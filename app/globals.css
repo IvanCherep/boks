@@ -19,41 +19,42 @@
 }
 
 :root {
+  color-scheme: light;
   --background: #f4f3ee;
-  --foreground: #2f2925;
-  --soft-foreground: #5f574f;
+  --foreground: #1f1915;
+  --soft-foreground: #3f3731;
   --card: #ffffff;
-  --card-foreground: #2f2925;
+  --card-foreground: #1f1915;
   --popover: #ffffff;
-  --popover-foreground: #2f2925;
-  --primary: #c15f3c;
+  --popover-foreground: #1f1915;
+  --primary: #8f3f24;
   --primary-foreground: #ffffff;
-  --secondary: #ebe7dd;
-  --secondary-foreground: #2f2925;
-  --muted: #e8e4db;
-  --muted-foreground: #746e67;
-  --accent: #f0ded3;
-  --accent-foreground: #2f2925;
-  --destructive: #e7000b;
-  --border: #d8d2c6;
-  --input: #d8d2c6;
-  --ring: #c15f3c;
+  --secondary: #ece8df;
+  --secondary-foreground: #1f1915;
+  --muted: #e6e0d5;
+  --muted-foreground: #5d554d;
+  --accent: #f1d8cb;
+  --accent-foreground: #1f1915;
+  --destructive: #b42318;
+  --border: #c9c0b1;
+  --input: #bfb6a7;
+  --ring: #8f3f24;
   --chart-1: #c15f3c;
-  --chart-2: #2f2925;
+  --chart-2: #1f1915;
   --chart-3: #8f8a7d;
-  --chart-4: #d6a24a;
-  --chart-5: #76618d;
+  --chart-4: #a66b2a;
+  --chart-5: #5f4b73;
   --radius: 0.5rem;
-  --reader: #fffaf0;
-  --reader-edge: #e9dfd2;
+  --reader: #fffdf8;
+  --reader-edge: #f3eadc;
   --sidebar: #ffffff;
-  --sidebar-foreground: #2f2925;
-  --sidebar-primary: #c15f3c;
+  --sidebar-foreground: #1f1915;
+  --sidebar-primary: #8f3f24;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0ded3;
-  --sidebar-accent-foreground: #2f2925;
-  --sidebar-border: #d8d2c6;
-  --sidebar-ring: #c15f3c;
+  --sidebar-accent: #f1d8cb;
+  --sidebar-accent-foreground: #1f1915;
+  --sidebar-border: #c9c0b1;
+  --sidebar-ring: #8f3f24;
 }
 
 @theme inline {
@@ -97,43 +98,6 @@
     "Liberation Mono", "Courier New", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #171717;
-    --card-foreground: #ededed;
-    --popover: #171717;
-    --popover-foreground: #ededed;
-    --primary: #ededed;
-    --primary-foreground: #171717;
-    --secondary: #262626;
-    --secondary-foreground: #ededed;
-    --muted: #262626;
-    --muted-foreground: #a1a1a1;
-    --accent: #262626;
-    --accent-foreground: #ededed;
-    --destructive: #ff6467;
-    --border: #ffffff1a;
-    --input: #ffffff26;
-    --ring: #737373;
-    --chart-1: #8e51ff;
-    --chart-2: #00bc7d;
-    --chart-3: #fe9a00;
-    --chart-4: #ad46ff;
-    --chart-5: #ff2056;
-    --reader: #171717;
-    --sidebar: #171717;
-    --sidebar-foreground: #ededed;
-    --sidebar-primary: #8e51ff;
-    --sidebar-primary-foreground: #ededed;
-    --sidebar-accent: #262626;
-    --sidebar-accent-foreground: #ededed;
-    --sidebar-border: #ffffff1a;
-    --sidebar-ring: #737373;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -154,8 +118,8 @@ textarea {
 
 .reader-shell {
   background:
-    linear-gradient(145deg, rgb(255 255 255 / 58%), transparent 34%),
-    radial-gradient(circle at 76% 12%, rgb(193 95 60 / 11%), transparent 30%),
+    linear-gradient(145deg, rgb(255 255 255 / 76%), transparent 38%),
+    radial-gradient(circle at 76% 12%, rgb(193 95 60 / 7%), transparent 30%),
     var(--background);
 }
 
@@ -170,7 +134,7 @@ textarea {
 
 .reader-card {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 72%), transparent 34%),
+    linear-gradient(180deg, rgb(255 255 255 / 92%), transparent 38%),
     linear-gradient(135deg, var(--reader), var(--reader-edge));
 }
 
@@ -190,7 +154,7 @@ textarea {
   gap: 0.25rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgb(255 255 255 / 86%);
+  background: rgb(255 255 255 / 94%);
   color: var(--foreground);
   padding: 0.75rem 0.55rem;
   box-shadow: 0 12px 34px rgb(47 41 37 / 12%);
@@ -210,6 +174,12 @@ textarea {
   color: var(--primary-foreground);
 }
 
+.action-button:focus-visible,
+.swipe-cue:focus-visible {
+  outline: 3px solid rgb(143 63 36 / 34%);
+  outline-offset: 3px;
+}
+
 .action-button span {
   font-size: 0.78rem;
   font-weight: 700;
@@ -222,8 +192,8 @@ textarea {
   gap: 0.45rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgb(255 255 255 / 70%);
-  color: var(--muted-foreground);
+  background: rgb(255 255 255 / 92%);
+  color: var(--foreground);
   padding: 0.45rem 0.8rem;
   font-size: 0.9rem;
   font-weight: 700;
@@ -232,7 +202,7 @@ textarea {
 .panel {
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: rgb(255 255 255 / 80%);
+  background: rgb(255 255 255 / 92%);
   box-shadow: 0 16px 50px rgb(47 41 37 / 8%);
 }
 
@@ -250,7 +220,7 @@ textarea {
 .metric-tile {
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgb(255 255 255 / 72%);
+  background: rgb(255 255 255 / 92%);
   padding: 0.9rem;
 }
 
