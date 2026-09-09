@@ -1,5 +1,5 @@
-import { BoksClient } from "./boks-client";
+import { ReaderFeed } from "./boks-client";
 
 export default function Home() {
-  return <BoksClient />;
+  return <ReaderFeed />;
 }

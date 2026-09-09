@@ -11,10 +11,10 @@ boks tests whether readers want a dedicated literature feed for complete short s
 ## Current Prototype Scope
 
 - Mobile-first responsive web app for MacBook, iPhone, and Android browsers.
-- Three modes: Read, Author, Metrics.
+- Dedicated routes: `/` for the swipe-first reader, `/author` for publishing, `/admin` for business analysis.
 - Shared D1 database for stories, comments, and analytics events.
 - Seed stories for immediate demos plus author-created stories.
-- Simple recommendation ranking based on selected mood, reading length, engagement, and completion.
+- Simple recommendation ranking based on local reader behavior, skips, completions, likes, comments, shares, and story freshness.
 - JSON metric export for analysis or investor updates.
 
 ## Validation Questions
@@ -24,6 +24,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Do they react or comment after completion?
 - Which mood and genre combinations perform best?
 - Do authors understand the 15 minute constraint and submit suitable pieces?
+- Does hiding manual choice improve story starts compared with chooser-based browsing?
 
 ## MVP Extension Points
 
@@ -32,3 +33,4 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Content safety: add moderation before public publishing.
 - Growth loops: add public story detail pages and richer share previews.
 - Monetization: add author subscriptions, paid collections, or sponsor-supported free reading.
+- Operations: add pagination, moderation queues, cohort exports, and author-level reporting once inventory reaches thousands of texts.

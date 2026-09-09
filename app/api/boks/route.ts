@@ -84,6 +84,7 @@ const eventTypes = new Set([
   "like",
   "share",
   "skip",
+  "comment",
   "publish",
   "preference",
 ]);
@@ -129,7 +130,7 @@ async function ensureSeedStories(db: D1Database) {
   );
 }
 
-async function getStories(db: D1Database) {
+async function getStories(db: D1Database, limit: number) {
   const result = await db
     .prepare(
       `SELECT
@@ -156,8 +157,9 @@ async function getStories(db: D1Database) {
       WHERE s.status = 'published'
       GROUP BY s.id
       ORDER BY s.is_seed ASC, s.created_at DESC
-      LIMIT 80`
+      LIMIT ?`
     )
+    .bind(limit)
     .all<StoryRow>();
 
   return result.results ?? [];
@@ -182,8 +184,8 @@ async function getComments(db: D1Database) {
   return result.results ?? [];
 }
 
-async function getMetrics(db: D1Database) {
-  const [funnel, storyMetrics, recentEvents] = await Promise.all([
+async function getMetrics(db: D1Database, limit: number) {
+  const [funnel, storyMetrics, genreMetrics, moodMetrics, recentEvents] = await Promise.all([
     db
       .prepare(
         `SELECT
@@ -193,6 +195,8 @@ async function getMetrics(db: D1Database) {
           SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
           SUM(CASE WHEN event_type = 'like' THEN 1 ELSE 0 END) AS likes,
           SUM(CASE WHEN event_type = 'share' THEN 1 ELSE 0 END) AS shares,
+          SUM(CASE WHEN event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
+          SUM(CASE WHEN event_type = 'comment' THEN 1 ELSE 0 END) AS comments,
           COALESCE(AVG(CASE WHEN event_type = 'complete' THEN value END), 0) AS avgReadSeconds
         FROM events`
       )
@@ -215,7 +219,46 @@ async function getMetrics(db: D1Database) {
         LEFT JOIN events e ON e.story_id = s.id
         GROUP BY s.id
         ORDER BY starts DESC, impressions DESC, s.created_at DESC
-        LIMIT 30`
+        LIMIT ?`
+      )
+      .bind(limit)
+      .all(),
+    db
+      .prepare(
+        `SELECT
+          s.genre,
+          COUNT(DISTINCT s.id) AS stories,
+          SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
+          SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
+          SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
+          SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
+          SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
+          SUM(CASE WHEN e.event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
+          SUM(CASE WHEN e.event_type = 'comment' THEN 1 ELSE 0 END) AS comments
+        FROM stories s
+        LEFT JOIN events e ON e.story_id = s.id
+        WHERE s.status = 'published'
+        GROUP BY s.genre
+        ORDER BY starts DESC, completes DESC`
+      )
+      .all(),
+    db
+      .prepare(
+        `SELECT
+          s.mood,
+          COUNT(DISTINCT s.id) AS stories,
+          SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
+          SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
+          SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
+          SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
+          SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
+          SUM(CASE WHEN e.event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
+          SUM(CASE WHEN e.event_type = 'comment' THEN 1 ELSE 0 END) AS comments
+        FROM stories s
+        LEFT JOIN events e ON e.story_id = s.id
+        WHERE s.status = 'published'
+        GROUP BY s.mood
+        ORDER BY starts DESC, completes DESC`
       )
       .all(),
     db
@@ -231,18 +274,22 @@ async function getMetrics(db: D1Database) {
   return {
     funnel: funnel ?? {},
     stories: storyMetrics.results ?? [],
+    genres: genreMetrics.results ?? [],
+    moods: moodMetrics.results ?? [],
     recentEvents: recentEvents.results ?? [],
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const db = getD1();
+    const url = new URL(request.url);
+    const limit = Math.max(20, Math.min(1000, Number(url.searchParams.get("limit")) || 500));
     await ensureSeedStories(db);
     const [stories, comments, metrics] = await Promise.all([
-      getStories(db),
+      getStories(db, limit),
       getComments(db),
-      getMetrics(db),
+      getMetrics(db, limit),
     ]);
 
     return Response.json({ stories, comments, metrics });

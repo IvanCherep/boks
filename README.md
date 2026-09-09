@@ -4,15 +4,15 @@ boks is a browser prototype for testing a short literature feed: readers discove
 
 ## What is included
 
-- Reader feed with mood and time-based recommendations.
+- Swipe-first reader feed with behavior-based recommendations.
 - Like, share, completion, and comment capture.
 - Author cabinet with a 15 minute reading-time guardrail.
-- Metrics dashboard and JSON export.
+- `/admin` business console with funnel, genre/mood breakdowns, sortable content operations, and JSON export.
 - D1-backed shared storage for real test sessions.
 
 ## Main files
 
-- `app/boks-client.tsx`: product interface.
+- `app/boks-client.tsx`: reader, author, and admin interfaces.
 - `app/api/boks/route.ts`: API, seed stories, metrics aggregation.
 - `db/schema.ts`: D1 schema.
 - `docs/boks-operations.md`: testing and operating guide.
