@@ -446,11 +446,11 @@ export function ReaderFeed() {
   return (
     <main className="reader-shell h-[100svh] overflow-hidden text-[var(--foreground)]">
       <section
-        className="relative mx-auto grid h-full w-full max-w-[1120px] grid-cols-1 lg:grid-cols-[minmax(0,1fr)_84px]"
+        className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_84px]"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <article className="reader-card relative m-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--reader)] shadow-[0_18px_70px_rgb(40_29_18/12%)] sm:m-4 lg:m-6">
+        <article className="reader-card relative m-2 grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--reader)] shadow-[0_18px_70px_rgb(40_29_18/12%)] sm:m-4 lg:m-6">
           <header className="z-10 flex items-center justify-between px-5 py-4 sm:px-8">
             <p className="brand-word">boks</p>
             <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
@@ -459,20 +459,20 @@ export function ReaderFeed() {
             </div>
           </header>
 
-          <div className="story-scroll min-h-0 overflow-y-auto px-5 pb-4 sm:px-10 lg:px-16">
-            <div className="mx-auto flex min-h-full max-w-[760px] flex-col justify-center py-8 sm:py-12">
+          <div className="story-scroll min-h-0 min-w-0 overflow-y-auto px-5 pb-28 sm:px-10 sm:pb-12 lg:px-16">
+            <div className="mx-auto flex min-h-full max-w-[760px] flex-col justify-start py-7 sm:py-12">
               <div className="mb-5 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
                 <span>{currentStory.genre}</span>
                 <span>·</span>
                 <span>{currentStory.mood}</span>
               </div>
-              <h1 className="max-w-[720px] text-[2.35rem] font-semibold leading-[1.02] tracking-normal text-[var(--foreground)] sm:text-[4.7rem]">
+              <h1 className="max-w-[720px] break-words text-[2.18rem] font-semibold leading-[1.04] tracking-normal text-[var(--foreground)] sm:text-[4.7rem]">
                 {currentStory.title}
               </h1>
               <p className="mt-5 max-w-[650px] text-xl leading-8 text-[var(--soft-foreground)]">
                 {currentStory.hook}
               </p>
-              <div className="mt-8 max-w-[680px] text-[1.08rem] leading-8 text-[var(--foreground)] sm:text-[1.18rem] sm:leading-9">
+              <div className="story-copy mt-8 max-w-[680px] text-[1.08rem] leading-8 text-[var(--foreground)] sm:text-[1.18rem] sm:leading-9">
                 {currentStory.body.split("\n").map((paragraph) => (
                   <p key={paragraph} className="mb-6">
                     {paragraph}
@@ -494,7 +494,7 @@ export function ReaderFeed() {
           </footer>
         </article>
 
-        <aside className="action-rail pointer-events-none absolute bottom-24 right-4 z-20 flex flex-col gap-3 lg:pointer-events-auto lg:static lg:bottom-auto lg:right-auto lg:justify-center">
+        <aside className="action-rail pointer-events-none absolute inset-x-4 bottom-4 z-20 flex justify-center gap-3 lg:static lg:inset-auto lg:flex-col lg:justify-center">
           <ActionButton label="Like" value={currentStory.likes} onClick={likeStory} active={liked[currentStory.id]}>
             <Heart className="size-5" />
           </ActionButton>

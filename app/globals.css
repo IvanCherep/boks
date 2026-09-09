@@ -102,6 +102,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
   text-rendering: optimizeLegibility;
 }
 
@@ -136,15 +137,22 @@ textarea {
   background:
     linear-gradient(180deg, rgb(255 255 255 / 92%), transparent 38%),
     linear-gradient(135deg, var(--reader), var(--reader-edge));
+  min-width: 0;
 }
 
 .story-scroll {
   scrollbar-width: none;
   overscroll-behavior: contain;
+  scroll-padding-bottom: 7rem;
 }
 
 .story-scroll::-webkit-scrollbar {
   display: none;
+}
+
+.story-copy {
+  overflow-wrap: break-word;
+  text-wrap: pretty;
 }
 
 .action-button {
@@ -276,15 +284,24 @@ textarea {
   }
 
   .action-rail {
-    bottom: 5.5rem;
+    bottom: 5.25rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgb(255 253 248 / 92%);
+    padding: 0.35rem;
+    box-shadow: 0 16px 44px rgb(47 41 37 / 16%);
+    backdrop-filter: blur(14px);
   }
 
   .action-button {
+    border-color: transparent;
+    box-shadow: none;
     min-width: 52px;
-    padding: 0.65rem 0.48rem;
+    padding: 0.55rem 0.48rem;
   }
 
   .reader-card {
     border-radius: 24px;
+    width: calc(100% - 1rem);
   }
 }
