@@ -14,18 +14,6 @@ type SeedStory = {
   minutes: number;
 };
 
-type StoryRow = SeedStory & {
-  status: string;
-  isSeed: number;
-  createdAt: string;
-  likes: number;
-  shares: number;
-  starts: number;
-  completes: number;
-  commentsCount: number;
-  avgSeconds: number;
-};
-
 const seedStories: SeedStory[] = [
   {
     id: "seed-after-the-platform",
@@ -106,6 +94,14 @@ function estimateMinutes(body: string) {
   return Math.max(1, Math.min(15, Math.ceil(words / 220)));
 }
 
+function numberParam(url: URL, key: string, fallback: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Number(url.searchParams.get(key)) || fallback));
+}
+
+function searchPattern(query: string) {
+  return `%${query.replaceAll("%", "").replaceAll("_", "").toLowerCase()}%`;
+}
+
 async function ensureSeedStories(db: D1Database) {
   await db.batch(
     seedStories.map((story) =>
@@ -130,42 +126,95 @@ async function ensureSeedStories(db: D1Database) {
   );
 }
 
-async function getStories(db: D1Database, limit: number) {
+function metricRollups() {
+  return `
+    WITH event_rollup AS (
+      SELECT
+        story_id,
+        SUM(CASE WHEN event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
+        SUM(CASE WHEN event_type = 'like' THEN 1 ELSE 0 END) AS likes,
+        SUM(CASE WHEN event_type = 'share' THEN 1 ELSE 0 END) AS shares,
+        SUM(CASE WHEN event_type = 'start' THEN 1 ELSE 0 END) AS starts,
+        SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
+        SUM(CASE WHEN event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
+        COALESCE(AVG(CASE WHEN event_type = 'complete' THEN value END), 0) AS avgSeconds
+      FROM events
+      GROUP BY story_id
+    ),
+    comment_rollup AS (
+      SELECT story_id, COUNT(*) AS comments
+      FROM comments
+      GROUP BY story_id
+    )`;
+}
+
+function storyMetricSelect(includeBody: boolean) {
+  return `
+    s.id,
+    s.title,
+    s.author_name AS authorName,
+    s.author_handle AS authorHandle,
+    s.hook,
+    ${includeBody ? "s.body," : "'' AS body,"}
+    s.genre,
+    s.mood,
+    s.minutes,
+    s.status,
+    s.is_seed AS isSeed,
+    s.created_at AS createdAt,
+    COALESCE(er.impressions, 0) AS impressions,
+    COALESCE(er.likes, 0) AS likes,
+    COALESCE(er.shares, 0) AS shares,
+    COALESCE(er.starts, 0) AS starts,
+    COALESCE(er.completes, 0) AS completes,
+    COALESCE(er.skips, 0) AS skips,
+    COALESCE(cr.comments, 0) AS commentsCount,
+    COALESCE(cr.comments, 0) AS comments,
+    COALESCE(er.avgSeconds, 0) AS avgSeconds,
+    (
+      COALESCE(er.completes, 0) * 4 +
+      COALESCE(er.likes, 0) * 5 +
+      COALESCE(er.shares, 0) * 4 +
+      COALESCE(cr.comments, 0) * 6 -
+      MAX(0, COALESCE(er.starts, 0) - COALESCE(er.completes, 0))
+    ) AS signal,
+    CASE
+      WHEN COALESCE(er.starts, 0) > 0 THEN ROUND(COALESCE(er.completes, 0) * 100.0 / er.starts)
+      ELSE 0
+    END AS finishRate`;
+}
+
+async function getReaderStories(db: D1Database, limit: number) {
   const result = await db
     .prepare(
-      `SELECT
-        s.id,
-        s.title,
-        s.author_name AS authorName,
-        s.author_handle AS authorHandle,
-        s.hook,
-        s.body,
-        s.genre,
-        s.mood,
-        s.minutes,
-        s.status,
-        s.is_seed AS isSeed,
-        s.created_at AS createdAt,
-        SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
-        SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
-        SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
-        SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
-        COALESCE(AVG(CASE WHEN e.event_type = 'complete' THEN e.value END), 0) AS avgSeconds,
-        (SELECT COUNT(*) FROM comments c WHERE c.story_id = s.id) AS commentsCount
+      `${metricRollups()}
+      SELECT ${storyMetricSelect(true)}
       FROM stories s
-      LEFT JOIN events e ON e.story_id = s.id
+      LEFT JOIN event_rollup er ON er.story_id = s.id
+      LEFT JOIN comment_rollup cr ON cr.story_id = s.id
       WHERE s.status = 'published'
-      GROUP BY s.id
-      ORDER BY s.is_seed ASC, s.created_at DESC
+      ORDER BY
+        s.is_seed ASC,
+        (
+          COALESCE(er.completes, 0) * 7 +
+          COALESCE(er.likes, 0) * 5 +
+          COALESCE(cr.comments, 0) * 6 +
+          COALESCE(er.shares, 0) * 5 +
+          CASE WHEN COALESCE(er.starts, 0) < 4 THEN 20 ELSE 0 END +
+          ABS(RANDOM() % 9)
+        ) DESC,
+        s.created_at DESC
       LIMIT ?`
     )
     .bind(limit)
-    .all<StoryRow>();
+    .all();
 
   return result.results ?? [];
 }
 
-async function getComments(db: D1Database) {
+async function getComments(db: D1Database, storyIds: string[]) {
+  if (!storyIds.length) return [];
+  const placeholders = storyIds.map(() => "?").join(", ");
   const result = await db
     .prepare(
       `SELECT
@@ -176,16 +225,83 @@ async function getComments(db: D1Database) {
         body,
         created_at AS createdAt
       FROM comments
+      WHERE story_id IN (${placeholders})
       ORDER BY created_at DESC
-      LIMIT 80`
+      LIMIT 120`
     )
+    .bind(...storyIds)
     .all();
 
   return result.results ?? [];
 }
 
-async function getMetrics(db: D1Database, limit: number) {
-  const [funnel, storyMetrics, genreMetrics, moodMetrics, recentEvents] = await Promise.all([
+function adminOrder(sort: string) {
+  if (sort === "finish") return "finishRate DESC, starts DESC, s.created_at DESC";
+  if (sort === "starts") return "starts DESC, impressions DESC, s.created_at DESC";
+  if (sort === "comments") return "commentsCount DESC, starts DESC, s.created_at DESC";
+  if (sort === "newest") return "s.created_at DESC";
+  if (sort === "title") return "LOWER(s.title) ASC";
+  return "signal DESC, starts DESC, s.created_at DESC";
+}
+
+async function getAdminStoryCount(db: D1Database, query: string) {
+  const pattern = searchPattern(query);
+  const where = query
+    ? `WHERE s.status = 'published' AND (
+        LOWER(s.title) LIKE ? OR
+        LOWER(s.author_name) LIKE ? OR
+        LOWER(s.genre) LIKE ? OR
+        LOWER(s.mood) LIKE ?
+      )`
+    : "WHERE s.status = 'published'";
+  const statement = db.prepare(`SELECT COUNT(*) AS total FROM stories s ${where}`);
+  const row = query
+    ? await statement.bind(pattern, pattern, pattern, pattern).first<{ total: number }>()
+    : await statement.first<{ total: number }>();
+  return row?.total ?? 0;
+}
+
+async function getAdminStoryMetrics(
+  db: D1Database,
+  limit: number,
+  offset: number,
+  query: string,
+  sort: string
+) {
+  const pattern = searchPattern(query);
+  const where = query
+    ? `WHERE s.status = 'published' AND (
+        LOWER(s.title) LIKE ? OR
+        LOWER(s.author_name) LIKE ? OR
+        LOWER(s.genre) LIKE ? OR
+        LOWER(s.mood) LIKE ?
+      )`
+    : "WHERE s.status = 'published'";
+
+  const statement = db.prepare(
+    `${metricRollups()}
+    SELECT ${storyMetricSelect(false)}
+    FROM stories s
+    LEFT JOIN event_rollup er ON er.story_id = s.id
+    LEFT JOIN comment_rollup cr ON cr.story_id = s.id
+    ${where}
+    ORDER BY ${adminOrder(sort)}
+    LIMIT ? OFFSET ?`
+  );
+
+  const result = query
+    ? await statement.bind(pattern, pattern, pattern, pattern, limit, offset).all()
+    : await statement.bind(limit, offset).all();
+  return result.results ?? [];
+}
+
+async function getMetrics(
+  db: D1Database,
+  storyRows: Array<Record<string, unknown>>,
+  totalStories: number,
+  pagination: { limit: number; offset: number; sort: string; query: string }
+) {
+  const [funnel, genreMetrics, moodMetrics, recentEvents] = await Promise.all([
     db
       .prepare(
         `SELECT
@@ -203,40 +319,19 @@ async function getMetrics(db: D1Database, limit: number) {
       .first(),
     db
       .prepare(
-        `SELECT
-          s.id,
-          s.title,
-          s.genre,
-          s.mood,
-          s.minutes,
-          SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
-          SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
-          SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
-          SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
-          SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
-          (SELECT COUNT(*) FROM comments c WHERE c.story_id = s.id) AS comments
-        FROM stories s
-        LEFT JOIN events e ON e.story_id = s.id
-        GROUP BY s.id
-        ORDER BY starts DESC, impressions DESC, s.created_at DESC
-        LIMIT ?`
-      )
-      .bind(limit)
-      .all(),
-    db
-      .prepare(
-        `SELECT
+        `${metricRollups()}
+        SELECT
           s.genre,
           COUNT(DISTINCT s.id) AS stories,
-          SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
-          SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
-          SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
-          SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
-          SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
-          SUM(CASE WHEN e.event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
-          SUM(CASE WHEN e.event_type = 'comment' THEN 1 ELSE 0 END) AS comments
+          COALESCE(SUM(er.starts), 0) AS starts,
+          COALESCE(SUM(er.completes), 0) AS completes,
+          COALESCE(SUM(er.likes), 0) AS likes,
+          COALESCE(SUM(er.shares), 0) AS shares,
+          COALESCE(SUM(er.skips), 0) AS skips,
+          COALESCE(SUM(cr.comments), 0) AS comments
         FROM stories s
-        LEFT JOIN events e ON e.story_id = s.id
+        LEFT JOIN event_rollup er ON er.story_id = s.id
+        LEFT JOIN comment_rollup cr ON cr.story_id = s.id
         WHERE s.status = 'published'
         GROUP BY s.genre
         ORDER BY starts DESC, completes DESC`
@@ -244,18 +339,19 @@ async function getMetrics(db: D1Database, limit: number) {
       .all(),
     db
       .prepare(
-        `SELECT
+        `${metricRollups()}
+        SELECT
           s.mood,
           COUNT(DISTINCT s.id) AS stories,
-          SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
-          SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
-          SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
-          SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
-          SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
-          SUM(CASE WHEN e.event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
-          SUM(CASE WHEN e.event_type = 'comment' THEN 1 ELSE 0 END) AS comments
+          COALESCE(SUM(er.starts), 0) AS starts,
+          COALESCE(SUM(er.completes), 0) AS completes,
+          COALESCE(SUM(er.likes), 0) AS likes,
+          COALESCE(SUM(er.shares), 0) AS shares,
+          COALESCE(SUM(er.skips), 0) AS skips,
+          COALESCE(SUM(cr.comments), 0) AS comments
         FROM stories s
-        LEFT JOIN events e ON e.story_id = s.id
+        LEFT JOIN event_rollup er ON er.story_id = s.id
+        LEFT JOIN comment_rollup cr ON cr.story_id = s.id
         WHERE s.status = 'published'
         GROUP BY s.mood
         ORDER BY starts DESC, completes DESC`
@@ -266,17 +362,22 @@ async function getMetrics(db: D1Database, limit: number) {
         `SELECT story_id AS storyId, event_type AS eventType, value, created_at AS createdAt
         FROM events
         ORDER BY created_at DESC
-        LIMIT 24`
+        LIMIT 40`
       )
       .all(),
   ]);
 
   return {
-    funnel: funnel ?? {},
-    stories: storyMetrics.results ?? [],
+    funnel: { ...(funnel ?? {}), totalStories },
+    stories: storyRows,
     genres: genreMetrics.results ?? [],
     moods: moodMetrics.results ?? [],
     recentEvents: recentEvents.results ?? [],
+    pagination: {
+      ...pagination,
+      total: totalStories,
+      hasMore: pagination.offset + pagination.limit < totalStories,
+    },
   };
 }
 
@@ -284,13 +385,42 @@ export async function GET(request: Request) {
   try {
     const db = getD1();
     const url = new URL(request.url);
-    const limit = Math.max(20, Math.min(1000, Number(url.searchParams.get("limit")) || 500));
+    const view = url.searchParams.get("view") ?? "reader";
     await ensureSeedStories(db);
-    const [stories, comments, metrics] = await Promise.all([
-      getStories(db, limit),
-      getComments(db),
-      getMetrics(db, limit),
+
+    if (view === "admin") {
+      const limit = numberParam(url, "limit", 100, 20, 250);
+      const offset = numberParam(url, "offset", 0, 0, 1_000_000);
+      const query = cleanText(url.searchParams.get("q")).slice(0, 80);
+      const sort = cleanText(url.searchParams.get("sort"), "signal");
+      const [totalStories, storyRows] = await Promise.all([
+        getAdminStoryCount(db, query),
+        getAdminStoryMetrics(db, limit, offset, query, sort),
+      ]);
+      const metrics = await getMetrics(db, storyRows, totalStories, {
+        limit,
+        offset,
+        sort,
+        query,
+      });
+      return Response.json({ stories: [], comments: [], metrics });
+    }
+
+    const limit = numberParam(url, "limit", 80, 20, 120);
+    const [stories, totalStories] = await Promise.all([
+      getReaderStories(db, limit),
+      getAdminStoryCount(db, ""),
     ]);
+    const comments = await getComments(
+      db,
+      stories.map((story) => String(story.id))
+    );
+    const metrics = await getMetrics(db, [], totalStories, {
+      limit,
+      offset: 0,
+      sort: "reader",
+      query: "",
+    });
 
     return Response.json({ stories, comments, metrics });
   } catch (error) {

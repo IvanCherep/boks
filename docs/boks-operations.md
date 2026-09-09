@@ -25,6 +25,14 @@ Use `/author` during interviews. Ask an author to paste or write a short piece. 
 - `events`: impressions, starts, completions, likes, shares, preferences, and publishes.
 - `comments`: one-sentence qualitative feedback tied to a story.
 
+## Scale Notes
+
+The prototype is designed for a first test with about 40,000 short text stories and 100-400 readers. Reader requests load only a small recommendation batch. Admin requests use server-side pagination, sorting, and search rather than loading the whole catalog into the browser.
+
+For this stage, use `/admin` to review global funnel metrics, genre and mood rollups, recent events, and one page of content operations at a time. Export metrics before each content-mix change so the test remains explainable.
+
+Before moving beyond the first cohort, add bulk import, full-text search, precomputed metric rollups, role-based admin access, moderation, and scheduled exports.
+
 ## Prototype URLs
 
 - `/`: swipe-first reader experience.

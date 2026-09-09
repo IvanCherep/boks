@@ -19,6 +19,8 @@ export const stories = sqliteTable(
   },
   (table) => [
     index("idx_stories_status_created").on(table.status, table.createdAt),
+    index("idx_stories_status_title").on(table.status, table.title),
+    index("idx_stories_status_author").on(table.status, table.authorName),
     index("idx_stories_mood_genre").on(table.mood, table.genre),
   ]
 );
@@ -37,6 +39,7 @@ export const events = sqliteTable(
   },
   (table) => [
     index("idx_events_story_type").on(table.storyId, table.eventType),
+    index("idx_events_type_created").on(table.eventType, table.createdAt),
     index("idx_events_created").on(table.createdAt),
     index("idx_events_visitor").on(table.visitorId),
   ]
@@ -54,5 +57,6 @@ export const comments = sqliteTable(
   },
   (table) => [
     index("idx_comments_story_created").on(table.storyId, table.createdAt),
+    index("idx_comments_created").on(table.createdAt),
   ]
 );

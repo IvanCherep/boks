@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   BookOpen,
@@ -69,6 +70,14 @@ type Metrics = {
   recentEvents: Array<Record<string, number | string>>;
   genres?: Array<Record<string, number | string>>;
   moods?: Array<Record<string, number | string>>;
+  pagination?: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+    sort: string;
+    query: string;
+  };
 };
 
 type ReaderProfile = {
@@ -88,6 +97,14 @@ const initialProfile: ReaderProfile = {
   skipped: [],
   genreScore: {},
   moodScore: {},
+};
+
+type LoadOptions = {
+  view?: "reader" | "admin";
+  limit?: number;
+  offset?: number;
+  q?: string;
+  sort?: string;
 };
 
 function getBrowserId(key: string) {
@@ -158,7 +175,7 @@ function storySignal(story: Record<string, number | string>) {
     numberValue(story.completes) * 4 +
     numberValue(story.likes) * 5 +
     numberValue(story.shares) * 4 +
-    numberValue(story.comments) * 6 -
+    numberValue(story.commentsCount ?? story.comments) * 6 -
     Math.max(0, numberValue(story.starts) - numberValue(story.completes))
   );
 }
@@ -169,17 +186,26 @@ function useBoksData() {
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics);
   const [status, setStatus] = useState("Loading");
 
-  async function load(limit = 500) {
+  const load = useCallback(async (options: LoadOptions = {}) => {
     setStatus("Loading");
-    const response = await fetch(`/api/boks?limit=${limit}`, { cache: "no-store" });
+    const view = options.view ?? "reader";
+    const params = new URLSearchParams({
+      view,
+      limit: String(options.limit ?? (view === "admin" ? 100 : 80)),
+    });
+    if (options.offset) params.set("offset", String(options.offset));
+    if (options.q?.trim()) params.set("q", options.q.trim());
+    if (options.sort) params.set("sort", options.sort);
+
+    const response = await fetch(`/api/boks?${params.toString()}`, { cache: "no-store" });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Could not load boks.");
-    setStories(data.stories);
-    setComments(data.comments);
+    setStories(data.stories ?? []);
+    setComments(data.comments ?? []);
     setMetrics(data.metrics);
     setStatus("Ready");
     return data;
-  }
+  }, []);
 
   return { stories, comments, metrics, status, setStatus, load };
 }
@@ -206,9 +232,10 @@ export function ReaderFeed() {
   useEffect(() => {
     visitorId.current = getBrowserId("boks-reader");
     sessionId.current = `${Date.now()}-${crypto.randomUUID()}`;
-    setProfile(readProfile());
-    load().catch((error) => setStatus(error.message));
-  }, []);
+    const profileTimer = window.setTimeout(() => setProfile(readProfile()), 0);
+    load({ view: "reader", limit: 80 }).catch((error) => setStatus(error.message));
+    return () => window.clearTimeout(profileTimer);
+  }, [load, setStatus]);
 
   async function track(eventType: string, storyId: string, value = 1, metadata = {}) {
     await fetch("/api/boks", {
@@ -242,23 +269,23 @@ export function ReaderFeed() {
   }, [profile, stories]);
 
   const currentStory = rankedStories[selectedIndex] ?? rankedStories[0];
+  const currentStoryId = currentStory?.id;
   const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id).slice(0, 5);
 
   useEffect(() => {
-    if (!currentStory) return;
-    setCommentOpen(false);
+    if (!currentStoryId) return;
     readStartedAt.current = Date.now();
-    track("impression", currentStory.id, 1, {
+    track("impression", currentStoryId, 1, {
       rank: selectedIndex,
       algorithm: "local-behavior-v2",
     }).catch(() => undefined);
 
     const startTimer = window.setTimeout(() => {
-      track("start", currentStory.id, 1, { rank: selectedIndex }).catch(() => undefined);
+      track("start", currentStoryId, 1, { rank: selectedIndex }).catch(() => undefined);
     }, 1800);
 
     return () => window.clearTimeout(startTimer);
-  }, [currentStory?.id, selectedIndex]);
+  }, [currentStoryId, selectedIndex]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -312,6 +339,7 @@ export function ReaderFeed() {
 
   function move(delta: number) {
     if (!rankedStories.length) return;
+    setCommentOpen(false);
     setSelectedIndex((index) => (index + delta + rankedStories.length) % rankedStories.length);
   }
 
@@ -329,7 +357,7 @@ export function ReaderFeed() {
       : currentStory.minutes * 60;
     persistProfile(profileBump(profile, currentStory, "complete"));
     await track("complete", currentStory.id, seconds);
-    await load();
+    await load({ view: "reader", limit: 80 });
     move(1);
   }
 
@@ -338,7 +366,7 @@ export function ReaderFeed() {
     setLiked((state) => ({ ...state, [currentStory.id]: true }));
     persistProfile(profileBump(profile, currentStory, "like"));
     await track("like", currentStory.id);
-    await load();
+    await load({ view: "reader", limit: 80 });
   }
 
   async function shareStory() {
@@ -351,7 +379,7 @@ export function ReaderFeed() {
       setStatus("Copied");
     }
     await track("share", currentStory.id);
-    await load();
+    await load({ view: "reader", limit: 80 });
   }
 
   async function submitComment() {
@@ -372,7 +400,7 @@ export function ReaderFeed() {
     setSubmitting(false);
     if (response.ok) {
       setCommentText("");
-      await load();
+      await load({ view: "reader", limit: 80 });
     }
   }
 
@@ -389,10 +417,18 @@ export function ReaderFeed() {
     const dy = touch.clientY - start.y;
     touchStart.current = null;
     if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) {
-      dy < 0 ? skipStory() : move(-1);
+      if (dy < 0) {
+        skipStory();
+      } else {
+        move(-1);
+      }
     }
     if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)) {
-      dx < 0 ? skipStory() : move(-1);
+      if (dx < 0) {
+        skipStory();
+      } else {
+        move(-1);
+      }
     }
   }
 
@@ -513,7 +549,7 @@ export function ReaderFeed() {
 }
 
 export function AuthorConsole() {
-  const { status, setStatus, load } = useBoksData();
+  const { status, setStatus } = useBoksData();
   const [authorForm, setAuthorForm] = useState({
     title: "",
     authorName: "",
@@ -563,14 +599,13 @@ export function AuthorConsole() {
       mood: "quiet",
     });
     setStatus("Published");
-    await load();
   }
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="panel p-5 sm:p-7">
-          <a href="/" className="brand-word">boks</a>
+          <Link href="/" className="brand-word">boks</Link>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Author cabinet</h1>
           <p className="mt-3 max-w-2xl text-[var(--muted-foreground)]">
             Publish one focused piece into the test feed. The reader will never choose it manually; the algorithm must earn its place.
@@ -636,38 +671,45 @@ export function AuthorConsole() {
 }
 
 export function AdminDashboard() {
-  const { stories, metrics, status, setStatus, load } = useBoksData();
+  const { metrics, status, setStatus, load } = useBoksData();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("signal");
+  const [page, setPage] = useState(0);
+  const pageSize = 100;
   const funnel = metrics.funnel ?? {};
+  const pagination = metrics.pagination ?? {
+    limit: pageSize,
+    offset: page * pageSize,
+    total: metrics.stories.length,
+    hasMore: false,
+    sort,
+    query,
+  };
   const impressions = numberValue(funnel.impressions);
   const starts = numberValue(funnel.starts);
   const completes = numberValue(funnel.completes);
+  const pageStart = pagination.total ? pagination.offset + 1 : 0;
+  const pageEnd = Math.min(pagination.offset + pagination.limit, pagination.total);
 
   useEffect(() => {
-    load(1000).catch((error) => setStatus(error.message));
-  }, []);
-
-  const filteredStories = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    return [...metrics.stories]
-      .filter((story) => {
-        if (!q) return true;
-        return `${story.title} ${story.genre} ${story.mood}`.toLowerCase().includes(q);
-      })
-      .sort((a, b) => {
-        if (sort === "finish") return pct(numberValue(b.completes), numberValue(b.starts)) - pct(numberValue(a.completes), numberValue(a.starts));
-        if (sort === "starts") return numberValue(b.starts) - numberValue(a.starts);
-        if (sort === "comments") return numberValue(b.comments) - numberValue(a.comments);
-        return storySignal(b) - storySignal(a);
-      });
-  }, [metrics.stories, query, sort]);
+    const handle = window.setTimeout(() => {
+      load({
+        view: "admin",
+        limit: pageSize,
+        offset: page * pageSize,
+        q: query,
+        sort,
+      }).catch((error) => setStatus(error.message));
+    }, 180);
+    return () => window.clearTimeout(handle);
+  }, [load, page, query, setStatus, sort]);
 
   function downloadMetrics() {
     const payload = {
       exportedAt: new Date().toISOString(),
       funnel,
       stories: metrics.stories,
+      pagination,
       genres: metrics.genres,
       moods: metrics.moods,
       recentEvents: metrics.recentEvents,
@@ -686,14 +728,25 @@ export function AdminDashboard() {
       <div className="mx-auto grid max-w-7xl gap-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <a href="/" className="brand-word">boks</a>
+            <Link href="/" className="brand-word">boks</Link>
             <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Business console</h1>
             <p className="mt-3 max-w-3xl text-[var(--muted-foreground)]">
               Funnel health, story-level signal, content inventory, and cohort taste.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => load(1000).catch((error) => setStatus(error.message))}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                load({
+                  view: "admin",
+                  limit: pageSize,
+                  offset: page * pageSize,
+                  q: query,
+                  sort,
+                }).catch((error) => setStatus(error.message))
+              }
+            >
               <RefreshCw className="size-4" /> Refresh
             </Button>
             <Button onClick={downloadMetrics}>
@@ -703,7 +756,7 @@ export function AdminDashboard() {
         </header>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <MetricTile label="Stories" value={stories.length} />
+          <MetricTile label="Stories" value={numberValue(funnel.totalStories)} />
           <MetricTile label="Visitors" value={numberValue(funnel.visitors)} />
           <MetricTile label="Impressions" value={impressions} />
           <MetricTile label="Starts" value={starts} />
@@ -729,18 +782,37 @@ export function AdminDashboard() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
             <div>
               <h2 className="text-xl font-semibold tracking-normal">Content operations</h2>
-              <p className="text-sm text-[var(--muted-foreground)]">{filteredStories.length} rows · {status}</p>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {pageStart}-{pageEnd} of {pagination.total} · {status}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <label className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
-                <Input className="w-[220px] pl-9" placeholder="Search stories" value={query} onChange={(event) => setQuery(event.target.value)} />
+                <Input
+                  className="w-[220px] pl-9"
+                  placeholder="Search stories"
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(0);
+                  }}
+                />
               </label>
-              <select className="field-control w-[180px]" value={sort} onChange={(event) => setSort(event.target.value)}>
+              <select
+                className="field-control w-[180px]"
+                value={sort}
+                onChange={(event) => {
+                  setSort(event.target.value);
+                  setPage(0);
+                }}
+              >
                 <option value="signal">Signal</option>
                 <option value="finish">Finish rate</option>
                 <option value="starts">Starts</option>
                 <option value="comments">Comments</option>
+                <option value="newest">Newest</option>
+                <option value="title">Title</option>
               </select>
             </div>
           </div>
@@ -753,9 +825,10 @@ export function AdminDashboard() {
               <span>Comments</span>
               <span>Signal</span>
             </div>
-            {filteredStories.slice(0, 250).map((story) => {
+            {metrics.stories.map((story) => {
               const storyStarts = numberValue(story.starts);
               const storyCompletes = numberValue(story.completes);
+              const comments = numberValue(story.commentsCount ?? story.comments);
               return (
                 <div key={String(story.id)} className="admin-row">
                   <span>
@@ -765,11 +838,24 @@ export function AdminDashboard() {
                   <span>{storyStarts}</span>
                   <span>{pct(storyCompletes, storyStarts)}%</span>
                   <span>{numberValue(story.likes)}</span>
-                  <span>{numberValue(story.comments)}</span>
+                  <span>{comments}</span>
                   <span>{storySignal(story)}</span>
                 </div>
               );
             })}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] p-4">
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Showing {metrics.stories.length} stories per request. Search and sort are handled by the server.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>
+                Previous
+              </Button>
+              <Button variant="outline" disabled={!pagination.hasMore} onClick={() => setPage((value) => value + 1)}>
+                Next
+              </Button>
+            </div>
           </div>
         </section>
       </div>
