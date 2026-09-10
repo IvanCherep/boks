@@ -25,6 +25,7 @@ boks is a browser prototype for testing a short literature feed: readers discove
 - `db/schema.ts`: D1 compatibility schema.
 - `docs/architecture.md`: system map and data flows.
 - `docs/boks-operations.md`: testing and operating guide.
+- `docs/future-updates-playbook.md`: practical guide for future app updates.
 - `docs/growth-readiness.md`: scale posture and next growth work.
 - `specs/boks-product-spec.md`: product scope and extension points.
 
