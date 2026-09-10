@@ -14,7 +14,8 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Dedicated routes: `/` for the swipe-first reader, `/author` for publishing, `/admin` for business analysis.
 - Shared D1 database for stories, comments, and analytics events.
 - Seed stories for immediate demos plus author-created stories.
-- Simple recommendation ranking based on local reader behavior, skips, completions, likes, comments, shares, and story freshness.
+- Server-side recommendation ranking with deterministic anonymous experiment assignment.
+- Algorithm comparison metrics for start rate, finish rate, reaction rate, skip rate, read time, like timing, comment timing, feed rank, pace, and engagement score.
 - JSON metric export for analysis or investor updates.
 
 ## Validation Questions
@@ -29,7 +30,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 ## MVP Extension Points
 
 - Authentication: bind author identity to Sign in with ChatGPT or a later custom account system.
-- Recommendation: replace client ranking with a server-side model using reader history and story embeddings.
+- Recommendation: extend the algorithm registry, add precomputed rollups, then introduce reader history and story embeddings.
 - Content safety: add moderation before public publishing.
 - Growth loops: add public story detail pages and richer share previews.
 - Monetization: add author subscriptions, paid collections, or sponsor-supported free reading.

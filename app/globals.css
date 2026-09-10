@@ -250,6 +250,11 @@ textarea {
   overflow-x: auto;
 }
 
+.experiment-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .admin-row {
   display: grid;
   min-width: 820px;
@@ -276,6 +281,40 @@ textarea {
   background: var(--muted);
   color: var(--soft-foreground);
   font-weight: 700;
+}
+
+.experiment-row {
+  display: grid;
+  min-width: 1120px;
+  grid-template-columns:
+    minmax(190px, 1.3fr)
+    minmax(105px, 0.8fr)
+    repeat(9, minmax(82px, 0.55fr));
+  gap: 0.85rem;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 0.85rem 1rem;
+  color: var(--foreground);
+  font-size: 0.93rem;
+}
+
+.experiment-row strong,
+.experiment-row small {
+  display: block;
+}
+
+.experiment-row small {
+  margin-top: 0.16rem;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+
+.experiment-head {
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 @media (max-width: 720px) {

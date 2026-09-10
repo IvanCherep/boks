@@ -35,6 +35,11 @@ export const events = sqliteTable(
     eventType: text("event_type").notNull(),
     value: integer("value").notNull().default(1),
     metadata: text("metadata").notNull().default("{}"),
+    algorithmId: text("algorithm_id").notNull().default("unassigned"),
+    userSegment: text("user_segment").notNull().default("general"),
+    surface: text("surface").notNull().default("reader"),
+    rank: integer("rank").notNull().default(0),
+    clientElapsedSeconds: integer("client_elapsed_seconds").notNull().default(0),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
@@ -42,6 +47,9 @@ export const events = sqliteTable(
     index("idx_events_type_created").on(table.eventType, table.createdAt),
     index("idx_events_created").on(table.createdAt),
     index("idx_events_visitor").on(table.visitorId),
+    index("idx_events_algorithm_type_created").on(table.algorithmId, table.eventType, table.createdAt),
+    index("idx_events_algorithm_story").on(table.algorithmId, table.storyId),
+    index("idx_events_segment_algorithm").on(table.userSegment, table.algorithmId),
   ]
 );
 

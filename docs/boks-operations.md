@@ -14,6 +14,7 @@
 - Finish rate: completions divided by starts. Target: 55% or higher.
 - Reaction rate: likes, shares, and comments divided by completions. Target: 20% or higher.
 - Story signal: completions, likes, shares, and comments, minus skip/drop-off pressure.
+- Recommendation lab: compare algorithms by start rate, finish rate, reaction rate, skip rate, read time, like time, pace index, and engagement score.
 
 ## Author Testing
 
@@ -31,6 +32,8 @@ The prototype is designed for a first test with about 40,000 short text stories 
 
 For this stage, use `/admin` to review global funnel metrics, genre and mood rollups, recent events, and one page of content operations at a time. Export metrics before each content-mix change so the test remains explainable.
 
+The reader feed assigns recommendation algorithms automatically. Do not tell testers which algorithm they are seeing. Use the Recommendation lab in `/admin` after attributed events accumulate, then export the JSON before changing algorithm weights.
+
 Before moving beyond the first cohort, add bulk import, full-text search, precomputed metric rollups, role-based admin access, moderation, and scheduled exports.
 
 ## Prototype URLs
@@ -43,5 +46,7 @@ Before moving beyond the first cohort, add bulk import, full-text search, precom
 
 - Add schema changes through `db/schema.ts`, then generate a new Drizzle migration.
 - Keep seed stories in `app/api/boks/route.ts` until there is a real editorial tool.
+- Add or tune recommendation algorithms in `lib/boks/recommendations.ts`.
+- Keep metric definitions in `lib/boks/analytics.ts` so admin UI and exports stay aligned.
 - Use browser storage only for anonymous visitor/session ids. Product data stays in D1.
 - Export metrics before resetting or changing the production database.

@@ -70,6 +70,8 @@ type Metrics = {
   recentEvents: Array<Record<string, number | string>>;
   genres?: Array<Record<string, number | string>>;
   moods?: Array<Record<string, number | string>>;
+  algorithms?: RecommendationAlgorithm[];
+  algorithmMetrics?: Array<Record<string, number | string>>;
   pagination?: {
     limit: number;
     offset: number;
@@ -78,6 +80,19 @@ type Metrics = {
     sort: string;
     query: string;
   };
+};
+
+type RecommendationAlgorithm = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+type RecommendationExperiment = {
+  algorithmId: string;
+  algorithmName: string;
+  userSegment: string;
+  source: "assigned" | "requested";
 };
 
 type ReaderProfile = {
@@ -105,6 +120,8 @@ type LoadOptions = {
   offset?: number;
   q?: string;
   sort?: string;
+  visitorId?: string;
+  algorithm?: string;
 };
 
 function getBrowserId(key: string) {
@@ -140,6 +157,13 @@ function estimateMinutes(text: string) {
 function pct(part: number, whole: number) {
   if (!whole) return 0;
   return Math.round((part / whole) * 100);
+}
+
+function secondsLabel(value: unknown) {
+  const seconds = numberValue(value);
+  if (!seconds) return "0s";
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
 }
 
 function numberValue(value: unknown) {
@@ -184,6 +208,7 @@ function useBoksData() {
   const [stories, setStories] = useState<Story[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics);
+  const [experiment, setExperiment] = useState<RecommendationExperiment | null>(null);
   const [status, setStatus] = useState("Loading");
 
   const load = useCallback(async (options: LoadOptions = {}) => {
@@ -196,6 +221,8 @@ function useBoksData() {
     if (options.offset) params.set("offset", String(options.offset));
     if (options.q?.trim()) params.set("q", options.q.trim());
     if (options.sort) params.set("sort", options.sort);
+    if (options.visitorId) params.set("visitorId", options.visitorId);
+    if (options.algorithm) params.set("algorithm", options.algorithm);
 
     const response = await fetch(`/api/boks?${params.toString()}`, { cache: "no-store" });
     const data = await response.json();
@@ -203,15 +230,16 @@ function useBoksData() {
     setStories(data.stories ?? []);
     setComments(data.comments ?? []);
     setMetrics(data.metrics);
+    setExperiment(data.experiment ?? null);
     setStatus("Ready");
     return data;
   }, []);
 
-  return { stories, comments, metrics, status, setStatus, load };
+  return { stories, comments, metrics, experiment, status, setStatus, load };
 }
 
 export function ReaderFeed() {
-  const { stories, comments, metrics, status, setStatus, load } = useBoksData();
+  const { stories, comments, metrics, experiment, status, setStatus, load } = useBoksData();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
@@ -233,11 +261,14 @@ export function ReaderFeed() {
     visitorId.current = getBrowserId("boks-reader");
     sessionId.current = `${Date.now()}-${crypto.randomUUID()}`;
     const profileTimer = window.setTimeout(() => setProfile(readProfile()), 0);
-    load({ view: "reader", limit: 80 }).catch((error) => setStatus(error.message));
+    load({ view: "reader", limit: 80, visitorId: visitorId.current }).catch((error) => setStatus(error.message));
     return () => window.clearTimeout(profileTimer);
   }, [load, setStatus]);
 
-  async function track(eventType: string, storyId: string, value = 1, metadata = {}) {
+  const track = useCallback(async (eventType: string, storyId: string, value = 1, metadata = {}) => {
+    const elapsed = readStartedAt.current
+      ? Math.max(0, Math.round((Date.now() - readStartedAt.current) / 1000))
+      : 0;
     await fetch("/api/boks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -249,24 +280,22 @@ export function ReaderFeed() {
         metadata,
         visitorId: visitorId.current,
         sessionId: sessionId.current,
+        algorithmId: experiment?.algorithmId ?? "unassigned",
+        userSegment: experiment?.userSegment ?? "general",
+        surface: "reader",
+        rank: selectedIndex,
+        clientElapsedSeconds: elapsed,
       }),
     });
-  }
+  }, [experiment?.algorithmId, experiment?.userSegment, selectedIndex]);
 
   const rankedStories = useMemo(() => {
     return [...stories].sort((a, b) => {
-      const score = (story: Story) => {
-        const localTaste = (profile.genreScore[story.genre] ?? 0) * 12 + (profile.moodScore[story.mood] ?? 0) * 10;
-        const quality = story.completes * 7 + story.likes * 5 + story.commentsCount * 6 + story.shares * 5;
-        const freshness = story.starts < 4 ? 20 : 0;
-        const fatigue =
-          (profile.completed.includes(story.id) ? 80 : 0) +
-          (profile.skipped.includes(story.id) ? 35 : 0);
-        return localTaste + quality + freshness + Math.max(0, 15 - story.minutes) - fatigue;
-      };
-      return score(b) - score(a);
+      const fatigue = (story: Story) =>
+        (profile.completed.includes(story.id) ? 2 : 0) + (profile.skipped.includes(story.id) ? 1 : 0);
+      return fatigue(a) - fatigue(b);
     });
-  }, [profile, stories]);
+  }, [profile.completed, profile.skipped, stories]);
 
   const currentStory = rankedStories[selectedIndex] ?? rankedStories[0];
   const currentStoryId = currentStory?.id;
@@ -277,7 +306,8 @@ export function ReaderFeed() {
     readStartedAt.current = Date.now();
     track("impression", currentStoryId, 1, {
       rank: selectedIndex,
-      algorithm: "local-behavior-v2",
+      algorithm: experiment?.algorithmId ?? "unassigned",
+      segment: experiment?.userSegment ?? "general",
     }).catch(() => undefined);
 
     const startTimer = window.setTimeout(() => {
@@ -285,7 +315,7 @@ export function ReaderFeed() {
     }, 1800);
 
     return () => window.clearTimeout(startTimer);
-  }, [currentStoryId, selectedIndex]);
+  }, [currentStoryId, experiment?.algorithmId, experiment?.userSegment, selectedIndex, track]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -357,7 +387,7 @@ export function ReaderFeed() {
       : currentStory.minutes * 60;
     persistProfile(profileBump(profile, currentStory, "complete"));
     await track("complete", currentStory.id, seconds);
-    await load({ view: "reader", limit: 80 });
+    await load({ view: "reader", limit: 80, visitorId: visitorId.current });
     move(1);
   }
 
@@ -366,7 +396,7 @@ export function ReaderFeed() {
     setLiked((state) => ({ ...state, [currentStory.id]: true }));
     persistProfile(profileBump(profile, currentStory, "like"));
     await track("like", currentStory.id);
-    await load({ view: "reader", limit: 80 });
+    await load({ view: "reader", limit: 80, visitorId: visitorId.current });
   }
 
   async function shareStory() {
@@ -379,7 +409,7 @@ export function ReaderFeed() {
       setStatus("Copied");
     }
     await track("share", currentStory.id);
-    await load({ view: "reader", limit: 80 });
+    await load({ view: "reader", limit: 80, visitorId: visitorId.current });
   }
 
   async function submitComment() {
@@ -395,12 +425,19 @@ export function ReaderFeed() {
         visitorName: readerName,
         visitorId: visitorId.current,
         sessionId: sessionId.current,
+        algorithmId: experiment?.algorithmId ?? "unassigned",
+        userSegment: experiment?.userSegment ?? "general",
+        surface: "reader",
+        rank: selectedIndex,
+        clientElapsedSeconds: readStartedAt.current
+          ? Math.max(0, Math.round((Date.now() - readStartedAt.current) / 1000))
+          : 0,
       }),
     });
     setSubmitting(false);
     if (response.ok) {
       setCommentText("");
-      await load({ view: "reader", limit: 80 });
+      await load({ view: "reader", limit: 80, visitorId: visitorId.current });
     }
   }
 
@@ -690,6 +727,8 @@ export function AdminDashboard() {
   const completes = numberValue(funnel.completes);
   const pageStart = pagination.total ? pagination.offset + 1 : 0;
   const pageEnd = Math.min(pagination.offset + pagination.limit, pagination.total);
+  const algorithmRows = metrics.algorithmMetrics ?? [];
+  const algorithmNameById = new Map((metrics.algorithms ?? []).map((algorithm) => [algorithm.id, algorithm.name]));
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -712,6 +751,8 @@ export function AdminDashboard() {
       pagination,
       genres: metrics.genres,
       moods: metrics.moods,
+      algorithms: metrics.algorithms,
+      algorithmMetrics: metrics.algorithmMetrics,
       recentEvents: metrics.recentEvents,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -776,6 +817,57 @@ export function AdminDashboard() {
           <AdminPanel title="Mood signal">
             <Breakdown rows={metrics.moods ?? []} labelKey="mood" />
           </AdminPanel>
+        </section>
+
+        <section className="panel overflow-hidden">
+          <div className="border-b border-[var(--border)] p-4">
+            <h2 className="text-xl font-semibold tracking-normal">Recommendation lab</h2>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Automatic cohorts compared by behavior, timing, and story quality signal.
+            </p>
+          </div>
+          <div className="experiment-table">
+            <div className="experiment-row experiment-head">
+              <span>Algorithm</span>
+              <span>Segment</span>
+              <span>Visitors</span>
+              <span>Start</span>
+              <span>Finish</span>
+              <span>Reaction</span>
+              <span>Skip</span>
+              <span>Read</span>
+              <span>Pace</span>
+              <span>Like time</span>
+              <span>Score</span>
+            </div>
+            {algorithmRows.length ? (
+              algorithmRows.map((row) => {
+                const id = String(row.algorithmId);
+                return (
+                  <div key={`${id}-${String(row.userSegment)}`} className="experiment-row">
+                    <span>
+                      <strong>{algorithmNameById.get(id) ?? id}</strong>
+                      <small>{id}</small>
+                    </span>
+                    <span>{String(row.userSegment)}</span>
+                    <span>{numberValue(row.visitors)}</span>
+                    <span>{numberValue(row.startRate)}%</span>
+                    <span>{numberValue(row.finishRate)}%</span>
+                    <span>{numberValue(row.reactionRate)}%</span>
+                    <span>{numberValue(row.skipRate)}%</span>
+                    <span>{secondsLabel(row.avgReadSeconds)}</span>
+                    <span>{numberValue(row.paceIndex).toFixed(2)}x</span>
+                    <span>{secondsLabel(row.avgSecondsToLike)}</span>
+                    <span>{numberValue(row.engagementScore)}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 text-sm text-[var(--muted-foreground)]">
+                No algorithm-attributed events yet. Ask testers to read from the updated feed.
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="panel overflow-hidden">

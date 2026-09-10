@@ -1,4 +1,8 @@
 import { getD1 } from "@/db";
+import { adminOrder, algorithmMetricsSql, metricRollups, storyMetricSelect } from "@/lib/boks/analytics";
+import { eventTypes, type RecommendationAlgorithmId } from "@/lib/boks/contracts";
+import { recommendationAlgorithms, recommendationOrderSql, resolveRecommendationExperiment } from "@/lib/boks/recommendations";
+import { cleanText, estimateMinutes, integerPayload, numberParam, routeError, searchPattern } from "@/lib/boks/request";
 
 export const dynamic = "force-dynamic";
 
@@ -162,43 +166,6 @@ const seedStories: SeedStory[] = [
   },
 ];
 
-const eventTypes = new Set([
-  "impression",
-  "start",
-  "complete",
-  "like",
-  "share",
-  "skip",
-  "comment",
-  "publish",
-  "preference",
-]);
-
-function routeError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Unexpected error";
-  if (message.includes("no such table")) {
-    return "The prototype database is not ready yet. Run the D1 migration locally or publish the saved version so the platform can apply it.";
-  }
-  return message;
-}
-
-function cleanText(value: unknown, fallback = "") {
-  return typeof value === "string" ? value.trim() : fallback;
-}
-
-function estimateMinutes(body: string) {
-  const words = body.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.min(15, Math.ceil(words / 220)));
-}
-
-function numberParam(url: URL, key: string, fallback: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, Number(url.searchParams.get(key)) || fallback));
-}
-
-function searchPattern(query: string) {
-  return `%${query.replaceAll("%", "").replaceAll("_", "").toLowerCase()}%`;
-}
-
 async function ensureSeedStories(db: D1Database) {
   await db.batch(
     seedStories.map((story) =>
@@ -223,65 +190,7 @@ async function ensureSeedStories(db: D1Database) {
   );
 }
 
-function metricRollups() {
-  return `
-    WITH event_rollup AS (
-      SELECT
-        story_id,
-        SUM(CASE WHEN event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
-        SUM(CASE WHEN event_type = 'like' THEN 1 ELSE 0 END) AS likes,
-        SUM(CASE WHEN event_type = 'share' THEN 1 ELSE 0 END) AS shares,
-        SUM(CASE WHEN event_type = 'start' THEN 1 ELSE 0 END) AS starts,
-        SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
-        SUM(CASE WHEN event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
-        COALESCE(AVG(CASE WHEN event_type = 'complete' THEN value END), 0) AS avgSeconds
-      FROM events
-      GROUP BY story_id
-    ),
-    comment_rollup AS (
-      SELECT story_id, COUNT(*) AS comments
-      FROM comments
-      GROUP BY story_id
-    )`;
-}
-
-function storyMetricSelect(includeBody: boolean) {
-  return `
-    s.id,
-    s.title,
-    s.author_name AS authorName,
-    s.author_handle AS authorHandle,
-    s.hook,
-    ${includeBody ? "s.body," : "'' AS body,"}
-    s.genre,
-    s.mood,
-    s.minutes,
-    s.status,
-    s.is_seed AS isSeed,
-    s.created_at AS createdAt,
-    COALESCE(er.impressions, 0) AS impressions,
-    COALESCE(er.likes, 0) AS likes,
-    COALESCE(er.shares, 0) AS shares,
-    COALESCE(er.starts, 0) AS starts,
-    COALESCE(er.completes, 0) AS completes,
-    COALESCE(er.skips, 0) AS skips,
-    COALESCE(cr.comments, 0) AS commentsCount,
-    COALESCE(cr.comments, 0) AS comments,
-    COALESCE(er.avgSeconds, 0) AS avgSeconds,
-    (
-      COALESCE(er.completes, 0) * 4 +
-      COALESCE(er.likes, 0) * 5 +
-      COALESCE(er.shares, 0) * 4 +
-      COALESCE(cr.comments, 0) * 6 -
-      MAX(0, COALESCE(er.starts, 0) - COALESCE(er.completes, 0))
-    ) AS signal,
-    CASE
-      WHEN COALESCE(er.starts, 0) > 0 THEN ROUND(COALESCE(er.completes, 0) * 100.0 / er.starts)
-      ELSE 0
-    END AS finishRate`;
-}
-
-async function getReaderStories(db: D1Database, limit: number) {
+async function getReaderStories(db: D1Database, limit: number, algorithmId: RecommendationAlgorithmId) {
   const result = await db
     .prepare(
       `${metricRollups()}
@@ -290,17 +199,7 @@ async function getReaderStories(db: D1Database, limit: number) {
       LEFT JOIN event_rollup er ON er.story_id = s.id
       LEFT JOIN comment_rollup cr ON cr.story_id = s.id
       WHERE s.status = 'published'
-      ORDER BY
-        s.is_seed ASC,
-        (
-          COALESCE(er.completes, 0) * 7 +
-          COALESCE(er.likes, 0) * 5 +
-          COALESCE(cr.comments, 0) * 6 +
-          COALESCE(er.shares, 0) * 5 +
-          CASE WHEN COALESCE(er.starts, 0) < 4 THEN 20 ELSE 0 END +
-          ABS(RANDOM() % 9)
-        ) DESC,
-        s.created_at DESC
+      ORDER BY ${recommendationOrderSql(algorithmId)}
       LIMIT ?`
     )
     .bind(limit)
@@ -330,15 +229,6 @@ async function getComments(db: D1Database, storyIds: string[]) {
     .all();
 
   return result.results ?? [];
-}
-
-function adminOrder(sort: string) {
-  if (sort === "finish") return "finishRate DESC, starts DESC, s.created_at DESC";
-  if (sort === "starts") return "starts DESC, impressions DESC, s.created_at DESC";
-  if (sort === "comments") return "commentsCount DESC, starts DESC, s.created_at DESC";
-  if (sort === "newest") return "s.created_at DESC";
-  if (sort === "title") return "LOWER(s.title) ASC";
-  return "signal DESC, starts DESC, s.created_at DESC";
 }
 
 async function getAdminStoryCount(db: D1Database, query: string) {
@@ -398,7 +288,7 @@ async function getMetrics(
   totalStories: number,
   pagination: { limit: number; offset: number; sort: string; query: string }
 ) {
-  const [funnel, genreMetrics, moodMetrics, recentEvents] = await Promise.all([
+  const [funnel, genreMetrics, moodMetrics, recentEvents, algorithmMetrics] = await Promise.all([
     db
       .prepare(
         `SELECT
@@ -462,6 +352,7 @@ async function getMetrics(
         LIMIT 40`
       )
       .all(),
+    db.prepare(algorithmMetricsSql()).all(),
   ]);
 
   return {
@@ -470,6 +361,8 @@ async function getMetrics(
     genres: genreMetrics.results ?? [],
     moods: moodMetrics.results ?? [],
     recentEvents: recentEvents.results ?? [],
+    algorithms: recommendationAlgorithms,
+    algorithmMetrics: algorithmMetrics.results ?? [],
     pagination: {
       ...pagination,
       total: totalStories,
@@ -504,8 +397,10 @@ export async function GET(request: Request) {
     }
 
     const limit = numberParam(url, "limit", 80, 20, 120);
+    const visitorId = cleanText(url.searchParams.get("visitorId"), "anonymous").slice(0, 120);
+    const experiment = resolveRecommendationExperiment(visitorId, url.searchParams.get("algorithm"));
     const [stories, totalStories] = await Promise.all([
-      getReaderStories(db, limit),
+      getReaderStories(db, limit, experiment.algorithmId),
       getAdminStoryCount(db, ""),
     ]);
     const comments = await getComments(
@@ -519,7 +414,7 @@ export async function GET(request: Request) {
       query: "",
     });
 
-    return Response.json({ stories, comments, metrics });
+    return Response.json({ stories, comments, metrics, experiment });
   } catch (error) {
     return Response.json({ error: routeError(error) }, { status: 500 });
   }
@@ -532,6 +427,11 @@ export async function POST(request: Request) {
     const action = cleanText(payload.action);
     const visitorId = cleanText(payload.visitorId, "anonymous").slice(0, 120);
     const sessionId = cleanText(payload.sessionId).slice(0, 120);
+    const algorithmId = cleanText(payload.algorithmId, "unassigned").slice(0, 60);
+    const userSegment = cleanText(payload.userSegment, "general").slice(0, 60);
+    const surface = cleanText(payload.surface, "reader").slice(0, 40);
+    const rank = integerPayload(payload.rank);
+    const clientElapsedSeconds = integerPayload(payload.clientElapsedSeconds);
 
     if (action === "create-story") {
       const title = cleanText(payload.title).slice(0, 90);
@@ -566,8 +466,9 @@ export async function POST(request: Request) {
 
       await db
         .prepare(
-          `INSERT INTO events (story_id, visitor_id, session_id, event_type, metadata)
-          VALUES (?, ?, ?, 'publish', ?)`
+          `INSERT INTO events
+          (story_id, visitor_id, session_id, event_type, metadata, algorithm_id, user_segment, surface)
+          VALUES (?, ?, ?, 'publish', ?, 'author_console', 'author', 'author')`
         )
         .bind(id, visitorId, sessionId, JSON.stringify({ genre, mood, minutes }))
         .run();
@@ -594,10 +495,11 @@ export async function POST(request: Request) {
 
       await db
         .prepare(
-          `INSERT INTO events (story_id, visitor_id, session_id, event_type)
-          VALUES (?, ?, ?, 'comment')`
+          `INSERT INTO events
+          (story_id, visitor_id, session_id, event_type, algorithm_id, user_segment, surface, rank, client_elapsed_seconds)
+          VALUES (?, ?, ?, 'comment', ?, ?, ?, ?, ?)`
         )
-        .bind(storyId, visitorId, sessionId)
+        .bind(storyId, visitorId, sessionId, algorithmId, userSegment, surface, rank, clientElapsedSeconds)
         .run();
 
       return Response.json({ ok: true }, { status: 201 });
@@ -615,10 +517,23 @@ export async function POST(request: Request) {
 
       await db
         .prepare(
-          `INSERT INTO events (story_id, visitor_id, session_id, event_type, value, metadata)
-          VALUES (?, ?, ?, ?, ?, ?)`
+          `INSERT INTO events
+          (story_id, visitor_id, session_id, event_type, value, metadata, algorithm_id, user_segment, surface, rank, client_elapsed_seconds)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
-        .bind(storyId, visitorId, sessionId, eventType, Math.max(0, Math.round(value)), metadata)
+        .bind(
+          storyId,
+          visitorId,
+          sessionId,
+          eventType,
+          Math.max(0, Math.round(value)),
+          metadata,
+          algorithmId,
+          userSegment,
+          surface,
+          rank,
+          clientElapsedSeconds
+        )
         .run();
 
       return Response.json({ ok: true });
