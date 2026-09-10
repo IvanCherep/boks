@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   BookOpen,
-  Check,
   Download,
   Heart,
   MessageCircle,
@@ -113,6 +112,17 @@ const initialProfile: ReaderProfile = {
   genreScore: {},
   moodScore: {},
 };
+
+function inferReadOutcome(story: Story, elapsedSeconds: number, progress: number): "complete" | "skip" {
+  const estimatedSeconds = story.minutes * 60;
+  if (elapsedSeconds < 6) return "skip";
+
+  const reachedEnd = progress >= 0.82 && elapsedSeconds >= 8;
+  const gaveEnoughTime = elapsedSeconds >= Math.min(75, Math.max(14, estimatedSeconds * 0.2));
+  const showedEngagement = progress >= 0.45 && elapsedSeconds >= 10;
+
+  return reachedEnd || gaveEnoughTime || showedEngagement ? "complete" : "skip";
+}
 
 type LoadOptions = {
   view?: "reader" | "admin";
@@ -254,6 +264,9 @@ export function ReaderFeed() {
   const readStartedAt = useRef<number | null>(null);
   const chromeTimer = useRef<number | null>(null);
   const scrollIdleTimer = useRef<number | null>(null);
+  const storyScroll = useRef<HTMLDivElement | null>(null);
+  const storyProgress = useRef<Record<string, number>>({});
+  const trackedOutcomes = useRef<Set<string>>(new Set());
   const metricsRef = useRef<Metrics>(initialMetrics);
 
   useEffect(() => {
@@ -328,6 +341,7 @@ export function ReaderFeed() {
   useEffect(() => {
     if (!currentStoryId) return;
     readStartedAt.current = Date.now();
+    if (storyScroll.current) storyScroll.current.scrollTop = 0;
     const revealTimer = window.setTimeout(() => revealReaderChrome(3800), 0);
     track("impression", currentStoryId, 1, {
       rank: selectedIndex,
@@ -359,7 +373,7 @@ export function ReaderFeed() {
       if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
         revealReaderChrome(2400);
-        skipStory();
+        nextStory("keyboard");
       }
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault();
@@ -413,21 +427,43 @@ export function ReaderFeed() {
     setSelectedIndex((index) => (index + delta + rankedStories.length) % rankedStories.length);
   }
 
-  async function skipStory() {
-    if (!currentStory) return;
-    persistProfile(profileBump(profile, currentStory, "skip"));
-    await track("skip", currentStory.id, 1, { from: "swipe" });
-    move(1);
+  function elapsedReadingSeconds() {
+    return readStartedAt.current
+      ? Math.max(0, Math.round((Date.now() - readStartedAt.current) / 1000))
+      : 0;
   }
 
-  async function completeReading() {
+  function updateStoryProgress() {
+    if (!currentStory || !storyScroll.current) return 0;
+    const node = storyScroll.current;
+    const distance = Math.max(1, node.scrollHeight - node.clientHeight);
+    const progress = node.scrollHeight <= node.clientHeight + 4 ? 0 : Math.min(1, Math.max(0, node.scrollTop / distance));
+    const existing = storyProgress.current[currentStory.id] ?? 0;
+    storyProgress.current[currentStory.id] = Math.max(existing, progress);
+    return storyProgress.current[currentStory.id];
+  }
+
+  async function recordReadingOutcome(reason: "swipe" | "button" | "keyboard") {
     if (!currentStory) return;
-    const seconds = readStartedAt.current
-      ? Math.max(5, Math.round((Date.now() - readStartedAt.current) / 1000))
-      : currentStory.minutes * 60;
-    persistProfile(profileBump(profile, currentStory, "complete"));
-    await track("complete", currentStory.id, seconds);
-    await load({ view: "reader", limit: 80, visitorId: visitorId.current });
+    const key = `${sessionId.current}:${currentStory.id}`;
+    if (trackedOutcomes.current.has(key)) return;
+
+    trackedOutcomes.current.add(key);
+    const elapsedSeconds = elapsedReadingSeconds();
+    const progress = updateStoryProgress();
+    const outcome = inferReadOutcome(currentStory, elapsedSeconds, progress);
+
+    persistProfile(profileBump(profile, currentStory, outcome));
+    await track(outcome, currentStory.id, outcome === "complete" ? Math.max(5, elapsedSeconds) : 1, {
+      from: reason,
+      inferred: true,
+      progress: Math.round(progress * 100) / 100,
+      elapsedSeconds,
+    });
+  }
+
+  async function nextStory(reason: "swipe" | "button" | "keyboard" = "swipe") {
+    await recordReadingOutcome(reason);
     move(1);
   }
 
@@ -495,14 +531,14 @@ export function ReaderFeed() {
     touchStart.current = null;
     if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) {
       if (dy < 0) {
-        skipStory();
+        nextStory("swipe");
       } else {
         move(-1);
       }
     }
     if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)) {
       if (dx < 0) {
-        skipStory();
+        nextStory("swipe");
       } else {
         move(-1);
       }
@@ -516,6 +552,7 @@ export function ReaderFeed() {
   }
 
   function onStoryScroll() {
+    updateStoryProgress();
     hideReaderChrome();
     if (scrollIdleTimer.current) window.clearTimeout(scrollIdleTimer.current);
     scrollIdleTimer.current = window.setTimeout(() => {
@@ -555,7 +592,11 @@ export function ReaderFeed() {
             </div>
           </header>
 
-          <div className="story-scroll min-h-0 min-w-0 overflow-y-auto px-5 pb-28 sm:px-10 sm:pb-12 lg:px-16" onScroll={onStoryScroll}>
+          <div
+            ref={storyScroll}
+            className="story-scroll min-h-0 min-w-0 overflow-y-auto px-5 pb-28 sm:px-10 sm:pb-12 lg:px-16"
+            onScroll={onStoryScroll}
+          >
             <div className="mx-auto flex min-h-full max-w-[760px] flex-col justify-start py-7 sm:py-12">
               <div className="story-tags mb-5 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
                 <span>{currentStory.genre}</span>
@@ -583,8 +624,8 @@ export function ReaderFeed() {
               <p className="text-base font-semibold">{currentStory.authorName}</p>
               <p className="text-sm text-[var(--muted-foreground)]">{currentStory.authorHandle || "boks author"}</p>
             </div>
-            <button className="swipe-cue" onClick={skipStory} aria-label="Swipe to next story">
-              <span>swipe</span>
+            <button className="swipe-cue" onClick={() => nextStory("button")} aria-label="Next story">
+              <span>next</span>
               <ArrowDown className="size-4" />
             </button>
           </footer>
@@ -599,9 +640,6 @@ export function ReaderFeed() {
           </ActionButton>
           <ActionButton label="Share" value={currentStory.shares} onClick={shareStory}>
             <Share2 className="size-5" />
-          </ActionButton>
-          <ActionButton label="Done" value={currentStory.completes} onClick={completeReading}>
-            <Check className="size-5" />
           </ActionButton>
         </aside>
 

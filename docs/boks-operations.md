@@ -4,11 +4,10 @@
 
 1. Open `/` and ask each tester to read at least three stories.
 2. Ask them to swipe when they want the next story.
-3. Ask them to tap the check button only when they finish a story.
-4. Ask for one short comment after a story that strongly works or fails.
-5. After five to ten testers, open `/admin` and export `boks-metrics.json`.
+3. Ask for one short comment after a story that strongly works or fails.
+4. After five to ten testers, open `/admin` and export `boks-metrics.json`.
 
-During interviews, watch whether readers discover that a tap brings the reaction buttons back. The default reading state intentionally hides most interface elements after the story starts.
+During interviews, watch whether readers discover that a tap brings the reaction buttons back. The default reading state intentionally hides most interface elements after the story starts. Completion is inferred when the reader leaves a story after meaningful time or scroll progress.
 
 ## What to Watch
 
