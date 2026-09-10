@@ -23,9 +23,14 @@ Use `/author` during interviews. Ask an author to paste or write a short piece. 
 
 ## Data Model
 
-- `stories`: published seed and author stories.
-- `events`: impressions, starts, completions, likes, shares, preferences, and publishes.
-- `comments`: one-sentence qualitative feedback tied to a story.
+- Supabase production MVP:
+  - `reels`: published story inventory for the public reader.
+  - `views`: anonymous reader impressions/views.
+  - `likes`: one like per anonymous user and reel.
+- D1 compatibility path:
+  - `stories`: published seed and author stories.
+  - `events`: impressions, starts, completions, likes, shares, preferences, and publishes.
+  - `comments`: one-sentence qualitative feedback tied to a story.
 
 ## Scale Notes
 
@@ -49,6 +54,7 @@ Before moving beyond the first cohort, add bulk import, full-text search, precom
 - Keep seed stories in `lib/boks/seed-stories.ts` until there is a real editorial tool or bulk import pipeline.
 - Add or tune recommendation algorithms in `lib/boks/recommendations.ts`.
 - Keep metric definitions in `lib/boks/analytics.ts` so admin UI and exports stay aligned.
-- Use browser storage only for anonymous visitor/session ids. Product data stays in D1.
+- Use browser storage only for anonymous visitor/session ids, Supabase session persistence, and lightweight profile state. Production reader metrics stay in Supabase.
 - Export metrics before resetting or changing the production database.
+- Run `npm run verify:supabase` after Supabase config or migration changes.
 - For future AI-assisted changes, start with `AGENTS.md`, `docs/architecture.md`, and the relevant spec in `specs/`.

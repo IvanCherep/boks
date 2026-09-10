@@ -3,6 +3,11 @@
 import { useCallback, useState } from "react";
 import { initialMetrics } from "@/components/boks/constants";
 import type { Comment, LoadOptions, Metrics, RecommendationExperiment, Story } from "@/components/boks/client-types";
+import {
+  canUseSupabaseBrowserData,
+  loadSupabaseAdminMetrics,
+  loadSupabaseReaderFeed,
+} from "@/components/boks/supabase-browser-data";
 
 declare global {
   interface Document {
@@ -27,11 +32,42 @@ export function useBoksData() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics);
   const [experiment, setExperiment] = useState<RecommendationExperiment | null>(null);
+  const [likedStoryIds, setLikedStoryIds] = useState<string[]>([]);
+  const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
+  const [isSupabaseReader, setIsSupabaseReader] = useState(false);
   const [status, setStatus] = useState("Loading");
 
   const load = useCallback(async (options: LoadOptions = {}) => {
     setStatus("Loading");
     const view = options.view ?? "reader";
+
+    if (canUseSupabaseBrowserData() && view === "reader") {
+      const data = await loadSupabaseReaderFeed(options.limit ?? 80);
+      setStories(data.stories);
+      setComments(data.comments);
+      setMetrics(data.metrics);
+      setExperiment(data.experiment);
+      setLikedStoryIds(data.likedStoryIds);
+      setSupabaseUserId(data.supabaseUserId);
+      setIsSupabaseReader(true);
+      setStatus("Ready");
+      return data;
+    }
+
+    if (canUseSupabaseBrowserData() && view === "admin") {
+      const supabaseMetrics = await loadSupabaseAdminMetrics(options);
+      setStories((supabaseMetrics.stories as Story[]) ?? []);
+      setComments([]);
+      setMetrics(supabaseMetrics);
+      setExperiment(null);
+      setLikedStoryIds([]);
+      setSupabaseUserId(null);
+      setIsSupabaseReader(false);
+      setStatus("Ready");
+      return { stories: supabaseMetrics.stories, comments: [], metrics: supabaseMetrics };
+    }
+
+    setIsSupabaseReader(false);
     const params = new URLSearchParams({
       view,
       limit: String(options.limit ?? (view === "admin" ? 100 : 80)),
@@ -49,9 +85,22 @@ export function useBoksData() {
     setComments(data.comments ?? []);
     setMetrics(data.metrics);
     setExperiment(data.experiment ?? null);
+    setLikedStoryIds([]);
+    setSupabaseUserId(null);
     setStatus("Ready");
     return data;
   }, []);
 
-  return { stories, comments, metrics, experiment, status, setStatus, load };
+  return {
+    stories,
+    comments,
+    metrics,
+    experiment,
+    likedStoryIds,
+    supabaseUserId,
+    isSupabaseReader,
+    status,
+    setStatus,
+    load,
+  };
 }

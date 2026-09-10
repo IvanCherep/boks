@@ -71,7 +71,7 @@ export function AdminDashboard() {
       <div className="mx-auto grid max-w-7xl gap-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <Link href="/" className="brand-word">boks</Link>
+            <Link href="/" prefetch={false} className="brand-word">boks</Link>
             <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Business console</h1>
             <p className="mt-3 max-w-3xl text-[var(--muted-foreground)]">
               Funnel health, story-level signal, content inventory, and cohort taste.

@@ -5,10 +5,11 @@ boks is a browser prototype for testing a short literature feed: readers discove
 ## What is included
 
 - Swipe-first reader feed with behavior-based recommendations.
-- Like, share, completion, and comment capture.
+- Anonymous Supabase reader entry with reels, views, and likes stored behind RLS.
+- Like, share, completion, and comment capture in the original D1 API path.
 - Author cabinet with a 15 minute reading-time guardrail.
 - `/admin` business console with funnel, genre/mood breakdowns, sortable content operations, and JSON export.
-- D1-backed shared storage for real test sessions.
+- Supabase-backed production reader/admin test path, with D1 retained for the original author/API prototype path.
 
 ## Main files
 
@@ -17,11 +18,21 @@ boks is a browser prototype for testing a short literature feed: readers discove
 - `components/boks/reader-feed.tsx`: reader experience.
 - `components/boks/author-console.tsx`: author cabinet.
 - `components/boks/admin-dashboard.tsx`: admin/business console.
-- `components/boks/`: browser-facing product helpers, types, behavior inference, data access, and shared UI primitives.
+- `components/boks/`: browser-facing product helpers, Supabase data access, types, behavior inference, and shared UI primitives.
 - `app/api/boks/route.ts`: API orchestration for reader, author, admin, events, and exports.
-- `lib/boks/`: recommendation algorithms, analytics SQL, request helpers, contracts, and seed stories.
-- `db/schema.ts`: D1 schema.
+- `lib/boks/`: recommendation algorithms, analytics SQL, request helpers, Supabase client, contracts, and seed stories.
+- `supabase/`: production MVP Auth config, RLS schema, seed reels, and admin aggregate RPC.
+- `db/schema.ts`: D1 compatibility schema.
 - `docs/architecture.md`: system map and data flows.
 - `docs/boks-operations.md`: testing and operating guide.
 - `docs/growth-readiness.md`: scale posture and next growth work.
 - `specs/boks-product-spec.md`: product scope and extension points.
+
+## Supabase MVP
+
+Create `.env.local` from `.env.example`, then set:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+Run `npm run verify:supabase` to confirm anonymous auth, reel reads, view writes, like writes, RLS blocks, and admin metrics. Do not put a Supabase service role key in the frontend, repository, or Wrangler vars.

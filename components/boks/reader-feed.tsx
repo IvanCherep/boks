@@ -10,10 +10,22 @@ import { initialMetrics, initialProfile } from "@/components/boks/constants";
 import type { Metrics, ReaderProfile, Story } from "@/components/boks/client-types";
 import { getBrowserId, inferReadOutcome, profileBump, readProfile, saveProfile } from "@/components/boks/reader-behavior";
 import { ActionButton } from "@/components/boks/shared-ui";
+import { recordSupabaseView, setSupabaseLike } from "@/components/boks/supabase-browser-data";
 import { useBoksData } from "@/components/boks/use-boks-data";
 
 export function ReaderFeed() {
-  const { stories, comments, metrics, experiment, status, setStatus, load } = useBoksData();
+  const {
+    stories,
+    comments,
+    metrics,
+    experiment,
+    likedStoryIds,
+    supabaseUserId,
+    isSupabaseReader,
+    status,
+    setStatus,
+    load,
+  } = useBoksData();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
@@ -67,6 +79,13 @@ export function ReaderFeed() {
   }, []);
 
   const track = useCallback(async (eventType: string, storyId: string, value = 1, metadata = {}) => {
+    if (isSupabaseReader) {
+      if (eventType === "impression") {
+        await recordSupabaseView(supabaseUserId, storyId);
+      }
+      return;
+    }
+
     const elapsed = readStartedAt.current
       ? Math.max(0, Math.round((Date.now() - readStartedAt.current) / 1000))
       : 0;
@@ -88,7 +107,7 @@ export function ReaderFeed() {
         clientElapsedSeconds: elapsed,
       }),
     });
-  }, [experiment?.algorithmId, experiment?.userSegment, selectedIndex]);
+  }, [experiment?.algorithmId, experiment?.userSegment, isSupabaseReader, selectedIndex, supabaseUserId]);
 
   const rankedStories = useMemo(() => {
     return [...stories].sort((a, b) => {
@@ -101,6 +120,8 @@ export function ReaderFeed() {
   const currentStory = rankedStories[selectedIndex] ?? rankedStories[0];
   const currentStoryId = currentStory?.id;
   const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id).slice(0, 5);
+  const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
+  const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
 
   useEffect(() => {
     if (!currentStoryId) return;
@@ -232,11 +253,25 @@ export function ReaderFeed() {
   }
 
   async function likeStory() {
-    if (!currentStory || liked[currentStory.id]) return;
-    setLiked((state) => ({ ...state, [currentStory.id]: true }));
-    persistProfile(profileBump(profile, currentStory, "like"));
-    await track("like", currentStory.id);
-    await load({ view: "reader", limit: 80, visitorId: visitorId.current });
+    if (!currentStory) return;
+    const nextLiked = !isCurrentStoryLiked;
+    setLiked((state) => ({ ...state, [currentStory.id]: nextLiked }));
+
+    try {
+      if (isSupabaseReader) {
+        await setSupabaseLike(supabaseUserId, currentStory.id, nextLiked);
+      } else if (nextLiked) {
+        await track("like", currentStory.id);
+      }
+
+      if (nextLiked) {
+        persistProfile(profileBump(profile, currentStory, "like"));
+      }
+      await load({ view: "reader", limit: 80, visitorId: visitorId.current });
+    } catch (error) {
+      setLiked((state) => ({ ...state, [currentStory.id]: !nextLiked }));
+      setStatus(error instanceof Error ? error.message : "Could not update like");
+    }
   }
 
   async function shareStory() {
@@ -396,7 +431,7 @@ export function ReaderFeed() {
         </article>
 
         <aside className="action-rail reader-ui pointer-events-none absolute inset-x-4 bottom-4 z-20 flex justify-center gap-3 lg:static lg:inset-auto lg:flex-col lg:justify-center">
-          <ActionButton label="Like" value={currentStory.likes} onClick={likeStory} active={liked[currentStory.id]}>
+          <ActionButton label="Like" value={currentStory.likes} onClick={likeStory} active={isCurrentStoryLiked}>
             <Heart className="size-5" />
           </ActionButton>
           <ActionButton label="Comment" value={currentStory.commentsCount} onClick={() => setCommentOpen(true)}>

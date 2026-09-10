@@ -23,6 +23,8 @@ export function secondsLabel(value: unknown) {
 }
 
 export function storySignal(story: Record<string, number | string>) {
+  if ("signal" in story) return numberValue(story.signal);
+
   return (
     numberValue(story.completes) * 4 +
     numberValue(story.likes) * 5 +

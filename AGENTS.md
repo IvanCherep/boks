@@ -17,7 +17,7 @@ Business rules:
 
 - The founder must be able to compare recommendation strategies by attributed behavior, not opinions alone.
 - Author publishing stays simple, with the 15 minute promise enforced before publication.
-- Product data belongs in D1. Browser storage is only for anonymous local reader identity and lightweight profile state.
+- Production reader test data belongs in Supabase. Browser storage is only for anonymous local reader identity, Supabase session persistence, and lightweight profile state. D1 remains the compatibility backend for the original author/API prototype until that surface is migrated.
 
 ## Architecture Map
 
@@ -30,7 +30,8 @@ Business rules:
 - `components/boks/constants.ts`: reusable client constants and empty state.
 - `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
 - `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and completion/skip inference.
-- `components/boks/use-boks-data.ts`: API loading, mutation helpers, metrics export, and WebMCP reporting.
+- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader/admin data access using only the publishable key and RLS.
+- `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, mutation helpers, metrics export, and WebMCP reporting.
 - `components/boks/shared-ui.tsx`: small reusable UI primitives for prototype surfaces.
 - `app/globals.css`: visual system, reader focus behavior, responsive layout, and Claude-inspired light palette.
 - `app/api/boks/route.ts`: HTTP orchestration for reader, author, admin, comments, events, and exports.
@@ -39,7 +40,9 @@ Business rules:
 - `lib/boks/analytics.ts`: reusable SQL rollups, admin sorting, and algorithm comparison metrics.
 - `lib/boks/request.ts`: request parsing, validation, and API error helpers.
 - `lib/boks/seed-stories.ts`: demo story inventory for local and production seeding.
+- `lib/boks/supabase-client.ts`: browser Supabase client factory and anonymous auth helper.
 - `db/schema.ts` and `drizzle/`: D1 schema and migrations.
+- `supabase/config.toml` and `supabase/migrations/`: Supabase Auth config, RLS schema, seed reels, and aggregate admin RPC.
 - `specs/`: product and experiment contracts.
 - `docs/`: operating, architecture, and growth-readiness guidance.
 
@@ -47,10 +50,11 @@ Business rules:
 
 - Reader experience: start in `components/boks/reader-feed.tsx`, `components/boks/reader-behavior.ts`, and `app/globals.css`.
 - Author cabinet: start in `components/boks/author-console.tsx` and shared validation in `app/api/boks/route.ts`.
-- Admin metrics: start in `components/boks/admin-dashboard.tsx`, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
+- Admin metrics: start in `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, Supabase RPC migrations, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
 - Recommendation algorithms: update `lib/boks/contracts.ts`, `lib/boks/recommendations.ts`, and `specs/boks-recommendation-experiments.md` together.
 - Seed/demo content: update `lib/boks/seed-stories.ts`.
-- Persistent data: update `db/schema.ts`, then generate a Drizzle migration.
+- Supabase persistent data: update `supabase/migrations/` with RLS and indexes, then run `npm run verify:supabase`.
+- D1 compatibility data: update `db/schema.ts`, then generate a Drizzle migration.
 - Product decisions: update `specs/boks-product-spec.md` before or with implementation.
 
 ## Growth Guardrails
@@ -59,6 +63,7 @@ Business rules:
 - Keep recommendation events attributed with `algorithmId`, `userSegment`, `surface`, `rank`, elapsed time, and useful metadata.
 - Add high-volume metrics as indexed structured fields only when the UI or algorithm queries them often. Keep exploratory signals in event metadata.
 - Preserve deterministic algorithm assignment until real authentication exists, so a tester does not bounce between variants during one study.
+- Never expose a Supabase service role key in source, frontend code, Wrangler vars, docs, screenshots, or browser console output.
 - Keep naming literal and domain-specific. Prefer `reader`, `story`, `recommendation`, `experiment`, `event`, `metric`, and `author` over generic names.
 
 ## Validation
@@ -67,6 +72,7 @@ Run these before publishing changes:
 
 ```bash
 npm run lint
+npm run verify:supabase
 node /Users/iegorov/.codex/plugins/cache/openai-bundled/sites/0.1.66/scripts/build-site.mjs
 npm run start
 ```

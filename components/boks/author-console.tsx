@@ -69,7 +69,7 @@ export function AuthorConsole() {
     <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="panel p-5 sm:p-7">
-          <Link href="/" className="brand-word">boks</Link>
+          <Link href="/" prefetch={false} className="brand-word">boks</Link>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Author cabinet</h1>
           <p className="mt-3 max-w-2xl text-[var(--muted-foreground)]">
             Publish one focused piece into the test feed. The reader will never choose it manually; the algorithm must earn its place.

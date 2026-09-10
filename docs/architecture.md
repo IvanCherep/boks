@@ -8,7 +8,7 @@ boks is a browser prototype for testing a literature-only, swipe-first reading f
 
 The reader experience is intentionally narrow: open `/`, receive a story, read, react if needed, then swipe. Readers should not browse a catalog or choose algorithms. The product learns from behavior through impressions, starts, inferred completions, skips, likes, shares, comments, elapsed time, and scroll progress.
 
-The founder experience is broader: `/admin` supports experiment comparison, funnel review, content operations, search, sorting, pagination, JSON export, and scale monitoring.
+The founder experience is broader: `/admin` supports experiment comparison, funnel review, content operations, search, sorting, pagination, JSON export, and scale monitoring. In the Supabase production MVP it reads aggregate metrics through a browser-safe RPC rather than exposing raw cross-user rows.
 
 The author experience is constrained: `/author` lets a writer publish a short story and enforces the 15 minute promise before submission.
 
@@ -25,7 +25,8 @@ The author experience is constrained: `/author` lets a writer publish a short st
 - `components/boks/constants.ts`: mood, genre, empty metric, and empty reader profile constants.
 - `components/boks/client-format.ts`: word count, time estimate, percentage, numeric, seconds, and story signal helpers.
 - `components/boks/reader-behavior.ts`: local browser identity, reader profile persistence, and read-outcome inference.
-- `components/boks/use-boks-data.ts`: data loading, API mutations, exports, and WebMCP metrics exposure.
+- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader/admin data access using anonymous auth, the publishable key, RLS, and aggregate RPC.
+- `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
 - `app/globals.css`: theme, typography, responsive behavior, focus mode, and reading layout.
 - `app/api/boks/route.ts`: request orchestration for reader feed, author publish, comments, events, admin metrics, and exports.
@@ -34,6 +35,9 @@ The author experience is constrained: `/author` lets a writer publish a short st
 - `lib/boks/analytics.ts`: reusable SQL rollups and admin metrics.
 - `lib/boks/request.ts`: request parsing, validation, and error response helpers.
 - `lib/boks/seed-stories.ts`: demo story content used by database seeding.
+- `lib/boks/supabase-client.ts`: browser Supabase client and anonymous auth helper.
+- `supabase/config.toml`: remote Supabase config with anonymous sign-ins enabled.
+- `supabase/migrations/`: production MVP tables, indexes, RLS policies, seed reels, and admin aggregate functions.
 - `db/schema.ts`: Drizzle schema for D1.
 - `drizzle/`: generated migrations.
 - `specs/`: product and recommendation specifications.
@@ -42,21 +46,24 @@ The author experience is constrained: `/author` lets a writer publish a short st
 ## Reader Flow
 
 1. `/` creates or reads an anonymous browser id.
-2. `useBoksData` requests `/api/boks?view=reader` with bounded `limit` and visitor id.
-3. The API resolves a deterministic recommendation experiment for the visitor.
-4. The API returns stories ranked by `recommendationOrderSql`.
-5. The reader records impression, start, like, share, comment, skip, and inferred completion events.
+2. If Supabase environment variables are configured, `useBoksData` creates or reuses an anonymous Supabase session and reads a bounded batch from `public.reels`.
+3. Reader impressions are recorded in `public.views`; likes are stored in `public.likes` with a unique `(user_id, reel_id)` constraint.
+4. RLS allows readers to read published reels and only write/read/delete their own views or likes.
+5. Without Supabase config, the original D1 API path resolves deterministic recommendation experiments and records richer prototype events.
 6. `reader-behavior.ts` updates local preference state from completed or liked stories.
 
 ## Admin Flow
 
-1. `/admin` requests `/api/boks?view=admin` with page, limit, search query, and sort.
-2. The API uses shared analytics SQL to aggregate global metrics, algorithm metrics, genre and mood breakdowns, recent events, and a paginated story operations table.
-3. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
+1. With Supabase config, `/admin` calls `get_boks_admin_snapshot(limit, offset, query, sort)`.
+2. The RPC returns global aggregate metrics, genre and mood rollups, recent aggregate event rows, and a paginated story operations table without exposing all users' raw rows to the browser.
+3. Without Supabase config, `/admin` requests `/api/boks?view=admin` and uses the original D1 analytics SQL.
+4. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
 
 ## Recommendation Flow
 
 Recommendation behavior is centralized in `lib/boks/recommendations.ts`. Each algorithm has an id, label, description, user segment, and ranking formula. Event attribution records the selected algorithm so `/admin` can compare variants.
+
+The Supabase direct-browser MVP currently uses `supabase_recent` as a production smoke-test feed. Before running serious algorithm comparisons on Supabase, add an attributed `events` table or typed recommendation assignment table there; keep the older D1 event contract as the reference for the metrics shape.
 
 When adding a recommendation strategy:
 
@@ -72,6 +79,7 @@ When adding a recommendation strategy:
 - SQL metric definitions live in `lib/boks/analytics.ts` so ranking, admin display, and exports can stay consistent.
 - Exploratory signals can live in `events.metadata`; frequently queried signals should become typed columns and indexes.
 - At larger scale, replace direct event aggregation with rollup tables by story, algorithm, segment, and date.
+- Keep service role keys server-side only. Browser code must use `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, RLS, and narrowly scoped RPCs.
 
 ## AI Agent Workflow
 

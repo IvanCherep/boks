@@ -13,11 +13,13 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Mobile-first responsive web app for MacBook, iPhone, and Android browsers.
 - Dedicated routes: `/` for the swipe-first reader, `/author` for publishing, `/admin` for business analysis.
 - Reader focus mode: the full interface appears briefly on a new story, then fades during reading so the story owns the screen. Tapping/clicking the reading surface reveals reactions and comments. There is no manual finished button; completion is inferred from time and scroll progress when the reader leaves a story.
-- Shared D1 database for stories, comments, and analytics events.
+- Supabase production MVP for anonymous reader entry, public reels, views, likes, and admin aggregate metrics.
+- D1 compatibility backend for the original author cabinet, comments, and richer analytics event prototype path.
 - Seed stories for immediate demos plus author-created stories.
-- Server-side recommendation ranking with deterministic anonymous experiment assignment.
+- Server-side recommendation ranking with deterministic anonymous experiment assignment in the D1 prototype path; `supabase_recent` is the current Supabase smoke-test feed until attributed Supabase events are added.
 - Algorithm comparison metrics for start rate, finish rate, reaction rate, skip rate, read time, like timing, comment timing, feed rank, pace, and engagement score.
 - JSON metric export for analysis or investor updates.
+- Browser code uses only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`; service role keys are never used in frontend code.
 
 ## Validation Questions
 
@@ -36,3 +38,4 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Growth loops: add public story detail pages and richer share previews.
 - Monetization: add author subscriptions, paid collections, or sponsor-supported free reading.
 - Operations: add pagination, moderation queues, cohort exports, and author-level reporting once inventory reaches thousands of texts.
+- Supabase analytics: add attributed event and assignment tables before using Supabase for serious recommendation A/B testing.
