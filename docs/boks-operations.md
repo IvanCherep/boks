@@ -46,8 +46,9 @@ Before moving beyond the first cohort, add bulk import, full-text search, precom
 ## Maintenance
 
 - Add schema changes through `db/schema.ts`, then generate a new Drizzle migration.
-- Keep seed stories in `app/api/boks/route.ts` until there is a real editorial tool.
+- Keep seed stories in `lib/boks/seed-stories.ts` until there is a real editorial tool or bulk import pipeline.
 - Add or tune recommendation algorithms in `lib/boks/recommendations.ts`.
 - Keep metric definitions in `lib/boks/analytics.ts` so admin UI and exports stay aligned.
 - Use browser storage only for anonymous visitor/session ids. Product data stays in D1.
 - Export metrics before resetting or changing the production database.
+- For future AI-assisted changes, start with `AGENTS.md`, `docs/architecture.md`, and the relevant spec in `specs/`.

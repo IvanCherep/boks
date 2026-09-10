@@ -1,0 +1,86 @@
+# boks Agent Guide
+
+This file is the first stop for AI coding assistants working on boks. Keep changes aligned with the product promise: a reader opens the app, receives one algorithmic short literature feed, reads with minimal interface noise, and leaves behavioral signals that help compare recommendation systems.
+
+## Product Philosophy
+
+boks is not a book catalog and not a generic social network. It is a focused reading feed for complete short stories or book fragments that fit inside a 15 minute break.
+
+Reader rules:
+
+- The `/` surface stays swipe-first and algorithmic. Do not add a visible story picker, shelves, categories, or manual algorithm selection for readers.
+- Reading focus matters more than interface visibility. Controls may appear on story change, tap, hover, or pause, but the story should own the screen while a person reads.
+- There is no explicit finished button. Completion, drop-off, and skip behavior are inferred from elapsed time, scroll progress, and swipe timing.
+- Reader-facing language should stay minimal. Do not explain the interface inside the product unless the user must make a decision.
+
+Business rules:
+
+- The founder must be able to compare recommendation strategies by attributed behavior, not opinions alone.
+- Author publishing stays simple, with the 15 minute promise enforced before publication.
+- Product data belongs in D1. Browser storage is only for anonymous local reader identity and lightweight profile state.
+
+## Architecture Map
+
+- `app/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only.
+- `app/boks-client.tsx`: route compatibility exports for the three client surfaces.
+- `components/boks/reader-feed.tsx`: swipe-first reader experience and reaction controls.
+- `components/boks/author-console.tsx`: author publishing cabinet and length guardrail.
+- `components/boks/admin-dashboard.tsx`: founder/admin metrics, recommendation lab, export, and content operations.
+- `components/boks/client-types.ts`: browser-facing TypeScript contracts.
+- `components/boks/constants.ts`: reusable client constants and empty state.
+- `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
+- `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and completion/skip inference.
+- `components/boks/use-boks-data.ts`: API loading, mutation helpers, metrics export, and WebMCP reporting.
+- `components/boks/shared-ui.tsx`: small reusable UI primitives for prototype surfaces.
+- `app/globals.css`: visual system, reader focus behavior, responsive layout, and Claude-inspired light palette.
+- `app/api/boks/route.ts`: HTTP orchestration for reader, author, admin, comments, events, and exports.
+- `lib/boks/contracts.ts`: server-side product vocabulary and recommendation experiment ids.
+- `lib/boks/recommendations.ts`: recommendation registry, deterministic assignment, and SQL ordering formulas.
+- `lib/boks/analytics.ts`: reusable SQL rollups, admin sorting, and algorithm comparison metrics.
+- `lib/boks/request.ts`: request parsing, validation, and API error helpers.
+- `lib/boks/seed-stories.ts`: demo story inventory for local and production seeding.
+- `db/schema.ts` and `drizzle/`: D1 schema and migrations.
+- `specs/`: product and experiment contracts.
+- `docs/`: operating, architecture, and growth-readiness guidance.
+
+## Change Routing
+
+- Reader experience: start in `components/boks/reader-feed.tsx`, `components/boks/reader-behavior.ts`, and `app/globals.css`.
+- Author cabinet: start in `components/boks/author-console.tsx` and shared validation in `app/api/boks/route.ts`.
+- Admin metrics: start in `components/boks/admin-dashboard.tsx`, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
+- Recommendation algorithms: update `lib/boks/contracts.ts`, `lib/boks/recommendations.ts`, and `specs/boks-recommendation-experiments.md` together.
+- Seed/demo content: update `lib/boks/seed-stories.ts`.
+- Persistent data: update `db/schema.ts`, then generate a Drizzle migration.
+- Product decisions: update `specs/boks-product-spec.md` before or with implementation.
+
+## Growth Guardrails
+
+- Never load the full story catalog into the reader or admin browser session. Use bounded batches, server-side search, sorting, and pagination.
+- Keep recommendation events attributed with `algorithmId`, `userSegment`, `surface`, `rank`, elapsed time, and useful metadata.
+- Add high-volume metrics as indexed structured fields only when the UI or algorithm queries them often. Keep exploratory signals in event metadata.
+- Preserve deterministic algorithm assignment until real authentication exists, so a tester does not bounce between variants during one study.
+- Keep naming literal and domain-specific. Prefer `reader`, `story`, `recommendation`, `experiment`, `event`, `metric`, and `author` over generic names.
+
+## Validation
+
+Run these before publishing changes:
+
+```bash
+npm run lint
+node /Users/iegorov/.codex/plugins/cache/openai-bundled/sites/0.1.66/scripts/build-site.mjs
+npm run start
+```
+
+With the local server running, check:
+
+- `/`
+- `/author`
+- `/admin`
+- `/api/boks?view=reader&limit=20&visitorId=agent-check`
+- `/api/boks?view=admin&limit=20`
+
+If schema changed, also generate and review a migration:
+
+```bash
+npm run db:generate
+```

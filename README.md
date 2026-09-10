@@ -12,8 +12,16 @@ boks is a browser prototype for testing a short literature feed: readers discove
 
 ## Main files
 
-- `app/boks-client.tsx`: reader, author, and admin interfaces.
-- `app/api/boks/route.ts`: API, seed stories, metrics aggregation.
+- `AGENTS.md`: product philosophy, architecture routing, growth guardrails, and validation checklist for AI coding assistants.
+- `app/boks-client.tsx`: route compatibility exports for reader, author, and admin.
+- `components/boks/reader-feed.tsx`: reader experience.
+- `components/boks/author-console.tsx`: author cabinet.
+- `components/boks/admin-dashboard.tsx`: admin/business console.
+- `components/boks/`: browser-facing product helpers, types, behavior inference, data access, and shared UI primitives.
+- `app/api/boks/route.ts`: API orchestration for reader, author, admin, events, and exports.
+- `lib/boks/`: recommendation algorithms, analytics SQL, request helpers, contracts, and seed stories.
 - `db/schema.ts`: D1 schema.
+- `docs/architecture.md`: system map and data flows.
 - `docs/boks-operations.md`: testing and operating guide.
+- `docs/growth-readiness.md`: scale posture and next growth work.
 - `specs/boks-product-spec.md`: product scope and extension points.
