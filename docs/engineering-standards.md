@@ -1,0 +1,196 @@
+# boks Engineering Standards
+
+## Product Values
+
+boks values focused reading, behavioral learning, and fast iteration.
+
+Reader values:
+
+- One algorithmic feed, not a catalog.
+- Minimal interface during reading.
+- No manual finished button.
+- Short stories or fragments that fit a 15 minute break.
+- Readers should not need onboarding to begin.
+
+Business values:
+
+- Decisions come from behavior and interviews together.
+- Metrics must be attributable to content, recommendation strategy, and cohort.
+- Admin tooling can be dense; reader tooling must be quiet.
+- The MVP must remain cheap to change.
+
+Engineering values:
+
+- Keep names literal and domain-specific.
+- Keep modules separated by product surface and responsibility.
+- Prefer boring code over clever abstractions.
+- Add extension points only when they remove current friction.
+- Update specs and docs with behavior changes.
+
+## Naming Standards
+
+Use boks vocabulary consistently:
+
+- `reader`: person consuming stories.
+- `author`: person publishing stories.
+- `story`: browser-facing literature item.
+- `reel`: Supabase storage term for the current production MVP table.
+- `recommendation`: feed selection or ranking behavior.
+- `algorithm`: named recommendation strategy.
+- `experiment`: assignment and comparison context.
+- `event`: captured behavior signal.
+- `metric`: aggregated decision signal.
+- `segment`: stable user grouping for experiment comparison.
+
+Avoid generic names when a domain name is clearer:
+
+- Prefer `readerProfile` over `profile`.
+- Prefer `storyMetrics` over `data`.
+- Prefer `recommendationExperiment` over `variant`.
+- Prefer `recordReaderEvent` over `track`.
+
+## Module Boundaries
+
+Route entrypoints stay thin:
+
+- `app/page.tsx`
+- `app/author/page.tsx`
+- `app/admin/page.tsx`
+
+Reader UI starts in:
+
+- `components/boks/reader-feed.tsx`
+- `components/boks/reader-behavior.ts`
+- `app/globals.css`
+
+Author UI starts in:
+
+- `components/boks/author-console.tsx`
+
+Admin UI starts in:
+
+- `components/boks/admin-dashboard.tsx`
+
+Client data access starts in:
+
+- `components/boks/use-boks-data.ts`
+- `components/boks/supabase-browser-data.ts`
+
+Server-side D1 compatibility starts in:
+
+- `app/api/boks/route.ts`
+- `lib/boks/analytics.ts`
+- `lib/boks/recommendations.ts`
+- `lib/boks/request.ts`
+
+Supabase schema starts in:
+
+- `supabase/migrations/`
+- `scripts/verify-supabase-mvp.mjs`
+
+## Coupling Rules
+
+- Reader components may use browser-safe Supabase helpers.
+- Reader components must not import D1 schema or server-only helpers.
+- Server API code may import `lib/boks/*` and `db/*`.
+- `lib/boks/recommendations.ts` owns algorithm registry and ranking formulas.
+- `lib/boks/analytics.ts` owns D1 aggregate SQL.
+- Supabase aggregate SQL belongs in Supabase migrations until extracted into a managed SQL source folder.
+- Shared UI components in `components/boks/shared-ui.tsx` should stay small and product-neutral.
+
+## Spec-Driven Development
+
+Before implementation:
+
+1. Read the relevant spec.
+2. Write down which product rule changes, if any.
+3. Decide which module owns the change.
+4. Keep the first implementation small.
+5. Add tests or verification for the changed behavior.
+6. Update docs in the same task.
+
+If a change affects recommendation behavior, update:
+
+- `lib/boks/contracts.ts`
+- `lib/boks/recommendations.ts`
+- `specs/boks-recommendation-experiments.md`
+- Admin comparison UI if a metric changes
+
+If a change affects production data, update:
+
+- `supabase/migrations/`
+- `scripts/verify-supabase-mvp.mjs`
+- `docs/testing.md`
+- `docs/growth-readiness.md` if scale assumptions change
+
+## UI Standards
+
+Reader surface:
+
+- Light, readable palette.
+- Story text owns the screen.
+- Controls can be visible on story change, tap, hover, or pause.
+- Controls should fade during active reading.
+- Avoid cards inside cards.
+- Avoid decorative backgrounds that reduce readability.
+- Test small phone and desktop.
+
+Admin surface:
+
+- Dense but readable.
+- Use tables, filters, search, sorting, pagination, and exports.
+- Do not load the full catalog into the browser.
+- Use explicit metric labels and comparable units.
+
+Author surface:
+
+- Keep publishing simple.
+- Enforce the 15 minute promise before publication.
+- Do not add heavy author analytics until reader testing proves demand.
+
+## Data Standards
+
+High-volume behavior should be typed and indexed when it drives queries:
+
+- event type
+- story id
+- visitor or user id
+- algorithm id
+- segment
+- surface
+- rank
+- elapsed seconds
+- created time
+
+Low-volume exploratory fields may live in JSON metadata.
+
+Do not use browser storage for production metrics. Browser storage is only for:
+
+- anonymous local browser id
+- Supabase session persistence
+- lightweight reader preference state
+
+## AI Agent Workflow
+
+Future AI agents should:
+
+1. Read `AGENTS.md` and `docs/README.md`.
+2. Check `git status --short`.
+3. Inspect the owning files before editing.
+4. Make narrowly scoped changes.
+5. Avoid unrelated refactors.
+6. Run validation.
+7. Update docs and specs when behavior changes.
+
+When a file grows beyond comfortable review size, extract by responsibility, not by technical type alone. Example: split reader feed into reading state, story viewport, reaction rail, and comments only when those pieces start changing independently.
+
+## Definition Of Done
+
+A change is done when:
+
+- The intended product behavior works.
+- Validation commands pass or failures are explained.
+- Public deploy checks pass for hosting changes.
+- Specs/docs are current.
+- The repo has no unrelated accidental changes.
+- Future agents can find the new behavior by file name or documentation.

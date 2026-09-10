@@ -1,6 +1,6 @@
 # boks Agent Guide
 
-This file is the first stop for AI coding assistants working on boks. Keep changes aligned with the product promise: a reader opens the app, receives one algorithmic short literature feed, reads with minimal interface noise, and leaves behavioral signals that help compare recommendation systems.
+This file is the first stop for AI coding assistants working on boks. After reading it, read `docs/README.md` and the focused spec or guide for the task. Keep changes aligned with the product promise: a reader opens the app, receives one algorithmic short literature feed, reads with minimal interface noise, and leaves behavioral signals that help compare recommendation systems.
 
 ## Product Philosophy
 
@@ -45,6 +45,11 @@ Business rules:
 - `supabase/config.toml` and `supabase/migrations/`: Supabase Auth config, RLS schema, seed reels, and aggregate admin RPC.
 - `specs/`: product and experiment contracts.
 - `docs/`: operating, architecture, and growth-readiness guidance.
+- `docs/README.md`: documentation index and read order.
+- `docs/engineering-standards.md`: naming, boundaries, values, and AI-agent workflow.
+- `docs/hosting.md`: Cloudflare production deploy and URL operations.
+- `docs/testing.md`: user testing, product QA, and technical verification.
+- `docs/architecture-review.md`: current architecture risks and next refactor sequence.
 
 ## Change Routing
 
@@ -56,6 +61,8 @@ Business rules:
 - Supabase persistent data: update `supabase/migrations/` with RLS and indexes, then run `npm run verify:supabase`.
 - D1 compatibility data: update `db/schema.ts`, then generate a Drizzle migration.
 - Product decisions: update `specs/boks-product-spec.md` before or with implementation.
+- Hosting/deployment: update `wrangler.jsonc`, `docs/hosting.md`, and `docs/future-updates-playbook.md` together.
+- Testing process: update `docs/testing.md` and `docs/boks-operations.md` together.
 
 ## Growth Guardrails
 

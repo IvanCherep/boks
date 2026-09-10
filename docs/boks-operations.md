@@ -1,5 +1,7 @@
 # boks Operations Guide
 
+Use `docs/testing.md` for structured reader, author, admin, and technical test scripts. Use `docs/hosting.md` for Cloudflare deployment and production URL checks.
+
 ## Running a Test
 
 1. Open `/` and ask each tester to read at least three stories.
@@ -44,9 +46,9 @@ Before moving beyond the first cohort, add bulk import, full-text search, precom
 
 ## Prototype URLs
 
-- `/`: swipe-first reader experience.
-- `/author`: author publishing cabinet.
-- `/admin`: founder/business console for content operations and experiment analysis.
+- `https://read.tryboks.workers.dev/`: swipe-first reader experience.
+- `https://read.tryboks.workers.dev/author`: author publishing cabinet.
+- `https://read.tryboks.workers.dev/admin`: founder/business console for content operations and experiment analysis.
 
 ## Maintenance
 

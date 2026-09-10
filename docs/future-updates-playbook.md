@@ -13,10 +13,11 @@ Use this guide before changing the app. It keeps updates small, testable, and ea
 ## Start Every Update
 
 1. Read `AGENTS.md`.
-2. Read `docs/architecture.md`.
-3. Read the relevant spec in `specs/`.
-4. Check current changes with `git status --short`.
-5. Decide which surface is changing: reader, author, admin, recommendations, data, deployment, or docs.
+2. Read `docs/README.md`.
+3. Read `docs/architecture.md`.
+4. Read the relevant spec in `specs/`.
+5. Check current changes with `git status --short`.
+6. Decide which surface is changing: reader, author, admin, recommendations, data, deployment, or docs.
 
 ## Change Routing
 
@@ -61,6 +62,7 @@ Deployment:
 - `.env.local` is required for local build/deploy and must stay ignored.
 - `.env.example` documents required public env vars.
 - Use `npm run deploy` for Cloudflare production deployment.
+- Use `docs/hosting.md` for current URL, Cloudflare dashboard checks, DNS notes, and rollback.
 
 ## Validation Checklist
 

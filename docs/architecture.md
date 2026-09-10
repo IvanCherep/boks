@@ -4,6 +4,8 @@
 
 boks is a browser prototype for testing a literature-only, swipe-first reading feed. The architecture keeps product behavior, recommendation logic, analytics, and demo content separated so the prototype can grow without turning every change into a full-app rewrite.
 
+For the current architecture assessment, risks, and next extraction points, read `docs/architecture-review.md`. For standards and naming, read `docs/engineering-standards.md`.
+
 ## Product Shape
 
 The reader experience is intentionally narrow: open `/`, receive a story, read, react if needed, then swipe. Readers should not browse a catalog or choose algorithms. The product learns from behavior through impressions, starts, inferred completions, skips, likes, shares, comments, elapsed time, and scroll progress.
@@ -83,4 +85,6 @@ When adding a recommendation strategy:
 
 ## AI Agent Workflow
 
-Before implementation, read `AGENTS.md`, the relevant spec in `specs/`, and this architecture file. Keep naming domain-specific and route changes to the smallest matching module. If a change crosses reader experience, recommendation logic, and metrics, update code and docs in the same task.
+Before implementation, read `AGENTS.md`, `docs/README.md`, the relevant spec in `specs/`, and this architecture file. Keep naming domain-specific and route changes to the smallest matching module. If a change crosses reader experience, recommendation logic, and metrics, update code and docs in the same task.
+
+Record major architecture decisions in `docs/decisions/`.

@@ -1,4 +1,4 @@
-# boks prototype
+# boks
 
 boks is a browser prototype for testing a short literature feed: readers discover stories that fit inside 15 minutes, authors publish from a simple cabinet, and the founder reviews engagement metrics.
 
@@ -14,6 +14,7 @@ boks is a browser prototype for testing a short literature feed: readers discove
 ## Main files
 
 - `AGENTS.md`: product philosophy, architecture routing, growth guardrails, and validation checklist for AI coding assistants.
+- `docs/README.md`: documentation index and recommended read order.
 - `app/boks-client.tsx`: route compatibility exports for reader, author, and admin.
 - `components/boks/reader-feed.tsx`: reader experience.
 - `components/boks/author-console.tsx`: author cabinet.
@@ -24,6 +25,10 @@ boks is a browser prototype for testing a short literature feed: readers discove
 - `supabase/`: production MVP Auth config, RLS schema, seed reels, and admin aggregate RPC.
 - `db/schema.ts`: D1 compatibility schema.
 - `docs/architecture.md`: system map and data flows.
+- `docs/architecture-review.md`: architecture assessment, current risks, and next extraction points.
+- `docs/engineering-standards.md`: product values, naming, boundaries, and AI-agent workflow.
+- `docs/hosting.md`: Cloudflare hosting, deployment, URL, and production verification guide.
+- `docs/testing.md`: reader, author, admin, product QA, and technical validation guide.
 - `docs/boks-operations.md`: testing and operating guide.
 - `docs/future-updates-playbook.md`: practical guide for future app updates.
 - `docs/growth-readiness.md`: scale posture and next growth work.
