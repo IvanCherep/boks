@@ -92,8 +92,8 @@ For production deploys:
 
 ```bash
 npm run deploy
-curl -I https://boks.ivan-boks-prototype.workers.dev/
-curl -I https://boks.ivan-boks-prototype.workers.dev/admin
+curl -I https://read.tryboks.workers.dev/
+curl -I https://read.tryboks.workers.dev/admin
 ```
 
 Then open `/` and `/admin` in a fresh browser tab and confirm there are no console errors.
