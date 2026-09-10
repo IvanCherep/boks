@@ -4,16 +4,20 @@
 
 boks tests whether readers want a dedicated literature feed for complete short stories or book fragments that fit inside a 15 minute break. The prototype must support three jobs:
 
-- readers discover, read, react, comment, and share;
+- readers discover, read, react, comment, share, and optionally keep a personal reading profile;
 - authors publish a short story without an admin panel;
-- the founder reviews behavioral metrics from real test sessions.
+- the founder reviews behavioral metrics from real test sessions and controls admin access.
 
 ## Current Prototype Scope
 
 - Mobile-first responsive web app for MacBook, iPhone, and Android browsers.
 - Dedicated routes: `/` for the swipe-first reader, `/author` for publishing, `/admin` for business analysis.
 - Reader focus mode: the full interface appears briefly on a new story, then fades during reading so the story owns the screen. Tapping/clicking the reading surface reveals reactions and comments. There is no manual finished button; completion is inferred from time and scroll progress when the reader leaves a story.
-- Supabase production MVP for anonymous reader entry, public reels, views, likes, and admin aggregate metrics.
+- In product language, a `boks` is one short literature unit, similar to one reel in Instagram. In Supabase storage, the current table is still named `reels`.
+- Supabase production MVP for anonymous reader entry, email sign-up/sign-in, permanent reader profiles, public reels, views, likes, and admin aggregate metrics.
+- Guest readers start immediately with no visible sign-up wall. After 5 viewed boks they see a gentle notice, after 10 they see a second notice, and after 15 they must sign up or sign in to continue.
+- Signed-in readers can open the boks wordmark to manage settings and recent read boks.
+- Admin access is a database-backed role on `user_profiles`. Admins can grant or remove admin status only from `/admin`; the only exception is first-admin bootstrap when no admin exists yet.
 - D1 compatibility backend for the original author cabinet, comments, and richer analytics event prototype path.
 - Seed stories for immediate demos plus author-created stories.
 - Server-side recommendation ranking with deterministic anonymous experiment assignment in the D1 prototype path; `supabase_recent` is the current Supabase smoke-test feed until attributed Supabase events are added.
@@ -32,7 +36,8 @@ boks tests whether readers want a dedicated literature feed for complete short s
 
 ## MVP Extension Points
 
-- Authentication: bind author identity to Sign in with ChatGPT or a later custom account system.
+- Authentication: migrate author identity to Supabase permanent users and add password reset/magic-link options if email-password creates friction.
+- Authorization: keep admin role mutation behind Supabase RPC checks; never trust browser metadata or local storage for admin decisions.
 - Recommendation: extend the algorithm registry, add precomputed rollups, then introduce reader history and story embeddings.
 - Content safety: add moderation before public publishing.
 - Growth loops: add public story detail pages and richer share previews.

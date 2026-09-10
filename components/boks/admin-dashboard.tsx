@@ -2,15 +2,24 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Download, RefreshCw, Search } from "lucide-react";
+import { Download, RefreshCw, Search, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { BoksUserContext } from "@/components/boks/client-types";
 import { numberValue, pct, secondsLabel, storySignal } from "@/components/boks/client-format";
 import { AdminPanel, Breakdown, MetricTile, Target } from "@/components/boks/shared-ui";
+import { claimInitialBoksAdmin, ensureBoksProfile, loadBoksUserContext, setBoksAdminRole } from "@/components/boks/supabase-browser-data";
 import { useBoksData } from "@/components/boks/use-boks-data";
+import { signInBoksUser } from "@/lib/boks/supabase-client";
 
 export function AdminDashboard() {
   const { metrics, status, setStatus, load } = useBoksData();
+  const [user, setUser] = useState<BoksUserContext | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authStatus, setAuthStatus] = useState("");
+  const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("signal");
   const [page, setPage] = useState(0);
@@ -31,8 +40,17 @@ export function AdminDashboard() {
   const pageEnd = Math.min(pagination.offset + pagination.limit, pagination.total);
   const algorithmRows = metrics.algorithmMetrics ?? [];
   const algorithmNameById = new Map((metrics.algorithms ?? []).map((algorithm) => [algorithm.id, algorithm.name]));
+  const userRows = metrics.users ?? [];
 
   useEffect(() => {
+    refreshAccess().catch((error) => {
+      setAuthStatus(error instanceof Error ? error.message : "Could not check admin access.");
+      setAuthChecked(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!authChecked || user?.role !== "admin") return;
     const handle = window.setTimeout(() => {
       load({
         view: "admin",
@@ -43,7 +61,60 @@ export function AdminDashboard() {
       }).catch((error) => setStatus(error.message));
     }, 180);
     return () => window.clearTimeout(handle);
-  }, [load, page, query, setStatus, sort]);
+  }, [authChecked, load, page, query, setStatus, sort, user?.role]);
+
+  async function refreshAccess() {
+    const context = await loadBoksUserContext();
+    setUser(context);
+    setAuthChecked(true);
+    return context;
+  }
+
+  async function submitSignIn() {
+    if (!email.trim() || password.length < 6) {
+      setAuthStatus("Use an email and a password with at least 6 characters.");
+      return;
+    }
+
+    setBusy(true);
+    setAuthStatus("");
+    try {
+      await signInBoksUser(email.trim(), password);
+      await ensureBoksProfile();
+      await refreshAccess();
+    } catch (error) {
+      setAuthStatus(error instanceof Error ? error.message : "Could not sign in.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function claimFirstAdmin() {
+    setBusy(true);
+    setAuthStatus("");
+    try {
+      const context = await claimInitialBoksAdmin();
+      setUser(context);
+      await load({ view: "admin", limit: pageSize, offset: 0, q: query, sort });
+    } catch (error) {
+      setAuthStatus(error instanceof Error ? error.message : "Could not claim first admin.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleAdminRole(userId: string, isAdmin: boolean) {
+    setBusy(true);
+    setAuthStatus("");
+    try {
+      await setBoksAdminRole(userId, isAdmin);
+      await load({ view: "admin", limit: pageSize, offset: page * pageSize, q: query, sort });
+    } catch (error) {
+      setAuthStatus(error instanceof Error ? error.message : "Could not update admin role.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function downloadMetrics() {
     const payload = {
@@ -56,6 +127,7 @@ export function AdminDashboard() {
       algorithms: metrics.algorithms,
       algorithmMetrics: metrics.algorithmMetrics,
       recentEvents: metrics.recentEvents,
+      users: metrics.users,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -64,6 +136,64 @@ export function AdminDashboard() {
     link.download = "boks-metrics.json";
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
+        <div className="mx-auto grid min-h-[70svh] max-w-xl place-items-center">
+          <p className="text-[var(--muted-foreground)]">Checking admin access...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user || user.isAnonymous) {
+    return (
+      <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
+        <section className="auth-panel mx-auto mt-12">
+          <Link href="/" prefetch={false} className="brand-word">boks</Link>
+          <h1 className="mt-6 text-3xl font-semibold tracking-normal">Admin sign in</h1>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            Business metrics and role changes are available only to permanent admin users.
+          </p>
+          <div className="mt-6 grid gap-3">
+            <Input type="email" autoComplete="email" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <Input type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
+            <Button onClick={submitSignIn} disabled={busy}>
+              <Shield className="size-4" /> Sign in
+            </Button>
+          </div>
+          {authStatus && <p className="mt-4 text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
+        </section>
+      </main>
+    );
+  }
+
+  if (user.role !== "admin") {
+    return (
+      <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
+        <section className="auth-panel mx-auto mt-12">
+          <Link href="/" prefetch={false} className="brand-word">boks</Link>
+          <h1 className="mt-6 text-3xl font-semibold tracking-normal">Admin access</h1>
+          {user.hasAnyAdmin ? (
+            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+              This account is signed in as a reader. Ask an existing admin to grant access from this panel.
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                No admin exists yet. The first permanent account can become admin here; after that, only admins can grant admin access.
+              </p>
+              <Button className="mt-6" onClick={claimFirstAdmin} disabled={busy}>
+                <UserPlus className="size-4" /> Claim first admin
+              </Button>
+            </>
+          )}
+          {authStatus && <p className="mt-4 text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -119,6 +249,48 @@ export function AdminDashboard() {
           <AdminPanel title="Mood signal">
             <Breakdown rows={metrics.moods ?? []} labelKey="mood" />
           </AdminPanel>
+        </section>
+
+        <section className="panel overflow-hidden">
+          <div className="border-b border-[var(--border)] p-4">
+            <h2 className="text-xl font-semibold tracking-normal">User management</h2>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Grant admin access from here only. Reader accounts remain readers until an admin changes them.
+            </p>
+          </div>
+          <div className="user-table">
+            <div className="user-row user-head">
+              <span>User</span>
+              <span>Role</span>
+              <span>Reads</span>
+              <span>Likes</span>
+              <span>Last sign in</span>
+              <span>Action</span>
+            </div>
+            {userRows.length ? userRows.map((row) => (
+              <div key={row.userId} className="user-row">
+                <span>
+                  <strong>{row.email || row.displayName || row.userId}</strong>
+                  <small>{row.userId}</small>
+                </span>
+                <span>{row.role}</span>
+                <span>{numberValue(row.views)}</span>
+                <span>{numberValue(row.likes)}</span>
+                <span>{row.lastSignInAt ? new Date(row.lastSignInAt).toLocaleDateString() : "never"}</span>
+                <span>
+                  <Button
+                    variant={row.role === "admin" ? "outline" : "default"}
+                    disabled={busy || row.userId === user.userId}
+                    onClick={() => toggleAdminRole(row.userId, row.role !== "admin")}
+                  >
+                    {row.role === "admin" ? "Remove" : "Make admin"}
+                  </Button>
+                </span>
+              </div>
+            )) : (
+              <div className="p-4 text-sm text-[var(--muted-foreground)]">No permanent user profiles yet.</div>
+            )}
+          </div>
         </section>
 
         <section className="panel overflow-hidden">

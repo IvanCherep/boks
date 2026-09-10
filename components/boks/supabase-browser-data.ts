@@ -1,8 +1,14 @@
 "use client";
 
 import { initialMetrics } from "@/components/boks/constants";
-import type { Metrics, RecommendationExperiment, Story } from "@/components/boks/client-types";
-import { getAnonymousSupabaseUserId, isSupabaseConfigured, supabase } from "@/lib/boks/supabase-client";
+import type { BoksUserContext, Metrics, ReaderLibraryItem, RecommendationExperiment, Story } from "@/components/boks/client-types";
+import {
+  getAnonymousSupabaseUserId,
+  getCurrentBoksUserContext,
+  getCurrentSupabaseUser,
+  isSupabaseConfigured,
+  supabase,
+} from "@/lib/boks/supabase-client";
 
 type SupabaseReelRow = {
   id: string;
@@ -19,6 +25,17 @@ type SupabaseReelRow = {
 
 type SupabaseLikeRow = {
   reel_id: string;
+};
+
+type SupabaseLibraryViewRow = {
+  created_at: string;
+  reel_id: string;
+  reels: {
+    id: string;
+    title: string;
+    author_name: string;
+    minutes: number;
+  } | null;
 };
 
 export type SupabaseReaderPayload = {
@@ -85,7 +102,7 @@ export async function loadSupabaseReaderFeed(limit: number): Promise<SupabaseRea
     experiment: {
       algorithmId: "supabase_recent",
       algorithmName: "Supabase recent",
-      userSegment: "anonymous",
+      userSegment: (await getCurrentSupabaseUser())?.is_anonymous ? "anonymous" : "signed-in",
       source: "assigned",
     },
     likedStoryIds,
@@ -101,7 +118,8 @@ export async function loadSupabaseAdminMetrics(options: {
 }): Promise<Metrics> {
   if (!supabase) throw new Error("Supabase is not configured.");
 
-  await getAnonymousSupabaseUserId();
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) throw new Error("Sign in with an admin account to open business metrics.");
 
   const result = await supabase.rpc("get_boks_admin_snapshot", {
     p_limit: options.limit ?? 100,
@@ -113,6 +131,95 @@ export async function loadSupabaseAdminMetrics(options: {
   if (result.error) throw result.error;
 
   return (result.data ?? initialMetrics) as Metrics;
+}
+
+export async function loadBoksUserContext(): Promise<BoksUserContext | null> {
+  if (!supabase) return null;
+
+  return getCurrentBoksUserContext();
+}
+
+export async function ensureBoksProfile(displayName = ""): Promise<BoksUserContext | null> {
+  if (!supabase) return null;
+
+  const result = await supabase.rpc("ensure_boks_user_profile", {
+    p_display_name: displayName,
+  });
+  if (result.error) throw result.error;
+
+  return result.data as BoksUserContext;
+}
+
+export async function updateBoksProfile(input: {
+  displayName: string;
+  preferredGenre: string;
+  preferredMood: string;
+}): Promise<BoksUserContext | null> {
+  if (!supabase) return null;
+
+  const result = await supabase
+    .from("user_profiles")
+    .update({
+      display_name: input.displayName.trim() || "Reader",
+      preferred_genre: input.preferredGenre,
+      preferred_mood: input.preferredMood,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", (await getCurrentSupabaseUser())?.id);
+
+  if (result.error) throw result.error;
+
+  return loadBoksUserContext();
+}
+
+export async function loadReaderLibrary(limit = 24): Promise<ReaderLibraryItem[]> {
+  if (!supabase) return [];
+
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) return [];
+
+  const viewsResult = await supabase
+    .from("views")
+    .select("created_at,reel_id,reels(id,title,author_name,minutes)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (viewsResult.error) throw viewsResult.error;
+
+  const rows = (viewsResult.data ?? []) as SupabaseLibraryViewRow[];
+  const storyIds = rows.map((row) => row.reel_id);
+  const liked = new Set(await loadLikedStoryIds(user.id, storyIds));
+
+  return rows
+    .filter((row) => row.reels)
+    .map((row) => ({
+      storyId: row.reel_id,
+      title: row.reels?.title ?? "Untitled boks",
+      authorName: row.reels?.author_name ?? "boks",
+      minutes: row.reels?.minutes ?? 1,
+      readAt: row.created_at,
+      liked: liked.has(row.reel_id),
+    }));
+}
+
+export async function claimInitialBoksAdmin(): Promise<BoksUserContext | null> {
+  if (!supabase) return null;
+
+  const result = await supabase.rpc("claim_initial_boks_admin");
+  if (result.error) throw result.error;
+
+  return result.data as BoksUserContext;
+}
+
+export async function setBoksAdminRole(userId: string, isAdmin: boolean) {
+  if (!supabase) return;
+
+  const result = await supabase.rpc("set_boks_admin_role", {
+    p_user_id: userId,
+    p_is_admin: isAdmin,
+  });
+  if (result.error) throw result.error;
 }
 
 async function loadLikedStoryIds(userId: string, reelIds: string[]) {

@@ -12,10 +12,13 @@ Reader rules:
 - Reading focus matters more than interface visibility. Controls may appear on story change, tap, hover, or pause, but the story should own the screen while a person reads.
 - There is no explicit finished button. Completion, drop-off, and skip behavior are inferred from elapsed time, scroll progress, and swipe timing.
 - Reader-facing language should stay minimal. Do not explain the interface inside the product unless the user must make a decision.
+- Guest readers see no sign-up controls at first. They receive gentle notices after 5 and 10 viewed boks and must sign up or sign in after 15 viewed boks.
+- `boks` is the product term for one short content unit. `reel` remains the current Supabase table name for compatibility.
 
 Business rules:
 
 - The founder must be able to compare recommendation strategies by attributed behavior, not opinions alone.
+- Admin access is a Supabase `user_profiles.role` decision. It must be granted from `/admin` and enforced by RLS/RPC checks, never by local storage, URL flags, or `user_metadata`.
 - Author publishing stays simple, with the 15 minute promise enforced before publication.
 - Production reader test data belongs in Supabase. Browser storage is only for anonymous local reader identity, Supabase session persistence, and lightweight profile state. D1 remains the compatibility backend for the original author/API prototype until that surface is migrated.
 
@@ -30,6 +33,7 @@ Business rules:
 - `components/boks/constants.ts`: reusable client constants and empty state.
 - `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
 - `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and completion/skip inference.
+- `components/boks/user-auth-panel.tsx`: reader email sign-up/sign-in, settings, recent read boks, and admin shortcut.
 - `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader/admin data access using only the publishable key and RLS.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, mutation helpers, metrics export, and WebMCP reporting.
 - `components/boks/shared-ui.tsx`: small reusable UI primitives for prototype surfaces.
@@ -42,7 +46,7 @@ Business rules:
 - `lib/boks/seed-stories.ts`: demo story inventory for local and production seeding.
 - `lib/boks/supabase-client.ts`: browser Supabase client factory and anonymous auth helper.
 - `db/schema.ts` and `drizzle/`: D1 schema and migrations.
-- `supabase/config.toml` and `supabase/migrations/`: Supabase Auth config, RLS schema, seed reels, and aggregate admin RPC.
+- `supabase/config.toml` and `supabase/migrations/`: Supabase Auth config, user profiles, RLS schema, seed reels, and aggregate admin RPC.
 - `specs/`: product and experiment contracts.
 - `docs/`: operating, architecture, and growth-readiness guidance.
 - `docs/README.md`: documentation index and read order.
@@ -56,6 +60,7 @@ Business rules:
 - Reader experience: start in `components/boks/reader-feed.tsx`, `components/boks/reader-behavior.ts`, and `app/globals.css`.
 - Author cabinet: start in `components/boks/author-console.tsx` and shared validation in `app/api/boks/route.ts`.
 - Admin metrics: start in `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, Supabase RPC migrations, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
+- User management: start in `components/boks/user-auth-panel.tsx`, `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, `lib/boks/supabase-client.ts`, and Supabase migrations.
 - Recommendation algorithms: update `lib/boks/contracts.ts`, `lib/boks/recommendations.ts`, and `specs/boks-recommendation-experiments.md` together.
 - Seed/demo content: update `lib/boks/seed-stories.ts`.
 - Supabase persistent data: update `supabase/migrations/` with RLS and indexes, then run `npm run verify:supabase`.

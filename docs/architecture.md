@@ -10,7 +10,7 @@ For the current architecture assessment, risks, and next extraction points, read
 
 The reader experience is intentionally narrow: open `/`, receive a story, read, react if needed, then swipe. Readers should not browse a catalog or choose algorithms. The product learns from behavior through impressions, starts, inferred completions, skips, likes, shares, comments, elapsed time, and scroll progress.
 
-The founder experience is broader: `/admin` supports experiment comparison, funnel review, content operations, search, sorting, pagination, JSON export, and scale monitoring. In the Supabase production MVP it reads aggregate metrics through a browser-safe RPC rather than exposing raw cross-user rows.
+The founder experience is broader: `/admin` supports experiment comparison, funnel review, content operations, search, sorting, pagination, JSON export, user management, and scale monitoring. In the Supabase production MVP it reads aggregate metrics through admin-only browser-safe RPCs rather than exposing raw cross-user rows.
 
 The author experience is constrained: `/author` lets a writer publish a short story and enforces the 15 minute promise before submission.
 
@@ -27,6 +27,7 @@ The author experience is constrained: `/author` lets a writer publish a short st
 - `components/boks/constants.ts`: mood, genre, empty metric, and empty reader profile constants.
 - `components/boks/client-format.ts`: word count, time estimate, percentage, numeric, seconds, and story signal helpers.
 - `components/boks/reader-behavior.ts`: local browser identity, reader profile persistence, and read-outcome inference.
+- `components/boks/user-auth-panel.tsx`: reader account sheet for email sign-up/sign-in, settings, recent read boks, and admin shortcut.
 - `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader/admin data access using anonymous auth, the publishable key, RLS, and aggregate RPC.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
@@ -38,8 +39,8 @@ The author experience is constrained: `/author` lets a writer publish a short st
 - `lib/boks/request.ts`: request parsing, validation, and error response helpers.
 - `lib/boks/seed-stories.ts`: demo story content used by database seeding.
 - `lib/boks/supabase-client.ts`: browser Supabase client and anonymous auth helper.
-- `supabase/config.toml`: remote Supabase config with anonymous sign-ins enabled.
-- `supabase/migrations/`: production MVP tables, indexes, RLS policies, seed reels, and admin aggregate functions.
+- `supabase/config.toml`: Supabase config with anonymous sign-ins, email sign-up, production redirect URL, and manual linking documented.
+- `supabase/migrations/`: production MVP tables, user profiles, indexes, RLS policies, seed reels, and admin aggregate functions.
 - `db/schema.ts`: Drizzle schema for D1.
 - `drizzle/`: generated migrations.
 - `specs/`: product and recommendation specifications.
@@ -51,15 +52,19 @@ The author experience is constrained: `/author` lets a writer publish a short st
 2. If Supabase environment variables are configured, `useBoksData` creates or reuses an anonymous Supabase session and reads a bounded batch from `public.reels`.
 3. Reader impressions are recorded in `public.views`; likes are stored in `public.likes` with a unique `(user_id, reel_id)` constraint.
 4. RLS allows readers to read published reels and only write/read/delete their own views or likes.
-5. Without Supabase config, the original D1 API path resolves deterministic recommendation experiments and records richer prototype events.
-6. `reader-behavior.ts` updates local preference state from completed or liked stories.
+5. Guest access is tracked locally by distinct boks shown in the browser: notice at 5, notice at 10, sign-up required at 15.
+6. Signed-in readers can open the boks wordmark for settings and recently read boks; this data is backed by Supabase profile, view, and like rows.
+7. Without Supabase config, the original D1 API path resolves deterministic recommendation experiments and records richer prototype events.
+8. `reader-behavior.ts` updates local preference state from completed or liked stories.
 
 ## Admin Flow
 
-1. With Supabase config, `/admin` calls `get_boks_admin_snapshot(limit, offset, query, sort)`.
-2. The RPC returns global aggregate metrics, genre and mood rollups, recent aggregate event rows, and a paginated story operations table without exposing all users' raw rows to the browser.
-3. Without Supabase config, `/admin` requests `/api/boks?view=admin` and uses the original D1 analytics SQL.
-4. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
+1. `/admin` first resolves `get_boks_user_context()`.
+2. Anonymous users must sign in. Permanent readers without admin role see access status but no metrics.
+3. If no admin exists, the first permanent user can claim admin from `/admin`. After that, only admins can grant or remove admin roles through `set_boks_admin_role()`.
+4. Admin users call `get_boks_admin_snapshot(limit, offset, query, sort)`.
+5. The RPC returns global aggregate metrics, genre and mood rollups, recent aggregate event rows, recent permanent users, and a paginated story operations table.
+6. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
 
 ## Recommendation Flow
 
@@ -82,6 +87,7 @@ When adding a recommendation strategy:
 - Exploratory signals can live in `events.metadata`; frequently queried signals should become typed columns and indexes.
 - At larger scale, replace direct event aggregation with rollup tables by story, algorithm, segment, and date.
 - Keep service role keys server-side only. Browser code must use `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, RLS, and narrowly scoped RPCs.
+- Never make admin decisions from `user_metadata`, browser storage, URL flags, or UI state. Use `user_profiles.role` through RLS/RPC checks.
 
 ## AI Agent Workflow
 

@@ -137,6 +137,13 @@ textarea {
   text-decoration: none;
 }
 
+.brand-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
 .reader-card {
   background:
     linear-gradient(180deg, rgb(255 255 255 / 92%), transparent 38%),
@@ -270,6 +277,60 @@ textarea {
     box-shadow 180ms ease;
 }
 
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgb(31 25 21 / 22%);
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.auth-panel {
+  width: min(100%, 480px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 1.25rem;
+  box-shadow: 0 24px 80px rgb(47 41 37 / 20%);
+}
+
+.auth-tab {
+  min-height: 2.35rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.auth-tab.is-active {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 8px 18px rgb(47 41 37 / 8%);
+}
+
+.guest-notice {
+  position: absolute;
+  inset-inline: 1rem;
+  bottom: 1rem;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 96%);
+  padding: 0.9rem;
+  box-shadow: 0 18px 60px rgb(47 41 37 / 16%);
+  backdrop-filter: blur(14px);
+}
+
 .panel {
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -380,6 +441,49 @@ textarea {
   text-transform: uppercase;
 }
 
+.user-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.user-row {
+  display: grid;
+  min-width: 980px;
+  grid-template-columns:
+    minmax(280px, 1.7fr)
+    minmax(90px, 0.45fr)
+    minmax(80px, 0.4fr)
+    minmax(80px, 0.4fr)
+    minmax(140px, 0.7fr)
+    minmax(130px, 0.6fr);
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+}
+
+.user-row strong,
+.user-row small {
+  display: block;
+}
+
+.user-row small {
+  margin-top: 0.18rem;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+}
+
+.user-head {
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 @media (max-width: 720px) {
   .reader-shell {
     touch-action: pan-y;
@@ -405,5 +509,11 @@ textarea {
   .reader-card {
     border-radius: 24px;
     width: calc(100% - 1rem);
+  }
+
+  .guest-notice {
+    align-items: stretch;
+    flex-direction: column;
+    bottom: 0.75rem;
   }
 }

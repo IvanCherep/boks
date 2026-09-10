@@ -41,6 +41,7 @@ export type Metrics = {
   funnel: Record<string, number>;
   stories: Array<Record<string, number | string>>;
   recentEvents: Array<Record<string, number | string>>;
+  users?: AdminUserRow[];
   genres?: Array<Record<string, number | string>>;
   moods?: Array<Record<string, number | string>>;
   algorithms?: RecommendationAlgorithm[];
@@ -61,6 +62,41 @@ export type ReaderProfile = {
   skipped: string[];
   genreScore: Record<string, number>;
   moodScore: Record<string, number>;
+};
+
+export type BoksUserRole = "reader" | "admin";
+
+export type BoksUserContext = {
+  userId: string | null;
+  email: string | null;
+  isAnonymous: boolean;
+  role: BoksUserRole;
+  displayName: string;
+  preferredGenre: string;
+  preferredMood: string;
+  hasAnyAdmin: boolean;
+  views: number;
+  likes: number;
+};
+
+export type ReaderLibraryItem = {
+  storyId: string;
+  title: string;
+  authorName: string;
+  minutes: number;
+  readAt: string;
+  liked: boolean;
+};
+
+export type AdminUserRow = {
+  userId: string;
+  email: string;
+  role: BoksUserRole;
+  displayName: string;
+  createdAt: string;
+  lastSignInAt: string;
+  views: number;
+  likes: number;
 };
 
 export type LoadOptions = {

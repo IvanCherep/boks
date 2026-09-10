@@ -1,6 +1,19 @@
 import { initialProfile } from "@/components/boks/constants";
 import type { ReadOutcome, ReaderProfile, Story } from "@/components/boks/client-types";
 
+const anonymousReadStateKey = "boks-anonymous-read-state";
+const anonymousNoticeStateKey = "boks-anonymous-notice-state";
+
+export const anonymousReadLimits = {
+  firstNotice: 5,
+  secondNotice: 10,
+  requiredSignup: 15,
+};
+
+export type AnonymousReadState = {
+  storyIds: string[];
+};
+
 export function inferReadOutcome(story: Story, elapsedSeconds: number, progress: number): ReadOutcome {
   const estimatedSeconds = story.minutes * 60;
   if (elapsedSeconds < 6) return "skip";
@@ -32,6 +45,41 @@ export function readProfile() {
 
 export function saveProfile(profile: ReaderProfile) {
   window.localStorage.setItem("boks-profile", JSON.stringify(profile));
+}
+
+export function readAnonymousReadState(): AnonymousReadState {
+  if (typeof window === "undefined") return { storyIds: [] };
+  try {
+    return { storyIds: [], ...JSON.parse(window.localStorage.getItem(anonymousReadStateKey) ?? "{}") };
+  } catch {
+    return { storyIds: [] };
+  }
+}
+
+export function recordAnonymousBoksRead(storyId: string) {
+  if (typeof window === "undefined") return 0;
+  const current = readAnonymousReadState();
+  const storyIds = current.storyIds.includes(storyId) ? current.storyIds : [...current.storyIds, storyId];
+  window.localStorage.setItem(anonymousReadStateKey, JSON.stringify({ storyIds: storyIds.slice(-300) }));
+  return storyIds.length;
+}
+
+export function getAnonymousBoksReadCount() {
+  return readAnonymousReadState().storyIds.length;
+}
+
+export function readAnonymousNoticeState(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(anonymousNoticeStateKey) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function saveAnonymousNoticeState(state: Record<string, boolean>) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(anonymousNoticeStateKey, JSON.stringify(state));
 }
 
 export function profileBump(profile: ReaderProfile, story: Story, event: "complete" | "like" | "skip") {

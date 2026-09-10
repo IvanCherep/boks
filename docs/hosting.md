@@ -33,6 +33,15 @@ Required public values:
 
 Never store or deploy a Supabase service role key for browser code. Do not put service role keys in source, screenshots, Wrangler vars, or docs.
 
+Supabase Auth should allow:
+
+- anonymous sign-ins for guest reading;
+- email sign-up/sign-in for permanent reader accounts;
+- production redirect URL `https://read.tryboks.workers.dev`;
+- manual anonymous-user linking when preserving guest history during sign-up is required.
+
+Use `supabase config diff` before pushing config. Do not run a full config push if it would overwrite unrelated remote settings such as SMS/provider configuration.
+
 ## Deploy
 
 Before deploy:
@@ -41,6 +50,7 @@ Before deploy:
 git status --short
 npm run lint
 npm run verify:supabase
+npm run build
 node /Users/iegorov/.codex/plugins/cache/openai-bundled/sites/0.1.66/scripts/build-site.mjs
 ```
 
@@ -74,7 +84,7 @@ Expected:
 - `/` returns `200`.
 - `/admin` returns `200`.
 - Reader API returns a bounded story payload.
-- Admin API returns metrics JSON.
+- Admin API returns `403`; admin metrics load inside `/admin` through Supabase role-checked RPCs.
 
 Then open these routes in a browser:
 

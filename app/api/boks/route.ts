@@ -1,5 +1,5 @@
 import { getD1 } from "@/db";
-import { adminOrder, algorithmMetricsSql, metricRollups, storyMetricSelect } from "@/lib/boks/analytics";
+import { algorithmMetricsSql, metricRollups, storyMetricSelect } from "@/lib/boks/analytics";
 import { eventTypes, type RecommendationAlgorithmId } from "@/lib/boks/contracts";
 import { recommendationAlgorithms, recommendationOrderSql, resolveRecommendationExperiment } from "@/lib/boks/recommendations";
 import { cleanText, estimateMinutes, integerPayload, numberParam, routeError, searchPattern } from "@/lib/boks/request";
@@ -87,40 +87,6 @@ async function getAdminStoryCount(db: D1Database, query: string) {
     ? await statement.bind(pattern, pattern, pattern, pattern).first<{ total: number }>()
     : await statement.first<{ total: number }>();
   return row?.total ?? 0;
-}
-
-async function getAdminStoryMetrics(
-  db: D1Database,
-  limit: number,
-  offset: number,
-  query: string,
-  sort: string
-) {
-  const pattern = searchPattern(query);
-  const where = query
-    ? `WHERE s.status = 'published' AND (
-        LOWER(s.title) LIKE ? OR
-        LOWER(s.author_name) LIKE ? OR
-        LOWER(s.genre) LIKE ? OR
-        LOWER(s.mood) LIKE ?
-      )`
-    : "WHERE s.status = 'published'";
-
-  const statement = db.prepare(
-    `${metricRollups()}
-    SELECT ${storyMetricSelect(false)}
-    FROM stories s
-    LEFT JOIN event_rollup er ON er.story_id = s.id
-    LEFT JOIN comment_rollup cr ON cr.story_id = s.id
-    ${where}
-    ORDER BY ${adminOrder(sort)}
-    LIMIT ? OFFSET ?`
-  );
-
-  const result = query
-    ? await statement.bind(pattern, pattern, pattern, pattern, limit, offset).all()
-    : await statement.bind(limit, offset).all();
-  return result.results ?? [];
 }
 
 async function getMetrics(
@@ -220,21 +186,10 @@ export async function GET(request: Request) {
     await ensureSeedStories(db);
 
     if (view === "admin") {
-      const limit = numberParam(url, "limit", 100, 20, 250);
-      const offset = numberParam(url, "offset", 0, 0, 1_000_000);
-      const query = cleanText(url.searchParams.get("q")).slice(0, 80);
-      const sort = cleanText(url.searchParams.get("sort"), "signal");
-      const [totalStories, storyRows] = await Promise.all([
-        getAdminStoryCount(db, query),
-        getAdminStoryMetrics(db, limit, offset, query, sort),
-      ]);
-      const metrics = await getMetrics(db, storyRows, totalStories, {
-        limit,
-        offset,
-        sort,
-        query,
-      });
-      return Response.json({ stories: [], comments: [], metrics });
+      return Response.json(
+        { error: "Admin metrics require the Supabase admin role through /admin." },
+        { status: 403 }
+      );
     }
 
     const limit = numberParam(url, "limit", 80, 20, 120);

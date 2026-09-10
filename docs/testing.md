@@ -26,6 +26,7 @@ Ask each tester:
 3. Swipe when they want the next story.
 4. Like, comment, or share only when they genuinely feel it.
 5. Do not search for a specific story.
+6. If they reach a sign-up notice, ask whether it feels gentle or disruptive.
 
 Do not explain the algorithm before the session. The product promise is that the reader opens the app and starts reading.
 
@@ -35,6 +36,7 @@ After the session, ask:
 - Did any story feel worth finishing?
 - Did the interface disappear enough for focused reading?
 - Did you miss control, search, or choice?
+- Did the sign-up request arrive too early, too late, or at the right moment?
 - Would you open this during lunch, commute, or a break?
 
 ## Author Test Script
@@ -58,14 +60,17 @@ Watch for:
 
 Use `https://read.tryboks.workers.dev/admin`.
 
+Sign in with a permanent account that has `admin` role in Supabase. If this is the first admin, sign up as a reader first, open `/admin`, and use the first-admin claim. After one admin exists, new admins must be granted from the User management panel.
+
 After each small testing batch:
 
 1. Check funnel metrics.
 2. Check genre and mood rollups.
 3. Check recommendation comparison.
 4. Search and sort the story operations table.
-5. Export `boks-metrics.json`.
-6. Save the export with a date and cohort label outside the repo.
+5. Check User management for new permanent users, reads, likes, and roles.
+6. Export `boks-metrics.json`.
+7. Save the export with a date and cohort label outside the repo.
 
 Recommended export labels:
 
@@ -85,6 +90,10 @@ Reader:
 - Tapping/clicking reveals reactions.
 - There is no finished button.
 - Text remains readable on small phones and desktop.
+- No sign-up controls are visible before the reader opens the boks wordmark or reaches the guest notices.
+- Guest notices appear after 5 and 10 distinct viewed boks.
+- A guest cannot swipe past 15 distinct viewed boks without sign-up/sign-in.
+- Signed-in readers can open settings and recently read boks from the boks wordmark.
 
 Author:
 
@@ -98,6 +107,10 @@ Admin:
 - Search, sort, and pagination remain server-side.
 - Export includes the same major metrics shown in the UI.
 - Recommendation comparison stays attributed by algorithm where data exists.
+- Anonymous users cannot load admin metrics.
+- Regular reader accounts cannot load admin metrics.
+- Admins can grant and remove admin access from User management.
+- Admins cannot remove their own only admin access.
 
 ## Technical Validation
 
@@ -106,6 +119,7 @@ Run before every production deploy:
 ```bash
 npm run lint
 npm run verify:supabase
+npm run build
 node /Users/iegorov/.codex/plugins/cache/openai-bundled/sites/0.1.66/scripts/build-site.mjs
 ```
 
@@ -121,7 +135,7 @@ Then check:
 - `http://127.0.0.1:8787/author`
 - `http://127.0.0.1:8787/admin`
 - `http://127.0.0.1:8787/api/boks?view=reader&limit=20&visitorId=agent-check`
-- `http://127.0.0.1:8787/api/boks?view=admin&limit=20`
+- `http://127.0.0.1:8787/api/boks?view=admin&limit=20` returns `403`; admin metrics are loaded through Supabase role-checked RPCs from `/admin`.
 
 If the local port differs, use the URL printed by Wrangler.
 

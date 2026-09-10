@@ -11,12 +11,14 @@ Reader values:
 - No manual finished button.
 - Short stories or fragments that fit a 15 minute break.
 - Readers should not need onboarding to begin.
+- Reader accounts are optional until the guest limit is reached.
 
 Business values:
 
 - Decisions come from behavior and interviews together.
 - Metrics must be attributable to content, recommendation strategy, and cohort.
 - Admin tooling can be dense; reader tooling must be quiet.
+- Admin access must be granted from the admin panel and enforced in the database.
 - The MVP must remain cheap to change.
 
 Engineering values:
@@ -32,6 +34,7 @@ Engineering values:
 Use boks vocabulary consistently:
 
 - `reader`: person consuming stories.
+- `boks`: one short literature unit in product language.
 - `author`: person publishing stories.
 - `story`: browser-facing literature item.
 - `reel`: Supabase storage term for the current production MVP table.
@@ -41,6 +44,7 @@ Use boks vocabulary consistently:
 - `event`: captured behavior signal.
 - `metric`: aggregated decision signal.
 - `segment`: stable user grouping for experiment comparison.
+- `userProfile`: permanent Supabase profile and role record.
 
 Avoid generic names when a domain name is clearer:
 
@@ -61,6 +65,7 @@ Reader UI starts in:
 
 - `components/boks/reader-feed.tsx`
 - `components/boks/reader-behavior.ts`
+- `components/boks/user-auth-panel.tsx`
 - `app/globals.css`
 
 Author UI starts in:
@@ -96,6 +101,7 @@ Supabase schema starts in:
 - `lib/boks/recommendations.ts` owns algorithm registry and ranking formulas.
 - `lib/boks/analytics.ts` owns D1 aggregate SQL.
 - Supabase aggregate SQL belongs in Supabase migrations until extracted into a managed SQL source folder.
+- Supabase user role checks belong in RLS policies or security-definer RPCs. Browser components may display role state but must not enforce it alone.
 - Shared UI components in `components/boks/shared-ui.tsx` should stay small and product-neutral.
 
 ## Spec-Driven Development
@@ -169,6 +175,8 @@ Do not use browser storage for production metrics. Browser storage is only for:
 - anonymous local browser id
 - Supabase session persistence
 - lightweight reader preference state
+
+Do not store or trust admin roles in browser storage, URL params, `user_metadata`, or any user-editable field. Admin role state lives in `public.user_profiles.role` and must be enforced through RLS or explicit RPC checks.
 
 ## AI Agent Workflow
 

@@ -67,14 +67,26 @@ const blockedReelResult = await supabase.from("reels").insert({
 });
 assertOk(blockedReelResult.error, "RLS allowed browser insertion into reels.");
 
+const anonymousProfileResult = await supabase.rpc("ensure_boks_user_profile", {
+  p_display_name: "Anonymous check",
+});
+if (anonymousProfileResult.error) throw anonymousProfileResult.error;
+assertOk(anonymousProfileResult.data?.isAnonymous === true, "Anonymous profile check did not identify anonymous state.");
+assertOk(anonymousProfileResult.data?.role === "reader", "Anonymous profile returned a non-reader role.");
+
 const adminSnapshotResult = await supabase.rpc("get_boks_admin_snapshot", {
   p_limit: 10,
   p_offset: 0,
   p_query: "",
   p_sort: "signal",
 });
-if (adminSnapshotResult.error) throw adminSnapshotResult.error;
-assertOk(adminSnapshotResult.data?.funnel?.totalStories >= 1, "Admin snapshot did not return funnel metrics.");
+assertOk(adminSnapshotResult.error, "Anonymous auth could read admin metrics.");
+
+const blockedAdminGrantResult = await supabase.rpc("set_boks_admin_role", {
+  p_user_id: userId,
+  p_is_admin: true,
+});
+assertOk(blockedAdminGrantResult.error, "Anonymous auth could grant admin access.");
 
 console.log(
   JSON.stringify(
@@ -85,7 +97,9 @@ console.log(
       likeCreatedAndDeleted: true,
       rlsBlocksOtherUserWrites: true,
       rlsBlocksBrowserReelWrites: true,
-      adminSnapshotReadable: true,
+      anonymousProfileContext: true,
+      rlsBlocksAnonymousAdminSnapshot: true,
+      rlsBlocksAnonymousAdminGrant: true,
       checkedReel: reel.title,
     },
     null,

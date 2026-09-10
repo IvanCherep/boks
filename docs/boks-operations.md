@@ -11,6 +11,8 @@ Use `docs/testing.md` for structured reader, author, admin, and technical test s
 
 During interviews, watch whether readers discover that a tap brings the reaction buttons back. The default reading state intentionally hides most interface elements after the story starts. Completion is inferred when the reader leaves a story after meaningful time or scroll progress.
 
+Guest readers can read immediately. The product shows a gentle notice after 5 viewed boks, repeats after 10, and requires sign-up or sign-in after 15. The boks wordmark opens the optional account panel for settings and recently read boks.
+
 ## What to Watch
 
 - Start rate: starts divided by impressions. Target at this stage: 40% or higher.
@@ -27,8 +29,9 @@ Use `/author` during interviews. Ask an author to paste or write a short piece. 
 
 - Supabase production MVP:
   - `reels`: published story inventory for the public reader.
-  - `views`: anonymous reader impressions/views.
-  - `likes`: one like per anonymous user and reel.
+  - `views`: reader impressions/views for anonymous and permanent Supabase users.
+  - `likes`: one like per user and reel.
+  - `user_profiles`: permanent reader settings and the `reader` or `admin` role.
 - D1 compatibility path:
   - `stories`: published seed and author stories.
   - `events`: impressions, starts, completions, likes, shares, preferences, and publishes.
@@ -42,7 +45,18 @@ For this stage, use `/admin` to review global funnel metrics, genre and mood rol
 
 The reader feed assigns recommendation algorithms automatically. Do not tell testers which algorithm they are seeing. Use the Recommendation lab in `/admin` after attributed events accumulate, then export the JSON before changing algorithm weights.
 
-Before moving beyond the first cohort, add bulk import, full-text search, precomputed metric rollups, role-based admin access, moderation, and scheduled exports.
+Before moving beyond the first cohort, add bulk import, full-text search, precomputed metric rollups, moderation, password reset, and scheduled exports.
+
+## Admin Access
+
+Open `/admin` and sign in with a permanent account. If no admin exists yet, the first permanent account can claim admin inside `/admin`. After that, admin access is granted or removed only from the User management panel.
+
+Rules:
+
+- Anonymous users cannot become admins.
+- Regular readers cannot see metrics.
+- Admins cannot remove their own only admin access.
+- Do not edit `user_profiles.role` manually except for emergency recovery.
 
 ## Prototype URLs
 
@@ -59,4 +73,5 @@ Before moving beyond the first cohort, add bulk import, full-text search, precom
 - Use browser storage only for anonymous visitor/session ids, Supabase session persistence, and lightweight profile state. Production reader metrics stay in Supabase.
 - Export metrics before resetting or changing the production database.
 - Run `npm run verify:supabase` after Supabase config or migration changes.
+- After auth config changes, check Supabase dashboard settings for production redirect URL and manual anonymous-user linking. Avoid `supabase config push` when it would overwrite unrelated remote settings.
 - For future AI-assisted changes, start with `AGENTS.md`, `docs/architecture.md`, and the relevant spec in `specs/`.
