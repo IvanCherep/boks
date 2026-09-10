@@ -247,10 +247,13 @@ export function ReaderFeed() {
   const [commentText, setCommentText] = useState("");
   const [readerName, setReaderName] = useState("Reader");
   const [isSubmitting, setSubmitting] = useState(false);
+  const [readerChromeVisible, setReaderChromeVisible] = useState(true);
   const visitorId = useRef("anonymous");
   const sessionId = useRef("session");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const readStartedAt = useRef<number | null>(null);
+  const chromeTimer = useRef<number | null>(null);
+  const scrollIdleTimer = useRef<number | null>(null);
   const metricsRef = useRef<Metrics>(initialMetrics);
 
   useEffect(() => {
@@ -264,6 +267,27 @@ export function ReaderFeed() {
     load({ view: "reader", limit: 80, visitorId: visitorId.current }).catch((error) => setStatus(error.message));
     return () => window.clearTimeout(profileTimer);
   }, [load, setStatus]);
+
+  const hideReaderChrome = useCallback(() => {
+    if (!commentOpen) setReaderChromeVisible(false);
+  }, [commentOpen]);
+
+  const revealReaderChrome = useCallback((hideAfterMs = 3200) => {
+    setReaderChromeVisible(true);
+    if (chromeTimer.current) window.clearTimeout(chromeTimer.current);
+    if (hideAfterMs > 0) {
+      chromeTimer.current = window.setTimeout(() => {
+        if (!commentOpen) setReaderChromeVisible(false);
+      }, hideAfterMs);
+    }
+  }, [commentOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (chromeTimer.current) window.clearTimeout(chromeTimer.current);
+      if (scrollIdleTimer.current) window.clearTimeout(scrollIdleTimer.current);
+    };
+  }, []);
 
   const track = useCallback(async (eventType: string, storyId: string, value = 1, metadata = {}) => {
     const elapsed = readStartedAt.current
@@ -304,6 +328,7 @@ export function ReaderFeed() {
   useEffect(() => {
     if (!currentStoryId) return;
     readStartedAt.current = Date.now();
+    const revealTimer = window.setTimeout(() => revealReaderChrome(3800), 0);
     track("impression", currentStoryId, 1, {
       rank: selectedIndex,
       algorithm: experiment?.algorithmId ?? "unassigned",
@@ -312,19 +337,33 @@ export function ReaderFeed() {
 
     const startTimer = window.setTimeout(() => {
       track("start", currentStoryId, 1, { rank: selectedIndex }).catch(() => undefined);
+      hideReaderChrome();
     }, 1800);
 
-    return () => window.clearTimeout(startTimer);
-  }, [currentStoryId, experiment?.algorithmId, experiment?.userSegment, selectedIndex, track]);
+    return () => {
+      window.clearTimeout(revealTimer);
+      window.clearTimeout(startTimer);
+    };
+  }, [
+    currentStoryId,
+    experiment?.algorithmId,
+    experiment?.userSegment,
+    hideReaderChrome,
+    revealReaderChrome,
+    selectedIndex,
+    track,
+  ]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
+        revealReaderChrome(2400);
         skipStory();
       }
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault();
+        revealReaderChrome(2400);
         move(-1);
       }
     }
@@ -370,6 +409,7 @@ export function ReaderFeed() {
   function move(delta: number) {
     if (!rankedStories.length) return;
     setCommentOpen(false);
+    revealReaderChrome(3800);
     setSelectedIndex((index) => (index + delta + rankedStories.length) % rankedStories.length);
   }
 
@@ -469,6 +509,20 @@ export function ReaderFeed() {
     }
   }
 
+  function onReaderPointerDown(event: React.PointerEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    if (target.closest("button, a, input, textarea, select")) return;
+    revealReaderChrome(3600);
+  }
+
+  function onStoryScroll() {
+    hideReaderChrome();
+    if (scrollIdleTimer.current) window.clearTimeout(scrollIdleTimer.current);
+    scrollIdleTimer.current = window.setTimeout(() => {
+      revealReaderChrome(3000);
+    }, 1400);
+  }
+
   if (!currentStory) {
     return (
       <main className="reader-shell grid min-h-screen place-items-center px-6">
@@ -481,24 +535,29 @@ export function ReaderFeed() {
   }
 
   return (
-    <main className="reader-shell h-[100svh] overflow-hidden text-[var(--foreground)]">
+    <main
+      className={`reader-shell h-[100svh] overflow-hidden text-[var(--foreground)] ${
+        readerChromeVisible || commentOpen ? "reader-shell--chrome" : "reader-shell--focus"
+      }`}
+    >
       <section
         className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_84px]"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onPointerDown={onReaderPointerDown}
       >
         <article className="reader-card relative m-2 grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--reader)] shadow-[0_18px_70px_rgb(40_29_18/12%)] sm:m-4 lg:m-6">
-          <header className="z-10 flex items-center justify-between px-5 py-4 sm:px-8">
+          <header className="reader-topbar z-10 flex items-center justify-between px-5 py-4 sm:px-8">
             <p className="brand-word">boks</p>
-            <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+            <div className="reader-meta flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
               <BookOpen className="size-4" />
               <span>{currentStory.minutes} min</span>
             </div>
           </header>
 
-          <div className="story-scroll min-h-0 min-w-0 overflow-y-auto px-5 pb-28 sm:px-10 sm:pb-12 lg:px-16">
+          <div className="story-scroll min-h-0 min-w-0 overflow-y-auto px-5 pb-28 sm:px-10 sm:pb-12 lg:px-16" onScroll={onStoryScroll}>
             <div className="mx-auto flex min-h-full max-w-[760px] flex-col justify-start py-7 sm:py-12">
-              <div className="mb-5 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
+              <div className="story-tags mb-5 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
                 <span>{currentStory.genre}</span>
                 <span>·</span>
                 <span>{currentStory.mood}</span>
@@ -519,8 +578,8 @@ export function ReaderFeed() {
             </div>
           </div>
 
-          <footer className="z-10 flex items-end justify-between gap-4 px-5 py-4 sm:px-8">
-            <div>
+          <footer className="reader-footer z-10 flex items-end justify-between gap-4 px-5 py-4 sm:px-8">
+            <div className="reader-author">
               <p className="text-base font-semibold">{currentStory.authorName}</p>
               <p className="text-sm text-[var(--muted-foreground)]">{currentStory.authorHandle || "boks author"}</p>
             </div>
@@ -531,7 +590,7 @@ export function ReaderFeed() {
           </footer>
         </article>
 
-        <aside className="action-rail pointer-events-none absolute inset-x-4 bottom-4 z-20 flex justify-center gap-3 lg:static lg:inset-auto lg:flex-col lg:justify-center">
+        <aside className="action-rail reader-ui pointer-events-none absolute inset-x-4 bottom-4 z-20 flex justify-center gap-3 lg:static lg:inset-auto lg:flex-col lg:justify-center">
           <ActionButton label="Like" value={currentStory.likes} onClick={likeStory} active={liked[currentStory.id]}>
             <Heart className="size-5" />
           </ActionButton>

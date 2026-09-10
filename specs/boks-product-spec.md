@@ -12,6 +12,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 
 - Mobile-first responsive web app for MacBook, iPhone, and Android browsers.
 - Dedicated routes: `/` for the swipe-first reader, `/author` for publishing, `/admin` for business analysis.
+- Reader focus mode: the full interface appears briefly on a new story, then fades during reading so the story owns the screen. Tapping/clicking the reading surface reveals reactions and comments.
 - Shared D1 database for stories, comments, and analytics events.
 - Seed stories for immediate demos plus author-created stories.
 - Server-side recommendation ranking with deterministic anonymous experiment assignment.

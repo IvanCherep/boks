@@ -8,6 +8,8 @@
 4. Ask for one short comment after a story that strongly works or fails.
 5. After five to ten testers, open `/admin` and export `boks-metrics.json`.
 
+During interviews, watch whether readers discover that a tap brings the reaction buttons back. The default reading state intentionally hides most interface elements after the story starts.
+
 ## What to Watch
 
 - Start rate: starts divided by impressions. Target at this stage: 40% or higher.
