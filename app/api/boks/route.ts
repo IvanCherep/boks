@@ -7,6 +7,26 @@ import { seedStories } from "@/lib/boks/seed-stories";
 
 export const dynamic = "force-dynamic";
 
+function seedStoryRows(limit: number) {
+  return seedStories.slice(0, limit).map((story) => ({
+    id: story.id,
+    title: story.title,
+    authorName: story.authorName,
+    authorHandle: story.authorHandle,
+    hook: story.hook,
+    body: story.body,
+    genre: story.genre,
+    mood: story.mood,
+    minutes: story.minutes,
+    likes: 0,
+    shares: 0,
+    starts: 0,
+    completes: 0,
+    commentsCount: 0,
+    avgSeconds: 0,
+  }));
+}
+
 async function ensureSeedStories(db: D1Database) {
   await db.batch(
     seedStories.map((story) =>
@@ -180,10 +200,8 @@ async function getMetrics(
 
 export async function GET(request: Request) {
   try {
-    const db = getD1();
     const url = new URL(request.url);
     const view = url.searchParams.get("view") ?? "reader";
-    await ensureSeedStories(db);
 
     if (view === "admin") {
       return Response.json(
@@ -195,6 +213,25 @@ export async function GET(request: Request) {
     const limit = numberParam(url, "limit", 80, 20, 120);
     const visitorId = cleanText(url.searchParams.get("visitorId"), "anonymous").slice(0, 120);
     const experiment = resolveRecommendationExperiment(visitorId, url.searchParams.get("algorithm"));
+    let db: D1Database;
+
+    try {
+      db = getD1();
+    } catch {
+      const stories = seedStoryRows(limit);
+      return Response.json({
+        stories,
+        comments: [],
+        metrics: {
+          funnel: { totalStories: stories.length },
+          stories: [],
+          recentEvents: [],
+        },
+        experiment,
+      });
+    }
+
+    await ensureSeedStories(db);
     const [stories, totalStories] = await Promise.all([
       getReaderStories(db, limit, experiment.algorithmId),
       getAdminStoryCount(db, ""),
