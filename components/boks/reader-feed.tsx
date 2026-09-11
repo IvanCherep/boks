@@ -14,6 +14,7 @@ import {
   getBrowserId,
   inferReadOutcome,
   profileBump,
+  readAnonymousReadState,
   readAnonymousNoticeState,
   readProfile,
   recordAnonymousBoksRead,
@@ -165,22 +166,29 @@ export function ReaderFeed() {
     }).catch(() => undefined);
 
     if (isGuestReader && !countedAnonymousStories.current.has(currentStoryId)) {
-      countedAnonymousStories.current.add(currentStoryId);
-      const nextCount = recordAnonymousBoksRead(currentStoryId);
-      setGuestReadCount(nextCount);
+      const anonymousState = readAnonymousReadState();
+      const alreadyRead = anonymousState.storyIds.includes(currentStoryId);
 
-      const notices = readAnonymousNoticeState();
-      if (nextCount === anonymousReadLimits.firstNotice && !notices.first) {
-        window.setTimeout(() => setGuestNoticeStep(anonymousReadLimits.firstNotice), 0);
-        saveAnonymousNoticeState({ ...notices, first: true });
-      } else if (nextCount === anonymousReadLimits.secondNotice && !notices.second) {
-        window.setTimeout(() => setGuestNoticeStep(anonymousReadLimits.secondNotice), 0);
-        saveAnonymousNoticeState({ ...notices, second: true });
-      } else if (nextCount >= anonymousReadLimits.requiredSignup) {
+      if (!alreadyRead && anonymousState.storyIds.length >= anonymousReadLimits.requiredSignup) {
         window.setTimeout(() => {
+          setGuestReadCount(anonymousState.storyIds.length);
           setAuthReason("required");
           setAuthPanelOpen(true);
+          setGuestNoticeStep(null);
         }, 0);
+      } else {
+        countedAnonymousStories.current.add(currentStoryId);
+        const nextCount = recordAnonymousBoksRead(currentStoryId);
+        window.setTimeout(() => setGuestReadCount(nextCount), 0);
+
+        const notices = readAnonymousNoticeState();
+        if (nextCount === anonymousReadLimits.firstNotice && !notices.first) {
+          window.setTimeout(() => setGuestNoticeStep(anonymousReadLimits.firstNotice), 0);
+          saveAnonymousNoticeState({ ...notices, first: true });
+        } else if (nextCount === anonymousReadLimits.secondNotice && !notices.second) {
+          window.setTimeout(() => setGuestNoticeStep(anonymousReadLimits.secondNotice), 0);
+          saveAnonymousNoticeState({ ...notices, second: true });
+        }
       }
     }
 
@@ -307,7 +315,7 @@ export function ReaderFeed() {
 
   async function nextStory(reason: "swipe" | "button" | "keyboard" = "swipe") {
     await recordReadingOutcome(reason);
-    if (isGuestReader && guestReadCount >= anonymousReadLimits.requiredSignup) {
+    if (isGuestReader && getAnonymousBoksReadCount() >= anonymousReadLimits.requiredSignup) {
       openAccount("required");
       return;
     }
@@ -521,15 +529,15 @@ export function ReaderFeed() {
           <div className="guest-notice">
             <div>
               <p className="text-sm font-semibold">
-                {guestNoticeStep === 5 ? "You have read 5 boks as a guest." : "You have read 10 boks as a guest."}
+                {guestNoticeStep === 5 ? "10 free boks left" : "5 free boks left"}
               </p>
               <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                Guest reading is open for 15 boks. Sign up when you want to save history and keep going.
+                Create an account when you want to save your reading history and keep going after the guest limit.
               </p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setGuestNoticeStep(null)}>Later</Button>
-              <Button onClick={() => openAccount("notice")}>Sign in</Button>
+              <Button onClick={() => openAccount("notice")}>Create account</Button>
             </div>
           </div>
         )}

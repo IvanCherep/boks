@@ -6,6 +6,7 @@ import { BookOpen, LogOut, Shield, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { genres, moods } from "@/components/boks/constants";
+import { anonymousReadLimits } from "@/components/boks/reader-behavior";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
 import {
   ensureBoksProfile,
@@ -122,11 +123,12 @@ export function UserAuthPanel({ open, reason, guestReadCount, onClose, onUserCha
 
   const signedIn = user && !user.isAnonymous;
   const required = reason === "required";
+  const remainingGuestBoks = Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount);
   const noticeText = required
-    ? "Create a free account to keep reading boks."
-    : guestReadCount >= 10
-      ? "You can read 15 boks as a guest. Create an account now to keep your history."
-      : "You can keep reading as a guest. An account saves your history and settings.";
+    ? "You have read 15 boks as a guest. Sign up or sign in to keep reading."
+    : reason === "notice"
+      ? `${remainingGuestBoks} free boks left. Create an account to save your reading history and settings.`
+      : "Create an account to save your reading history and settings.";
 
   return (
     <div className="auth-overlay" role="dialog" aria-modal="true" aria-label="boks account">
