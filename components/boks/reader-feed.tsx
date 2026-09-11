@@ -22,7 +22,12 @@ import {
   saveProfile,
 } from "@/components/boks/reader-behavior";
 import { ActionButton } from "@/components/boks/shared-ui";
-import { loadBoksUserContext, recordSupabaseView, setSupabaseLike } from "@/components/boks/supabase-browser-data";
+import {
+  loadBoksUserContext,
+  loadSupabaseStory,
+  recordSupabaseView,
+  setSupabaseLike,
+} from "@/components/boks/supabase-browser-data";
 import { supabase } from "@/lib/boks/supabase-client";
 import { type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
@@ -54,6 +59,8 @@ export function ReaderFeed() {
   const [authInitialMode, setAuthInitialMode] = useState<AuthPanelMode>("signup");
   const [guestReadCount, setGuestReadCount] = useState(0);
   const [guestNoticeStep, setGuestNoticeStep] = useState<5 | 10 | null>(null);
+  const [libraryStories, setLibraryStories] = useState<Story[]>([]);
+  const [pendingLibraryStoryId, setPendingLibraryStoryId] = useState<string | null>(null);
   const visitorId = useRef("anonymous");
   const sessionId = useRef("session");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -156,12 +163,16 @@ export function ReaderFeed() {
   }, [experiment?.algorithmId, experiment?.userSegment, isSupabaseReader, selectedIndex, supabaseUserId]);
 
   const rankedStories = useMemo(() => {
-    return [...stories].sort((a, b) => {
+    const storyMap = new Map<string, Story>();
+    libraryStories.forEach((story) => storyMap.set(story.id, story));
+    stories.forEach((story) => storyMap.set(story.id, story));
+
+    return [...storyMap.values()].sort((a, b) => {
       const fatigue = (story: Story) =>
         (profile.completed.includes(story.id) ? 2 : 0) + (profile.skipped.includes(story.id) ? 1 : 0);
       return fatigue(a) - fatigue(b);
     });
-  }, [profile.completed, profile.skipped, stories]);
+  }, [libraryStories, profile.completed, profile.skipped, stories]);
 
   const currentStory = rankedStories[selectedIndex] ?? rankedStories[0];
   const currentStoryId = currentStory?.id;
@@ -169,6 +180,22 @@ export function ReaderFeed() {
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
   const isGuestReader = isSupabaseReader && (!user || user.isAnonymous);
+
+  useEffect(() => {
+    if (!pendingLibraryStoryId) return;
+    const index = rankedStories.findIndex((story) => story.id === pendingLibraryStoryId);
+    if (index < 0) return;
+
+    const handle = window.setTimeout(() => {
+      setCommentOpen(false);
+      setSelectedIndex(index);
+      setAuthPanelOpen(false);
+      setPendingLibraryStoryId(null);
+      revealReaderChrome(3800);
+    }, 0);
+
+    return () => window.clearTimeout(handle);
+  }, [pendingLibraryStoryId, rankedStories, revealReaderChrome]);
 
   useEffect(() => {
     if (!currentStoryId) return;
@@ -293,6 +320,38 @@ export function ReaderFeed() {
     setAuthPanelOpen(true);
     setGuestNoticeStep(null);
     revealReaderChrome(0);
+  }
+
+  async function openReadBoks(storyId: string) {
+    if (currentStoryId === storyId) {
+      if (storyScroll.current) storyScroll.current.scrollTop = 0;
+      setAuthPanelOpen(false);
+      revealReaderChrome(3800);
+      track("impression", storyId, 1, { from: "library", reread: true }).catch(() => undefined);
+      return;
+    }
+
+    const existingIndex = rankedStories.findIndex((story) => story.id === storyId);
+    if (existingIndex >= 0) {
+      setCommentOpen(false);
+      setSelectedIndex(existingIndex);
+      setAuthPanelOpen(false);
+      revealReaderChrome(3800);
+      return;
+    }
+
+    try {
+      const story = await loadSupabaseStory(storyId);
+      if (!story) {
+        setStatus("This boks is no longer available.");
+        return;
+      }
+
+      setLibraryStories((current) => [story, ...current.filter((item) => item.id !== story.id)]);
+      setPendingLibraryStoryId(story.id);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not open this boks.");
+    }
   }
 
   function elapsedReadingSeconds() {
@@ -606,6 +665,7 @@ export function ReaderFeed() {
           guestReadCount={guestReadCount}
           currentUser={user}
           onClose={() => setAuthPanelOpen(false)}
+          onOpenReadBoks={openReadBoks}
           onUserChanged={handleUserChanged}
         />
       </section>

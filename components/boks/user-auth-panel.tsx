@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { BookOpen, KeyRound, LogOut, Mail, Shield, UserRound, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookOpen, KeyRound, LogOut, Mail, Search, Shield, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { genres, moods } from "@/components/boks/constants";
 import { anonymousReadLimits } from "@/components/boks/reader-behavior";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
 import {
@@ -35,6 +34,7 @@ type UserAuthPanelProps = {
   guestReadCount: number;
   currentUser: BoksUserContext | null;
   onClose: () => void;
+  onOpenReadBoks: (storyId: string) => void;
   onUserChanged: (user: BoksUserContext | null) => void;
 };
 
@@ -45,6 +45,7 @@ export function UserAuthPanel({
   guestReadCount,
   currentUser,
   onClose,
+  onOpenReadBoks,
   onUserChanged,
 }: UserAuthPanelProps) {
   const [mode, setMode] = useState<AuthPanelMode>(initialMode);
@@ -54,19 +55,23 @@ export function UserAuthPanel({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("Reader");
-  const [preferredGenre, setPreferredGenre] = useState(genres[0]);
-  const [preferredMood, setPreferredMood] = useState(moods[0]);
+  const [libraryQuery, setLibraryQuery] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
+  const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
+  const visibleLibrary = useMemo(() => {
+    if (!normalizedLibraryQuery) return library;
+    return library.filter((item) =>
+      `${item.title} ${item.authorName}`.toLowerCase().includes(normalizedLibraryQuery)
+    );
+  }, [library, normalizedLibraryQuery]);
 
   const refreshUser = useCallback(async () => {
     const context = await loadBoksUserContext();
     setUser(context);
     setDisplayName(context?.displayName || "Reader");
-    setPreferredGenre(context?.preferredGenre || genres[0]);
-    setPreferredMood(context?.preferredMood || moods[0]);
 
     if (context && !context.isAnonymous) {
       const items = await loadReaderLibrary();
@@ -95,8 +100,6 @@ export function UserAuthPanel({
       setUser(currentUser);
       if (currentUser && !currentUser.isAnonymous) {
         setDisplayName(currentUser.displayName || "Reader");
-        setPreferredGenre(currentUser.preferredGenre || genres[0]);
-        setPreferredMood(currentUser.preferredMood || moods[0]);
       }
     }, 0);
     return () => window.clearTimeout(handle);
@@ -236,7 +239,7 @@ export function UserAuthPanel({
     setBusy(true);
     setStatus("");
     try {
-      const next = await updateBoksProfile({ displayName, preferredGenre, preferredMood });
+      const next = await updateBoksProfile({ displayName });
       setUser(next);
       onUserChanged(next);
       setStatus("Settings saved.");
@@ -245,6 +248,11 @@ export function UserAuthPanel({
     } finally {
       setBusy(false);
     }
+  }
+
+  function openReadBoks(storyId: string) {
+    onOpenReadBoks(storyId);
+    onClose();
   }
 
   async function signOut() {
@@ -284,6 +292,11 @@ export function UserAuthPanel({
         : mode === "setPassword"
           ? "Choose a new password"
           : "Create your boks account";
+  const emailInputId =
+    mode === "signin" ? "boks-signin-username" : mode === "recover" ? "boks-recovery-username" : "boks-signup-email";
+  const passwordInputId =
+    mode === "signin" ? "boks-signin-password" : mode === "setPassword" ? "boks-new-password" : "boks-signup-password";
+  const emailAutocomplete = mode === "signin" || mode === "recover" ? "username" : "email";
 
   return (
     <div className="auth-overlay" role="dialog" aria-modal="true" aria-label="boks account">
@@ -336,34 +349,6 @@ export function UserAuthPanel({
                   onChange={(event) => setDisplayName(event.target.value)}
                 />
               </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-sm font-medium" htmlFor="boks-preferred-genre">
-                  Genre
-                  <select
-                    id="boks-preferred-genre"
-                    className="field-control"
-                    value={preferredGenre}
-                    onChange={(event) => setPreferredGenre(event.target.value)}
-                  >
-                    {genres.map((genre) => (
-                      <option key={genre} value={genre}>{genre}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm font-medium" htmlFor="boks-preferred-mood">
-                  Mood
-                  <select
-                    id="boks-preferred-mood"
-                    className="field-control"
-                    value={preferredMood}
-                    onChange={(event) => setPreferredMood(event.target.value)}
-                  >
-                    {moods.map((mood) => (
-                      <option key={mood} value={mood}>{mood}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
               <Button onClick={saveSettings} disabled={busy}>
                 <UserRound className="size-4" /> Save settings
               </Button>
@@ -374,16 +359,37 @@ export function UserAuthPanel({
 
             <div>
               <h2 className="text-base font-semibold tracking-normal">Recently read</h2>
+              <label className="relative mt-3 block" htmlFor="boks-library-search">
+                <span className="sr-only">Search read boks</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+                <Input
+                  id="boks-library-search"
+                  name="search-read-boks"
+                  type="search"
+                  autoComplete="off"
+                  placeholder="Search read boks"
+                  className="pl-9"
+                  value={libraryQuery}
+                  onChange={(event) => setLibraryQuery(event.target.value)}
+                />
+              </label>
               <div className="mt-3 grid max-h-[240px] gap-2 overflow-y-auto pr-1">
-                {library.length ? library.map((item) => (
-                  <div key={`${item.storyId}-${item.readAt}`} className="rounded-lg bg-[var(--muted)] p-3">
-                    <p className="font-medium">{item.title}</p>
-                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                {visibleLibrary.length ? visibleLibrary.map((item) => (
+                  <button
+                    key={`${item.storyId}-${item.readAt}`}
+                    type="button"
+                    className="library-item"
+                    onClick={() => openReadBoks(item.storyId)}
+                  >
+                    <span className="font-medium">{item.title}</span>
+                    <span className="mt-1 text-sm text-[var(--muted-foreground)]">
                       {item.authorName} · {item.minutes} min{item.liked ? " · liked" : ""}
-                    </p>
-                  </div>
+                    </span>
+                  </button>
                 )) : (
-                  <p className="text-sm text-[var(--muted-foreground)]">Your read boks will appear here.</p>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    {library.length ? "No read boks match this search." : "Your read boks will appear here."}
+                  </p>
                 )}
               </div>
             </div>
@@ -393,7 +399,7 @@ export function UserAuthPanel({
             </Button>
           </div>
         ) : (
-          <form className="mt-6 grid gap-4" autoComplete="on" onSubmit={submitAuth}>
+          <form key={mode} className="mt-6 grid gap-4" autoComplete="on" data-auth-mode={mode} onSubmit={submitAuth}>
             {mode !== "recover" && mode !== "setPassword" && (
               <div className="grid grid-cols-2 rounded-lg bg-[var(--muted)] p-1">
                 <button type="button" className={`auth-tab ${mode === "signup" ? "is-active" : ""}`} onClick={() => switchMode("signup")}>
@@ -406,10 +412,10 @@ export function UserAuthPanel({
             )}
 
             {mode === "signup" && (
-              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-auth-name">
+              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-signup-name">
                 Name
                 <Input
-                  id="boks-auth-name"
+                  id="boks-signup-name"
                   name="name"
                   autoComplete="name"
                   value={displayName}
@@ -419,14 +425,17 @@ export function UserAuthPanel({
             )}
 
             {mode !== "setPassword" && (
-              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-auth-email">
+              <label className="grid gap-1 text-sm font-medium" htmlFor={emailInputId}>
                 Email
                 <Input
-                  id="boks-auth-email"
-                  name="email"
+                  key={emailInputId}
+                  id={emailInputId}
+                  name={mode === "signin" || mode === "recover" ? "username" : "email"}
                   type="email"
                   inputMode="email"
-                  autoComplete="email"
+                  autoComplete={emailAutocomplete}
+                  autoCapitalize="none"
+                  spellCheck={false}
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -435,13 +444,15 @@ export function UserAuthPanel({
             )}
 
             {mode !== "recover" && (
-              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-auth-password">
+              <label className="grid gap-1 text-sm font-medium" htmlFor={passwordInputId}>
                 {mode === "setPassword" ? "New password" : "Password"}
                 <Input
-                  id="boks-auth-password"
-                  name={mode === "signin" ? "current-password" : "new-password"}
+                  key={passwordInputId}
+                  id={passwordInputId}
+                  name={mode === "signin" ? "password" : "new-password"}
                   type="password"
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  enterKeyHint="done"
                   minLength={mode === "signin" ? 6 : 8}
                   required
                   value={password}
@@ -451,13 +462,14 @@ export function UserAuthPanel({
             )}
 
             {(mode === "signup" || mode === "setPassword") && (
-              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-auth-confirm-password">
+              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-confirm-new-password">
                 Confirm password
                 <Input
-                  id="boks-auth-confirm-password"
-                  name="confirm-password"
+                  id="boks-confirm-new-password"
+                  name="confirm-new-password"
                   type="password"
                   autoComplete="new-password"
+                  enterKeyHint="done"
                   minLength={8}
                   required
                   value={confirmPassword}

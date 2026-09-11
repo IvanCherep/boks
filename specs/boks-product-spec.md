@@ -18,7 +18,8 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Guest readers start immediately with no visible sign-up wall. After 5 viewed boks they see a gentle notice, after 10 they see a second notice, and after 15 they must sign up or sign in to continue.
 - Sign-up and sign-in must use browser-standard form semantics: named fields, email autocomplete, current/new password autocomplete, confirm-password checks, submit buttons, clear status text, and a forgot-password path.
 - New accounts must accept the current Terms before creation. The profile stores the accepted terms version and timestamp. The Terms include the author content license needed for boks to host, recommend, distribute, promote, demo, and advertise submitted works while authors retain ownership.
-- Signed-in readers can open the boks wordmark to manage settings, recent read boks, and password changes.
+- Signed-in readers can open the boks wordmark to manage identity settings, search recent read boks, reopen a read boks inside the feed, and change their password.
+- Reader accounts must not expose genre, mood, category, or algorithm preference controls. The feed learns from behavior instead of asking the reader to configure what they want.
 - Admin access is a database-backed role on `user_profiles`. Admins can grant or remove admin status only from `/admin`; the only exception is first-admin bootstrap when no admin exists yet.
 - D1 compatibility backend for the original author cabinet, comments, and richer analytics event prototype path.
 - Seed stories for immediate demos plus author-created stories.
@@ -32,7 +33,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Do readers start stories when the promise is under 15 minutes?
 - Do they complete after starting?
 - Do they react or comment after completion?
-- Which mood and genre combinations perform best?
+- Which story attributes correlate with starts, completions, rereads, and reactions?
 - Do authors understand the 15 minute constraint and submit suitable pieces?
 - Does hiding manual choice improve story starts compared with chooser-based browsing?
 

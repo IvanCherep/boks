@@ -38,6 +38,26 @@ type SupabaseLibraryViewRow = {
   } | null;
 };
 
+function mapSupabaseReelToStory(reel: SupabaseReelRow, likedSet = new Set<string>()): Story {
+  return {
+    id: reel.id,
+    title: reel.title,
+    authorName: reel.author_name,
+    authorHandle: reel.author_handle,
+    hook: reel.hook,
+    body: reel.text,
+    genre: reel.genre,
+    mood: reel.mood,
+    minutes: reel.minutes,
+    likes: likedSet.has(reel.id) ? 1 : 0,
+    shares: 0,
+    starts: 0,
+    completes: 0,
+    commentsCount: 0,
+    avgSeconds: 0,
+  };
+}
+
 export type SupabaseReaderPayload = {
   stories: Story[];
   comments: [];
@@ -71,23 +91,7 @@ export async function loadSupabaseReaderFeed(limit: number): Promise<SupabaseRea
   const likedStoryIds = await loadLikedStoryIds(userId, reelIds);
   const likedSet = new Set(likedStoryIds);
 
-  const stories = reelRows.map((reel) => ({
-    id: reel.id,
-    title: reel.title,
-    authorName: reel.author_name,
-    authorHandle: reel.author_handle,
-    hook: reel.hook,
-    body: reel.text,
-    genre: reel.genre,
-    mood: reel.mood,
-    minutes: reel.minutes,
-    likes: likedSet.has(reel.id) ? 1 : 0,
-    shares: 0,
-    starts: 0,
-    completes: 0,
-    commentsCount: 0,
-    avgSeconds: 0,
-  }));
+  const stories = reelRows.map((reel) => mapSupabaseReelToStory(reel, likedSet));
 
   return {
     stories,
@@ -152,8 +156,6 @@ export async function ensureBoksProfile(displayName = ""): Promise<BoksUserConte
 
 export async function updateBoksProfile(input: {
   displayName: string;
-  preferredGenre: string;
-  preferredMood: string;
 }): Promise<BoksUserContext | null> {
   if (!supabase) return null;
 
@@ -161,8 +163,6 @@ export async function updateBoksProfile(input: {
     .from("user_profiles")
     .update({
       display_name: input.displayName.trim() || "Reader",
-      preferred_genre: input.preferredGenre,
-      preferred_mood: input.preferredMood,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", (await getCurrentSupabaseUser())?.id);
@@ -183,7 +183,7 @@ export async function acceptBoksTerms(termsVersion: string): Promise<BoksUserCon
   return result.data as BoksUserContext;
 }
 
-export async function loadReaderLibrary(limit = 24): Promise<ReaderLibraryItem[]> {
+export async function loadReaderLibrary(limit = 120): Promise<ReaderLibraryItem[]> {
   if (!supabase) return [];
 
   const user = await getCurrentSupabaseUser();
@@ -212,6 +212,26 @@ export async function loadReaderLibrary(limit = 24): Promise<ReaderLibraryItem[]
       readAt: row.created_at,
       liked: liked.has(row.reel_id),
     }));
+}
+
+export async function loadSupabaseStory(storyId: string): Promise<Story | null> {
+  if (!supabase) return null;
+
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) return null;
+
+  const reelResult = await supabase
+    .from("reels")
+    .select("id,title,author_name,author_handle,hook,text,genre,mood,minutes,created_at")
+    .eq("id", storyId)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (reelResult.error) throw reelResult.error;
+  if (!reelResult.data) return null;
+
+  const likedStoryIds = await loadLikedStoryIds(user.id, [storyId]);
+  return mapSupabaseReelToStory(reelResult.data as SupabaseReelRow, new Set(likedStoryIds));
 }
 
 export async function claimInitialBoksAdmin(): Promise<BoksUserContext | null> {

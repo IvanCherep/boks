@@ -355,6 +355,29 @@ textarea {
   text-underline-offset: 0.2rem;
 }
 
+.library-item {
+  display: grid;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: var(--muted);
+  padding: 0.75rem;
+  color: var(--foreground);
+  text-align: left;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.library-item:hover,
+.library-item:focus-visible {
+  border-color: var(--border);
+  background: var(--reader);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .guest-notice {
   position: absolute;
   inset-inline: 1rem;

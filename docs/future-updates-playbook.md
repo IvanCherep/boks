@@ -5,6 +5,7 @@ Use this guide before changing the app. It keeps updates small, testable, and ea
 ## Product Rules
 
 - Keep `/` as one algorithmic reading feed. Do not add catalogs, shelves, manual story picking, or reader-facing algorithm controls.
+- Do not add reader genre, mood, category, or mode preferences. Settings are for identity, security, and personal history; recommendation quality must come from observed behavior.
 - Keep reading focused. The story should own the screen after the reader starts reading; actions can appear on tap, hover, pause, or story change.
 - Do not add a finished button. Infer completion, skip, and drop-off from time, scroll progress, and swipe timing.
 - Keep visible reader copy minimal. Explain decisions in docs, not inside the reader surface.
