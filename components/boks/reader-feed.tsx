@@ -55,9 +55,9 @@ export function ReaderFeed() {
   const visitorId = useRef("anonymous");
   const sessionId = useRef("session");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const readStartedAt = useRef<number | null>(null);
   const chromeTimer = useRef<number | null>(null);
-  const scrollIdleTimer = useRef<number | null>(null);
   const storyScroll = useRef<HTMLDivElement | null>(null);
   const storyProgress = useRef<Record<string, number>>({});
   const trackedOutcomes = useRef<Set<string>>(new Set());
@@ -104,7 +104,6 @@ export function ReaderFeed() {
   useEffect(() => {
     return () => {
       if (chromeTimer.current) window.clearTimeout(chromeTimer.current);
-      if (scrollIdleTimer.current) window.clearTimeout(scrollIdleTimer.current);
     };
   }, []);
 
@@ -409,13 +408,7 @@ export function ReaderFeed() {
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     touchStart.current = null;
-    if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) {
-      if (dy < 0) {
-        nextStory("swipe");
-      } else {
-        move(-1);
-      }
-    }
+
     if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)) {
       if (dx < 0) {
         nextStory("swipe");
@@ -428,16 +421,26 @@ export function ReaderFeed() {
   function onReaderPointerDown(event: React.PointerEvent<HTMLElement>) {
     const target = event.target as HTMLElement;
     if (target.closest("button, a, input, textarea, select")) return;
-    revealReaderChrome(3600);
+    pointerStart.current = { x: event.clientX, y: event.clientY };
+  }
+
+  function onReaderPointerUp(event: React.PointerEvent<HTMLElement>) {
+    const start = pointerStart.current;
+    pointerStart.current = null;
+    if (!start) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest("button, a, input, textarea, select")) return;
+
+    const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+    if (moved <= 10) {
+      revealReaderChrome(4200);
+    }
   }
 
   function onStoryScroll() {
     updateStoryProgress();
     hideReaderChrome();
-    if (scrollIdleTimer.current) window.clearTimeout(scrollIdleTimer.current);
-    scrollIdleTimer.current = window.setTimeout(() => {
-      revealReaderChrome(3000);
-    }, 1400);
   }
 
   if (!currentStory) {
@@ -462,6 +465,7 @@ export function ReaderFeed() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onPointerDown={onReaderPointerDown}
+        onPointerUp={onReaderPointerUp}
       >
         <article className="reader-card relative m-2 grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--reader)] shadow-[0_18px_70px_rgb(40_29_18/12%)] sm:m-4 lg:m-6">
           <header className="reader-topbar z-10 flex items-center justify-between px-5 py-4 sm:px-8">
@@ -581,6 +585,7 @@ export function ReaderFeed() {
           open={authPanelOpen}
           reason={authReason}
           guestReadCount={guestReadCount}
+          currentUser={user}
           onClose={() => setAuthPanelOpen(false)}
           onUserChanged={handleUserChanged}
         />

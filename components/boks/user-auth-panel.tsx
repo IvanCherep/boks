@@ -20,11 +20,12 @@ type UserAuthPanelProps = {
   open: boolean;
   reason: "manual" | "notice" | "required";
   guestReadCount: number;
+  currentUser: BoksUserContext | null;
   onClose: () => void;
   onUserChanged: (user: BoksUserContext | null) => void;
 };
 
-export function UserAuthPanel({ open, reason, guestReadCount, onClose, onUserChanged }: UserAuthPanelProps) {
+export function UserAuthPanel({ open, reason, guestReadCount, currentUser, onClose, onUserChanged }: UserAuthPanelProps) {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [library, setLibrary] = useState<ReaderLibraryItem[]>([]);
@@ -35,11 +36,11 @@ export function UserAuthPanel({ open, reason, guestReadCount, onClose, onUserCha
   const [preferredMood, setPreferredMood] = useState(moods[0]);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [accountLoading, setAccountLoading] = useState(false);
 
   const refreshUser = useCallback(async () => {
     const context = await loadBoksUserContext();
     setUser(context);
-    onUserChanged(context);
     setDisplayName(context?.displayName || "Reader");
     setPreferredGenre(context?.preferredGenre || genres[0]);
     setPreferredMood(context?.preferredMood || moods[0]);
@@ -50,12 +51,29 @@ export function UserAuthPanel({ open, reason, guestReadCount, onClose, onUserCha
     } else {
       setLibrary([]);
     }
-  }, [onUserChanged]);
+    return context;
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     const handle = window.setTimeout(() => {
-      refreshUser().catch((error) => setStatus(error instanceof Error ? error.message : "Could not load account"));
+      setUser(currentUser);
+      if (currentUser && !currentUser.isAnonymous) {
+        setDisplayName(currentUser.displayName || "Reader");
+        setPreferredGenre(currentUser.preferredGenre || genres[0]);
+        setPreferredMood(currentUser.preferredMood || moods[0]);
+      }
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, [open, currentUser]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = window.setTimeout(() => {
+      setAccountLoading(true);
+      refreshUser()
+        .catch((error) => setStatus(error instanceof Error ? error.message : "Could not load account"))
+        .finally(() => setAccountLoading(false));
     }, 0);
     return () => window.clearTimeout(handle);
   }, [open, refreshUser]);
@@ -80,7 +98,8 @@ export function UserAuthPanel({ open, reason, guestReadCount, onClose, onUserCha
       }
       setEmail("");
       setPassword("");
-      await refreshUser();
+      const context = await refreshUser();
+      onUserChanged(context);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not update account.");
     } finally {
@@ -145,7 +164,11 @@ export function UserAuthPanel({ open, reason, guestReadCount, onClose, onUserCha
           )}
         </header>
 
-        {signedIn ? (
+        {accountLoading && !user ? (
+          <div className="mt-6 rounded-lg bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">
+            Checking account...
+          </div>
+        ) : signedIn ? (
           <div className="mt-6 grid gap-5">
             <div className="rounded-lg border border-[var(--border)] bg-[var(--reader)] p-4">
               <div className="flex items-center justify-between gap-3">
