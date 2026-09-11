@@ -74,6 +74,8 @@ export type BoksUserContext = {
   displayName: string;
   preferredGenre: string;
   preferredMood: string;
+  termsAcceptedAt: string | null;
+  termsVersion: string | null;
   hasAnyAdmin: boolean;
   views: number;
   likes: number;

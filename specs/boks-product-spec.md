@@ -16,7 +16,9 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - In product language, a `boks` is one short literature unit, similar to one reel in Instagram. In Supabase storage, the current table is still named `reels`.
 - Supabase production MVP for anonymous reader entry, email sign-up/sign-in, permanent reader profiles, public reels, views, likes, and admin aggregate metrics.
 - Guest readers start immediately with no visible sign-up wall. After 5 viewed boks they see a gentle notice, after 10 they see a second notice, and after 15 they must sign up or sign in to continue.
-- Signed-in readers can open the boks wordmark to manage settings and recent read boks.
+- Sign-up and sign-in must use browser-standard form semantics: named fields, email autocomplete, current/new password autocomplete, confirm-password checks, submit buttons, clear status text, and a forgot-password path.
+- New accounts must accept the current Terms before creation. The profile stores the accepted terms version and timestamp. The Terms include the author content license needed for boks to host, recommend, distribute, promote, demo, and advertise submitted works while authors retain ownership.
+- Signed-in readers can open the boks wordmark to manage settings, recent read boks, and password changes.
 - Admin access is a database-backed role on `user_profiles`. Admins can grant or remove admin status only from `/admin`; the only exception is first-admin bootstrap when no admin exists yet.
 - D1 compatibility backend for the original author cabinet, comments, and richer analytics event prototype path.
 - Seed stories for immediate demos plus author-created stories.

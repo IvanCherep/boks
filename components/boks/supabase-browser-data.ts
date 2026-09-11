@@ -172,6 +172,17 @@ export async function updateBoksProfile(input: {
   return loadBoksUserContext();
 }
 
+export async function acceptBoksTerms(termsVersion: string): Promise<BoksUserContext | null> {
+  if (!supabase) return null;
+
+  const result = await supabase.rpc("accept_boks_terms", {
+    p_terms_version: termsVersion,
+  });
+  if (result.error) throw result.error;
+
+  return result.data as BoksUserContext;
+}
+
 export async function loadReaderLibrary(limit = 24): Promise<ReaderLibraryItem[]> {
   if (!supabase) return [];
 

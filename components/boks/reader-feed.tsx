@@ -23,7 +23,8 @@ import {
 } from "@/components/boks/reader-behavior";
 import { ActionButton } from "@/components/boks/shared-ui";
 import { loadBoksUserContext, recordSupabaseView, setSupabaseLike } from "@/components/boks/supabase-browser-data";
-import { UserAuthPanel } from "@/components/boks/user-auth-panel";
+import { supabase } from "@/lib/boks/supabase-client";
+import { type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
 
 export function ReaderFeed() {
@@ -50,6 +51,7 @@ export function ReaderFeed() {
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
   const [authReason, setAuthReason] = useState<"manual" | "notice" | "required">("manual");
+  const [authInitialMode, setAuthInitialMode] = useState<AuthPanelMode>("signup");
   const [guestReadCount, setGuestReadCount] = useState(0);
   const [guestNoticeStep, setGuestNoticeStep] = useState<5 | 10 | null>(null);
   const visitorId = useRef("anonymous");
@@ -100,6 +102,21 @@ export function ReaderFeed() {
       }, hideAfterMs);
     }
   }, [commentOpen]);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    const result = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setAuthReason("manual");
+        setAuthInitialMode("setPassword");
+        setAuthPanelOpen(true);
+        revealReaderChrome(0);
+      }
+    });
+
+    return () => result.data.subscription.unsubscribe();
+  }, [revealReaderChrome]);
 
   useEffect(() => {
     return () => {
@@ -270,8 +287,9 @@ export function ReaderFeed() {
     setSelectedIndex((index) => (index + delta + rankedStories.length) % rankedStories.length);
   }
 
-  function openAccount(reason: "manual" | "notice" | "required" = "manual") {
+  function openAccount(reason: "manual" | "notice" | "required" = "manual", initialMode: AuthPanelMode = "signup") {
     setAuthReason(reason);
+    setAuthInitialMode(initialMode);
     setAuthPanelOpen(true);
     setGuestNoticeStep(null);
     revealReaderChrome(0);
@@ -541,7 +559,7 @@ export function ReaderFeed() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setGuestNoticeStep(null)}>Later</Button>
-              <Button onClick={() => openAccount("notice")}>Create account</Button>
+              <Button onClick={() => openAccount("notice", "signup")}>Create account</Button>
             </div>
           </div>
         )}
@@ -584,6 +602,7 @@ export function ReaderFeed() {
         <UserAuthPanel
           open={authPanelOpen}
           reason={authReason}
+          initialMode={authInitialMode}
           guestReadCount={guestReadCount}
           currentUser={user}
           onClose={() => setAuthPanelOpen(false)}

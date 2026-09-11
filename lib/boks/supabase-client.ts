@@ -93,6 +93,25 @@ export async function signInBoksUser(email: string, password: string) {
   return signInResult.data.user;
 }
 
+export async function requestBoksPasswordReset(email: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const redirectTo = typeof window === "undefined" ? undefined : window.location.origin;
+  const result = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
+  if (result.error) throw result.error;
+}
+
+export async function updateBoksPassword(password: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.auth.updateUser({ password });
+  if (result.error) throw result.error;
+
+  return result.data.user;
+}
+
 export async function signOutBoksUser() {
   if (!supabase) return;
 
