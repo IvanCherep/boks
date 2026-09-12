@@ -31,8 +31,8 @@ Use `/author` during interviews. Ask an author to paste or write a short piece. 
   - `reels`: published story inventory for the public reader.
   - `views`: reader impressions/views for anonymous and permanent Supabase users.
   - `likes`: one like per permanent user and reel.
-  - `comments`: profile-owned responses visible to all readers on published boks.
-  - `user_profiles`: permanent reader settings and the `reader` or `admin` role.
+  - `comments`: profile-owned responses visible to all readers on published boks, attributed by unique `@nickname`.
+  - `user_profiles`: permanent reader settings, unique handle, and the `reader` or `admin` role.
 - D1 compatibility path:
   - `stories`: published seed and author stories.
   - `events`: impressions, starts, completions, likes, shares, preferences, and publishes.

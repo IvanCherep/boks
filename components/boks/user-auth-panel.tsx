@@ -27,6 +27,16 @@ export const currentBoksTermsVersion = "2026-09-11";
 
 export type AuthPanelMode = "signin" | "signup" | "recover" | "setPassword";
 
+function normalizeHandleInput(value: string) {
+  return value
+    .trim()
+    .replace(/^@+/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 24);
+}
+
 type UserAuthPanelProps = {
   open: boolean;
   surface?: "reader" | "author";
@@ -59,6 +69,7 @@ export function UserAuthPanel({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("Reader");
+  const [handle, setHandle] = useState("");
   const [libraryQuery, setLibraryQuery] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [status, setStatus] = useState("");
@@ -76,6 +87,7 @@ export function UserAuthPanel({
     const context = await loadBoksUserContext();
     setUser(context);
     setDisplayName(context?.displayName || "Reader");
+    setHandle(context?.handle || "");
 
     if (context && !context.isAnonymous) {
       const items = await loadReaderLibrary();
@@ -104,6 +116,7 @@ export function UserAuthPanel({
       setUser(currentUser);
       if (currentUser && !currentUser.isAnonymous) {
         setDisplayName(currentUser.displayName || "Reader");
+        setHandle(currentUser.handle || "");
       }
     }, 0);
     return () => window.clearTimeout(handle);
@@ -184,7 +197,7 @@ export function UserAuthPanel({
         setStatus("Signed in. Your reading history is available.");
       } else {
         await createOrUpgradeBoksUser(email.trim(), password);
-        await ensureBoksProfile(displayName);
+        await updateBoksProfile({ displayName, handle });
         await acceptBoksTerms(currentBoksTermsVersion);
         setStatus("Account created. You can keep reading.");
       }
@@ -243,7 +256,7 @@ export function UserAuthPanel({
     setBusy(true);
     setStatus("");
     try {
-      const next = await updateBoksProfile({ displayName });
+      const next = await updateBoksProfile({ displayName, handle });
       setUser(next);
       onUserChanged(next);
       setStatus("Settings saved.");
@@ -339,7 +352,7 @@ export function UserAuthPanel({
                 <div className="min-w-0">
                   <p className="truncate text-base font-semibold">{accountUser?.email}</p>
                   <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    {accountUser?.views} read boks · {accountUser?.likes} liked
+                    @{accountUser?.handle || "reader"} · {accountUser?.views} read boks · {accountUser?.likes} liked
                   </p>
                 </div>
                 {accountUser?.role === "admin" && (
@@ -360,6 +373,24 @@ export function UserAuthPanel({
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
                 />
+              </label>
+              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-handle">
+                Unique @nickname
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]">
+                    @
+                  </span>
+                  <Input
+                    id="boks-handle"
+                    name="username"
+                    autoComplete="username"
+                    className="pl-7"
+                    minLength={3}
+                    maxLength={24}
+                    value={handle}
+                    onChange={(event) => setHandle(normalizeHandleInput(event.target.value))}
+                  />
+                </div>
               </label>
               <Button onClick={saveSettings} disabled={busy}>
                 <UserRound className="size-4" /> Save settings
@@ -424,16 +455,37 @@ export function UserAuthPanel({
             )}
 
             {mode === "signup" && (
-              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-signup-name">
-                Name
-                <Input
-                  id="boks-signup-name"
-                  name="name"
-                  autoComplete="name"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                />
-              </label>
+              <>
+                <label className="grid gap-1 text-sm font-medium" htmlFor="boks-signup-name">
+                  Name
+                  <Input
+                    id="boks-signup-name"
+                    name="name"
+                    autoComplete="name"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                  />
+                </label>
+                <label className="grid gap-1 text-sm font-medium" htmlFor="boks-signup-handle">
+                  Unique @nickname
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]">
+                      @
+                    </span>
+                    <Input
+                      id="boks-signup-handle"
+                      name="username"
+                      autoComplete="username"
+                      className="pl-7"
+                      minLength={3}
+                      maxLength={24}
+                      placeholder="boks_reader"
+                      value={handle}
+                      onChange={(event) => setHandle(normalizeHandleInput(event.target.value))}
+                    />
+                  </div>
+                </label>
+              </>
             )}
 
             {mode !== "setPassword" && (

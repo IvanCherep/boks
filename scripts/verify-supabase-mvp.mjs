@@ -50,7 +50,10 @@ const likeResult = await supabase.from("likes").upsert(
 );
 assertOk(likeResult.error, "Anonymous auth could like a bok.");
 
-const commentsResult = await supabase.from("comments").select("id,reel_id,visitor_name,body,created_at").eq("reel_id", reel.id);
+const commentsResult = await supabase
+  .from("comments")
+  .select("id,reel_id,visitor_name,visitor_handle,body,created_at")
+  .eq("reel_id", reel.id);
 if (commentsResult.error) throw commentsResult.error;
 
 const blockedCommentResult = await supabase.rpc("create_bok_comment", {
@@ -59,6 +62,13 @@ const blockedCommentResult = await supabase.rpc("create_bok_comment", {
 });
 assertOk(blockedCommentResult.error, "Anonymous auth could comment on a bok.");
 assertOk(blockedCommentResult.error.code !== "PGRST202", "Bok comment RPC is missing.");
+
+const blockedProfileUpdateResult = await supabase.rpc("update_boks_user_profile", {
+  p_display_name: "Anonymous check",
+  p_handle: "anonymous_check",
+});
+assertOk(blockedProfileUpdateResult.error, "Anonymous auth could update a permanent profile.");
+assertOk(blockedProfileUpdateResult.error.code !== "PGRST202", "Profile update RPC is missing.");
 
 const otherUserId = "00000000-0000-4000-8000-000000000001";
 const blockedViewResult = await supabase.from("views").insert({
@@ -132,6 +142,7 @@ console.log(
       rlsBlocksAnonymousLikes: true,
       commentsReadable: true,
       rlsBlocksAnonymousComments: true,
+      rlsBlocksAnonymousProfileUpdates: true,
       rlsBlocksOtherUserWrites: true,
       rlsBlocksBrowserReelWrites: true,
       anonymousProfileContext: true,

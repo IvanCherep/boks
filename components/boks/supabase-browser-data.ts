@@ -39,6 +39,7 @@ type SupabaseCommentRow = {
   id: number;
   reel_id: string;
   visitor_name: string;
+  visitor_handle: string | null;
   body: string;
   created_at: string;
 };
@@ -181,20 +182,17 @@ export async function ensureBoksProfile(displayName = ""): Promise<BoksUserConte
 
 export async function updateBoksProfile(input: {
   displayName: string;
+  handle?: string;
 }): Promise<BoksUserContext | null> {
   if (!supabase) return null;
 
-  const result = await supabase
-    .from("user_profiles")
-    .update({
-      display_name: input.displayName.trim() || "Reader",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", (await getCurrentSupabaseUser())?.id);
-
+  const result = await supabase.rpc("update_boks_user_profile", {
+    p_display_name: input.displayName,
+    p_handle: input.handle ?? "",
+  });
   if (result.error) throw result.error;
 
-  return loadBoksUserContext();
+  return result.data as BoksUserContext;
 }
 
 export async function acceptBoksTerms(termsVersion: string): Promise<BoksUserContext | null> {
@@ -355,7 +353,7 @@ async function loadSupabaseCommentsForReels(reelIds: string[]): Promise<Comment[
 
   const commentsResult = await supabase
     .from("comments")
-    .select("id,reel_id,visitor_name,body,created_at")
+    .select("id,reel_id,visitor_name,visitor_handle,body,created_at")
     .in("reel_id", reelIds)
     .order("created_at", { ascending: true })
     .limit(1000);
@@ -366,6 +364,7 @@ async function loadSupabaseCommentsForReels(reelIds: string[]): Promise<Comment[
     id: comment.id,
     storyId: comment.reel_id,
     visitorName: comment.visitor_name,
+    visitorHandle: comment.visitor_handle,
     body: comment.body,
     createdAt: comment.created_at,
   }));

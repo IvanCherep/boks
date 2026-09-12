@@ -20,6 +20,7 @@ export type Comment = {
   id: number;
   storyId: string;
   visitorName: string;
+  visitorHandle?: string | null;
   body: string;
   createdAt: string;
 };
@@ -73,6 +74,7 @@ export type BoksUserContext = {
   isAnonymous: boolean;
   role: BoksUserRole;
   displayName: string;
+  handle: string | null;
   preferredGenre: string;
   preferredMood: string;
   termsAcceptedAt: string | null;

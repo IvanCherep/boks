@@ -260,6 +260,9 @@ export function ReaderFeed() {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("button, a, input, textarea, select, [contenteditable='true']")) return;
+
       if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
         revealReaderChrome(2400);
@@ -664,7 +667,10 @@ export function ReaderFeed() {
               {currentComments.length ? (
                 currentComments.map((comment) => (
                   <div key={comment.id} className="rounded-md bg-[var(--muted)] p-3">
-                    <p className="text-sm font-medium">{comment.visitorName}</p>
+                    <p className="text-sm font-medium">
+                      @{comment.visitorHandle || comment.visitorName}
+                      <span className="ml-2 font-normal text-[var(--muted-foreground)]">{comment.visitorName}</span>
+                    </p>
                     <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">{comment.body}</p>
                   </div>
                 ))
@@ -675,7 +681,7 @@ export function ReaderFeed() {
             <div className="mt-3 grid gap-2">
               <p className="text-sm text-[var(--muted-foreground)]">
                 {hasSignedInAccount
-                  ? `Commenting as ${user?.displayName || "Reader"}.`
+                  ? `Commenting as @${user?.handle || "reader"}.`
                   : "Sign up free to write a response. Everyone can read comments."}
               </p>
               <Textarea

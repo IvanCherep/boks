@@ -172,7 +172,7 @@ Check:
 - Modals or comment fields fit on small screens.
 - Guest readers can open and read comments without friction.
 - Guest readers see the free-account prompt when they try to like or write a comment.
-- Signed-in comments show the current profile name and do not offer a separate name field.
+- Signed-in comments show the current unique `@nickname`, with display name secondary, and do not offer a separate name field.
 
 ## Metrics Quality Checks
 

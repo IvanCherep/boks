@@ -51,10 +51,10 @@ The author experience is constrained: `/author` lets any permanent user submit a
 1. `/` creates or reads an anonymous browser id.
 2. If Supabase environment variables are configured, `useBoksData` creates or reuses an anonymous Supabase session and reads a bounded batch from `public.reels`.
 3. Reader impressions are recorded in `public.views`; signed-in likes are stored in `public.likes` with a unique `(user_id, reel_id)` constraint.
-4. Comments are readable on published boks for all reader sessions. Creating a comment goes through `create_bok_comment()`, which rejects anonymous sessions and stores the current profile display name.
+4. Comments are readable on published boks for all reader sessions. Creating a comment goes through `create_bok_comment()`, which rejects anonymous sessions and stores the current unique profile handle plus display name.
 5. RLS allows readers to read published reels, record their own views, and manage likes only after they have a permanent account.
 6. Guest access is tracked locally by distinct boks shown in the browser: notice at 5, notice at 10, sign-up required at 15.
-7. Signed-in readers can open the boks wordmark for settings and recently read boks; this data is backed by Supabase profile, view, like, and comment rows.
+7. Signed-in readers can open the boks wordmark for settings, unique `@nickname`, and recently read boks; this data is backed by Supabase profile, view, like, and comment rows.
 8. Without Supabase config, the original D1 API path resolves deterministic recommendation experiments and records richer prototype events.
 9. `reader-behavior.ts` updates local preference state from completed or liked stories.
 
