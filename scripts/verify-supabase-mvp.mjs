@@ -48,10 +48,17 @@ const likeResult = await supabase.from("likes").upsert(
   },
   { onConflict: "user_id,reel_id" }
 );
-if (likeResult.error) throw likeResult.error;
+assertOk(likeResult.error, "Anonymous auth could like a bok.");
 
-const unlikeResult = await supabase.from("likes").delete().eq("user_id", userId).eq("reel_id", reel.id);
-if (unlikeResult.error) throw unlikeResult.error;
+const commentsResult = await supabase.from("comments").select("id,reel_id,visitor_name,body,created_at").eq("reel_id", reel.id);
+if (commentsResult.error) throw commentsResult.error;
+
+const blockedCommentResult = await supabase.rpc("create_bok_comment", {
+  p_reel_id: reel.id,
+  p_body: "Anonymous comments must be blocked.",
+});
+assertOk(blockedCommentResult.error, "Anonymous auth could comment on a bok.");
+assertOk(blockedCommentResult.error.code !== "PGRST202", "Bok comment RPC is missing.");
 
 const otherUserId = "00000000-0000-4000-8000-000000000001";
 const blockedViewResult = await supabase.from("views").insert({
@@ -122,7 +129,9 @@ console.log(
       anonymousAuth: "working",
       publishedReelsReadable: true,
       viewRecorded: true,
-      likeCreatedAndDeleted: true,
+      rlsBlocksAnonymousLikes: true,
+      commentsReadable: true,
+      rlsBlocksAnonymousComments: true,
       rlsBlocksOtherUserWrites: true,
       rlsBlocksBrowserReelWrites: true,
       anonymousProfileContext: true,

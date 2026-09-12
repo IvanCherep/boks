@@ -4,7 +4,6 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, BookOpen, Heart, MessageCircle, Send, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { initialMetrics, initialProfile } from "@/components/boks/constants";
 import type { BoksUserContext, Metrics, ReaderProfile, Story } from "@/components/boks/client-types";
@@ -27,10 +26,13 @@ import {
   loadSupabaseStory,
   recordSupabaseView,
   setSupabaseLike,
+  submitSupabaseComment,
 } from "@/components/boks/supabase-browser-data";
 import { supabase } from "@/lib/boks/supabase-client";
 import { type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
+
+type AuthIntent = "general" | "like" | "comment";
 
 export function ReaderFeed() {
   const {
@@ -50,13 +52,13 @@ export function ReaderFeed() {
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [readerName, setReaderName] = useState("Reader");
   const [isSubmitting, setSubmitting] = useState(false);
   const [readerChromeVisible, setReaderChromeVisible] = useState(true);
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
   const [authReason, setAuthReason] = useState<"manual" | "notice" | "required">("manual");
   const [authInitialMode, setAuthInitialMode] = useState<AuthPanelMode>("signup");
+  const [authIntent, setAuthIntent] = useState<AuthIntent>("general");
   const [guestReadCount, setGuestReadCount] = useState(0);
   const [guestNoticeStep, setGuestNoticeStep] = useState<5 | 10 | null>(null);
   const [libraryStories, setLibraryStories] = useState<Story[]>([]);
@@ -176,10 +178,11 @@ export function ReaderFeed() {
 
   const currentStory = rankedStories[selectedIndex] ?? rankedStories[0];
   const currentStoryId = currentStory?.id;
-  const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id).slice(0, 5);
+  const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id);
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
   const isGuestReader = isSupabaseReader && (!user || user.isAnonymous);
+  const hasSignedInAccount = Boolean(user && !user.isAnonymous);
 
   useEffect(() => {
     if (!pendingLibraryStoryId) return;
@@ -314,9 +317,14 @@ export function ReaderFeed() {
     setSelectedIndex((index) => (index + delta + rankedStories.length) % rankedStories.length);
   }
 
-  function openAccount(reason: "manual" | "notice" | "required" = "manual", initialMode: AuthPanelMode = "signup") {
+  function openAccount(
+    reason: "manual" | "notice" | "required" = "manual",
+    initialMode: AuthPanelMode = "signup",
+    intent: AuthIntent = "general"
+  ) {
     setAuthReason(reason);
     setAuthInitialMode(initialMode);
+    setAuthIntent(intent);
     setAuthPanelOpen(true);
     setGuestNoticeStep(null);
     revealReaderChrome(0);
@@ -400,6 +408,12 @@ export function ReaderFeed() {
 
   async function likeStory() {
     if (!currentStory) return;
+    if (!hasSignedInAccount) {
+      setCommentOpen(false);
+      openAccount("manual", "signup", "like");
+      return;
+    }
+
     const nextLiked = !isCurrentStoryLiked;
     setLiked((state) => ({ ...state, [currentStory.id]: nextLiked }));
 
@@ -437,30 +451,45 @@ export function ReaderFeed() {
 
   async function submitComment() {
     if (!currentStory || !commentText.trim()) return;
+
+    if (!hasSignedInAccount) {
+      openAccount("manual", "signup", "comment");
+      return;
+    }
+
     setSubmitting(true);
-    const response = await fetch("/api/boks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "comment",
-        storyId: currentStory.id,
-        body: commentText,
-        visitorName: readerName,
-        visitorId: visitorId.current,
-        sessionId: sessionId.current,
-        algorithmId: experiment?.algorithmId ?? "unassigned",
-        userSegment: experiment?.userSegment ?? "general",
-        surface: "reader",
-        rank: selectedIndex,
-        clientElapsedSeconds: readStartedAt.current
-          ? Math.max(0, Math.round((Date.now() - readStartedAt.current) / 1000))
-          : 0,
-      }),
-    });
-    setSubmitting(false);
-    if (response.ok) {
+    try {
+      if (isSupabaseReader) {
+        await submitSupabaseComment(currentStory.id, commentText);
+      } else {
+        const response = await fetch("/api/boks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "comment",
+            storyId: currentStory.id,
+            body: commentText,
+            visitorName: user?.displayName || "Reader",
+            visitorId: visitorId.current,
+            sessionId: sessionId.current,
+            algorithmId: experiment?.algorithmId ?? "unassigned",
+            userSegment: experiment?.userSegment ?? "general",
+            surface: "reader",
+            rank: selectedIndex,
+            clientElapsedSeconds: readStartedAt.current
+              ? Math.max(0, Math.round((Date.now() - readStartedAt.current) / 1000))
+              : 0,
+          }),
+        });
+        if (!response.ok) throw new Error("Could not send comment.");
+      }
+
       setCommentText("");
       await load({ view: "reader", limit: 80, visitorId: visitorId.current });
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not send comment.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -644,15 +673,35 @@ export function ReaderFeed() {
               )}
             </div>
             <div className="mt-3 grid gap-2">
-              <Input aria-label="Reader name" value={readerName} onChange={(event) => setReaderName(event.target.value)} />
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {hasSignedInAccount
+                  ? `Commenting as ${user?.displayName || "Reader"}.`
+                  : "Sign up free to write a response. Everyone can read comments."}
+              </p>
               <Textarea
                 aria-label="Comment"
-                placeholder="One sentence after reading"
+                placeholder={hasSignedInAccount ? "One sentence after reading" : "Create a free account to respond"}
+                readOnly={!hasSignedInAccount}
                 value={commentText}
+                onClick={() => {
+                  if (!hasSignedInAccount) openAccount("manual", "signup", "comment");
+                }}
+                onFocus={() => {
+                  if (!hasSignedInAccount) openAccount("manual", "signup", "comment");
+                }}
                 onChange={(event) => setCommentText(event.target.value)}
               />
-              <Button onClick={submitComment} disabled={isSubmitting || !commentText.trim()}>
-                <Send className="size-4" /> Send
+              <Button
+                onClick={() => {
+                  if (!hasSignedInAccount) {
+                    openAccount("manual", "signup", "comment");
+                    return;
+                  }
+                  submitComment();
+                }}
+                disabled={hasSignedInAccount && (isSubmitting || !commentText.trim())}
+              >
+                <Send className="size-4" /> {hasSignedInAccount ? "Send" : "Sign up to comment"}
               </Button>
             </div>
           </div>
@@ -660,6 +709,7 @@ export function ReaderFeed() {
 
         <UserAuthPanel
           open={authPanelOpen}
+          intent={authIntent}
           reason={authReason}
           initialMode={authInitialMode}
           guestReadCount={guestReadCount}

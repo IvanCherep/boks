@@ -30,6 +30,7 @@ export type AuthPanelMode = "signin" | "signup" | "recover" | "setPassword";
 type UserAuthPanelProps = {
   open: boolean;
   surface?: "reader" | "author";
+  intent?: "general" | "like" | "comment";
   reason: "manual" | "notice" | "required";
   initialMode: AuthPanelMode;
   guestReadCount: number;
@@ -42,6 +43,7 @@ type UserAuthPanelProps = {
 export function UserAuthPanel({
   open,
   surface = "reader",
+  intent = "general",
   reason,
   initialMode,
   guestReadCount,
@@ -286,6 +288,10 @@ export function UserAuthPanel({
       : "You have used the guest reading limit. Create an account or sign in to continue."
     : reason === "notice"
       ? `${remainingGuestBoks} free boks left. Create an account to save your reading history.`
+      : intent === "like"
+        ? "Sign up is free. Likes help boks tune recommendations to your taste and keep your reading history connected to you."
+        : intent === "comment"
+          ? "Sign up is free. It keeps comments connected to your profile name and helps boks understand what stories work for you."
       : surface === "author"
         ? "Create an account to submit boks for review."
         : "Create an account to save your reading history and settings.";

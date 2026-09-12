@@ -4,6 +4,7 @@ import { initialMetrics } from "@/components/boks/constants";
 import type {
   AuthorBokSubmission,
   BoksUserContext,
+  Comment,
   Metrics,
   ReaderLibraryItem,
   RecommendationExperiment,
@@ -34,6 +35,14 @@ type SupabaseLikeRow = {
   reel_id: string;
 };
 
+type SupabaseCommentRow = {
+  id: number;
+  reel_id: string;
+  visitor_name: string;
+  body: string;
+  created_at: string;
+};
+
 type SupabaseLibraryViewRow = {
   created_at: string;
   reel_id: string;
@@ -45,7 +54,11 @@ type SupabaseLibraryViewRow = {
   } | null;
 };
 
-function mapSupabaseReelToStory(reel: SupabaseReelRow, likedSet = new Set<string>()): Story {
+function mapSupabaseReelToStory(
+  reel: SupabaseReelRow,
+  likedSet = new Set<string>(),
+  commentCounts = new Map<string, number>()
+): Story {
   return {
     id: reel.id,
     title: reel.title,
@@ -60,14 +73,14 @@ function mapSupabaseReelToStory(reel: SupabaseReelRow, likedSet = new Set<string
     shares: 0,
     starts: 0,
     completes: 0,
-    commentsCount: 0,
+    commentsCount: commentCounts.get(reel.id) ?? 0,
     avgSeconds: 0,
   };
 }
 
 export type SupabaseReaderPayload = {
   stories: Story[];
-  comments: [];
+  comments: Comment[];
   metrics: Metrics;
   experiment: RecommendationExperiment;
   likedStoryIds: string[];
@@ -97,12 +110,17 @@ export async function loadSupabaseReaderFeed(limit: number): Promise<SupabaseRea
   const reelIds = reelRows.map((reel) => reel.id);
   const likedStoryIds = await loadLikedStoryIds(userId, reelIds);
   const likedSet = new Set(likedStoryIds);
+  const comments = await loadSupabaseCommentsForReels(reelIds);
+  const commentCounts = comments.reduce((counts, comment) => {
+    counts.set(comment.storyId, (counts.get(comment.storyId) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
 
-  const stories = reelRows.map((reel) => mapSupabaseReelToStory(reel, likedSet));
+  const stories = reelRows.map((reel) => mapSupabaseReelToStory(reel, likedSet, commentCounts));
 
   return {
     stories,
-    comments: [],
+    comments,
     metrics: {
       ...initialMetrics,
       funnel: {
@@ -332,6 +350,27 @@ async function loadLikedStoryIds(userId: string, reelIds: string[]) {
   return ((likesResult.data ?? []) as SupabaseLikeRow[]).map((like) => like.reel_id);
 }
 
+async function loadSupabaseCommentsForReels(reelIds: string[]): Promise<Comment[]> {
+  if (!supabase || !reelIds.length) return [];
+
+  const commentsResult = await supabase
+    .from("comments")
+    .select("id,reel_id,visitor_name,body,created_at")
+    .in("reel_id", reelIds)
+    .order("created_at", { ascending: true })
+    .limit(1000);
+
+  if (commentsResult.error) throw commentsResult.error;
+
+  return ((commentsResult.data ?? []) as SupabaseCommentRow[]).map((comment) => ({
+    id: comment.id,
+    storyId: comment.reel_id,
+    visitorName: comment.visitor_name,
+    body: comment.body,
+    createdAt: comment.created_at,
+  }));
+}
+
 export async function recordSupabaseView(userId: string | null, storyId: string) {
   if (!supabase || !userId) return;
 
@@ -345,16 +384,34 @@ export async function recordSupabaseView(userId: string | null, storyId: string)
 
 export async function setSupabaseLike(userId: string | null, storyId: string, liked: boolean) {
   if (!supabase || !userId) return;
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) throw new Error("Create a free account to like boks.");
 
   const result = liked
     ? await supabase.from("likes").upsert(
         {
-          user_id: userId,
+          user_id: user.id,
           reel_id: storyId,
         },
         { onConflict: "user_id,reel_id" }
       )
-    : await supabase.from("likes").delete().eq("user_id", userId).eq("reel_id", storyId);
+    : await supabase.from("likes").delete().eq("user_id", user.id).eq("reel_id", storyId);
 
   if (result.error) throw result.error;
+}
+
+export async function submitSupabaseComment(storyId: string, body: string): Promise<Comment> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) throw new Error("Create a free account to comment.");
+
+  const result = await supabase.rpc("create_bok_comment", {
+    p_reel_id: storyId,
+    p_body: body,
+  });
+
+  if (result.error) throw result.error;
+
+  return result.data as Comment;
 }

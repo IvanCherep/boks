@@ -170,6 +170,9 @@ Check:
 - Action buttons do not cover important text while hidden or visible.
 - Swipe target is large enough.
 - Modals or comment fields fit on small screens.
+- Guest readers can open and read comments without friction.
+- Guest readers see the free-account prompt when they try to like or write a comment.
+- Signed-in comments show the current profile name and do not offer a separate name field.
 
 ## Metrics Quality Checks
 
@@ -188,7 +191,7 @@ During a test, verify these signals accumulate:
 - algorithm id
 - user segment
 
-For Supabase, the current MVP records production reader `views` and `likes`; richer recommendation attribution still lives in the D1 compatibility path. Before making serious algorithm decisions from Supabase traffic, add attributed Supabase events matching `specs/boks-recommendation-experiments.md`.
+For Supabase, the current MVP records production reader `views`, signed-in `likes`, and profile-owned `comments`; richer recommendation attribution still lives in the D1 compatibility path. Before making serious algorithm decisions from Supabase traffic, add attributed Supabase events matching `specs/boks-recommendation-experiments.md`.
 
 ## When A Test Result Is Useful
 
