@@ -11,6 +11,7 @@ Create a new file when a change affects:
 - metrics model
 - hosting strategy
 - large directory structure
+- agent-readable documentation and onboarding workflow
 
 Template:
 

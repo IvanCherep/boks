@@ -10,7 +10,7 @@ The recommendation framework tests which feed strategy creates the strongest rea
 - `completion_first`: favors stories people finish after starting.
 - `reaction_first`: favors stories that create likes, shares, or comments quickly.
 - `discovery`: gives newer and under-tested stories more chances.
-- `supabase_recent`: temporary Supabase production MVP feed that serves newest published reels and records views/likes only. Use it for deployment validation, not as the final experiment framework.
+- `supabase_recent`: temporary Supabase production MVP feed that serves newest published reels and records views, signed-in likes, and profile-owned comments. Use it for deployment validation, not as the final experiment framework.
 
 ## Event Contract
 
@@ -24,7 +24,7 @@ Every reader event should include:
 - `value`: event-specific numeric value. Completion uses read seconds; most other events use `1`.
 - `metadata`: optional JSON for low-volume exploratory fields.
 
-The current Supabase MVP stores only `views` and `likes`. Before comparing algorithms seriously on Supabase, add an attributed event table that matches this contract.
+The current Supabase MVP stores production `views`, signed-in `likes`, and profile-owned `comments`, but it does not yet store full algorithm assignment and elapsed-time attribution for every behavior. Before comparing algorithms seriously on Supabase, add an attributed event table that matches this contract.
 
 ## Metrics
 

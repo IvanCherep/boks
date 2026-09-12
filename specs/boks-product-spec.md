@@ -24,7 +24,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Reader accounts must not expose genre, mood, category, or algorithm preference controls. The feed learns from behavior instead of asking the reader to configure what they want.
 - Admin access is a database-backed role on `user_profiles`. Admins can grant or remove admin status only from `/admin`; the only exception is first-admin bootstrap when no admin exists yet.
 - Admins review recently submitted boks in `/admin`, approve suitable boks into the reader feed, or refuse them with a clear reason shown in the author cabinet.
-- D1 compatibility backend for the original author cabinet, comments, and richer analytics event prototype path.
+- D1 compatibility backend for the original prototype API, local/demo fallback, and richer analytics event contract reference. Production author moderation and comments are Supabase-backed.
 - Seed stories for immediate demos plus admin-approved user-created boks.
 - Server-side recommendation ranking with deterministic anonymous experiment assignment in the D1 prototype path; `supabase_recent` is the current Supabase smoke-test feed until attributed Supabase events are added.
 - Algorithm comparison metrics for start rate, finish rate, reaction rate, skip rate, read time, like timing, comment timing, feed rank, pace, and engagement score.
@@ -43,7 +43,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 
 ## MVP Extension Points
 
-- Authentication: migrate author identity to Supabase permanent users and add password reset/magic-link options if email-password creates friction.
+- Authentication: keep Supabase permanent users as the identity source, improve account recovery if needed, and add magic-link/passkey options only if email-password creates friction.
 - Authorization: keep admin role mutation behind Supabase RPC checks; never trust browser metadata or local storage for admin decisions.
 - Recommendation: extend the algorithm registry, add precomputed rollups, then introduce reader history and story embeddings.
 - Content safety: add moderation before public publishing.

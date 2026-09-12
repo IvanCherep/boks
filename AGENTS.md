@@ -1,6 +1,6 @@
 # boks Agent Guide
 
-This file is the first stop for AI coding assistants working on boks. After reading it, read `docs/README.md` and the focused spec or guide for the task. Keep changes aligned with the product promise: a reader opens the app, receives one algorithmic short literature feed, reads with minimal interface noise, and leaves behavioral signals that help compare recommendation systems.
+This file is the first stop for AI coding assistants working on boks. After reading it, read `docs/README.md`, `docs/ai-agent-guide.md`, and the focused spec or guide for the task. Keep changes aligned with the product promise: a reader opens the app, receives one algorithmic short literature feed, reads with minimal interface noise, and leaves behavioral signals that help compare recommendation systems.
 
 ## Product Philosophy
 
@@ -13,6 +13,8 @@ Reader rules:
 - There is no explicit finished button. Completion, drop-off, and skip behavior are inferred from elapsed time, scroll progress, and swipe timing.
 - Reader-facing language should stay minimal. Do not explain the interface inside the product unless the user must make a decision.
 - Guest readers see no sign-up controls at first. They receive gentle notices after 5 and 10 viewed boks and must sign up or sign in after 15 viewed boks.
+- Guest readers can read comments, but liking and writing comments require a permanent account.
+- Comments must be attributed to the signed-in user's unique `@nickname`; users cannot type an arbitrary commenter name.
 - `boks` is the product term for one short content unit. `reel` remains the current Supabase table name for compatibility.
 
 Business rules:
@@ -20,7 +22,7 @@ Business rules:
 - The founder must be able to compare recommendation strategies by attributed behavior, not opinions alone.
 - Admin access is a Supabase `user_profiles.role` decision. It must be granted from `/admin` and enforced by RLS/RPC checks, never by local storage, URL flags, or `user_metadata`.
 - Author submission stays simple, with the 15 minute promise enforced before review and admin approval required before publication.
-- Production reader test data belongs in Supabase. Browser storage is only for anonymous local reader identity, Supabase session persistence, and lightweight profile state. D1 remains the compatibility backend for the original author/API prototype until that surface is migrated.
+- Production reader, author, account, moderation, comment, and admin test data belongs in Supabase. Browser storage is only for anonymous local reader identity, Supabase session persistence, and lightweight profile state. D1 remains a compatibility path for the original prototype API and richer event-contract reference.
 
 ## Architecture Map
 
@@ -34,7 +36,7 @@ Business rules:
 - `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
 - `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and completion/skip inference.
 - `components/boks/user-auth-panel.tsx`: reader email sign-up/sign-in, settings, recent read boks, and admin shortcut.
-- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader/admin data access using only the publishable key and RLS.
+- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, account, comment, and admin data access using only the publishable key, RLS, and narrowly scoped RPCs.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, mutation helpers, metrics export, and WebMCP reporting.
 - `components/boks/shared-ui.tsx`: small reusable UI primitives for prototype surfaces.
 - `app/globals.css`: visual system, reader focus behavior, responsive layout, and Claude-inspired light palette.
@@ -50,6 +52,7 @@ Business rules:
 - `specs/`: product and experiment contracts.
 - `docs/`: operating, architecture, and growth-readiness guidance.
 - `docs/README.md`: documentation index and read order.
+- `docs/ai-agent-guide.md`: fast onboarding, ownership map, spec-driven workflow, and deployment rules for any AI agent.
 - `docs/engineering-standards.md`: naming, boundaries, values, and AI-agent workflow.
 - `docs/hosting.md`: Cloudflare production deploy and URL operations.
 - `docs/testing.md`: user testing, product QA, and technical verification.

@@ -5,9 +5,9 @@ boks is a browser prototype for testing a short literature feed: readers discove
 ## What is included
 
 - Swipe-first reader feed with behavior-based recommendations.
-- Anonymous Supabase reader entry with reels, views, and likes stored behind RLS.
-- Like, share, completion, and comment capture in the original D1 API path.
-- Author cabinet with a 15 minute reading-time guardrail.
+- Anonymous Supabase reader entry with reels, views, signed-in likes, profile-owned comments, and unique `@nickname` handles stored behind RLS/RPCs.
+- D1 compatibility path for the original prototype API and richer event contract reference.
+- Supabase author cabinet with a 15 minute reading-time guardrail and admin moderation workflow.
 - `/admin` business console with funnel, genre/mood breakdowns, sortable content operations, and JSON export.
 - Supabase-backed production reader/admin test path, with D1 retained for the original author/API prototype path.
 
@@ -15,6 +15,7 @@ boks is a browser prototype for testing a short literature feed: readers discove
 
 - `AGENTS.md`: product philosophy, architecture routing, growth guardrails, and validation checklist for AI coding assistants.
 - `docs/README.md`: documentation index and recommended read order.
+- `docs/ai-agent-guide.md`: fast project onboarding, ownership map, spec-driven workflow, and validation rules for any AI agent.
 - `app/boks-client.tsx`: route compatibility exports for reader, author, and admin.
 - `components/boks/reader-feed.tsx`: reader experience.
 - `components/boks/author-console.tsx`: author cabinet.
@@ -41,4 +42,4 @@ Create `.env.local` from `.env.example`, then set:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Run `npm run verify:supabase` to confirm anonymous auth, reel reads, view writes, like writes, RLS blocks, and admin metrics. Do not put a Supabase service role key in the frontend, repository, or Wrangler vars.
+Run `npm run verify:supabase` to confirm anonymous auth, reel reads, view writes, anonymous write blocks, comment reads, admin blocks, author/moderation RPCs, and profile safety. Do not put a Supabase service role key in the frontend, repository, or Wrangler vars.

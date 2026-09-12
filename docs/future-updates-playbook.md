@@ -9,16 +9,18 @@ Use this guide before changing the app. It keeps updates small, testable, and ea
 - Keep reading focused. The story should own the screen after the reader starts reading; actions can appear on tap, hover, pause, or story change.
 - Do not add a finished button. Infer completion, skip, and drop-off from time, scroll progress, and swipe timing.
 - Keep visible reader copy minimal. Explain decisions in docs, not inside the reader surface.
+- Keep comment identity profile-owned. Guests may read comments, but writes require sign-up and must use the account's unique `@nickname`.
 - Do not expose Supabase service role keys anywhere in source, browser code, Wrangler vars, screenshots, or docs.
 
 ## Start Every Update
 
 1. Read `AGENTS.md`.
 2. Read `docs/README.md`.
-3. Read `docs/architecture.md`.
-4. Read the relevant spec in `specs/`.
-5. Check current changes with `git status --short`.
-6. Decide which surface is changing: reader, author, admin, recommendations, data, deployment, or docs.
+3. Read `docs/ai-agent-guide.md`.
+4. Read `docs/architecture.md`.
+5. Read the relevant spec in `specs/`.
+6. Check current changes with `git status --short`.
+7. Decide which surface is changing: reader, author, admin, recommendations, data, deployment, or docs.
 
 ## Change Routing
 
@@ -28,6 +30,14 @@ Reader experience:
 - Use `components/boks/reader-behavior.ts` for local identity, profile, completion, and skip inference.
 - Use `app/globals.css` for reading layout, focus mode, and responsive behavior.
 - Use `components/boks/supabase-browser-data.ts` only for browser-safe Supabase reads/writes.
+- Keep feed-level keyboard shortcuts disabled while focus is inside form controls, especially the comment composer.
+
+Account and comments:
+
+- Start with `components/boks/user-auth-panel.tsx` for sign-up, sign-in, profile, unique handle, and recent reads.
+- Start with `components/boks/reader-feed.tsx` for comment sheet UX.
+- Start with `components/boks/supabase-browser-data.ts` and Supabase RPC migrations for persistence.
+- Do not let users type a separate commenter name.
 
 Author cabinet:
 
@@ -139,6 +149,7 @@ When behavior changes, update at least one of:
 
 - `specs/boks-product-spec.md` for product scope or user behavior.
 - `specs/boks-recommendation-experiments.md` for algorithm and metric rules.
+- `docs/ai-agent-guide.md` for ownership map, validation, or agent workflow changes.
 - `docs/architecture.md` for module/data flow changes.
 - `docs/boks-operations.md` for how to run tests with users.
 - `docs/growth-readiness.md` for scale assumptions and limits.

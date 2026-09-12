@@ -8,8 +8,9 @@ For every AI coding assistant:
 
 1. `AGENTS.md`
 2. `docs/README.md`
-3. `specs/boks-product-spec.md`
-4. The focused guide for the change: hosting, testing, standards, architecture, or growth
+3. `docs/ai-agent-guide.md`
+4. `specs/boks-product-spec.md`
+5. The focused guide for the change: hosting, testing, standards, architecture, or growth
 
 For founder/operator work:
 
@@ -29,6 +30,7 @@ For recommendation or metrics work:
 
 - `docs/hosting.md`: how the production Cloudflare Worker is hosted, deployed, and checked.
 - `docs/testing.md`: how to run reader tests, author tests, admin checks, and technical verification.
+- `docs/ai-agent-guide.md`: fast onboarding, ownership map, spec-driven workflow, validation, and deployment rules for any AI agent.
 - `docs/engineering-standards.md`: product values, naming, boundaries, code standards, and AI-agent workflow.
 - `docs/architecture.md`: current module map and data flows.
 - `docs/architecture-review.md`: current architecture assessment, risks, and next refactor steps.

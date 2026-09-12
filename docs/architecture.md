@@ -4,7 +4,7 @@
 
 boks is a browser prototype for testing a literature-only, swipe-first reading feed. The architecture keeps product behavior, recommendation logic, analytics, and demo content separated so the prototype can grow without turning every change into a full-app rewrite.
 
-For the current architecture assessment, risks, and next extraction points, read `docs/architecture-review.md`. For standards and naming, read `docs/engineering-standards.md`.
+For fast agent onboarding, read `docs/ai-agent-guide.md`. For the current architecture assessment, risks, and next extraction points, read `docs/architecture-review.md`. For standards and naming, read `docs/engineering-standards.md`.
 
 ## Product Shape
 
@@ -28,7 +28,7 @@ The author experience is constrained: `/author` lets any permanent user submit a
 - `components/boks/client-format.ts`: word count, time estimate, percentage, numeric, seconds, and story signal helpers.
 - `components/boks/reader-behavior.ts`: local browser identity, reader profile persistence, and read-outcome inference.
 - `components/boks/user-auth-panel.tsx`: reader account sheet for email sign-up/sign-in, settings, recent read boks, and admin shortcut.
-- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, and admin data access using anonymous auth, the publishable key, RLS, and narrowly scoped RPCs.
+- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, account, comment, and admin data access using anonymous auth, the publishable key, RLS, and narrowly scoped RPCs.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
 - `app/globals.css`: theme, typography, responsive behavior, focus mode, and reading layout.
@@ -45,6 +45,7 @@ The author experience is constrained: `/author` lets any permanent user submit a
 - `drizzle/`: generated migrations.
 - `specs/`: product and recommendation specifications.
 - `docs/`: operating and growth notes.
+- `docs/ai-agent-guide.md`: fast onboarding and spec-driven development workflow for AI agents.
 
 ## Reader Flow
 
@@ -57,6 +58,15 @@ The author experience is constrained: `/author` lets any permanent user submit a
 7. Signed-in readers can open the boks wordmark for settings, unique `@nickname`, and recently read boks; this data is backed by Supabase profile, view, like, and comment rows.
 8. Without Supabase config, the original D1 API path resolves deterministic recommendation experiments and records richer prototype events.
 9. `reader-behavior.ts` updates local preference state from completed or liked stories.
+
+## Account And Comment Flow
+
+1. Guest readers use anonymous Supabase sessions and can read published boks and comments.
+2. Likes and comment writes require a permanent account. UI gates these actions gently, and Supabase RLS/RPCs enforce the same rule.
+3. Permanent profiles live in `public.user_profiles` with `display_name`, unique `handle`, role, terms fields, and account settings.
+4. The reader account sheet writes profile changes through `update_boks_user_profile()`, which normalizes handles and rejects duplicates.
+5. Comments are created through `create_bok_comment()`. The RPC stores both display name and unique `visitor_handle`; the reader UI displays `@nickname` first and display name second.
+6. Keyboard shortcuts must ignore focus inside buttons, links, inputs, textareas, selects, and editable content so writing comments never advances the feed.
 
 ## Admin Flow
 

@@ -28,6 +28,7 @@ Engineering values:
 - Prefer boring code over clever abstractions.
 - Add extension points only when they remove current friction.
 - Update specs and docs with behavior changes.
+- Optimize the repository for agent comprehension: obvious filenames, explicit contracts, focused docs, and small ownership boundaries.
 
 ## Naming Standards
 
@@ -45,6 +46,7 @@ Use boks vocabulary consistently:
 - `metric`: aggregated decision signal.
 - `segment`: stable user grouping for experiment comparison.
 - `userProfile`: permanent Supabase profile and role record.
+- `handle`: unique `@nickname` used for public comment identity.
 
 Avoid generic names when a domain name is clearer:
 
@@ -115,6 +117,8 @@ Before implementation:
 5. Add tests or verification for the changed behavior.
 6. Update docs in the same task.
 
+For AI agents, `docs/ai-agent-guide.md` is the practical workflow. Treat specs as source of product truth and docs as the operating map. Code that changes product behavior without updating specs/docs is incomplete.
+
 If a change affects recommendation behavior, update:
 
 - `lib/boks/contracts.ts`
@@ -128,6 +132,14 @@ If a change affects production data, update:
 - `scripts/verify-supabase-mvp.mjs`
 - `docs/testing.md`
 - `docs/growth-readiness.md` if scale assumptions change
+
+If a change affects public reader identity or comments, update:
+
+- `components/boks/user-auth-panel.tsx`
+- `components/boks/reader-feed.tsx`
+- `components/boks/supabase-browser-data.ts`
+- Supabase profile/comment migrations
+- `specs/boks-product-spec.md`
 
 ## UI Standards
 
@@ -183,12 +195,13 @@ Do not store or trust admin roles in browser storage, URL params, `user_metadata
 Future AI agents should:
 
 1. Read `AGENTS.md` and `docs/README.md`.
-2. Check `git status --short`.
-3. Inspect the owning files before editing.
-4. Make narrowly scoped changes.
-5. Avoid unrelated refactors.
-6. Run validation.
-7. Update docs and specs when behavior changes.
+2. Read `docs/ai-agent-guide.md`.
+3. Check `git status --short`.
+4. Inspect the owning files before editing.
+5. Make narrowly scoped changes.
+6. Avoid unrelated refactors.
+7. Run validation.
+8. Update docs and specs when behavior changes.
 
 When a file grows beyond comfortable review size, extract by responsibility, not by technical type alone. Example: split reader feed into reading state, story viewport, reaction rail, and comments only when those pieces start changing independently.
 

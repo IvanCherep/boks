@@ -5,29 +5,29 @@ This note describes how the current prototype supports a test with about 40,000 
 ## Ready Now
 
 - Reader feed requests load bounded batches rather than the whole catalog.
-- Reader events are attributed to recommendation algorithm, segment, surface, feed rank, elapsed seconds, and metadata.
+- D1 compatibility reader events are attributed to recommendation algorithm, segment, surface, feed rank, elapsed seconds, and metadata.
 - Admin content operations use server-side pagination, search, and sorting.
 - Recommendation algorithms are registered in one server module and compared in the admin Recommendation lab.
 - Demo stories are isolated in `lib/boks/seed-stories.ts`, so API behavior can evolve without mixing content and routing code.
 - Client helpers are split by concern: formatting, data access, behavior inference, shared UI, constants, and types.
-- Supabase reader/admin MVP uses bounded queries, indexed `reels`, `views`, and `likes`, and an aggregate RPC for the business console.
+- Supabase reader/admin/author MVP uses bounded queries, indexed `reels`, `views`, `likes`, `comments`, `user_profiles`, and aggregate RPCs for the business console.
 
 ## Current Limits
 
 - Reader, author, and admin surfaces are now separate component files. The next UI growth step should extract smaller subcomponents inside each surface only when repeated behavior appears.
-- Supabase MVP analytics are calculated directly from `views` and `likes`. This is fine for early testing, but larger usage needs attributed event tables and precomputed rollups.
+- Supabase MVP analytics are calculated directly from `views`, signed-in `likes`, and profile-owned `comments`. This is fine for early testing, but larger usage needs attributed event tables and precomputed rollups.
 - Seed content is bundled in source code. A 40,000 story catalog needs an import pipeline and editorial operations.
-- Reader access uses anonymous Supabase Auth. There is still no admin role separation or moderation workflow.
+- Reader access uses anonymous Supabase Auth. Permanent accounts, unique `@nickname`, admin role management, author submission, and moderation are present, but still MVP-level.
 - Search is simple SQL matching, not full-text search.
 
 ## Next Scaling Moves
 
 1. Add a bulk import pipeline for Supabase reels with validation for title, author, hook, text, genre, mood, reading minutes, language, rights, and status.
-2. Add moderation states before public publishing: draft, submitted, approved, rejected, published, archived.
+2. Add attributed Supabase event and recommendation assignment tables.
 3. Move high-volume analytics to rollup tables by story, algorithm, segment, and day.
 4. Add background jobs for rollup refreshes, export generation, and import processing.
 5. Add full-text search for admin operations, not reader choice.
-6. Add authentication and roles for founder, admin, author, and tester while preserving no-friction anonymous reader entry.
+6. Add richer role and cohort labels for founder, admin, author, and tester while preserving no-friction anonymous reader entry.
 7. Add event deduplication and sessionization, especially for impressions and starts.
 8. Add cohort exports so investor updates can compare fixed time windows and experiment groups.
 
@@ -44,6 +44,6 @@ This note describes how the current prototype supports a test with about 40,000 
 - Every reader event has `storyId`, `eventType`, `visitorId`, `algorithmId`, `userSegment`, `surface`, and `rank` when available.
 - Completion events include read seconds as `value`.
 - Likes, shares, comments, skips, and starts include elapsed seconds when available.
-- Comments stay tied to story and anonymous visitor.
+- Comments stay tied to story, permanent user id, display name snapshot, and unique `@nickname`.
 - Exports are saved before major content or algorithm changes.
 - Supabase RLS checks pass with `npm run verify:supabase` before every public deploy.

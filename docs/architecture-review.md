@@ -16,6 +16,7 @@ The main architecture risk is not the current file structure. The main risk is u
 - Supabase browser access is isolated in `components/boks/supabase-browser-data.ts`.
 - Supabase has RLS validation through `npm run verify:supabase`.
 - Product rules are explicit in `AGENTS.md` and `specs/`.
+- `docs/ai-agent-guide.md` gives non-Codex agents a direct onboarding and ownership map.
 
 ## Current Risks
 
@@ -49,15 +50,15 @@ Preferred future split:
 
 ### Supabase And D1 Split
 
-The production reader/admin MVP is Supabase-first, while author publishing and richer event attribution still use the D1 compatibility path.
+The production reader, account, author moderation, comments, and admin MVP is Supabase-first. D1 remains as a compatibility path for the original API prototype, local/demo fallback, and richer attributed event contract reference.
 
-This split is intentional for MVP continuity, but it must not become permanent by accident.
+This split is intentional for MVP continuity, but it must not become permanent by accident. New production behavior should usually go to Supabase first unless the user explicitly asks for local-only/demo work.
 
 Migration direction:
 
 1. Add attributed Supabase event tables.
-2. Add Supabase author publishing with moderation status.
-3. Move comments to Supabase.
+2. Add Supabase recommendation assignment tables.
+3. Move serious recommendation comparison from D1-shaped events to Supabase events and rollups.
 4. Keep D1 only as a local/demo fallback or remove it.
 
 ### Metrics Maturity
@@ -128,6 +129,17 @@ Owned by:
 - `app/api/boks/route.ts` for D1 compatibility capture
 - Supabase migration if production capture is needed
 - `docs/testing.md` if operators should inspect it
+
+### Add Or Change Comment Identity
+
+Owned by:
+
+- `components/boks/user-auth-panel.tsx`
+- `components/boks/reader-feed.tsx`
+- `components/boks/supabase-browser-data.ts`
+- Supabase profile/comment RPC migrations
+- `scripts/verify-supabase-mvp.mjs`
+- `specs/boks-product-spec.md`
 
 ### Add A Story Operation
 

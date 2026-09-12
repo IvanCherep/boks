@@ -46,7 +46,7 @@ For this stage, use `/admin` to review global funnel metrics, genre and mood rol
 
 The reader feed assigns recommendation algorithms automatically. Do not tell testers which algorithm they are seeing. Use the Recommendation lab in `/admin` after attributed events accumulate, then export the JSON before changing algorithm weights.
 
-Before moving beyond the first cohort, add bulk import, full-text search, precomputed metric rollups, moderation, password reset, and scheduled exports.
+Before moving beyond the first cohort, add bulk import, full-text search, precomputed metric rollups, stronger moderation operations, and scheduled exports.
 
 ## Admin Access
 
@@ -76,4 +76,4 @@ Rules:
 - Export metrics before resetting or changing the production database.
 - Run `npm run verify:supabase` after Supabase config or migration changes.
 - After auth config changes, check Supabase dashboard settings for production redirect URL and manual anonymous-user linking. Avoid `supabase config push` when it would overwrite unrelated remote settings.
-- For future AI-assisted changes, start with `AGENTS.md`, `docs/architecture.md`, and the relevant spec in `specs/`.
+- For future AI-assisted changes, start with `AGENTS.md`, `docs/README.md`, `docs/ai-agent-guide.md`, and the relevant spec in `specs/`.
