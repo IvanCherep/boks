@@ -480,6 +480,74 @@ textarea {
   line-height: 1;
 }
 
+.submission-card,
+.moderation-item {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 82%);
+}
+
+.submission-card {
+  padding: 0.85rem;
+}
+
+.moderation-list {
+  display: grid;
+  gap: 0;
+}
+
+.moderation-item {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding: 1rem;
+}
+
+.moderation-item:last-child {
+  border-bottom-width: 0;
+}
+
+.moderation-copy {
+  color: var(--foreground);
+}
+
+.review-badge {
+  display: inline-flex;
+  min-height: 1.8rem;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+  padding: 0.25rem 0.55rem;
+  color: var(--soft-foreground);
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.review-badge--pending_review {
+  border-color: rgb(169 107 41 / 28%);
+  background: rgb(255 244 220 / 84%);
+  color: rgb(112 73 35);
+}
+
+.review-badge--published {
+  border-color: rgb(45 125 90 / 24%);
+  background: rgb(232 247 239 / 86%);
+  color: rgb(37 101 74);
+}
+
+.review-badge--rejected {
+  border-color: rgb(182 77 70 / 24%);
+  background: rgb(255 237 234 / 86%);
+  color: rgb(143 54 48);
+}
+
+.review-badge--archived,
+.review-badge--draft {
+  background: rgb(244 241 235 / 90%);
+}
+
 .admin-table {
   width: 100%;
   overflow-x: auto;

@@ -19,7 +19,7 @@ Business rules:
 
 - The founder must be able to compare recommendation strategies by attributed behavior, not opinions alone.
 - Admin access is a Supabase `user_profiles.role` decision. It must be granted from `/admin` and enforced by RLS/RPC checks, never by local storage, URL flags, or `user_metadata`.
-- Author publishing stays simple, with the 15 minute promise enforced before publication.
+- Author submission stays simple, with the 15 minute promise enforced before review and admin approval required before publication.
 - Production reader test data belongs in Supabase. Browser storage is only for anonymous local reader identity, Supabase session persistence, and lightweight profile state. D1 remains the compatibility backend for the original author/API prototype until that surface is migrated.
 
 ## Architecture Map
@@ -27,8 +27,8 @@ Business rules:
 - `app/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only.
 - `app/boks-client.tsx`: route compatibility exports for the three client surfaces.
 - `components/boks/reader-feed.tsx`: swipe-first reader experience and reaction controls.
-- `components/boks/author-console.tsx`: author publishing cabinet and length guardrail.
-- `components/boks/admin-dashboard.tsx`: founder/admin metrics, recommendation lab, export, and content operations.
+- `components/boks/author-console.tsx`: author submission cabinet, review status, rejection reason, revision flow, and length guardrail.
+- `components/boks/admin-dashboard.tsx`: founder/admin metrics, moderation queue, recommendation lab, export, and content operations.
 - `components/boks/client-types.ts`: browser-facing TypeScript contracts.
 - `components/boks/constants.ts`: reusable client constants and empty state.
 - `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
@@ -58,8 +58,8 @@ Business rules:
 ## Change Routing
 
 - Reader experience: start in `components/boks/reader-feed.tsx`, `components/boks/reader-behavior.ts`, and `app/globals.css`.
-- Author cabinet: start in `components/boks/author-console.tsx` and shared validation in `app/api/boks/route.ts`.
-- Admin metrics: start in `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, Supabase RPC migrations, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
+- Author cabinet: start in `components/boks/author-console.tsx`, `components/boks/supabase-browser-data.ts`, and Supabase submission/review RPC migrations.
+- Admin metrics and moderation: start in `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, Supabase RPC migrations, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
 - User management: start in `components/boks/user-auth-panel.tsx`, `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, `lib/boks/supabase-client.ts`, and Supabase migrations.
 - Recommendation algorithms: update `lib/boks/contracts.ts`, `lib/boks/recommendations.ts`, and `specs/boks-recommendation-experiments.md` together.
 - Seed/demo content: update `lib/boks/seed-stories.ts`.

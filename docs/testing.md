@@ -45,16 +45,25 @@ Use `https://read.tryboks.workers.dev/author`.
 
 Ask an author:
 
-1. Paste or write one short piece.
-2. Check whether the estimated reading time is clear.
-3. Try to publish.
-4. Notice whether the 15 minute limit blocks long text.
+1. Sign up or sign in as a normal reader account.
+2. Paste or write one short bok.
+3. Check whether the estimated reading time is clear.
+4. Submit for review.
+5. Notice whether the 15 minute limit blocks long text.
+6. Check whether the submission appears in the author cabinet with a review status.
+
+After admin review, ask the author to check:
+
+1. Whether published status is understandable.
+2. Whether a refused bok shows a clear reason.
+3. Whether revision feels natural.
 
 Watch for:
 
 - Confusion around title, hook, genre, mood, or body.
+- Confusion around waiting, published, or refused states.
 - Whether the author understands that readers cannot manually pick the story.
-- Whether the author expects drafts, editing, moderation, or analytics.
+- Whether the author expects drafts, editing, moderation, or analytics beyond this MVP.
 
 ## Admin Test Script
 
@@ -67,10 +76,11 @@ After each small testing batch:
 1. Check funnel metrics.
 2. Check genre and mood rollups.
 3. Check recommendation comparison.
-4. Search and sort the story operations table.
-5. Check User management for new permanent users, reads, likes, and roles.
-6. Export `boks-metrics.json`.
-7. Save the export with a date and cohort label outside the repo.
+4. Review pending boks and approve or refuse them with reasons.
+5. Search and sort the story operations table.
+6. Check User management for new permanent users, reads, likes, and roles.
+7. Export `boks-metrics.json`.
+8. Save the export with a date and cohort label outside the repo.
 
 Recommended export labels:
 
@@ -97,12 +107,17 @@ Reader:
 
 Author:
 
-- `/author` publishes a valid short story.
+- `/author` submits a valid bok for admin review.
 - Pieces above 15 minutes are blocked.
 - Required fields are visible and understandable.
+- Authors can see waiting, published, and refused statuses.
+- Refused boks show the admin reason and can be revised.
 
 Admin:
 
+- Admins can approve or refuse submitted boks from Review queue.
+- Refusal requires a reason visible to the author.
+- Approved boks become eligible for the reader feed.
 - `/admin` does not load all stories at once.
 - Search, sort, and pagination remain server-side.
 - Export includes the same major metrics shown in the UI.

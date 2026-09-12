@@ -1,7 +1,14 @@
 "use client";
 
 import { initialMetrics } from "@/components/boks/constants";
-import type { BoksUserContext, Metrics, ReaderLibraryItem, RecommendationExperiment, Story } from "@/components/boks/client-types";
+import type {
+  AuthorBokSubmission,
+  BoksUserContext,
+  Metrics,
+  ReaderLibraryItem,
+  RecommendationExperiment,
+  Story,
+} from "@/components/boks/client-types";
 import {
   getAnonymousSupabaseUserId,
   getCurrentBoksUserContext,
@@ -181,6 +188,64 @@ export async function acceptBoksTerms(termsVersion: string): Promise<BoksUserCon
   if (result.error) throw result.error;
 
   return result.data as BoksUserContext;
+}
+
+export async function submitBokForReview(input: {
+  title: string;
+  authorName: string;
+  authorHandle: string;
+  hook: string;
+  body: string;
+  genre: string;
+  mood: string;
+  minutes: number;
+}) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("submit_bok_for_review", {
+    p_title: input.title,
+    p_author_name: input.authorName,
+    p_author_handle: input.authorHandle,
+    p_hook: input.hook,
+    p_text: input.body,
+    p_genre: input.genre,
+    p_mood: input.mood,
+    p_minutes: input.minutes,
+  });
+
+  if (result.error) throw result.error;
+
+  return result.data as { id: string; title: string; status: string; submittedAt: string };
+}
+
+export async function loadMyBokSubmissions(limit = 50): Promise<AuthorBokSubmission[]> {
+  if (!supabase) return [];
+
+  const result = await supabase.rpc("get_my_bok_submissions", {
+    p_limit: limit,
+  });
+
+  if (result.error) throw result.error;
+
+  return (result.data ?? []) as AuthorBokSubmission[];
+}
+
+export async function reviewBokSubmission(input: {
+  bokId: string;
+  decision: "approve" | "reject";
+  reason?: string;
+}) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("review_bok_submission", {
+    p_bok_id: input.bokId,
+    p_decision: input.decision,
+    p_reason: input.reason ?? "",
+  });
+
+  if (result.error) throw result.error;
+
+  return result.data as { id: string; title: string; status: string; reviewedAt: string; reviewNote: string | null };
 }
 
 export async function loadReaderLibrary(limit = 120): Promise<ReaderLibraryItem[]> {

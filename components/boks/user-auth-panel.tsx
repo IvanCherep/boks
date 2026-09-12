@@ -29,6 +29,7 @@ export type AuthPanelMode = "signin" | "signup" | "recover" | "setPassword";
 
 type UserAuthPanelProps = {
   open: boolean;
+  surface?: "reader" | "author";
   reason: "manual" | "notice" | "required";
   initialMode: AuthPanelMode;
   guestReadCount: number;
@@ -40,6 +41,7 @@ type UserAuthPanelProps = {
 
 export function UserAuthPanel({
   open,
+  surface = "reader",
   reason,
   initialMode,
   guestReadCount,
@@ -279,10 +281,14 @@ export function UserAuthPanel({
   const showingAccount = Boolean(accountUser && mode !== "setPassword");
   const remainingGuestBoks = Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount);
   const noticeText = required
-    ? "You have used the guest reading limit. Create an account or sign in to continue."
+    ? surface === "author"
+      ? "Sign up or sign in to submit boks for review and track decisions."
+      : "You have used the guest reading limit. Create an account or sign in to continue."
     : reason === "notice"
       ? `${remainingGuestBoks} free boks left. Create an account to save your reading history.`
-      : "Create an account to save your reading history and settings.";
+      : surface === "author"
+        ? "Create an account to submit boks for review."
+        : "Create an account to save your reading history and settings.";
   const title = showingAccount
     ? "Your reading profile"
     : mode === "signin"

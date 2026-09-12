@@ -61,12 +61,13 @@ Rules:
 ## Prototype URLs
 
 - `https://read.tryboks.workers.dev/`: swipe-first reader experience.
-- `https://read.tryboks.workers.dev/author`: author publishing cabinet.
-- `https://read.tryboks.workers.dev/admin`: founder/business console for content operations and experiment analysis.
+- `https://read.tryboks.workers.dev/author`: author submission cabinet.
+- `https://read.tryboks.workers.dev/admin`: founder/business console for moderation, content operations, and experiment analysis.
 
 ## Maintenance
 
-- Add schema changes through `db/schema.ts`, then generate a new Drizzle migration.
+- Add Supabase production schema changes through `supabase/migrations/`, then run `npm run verify:supabase`.
+- Add D1 compatibility schema changes through `db/schema.ts`, then generate a new Drizzle migration.
 - Keep seed stories in `lib/boks/seed-stories.ts` until there is a real editorial tool or bulk import pipeline.
 - Add or tune recommendation algorithms in `lib/boks/recommendations.ts`.
 - Keep metric definitions in `lib/boks/analytics.ts` so admin UI and exports stay aligned.

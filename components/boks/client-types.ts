@@ -41,6 +41,7 @@ export type Metrics = {
   funnel: Record<string, number>;
   stories: Array<Record<string, number | string>>;
   recentEvents: Array<Record<string, number | string>>;
+  moderationQueue?: AdminModerationItem[];
   users?: AdminUserRow[];
   genres?: Array<Record<string, number | string>>;
   moods?: Array<Record<string, number | string>>;
@@ -88,6 +89,31 @@ export type ReaderLibraryItem = {
   minutes: number;
   readAt: string;
   liked: boolean;
+};
+
+export type BokReviewStatus = "draft" | "pending_review" | "published" | "rejected" | "archived";
+
+export type AuthorBokSubmission = {
+  id: string;
+  title: string;
+  hook: string;
+  body: string;
+  genre: string;
+  mood: string;
+  minutes: number;
+  status: BokReviewStatus;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+};
+
+export type AdminModerationItem = AuthorBokSubmission & {
+  authorName: string;
+  authorHandle: string;
+  body: string;
+  authorUserId: string | null;
+  authorEmail: string;
 };
 
 export type AdminUserRow = {

@@ -33,7 +33,8 @@ Author cabinet:
 
 - Start with `components/boks/author-console.tsx`.
 - Keep the 15 minute guardrail.
-- The current author path still uses the D1 compatibility API. Migrate it deliberately when ready; do not mix partial Supabase writes into the existing D1 publish flow without updating docs and specs.
+- Permanent users submit boks through Supabase RPCs for review. Do not publish author-created boks directly to the reader feed.
+- Keep author-visible status clear: waiting, published, or refused with a reason.
 
 Admin and metrics:
 
@@ -41,6 +42,7 @@ Admin and metrics:
 - Supabase aggregate data comes from `get_boks_admin_snapshot` in `supabase/migrations/`.
 - D1 compatibility metrics live in `lib/boks/analytics.ts`.
 - Admin must use pagination, search, and server-side sorting. Never load the whole catalog into the browser.
+- Admin moderation actions must call admin-checked RPCs. Never let a normal browser update `reels.status` directly.
 
 Recommendation experiments:
 

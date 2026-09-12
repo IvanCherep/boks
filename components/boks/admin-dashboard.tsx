@@ -2,13 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Download, RefreshCw, Search, Shield, UserPlus } from "lucide-react";
+import { Check, Download, RefreshCw, Search, Shield, UserPlus, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { BoksUserContext } from "@/components/boks/client-types";
+import { Textarea } from "@/components/ui/textarea";
+import type { AdminModerationItem, BoksUserContext } from "@/components/boks/client-types";
 import { numberValue, pct, secondsLabel, storySignal } from "@/components/boks/client-format";
 import { AdminPanel, Breakdown, MetricTile, Target } from "@/components/boks/shared-ui";
-import { claimInitialBoksAdmin, ensureBoksProfile, loadBoksUserContext, setBoksAdminRole } from "@/components/boks/supabase-browser-data";
+import {
+  claimInitialBoksAdmin,
+  ensureBoksProfile,
+  loadBoksUserContext,
+  reviewBokSubmission,
+  setBoksAdminRole,
+} from "@/components/boks/supabase-browser-data";
 import { useBoksData } from "@/components/boks/use-boks-data";
 import { signInBoksUser } from "@/lib/boks/supabase-client";
 
@@ -23,6 +30,7 @@ export function AdminDashboard() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("signal");
   const [page, setPage] = useState(0);
+  const [reviewReasons, setReviewReasons] = useState<Record<string, string>>({});
   const pageSize = 100;
   const funnel = metrics.funnel ?? {};
   const pagination = metrics.pagination ?? {
@@ -41,6 +49,7 @@ export function AdminDashboard() {
   const algorithmRows = metrics.algorithmMetrics ?? [];
   const algorithmNameById = new Map((metrics.algorithms ?? []).map((algorithm) => [algorithm.id, algorithm.name]));
   const userRows = metrics.users ?? [];
+  const moderationQueue = metrics.moderationQueue ?? [];
 
   useEffect(() => {
     refreshAccess().catch((error) => {
@@ -116,6 +125,35 @@ export function AdminDashboard() {
     }
   }
 
+  async function moderateBok(item: AdminModerationItem, decision: "approve" | "reject") {
+    const reason = reviewReasons[item.id]?.trim() ?? "";
+    if (decision === "reject" && !reason) {
+      setStatus("Add a clear reason before refusing a bok.");
+      return;
+    }
+
+    setBusy(true);
+    setStatus("");
+    try {
+      await reviewBokSubmission({
+        bokId: item.id,
+        decision,
+        reason,
+      });
+      setReviewReasons((current) => {
+        const next = { ...current };
+        delete next[item.id];
+        return next;
+      });
+      await load({ view: "admin", limit: pageSize, offset: page * pageSize, q: query, sort });
+      setStatus(decision === "approve" ? "Bok approved and published." : "Bok refused. The author can see the reason.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not review bok.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function downloadMetrics() {
     const payload = {
       exportedAt: new Date().toISOString(),
@@ -126,6 +164,7 @@ export function AdminDashboard() {
       moods: metrics.moods,
       algorithms: metrics.algorithms,
       algorithmMetrics: metrics.algorithmMetrics,
+      moderationQueue: metrics.moderationQueue,
       recentEvents: metrics.recentEvents,
       users: metrics.users,
     };
@@ -228,13 +267,14 @@ export function AdminDashboard() {
           </div>
         </header>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
           <MetricTile label="Stories" value={numberValue(funnel.totalStories)} />
           <MetricTile label="Visitors" value={numberValue(funnel.visitors)} />
           <MetricTile label="Impressions" value={impressions} />
           <MetricTile label="Starts" value={starts} />
           <MetricTile label="Completes" value={completes} />
           <MetricTile label="Likes" value={numberValue(funnel.likes)} />
+          <MetricTile label="Pending" value={numberValue(funnel.pendingReview)} />
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[1fr_1fr_1fr]">
@@ -249,6 +289,67 @@ export function AdminDashboard() {
           <AdminPanel title="Mood signal">
             <Breakdown rows={metrics.moods ?? []} labelKey="mood" />
           </AdminPanel>
+        </section>
+
+        <section className="panel overflow-hidden">
+          <div className="border-b border-[var(--border)] p-4">
+            <h2 className="text-xl font-semibold tracking-normal">Review queue</h2>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              New boks stay private until an admin approves them. Refused boks return to the author with your reason.
+            </p>
+          </div>
+          <div className="moderation-list">
+            {moderationQueue.length ? moderationQueue.map((item) => (
+              <article key={item.id} className="moderation-item">
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`review-badge review-badge--${item.status}`}>
+                        {item.status === "rejected" ? <XCircle className="size-4" /> : <RefreshCw className="size-4" />}
+                        {item.status === "rejected" ? "Refused" : "Waiting"}
+                      </span>
+                      <span className="text-xs text-[var(--muted-foreground)]">
+                        {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : "not submitted"}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 break-words text-lg font-semibold tracking-normal">{item.title}</h3>
+                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                      {item.authorName} {item.authorHandle ? `· ${item.authorHandle}` : ""} · {item.authorEmail || "unknown email"} · {item.minutes} min · {item.genre} · {item.mood}
+                    </p>
+                    {item.hook && <p className="mt-3 text-sm leading-6 text-[var(--soft-foreground)]">{item.hook}</p>}
+                    <div className="moderation-copy mt-3 max-h-[220px] overflow-y-auto rounded-lg bg-[var(--reader)] p-3 text-sm leading-7">
+                      {item.body.split("\n").map((paragraph) => (
+                        <p key={paragraph} className="mb-3 last:mb-0">{paragraph}</p>
+                      ))}
+                    </div>
+                    {item.reviewNote && (
+                      <p className="mt-3 rounded-lg bg-[var(--muted)] p-3 text-sm leading-6 text-[var(--muted-foreground)]">
+                        Previous reason: {item.reviewNote}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid content-start gap-3">
+                    <Textarea
+                      aria-label={`Refusal reason for ${item.title}`}
+                      placeholder="Reason if refused"
+                      value={reviewReasons[item.id] ?? ""}
+                      onChange={(event) => setReviewReasons((current) => ({ ...current, [item.id]: event.target.value }))}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" disabled={busy} onClick={() => moderateBok(item, "reject")}>
+                        <XCircle className="size-4" /> Refuse
+                      </Button>
+                      <Button disabled={busy} onClick={() => moderateBok(item, "approve")}>
+                        <Check className="size-4" /> Approve
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            )) : (
+              <div className="p-4 text-sm text-[var(--muted-foreground)]">No boks are waiting for review.</div>
+            )}
+          </div>
         </section>
 
         <section className="panel overflow-hidden">

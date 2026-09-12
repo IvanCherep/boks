@@ -87,6 +87,34 @@ const blockedAdminGrantResult = await supabase.rpc("set_boks_admin_role", {
   p_is_admin: true,
 });
 assertOk(blockedAdminGrantResult.error, "Anonymous auth could grant admin access.");
+assertOk(blockedAdminGrantResult.error.code !== "PGRST202", "Admin grant RPC is missing.");
+
+const authorSubmissionsResult = await supabase.rpc("get_my_bok_submissions", {
+  p_limit: 10,
+});
+if (authorSubmissionsResult.error) throw authorSubmissionsResult.error;
+assertOk(Array.isArray(authorSubmissionsResult.data), "Author submissions RPC did not return a list.");
+
+const blockedSubmitResult = await supabase.rpc("submit_bok_for_review", {
+  p_title: "Blocked anonymous submit",
+  p_author_name: "Anonymous QA",
+  p_author_handle: "@qa",
+  p_hook: "This should not be accepted.",
+  p_text: "Anonymous users must create a permanent account before submitting boks.",
+  p_genre: "literary",
+  p_mood: "quiet",
+  p_minutes: 1,
+});
+assertOk(blockedSubmitResult.error, "Anonymous auth could submit a bok for review.");
+assertOk(blockedSubmitResult.error.code !== "PGRST202", "Bok submission RPC is missing.");
+
+const blockedReviewResult = await supabase.rpc("review_bok_submission", {
+  p_bok_id: reel.id,
+  p_decision: "approve",
+  p_reason: "",
+});
+assertOk(blockedReviewResult.error, "Anonymous auth could review a bok.");
+assertOk(blockedReviewResult.error.code !== "PGRST202", "Bok review RPC is missing.");
 
 console.log(
   JSON.stringify(
@@ -100,6 +128,9 @@ console.log(
       anonymousProfileContext: true,
       rlsBlocksAnonymousAdminSnapshot: true,
       rlsBlocksAnonymousAdminGrant: true,
+      authorSubmissionsRpcReadable: true,
+      rlsBlocksAnonymousBokSubmit: true,
+      rlsBlocksAnonymousBokReview: true,
       checkedReel: reel.title,
     },
     null,

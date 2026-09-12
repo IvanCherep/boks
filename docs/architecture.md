@@ -10,9 +10,9 @@ For the current architecture assessment, risks, and next extraction points, read
 
 The reader experience is intentionally narrow: open `/`, receive a story, read, react if needed, then swipe. Readers should not browse a catalog or choose algorithms. The product learns from behavior through impressions, starts, inferred completions, skips, likes, shares, comments, elapsed time, and scroll progress.
 
-The founder experience is broader: `/admin` supports experiment comparison, funnel review, content operations, search, sorting, pagination, JSON export, user management, and scale monitoring. In the Supabase production MVP it reads aggregate metrics through admin-only browser-safe RPCs rather than exposing raw cross-user rows.
+The founder experience is broader: `/admin` supports experiment comparison, funnel review, moderation review, content operations, search, sorting, pagination, JSON export, user management, and scale monitoring. In the Supabase production MVP it reads aggregate metrics and moderation queues through admin-only browser-safe RPCs rather than exposing raw cross-user rows.
 
-The author experience is constrained: `/author` lets a writer publish a short story and enforces the 15 minute promise before submission.
+The author experience is constrained: `/author` lets any permanent user submit a bok for review, see whether it is waiting, published, or refused, and revise refused boks. Admin approval is required before a submitted bok reaches the reader feed.
 
 ## Module Map
 
@@ -21,14 +21,14 @@ The author experience is constrained: `/author` lets a writer publish a short st
 - `app/admin/page.tsx`: admin route entrypoint.
 - `app/boks-client.tsx`: route compatibility exports for the three product surfaces.
 - `components/boks/reader-feed.tsx`: swipe-first reader experience, focus mode, inferred reading outcomes, comments, likes, and shares.
-- `components/boks/author-console.tsx`: author publishing cabinet and 15 minute length guardrail.
-- `components/boks/admin-dashboard.tsx`: founder console, recommendation lab, metrics export, search, sorting, and content pagination.
+- `components/boks/author-console.tsx`: author submission cabinet, status history, rejection reasons, revision flow, and 15 minute length guardrail.
+- `components/boks/admin-dashboard.tsx`: founder console, moderation queue, recommendation lab, metrics export, search, sorting, and content pagination.
 - `components/boks/client-types.ts`: browser-facing Story, Metrics, Comment, Recommendation, Profile, and load contracts.
 - `components/boks/constants.ts`: mood, genre, empty metric, and empty reader profile constants.
 - `components/boks/client-format.ts`: word count, time estimate, percentage, numeric, seconds, and story signal helpers.
 - `components/boks/reader-behavior.ts`: local browser identity, reader profile persistence, and read-outcome inference.
 - `components/boks/user-auth-panel.tsx`: reader account sheet for email sign-up/sign-in, settings, recent read boks, and admin shortcut.
-- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader/admin data access using anonymous auth, the publishable key, RLS, and aggregate RPC.
+- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, and admin data access using anonymous auth, the publishable key, RLS, and narrowly scoped RPCs.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
 - `app/globals.css`: theme, typography, responsive behavior, focus mode, and reading layout.
@@ -63,8 +63,18 @@ The author experience is constrained: `/author` lets a writer publish a short st
 2. Anonymous users must sign in. Permanent readers without admin role see access status but no metrics.
 3. If no admin exists, the first permanent user can claim admin from `/admin`. After that, only admins can grant or remove admin roles through `set_boks_admin_role()`.
 4. Admin users call `get_boks_admin_snapshot(limit, offset, query, sort)`.
-5. The RPC returns global aggregate metrics, genre and mood rollups, recent aggregate event rows, recent permanent users, and a paginated story operations table.
+5. The RPC returns global aggregate metrics, genre and mood rollups, recent aggregate event rows, moderation queue rows, recent permanent users, and a paginated story operations table.
 6. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
+
+## Author And Moderation Flow
+
+1. `/author` resolves the current Supabase user context.
+2. Anonymous readers can view the form but must sign up or sign in before submitting.
+3. Permanent users call `submit_bok_for_review()`. The RPC writes a private `reels` row with `status = 'pending_review'`, `author_user_id`, `submitted_at`, and a 15 minute limit.
+4. Authors call `get_my_bok_submissions()` to see their own submitted boks, including status and review notes.
+5. Admins see pending and recently refused boks in `/admin` through `get_boks_admin_snapshot()`.
+6. Admins call `review_bok_submission()` to approve or refuse. Approval changes status to `published`, which makes the bok eligible for the reader feed. Refusal stores `review_note`, visible only to the author and admins.
+7. Direct browser table writes cannot publish boks. Publication status changes happen through admin-checked RPCs.
 
 ## Recommendation Flow
 
