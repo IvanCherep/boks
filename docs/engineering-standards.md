@@ -83,11 +83,17 @@ Client data access starts in:
 - `components/boks/use-boks-data.ts`
 - `components/boks/supabase-browser-data.ts`
 
+Recommendation logic starts in:
+
+- `lib/boks/recommendations/strategies/index.ts` to add an algorithm
+- `lib/boks/recommendations/feed.ts` for ranking rules that apply to every algorithm
+- `lib/boks/recommendations/metrics.ts` for what a metric means
+- `lib/boks/recommendations/experiments.ts` for assignment and traffic split
+
 Server-side D1 compatibility starts in:
 
 - `app/api/boks/route.ts`
 - `lib/boks/analytics.ts`
-- `lib/boks/recommendations.ts`
 - `lib/boks/request.ts`
 
 Supabase schema starts in:
@@ -100,7 +106,9 @@ Supabase schema starts in:
 - Reader components may use browser-safe Supabase helpers.
 - Reader components must not import D1 schema or server-only helpers.
 - Server API code may import `lib/boks/*` and `db/*`.
-- `lib/boks/recommendations.ts` owns algorithm registry and ranking formulas.
+- `lib/boks/contracts.ts` imports nothing, so it is safe from browser, worker and test code.
+- `lib/boks/recommendations/` is browser-safe by design: the Supabase reader ranks its own feed. Never add a server-only import to it.
+- `lib/boks/recommendations/` owns the algorithm registry, ranking and metric definitions. SQL returns counters; it never decides an order or a rate.
 - `lib/boks/analytics.ts` owns D1 aggregate SQL.
 - Supabase aggregate SQL belongs in Supabase migrations until extracted into a managed SQL source folder.
 - Supabase user role checks belong in RLS policies or security-definer RPCs. Browser components may display role state but must not enforce it alone.
@@ -119,12 +127,19 @@ Before implementation:
 
 For AI agents, `docs/ai-agent-guide.md` is the practical workflow. Treat specs as source of product truth and docs as the operating map. Code that changes product behavior without updating specs/docs is incomplete.
 
-If a change affects recommendation behavior, update:
+If a change adds a recommendation algorithm, update:
+
+- `lib/boks/recommendations/strategies/<name>.ts`
+- `lib/boks/recommendations/strategies/index.ts`
+- `lib/boks/recommendations/feed.test.ts`
+
+If a change affects the recommendation contract or a metric, also update:
 
 - `lib/boks/contracts.ts`
-- `lib/boks/recommendations.ts`
+- `lib/boks/recommendations/metrics.ts`
+- The Supabase event/lab migration
 - `specs/boks-recommendation-experiments.md`
-- Admin comparison UI if a metric changes
+- `components/boks/admin/recommendation-lab.tsx`
 
 If a change affects production data, update:
 
@@ -149,6 +164,8 @@ Reader surface:
 - Story text owns the screen.
 - Controls can be visible on story change, tap, hover, or pause.
 - Controls should fade during active reading.
+- Literature typography uses the bundled Source Serif 4 variable font. Keep the font local, preserve Latin and Cyrillic coverage, and keep its SIL OFL text reachable from Settings.
+- Horizontal navigation follows the product mapping: left is previous, right is next. Vertical navigation changes boks only from a text boundary. Keep the pure rules and tests in `components/boks/reader-navigation.ts`.
 - Avoid cards inside cards.
 - Avoid decorative backgrounds that reduce readability.
 - Test small phone and desktop.
@@ -210,7 +227,8 @@ When a file grows beyond comfortable review size, extract by responsibility, not
 A change is done when:
 
 - The intended product behavior works.
-- Validation commands pass or failures are explained.
+- `npm run lint`, `npm run typecheck` and `npm test` pass, or failures are explained.
+- Schema changes pass `npm run verify:schema`, and product-flow changes pass `npm run test:supabase` against a local stack.
 - Public deploy checks pass for hosting changes.
 - Specs/docs are current.
 - The repo has no unrelated accidental changes.

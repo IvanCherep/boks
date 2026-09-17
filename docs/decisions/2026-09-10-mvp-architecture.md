@@ -19,7 +19,7 @@ Keep the current surface-based structure for now:
 - `components/boks/reader-feed.tsx`
 - `components/boks/author-console.tsx`
 - `components/boks/admin-dashboard.tsx`
-- `lib/boks/recommendations.ts`
+- `lib/boks/recommendations.ts` (superseded 2026-09-12 by the `lib/boks/recommendations/` module; see `2026-09-12-typescript-ranking-and-attributed-events.md`)
 - `lib/boks/analytics.ts`
 - `app/api/boks/route.ts`
 

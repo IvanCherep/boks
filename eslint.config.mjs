@@ -14,6 +14,18 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   {
+    // boks navigates between reader, author and admin with plain anchors.
+    // vinext's `next/link` client navigation throws `TypeError: e is not a
+    // function` in this build and silently does nothing, so the rule's advice
+    // produces dead links. A full navigation is also correct here: moving
+    // between surfaces should reset the surface. Re-enable this rule once
+    // vinext `Link` works.
+    files: ["app/**/*.tsx", "components/boks/**/*.tsx"],
+    rules: {
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
+  {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],
     rules: {
       // These files are vendored verbatim from shadcn@4.17.0. Keep the

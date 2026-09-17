@@ -1,4 +1,3 @@
-import Link from "next/link";
 
 const effectiveDate = "September 11, 2026";
 
@@ -6,9 +5,9 @@ export default function TermsPage() {
   return (
     <main className="legal-page">
       <article className="legal-document">
-        <Link href="/" className="brand-word brand-button">
+        <a href="/" className="brand-word brand-button">
           boks
-        </Link>
+        </a>
         <p className="mt-8 text-sm font-semibold text-[var(--muted-foreground)]">Effective {effectiveDate}</p>
         <h1>Terms of Use</h1>
         <p>
@@ -18,9 +17,9 @@ export default function TermsPage() {
 
         <h2>Accounts</h2>
         <p>
-          Readers can create an account with email and password to continue reading after the guest limit and to keep a
-          reading history. You are responsible for keeping your account credentials private and for activity from your
-          account.
+          Readers can create an account with an email magic link to continue reading after the guest limit and to keep
+          a reading history. You are responsible for keeping access to your email account secure and for activity from
+          your boks account.
         </p>
 
         <h2>Reader Signals</h2>

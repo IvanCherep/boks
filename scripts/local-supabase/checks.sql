@@ -1,0 +1,1407 @@
+-- Behavioral checks for the boks Supabase schema, run against a plain Postgres
+-- container with `scripts/local-supabase/shim.sql` applied. See docs/testing.md.
+--
+-- Every check raises an exception on failure, so `psql -v ON_ERROR_STOP=1`
+-- turns this file into a pass/fail gate.
+
+\set ON_ERROR_STOP on
+
+-- Acting as a given user means setting the same JWT claims PostgREST would set.
+create or replace function public.boks_test_login(p_user_id uuid, p_is_anonymous boolean default false)
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', p_user_id::text, 'role', 'authenticated', 'is_anonymous', p_is_anonymous)::text,
+    false
+  );
+end;
+$$;
+
+create or replace function public.boks_test_logout()
+returns void
+language sql
+as $$
+  select set_config('request.jwt.claims', '{}', false);
+$$;
+
+create or replace function public.boks_assert(p_condition boolean, p_message text)
+returns void
+language plpgsql
+as $$
+begin
+  if p_condition is not true then
+    raise exception 'CHECK FAILED: %', p_message;
+  end if;
+  raise notice 'ok: %', p_message;
+end;
+$$;
+
+do $$
+declare
+  v_author uuid := '11111111-1111-4111-8111-111111111111';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_reel uuid;
+  v_result jsonb;
+  v_quota jsonb;
+  v_error text;
+  v_count integer;
+  v_feed_id uuid;
+begin
+  -- Clean slate for repeated runs.
+  delete from public.recommendation_events;
+  delete from public.recommendation_assignments;
+  delete from public.reels where author_user_id is not null;
+  delete from public.user_profiles where user_id in (v_author, v_admin, v_reader);
+  delete from auth.users where id in (v_author, v_admin, v_reader);
+
+  -- The split a fresh database starts on, asserted before any test touches it.
+  perform public.boks_assert(
+    (select control_algorithm_id from public.recommendation_experiments where is_active) = 'for_you',
+    'a fresh database serves the for_you ranker as control'
+  );
+  perform public.boks_assert(
+    (select arms from public.recommendation_experiments where is_active)
+      = '[{"algorithmId":"for_you","weight":50},{"algorithmId":"completion_first","weight":50}]'::jsonb,
+    'the seeded split is the pairing the divergence gate could resolve'
+  );
+
+
+  insert into auth.users (id, email, is_anonymous) values
+    (v_author, 'author@boks.test', false),
+    (v_admin, 'admin@boks.test', false),
+    (v_reader, 'reader@boks.test', false);
+
+  -- ---------------------------------------------------------------- authoring
+  perform public.boks_test_login(v_author);
+  perform public.ensure_boks_user_profile();
+
+  -- The @handle comes from the email, with nothing asked of the reader.
+  perform public.boks_assert(
+    (select handle from public.user_profiles where user_id = v_author) = 'author',
+    'a new profile takes its @nickname from the email address'
+  );
+
+  v_quota := public.get_my_bok_quota();
+  perform public.boks_assert((v_quota ->> 'limit')::int = 3, 'daily limit is three boks');
+  perform public.boks_assert((v_quota ->> 'usedToday')::int = 0, 'a new author starts at zero submissions');
+
+  -- No byline given: it falls back to the @nickname.
+  perform public.submit_bok_for_review(
+    'Test bok 1', 'A hook.',
+    'A short story body that is well under fifteen minutes.', 'literary', 'quiet', 4,
+    '', true, 'Written by me.'
+  );
+  -- A byline is optional. Left empty, the reader is attributed by their
+  -- @handle alone, and nothing is stored on the work.
+  perform public.boks_assert(
+    exists (select 1 from public.reels where title = 'Test bok 1' and author_name is null),
+    'a boks published with no byline stores none'
+  );
+  perform public.boks_assert(
+    (select author_handle from public.boks_reels where title = 'Test bok 1') = 'author',
+    'a boks with no byline is still attributed by @handle'
+  );
+  perform public.boks_assert(
+    public.get_my_default_author_name() = '',
+    'an author who never chose a byline starts with an empty field'
+  );
+  -- Submissions in life are minutes apart; in one transaction they are not, so
+  -- the order is made explicit rather than left to a shared `now()`.
+  update public.reels set submitted_at = now() - interval '2 hours' where title = 'Test bok 1';
+
+  -- A pen name, chosen for this piece.
+  perform public.submit_bok_for_review(
+    'Test bok 2', 'A hook.',
+    'A short story body that is well under fifteen minutes.', 'literary', 'quiet', 4, 'Mira Vale',
+    true, ''
+  );
+  perform public.boks_assert(
+    exists (select 1 from public.reels where title = 'Test bok 2' and author_name = 'Mira Vale'),
+    'an author can publish under a pen name'
+  );
+  update public.reels set submitted_at = now() - interval '1 hour' where title = 'Test bok 2';
+  perform public.boks_assert(
+    public.get_my_default_author_name() = 'Mira Vale',
+    'the next boks defaults to the pen name used last'
+  );
+
+  -- The server stores exactly what it was given. Carrying the previous byline
+  -- forward is the *form* pre-filling a field, not the database inventing a
+  -- name for work that was submitted without one.
+  perform public.submit_bok_for_review(
+    'Test bok 3', 'A hook.',
+    'A short story body that is well under fifteen minutes.', '', '', 0, '', true
+  );
+  perform public.boks_assert(
+    (select author_name from public.reels where title = 'Test bok 3') is null,
+    'submitting with an empty byline stores no byline'
+  );
+  perform public.boks_assert(
+    public.get_my_default_author_name() = 'Mira Vale',
+    'the form is still offered the byline this author last chose'
+  );
+
+  -- A rename moves the @handle and leaves published work alone. The byline was
+  -- a decision the author made about that piece; a later change of nickname is
+  -- not a reason to rewrite it.
+  update public.user_profiles set handle = 'renamed_author' where user_id = v_author;
+  perform public.boks_assert(
+    (select author_handle from public.boks_reels where title = 'Test bok 2') = 'renamed_author',
+    'renaming an author moves the @handle on work they already published'
+  );
+  perform public.boks_assert(
+    (select author_name from public.boks_reels where title = 'Test bok 2') = 'Mira Vale',
+    'renaming an author leaves the byline they chose alone'
+  );
+  update public.user_profiles set handle = 'author' where user_id = v_author;
+
+  perform public.boks_assert(
+    not exists (
+      select 1 from public.reels where author_user_id is not null and author_handle is not null
+    ),
+    'a handle is never stored on the work - it is always joined from the profile'
+  );
+
+  v_quota := public.get_my_bok_quota();
+  perform public.boks_assert((v_quota ->> 'usedToday')::int = 3, 'three submissions are counted');
+  perform public.boks_assert((v_quota ->> 'exhausted')::boolean, 'quota reports exhausted at the limit');
+
+  begin
+    perform public.submit_bok_for_review(
+      'Fourth bok', 'A hook.',
+      'This one must be refused by the daily limit.', 'literary', 'quiet', 4, '', true
+    );
+    perform public.boks_assert(false, 'a fourth submission is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Daily limit reached%', 'a fourth submission is refused: ' || v_error);
+  end;
+
+  -- Yesterday's submissions must not consume today's quota.
+  update public.reels
+  set submitted_at = now() - interval '2 days'
+  where author_user_id = v_author;
+
+  v_quota := public.get_my_bok_quota();
+  perform public.boks_assert((v_quota ->> 'usedToday')::int = 0, 'the quota resets for a new day');
+
+  -- A submission stays private until an admin approves it.
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where author_user_id = v_author and status = 'published'),
+    'submitted boks are not published before review'
+  );
+
+  -- ------------------------------------------------------------- moderation
+  perform public.boks_test_login(v_admin);
+  perform public.ensure_boks_user_profile('Test Admin');
+  perform public.claim_initial_boks_admin();
+  perform public.boks_assert(public.is_boks_admin(v_admin), 'first admin can claim the role');
+
+  select id into v_reel from public.reels where author_user_id = v_author order by created_at limit 1;
+  v_result := public.review_bok_submission(v_reel, 'approve', '');
+  perform public.boks_assert(v_result ->> 'status' = 'published', 'an approved bok is published');
+
+  select id into v_reel from public.reels where author_user_id = v_author and status = 'pending_review' limit 1;
+  v_result := public.review_bok_submission(v_reel, 'reject', 'Needs a stronger ending.');
+  perform public.boks_assert(v_result ->> 'status' = 'rejected', 'a refused bok is rejected');
+  perform public.boks_assert(v_result ->> 'reviewNote' = 'Needs a stronger ending.', 'the refusal reason reaches the author');
+
+  begin
+    perform public.review_bok_submission(v_reel, 'reject', '');
+    perform public.boks_assert(false, 'refusing without a reason is blocked');
+  exception when others then
+    perform public.boks_assert(true, 'refusing without a reason is blocked');
+  end;
+
+  -- A reader must not be able to review or grant admin.
+  perform public.boks_test_login(v_reader);
+  perform public.ensure_boks_user_profile('Test Reader');
+  begin
+    perform public.review_bok_submission(v_reel, 'approve', '');
+    perform public.boks_assert(false, 'a reader cannot approve a bok');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot approve a bok');
+  end;
+
+  begin
+    perform public.set_boks_admin_role(v_reader, true);
+    perform public.boks_assert(false, 'a reader cannot grant themselves admin');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot grant themselves admin');
+  end;
+
+  -- -------------------------------------------------------- recommendations
+  v_result := public.get_active_recommendation_experiment();
+  perform public.boks_assert(v_result ->> 'key' = 'boks-feed-v1', 'an active experiment exists');
+  perform public.boks_assert(jsonb_array_length(v_result -> 'arms') = 2, 'the default experiment runs two arms, not four');
+
+  select id into v_reel from public.reels where status = 'published' order by created_at limit 1;
+
+  perform public.record_recommendation_assignment('boks-feed-v1', 'discovery', 'new_reader', 'visitor-x');
+  perform public.boks_assert(
+    exists (select 1 from public.recommendation_assignments where user_id = v_reader and algorithm_id = 'discovery'),
+    'a reader assignment is recorded'
+  );
+
+  -- The arm must not be rewritten by a later page load, or every cohort and
+  -- before/after reading would be based on history that had been overwritten.
+  perform public.record_recommendation_assignment('boks-feed-v1', 'balanced', 'general', 'visitor-x');
+  perform public.boks_assert(
+    exists (select 1 from public.recommendation_assignments where user_id = v_reader and algorithm_id = 'discovery'),
+    'a second assignment call does not silently move the reader to another arm'
+  );
+
+  v_result := public.get_my_recommendation_assignment('boks-feed-v1');
+  perform public.boks_assert(v_result ->> 'algorithmId' = 'discovery', 'the stored assignment is readable by its owner');
+
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
+      'clientElapsedSeconds', 0, 'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
+    jsonb_build_object('eventType', 'start', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
+      'clientElapsedSeconds', 2, 'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
+    jsonb_build_object('eventType', 'complete', 'storyId', v_reel::text, 'value', 180, 'algorithmId', 'discovery',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
+      'clientElapsedSeconds', 180, 'activeSeconds', 180, 'progress', 0.91,
+      'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
+    jsonb_build_object('eventType', 'not_a_real_event', 'storyId', v_reel::text, 'algorithmId', 'discovery'),
+    jsonb_build_object('eventType', 'start', 'storyId', 'not-a-uuid', 'algorithmId', 'discovery')
+  ));
+  perform public.boks_assert(v_count = 3, 'the event batch accepts three valid events and drops two invalid ones');
+
+  perform public.boks_assert(
+    not exists (select 1 from public.recommendation_events where user_id <> v_reader),
+    'recorded events are attributed to the calling reader only'
+  );
+
+  v_result := public.get_recommendation_candidates(50);
+  perform public.boks_assert(jsonb_array_length(v_result) >= 1, 'candidate rollups return published boks');
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result) as c
+      where c ->> 'id' = v_reel::text and (c ->> 'completes')::int = 1 and (c ->> 'readSecondsTotal')::numeric = 180
+    ),
+    'candidate rollups include attributed completion counters'
+  );
+
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result) as c
+      where c ->> 'id' = v_reel::text and (c ->> 'wordCount')::int > 0
+    ),
+    'candidates carry a real word count, not a clamped minute estimate'
+  );
+
+  -- Reading time is cumulative per (session, boks). Replaying the batch, or a
+  -- heartbeat arriving after the final event, must not add time twice.
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
+      'clientElapsedSeconds', 60, 'activeSeconds', 60, 'progress', 0.4,
+      'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
+    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
+      'clientElapsedSeconds', 120, 'activeSeconds', 120, 'progress', 0.7,
+      'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x')
+  ));
+  perform public.boks_assert(v_count = 2, 'heartbeat events are accepted');
+
+  v_result := public.get_recommendation_candidates(50);
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result) as c
+      where c ->> 'id' = v_reel::text and (c ->> 'readSecondsTotal')::numeric = 180
+    ),
+    'repeated heartbeats do not inflate reading time: the rollup takes the maximum, not the sum'
+  );
+
+  begin
+    perform public.get_recommendation_lab(30);
+    perform public.boks_assert(false, 'a reader cannot open the recommendation lab');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot open the recommendation lab');
+  end;
+
+  perform public.boks_test_login(v_admin);
+  v_result := public.get_recommendation_lab(30);
+  perform public.boks_assert(jsonb_array_length(v_result -> 'counters') = 1, 'the lab returns one counter row per algorithm-segment-day');
+  perform public.boks_assert(
+    (v_result -> 'counters' -> 0 ->> 'completes')::int = 1
+      and (v_result -> 'counters' -> 0 ->> 'readSecondsTotal')::numeric = 180
+      and (v_result -> 'counters' -> 0 ->> 'paceCount')::int = 1,
+    'the lab counters carry completion, read seconds and pace samples'
+  );
+
+  v_result := public.save_recommendation_experiment(
+    'boks-feed-v1', 'balanced',
+    '[{"algorithmId":"balanced","weight":50},{"algorithmId":"taste_match","weight":50}]'::jsonb,
+    25
+  );
+  perform public.boks_assert(jsonb_array_length(v_result -> 'arms') = 2, 'an admin can change the live experiment split');
+  perform public.boks_assert((v_result ->> 'minimumImpressionsPerArm')::int = 25, 'an admin can change the minimum sample');
+
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.save_recommendation_experiment('boks-feed-v1', 'balanced', '[{"algorithmId":"balanced","weight":100}]'::jsonb, 10);
+    perform public.boks_assert(false, 'a reader cannot change the experiment split');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot change the experiment split');
+  end;
+
+  -- -------------------------------------------------------------- overview
+  begin
+    perform public.get_boks_overview(7);
+    perform public.boks_assert(false, 'a reader cannot open the overview');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot open the overview');
+  end;
+
+  perform public.boks_test_login(v_admin);
+  v_result := public.get_boks_overview(7);
+
+  perform public.boks_assert(
+    (v_result -> 'catalog' ->> 'published')::int = (select count(*)::int from public.reels where status = 'published'),
+    'the overview counts the published catalog'
+  );
+  perform public.boks_assert(
+    (v_result -> 'reading' ->> 'activeSeconds')::int = 180,
+    'reading time sums the maximum per session and boks, so repeated heartbeats do not inflate it'
+  );
+  perform public.boks_assert(
+    (v_result -> 'readers' ->> 'active')::int >= 1,
+    'the overview counts active readers from attributed events'
+  );
+  perform public.boks_assert(
+    (v_result -> 'dataQuality' ->> 'readsWithOutcome')::int <= (v_result -> 'dataQuality' ->> 'reads')::int,
+    'the data quality tile cannot report more outcomes than reads'
+  );
+  perform public.boks_assert(
+    (v_result -> 'supply' ->> 'pending') is not null and (v_result -> 'supply' ->> 'approved') is not null,
+    'the overview reports supply health'
+  );
+
+  -- ---------------------------------------------------------------- growth
+  v_result := public.get_boks_growth(12);
+  perform public.boks_assert(
+    jsonb_array_length(v_result -> 'weekly') = 12,
+    'growth returns one row per week in the window, including weeks with nothing in them'
+  );
+  perform public.boks_assert(
+    (v_result -> 'totals' ->> 'readers')::int >= 1,
+    'growth counts every reader ever seen, not just this week'
+  );
+  perform public.boks_assert(
+    (v_result -> 'stickiness' ->> 'monthly')::int >= (v_result -> 'stickiness' ->> 'weekly')::int
+      and (v_result -> 'stickiness' ->> 'weekly')::int >= (v_result -> 'stickiness' ->> 'daily')::int,
+    'daily readers are a subset of weekly, and weekly of monthly'
+  );
+  perform public.boks_assert(
+    (v_result -> 'activation' ->> 'finishedOne')::int >= (v_result -> 'activation' ->> 'finishedThree')::int,
+    'more new readers finish one bok than finish three'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(v_result -> 'cohorts') >= 1
+      and (v_result -> 'cohorts' -> 0 ->> 'size')::int >= 1,
+    'growth reports at least one signup cohort with a size'
+  );
+
+  -- People and content now come from events, so they agree with everything else.
+  v_result := public.get_boks_people(50, 0, '');
+  perform public.boks_assert(
+    (v_result ->> 'total')::int >= 2,
+    'people lists permanent readers'
+  );
+  perform public.boks_assert(
+    (v_result -> 'rows' -> 0 ->> 'minutes') is not null,
+    'people reports reading minutes from events, not from the views table'
+  );
+
+  v_result := public.get_boks_content(50, 0, '', 'minutes');
+  perform public.boks_assert(
+    (v_result ->> 'total')::int >= 1,
+    'content lists published boks'
+  );
+  perform public.boks_assert(
+    (v_result -> 'rows' -> 0 ->> 'wordCount')::int > 0,
+    'content reports a real word count'
+  );
+
+  -- A bok's stated length must match the text on the page. It is the one
+  -- promise the product makes to a reader.
+  perform public.boks_assert(
+    not exists (
+      select 1 from public.reels
+      where minutes <> public.boks_reading_minutes(text)
+    ),
+    'every bok reports the reading time its text actually implies'
+  );
+  -- And the promise has to hold in more than one language. The ceiling was
+  -- derived from English word lengths, so the same 20,000 characters used to
+  -- be fifteen minutes of English and nearly seventeen of Russian.
+  perform public.boks_assert(
+    public.boks_reading_minutes(repeat('a', public.boks_max_text_characters())) = 15
+      and public.boks_reading_minutes(repeat('слово ', public.boks_max_text_characters() / 6)) = 15,
+    'the character ceiling is fifteen minutes whatever the language'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.boks_reels where author_handle like '@%'),
+    'handles are stored bare, so the @ is never doubled when rendered'
+  );
+
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.get_boks_growth(12);
+    perform public.boks_assert(false, 'a reader cannot open growth metrics');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot open growth metrics');
+  end;
+  begin
+    perform public.get_boks_people(10, 0, '');
+    perform public.boks_assert(false, 'a reader cannot list people');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot list people');
+  end;
+  perform public.boks_test_login(v_admin);
+
+  -- ------------------------------------------------ the fifteen minute rule
+
+  perform public.boks_assert(
+    public.boks_max_text_characters() = 20000,
+    'the 15 minute promise is 20000 characters'
+  );
+  begin
+    perform public.submit_bok_for_review(
+      'Far too long', 'A hook.', repeat('a ', public.boks_max_text_characters()), '', '', 0, '', true
+    );
+    perform public.boks_assert(false, 'a boks over the character ceiling is refused');
+  exception when others then
+    perform public.boks_assert(true, 'a boks over the character ceiling is refused');
+  end;
+  -- Enforced by the table too, not only by the RPC that normally writes it.
+  begin
+    insert into public.reels (title, author_name, hook, text, genre, mood, minutes, status)
+    values ('Direct and too long', 'Seed', 'A hook.', repeat('b', 20001), 'literary', 'quiet', 1, 'published');
+    perform public.boks_assert(false, 'the table refuses an over-long boks whatever writes it');
+  exception when check_violation then
+    perform public.boks_assert(true, 'the table refuses an over-long boks whatever writes it');
+  end;
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where char_length(text) > public.boks_max_text_characters()),
+    'every stored boks fits inside fifteen minutes'
+  );
+
+  -- --------------------------------------------------- identity is single
+
+  -- A byline is optional for an account-backed boks and required for a seeded
+  -- one, which has no profile to be attributed from.
+  perform public.boks_assert(
+    not exists (
+      select 1 from public.reels
+      where author_user_id is null and btrim(coalesce(author_name, '')) = ''
+    ),
+    'a boks with no account behind it still carries a byline'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where btrim(author_name) = ''),
+    'a byline is either a name or nothing, never an empty string'
+  );
+  perform public.boks_assert(
+    not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'user_profiles' and column_name = 'display_name'
+    ),
+    'a person has one name and it is their @nickname'
+  );
+  -- Attribution, not a name: a byline is optional, the @handle is not.
+  perform public.boks_assert(
+    not exists (select 1 from public.published_boks where btrim(coalesce(author_handle, '')) = ''),
+    'every published boks is attributed to someone'
+  );
+
+  -- The comment table has no identity columns at all; there is nothing to drift.
+  perform public.boks_assert(
+    not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'comments'
+        and column_name in ('visitor_name', 'visitor_handle')
+    ),
+    'comments carry no copy of who wrote them'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.user_profiles where handle is null),
+    'every profile has the @handle that identifies it'
+  );
+
+  -- ------------------------------------------------- the nickname shape
+
+  perform public.boks_assert(
+    public.boks_handle_is_valid('ivan_ystal') and public.boks_handle_is_valid('reader_2026'),
+    'a nickname may use English letters, digits and underscores'
+  );
+  -- The trailing underscore had no rule against it, but the input normaliser
+  -- stripped it on every keystroke, which made an underscore impossible to
+  -- type anywhere. Asserted so the two ends stay agreed on what is legal.
+  perform public.boks_assert(
+    public.boks_handle_is_valid('ivan_'),
+    'a nickname may end in an underscore'
+  );
+  perform public.boks_assert(
+    not public.boks_handle_is_valid('9ivan') and not public.boks_handle_is_valid('_ivan'),
+    'a nickname has to start with a letter'
+  );
+  perform public.boks_assert(
+    not public.boks_handle_is_valid('иван') and not public.boks_handle_is_valid('ivan_иван'),
+    'a nickname uses English letters only'
+  );
+  perform public.boks_assert(
+    not public.boks_handle_is_valid('ivan.ystal') and not public.boks_handle_is_valid('ivan-ystal'),
+    'a nickname has no punctuation'
+  );
+  perform public.boks_assert(
+    not public.boks_handle_is_valid('ab') and not public.boks_handle_is_valid(repeat('a', 25)),
+    'a nickname is 3 to 24 characters'
+  );
+
+  -- The table constraint repeats the rule rather than calling the function, so
+  -- the two are asserted to agree on every shape that matters.
+  perform public.boks_assert(
+    (select bool_and(public.boks_handle_is_valid(candidate) = (candidate ~ '^[a-z][a-z0-9_]{2,23}$'))
+     from unnest(array['ivan_ystal', 'ivan_', '9ivan', '_ivan', 'иван', 'ivan.ystal', 'ab', repeat('a', 25)]) candidate),
+    'the nickname constraint and boks_handle_is_valid agree'
+  );
+
+  -- Derivation sanitises, because there is no one to refuse: an email that
+  -- starts with a digit still has to yield a usable nickname.
+  perform public.boks_assert(
+    public.normalize_boks_handle('9ivan') = 'ivan',
+    'a seed that starts with a digit is trimmed to start with a letter'
+  );
+  perform public.boks_assert(
+    public.normalize_boks_handle('@Ivan.Ystal') = 'ivan_ystal',
+    'a seed is lowercased and punctuation becomes an underscore'
+  );
+  perform public.boks_assert(
+    public.normalize_boks_handle('999') is null,
+    'a seed with no letters yields nothing, so generation falls back'
+  );
+  perform public.boks_assert(
+    public.boks_handle_is_valid(
+      public.generate_boks_handle(public.boks_handle_seed_from_email('999@boks.test'), '44444444-4444-4444-8444-444444444444')
+    ),
+    'a generated nickname is always valid, whatever the email looked like'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.user_profiles where handle is not null and not public.boks_handle_is_valid(handle)),
+    'no stored nickname breaks the rule'
+  );
+
+  -- ----------------------------------------------------- content shape
+
+  perform public.boks_assert(
+    public.boks_word_count('') = 0,
+    'empty text is zero words, not one'
+  );
+  perform public.boks_assert(
+    public.boks_reading_shape('') = 'unknown',
+    'a boks with no text has no reading shape'
+  );
+  perform public.boks_assert(
+    public.boks_reading_shape(E'Light on the sill.\nA cup, half drunk.\nThe morning waits.\nNobody speaks.\nThe kettle cools.') = 'verse',
+    'short broken lines are recognised as verse'
+  );
+  perform public.boks_assert(
+    public.boks_reading_shape('A single paragraph that simply runs on without any line breaks at all.') = 'short_prose',
+    'an unbroken short paragraph is short prose'
+  );
+  perform public.boks_assert(
+    public.boks_reading_shape(repeat('word ', 600)) = 'long_prose',
+    'six hundred words is long prose'
+  );
+  perform public.boks_assert(
+    not exists (
+      select 1 from public.reels
+      where reading_shape <> public.boks_reading_shape(text)
+    ),
+    'every boks carries the reading shape its text implies'
+  );
+
+  -- --------------------------------------------------------- author follows
+
+  perform public.boks_test_login(v_reader);
+  v_result := public.set_author_follow(v_author, true);
+  perform public.boks_assert(
+    (v_result ->> 'following')::boolean and (v_result ->> 'followers')::integer = 1,
+    'a signed-in reader can follow an author'
+  );
+  -- Written once: a second follow is not a second follower.
+  v_result := public.set_author_follow(v_author, true);
+  perform public.boks_assert(
+    (v_result ->> 'followers')::integer = 1,
+    'following twice leaves one follow'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(public.get_my_followed_authors()) = 1,
+    'a reader can list who they follow'
+  );
+
+  begin
+    perform public.set_author_follow(v_reader, true);
+    perform public.boks_assert(false, 'a reader cannot follow themselves');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot follow themselves');
+  end;
+
+  perform public.boks_test_login(v_author);
+  perform public.boks_assert(
+    jsonb_array_length(public.get_my_followed_authors()) = 0,
+    'follows are private to the reader who made them'
+  );
+
+  perform public.boks_test_login(v_reader, true);
+  begin
+    perform public.set_author_follow(v_author, false);
+    perform public.boks_assert(false, 'an anonymous reader cannot follow an author');
+  exception when others then
+    perform public.boks_assert(true, 'an anonymous reader cannot follow an author');
+  end;
+
+  perform public.boks_test_login(v_reader);
+  v_result := public.set_author_follow(v_author, false);
+  perform public.boks_assert(
+    not (v_result ->> 'following')::boolean,
+    'a reader can unfollow an author'
+  );
+
+  -- ------------------------------------------------------- feed provenance
+  -- Everything here exists because a served feed used to leave no trace: the
+  -- ranking ran in the browser and only its consequences were stored.
+
+  perform public.boks_test_login(v_reader);
+  v_feed_id := public.record_served_feed(
+    jsonb_build_object(
+      'sessionId', 'session-checks',
+      'experimentKey', 'boks-feed-v1',
+      'algorithmId', 'balanced',
+      'assignmentSource', 'assigned',
+      'candidateCount', 2,
+      'catalogSize', 2,
+      'servingBackend', 'worker',
+      'signalsVersion', 'signals.v1',
+      'rankingVersion', 'ranking.v1',
+      'labelingVersion', 'labeling.v1',
+      'profileSnapshot', jsonb_build_object('genreAffinity', jsonb_build_object('literary', 3))
+    ),
+    jsonb_build_array(
+      jsonb_build_object('reelId', v_reel::text, 'deliveredRank', 0, 'score', 0.91,
+        'creditedAlgorithmId', 'balanced')
+    )
+  );
+  perform public.boks_assert(v_feed_id is not null, 'a reader can record the feed they were served');
+  perform public.boks_assert(
+    (select count(*) from public.served_feed_item where feed_id = v_feed_id) = 1,
+    'a served feed keeps one row per delivered slot'
+  );
+  perform public.boks_assert(
+    (select profile_snapshot -> 'genreAffinity' ->> 'literary' from public.served_feed where id = v_feed_id) = '3',
+    'the reader profile the ranking saw is stored verbatim, so the serve can be replayed'
+  );
+
+  -- A feed id is a hint from the client, never an authority. One belonging to
+  -- somebody else must be dropped rather than trusted.
+  perform public.boks_test_login(v_author);
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'algorithmId', 'balanced',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'general', 'surface', 'reader', 'rank', 0,
+      'sessionId', 'session-foreign', 'feedId', v_feed_id::text, 'servingBackend', 'worker',
+      'labelingVersion', 'labeling.v1')
+  ));
+  perform public.boks_assert(v_count = 1, 'an event with somebody else''s feed id is still recorded');
+  perform public.boks_assert(
+    (select feed_id from public.recommendation_events where session_id = 'session-foreign') is null,
+    'an event may not claim a feed that belongs to another reader'
+  );
+
+  perform public.boks_test_login(v_reader);
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'algorithmId', 'balanced',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'general', 'surface', 'reader', 'rank', 0,
+      'sessionId', 'session-checks', 'feedId', v_feed_id::text, 'servingBackend', 'worker',
+      'labelingVersion', 'labeling.v1', 'activeSeconds', 30, 'progress', 0.4),
+    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'algorithmId', 'balanced',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'general', 'surface', 'reader', 'rank', 0,
+      'sessionId', 'session-checks', 'feedId', v_feed_id::text, 'servingBackend', 'worker',
+      'labelingVersion', 'labeling.v1', 'activeSeconds', 90, 'progress', 0.7),
+    jsonb_build_object('eventType', 'complete', 'storyId', v_reel::text, 'algorithmId', 'balanced',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'general', 'surface', 'reader', 'rank', 0,
+      'sessionId', 'session-checks', 'feedId', v_feed_id::text, 'servingBackend', 'worker',
+      'labelingVersion', 'labeling.v1', 'activeSeconds', 140, 'progress', 0.95)
+  ));
+  perform public.boks_assert(v_count = 3, 'a reader records their own attributed events');
+  perform public.boks_assert(
+    (select count(*) from public.recommendation_events
+      where session_id = 'session-checks' and feed_id = v_feed_id) = 3,
+    'events carry the feed that served them'
+  );
+
+  -- ------------------------------------------------------- reader outcomes
+  perform public.boks_test_login(v_admin);
+  v_result := public.get_reader_outcomes(30, 'boks-feed-v1');
+  perform public.boks_assert(
+    jsonb_array_length(v_result) >= 1,
+    'reader outcomes come back one row per reader, algorithm and day'
+  );
+  -- Three events, one reader, one algorithm, one day: one row. Counting the
+  -- events instead is the pseudo-replication this whole phase exists to remove.
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(v_result) row
+      where row ->> 'userId' = v_reader::text and row ->> 'algorithmId' = 'balanced') = 1,
+    'a reader appears once per algorithm and day, never once per event'
+  );
+  perform public.boks_assert(
+    (select (row ->> 'activeSeconds')::integer from jsonb_array_elements(v_result) row
+      where row ->> 'userId' = v_reader::text and row ->> 'algorithmId' = 'balanced') = 140,
+    'cumulative reading time rolls up with max(), so a repeated heartbeat costs nothing'
+  );
+  perform public.boks_assert(
+    (select (row ->> 'sessions')::integer from jsonb_array_elements(v_result) row
+      where row ->> 'userId' = v_reader::text and row ->> 'algorithmId' = 'balanced') = 1,
+    'three events in one session are one session'
+  );
+  perform public.boks_assert(
+    (select (row ->> 'totalEvents')::integer from jsonb_array_elements(v_result) row
+      where row ->> 'userId' = v_reader::text and row ->> 'algorithmId' = 'balanced') = 3,
+    'the event count is still reported, as a denominator rather than a sample size'
+  );
+
+  -- The evaluation claims to be cohort-aware, so the analysis unit has to know
+  -- which reader it belongs to. Without these two fields a reader who joined
+  -- this week and one reading for a month are the same observation, and an arm
+  -- that helps one while hurting the other averages to nothing.
+  perform public.boks_assert(
+    (select row ->> 'cohortWeek' from jsonb_array_elements(v_result) row
+      where row ->> 'userId' = v_reader::text and row ->> 'algorithmId' = 'balanced')
+      ~ '^\d{4}-\d{2}-\d{2}$',
+    'every outcome row names the reader''s cohort week'
+  );
+  perform public.boks_assert(
+    (select (row ->> 'tenureDays')::integer from jsonb_array_elements(v_result) row
+      where row ->> 'userId' = v_reader::text and row ->> 'algorithmId' = 'balanced') = 0,
+    'a reader measured on their first day has a tenure of zero'
+  );
+  perform public.boks_assert(
+    (select bool_and((row ->> 'tenureDays')::integer >= 0) from jsonb_array_elements(v_result) row),
+    'tenure is never negative, whatever the window'
+  );
+
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.get_reader_outcomes(30, '');
+    perform public.boks_assert(false, 'a reader cannot read everybody''s outcomes');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot read everybody''s outcomes');
+  end;
+
+  -- --------------------------------------------------------- data quality
+  perform public.boks_test_login(v_admin);
+  v_result := public.get_recommendation_data_quality(30);
+  perform public.boks_assert(
+    (v_result ->> 'feeds')::integer = 1,
+    'the data-quality panel counts served feeds'
+  );
+  perform public.boks_assert(
+    (v_result ->> 'eventsWithoutFeed')::integer >= 1,
+    'an event with no provenance is counted, not hidden'
+  );
+  perform public.boks_assert(
+    (v_result -> 'feedsByBackend' ->> 'worker')::integer = 1,
+    'feeds are counted by the backend that served them'
+  );
+  perform public.boks_assert(
+    (v_result ->> 'algorithmMismatch')::integer = 0
+      and (v_result ->> 'rankNotInFeed')::integer = 0
+      and (v_result ->> 'eventsBeforeFeed')::integer = 0,
+    'a well-formed serve trips none of the attribution checks'
+  );
+  perform public.boks_assert(
+    (v_result -> 'labelingVersions' ->> 'labeling.v1')::integer = 4,
+    'every event records the labelling rules in force when it was written'
+  );
+
+  -- ----------------------------------------------------------- anonymous path
+  perform public.boks_test_login(v_reader, true);
+  begin
+    perform public.submit_bok_for_review('Anon bok', '', 'Anonymous readers must not publish.', 'literary', 'quiet', 2, '', true);
+    perform public.boks_assert(false, 'an anonymous reader cannot submit a bok');
+  exception when others then
+    perform public.boks_assert(true, 'an anonymous reader cannot submit a bok');
+  end;
+
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'algorithmId', 'balanced',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'general', 'surface', 'reader', 'rank', 1)
+  ));
+  perform public.boks_assert(v_count = 1, 'an anonymous guest reader still produces attributed events');
+
+  -- --------------------------------------------------- the catalogue import
+  -- A publisher account is an ordinary account that an admin has marked. The
+  -- per-piece byline is what lets one account publish many writers.
+  perform public.boks_test_login(v_admin);
+
+  begin
+    perform public.import_boks_batch('author', jsonb_build_array(
+      jsonb_build_object('importKey', 'x', 'title', 'T', 'text', 'Text.')
+    ), true, true);
+    perform public.boks_assert(false, 'an account that is not a publisher refuses an import');
+  exception when others then
+    perform public.boks_assert(true, 'an account that is not a publisher refuses an import');
+  end;
+
+  perform public.set_boks_publisher('author', true);
+  perform public.boks_assert(
+    (select is_publisher from public.user_profiles where user_id = v_author),
+    'an admin can mark an account as a publisher'
+  );
+
+  -- The batch is attested once, and a row may carry its own note.
+  v_result := public.import_boks_batch('author', jsonb_build_array(
+    jsonb_build_object('importKey', 'cat-1', 'title', 'With a byline', 'hook', 'One line.',
+                       'text', 'A short imported piece.', 'authorName', 'Abel Mensah',
+                       'createdAt', '1998-04-02T00:00:00Z', 'rightsNote', 'Project Gutenberg #1342'),
+    jsonb_build_object('importKey', 'cat-2', 'title', 'Without one', 'text', 'Another imported piece.'),
+    jsonb_build_object('importKey', 'cat-3', 'text', 'No title at all.'),
+    jsonb_build_object('importKey', 'cat-4', 'title', 'Too long', 'text', repeat('x', 20001)),
+    jsonb_build_object('title', 'No key', 'text', 'Nothing to deduplicate on.')
+  ), true, true, 'Public domain, verified against the source.');
+
+  perform public.boks_assert((v_result ->> 'imported')::integer = 2, 'an import writes the rows that are sound');
+  perform public.boks_assert(
+    (v_result ->> 'rejected')::integer = 3,
+    'a bad row is reported and the rest of the batch still lands'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result -> 'results') r
+      where r.value ->> 'importKey' = 'cat-4' and r.value ->> 'reason' like '%15 minutes%'
+    ),
+    'an over-long import row is refused by the same fifteen-minute rule as the form'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result -> 'results') r
+      where r.value ->> 'status' = 'rejected' and r.value ->> 'reason' like '%import key is required%'
+    ),
+    'a row with no import key is refused, because the load could not be repeated'
+  );
+
+  -- Published outright: a catalogue does not queue for review.
+  perform public.boks_assert(
+    (select status from public.reels where import_key = 'cat-1') = 'published',
+    'an imported boks is published, not queued'
+  );
+  perform public.boks_assert(
+    (select author_user_id from public.reels where import_key = 'cat-1') = v_author,
+    'an imported boks belongs to the publisher account, which is what a reader follows'
+  );
+  perform public.boks_assert(
+    (select author_name from public.reels where import_key = 'cat-1') = 'Abel Mensah'
+      and (select author_name from public.reels where import_key = 'cat-2') is null,
+    'each imported piece carries its own byline, and may carry none'
+  );
+  -- Read through the sanctioned projection, which is what the app queries.
+  -- `import_key` is bookkeeping and deliberately not part of it.
+  perform public.boks_assert(
+    (select v.author_handle from public.boks_reels v
+     where v.id = (select r.id from public.reels r where r.import_key = 'cat-1')) = 'author',
+    'an imported boks is attributed by the publisher @handle as well as its byline'
+  );
+  perform public.boks_assert(
+    not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'boks_reels' and column_name = 'import_key'
+    ),
+    'the import key stays out of the reader-facing projection'
+  );
+  perform public.boks_assert(
+    (select created_at from public.reels where import_key = 'cat-1')::date = '1998-04-02'::date,
+    'an import keeps the catalogue''s own date'
+  );
+  perform public.boks_assert(
+    (select word_count from public.reels where import_key = 'cat-1') = 4
+      and (select minutes from public.reels where import_key = 'cat-1') = 1,
+    'the same trigger derives length for an imported boks as for a submitted one'
+  );
+
+  perform public.boks_assert(
+    (select confirmed from public.bok_rights br
+     join public.reels r on r.id = br.reel_id where r.import_key = 'cat-1'),
+    'an imported bok carries the attestation the admin made for the batch'
+  );
+  perform public.boks_assert(
+    (select note from public.bok_rights br
+     join public.reels r on r.id = br.reel_id where r.import_key = 'cat-1') = 'Project Gutenberg #1342',
+    'a row with its own rights note keeps it'
+  );
+  perform public.boks_assert(
+    (select note from public.bok_rights br
+     join public.reels r on r.id = br.reel_id where r.import_key = 'cat-2')
+      = 'Public domain, verified against the source.',
+    'a row with no note of its own takes the batch note'
+  );
+
+  begin
+    perform public.import_boks_batch('author', jsonb_build_array(
+      jsonb_build_object('importKey', 'unattested', 'title', 'T', 'text', 'Text.')
+    ), true, false);
+    perform public.boks_assert(false, 'an import without a rights confirmation is refused');
+  exception when others then
+    perform public.boks_assert(true, 'an import without a rights confirmation is refused');
+  end;
+
+  -- The whole point of the import key.
+  v_result := public.import_boks_batch('author', jsonb_build_array(
+    jsonb_build_object('importKey', 'cat-1', 'title', 'With a byline', 'text', 'A short imported piece.')
+  ), true, true);
+  perform public.boks_assert(
+    (v_result ->> 'skipped')::integer = 1 and (v_result ->> 'imported')::integer = 0,
+    'importing the same key twice imports nothing the second time'
+  );
+
+  -- Removal, and the confirmation that gates it.
+  v_result := public.delete_boks_import('author', 'cat-', null);
+  perform public.boks_assert(
+    (v_result ->> 'matched')::integer = 2 and (v_result ->> 'deleted')::integer = 0,
+    'a removal without confirmation counts and deletes nothing'
+  );
+  v_result := public.delete_boks_import('author', 'cat-', 'cat-');
+  perform public.boks_assert(
+    (v_result ->> 'deleted')::integer = 2,
+    'a confirmed removal takes the batch out'
+  );
+
+  -- A reader must not be able to publish into an account or empty one.
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.import_boks_batch('author', jsonb_build_array(
+      jsonb_build_object('importKey', 'sneak', 'title', 'T', 'text', 'Text.')
+    ), true, true);
+    perform public.boks_assert(false, 'a reader cannot import boks into an account');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot import boks into an account');
+  end;
+  begin
+    perform public.set_boks_publisher('author', true);
+    perform public.boks_assert(false, 'a reader cannot make an account a publisher');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot make an account a publisher');
+  end;
+
+  -- ------------------------------------------------------ reading languages
+  perform public.boks_assert(
+    public.boks_detect_language('Абель зажигал девяносто четыре фонаря тридцать один год, и он знал каждый из них.') = 'ru',
+    'Cyrillic prose is detected as Russian'
+  );
+  perform public.boks_assert(
+    public.boks_detect_language('Abel had lit the same ninety-four lamps for thirty-one years, and he knew each one of them.') = 'en',
+    'English prose is detected as English'
+  );
+  -- Latin script alone is not English. A classifier that guesses here would
+  -- serve Spanish to a reader who asked for English only.
+  perform public.boks_assert(
+    public.boks_detect_language('Abel encendía las mismas noventa y cuatro lámparas desde hacía treinta y un años.') = 'und',
+    'Latin script that is not English is left undetermined rather than guessed'
+  );
+  perform public.boks_assert(
+    public.boks_detect_language('') = 'und' and public.boks_detect_language('Hi.') = 'und',
+    'too little text is undetermined, not a coin flip'
+  );
+  -- The rule this replaced searched the raw text for ' the ', which a poem
+  -- almost never contains: every word sits against a line break or a comma.
+  -- It was measuring prose, not English, and it lost twenty poems on
+  -- production. Verse in short lines has to come back as English.
+  perform public.boks_assert(
+    public.boks_detect_language(
+      E'The morns are meeker than they were,\nThe nuts are getting brown;\nThe berry\'s cheek is plumper,\nThe rose is out of town.'
+    ) = 'en',
+    'verse in short lines is English, not undetermined - punctuation is not a language'
+  );
+  -- Latin script in the languages most likely to be mistaken for English.
+  -- These share almost no function words with it, and must stay undetermined
+  -- rather than be served to someone who asked for English.
+  perform public.boks_assert(
+    public.boks_detect_language(
+      E'La nebbia in me si fermava ogni sera, e non sapevo piu se la casa\nche vedevo in fondo alla strada fosse la mia o quella di un altro.'
+    ) = 'und'
+    and public.boks_detect_language(
+      E'Es war in diesem Sommer, als der alte Mann mit der Laterne jeden\nAbend durch die Gassen ging und niemand sich daran erinnerte.'
+    ) = 'und',
+    'Italian and German are left undetermined rather than called English'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where language is null),
+    'every boks carries a derived language'
+  );
+
+  -- The filter lives in retrieval, and a reader who narrowed gets only what
+  -- they named. `und` is not evidence that they can read a piece: treating it
+  -- as eligible is how twenty English poems reached a Russian-only reader.
+  perform public.boks_test_login(v_reader);
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(public.get_recommendation_candidates(50, array['ru']))) = 0
+      or (select bool_and((c.value ->> 'language') = 'ru')
+          from jsonb_array_elements(public.get_recommendation_candidates(50, array['ru'])) c),
+    'a reader who narrowed to Russian is offered nothing else, undetermined included'
+  );
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(public.get_recommendation_candidates(50, array[]::text[])))
+      >= (select count(*) from jsonb_array_elements(public.get_recommendation_candidates(50, array['ru']))),
+    'no filter offers at least as much as a filter'
+  );
+
+  -- An empty array means "all", never "none": a filter that can silently empty
+  -- the feed must be impossible to set by accident.
+  v_result := public.set_my_reading_languages(array['ru-RU', 'RU', 'ja']);
+  perform public.boks_assert(
+    (v_result -> 'readingLanguages')::text = '["ru"]',
+    'a region tag is stored as its language, and an unsupported one is dropped'
+  );
+  perform public.boks_assert(
+    (select reading_languages from public.user_profiles where user_id = v_reader) = array['ru'],
+    'the reader''s choice is stored on their account'
+  );
+  -- Stored choice beats whatever the client sends.
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(public.get_recommendation_candidates(50, array['en']))) = 0
+      or (select bool_and((c.value ->> 'language') = 'ru')
+          from jsonb_array_elements(public.get_recommendation_candidates(50, array['en'])) c),
+    'a stored language filter is not overridden by the request'
+  );
+  v_result := public.set_my_reading_languages(array[]::text[]);
+  perform public.boks_assert(
+    (v_result -> 'readingLanguages')::text = '[]',
+    'clearing the filter is allowed and means everything is eligible'
+  );
+  -- Narrowing excludes `und`, so the reader who narrowed nothing has to be the
+  -- one who can still reach it. Otherwise an unplaceable piece is unreachable
+  -- by anybody, which is a quiet way to delete it.
+  insert into public.reels (title, hook, text, genre, mood, minutes, status, author_user_id, author_name, language)
+  values ('Unplaceable', 'A hook.', 'Zzz qqq xxx vvv zzz qqq xxx vvv.', 'fiction', 'calm', 1, 'published', v_admin, 'Nobody', 'und');
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(public.get_recommendation_candidates(400, array[]::text[])) c
+      where c.value ->> 'title' = 'Unplaceable'
+    ),
+    'a reader with no filter can still reach a piece the detector could not place'
+  );
+  delete from public.reels where title = 'Unplaceable';
+
+  perform public.boks_assert(
+    (public.boks_language_coverage() -> 'en') is not null
+      or public.boks_language_coverage() = '{}'::jsonb,
+    'the catalogue reports what it holds per language'
+  );
+
+  -- ------------------------------------------- reading a writer, not a feed
+  -- A publishing account holds many writers, and both halves of a byline are
+  -- tapped. They have to lead to different places.
+  perform public.boks_test_login(v_admin);
+  perform public.set_boks_publisher('author', true);
+  perform public.import_boks_batch('author', jsonb_build_array(
+    jsonb_build_object('importKey', 'w-1', 'title', 'First by Ada', 'text', 'A piece.', 'authorName', 'Ada Lovelace'),
+    jsonb_build_object('importKey', 'w-2', 'title', 'Second by Ada', 'text', 'Another piece.', 'authorName', 'Ada Lovelace'),
+    jsonb_build_object('importKey', 'w-3', 'title', 'Only by Bo', 'text', 'A third piece.', 'authorName', 'Bo Yun')
+  ), true, true, 'Public domain');
+
+  v_result := public.get_boks_author('author');
+  perform public.boks_assert(
+    (v_result ->> 'byline') is null,
+    'the @handle view is the publisher, not one of its writers'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(v_result -> 'writers') >= 2,
+    'the publisher view indexes the writers it publishes'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result -> 'writers') w
+      where w.value ->> 'name' = 'Ada Lovelace' and (w.value ->> 'boks')::int = 2
+    ),
+    'each writer is listed with how much of them there is'
+  );
+
+  v_result := public.get_boks_author('author', 'Ada Lovelace');
+  perform public.boks_assert(
+    v_result ->> 'byline' = 'Ada Lovelace' and v_result ->> 'authorName' = 'Ada Lovelace',
+    'asking for a writer returns that writer, not the account'
+  );
+  perform public.boks_assert(
+    (v_result ->> 'totalBoks')::int = 2 and jsonb_array_length(v_result -> 'boks') = 2,
+    'a writer view holds only that writer''s boks'
+  );
+  perform public.boks_assert(
+    v_result ->> 'authorHandle' = 'author',
+    'the writer view still names the account that published them, which is what Follow follows'
+  );
+  perform public.boks_assert(
+    public.get_boks_author('author', 'Nobody At All') is null,
+    'a byline nobody wrote is a stale link, not an empty writer'
+  );
+
+  -- Retrieval has to be able to reach the whole catalogue, not just the newest
+  -- slice: with 457 published boks and a window of 200, more than half of them
+  -- were unreachable for everyone.
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(public.get_recommendation_candidates(20))) <= 20,
+    'candidate retrieval respects its limit'
+  );
+
+  perform public.delete_boks_import('author', 'w-', 'w-');
+
+  -- ------------------------------------------------- clearing the demo set
+  perform public.boks_test_login(v_admin);
+  v_result := public.delete_seed_boks(null);
+  perform public.boks_assert(
+    (v_result ->> 'deleted')::integer = 0,
+    'clearing the demo catalogue reports before it deletes'
+  );
+  perform public.boks_assert(
+    (v_result ->> 'seeds')::integer > 0 and (v_result ->> 'authored')::integer >= 0,
+    'the report separates seeded boks from work an author published'
+  );
+
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.delete_seed_boks('delete the demo catalogue');
+    perform public.boks_assert(false, 'a reader cannot clear the catalogue');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot clear the catalogue');
+  end;
+
+  -- ------------------------------------------------------- reserved nicknames
+  begin
+    perform public.update_boks_user_profile('', 'boks');
+    perform public.boks_assert(false, 'a reader cannot take a reserved nickname');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot take a reserved nickname');
+  end;
+
+  perform public.boks_test_login(v_admin);
+  perform public.update_boks_user_profile('', 'boks');
+  perform public.boks_assert(
+    (select handle from public.user_profiles where user_id = v_admin) = 'boks',
+    'an admin can take a reserved nickname, which is how the official account gets its name'
+  );
+
+  -- Derivation has to respect the list too, or signing up as boks@... would
+  -- hand out the platform's own name.
+  perform public.boks_assert(
+    public.generate_boks_handle('boks', '55555555-5555-4555-8555-555555555555') <> 'boks',
+    'a reserved nickname is never handed out by derivation'
+  );
+  perform public.boks_assert(
+    public.boks_handle_is_valid(
+      public.generate_boks_handle('boks', '55555555-5555-4555-8555-555555555555')
+    ),
+    'the nickname derivation falls back to something valid'
+  );
+
+  -- ------------------------------------------------------------------ rights
+  perform public.boks_test_login(v_author);
+
+  -- The attestation is not optional, and the refusal names what is missing.
+  begin
+    perform public.submit_bok_for_review('Unattested', 'A hook.', 'Text that nobody vouched for.');
+    perform public.boks_assert(false, 'publishing without confirming the rights is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(
+      v_error like '%rights%',
+      'publishing without confirming the rights is refused, saying so'
+    );
+  end;
+
+  perform public.boks_assert(
+    (select confirmed from public.bok_rights br
+     join public.reels r on r.id = br.reel_id where r.title = 'Test bok 1'),
+    'a submitted bok carries its author''s attestation'
+  );
+  perform public.boks_assert(
+    (select note from public.bok_rights br
+     join public.reels r on r.id = br.reel_id where r.title = 'Test bok 1') = 'Written by me.',
+    'the rights note is stored as written'
+  );
+  perform public.boks_assert(
+    (select note from public.bok_rights br
+     join public.reels r on r.id = br.reel_id where r.title = 'Test bok 2') is null,
+    'an empty rights note is stored as nothing, not as an empty string'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.reels r where not exists
+      (select 1 from public.bok_rights br where br.reel_id = r.id)),
+    'every bok has a rights record'
+  );
+
+  -- Rights text can name a person, an estate or a contract, so it is not in
+  -- the reader-facing projection and not readable by a reader.
+  perform public.boks_assert(
+    not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name in ('boks_reels', 'published_boks')
+        and column_name in ('rights_note', 'note', 'rights_confirmed', 'confirmed')
+    ),
+    'no rights field reaches the reader-facing projections'
+  );
+
+  -- ----------------------------------------------------------------- reports
+  perform public.boks_test_login(v_reader);
+
+  -- A reason an admin cannot act on is worse than no report at all.
+  begin
+    perform public.report_bok(v_reel, 'bad');
+    perform public.boks_assert(false, 'a report needs a reason worth reading');
+  exception when others then
+    perform public.boks_assert(true, 'a report needs a reason worth reading');
+  end;
+
+  v_result := public.report_bok(v_reel, 'This is my translation, published in 1998 without my permission.');
+  perform public.boks_assert(v_result ->> 'status' = 'received', 'a reader can report a bok');
+
+  v_result := public.report_bok(v_reel, 'This is my translation, published in 1998 without my permission.');
+  perform public.boks_assert(
+    v_result ->> 'status' = 'already',
+    'reporting the same bok twice does not pile up rows for an admin to read twice'
+  );
+
+  -- Whether a reader can *read* these tables is asserted in the row-level
+  -- security block at the end of this file: this block runs as the database
+  -- owner, for which RLS is bypassed, so a check here would always pass.
+
+  perform public.boks_test_login(v_admin);
+  v_result := public.get_boks_rights_review('open', 50);
+  perform public.boks_assert(
+    (v_result ->> 'openReports')::integer = 1,
+    'an admin sees the open report'
+  );
+  perform public.boks_assert(
+    (v_result -> 'reports' -> 0 ->> 'reason') like '%my translation%',
+    'an admin reads the reason the reader gave'
+  );
+  perform public.boks_assert(
+    (v_result -> 'reports' -> 0 ->> 'rightsNote') is not null
+      or (v_result -> 'reports' -> 0 ->> 'rightsConfirmed') is not null,
+    'the report arrives next to what the author claimed about the rights'
+  );
+  perform public.boks_assert(
+    (v_result ->> 'unattested')::integer >= 1,
+    'boks published before the rights record are listed as unattested'
+  );
+
+  -- Taking a piece down needs a reason, because the author is told it.
+  begin
+    perform public.review_bok_report((v_result -> 'reports' -> 0 ->> 'id')::uuid, 'actioned', '');
+    perform public.boks_assert(false, 'taking a bok down requires a reason');
+  exception when others then
+    perform public.boks_assert(true, 'taking a bok down requires a reason');
+  end;
+
+  v_result := public.review_bok_report(
+    (public.get_boks_rights_review('open', 50) -> 'reports' -> 0 ->> 'id')::uuid,
+    'actioned',
+    'Confirmed with the translator. Withdrawn.'
+  );
+  perform public.boks_assert(
+    v_result ->> 'status' = 'actioned' and v_result ->> 'bokStatus' = 'rejected',
+    'acting on a report takes the bok out of the feed, which review_bok_submission cannot do'
+  );
+  perform public.boks_assert(
+    not (select confirmed from public.bok_rights where reel_id = v_reel),
+    'a withdrawn bok loses its attestation, so it cannot quietly come back'
+  );
+  perform public.boks_assert(
+    (select review_note from public.reels where id = v_reel) like '%translator%',
+    'the author is told why their bok was withdrawn'
+  );
+  -- The withdrawal is appended to whatever the author claimed, and a piece
+  -- whose author left no note must not end up with a note that begins with a
+  -- separator - which is what naive concatenation produced.
+  perform public.boks_assert(
+    (select note from public.bok_rights where reel_id = v_reel) like '%Withdrawn after a report:%'
+      and (select btrim(note) from public.bok_rights where reel_id = v_reel) not like '|%',
+    'a withdrawal is appended to the author''s claim without a leading separator'
+  );
+  -- The same path with nothing to append to.
+  perform public.boks_test_login(v_admin);
+  perform public.set_bok_rights(v_reel, true, '');
+  perform public.boks_test_login(v_reader);
+  v_result := public.report_bok(v_reel, 'Reporting it a second time, now that the note is empty.');
+  perform public.boks_test_login(v_admin);
+  perform public.review_bok_report(
+    (v_result ->> 'id')::uuid, 'actioned', 'Withdrawn again.'
+  );
+  perform public.boks_assert(
+    (select note from public.bok_rights where reel_id = v_reel) = 'Withdrawn after a report: Withdrawn again.',
+    'with no claim to append to, the withdrawal note stands on its own'
+  );
+  perform public.boks_assert(
+    (public.get_boks_rights_review('open', 50) ->> 'openReports')::integer = 0,
+    'a resolved report leaves the open list'
+  );
+
+  -- A reader cannot review reports or rewrite a rights record.
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.get_boks_rights_review('open', 50);
+    perform public.boks_assert(false, 'a reader cannot read the rights review');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot read the rights review');
+  end;
+  begin
+    perform public.set_bok_rights(v_reel, true, 'Nothing to see here.');
+    perform public.boks_assert(false, 'a reader cannot rewrite a rights record');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot rewrite a rights record');
+  end;
+
+  perform public.boks_test_logout();
+  raise notice 'ALL CHECKS PASSED';
+end $$;
+
+-- Row level security must hold for a plain authenticated session too.
+set role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', '33333333-3333-4333-8333-333333333333', 'role', 'authenticated', 'is_anonymous', false)::text, false);
+
+do $$
+begin
+  perform public.boks_assert(
+    (select count(*) from public.recommendation_events) = 0,
+    'a reader cannot select the recommendation event stream'
+  );
+  -- Rights text can name a person, an estate or a contract; a complaint names
+  -- a grievance. Neither is a reader's to read - not even their own report.
+  perform public.boks_assert(
+    (select count(*) from public.bok_rights) = 0,
+    'a reader cannot read the rights records'
+  );
+  perform public.boks_assert(
+    (select count(*) from public.bok_reports) = 0,
+    'a reader cannot read the reports, including the one they filed'
+  );
+  perform public.boks_assert(
+    (select count(*) from public.recommendation_experiments where is_active) = 1,
+    'a reader can read the active experiment row'
+  );
+
+  begin
+    insert into public.recommendation_events (user_id, reel_id, event_type)
+    values ('33333333-3333-4333-8333-333333333333', null, 'impression');
+    perform public.boks_assert(false, 'a reader cannot insert events directly, only through the RPC');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot insert events directly, only through the RPC');
+  end;
+end $$;
+
+reset role;

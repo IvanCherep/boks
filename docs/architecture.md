@@ -22,25 +22,31 @@ The author experience is constrained: `/author` lets any permanent user submit a
 - `app/boks-client.tsx`: route compatibility exports for the three product surfaces.
 - `components/boks/reader-feed.tsx`: swipe-first reader experience, focus mode, inferred reading outcomes, comments, likes, and shares.
 - `components/boks/author-console.tsx`: author submission cabinet, status history, rejection reasons, revision flow, and 15 minute length guardrail.
-- `components/boks/admin-dashboard.tsx`: founder console, moderation queue, recommendation lab, metrics export, search, sorting, and content pagination.
+- `components/boks/admin-dashboard.tsx`: founder console, moderation queue, user management, metrics export, search, sorting, and content pagination.
+- `components/boks/admin/recommendation-lab.tsx`: algorithm comparison, uplift against control, sample readiness, segment breakdown, and comparison export.
+- `components/boks/admin/experiment-editor.tsx`: the live traffic split across every registered algorithm.
+- `components/boks/admin/metric-bars.tsx`: single-series comparison bars and per-algorithm sparklines.
 - `components/boks/client-types.ts`: browser-facing Story, Metrics, Comment, Recommendation, Profile, and load contracts.
 - `components/boks/constants.ts`: mood, genre, empty metric, and empty reader profile constants.
 - `components/boks/client-format.ts`: word count, time estimate, percentage, numeric, seconds, and story signal helpers.
 - `components/boks/reader-behavior.ts`: local browser identity, reader profile persistence, and read-outcome inference.
+- `components/boks/reader-events.ts`: attributed reader event queue with batching, retry and flush on tab exit.
 - `components/boks/user-auth-panel.tsx`: reader account sheet for email sign-up/sign-in, settings, recent read boks, and admin shortcut.
 - `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, account, comment, and admin data access using anonymous auth, the publishable key, RLS, and narrowly scoped RPCs.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
 - `app/globals.css`: theme, typography, responsive behavior, focus mode, and reading layout.
 - `app/api/boks/route.ts`: request orchestration for reader feed, author publish, comments, events, admin metrics, and exports.
-- `lib/boks/contracts.ts`: server product vocabulary, event types, and algorithm ids.
-- `lib/boks/recommendations.ts`: algorithm registry, deterministic assignment, and ranking SQL.
-- `lib/boks/analytics.ts`: reusable SQL rollups and admin metrics.
+- `lib/boks/contracts.ts`: product vocabulary, event types, the attributed `ReaderEvent` contract, and the daily submission limit. Imports nothing, so it is safe in browser, worker and test code.
+- `lib/boks/recommendations/`: signals, strategy contract, strategy files, registry, experiment assignment, feed ranking, and metric derivation. Browser-safe.
+- `lib/boks/author/submission-quota.ts`: the daily author limit mirrored for the UI.
+- `lib/boks/analytics.ts`: reusable D1 SQL rollups, candidate selection and algorithm counters.
 - `lib/boks/request.ts`: request parsing, validation, and error response helpers.
 - `lib/boks/seed-stories.ts`: demo story content used by database seeding.
 - `lib/boks/supabase-client.ts`: browser Supabase client and anonymous auth helper.
 - `supabase/config.toml`: Supabase config with anonymous sign-ins, email sign-up, production redirect URL, and manual linking documented.
-- `supabase/migrations/`: production MVP tables, user profiles, indexes, RLS policies, seed reels, and admin aggregate functions.
+- `supabase/migrations/`: production MVP tables, user profiles, indexes, RLS policies, seed reels, moderation, author quota, recommendation experiments/assignments/events, and admin aggregate functions.
+- `scripts/local-supabase/`: the Supabase platform shim and behavior checks used by `npm run verify:schema`.
 - `db/schema.ts`: Drizzle schema for D1.
 - `drizzle/`: generated migrations.
 - `specs/`: product and recommendation specifications.
@@ -56,8 +62,10 @@ The author experience is constrained: `/author` lets any permanent user submit a
 5. RLS allows readers to read published reels, record their own views, and manage likes only after they have a permanent account.
 6. Guest access is tracked locally by distinct boks shown in the browser: notice at 5, notice at 10, sign-up required at 15.
 7. Signed-in readers can open the boks wordmark for settings, unique `@nickname`, and recently read boks; this data is backed by Supabase profile, view, like, and comment rows.
-8. Without Supabase config, the original D1 API path resolves deterministic recommendation experiments and records richer prototype events.
-9. `reader-behavior.ts` updates local preference state from completed or liked stories.
+8. The feed itself is ranked by `buildReaderFeed`: `get_recommendation_candidates` returns published boks with their behavior counters, and the assigned strategy orders them in the browser. Without the recommendation migration the loader falls back to newest-first and reports the `recency` baseline instead of failing.
+9. Every behavior signal goes through `components/boks/reader-events.ts` into `record_recommendation_events`, attributed with algorithm, experiment, segment, feed rank, elapsed seconds and estimated duration.
+10. Without Supabase config, the D1 API path ranks through the same `buildReaderFeed` and records the same attributed events in the D1 `events` table.
+11. `reader-behavior.ts` updates local preference state from completed or liked stories. That state becomes the `ReaderSignals` input for personalized strategies.
 
 ## Account And Comment Flow
 
@@ -65,7 +73,8 @@ The author experience is constrained: `/author` lets any permanent user submit a
 2. Likes and comment writes require a permanent account. UI gates these actions gently, and Supabase RLS/RPCs enforce the same rule.
 3. Permanent profiles live in `public.user_profiles` with `display_name`, unique `handle`, role, terms fields, and account settings.
 4. The reader account sheet writes profile changes through `update_boks_user_profile()`, which normalizes handles and rejects duplicates.
-5. Comments are created through `create_bok_comment()`. The RPC stores both display name and unique `visitor_handle`; the reader UI displays `@nickname` first and display name second.
+5. Comments are created through `create_bok_comment()`. The RPC stores both display name and unique `visitor_handle`; the reader UI shows `@nickname` only, because the handle already identifies the commenter. The stored display name remains available for admin and moderation context.
+5a. A bok's byline is the author's profile identity. `submit_bok_for_review()` reads `display_name` and `handle` from `user_profiles` and ignores anything the browser might send, so a bok cannot be published under another author's name.
 6. Keyboard shortcuts must ignore focus inside buttons, links, inputs, textareas, selects, and editable content so writing comments never advances the feed.
 
 ## Admin Flow
@@ -81,7 +90,8 @@ The author experience is constrained: `/author` lets any permanent user submit a
 
 1. `/author` resolves the current Supabase user context.
 2. Anonymous readers can view the form but must sign up or sign in before submitting.
-3. Permanent users call `submit_bok_for_review()`. The RPC writes a private `reels` row with `status = 'pending_review'`, `author_user_id`, `submitted_at`, and a 15 minute limit.
+3. Permanent users call `submit_bok_for_review()`. The RPC writes a private `reels` row with `status = 'pending_review'`, `author_user_id`, `submitted_at`, a 15 minute limit, and a limit of 3 submissions per UTC day. The day counter is read under a lock on the author's own profile row, so two parallel submissions cannot both slip past the limit.
+3a. `get_my_bok_quota()` reports used, remaining and reset time. The author cabinet shows it and disables submission when exhausted; the database refuses a fourth submission regardless of what the UI does.
 4. Authors call `get_my_bok_submissions()` to see their own submitted boks, including status and review notes.
 5. Admins see pending and recently refused boks in `/admin` through `get_boks_admin_snapshot()`.
 6. Admins call `review_bok_submission()` to approve or refuse. Approval changes status to `published`, which makes the bok eligible for the reader feed. Refusal stores `review_note`, visible only to the author and admins.
@@ -89,24 +99,48 @@ The author experience is constrained: `/author` lets any permanent user submit a
 
 ## Recommendation Flow
 
-Recommendation behavior is centralized in `lib/boks/recommendations.ts`. Each algorithm has an id, label, description, user segment, and ranking formula. Event attribution records the selected algorithm so `/admin` can compare variants.
+Ranking is TypeScript, not SQL. The database returns candidates with behavior
+counters; `lib/boks/recommendations` scores and orders them. One strategy
+implementation therefore serves the Supabase production path, the D1
+compatibility path and the unit tests.
 
-The Supabase direct-browser MVP currently uses `supabase_recent` as a production smoke-test feed. Before running serious algorithm comparisons on Supabase, add an attributed `events` table or typed recommendation assignment table there; keep the older D1 event contract as the reference for the metrics shape.
+```text
+candidates + reader signals ──▶ deriveFeedSignals ──▶ strategy.score
+                                                         │
+       experiment config ──▶ assignExperimentArm ────────▶ buildReaderFeed ──▶ ranked feed + experiment
+```
+
+1. `get_active_recommendation_experiment()` returns the live traffic split.
+2. `assignExperimentArm` picks a deterministic arm for the visitor, so one tester
+   never bounces between variants. The assignment is recorded once in
+   `public.recommendation_assignments`.
+3. `deriveFeedSignals` normalizes every candidate's counters into `0..1` signals.
+4. The assigned strategy scores each candidate. Reading fatigue is applied in
+   `feed.ts`, not by strategies, so an already-skipped boks never outranks an
+   unseen one whatever the weights say.
+5. Reader behavior flows back through `record_recommendation_events`.
+6. `get_recommendation_lab()` returns raw per-algorithm, per-segment, per-day
+   counters. `buildRecommendationLab` derives rates, uplift against control, a
+   coarse confidence label and sample readiness in the browser.
 
 When adding a recommendation strategy:
 
-1. Extend `RecommendationAlgorithmId` in `lib/boks/contracts.ts`.
-2. Add the algorithm definition and SQL ordering in `lib/boks/recommendations.ts`.
-3. Update `specs/boks-recommendation-experiments.md`.
-4. Verify the admin Recommendation lab still shows comparable metrics.
+1. Create one file in `lib/boks/recommendations/strategies/`.
+2. List it in that folder's `index.ts`.
+3. Add a ranking case to `lib/boks/recommendations/feed.test.ts`.
+4. Run `npm test`, then give it traffic in `/admin`.
+
+Nothing else changes: the algorithm id union, the admin lab, the traffic split
+editor and event attribution are all derived from the registry.
 
 ## Scaling Principles
 
 - Reader and admin views must request bounded pages or batches.
 - The reader feed must stay algorithmic; catalog exploration belongs in admin tooling, not the main experience.
-- SQL metric definitions live in `lib/boks/analytics.ts` so ranking, admin display, and exports can stay consistent.
+- SQL returns counters; rates, uplift and confidence are derived once in `lib/boks/recommendations/metrics.ts`, so the Supabase and D1 backends cannot drift apart on what a metric means.
+- D1 SQL rollups live in `lib/boks/analytics.ts`.
 - Exploratory signals can live in `events.metadata`; frequently queried signals should become typed columns and indexes.
-- At larger scale, replace direct event aggregation with rollup tables by story, algorithm, segment, and date.
+- At larger scale, replace direct event aggregation with rollup tables by story, algorithm, segment, and date. `get_recommendation_lab` and `get_recommendation_candidates` aggregate the raw event stream today and are the first two queries that will need it; both are already bounded (60 days of events, 400 newest published boks).
 - Keep service role keys server-side only. Browser code must use `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, RLS, and narrowly scoped RPCs.
 - Never make admin decisions from `user_metadata`, browser storage, URL flags, or UI state. Use `user_profiles.role` through RLS/RPC checks.
 

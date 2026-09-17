@@ -37,7 +37,8 @@ This note describes how the current prototype supports a test with about 40,000 
 - Do not compare algorithms before there are enough attributed impressions. For this prototype, wait for at least 30-50 impressions per variant.
 - Compare finish rate, reaction rate, skip rate, read time, speed, and engagement score together. Do not optimize only for likes.
 - Preserve reader invisibility: users should never manually select the algorithm.
-- New algorithm ids must be added to `lib/boks/contracts.ts`, implemented in `lib/boks/recommendations.ts`, and documented in `specs/boks-recommendation-experiments.md`.
+- A new algorithm is one file in `lib/boks/recommendations/strategies/` plus a list entry in that folder's `index.ts`. The id union type, admin lab and traffic split editor all derive from that list.
+- `get_recommendation_candidates` ranks a bounded set (400 newest published boks, 60 days of events). Past that, add precomputed daily rollups rather than raising the bound.
 
 ## Data Quality Checklist
 

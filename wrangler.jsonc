@@ -17,5 +17,20 @@
   ],
   "observability": {
     "enabled": true
-  }
+  },
+  // The apex only, on purpose. Attaching `www` as a second custom domain would
+  // serve the app from two origins, and an origin is a separate browser storage
+  // bucket - sign in on one and the other still looks signed out. `www` belongs
+  // behind a redirect rule to the apex, which is a zone-level setting.
+  //
+  // `workers_dev` must be declared explicitly. Adding a custom domain does not
+  // by itself remove the workers.dev subdomain - but *omitting* this flag does:
+  // Wrangler defaults it to false and silently turned `read.tryboks.workers.dev`
+  // into a 404 on the first triggers deploy. Links already shared point there,
+  // and so does the Supabase `site_url` that sign-in depends on, so it stays on
+  // until both have been moved.
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "tryboks.com", "custom_domain": true }
+  ]
 }

@@ -158,11 +158,23 @@ enabled = true
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "https://read.tryboks.workers.dev"
+site_url = "https://tryboks.com"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8787", "http://127.0.0.1:8787"]
+# Entries are matched exactly unless they carry a glob, so an origin on its own
+# permits only the bare origin. Without the `/**` forms a link asked to return
+# to `/admin` is silently replaced by `site_url`, and an admin who clicks their
+# email link lands on the reader instead of the console - no error, just the
+# wrong page. Verified against the local GoTrue: `http://localhost:5173` is
+# honoured, `http://localhost:5173/admin` is not.
+#
+# The workers.dev origin stays on this list after the move to `tryboks.com`.
+# Magic links already sitting in someone's inbox name it, and a link whose
+# return address is not on the list is silently rewritten to `site_url` - the
+# person lands on the wrong host with no error shown. It comes off only once no
+# live link can still point there.
+additional_redirect_urls = ["https://tryboks.com", "https://tryboks.com/**", "https://read.tryboks.workers.dev", "https://read.tryboks.workers.dev/**", "http://localhost:3000", "http://localhost:3000/**", "http://localhost:5173", "http://localhost:5173/**", "http://127.0.0.1:5173", "http://127.0.0.1:5173/**", "http://localhost:8787", "http://localhost:8787/**", "http://127.0.0.1:8787", "http://127.0.0.1:8787/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -198,7 +210,7 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -235,15 +247,30 @@ otp_length = 8
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# boks pilot email delivery. Keep the API key out of source and provide it as
+# RESEND_API_KEY only when pushing Auth config.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+# The sender address readers actually see. It has to sit on a domain verified in
+# Resend: `tryboks.com` is, with DKIM published at
+# `resend._domainkey.tryboks.com` and the return path on
+# `send.tryboks.com` (a CNAME to Resend's SPF host).
+#
+# It used to be `onboarding@resend.dev`, a Resend sandbox address that delivers
+# essentially only to the account owner - which is what blocked any pilot with
+# more than one tester.
+#
+# Two things about this address are worth knowing before changing it:
+#   * mail *to* `@tryboks.com` bounces until the zone has MX records, so a
+#     reader who replies gets nothing. Cloudflare Email Routing fixes that.
+#   * there is no DMARC record on the domain yet. Not required, but Gmail and
+#     Yahoo treat a sender without one more harshly.
+admin_email = "hello@tryboks.com"
+sender_name = "boks"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

@@ -36,10 +36,12 @@ export const events = sqliteTable(
     value: integer("value").notNull().default(1),
     metadata: text("metadata").notNull().default("{}"),
     algorithmId: text("algorithm_id").notNull().default("unassigned"),
+    experimentKey: text("experiment_key").notNull().default(""),
     userSegment: text("user_segment").notNull().default("general"),
     surface: text("surface").notNull().default("reader"),
     rank: integer("rank").notNull().default(0),
     clientElapsedSeconds: integer("client_elapsed_seconds").notNull().default(0),
+    estimatedSeconds: integer("estimated_seconds").notNull().default(0),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [

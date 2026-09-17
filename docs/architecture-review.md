@@ -11,7 +11,8 @@ The main architecture risk is not the current file structure. The main risk is u
 - Route files are thin and easy to reason about.
 - Product surfaces are separated into reader, author, and admin components.
 - Browser-facing contracts are centralized in `components/boks/client-types.ts`.
-- Recommendation strategies are centralized in `lib/boks/recommendations.ts`.
+- Recommendation strategies are centralized in `lib/boks/recommendations/`, with one file per algorithm and a registry list that everything else derives from.
+- Ranking runs in one place for every backend, and is unit-tested without a database.
 - D1 analytics SQL is centralized in `lib/boks/analytics.ts`.
 - Supabase browser access is isolated in `components/boks/supabase-browser-data.ts`.
 - Supabase has RLS validation through `npm run verify:supabase`.
@@ -56,24 +57,28 @@ This split is intentional for MVP continuity, but it must not become permanent b
 
 Migration direction:
 
-1. Add attributed Supabase event tables.
-2. Add Supabase recommendation assignment tables.
-3. Move serious recommendation comparison from D1-shaped events to Supabase events and rollups.
-4. Keep D1 only as a local/demo fallback or remove it.
+1. ~~Add attributed Supabase event tables.~~ Done 2026-09-12: `recommendation_events`.
+2. ~~Add Supabase recommendation assignment tables.~~ Done 2026-09-12: `recommendation_assignments` and `recommendation_experiments`.
+3. ~~Move serious recommendation comparison to Supabase events.~~ Done 2026-09-12: `get_recommendation_lab` plus `lib/boks/recommendations/metrics.ts`.
+4. Keep D1 only as a local/demo fallback or remove it. After 2026-09-12 the D1
+   path is no longer a separate implementation, only a separate data source, so
+   removing it is a small decision either way.
 
 ### Metrics Maturity
 
-The app has enough metrics for early testing, but serious recommendation comparison needs attributed Supabase events and rollups.
+Attributed events, assignments and per-algorithm comparison landed 2026-09-12.
+What remains is cost, not capability: `get_recommendation_lab` and
+`get_recommendation_candidates` aggregate the raw event stream on every call.
+Both are bounded today - 60 days of events, 400 newest published boks - which is
+comfortable for a testing cohort and not for a real catalog.
 
-Next production metrics model:
+Remaining metrics model:
 
-- `recommendation_assignments`
-- `reader_events`
 - `story_metric_rollups_daily`
 - `algorithm_metric_rollups_daily`
 - `cohort_exports`
 
-Do not build expensive metrics until the first real testing cohort confirms which questions matter.
+Build these when the two live aggregations start to drag, not before.
 
 ## Recommended Directory Evolution
 
@@ -115,19 +120,25 @@ Do this gradually. Do not perform a large directory rewrite while core product b
 
 Owned by:
 
-- `lib/boks/contracts.ts`
-- `lib/boks/recommendations.ts`
-- `specs/boks-recommendation-experiments.md`
-- `components/boks/admin-dashboard.tsx` if displayed metrics change
+- `lib/boks/recommendations/strategies/<name>.ts` (new file)
+- `lib/boks/recommendations/strategies/index.ts` (one list entry)
+- `lib/boks/recommendations/feed.test.ts` (one ordering case)
+
+Nothing else. The id union, admin lab, traffic split editor and event
+attribution all derive from the registry. Update
+`specs/boks-recommendation-experiments.md` only when the contract itself
+changes, not for each new algorithm.
 
 ### Add A Reader Event
 
 Owned by:
 
-- `components/boks/reader-feed.tsx` or a future `use-reader-session.ts`
+- `lib/boks/contracts.ts` for the event type and the `ReaderEvent` contract
+- `components/boks/reader-feed.tsx` for where it fires
 - `components/boks/reader-behavior.ts` if inference changes
-- `app/api/boks/route.ts` for D1 compatibility capture
-- Supabase migration if production capture is needed
+- `components/boks/reader-events.ts` if it needs different flush behavior
+- The Supabase `record_recommendation_events` check list and the D1 event insert
+- `lib/boks/recommendations/metrics.ts` if it should affect a metric
 - `docs/testing.md` if operators should inspect it
 
 ### Add Or Change Comment Identity

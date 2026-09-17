@@ -44,3 +44,12 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+# TypeScript incremental build state
+tsconfig.tsbuildinfo
+
+# Downloaded corpus caches. 39 MB of scraped wikitext and Gutenberg plain text,
+# reproducible with `npm run corpus:fetch-ru` and `npm run corpus:fetch`. The
+# source lists that say what to download are checked in; the downloads are not.
+/scripts/wikisource/
+/scripts/gutenberg/

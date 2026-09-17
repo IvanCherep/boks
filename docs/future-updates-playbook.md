@@ -56,7 +56,8 @@ Admin and metrics:
 
 Recommendation experiments:
 
-- Update `lib/boks/contracts.ts`, `lib/boks/recommendations.ts`, and `specs/boks-recommendation-experiments.md` together.
+- Add one file in `lib/boks/recommendations/strategies/`, list it in that folder's `index.ts`, and add a ranking case to `lib/boks/recommendations/feed.test.ts`.
+- Update `specs/boks-recommendation-experiments.md` only when the contract, the signals or a metric definition changes.
 - Keep algorithm assignment invisible to readers.
 - Compare algorithms using attributed behavior, not only likes.
 - Before serious Supabase A/B testing, add Supabase event/assignment tables that include algorithm id, user segment, surface, rank, elapsed time, and metadata.

@@ -38,6 +38,7 @@ For any non-trivial change, read:
    - standards: `docs/engineering-standards.md`
    - testing: `docs/testing.md`
    - deploy: `docs/hosting.md`
+   - local agent infrastructure and service access: `docs/local-agent-infrastructure.md`
    - future changes: `docs/future-updates-playbook.md`
 
 Always run:
@@ -58,6 +59,7 @@ Never break these unless the user explicitly changes the product strategy and th
 - No explicit finished button. Completion is inferred from time, scroll, and swipe behavior.
 - Guest readers start without a visible sign-up wall.
 - Guest readers get notices after 5 and 10 viewed boks and must sign up or sign in after 15.
+- User-facing authentication is passwordless. Use Supabase email magic links only; do not add password, reset-password, or change-password UI.
 - Guests can read comments. Guests cannot like or write comments.
 - Comments are written only by permanent users and display unique `@nickname`.
 - Every permanent user can submit boks for admin review.
@@ -77,7 +79,9 @@ Use this map before opening files.
 | Unique `@nickname` and comments | `components/boks/user-auth-panel.tsx` | `components/boks/reader-feed.tsx`, `supabase/migrations/`, `scripts/verify-supabase-mvp.mjs` |
 | Author submission/review status | `components/boks/author-console.tsx` | `components/boks/supabase-browser-data.ts`, review RPC migrations |
 | Admin metrics/moderation/users | `components/boks/admin-dashboard.tsx` | `components/boks/supabase-browser-data.ts`, `get_boks_admin_snapshot` migrations |
-| Recommendation algorithms | `lib/boks/contracts.ts`, `lib/boks/recommendations.ts` | `specs/boks-recommendation-experiments.md`, admin comparison UI |
+| Add a recommendation algorithm | `lib/boks/recommendations/strategies/<name>.ts` + that folder's `index.ts` | `lib/boks/recommendations/feed.test.ts` |
+| Recommendation contract or metrics | `lib/boks/contracts.ts`, `lib/boks/recommendations/metrics.ts` | Supabase event/lab migration, `specs/boks-recommendation-experiments.md`, `components/boks/admin/recommendation-lab.tsx` |
+| Author submission limits | `lib/boks/author/submission-quota.ts`, Supabase `submit_bok_for_review` / `get_my_bok_quota` | `components/boks/author-console.tsx`, `lib/boks/contracts.ts` |
 | D1 compatibility API | `app/api/boks/route.ts` | `lib/boks/analytics.ts`, `lib/boks/request.ts`, `db/schema.ts` |
 | Supabase data/RLS/RPC | `supabase/migrations/` | `scripts/verify-supabase-mvp.mjs`, Supabase skills/docs |
 | Visual system | `app/globals.css` | reader screenshots/mobile QA |
@@ -97,7 +101,9 @@ Answer before editing:
 
 If product behavior changes, update `specs/boks-product-spec.md` before or with implementation.
 
-If recommendation behavior changes, update `specs/boks-recommendation-experiments.md` before or with implementation.
+Adding an algorithm does not change the recommendation contract, so it does not need a spec edit - only a new strategy file, a registry entry and a ranking test. Update `specs/boks-recommendation-experiments.md` when the contract, the signals or a metric definition changes.
+
+To pick up work another agent left in flight, read the newest file in `docs/handover/` first.
 
 ### 2. Pick the smallest owner
 
@@ -218,6 +224,7 @@ Add an ADR in `docs/decisions/` when the decision affects future rewrites, such 
 - `git push origin main` may fail in this environment if credentials for `git.chatgpt-team.site` are unavailable. If it fails, report it; do not invent a pushed SHA.
 - `.env.local` is required for local Supabase verification and deploy. It must stay ignored.
 - Sites metadata exists in `.openai/hosting.json`, but Cloudflare Worker deployment is the production path for `read.tryboks.workers.dev`.
+- Local agents that need to deploy or manage connected services should read `docs/local-agent-infrastructure.md` before touching Cloudflare, Supabase, or Resend configuration.
 - Old Worker names may exist as rollback references. Do not delete them without an explicit cleanup request.
 
 ## Definition Of Done For Agents

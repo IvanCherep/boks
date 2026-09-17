@@ -6,21 +6,179 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 
+export const supabaseRestUrl = supabaseUrl ? `${supabaseUrl as string}/rest/v1` : null;
+export const supabasePublishableApiKey = (supabasePublishableKey as string | undefined) ?? null;
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: false,
+        flowType: "pkce",
       },
     })
   : null;
 
+/**
+ * The access token, kept where a `pagehide` handler can reach it without
+ * awaiting anything. Reading the session is asynchronous, and a page that is
+ * being torn down does not reliably get another microtask.
+ */
+let cachedAccessToken: string | null = null;
+let magicLinkRedirectPromise: Promise<void> | null = null;
+
+if (supabase) {
+  void settleBoksMagicLinkRedirect()
+    .catch(() => undefined)
+    .then(() => supabase.auth.getSession())
+    .then((result) => {
+      cachedAccessToken = result.data.session?.access_token ?? null;
+    });
+  supabase.auth.onAuthStateChange((_event, session) => {
+    cachedAccessToken = session?.access_token ?? null;
+  });
+}
+
+export function getCachedAccessToken() {
+  return cachedAccessToken;
+}
+
+function readHashParams() {
+  if (typeof window === "undefined" || !window.location.hash.startsWith("#")) return null;
+  return new URLSearchParams(window.location.hash.slice(1));
+}
+
+function readSearchParams() {
+  if (typeof window === "undefined" || !window.location.search) return null;
+  return new URLSearchParams(window.location.search);
+}
+
+function clearAuthRedirectFromUrl() {
+  if (typeof window === "undefined") return;
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const authSearchKeys = ["code", "error", "error_code", "error_description"];
+  authSearchKeys.forEach((key) => searchParams.delete(key));
+
+  const search = searchParams.toString();
+  const nextUrl = `${window.location.pathname}${search ? `?${search}` : ""}`;
+  window.history.replaceState(window.history.state, document.title, nextUrl);
+}
+
+function clearStoredSupabaseSession() {
+  if (typeof window === "undefined" || !supabaseUrl) return;
+
+  try {
+    const projectRef = new URL(supabaseUrl as string).hostname.split(".")[0];
+    window.localStorage.removeItem(`sb-${projectRef}-auth-token`);
+  } catch {
+    // The URL is validated by createClient; this guard only keeps cleanup best-effort.
+  }
+}
+
+function rememberUnusableMagicLink(message?: string | null) {
+  clearAuthRedirectFromUrl();
+  clearStoredSupabaseSession();
+  saveMagicLinkRedirectNotice(
+    message?.replace(/\+/g, " ") ||
+      "This boks email link has already been used or expired. Request a new free email link to continue."
+  );
+}
+
+function isUnusableMagicLinkError(message?: string | null) {
+  const normalized = (message ?? "").toLowerCase();
+  return (
+    normalized.includes("email link is invalid") ||
+    normalized.includes("invalid refresh token") ||
+    normalized.includes("refresh token not found") ||
+    normalized.includes("expired") ||
+    normalized.includes("invalid jwt") ||
+    normalized.includes("unrecognized jwt kid")
+  );
+}
+
+/**
+ * Supabase magic links now use PKCE and return `?code=...`. Older emails may
+ * still contain implicit-flow tokens in the hash, so keep a fallback that can
+ * explain expired or already-used links without leaving broken tokens in the URL.
+ */
+export async function settleBoksMagicLinkRedirect() {
+  if (!supabase) return;
+  if (magicLinkRedirectPromise) return magicLinkRedirectPromise;
+
+  magicLinkRedirectPromise = (async () => {
+    const searchParams = readSearchParams();
+    const searchError = searchParams?.get("error_description") || searchParams?.get("error");
+    if (searchError) {
+      rememberUnusableMagicLink(searchError);
+      return;
+    }
+
+    const code = searchParams?.get("code");
+    if (code) {
+      try {
+        const exchanged = await supabase.auth.exchangeCodeForSession(code);
+        if (exchanged.error) throw exchanged.error;
+        cachedAccessToken = exchanged.data.session?.access_token ?? null;
+      } catch (error) {
+        rememberUnusableMagicLink(error instanceof Error ? error.message : null);
+      } finally {
+        clearAuthRedirectFromUrl();
+      }
+      return;
+    }
+
+    const hashParams = readHashParams();
+    if (!hashParams) return;
+
+    const error = hashParams.get("error_description") || hashParams.get("error");
+    if (error) {
+      rememberUnusableMagicLink(error);
+      return;
+    }
+
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    if (!refreshToken) return;
+
+    try {
+      if (accessToken) {
+        const session = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!session.error) {
+          cachedAccessToken = session.data.session?.access_token ?? null;
+          return;
+        }
+      }
+
+      const refreshed = await supabase.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
+      if (refreshed.error) throw refreshed.error;
+      cachedAccessToken = refreshed.data.session?.access_token ?? null;
+    } catch (error) {
+      rememberUnusableMagicLink(error instanceof Error ? error.message : null);
+    } finally {
+      clearAuthRedirectFromUrl();
+    }
+  })();
+
+  return magicLinkRedirectPromise;
+}
+
 export async function getAnonymousSupabaseUserId() {
   if (!supabase) return null;
 
+  await settleBoksMagicLinkRedirect();
+
   const sessionResult = await supabase.auth.getSession();
-  if (sessionResult.error) throw sessionResult.error;
+  if (sessionResult.error) {
+    if (!isUnusableMagicLinkError(sessionResult.error.message)) throw sessionResult.error;
+    rememberUnusableMagicLink(sessionResult.error.message);
+  }
   if (sessionResult.data.session?.user.id) return sessionResult.data.session.user.id;
 
   const signInResult = await supabase.auth.signInAnonymously();
@@ -32,8 +190,14 @@ export async function getAnonymousSupabaseUserId() {
 export async function getCurrentSupabaseUser() {
   if (!supabase) return null;
 
+  await settleBoksMagicLinkRedirect();
+
   const sessionResult = await supabase.auth.getSession();
-  if (sessionResult.error) throw sessionResult.error;
+  if (sessionResult.error) {
+    if (!isUnusableMagicLinkError(sessionResult.error.message)) throw sessionResult.error;
+    rememberUnusableMagicLink(sessionResult.error.message);
+    return null;
+  }
 
   return sessionResult.data.session?.user ?? null;
 }
@@ -47,69 +211,186 @@ export async function getCurrentBoksUserContext(): Promise<BoksUserContext | nul
   const result = await supabase.rpc("get_boks_user_context");
   if (result.error) throw result.error;
 
-  return result.data as BoksUserContext;
+  const context = result.data as BoksUserContext;
+  if (context.isAnonymous || context.handle) return context;
+
+  // A signed-in reader with no @nickname has no profile row, which happens
+  // whenever the email link is opened on a device that did not ask for it -
+  // asked for on a phone, opened on a laptop - or after the browser cleared
+  // its storage. The handle is the only public identity boks has: without a
+  // row their comments and any boks they published would have nothing to
+  // attribute them to, and every surface would call them "@reader". This is
+  // the one seam every surface reads identity through, so the row is created
+  // here. The RPC derives the nickname from the email and is idempotent.
+  const ensured = await supabase.rpc("ensure_boks_user_profile", { p_display_name: "" });
+  if (ensured.error) throw ensured.error;
+
+  return ensured.data as BoksUserContext;
 }
 
-export async function createOrUpgradeBoksUser(email: string, password: string) {
-  if (!supabase) throw new Error("Supabase is not configured.");
+type PendingMagicLinkProfile = {
+  email: string;
+  displayName: string;
+  handle: string;
+  acceptedTermsVersion: string | null;
+  createdAt: string;
+};
 
-  const user = await getCurrentSupabaseUser();
-  const redirectTo = typeof window === "undefined" ? undefined : window.location.origin;
-  const signUp = async () => {
-    const signUpResult = await supabase.auth.signUp({
-      email,
-      password,
-      options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
-    });
-    if (signUpResult.error) throw signUpResult.error;
-    return signUpResult.data.user;
-  };
+const pendingMagicLinkProfileKey = "boks-pending-magic-link-profile";
+const magicLinkRedirectNoticeKey = "boks-magic-link-redirect-notice";
 
-  if (user?.is_anonymous) {
-    const updateResult = await supabase.auth.updateUser({
-      email,
-      password,
-    });
-    if (updateResult.error) {
-      const emailOnlyResult = await supabase.auth.updateUser({ email });
-      if (emailOnlyResult.error) {
-        await supabase.auth.signOut();
-        return signUp();
-      }
-      return emailOnlyResult.data.user;
-    }
-    return updateResult.data.user;
+type MagicLinkErrorContext = {
+  flow: "signin" | "signup" | "admin";
+};
+
+function normalizedEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function redirectUrl(path = "/") {
+  if (typeof window === "undefined") return undefined;
+  return new URL(path, window.location.origin).toString();
+}
+
+function savePendingMagicLinkProfile(profile: PendingMagicLinkProfile | null) {
+  if (typeof window === "undefined") return;
+  if (!profile) {
+    window.localStorage.removeItem(pendingMagicLinkProfileKey);
+    return;
   }
-
-  return signUp();
+  window.localStorage.setItem(pendingMagicLinkProfileKey, JSON.stringify(profile));
 }
 
-export async function signInBoksUser(email: string, password: string) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-
-  const signInResult = await supabase.auth.signInWithPassword({ email, password });
-  if (signInResult.error) throw signInResult.error;
-
-  return signInResult.data.user;
+function saveMagicLinkRedirectNotice(message: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(magicLinkRedirectNoticeKey, message);
 }
 
-export async function requestBoksPasswordReset(email: string) {
+export function consumeBoksMagicLinkRedirectNotice() {
+  if (typeof window === "undefined") return "";
+  const message = window.sessionStorage.getItem(magicLinkRedirectNoticeKey) ?? "";
+  window.sessionStorage.removeItem(magicLinkRedirectNoticeKey);
+  return message;
+}
+
+function readPendingMagicLinkProfile() {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(window.localStorage.getItem(pendingMagicLinkProfileKey) ?? "null") as PendingMagicLinkProfile | null;
+  } catch {
+    return null;
+  }
+}
+
+export async function requestBoksMagicLink(input: {
+  email: string;
+  displayName?: string;
+  handle?: string;
+  acceptedTermsVersion?: string | null;
+  redirectPath?: string;
+  shouldCreateUser?: boolean;
+}) {
   if (!supabase) throw new Error("Supabase is not configured.");
 
-  const redirectTo = typeof window === "undefined" ? undefined : window.location.origin;
-  const result = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo,
+  const email = normalizedEmail(input.email);
+  if (!email) throw new Error("Enter your email.");
+
+  const result = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: redirectUrl(input.redirectPath ?? "/"),
+      shouldCreateUser: input.shouldCreateUser ?? true,
+    },
   });
   if (result.error) throw result.error;
+
+  if (input.acceptedTermsVersion) {
+    savePendingMagicLinkProfile({
+      email,
+      displayName: input.displayName?.trim() || "Reader",
+      handle: input.handle?.trim() || "",
+      acceptedTermsVersion: input.acceptedTermsVersion,
+      createdAt: new Date().toISOString(),
+    });
+  }
 }
 
-export async function updateBoksPassword(password: string) {
-  if (!supabase) throw new Error("Supabase is not configured.");
+export function explainBoksMagicLinkError(error: unknown, context: MagicLinkErrorContext) {
+  const message = error instanceof Error ? error.message : "";
+  const normalized = message.toLowerCase();
 
-  const result = await supabase.auth.updateUser({ password });
-  if (result.error) throw result.error;
+  if (normalized.includes("signups not allowed for otp")) {
+    if (context.flow === "admin") {
+      return "This email is not connected to an admin account yet. Sign in with an existing admin email, or grant admin access from the admin panel.";
+    }
+    return context.flow === "signin"
+      ? "No boks account exists for this email yet. Use Sign up - it is free and keeps your reading history connected."
+      : "Could not create this account by email link. Try again in a minute.";
+  }
 
-  return result.data.user;
+  if (
+    normalized.includes("error sending magic link email") ||
+    normalized.includes("email address not authorized") ||
+    normalized.includes("smtp")
+  ) {
+    return "boks could not send the email link right now. The current email sender is limited; try again in a few minutes or use an address already approved for this test.";
+  }
+
+  if (
+    normalized.includes("rate limit") ||
+    normalized.includes("too many requests") ||
+    normalized.includes("email rate limit") ||
+    normalized.includes("over email send rate limit")
+  ) {
+    return "Please wait a minute before requesting another boks email link.";
+  }
+
+  if (normalized.includes("invalid login")) return "This email could not be signed in.";
+  if (normalized.includes("already registered")) return "This email already has an account. Sign in instead.";
+  if (
+    normalized.includes("invalid refresh token") ||
+    normalized.includes("refresh token not found") ||
+    normalized.includes("expired") ||
+    normalized.includes("invalid jwt") ||
+    normalized.includes("unrecognized jwt kid")
+  ) {
+    return "This boks email link has already been used or expired. Request a new free email link to continue.";
+  }
+
+  return message || "Could not send the boks email link.";
+}
+
+export async function completePendingBoksMagicLinkProfile(termsVersion: string): Promise<BoksUserContext | null> {
+  if (!supabase) return null;
+
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) return null;
+
+  const pending = readPendingMagicLinkProfile();
+  if (!pending || normalizedEmail(user.email ?? "") !== normalizedEmail(pending.email)) {
+    // No pending record: the link was opened on another device, or storage was
+    // cleared. `getCurrentBoksUserContext` provisions the profile in that case.
+    return getCurrentBoksUserContext();
+  }
+
+  const ensure = await supabase.rpc("ensure_boks_user_profile", {
+    p_display_name: pending.displayName || "Reader",
+  });
+  if (ensure.error) throw ensure.error;
+
+  const update = await supabase.rpc("update_boks_user_profile", {
+    p_display_name: pending.displayName || "Reader",
+    p_handle: pending.handle || "",
+  });
+  if (update.error) throw update.error;
+
+  const accept = await supabase.rpc("accept_boks_terms", {
+    p_terms_version: pending.acceptedTermsVersion || termsVersion,
+  });
+  if (accept.error) throw accept.error;
+
+  savePendingMagicLinkProfile(null);
+  return accept.data as BoksUserContext;
 }
 
 export async function signOutBoksUser() {

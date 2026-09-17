@@ -14,15 +14,68 @@ export type AnonymousReadState = {
   storyIds: string[];
 };
 
-export function inferReadOutcome(story: Story, elapsedSeconds: number, progress: number): ReadOutcome {
-  const estimatedSeconds = story.minutes * 60;
-  if (elapsedSeconds < 6) return "skip";
+/**
+ * Average adult reading speed for prose, in words per minute.
+ *
+ * Deliberately a fixed constant rather than each reader's own measured speed.
+ * If "completed" depended on a per-reader speed that shifts as samples
+ * accumulate, finish rate would stop being comparable between readers and would
+ * drift for the same reader over time - moving the instrument while measuring
+ * with it. Per-reader speed is reported separately, as a property of the
+ * reader, and never feeds back into this label.
+ */
+export const readingWordsPerMinute = 238;
 
-  const reachedEnd = progress >= 0.82 && elapsedSeconds >= 8;
-  const gaveEnoughTime = elapsedSeconds >= Math.min(75, Math.max(14, estimatedSeconds * 0.2));
-  const showedEngagement = progress >= 0.45 && elapsedSeconds >= 10;
+/** Seconds a typical reader would need for this boks. */
+export function expectedReadingSeconds(story: Pick<Story, "wordCount" | "minutes">) {
+  const words = story.wordCount > 0 ? story.wordCount : Math.max(1, story.minutes) * 220;
+  return Math.max(20, Math.round((words / readingWordsPerMinute) * 60));
+}
 
-  return reachedEnd || gaveEnoughTime || showedEngagement ? "complete" : "skip";
+/**
+ * Was this boks read, or passed over?
+ *
+ * `activeSeconds` is foreground-only time, so this judges attention rather than
+ * how long a tab happened to be open.
+ */
+export function inferReadOutcome(story: Story, activeSeconds: number, progress: number): ReadOutcome {
+  const expectedSeconds = expectedReadingSeconds(story);
+
+  // Too little time for the length of the piece, whatever the scroll says.
+  if (activeSeconds < Math.max(5, expectedSeconds * 0.25)) return "skip";
+
+  // Reached the end and spent a plausible amount of time getting there.
+  if (progress >= 0.85 && activeSeconds >= expectedSeconds * 0.4) return "complete";
+
+  // Stayed long enough that they read most of it, even without scrolling to the
+  // very end - short boks often fit on one screen and never scroll at all.
+  return activeSeconds >= expectedSeconds * 0.7 ? "complete" : "skip";
+}
+
+/**
+ * Forgets what this browser learned about the reader.
+ *
+ * Signing out has to take the reading profile with it. It shapes the feed and
+ * lists what has already been read, so leaving it behind on a borrowed phone
+ * hands the next person your taste and your history - and quietly ranks their
+ * feed with it. The visitor id is reissued for the same reason: a new person is
+ * not the previous one.
+ */
+export function clearLocalReaderState() {
+  if (typeof window === "undefined") return;
+  try {
+    for (const key of [
+      "boks-profile",
+      anonymousReadStateKey,
+      anonymousNoticeStateKey,
+      "boks-pending-magic-link-profile",
+      "boks-reader",
+    ]) {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage can refuse in a private window. Nothing here is load-bearing.
+  }
 }
 
 export function getBrowserId(key: string) {

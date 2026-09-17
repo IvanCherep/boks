@@ -10,13 +10,26 @@
     "dev": "vinext dev --port 5173",
     "build": "vinext build",
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
-    "deploy": "npm run build && wrangler deploy --config wrangler.jsonc --keep-vars",
+    "deploy": "npm run build && npm run check:deploy-target && wrangler deploy --config wrangler.jsonc --keep-vars",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern work",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:supabase": "node scripts/run-supabase-flow-test.mjs",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "verify:supabase": "node --env-file=.env.local scripts/verify-supabase-mvp.mjs"
+    "verify:supabase": "node --env-file=.env.local scripts/verify-supabase-mvp.mjs",
+    "verify:schema": "node scripts/verify-schema-local.mjs",
+    "verify:divergence": "tsx --tsconfig tsconfig.json scripts/check-algorithm-divergence.mts",
+    "check:deploy-target": "node scripts/check-deploy-target.mjs",
+    "fixtures:boks": "node scripts/generate-boks-fixtures.mjs",
+    "corpus:fetch": "node scripts/fetch-gutenberg.mjs",
+    "corpus:build": "node scripts/build-public-domain-corpus.mjs",
+    "corpus:fetch-ru": "tsx --tsconfig tsconfig.json scripts/fetch-wikisource.mts",
+    "corpus:build-ru": "tsx --tsconfig tsconfig.json scripts/build-russian-corpus.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
+    "@fontsource-variable/source-serif-4": "^5.3.0",
     "@hookform/resolvers": "^5.7.1",
     "@shadcn/react": "^0.3.0",
     "@supabase/supabase-js": "^2.116.0",
@@ -60,6 +73,7 @@
     "typescript": "5.9.3",
     "vinext": "1.0.0-beta.5",
     "vite": "8.0.13",
+    "vitest": "^3.2.7",
     "wrangler": "4.92.0"
   },
   "type": "module"

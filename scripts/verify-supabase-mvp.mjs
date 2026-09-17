@@ -51,8 +51,8 @@ const likeResult = await supabase.from("likes").upsert(
 assertOk(likeResult.error, "Anonymous auth could like a bok.");
 
 const commentsResult = await supabase
-  .from("comments")
-  .select("id,reel_id,visitor_name,visitor_handle,body,created_at")
+  .from("boks_comments")
+  .select("id,reel_id,visitor_handle,body,created_at")
   .eq("reel_id", reel.id);
 if (commentsResult.error) throw commentsResult.error;
 
@@ -114,13 +114,12 @@ assertOk(Array.isArray(authorSubmissionsResult.data), "Author submissions RPC di
 
 const blockedSubmitResult = await supabase.rpc("submit_bok_for_review", {
   p_title: "Blocked anonymous submit",
-  p_author_name: "Anonymous QA",
-  p_author_handle: "@qa",
   p_hook: "This should not be accepted.",
   p_text: "Anonymous users must create a permanent account before submitting boks.",
   p_genre: "literary",
   p_mood: "quiet",
   p_minutes: 1,
+  p_rights_confirmed: true,
 });
 assertOk(blockedSubmitResult.error, "Anonymous auth could submit a bok for review.");
 assertOk(blockedSubmitResult.error.code !== "PGRST202", "Bok submission RPC is missing.");
@@ -132,6 +131,79 @@ const blockedReviewResult = await supabase.rpc("review_bok_submission", {
 });
 assertOk(blockedReviewResult.error, "Anonymous auth could review a bok.");
 assertOk(blockedReviewResult.error.code !== "PGRST202", "Bok review RPC is missing.");
+
+// --- Recommendation experiment surface -------------------------------------
+// These RPCs arrive with 20260912160000_boks_recommendation_experiments.sql.
+// A project that has not applied it yet is reported as `pending` rather than
+// failed, because the reader degrades to the newest-first baseline instead of
+// breaking. Everything else here is a hard requirement.
+
+function isMissingRpc(error) {
+  return error?.code === "PGRST202";
+}
+
+const experimentResult = await supabase.rpc("get_active_recommendation_experiment");
+const recommendationMigrationApplied = !isMissingRpc(experimentResult.error);
+
+let activeExperimentReadable = "pending";
+let rlsBlocksAnonymousLabAccess = "pending";
+let rlsBlocksAnonymousExperimentWrites = "pending";
+let attributedEventsWritable = "pending";
+let authorQuotaReadable = "pending";
+
+if (recommendationMigrationApplied) {
+  if (experimentResult.error) throw experimentResult.error;
+  assertOk(experimentResult.data?.key, "Active recommendation experiment has no key.");
+  assertOk(Array.isArray(experimentResult.data?.arms), "Active recommendation experiment has no arms.");
+  activeExperimentReadable = true;
+
+  const labResult = await supabase.rpc("get_recommendation_lab", { p_days: 7 });
+  assertOk(labResult.error, "Anonymous auth could read the recommendation lab.");
+  rlsBlocksAnonymousLabAccess = true;
+
+  const blockedExperimentWrite = await supabase.rpc("save_recommendation_experiment", {
+    p_key: "boks-feed-v1",
+    p_control_algorithm_id: "balanced",
+    p_arms: [{ algorithmId: "balanced", weight: 100 }],
+    p_minimum_impressions_per_arm: 10,
+  });
+  assertOk(blockedExperimentWrite.error, "Anonymous auth could change the live experiment split.");
+  rlsBlocksAnonymousExperimentWrites = true;
+
+  // Guest readers are real anonymous users and must still be measurable.
+  const eventResult = await supabase.rpc("record_recommendation_events", {
+    p_events: [
+      {
+        eventType: "impression",
+        storyId: reel.id,
+        value: 1,
+        algorithmId: "balanced",
+        experimentKey: experimentResult.data.key,
+        userSegment: "general",
+        surface: "reader",
+        rank: 0,
+        clientElapsedSeconds: 0,
+        estimatedSeconds: 300,
+        sessionId: "verify",
+        visitorId: "verify",
+      },
+    ],
+  });
+  if (eventResult.error) throw eventResult.error;
+  assertOk(eventResult.data === 1, "Attributed reader event was not recorded.");
+  attributedEventsWritable = true;
+
+  const blockedEventRead = await supabase.from("recommendation_events").select("id").limit(1);
+  assertOk((blockedEventRead.data ?? []).length === 0, "Anonymous auth could read the event stream.");
+}
+
+const quotaResult = await supabase.rpc("get_my_bok_quota");
+if (!isMissingRpc(quotaResult.error)) {
+  if (quotaResult.error) throw quotaResult.error;
+  assertOk(quotaResult.data?.limit === 3, "Daily bok submission limit is not three.");
+  assertOk(quotaResult.data?.usedToday === 0, "Anonymous auth reported author submissions.");
+  authorQuotaReadable = true;
+}
 
 console.log(
   JSON.stringify(
@@ -151,6 +223,12 @@ console.log(
       authorSubmissionsRpcReadable: true,
       rlsBlocksAnonymousBokSubmit: true,
       rlsBlocksAnonymousBokReview: true,
+      recommendationMigrationApplied,
+      activeExperimentReadable,
+      attributedEventsWritable,
+      rlsBlocksAnonymousLabAccess,
+      rlsBlocksAnonymousExperimentWrites,
+      authorQuotaReadable,
       checkedReel: reel.title,
     },
     null,

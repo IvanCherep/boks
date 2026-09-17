@@ -1,13 +1,25 @@
+import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
+import type { BokSubmissionQuota } from "@/lib/boks/author/submission-quota";
+import type {
+  ReaderSignals,
+  RecommendationExperimentConfig,
+  RecommendationLabReport,
+} from "@/lib/boks/recommendations";
+
 export type Story = {
   id: string;
   title: string;
   authorName: string;
   authorHandle: string;
+  /** Account that published it. Empty for seeded demo boks, which cannot be followed. */
+  authorUserId?: string;
   hook: string;
   body: string;
   genre: string;
   mood: string;
   minutes: number;
+  /** Real word count. Zero when unknown; callers fall back to `minutes`. */
+  wordCount: number;
   likes: number;
   shares: number;
   starts: number;
@@ -25,17 +37,41 @@ export type Comment = {
   createdAt: string;
 };
 
-export type RecommendationAlgorithm = {
+/**
+ * Browser-facing view of one registered algorithm. Sourced from
+ * `lib/boks/recommendations` - the registry is browser-safe on purpose, because
+ * the Supabase reader ranks its own feed.
+ */
+export type RecommendationAlgorithmSummary = {
   id: string;
   name: string;
   description: string;
+  family: string;
+  segment: string;
 };
 
 export type RecommendationExperiment = {
+  experimentKey: string;
   algorithmId: string;
   algorithmName: string;
   userSegment: string;
-  source: "assigned" | "requested";
+  source: "assigned" | "requested" | "fallback";
+};
+
+/**
+ * Where a feed came from and under which rules it was labelled.
+ *
+ * Carried on every reader event so a degraded serve is a countable condition
+ * rather than an invisible second instrumentation regime (ADR-001).
+ */
+export type FeedProvenance = {
+  feedId: string | null;
+  servingBackend: "worker" | "browser" | "d1_fallback";
+  degradedMode: boolean;
+  fallbackReason: string | null;
+  labelingVersion: string;
+  catalogSize: number;
+  candidateCount: number;
 };
 
 export type Metrics = {
@@ -46,8 +82,7 @@ export type Metrics = {
   users?: AdminUserRow[];
   genres?: Array<Record<string, number | string>>;
   moods?: Array<Record<string, number | string>>;
-  algorithms?: RecommendationAlgorithm[];
-  algorithmMetrics?: Array<Record<string, number | string>>;
+  algorithms?: RecommendationAlgorithmSummary[];
   pagination?: {
     limit: number;
     offset: number;
@@ -56,6 +91,132 @@ export type Metrics = {
     sort: string;
     query: string;
   };
+};
+
+/**
+ * Counts of everything that would quietly corrupt a comparison.
+ *
+ * Every field is a condition that was previously invisible. Without this panel
+ * broken numbers get trusted - which is exactly what happened.
+ */
+export type RecommendationDataQuality = {
+  windowDays: number;
+  events: number;
+  eventsWithoutFeed: number;
+  eventsUnattributed: number;
+  feeds: number;
+  feedsByBackend: Record<string, number>;
+  degradedFeeds: number;
+  emptyFeeds: number;
+  algorithmMismatch: number;
+  rankNotInFeed: number;
+  eventsBeforeFeed: number;
+  duplicateOutcomes: number;
+  clampedReadingTime: number;
+  outcomesWithoutTime: number;
+  assignmentsWithoutEvents: number;
+  eventsWithoutAssignment: number;
+  labelingVersions: Record<string, number>;
+};
+
+export type RecommendationLabPayload = {
+  experiment: RecommendationExperimentConfig;
+  report: RecommendationLabReport;
+  assignments: Array<{ algorithmId: string; userSegment: string; readers: number }>;
+  topStories: Array<{ algorithmId: string; storyId: string; title: string; starts: number; completes: number; likes: number }>;
+  /** Conditions that decide whether these numbers can be trusted at all. */
+  dataQuality: RecommendationDataQuality | null;
+  /**
+   * The analysis unit itself - one row per (reader, algorithm, day). Carried so
+   * the console can export it: a comparison nobody can recompute from the raw
+   * rows is a claim, not a result.
+   */
+  outcomes: ReaderOutcomeRow[];
+  /** False while the recommendation migration has not reached this project yet. */
+  available: boolean;
+  notice: string;
+};
+
+export type BoksOverview = {
+  windowDays: number;
+  readers: { active: number; previousActive: number; returning: number; new: number };
+  reading: { activeSeconds: number; sessions: number; boksCompleted: number; boksStarted: number };
+  readsPerReader: Array<{ bucket: string; readers: number }>;
+  supply: {
+    submitted: number;
+    approved: number;
+    refused: number;
+    pending: number;
+    activeAuthors: number;
+    medianReviewHours: number;
+  };
+  catalog: {
+    published: number;
+    publishedRecently: number;
+    readersPastHalf: number;
+    medianSeenShare: number;
+  };
+  dataQuality: {
+    reads: number;
+    readsWithOutcome: number;
+    sessions: number;
+    sessionsWithoutOutcome: number;
+    unattributedEvents: number;
+    outcomesWithoutTime: number;
+  };
+};
+
+export type BoksGrowth = {
+  weeks: number;
+  weekly: Array<{
+    week: string;
+    activeReaders: number;
+    newReaders: number;
+    signups: number;
+    sessions: number;
+    minutes: number;
+    boksFinished: number;
+    boksPublished: number;
+  }>;
+  cohorts: Array<{ week: string; size: number; retained: Array<{ offset: number; readers: number }> }>;
+  activation: { newReaders: number; finishedOne: number; finishedThree: number; signedUp: number };
+  stickiness: { daily: number; weekly: number; monthly: number };
+  totals: { readers: number; accounts: number; minutes: number; boksFinished: number; publishedBoks: number };
+};
+
+export type BoksPersonRow = {
+  userId: string;
+  email: string;
+  handle: string | null;
+  role: BoksUserRole;
+  displayName: string;
+  joinedAt: string;
+  lastSignInAt: string;
+  lastReadAt: string | null;
+  minutes: number;
+  boksOpened: number;
+  boksFinished: number;
+  sessions: number;
+  algorithmId: string | null;
+};
+
+export type BoksContentRow = {
+  id: string;
+  title: string;
+  authorName: string;
+  authorHandle: string;
+  genre: string;
+  mood: string;
+  estimatedMinutes: number;
+  wordCount: number;
+  minutes: number;
+  readers: number;
+  starts: number;
+  completes: number;
+  skips: number;
+  likes: number;
+  comments: number;
+  finishRate: number | null;
 };
 
 export type ReaderProfile = {
@@ -73,7 +234,7 @@ export type BoksUserContext = {
   email: string | null;
   isAnonymous: boolean;
   role: BoksUserRole;
-  displayName: string;
+  /** The @nickname. A person has one name, and this is it. */
   handle: string | null;
   preferredGenre: string;
   preferredMood: string;
@@ -82,6 +243,50 @@ export type BoksUserContext = {
   hasAnyAdmin: boolean;
   views: number;
   likes: number;
+  /**
+   * Languages this reader accepts. Empty means they have not said, and
+   * everything is eligible - never "nothing is".
+   */
+  readingLanguages: string[];
+  /** Published boks per language, so an empty feed can explain itself. */
+  languageCoverage: Record<string, number>;
+};
+
+/** An author as the reader meets them: who they are, and what they have written. */
+/** One writer a publishing account has published, with how much of them. */
+export type AuthorProfileWriter = {
+  name: string;
+  boks: number;
+};
+
+export type AuthorProfile = {
+  /** Empty for the seeded catalog, which has a byline but no account. */
+  authorUserId: string;
+  authorName: string;
+  authorHandle: string;
+  /**
+   * Set when the sheet is showing one writer inside a publisher's catalogue.
+   * The account is what a reader can follow; the byline is who wrote it.
+   */
+  byline: string | null;
+  followers: number;
+  following: boolean;
+  /** How many the whole scope holds, which may exceed the page of `boks`. */
+  totalBoks: number;
+  /** The writers this account publishes. Empty for an author's own account. */
+  writers: AuthorProfileWriter[];
+  boks: AuthorBok[];
+};
+
+export type AuthorBok = {
+  id: string;
+  title: string;
+  hook: string;
+  minutes: number;
+  readingShape: string;
+  createdAt: string;
+  /** The byline on this piece, when the account printed one. */
+  authorName?: string | null;
 };
 
 export type ReaderLibraryItem = {
@@ -102,6 +307,13 @@ export type AuthorBokSubmission = {
   body: string;
   genre: string;
   mood: string;
+  /** The byline this piece was submitted under. Empty means the @handle alone. */
+  authorName: string;
+  wordCount: number;
+  likes: number;
+  comments: number;
+  /** When an admin approved it, or null while it is not published. */
+  publishedAt: string | null;
   minutes: number;
   status: BokReviewStatus;
   submittedAt: string | null;
@@ -129,6 +341,8 @@ export type AdminUserRow = {
   likes: number;
 };
 
+export type AuthorBokQuota = BokSubmissionQuota;
+
 export type LoadOptions = {
   view?: "reader" | "admin";
   limit?: number;
@@ -136,7 +350,104 @@ export type LoadOptions = {
   q?: string;
   sort?: string;
   visitorId?: string;
+  /** Admin preview only. The reader surface never requests an algorithm. */
   algorithm?: string;
+  /** Behavioral affinity used by personalized strategies. */
+  reader?: ReaderSignals;
+  /** Reading session this feed belongs to, recorded with its provenance. */
+  sessionId?: string;
+  /** The reader profile the ranking saw, stored verbatim so it can be replayed. */
+  profileSnapshot?: Record<string, unknown>;
+  /** Languages a guest accepts; a signed-in reader's stored set wins. */
+  readingLanguages?: readonly string[];
 };
 
 export type ReadOutcome = "complete" | "skip";
+
+/** An account boks may be imported into, and what it already holds. */
+export type BoksPublisher = {
+  handle: string;
+  userId: string;
+  published: number;
+  imported: number;
+  followers: number;
+};
+
+export type BoksImportRowResult = {
+  index: number;
+  importKey: string | null;
+  status: "imported" | "skipped" | "rejected";
+  reason?: string;
+  id?: string;
+};
+
+export type BoksImportReport = {
+  publisher: string;
+  status: "published" | "pending_review";
+  results: BoksImportRowResult[];
+  imported: number;
+  skipped: number;
+  rejected: number;
+};
+
+/** One reader complaint, as an admin sees it: the grievance beside the claim. */
+export type BoksReport = {
+  id: string;
+  reelId: string;
+  title: string;
+  authorHandle: string | null;
+  authorName: string | null;
+  bokStatus: string;
+  kind: "copyright" | "other";
+  reason: string;
+  status: "open" | "actioned" | "dismissed";
+  createdAt: string;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  reporterHandle: string | null;
+  rightsConfirmed: boolean | null;
+  rightsNote: string | null;
+};
+
+/** A bok nobody has vouched for - published before the record, or withdrawn. */
+export type BoksUnattested = {
+  reelId: string;
+  title: string;
+  authorHandle: string | null;
+  bokStatus: string;
+  note: string | null;
+  createdAt: string;
+};
+
+export type BoksRightsReview = {
+  openReports: number;
+  unattested: number;
+  reports: BoksReport[];
+  unattestedBoks: BoksUnattested[];
+};
+
+/**
+ * Reading by slate position, per arm. The sequential dimension of the feed:
+ * two arms can reach the same completion rate for opposite reasons, and
+ * position is what separates better retrieval from better ordering.
+ */
+export type SlatePositionRow = {
+  algorithmId: string;
+  position: string;
+  readers: number;
+  impressions: number;
+  starts: number;
+  completes: number;
+  skips: number;
+  reactions: number;
+  activeSeconds: number;
+};
+
+/** Supply against demand for one language: the content-acquisition signal. */
+export type LanguageDemandRow = {
+  language: string;
+  published: number;
+  readers: number;
+  /** Readers who accept only this language - an empty app if published is 0. */
+  readersOnly: number;
+};

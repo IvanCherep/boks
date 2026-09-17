@@ -9,7 +9,8 @@ export function metricRollups() {
         SUM(CASE WHEN event_type = 'start' THEN 1 ELSE 0 END) AS starts,
         SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
         SUM(CASE WHEN event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
-        COALESCE(AVG(CASE WHEN event_type = 'complete' THEN value END), 0) AS avgSeconds
+        COALESCE(AVG(CASE WHEN event_type = 'complete' THEN value END), 0) AS avgSeconds,
+        COALESCE(SUM(CASE WHEN event_type = 'complete' THEN value END), 0) AS readSecondsTotal
       FROM events
       GROUP BY story_id
     ),
@@ -31,6 +32,7 @@ export function storyMetricSelect(includeBody: boolean) {
     s.genre,
     s.mood,
     s.minutes,
+    (LENGTH(TRIM(s.body)) - LENGTH(REPLACE(TRIM(s.body), ' ', '')) + 1) AS wordCount,
     s.status,
     s.is_seed AS isSeed,
     s.created_at AS createdAt,
@@ -65,55 +67,27 @@ export function adminOrder(sort: string) {
   return "signal DESC, starts DESC, s.created_at DESC";
 }
 
-export function algorithmMetricsSql() {
+/**
+ * Candidate rollups for the D1 compatibility feed, in the shape
+ * `lib/boks/recommendations` ranks. Ordering and scoring deliberately stay out
+ * of SQL so both backends share one strategy implementation.
+ */
+export function storyCandidateSelect() {
   return `
-    SELECT
-      e.algorithm_id AS algorithmId,
-      e.user_segment AS userSegment,
-      COUNT(DISTINCT e.visitor_id) AS visitors,
-      SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) AS impressions,
-      SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) AS starts,
-      SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) AS completes,
-      SUM(CASE WHEN e.event_type = 'like' THEN 1 ELSE 0 END) AS likes,
-      SUM(CASE WHEN e.event_type = 'share' THEN 1 ELSE 0 END) AS shares,
-      SUM(CASE WHEN e.event_type = 'skip' THEN 1 ELSE 0 END) AS skips,
-      SUM(CASE WHEN e.event_type = 'comment' THEN 1 ELSE 0 END) AS comments,
-      ROUND(COALESCE(AVG(CASE WHEN e.event_type = 'complete' THEN e.value END), 0)) AS avgReadSeconds,
-      ROUND(COALESCE(AVG(CASE WHEN e.event_type = 'like' AND e.client_elapsed_seconds > 0 THEN e.client_elapsed_seconds END), 0)) AS avgSecondsToLike,
-      ROUND(COALESCE(AVG(CASE WHEN e.event_type = 'comment' AND e.client_elapsed_seconds > 0 THEN e.client_elapsed_seconds END), 0)) AS avgSecondsToComment,
-      ROUND(COALESCE(AVG(CASE WHEN e.event_type = 'start' THEN e.rank END), 0), 1) AS avgStartRank,
-      ROUND(COALESCE(AVG(CASE WHEN e.event_type = 'complete' AND e.value > 0 THEN s.minutes * 60.0 / e.value END), 0), 2) AS paceIndex,
-      CASE
-        WHEN SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END) > 0
-        THEN ROUND(SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) * 100.0 / SUM(CASE WHEN e.event_type = 'impression' THEN 1 ELSE 0 END))
-        ELSE 0
-      END AS startRate,
-      CASE
-        WHEN SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END) > 0
-        THEN ROUND(SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) * 100.0 / SUM(CASE WHEN e.event_type = 'start' THEN 1 ELSE 0 END))
-        ELSE 0
-      END AS finishRate,
-      CASE
-        WHEN SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END) > 0
-        THEN ROUND((SUM(CASE WHEN e.event_type IN ('like', 'share', 'comment') THEN 1 ELSE 0 END)) * 100.0 / SUM(CASE WHEN e.event_type = 'complete' THEN 1 ELSE 0 END))
-        ELSE 0
-      END AS reactionRate,
-      CASE
-        WHEN SUM(CASE WHEN e.event_type IN ('start', 'skip') THEN 1 ELSE 0 END) > 0
-        THEN ROUND(SUM(CASE WHEN e.event_type = 'skip' THEN 1 ELSE 0 END) * 100.0 / SUM(CASE WHEN e.event_type IN ('start', 'skip') THEN 1 ELSE 0 END))
-        ELSE 0
-      END AS skipRate,
-      (
-        SUM(CASE WHEN e.event_type = 'complete' THEN 7 ELSE 0 END) +
-        SUM(CASE WHEN e.event_type = 'like' THEN 5 ELSE 0 END) +
-        SUM(CASE WHEN e.event_type = 'share' THEN 5 ELSE 0 END) +
-        SUM(CASE WHEN e.event_type = 'comment' THEN 8 ELSE 0 END) -
-        SUM(CASE WHEN e.event_type = 'skip' THEN 3 ELSE 0 END)
-      ) AS engagementScore
-    FROM events e
-    LEFT JOIN stories s ON s.id = e.story_id
-    WHERE e.algorithm_id != 'unassigned'
-    GROUP BY e.algorithm_id, e.user_segment
-    ORDER BY engagementScore DESC, visitors DESC
-    LIMIT 60`;
+    s.id,
+    s.title,
+    s.genre,
+    s.mood,
+    s.minutes,
+    (LENGTH(TRIM(s.body)) - LENGTH(REPLACE(TRIM(s.body), ' ', '')) + 1) AS wordCount,
+    s.created_at AS createdAt,
+    COALESCE(er.impressions, 0) AS impressions,
+    COALESCE(er.starts, 0) AS starts,
+    COALESCE(er.completes, 0) AS completes,
+    COALESCE(er.skips, 0) AS skips,
+    COALESCE(er.likes, 0) AS likes,
+    COALESCE(er.shares, 0) AS shares,
+    COALESCE(cr.comments, 0) AS comments,
+    COALESCE(er.readSecondsTotal, 0) AS readSecondsTotal`;
 }
+

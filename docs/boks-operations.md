@@ -68,9 +68,12 @@ Rules:
 ## Maintenance
 
 - Add Supabase production schema changes through `supabase/migrations/`, then run `npm run verify:supabase`.
+- Keep Supabase custom SMTP active before inviting external testers. Magic-link auth depends on email delivery, and Supabase's default sender is too limited for a real pilot.
+- The current Resend setup uses `onboarding@resend.dev` for owner-only sandbox delivery to `ivanystal@gmail.com`. For testers, verify a real sending domain in Resend, update the Supabase SMTP sender to that domain, and re-test magic links before sharing the app.
 - Add D1 compatibility schema changes through `db/schema.ts`, then generate a new Drizzle migration.
 - Keep seed stories in `lib/boks/seed-stories.ts` until there is a real editorial tool or bulk import pipeline.
-- Add or tune recommendation algorithms in `lib/boks/recommendations.ts`.
+- Add a recommendation algorithm with one file in `lib/boks/recommendations/strategies/` plus a list entry in that folder's `index.ts`, then give it traffic in `/admin` -> Recommendation lab -> Traffic split.
+- Change the live split between existing algorithms from `/admin` alone; that needs no deploy.
 - Keep metric definitions in `lib/boks/analytics.ts` so admin UI and exports stay aligned.
 - Use browser storage only for anonymous visitor/session ids, Supabase session persistence, and lightweight profile state. Production reader metrics stay in Supabase.
 - Export metrics before resetting or changing the production database.
