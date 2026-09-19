@@ -56,7 +56,7 @@ Cloudflare hosts the production browser app.
 Current production URL:
 
 ```text
-https://read.tryboks.workers.dev
+https://tryboks.com
 ```
 
 Cloudflare naming:
@@ -187,7 +187,7 @@ Current rules:
 - Browser client uses PKCE magic-link flow.
 - Redirect URL must include:
   ```text
-  https://read.tryboks.workers.dev
+  https://tryboks.com
   ```
 
 Auth-related files:
@@ -200,7 +200,7 @@ Auth-related files:
 
 When testing magic links:
 
-1. Open `https://read.tryboks.workers.dev`.
+1. Open `https://tryboks.com`.
 2. Open the boks account panel.
 3. Use Sign up or Sign in.
 4. Request a magic link from the UI, not by manually calling the OTP endpoint,
@@ -374,10 +374,10 @@ state the exact reason and do not pretend it passed.
 Run:
 
 ```bash
-curl -I https://read.tryboks.workers.dev/
-curl -I https://read.tryboks.workers.dev/admin
-curl -I https://read.tryboks.workers.dev/author
-curl 'https://read.tryboks.workers.dev/api/boks?view=reader&limit=3&visitorId=agent-live-check'
+curl -I https://tryboks.com/
+curl -I https://tryboks.com/admin
+curl -I https://tryboks.com/author
+curl 'https://tryboks.com/api/boks?view=reader&limit=3&visitorId=agent-live-check'
 ```
 
 Expected:
@@ -393,6 +393,26 @@ For auth work, also test in Chrome:
 - verify the app cleans the redirect URL;
 - verify old/used links show a recoverable sign-in experience rather than a
   broken global error.
+
+Pitfalls when an agent drives the reader through the Chrome extension
+(learned 2026-09-19):
+
+- **The screenshot frame is not the viewport.** Screenshots can report a frame
+  of ~1531-1547px wide while `innerWidth` is 1470, and the frame changes
+  between calls. Clicks are scaled from the frame, so a coordinate read off a
+  screenshot can land a few pixels off - next to the rail, on the reader's
+  right edge, which turns the page. Take the element's centre from
+  `getBoundingClientRect()` and multiply by `frameWidth / innerWidth`. Clicking
+  by `ref` from `find` misses the same way; do not use it for the rail.
+- **The tab is often `document.visibilityState === "hidden"`.** Input may not
+  arrive at all until a screenshot brings the tab forward, and React commits
+  late. Wait ~3s between a tap and reading state back, and log `pointerdown`
+  to confirm an input was delivered before debugging the app.
+- **A tap within 150ms of a scroll is ignored by design** (it stops a flick).
+  Taking a screenshot can fire a scroll event, so the first tap after one may
+  do nothing.
+- **Test likes are real rows.** Remove them through the UI afterwards (open the
+  boks at `/b/<id>`, tap the filled heart) and confirm with `get_bok_reactions`.
 
 ## Admin Access
 
@@ -434,7 +454,7 @@ npm run lint
 npm run typecheck
 npm run build
 npm run deploy
-curl -I https://read.tryboks.workers.dev/
+curl -I https://tryboks.com/
 ```
 
 If Supabase changed:

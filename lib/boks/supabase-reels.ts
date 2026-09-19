@@ -26,6 +26,14 @@ export type SupabaseReelRow = {
   minutes: number;
   word_count?: number | null;
   created_at: string;
+  /**
+   * Public totals: how many readers liked it and how many replied. Present
+   * when the row came through an aggregate - the feed RPC or
+   * `get_bok_reactions` - and absent when read straight from a table, where a
+   * reader can see only their own like and so could never count the rest.
+   */
+  likes_count?: number;
+  comments_count?: number;
 };
 
 /** The calling reader's own history with one boks, as the RPC returns it. */
@@ -164,6 +172,11 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
           minutes: Number(row.minutes) || 5,
           word_count: Number(row.wordCount) || 0,
           created_at: String(row.createdAt),
+          // The feed RPC already returns both totals to every reader. They
+          // used to stop here, feeding the ranker only, so the rail could not
+          // show a like count at all.
+          likes_count: Number(row.likes) || 0,
+          comments_count: Number(row.comments) || 0,
         } satisfies SupabaseReelRow,
       ])
     ),
@@ -210,9 +223,18 @@ export function candidatesFromReelRows(rows: SupabaseReelRow[]): CandidateSet {
   };
 }
 
+/**
+ * A reel as the reader shows it.
+ *
+ * `likes` is the public total. It used to hold the reader's own like as 0 or
+ * 1, which nothing read; whether *this* reader liked it travels separately, in
+ * `likedStoryIds`, and `displayedLikeCount` reconciles the two on screen.
+ *
+ * The comment count prefers the aggregate: counting the comments that happened
+ * to load undercounts once a slate carries more than the loader's cap.
+ */
 export function mapSupabaseReelToStory(
   reel: SupabaseReelRow,
-  likedSet = new Set<string>(),
   commentCounts = new Map<string, number>()
 ): Story {
   return {
@@ -227,11 +249,11 @@ export function mapSupabaseReelToStory(
     mood: reel.mood,
     minutes: reel.minutes,
     wordCount: Number(reel.word_count) || 0,
-    likes: likedSet.has(reel.id) ? 1 : 0,
+    likes: reel.likes_count ?? 0,
     shares: 0,
     starts: 0,
     completes: 0,
-    commentsCount: commentCounts.get(reel.id) ?? 0,
+    commentsCount: reel.comments_count ?? commentCounts.get(reel.id) ?? 0,
     avgSeconds: 0,
   };
 }

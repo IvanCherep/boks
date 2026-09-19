@@ -133,6 +133,11 @@ export function AuthorConsole() {
       return;
     }
 
+    if (signedInAuthor.bannedAt) {
+      setStatus(signedInAuthor.banReason || "This account is suspended and cannot submit boks.");
+      return;
+    }
+
     if (quota.exhausted) {
       setStatus(quota.message);
       return;
@@ -189,6 +194,11 @@ export function AuthorConsole() {
             </div>
           )}
           <div className="mt-7 grid gap-4">
+            {signedInAuthor?.bannedAt && (
+              <div className="rounded-lg border border-[var(--destructive)]/35 bg-[var(--destructive)]/5 p-4 text-sm leading-6">
+                This account is suspended and cannot publish. {signedInAuthor.banReason || "Contact a boks administrator for details."}
+              </div>
+            )}
             {signedInAuthor && (
               <p className="byline-note">
                 Publishing as <strong>@{signedInAuthor.handle || "reader"}</strong>. Every bok you
@@ -260,7 +270,8 @@ export function AuthorConsole() {
                 !authorForm.body.trim() ||
                 !authorForm.rightsConfirmed ||
                 overLength ||
-                Boolean(signedInAuthor && quota.exhausted)
+                Boolean(signedInAuthor && quota.exhausted) ||
+                Boolean(signedInAuthor?.bannedAt)
               }
             >
               <Send className="size-4" /> Submit for review

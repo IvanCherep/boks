@@ -75,3 +75,32 @@ export function groupDigits(value: number) {
   const sign = rounded < 0 ? "-" : "";
   return sign + String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+/**
+ * The like count on the rail, reconciled with this reader's own like.
+ *
+ * `total` comes from the server and includes the reader's like if they had
+ * liked the boks when the feed loaded (`likedOnServer`). Tapping the heart
+ * changes `likedNow` at once, so the number moves with the heart instead of a
+ * second later - and it does not jump when the reload lands, because the
+ * reload moves `total` and `likedOnServer` together.
+ */
+export function displayedLikeCount(total: number, likedOnServer: boolean, likedNow: boolean) {
+  return Math.max(0, total - (likedOnServer ? 1 : 0) + (likedNow ? 1 : 0));
+}
+
+/**
+ * A count short enough for the rail: `999`, `1.2k`, `12k`, `1.5m`.
+ *
+ * Zero is printed, not hidden - the rail shows its counts always, so a boks
+ * nobody has liked yet says so rather than looking as though it has no count.
+ */
+export function formatCompactCount(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return "0";
+  if (value < 1000) return String(Math.round(value));
+  const [divisor, suffix] = value < 1_000_000 ? [1000, "k"] : [1_000_000, "m"];
+  const scaled = value / divisor;
+  // One decimal below ten ("1.2k"), none above ("12k"), and never "1.0k".
+  const rounded = scaled < 10 ? Math.floor(scaled * 10) / 10 : Math.floor(scaled);
+  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}${suffix}`;
+}

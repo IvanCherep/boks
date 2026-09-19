@@ -2,6 +2,8 @@
 
 import { initialMetrics } from "@/components/boks/constants";
 import type {
+  AdminBokDetail,
+  AdminPersonDetail,
   AuthorBokQuota,
   BoksContentRow,
   BoksGrowth,
@@ -11,6 +13,7 @@ import type {
   AuthorProfile,
   BoksUserContext,
   Comment,
+  CommentLikeState,
   FeedProvenance,
   Metrics,
   ReaderLibraryItem,
@@ -75,17 +78,6 @@ function isMissingDatabaseObject(error: { code?: string; message?: string } | nu
 type SupabaseLikeRow = {
   reel_id: string;
 };
-
-type SupabaseCommentRow = {
-  id: number;
-  reel_id: string;
-  visitor_handle: string | null;
-  body: string;
-  created_at: string;
-};
-
-
-
 
 export type SupabaseReaderPayload = {
   stories: Story[];
@@ -225,7 +217,7 @@ async function loadBrowserReaderFeed(
   });
 }
 
-/** Likes and comments for a slate that has already been ranked and recorded. */
+/** Reader-specific reactions for a slate that has already been ranked and recorded. */
 async function decorateServedFeed(input: {
   userId: string;
   reels: SupabaseReelRow[];
@@ -234,18 +226,14 @@ async function decorateServedFeed(input: {
 }): Promise<SupabaseReaderPayload> {
   const rankedIds = input.reels.map((reel) => reel.id);
   const likedStoryIds = await loadLikedStoryIds(input.userId, rankedIds);
-  const likedSet = new Set(likedStoryIds);
-  const comments = await loadSupabaseCommentsForReels(rankedIds);
-  const commentCounts = comments.reduce((counts, comment) => {
-    counts.set(comment.storyId, (counts.get(comment.storyId) ?? 0) + 1);
-    return counts;
-  }, new Map<string, number>());
-
-  const stories = input.reels.map((reel) => mapSupabaseReelToStory(reel, likedSet, commentCounts));
+  // Bodies are intentionally not fetched for every boks in the slate. The
+  // candidate rows already contain aggregate counts; the conversation itself
+  // is loaded only when its sheet opens.
+  const stories = input.reels.map((reel) => mapSupabaseReelToStory(reel));
 
   return {
     stories,
-    comments,
+    comments: [],
     metrics: { ...initialMetrics, funnel: { totalStories: stories.length }, stories },
     experiment: input.experiment,
     likedStoryIds,
@@ -286,9 +274,9 @@ export function createBrowserFeedTransport(): FeedTransport {
     async publishedReels(limit: number) {
       if (!supabase) throw new Error("Supabase is not configured.");
       const result = await supabase
+        // Published-only by definition; the view has no `status` to filter on.
         .from("published_boks")
         .select("id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at")
-        .eq("status", "published")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (result.error) throw asTransportError(result.error);
@@ -340,9 +328,9 @@ async function loadFeedCandidates(limit: number, languages?: readonly string[]) 
   if (!isMissingDatabaseObject(candidatesResult.error)) throw candidatesResult.error;
 
   const reelsResult = await supabase
+    // Published-only by definition; the view has no `status` to filter on.
     .from("published_boks")
     .select("id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at")
-    .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(Math.max(limit, 200));
 
@@ -390,7 +378,13 @@ export async function loadBoksPeople(options: { limit?: number; offset?: number;
 }
 
 export async function loadBoksContent(
-  options: { limit?: number; offset?: number; query?: string; sort?: string } = {}
+  options: {
+    limit?: number;
+    offset?: number;
+    query?: string;
+    sort?: string;
+    status?: "published" | "archived";
+  } = {}
 ) {
   if (!supabase) return { total: 0, rows: [] as BoksContentRow[] };
 
@@ -399,6 +393,7 @@ export async function loadBoksContent(
     p_offset: options.offset ?? 0,
     p_query: options.query ?? "",
     p_sort: options.sort ?? "minutes",
+    p_status: options.status ?? "published",
   });
   if (result.error) {
     if (isMissingDatabaseObject(result.error)) return { total: 0, rows: [] as BoksContentRow[] };
@@ -1013,24 +1008,51 @@ export async function loadReaderLibrary(limit = 120): Promise<ReaderLibraryItem[
   return (result.data ?? []) as ReaderLibraryItem[];
 }
 
-export async function loadSupabaseStory(storyId: string): Promise<Story | null> {
+/**
+ * One published boks by id - a shared link, or a piece reopened from history.
+ *
+ * Open to guests: a shared link is mostly followed by someone without an
+ * account, and every column here is already public in the view. It used to
+ * return null for them, and for everyone else it failed outright - it filtered
+ * on `status`, which `published_boks` does not expose (it is published-only by
+ * definition), so PostgREST answered 42703 and the link opened the ordinary
+ * feed instead of the boks.
+ */
+export async function loadSupabaseStory(storyId: string): Promise<{ story: Story; likedByMe: boolean } | null> {
   if (!supabase) return null;
-
-  const user = await getCurrentSupabaseUser();
-  if (!user || user.is_anonymous) return null;
 
   const reelResult = await supabase
     .from("published_boks")
     .select("id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at")
     .eq("id", storyId)
-    .eq("status", "published")
     .maybeSingle();
 
   if (reelResult.error) throw reelResult.error;
   if (!reelResult.data) return null;
 
-  const likedStoryIds = await loadLikedStoryIds(user.id, [storyId]);
-  return mapSupabaseReelToStory(reelResult.data as SupabaseReelRow, new Set(likedStoryIds));
+  // Read straight from the table this row has no counts, and a reader can see
+  // only their own like, so the totals come from the aggregate - the same
+  // numbers the feed shows for this boks.
+  const reactions = await loadBokReactions([storyId]);
+  const counts = reactions.get(storyId);
+
+  // A boks outside the slate is not covered by the feed's `likedStoryIds`, so
+  // this reader's own like is looked up here and handed back separately. The
+  // total is returned without it - the reader's like lives in local state and
+  // `displayedLikeCount` adds it back - the same convention as a boks held
+  // across a reload, so the number is right before and after a tap.
+  const user = await getCurrentSupabaseUser();
+  const likedByMe =
+    user && !user.is_anonymous ? (await loadLikedStoryIds(user.id, [storyId])).includes(storyId) : false;
+
+  return {
+    story: mapSupabaseReelToStory({
+      ...(reelResult.data as SupabaseReelRow),
+      likes_count: Math.max(0, (counts?.likes ?? 0) - (likedByMe ? 1 : 0)),
+      comments_count: counts?.comments ?? 0,
+    }),
+    likedByMe,
+  };
 }
 
 export async function claimInitialBoksAdmin(): Promise<BoksUserContext | null> {
@@ -1050,6 +1072,75 @@ export async function setBoksAdminRole(userId: string, isAdmin: boolean) {
     p_is_admin: isAdmin,
   });
   if (result.error) throw result.error;
+  return result.data as { ok: true; userId: string; role: "reader" | "admin" };
+}
+
+export async function setBoksUserBan(userId: string, banned: boolean, reason = "") {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("set_boks_user_ban", {
+    p_user_id: userId,
+    p_banned: banned,
+    p_reason: reason,
+  });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; userId: string; banned: boolean; reason: string | null };
+}
+
+export async function deleteBoksUser(userId: string, confirmation: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("delete_boks_user", {
+    p_user_id: userId,
+    p_confirm: confirmation,
+  });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; userId: string; archivedBoks: number };
+}
+
+/** One boks in any status, for the admin inspector. Admin-only on the server. */
+export async function loadAdminBok(reelId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("get_admin_bok", { p_reel_id: reelId });
+  if (result.error) throw result.error;
+  return result.data as AdminBokDetail;
+}
+
+/** One account with its metrics and activity, for the admin inspector. Admin-only on the server. */
+export async function loadAdminPerson(userId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("get_admin_person", { p_user_id: userId });
+  if (result.error) throw result.error;
+  return result.data as AdminPersonDetail;
+}
+
+export async function archiveBok(reelId: string, reason: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("archive_bok", { p_reel_id: reelId, p_reason: reason });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: string; title: string; status: "archived" };
+}
+
+export async function restoreArchivedBok(reelId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("restore_archived_bok", { p_reel_id: reelId });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: string; title: string; status: "published" };
+}
+
+export async function permanentlyDeleteArchivedBok(reelId: string, confirmation: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("delete_archived_bok", {
+    p_reel_id: reelId,
+    p_confirm: confirmation,
+  });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: string; title: string; permanentlyDeleted: true };
 }
 
 async function loadLikedStoryIds(userId: string, reelIds: string[]) {
@@ -1066,26 +1157,24 @@ async function loadLikedStoryIds(userId: string, reelIds: string[]) {
   return ((likesResult.data ?? []) as SupabaseLikeRow[]).map((like) => like.reel_id);
 }
 
-async function loadSupabaseCommentsForReels(reelIds: string[]): Promise<Comment[]> {
-  if (!supabase || !reelIds.length) return [];
+/** Public like and comment totals, by boks id. Counts only - never who. */
+async function loadBokReactions(reelIds: string[]) {
+  const counts = new Map<string, { likes: number; comments: number }>();
+  if (!supabase || !reelIds.length) return counts;
+  const result = await supabase.rpc("get_bok_reactions", { p_reel_ids: reelIds });
+  if (result.error) throw result.error;
+  for (const row of (result.data ?? []) as { id: string; likes: number; comments: number }[]) {
+    counts.set(row.id, { likes: Number(row.likes) || 0, comments: Number(row.comments) || 0 });
+  }
+  return counts;
+}
 
-  const commentsResult = await supabase
-    .from("boks_comments")
-    .select("id,reel_id,visitor_handle,body,created_at")
-    .in("reel_id", reelIds)
-    .order("created_at", { ascending: true })
-    .limit(1000);
+export async function loadSupabaseComments(storyId: string): Promise<Comment[]> {
+  if (!supabase) return [];
 
-  if (commentsResult.error) throw commentsResult.error;
-
-  return ((commentsResult.data ?? []) as SupabaseCommentRow[]).map((comment) => ({
-    id: comment.id,
-    storyId: comment.reel_id,
-    visitorName: comment.visitor_handle || "reader",
-    visitorHandle: comment.visitor_handle,
-    body: comment.body,
-    createdAt: comment.created_at,
-  }));
+  const result = await supabase.rpc("get_bok_comments", { p_reel_id: storyId });
+  if (result.error) throw result.error;
+  return (result.data ?? []) as Comment[];
 }
 
 export async function recordSupabaseView(userId: string | null, storyId: string) {
@@ -1117,7 +1206,11 @@ export async function setSupabaseLike(userId: string | null, storyId: string, li
   if (result.error) throw result.error;
 }
 
-export async function submitSupabaseComment(storyId: string, body: string): Promise<Comment> {
+export async function submitSupabaseComment(
+  storyId: string,
+  body: string,
+  parentCommentId: number | null = null
+): Promise<Comment> {
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const user = await getCurrentSupabaseUser();
@@ -1126,9 +1219,27 @@ export async function submitSupabaseComment(storyId: string, body: string): Prom
   const result = await supabase.rpc("create_bok_comment", {
     p_reel_id: storyId,
     p_body: body,
+    p_parent_comment_id: parentCommentId,
   });
 
   if (result.error) throw result.error;
 
   return result.data as Comment;
+}
+
+export async function setSupabaseCommentLike(
+  commentId: number,
+  liked: boolean
+): Promise<CommentLikeState> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const user = await getCurrentSupabaseUser();
+  if (!user || user.is_anonymous) throw new Error("Create a free account to like comments.");
+
+  const result = await supabase.rpc("set_bok_comment_like", {
+    p_comment_id: commentId,
+    p_liked: liked,
+  });
+  if (result.error) throw result.error;
+  return result.data as CommentLikeState;
 }

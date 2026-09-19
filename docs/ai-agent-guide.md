@@ -18,7 +18,7 @@ Product terms:
 
 Current production:
 
-- URL: `https://read.tryboks.workers.dev`
+- URL: `https://tryboks.com`
 - Hosting: Cloudflare Workers with Static Assets.
 - Production data/auth: Supabase with RLS and RPCs.
 - Compatibility path: D1 API remains for older prototype events, local/demo fallback, and richer event-shape reference.
@@ -60,8 +60,8 @@ Never break these unless the user explicitly changes the product strategy and th
 - Guest readers start without a visible sign-up wall.
 - Guest readers get notices after 5 and 10 viewed boks and must sign up or sign in after 15.
 - User-facing authentication is passwordless. Use Supabase email magic links only; do not add password, reset-password, or change-password UI.
-- Guests can read comments. Guests cannot like or write comments.
-- Comments are written only by permanent users and display unique `@nickname`.
+- Guests can read comments and one-level reply threads. Guests cannot write, reply, or like comments.
+- Comments and comment likes are written only by permanent users; comments display the profile's unique `@nickname`.
 - Every permanent user can submit boks for admin review.
 - Admin approval is required before user-submitted boks are published.
 - Admin access is a database role enforced by RLS/RPC, not browser state.
@@ -74,9 +74,9 @@ Use this map before opening files.
 | Change area | Start here | Also check |
 | --- | --- | --- |
 | Reader feed, swipe, focus mode | `components/boks/reader-feed.tsx` | `components/boks/reader-behavior.ts`, `app/globals.css`, `docs/testing.md` |
-| Like/comment/share UX | `components/boks/reader-feed.tsx` | `components/boks/supabase-browser-data.ts`, Supabase migrations |
+| Like/comment/share UX | `components/boks/comments-sheet.tsx`, `components/boks/reader-feed.tsx` | `components/boks/comment-threads.ts`, `components/boks/supabase-browser-data.ts`, Supabase migrations |
 | User sign-up/sign-in/profile | `components/boks/user-auth-panel.tsx` | `lib/boks/supabase-client.ts`, `components/boks/supabase-browser-data.ts`, Supabase migrations |
-| Unique `@nickname` and comments | `components/boks/user-auth-panel.tsx` | `components/boks/reader-feed.tsx`, `supabase/migrations/`, `scripts/verify-supabase-mvp.mjs` |
+| Unique `@nickname` and comments | `components/boks/user-auth-panel.tsx` | `components/boks/comments-sheet.tsx`, `supabase/migrations/`, `scripts/local-supabase/checks.sql` |
 | Author submission/review status | `components/boks/author-console.tsx` | `components/boks/supabase-browser-data.ts`, review RPC migrations |
 | Admin metrics/moderation/users | `components/boks/admin-dashboard.tsx` | `components/boks/supabase-browser-data.ts`, `get_boks_admin_snapshot` migrations |
 | Add a recommendation algorithm | `lib/boks/recommendations/strategies/<name>.ts` + that folder's `index.ts` | `lib/boks/recommendations/feed.test.ts` |
@@ -165,10 +165,10 @@ npm run deploy
 Then verify:
 
 ```bash
-curl -I https://read.tryboks.workers.dev/
-curl -I https://read.tryboks.workers.dev/admin
-curl -I https://read.tryboks.workers.dev/author
-curl 'https://read.tryboks.workers.dev/api/boks?view=reader&limit=3&visitorId=agent-live-check'
+curl -I https://tryboks.com/
+curl -I https://tryboks.com/admin
+curl -I https://tryboks.com/author
+curl 'https://tryboks.com/api/boks?view=reader&limit=3&visitorId=agent-live-check'
 ```
 
 Record the Cloudflare Worker version in the final response.
@@ -182,7 +182,7 @@ Supabase is the production MVP backend for:
 - profiles and unique `@nickname`;
 - views;
 - signed-in likes;
-- profile-owned comments;
+- profile-owned comments, one-level replies, and private comment-like rows exposed only as aggregate counts;
 - author submissions and moderation;
 - admin users and aggregate snapshots.
 
@@ -223,7 +223,7 @@ Add an ADR in `docs/decisions/` when the decision affects future rewrites, such 
 
 - `git push origin main` may fail in this environment if credentials for `git.chatgpt-team.site` are unavailable. If it fails, report it; do not invent a pushed SHA.
 - `.env.local` is required for local Supabase verification and deploy. It must stay ignored.
-- Sites metadata exists in `.openai/hosting.json`, but Cloudflare Worker deployment is the production path for `read.tryboks.workers.dev`.
+- Sites metadata exists in `.openai/hosting.json`, but Cloudflare Worker deployment is the production path for `tryboks.com`.
 - Local agents that need to deploy or manage connected services should read `docs/local-agent-infrastructure.md` before touching Cloudflare, Supabase, or Resend configuration.
 - Old Worker names may exist as rollback references. Do not delete them without an explicit cleanup request.
 

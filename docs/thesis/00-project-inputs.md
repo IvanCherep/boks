@@ -17,7 +17,7 @@
 рекомендациями. Один «бок» — одно произведение, помещающееся в
 пятнадцатиминутный перерыв.
 
-Прод: **https://read.tryboks.workers.dev** `[факт]`
+Прод: **https://tryboks.com** `[факт]`
 
 Текущее рабочее название магистерской темы: *Cohort-Aware Behavioral
 Evaluation and Regression Testing of Sequential Recommender Systems* `[факт,

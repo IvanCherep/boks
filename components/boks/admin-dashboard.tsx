@@ -26,6 +26,7 @@ import {
 } from "@/components/boks/supabase-browser-data";
 import { CatalogueImport } from "@/components/boks/admin/catalogue-import";
 import { RightsReview } from "@/components/boks/admin/rights-review";
+import { AdminInspectorProvider } from "@/components/boks/admin/admin-inspector";
 import { useBoksData } from "@/components/boks/use-boks-data";
 import { explainBoksMagicLinkError, requestBoksMagicLink } from "@/lib/boks/supabase-client";
 
@@ -248,6 +249,9 @@ export function AdminDashboard() {
   }
 
   return (
+    // One boks view and one person view for the whole console: every tab opens
+    // the same inspector rather than keeping a detail view of its own.
+    <AdminInspectorProvider onChange={() => needsSnapshot && loadSnapshot().catch((error) => setStatus(error.message))}>
     <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
       <div className="mx-auto grid max-w-7xl gap-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
@@ -315,5 +319,6 @@ export function AdminDashboard() {
         {authStatus && <p className="text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
       </div>
     </main>
+    </AdminInspectorProvider>
   );
 }

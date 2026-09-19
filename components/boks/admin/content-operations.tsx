@@ -1,43 +1,48 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Search } from "lucide-react";
+import { Archive, RefreshCw, RotateCcw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { BoksContentRow } from "@/components/boks/client-types";
 import { loadBoksContent } from "@/components/boks/supabase-browser-data";
+import { useAdminInspector } from "@/components/boks/admin/inspector-context";
+import {
+  BokLifecycleDialog,
+  type BokLifecycleAction,
+  type BokLifecycleTarget,
+} from "@/components/boks/admin/bok-lifecycle-dialog";
 
 const pageSize = 50;
+type ContentScope = "published" | "archived";
 
-/**
- * Which boks are actually being read.
- *
- * Sorted by reading minutes rather than by views, because a boks that is opened
- * and abandoned is not working. Finish rate is shown only where enough readers
- * started the piece for the number to mean anything - below that it prints the
- * count instead of a percentage.
- */
+/** Published and soft-deleted boks, with irreversible deletion as a separate step. */
 export function ContentOperations() {
   const [rows, setRows] = useState<BoksContentRow[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("minutes");
+  const [scope, setScope] = useState<ContentScope>("published");
   const [page, setPage] = useState(0);
   const [status, setStatus] = useState("Loading...");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<BokLifecycleTarget | null>(null);
+  const { openBok, changes } = useAdminInspector();
 
-  const refresh = useCallback(async (search: string, order: string, pageIndex: number) => {
+  const refresh = useCallback(async (search: string, order: string, pageIndex: number, nextScope: ContentScope) => {
     setBusy(true);
     try {
       const payload = await loadBoksContent({
         query: search,
         sort: order,
+        status: nextScope,
         limit: pageSize,
         offset: pageIndex * pageSize,
       });
       setRows(payload.rows);
       setTotal(payload.total);
-      setStatus(payload.rows.length ? "" : "No published boks match.");
+      setStatus(payload.rows.length ? "" : `No ${nextScope === "published" ? "published" : "deleted"} boks match.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not load content.");
     } finally {
@@ -45,12 +50,38 @@ export function ContentOperations() {
     }
   }, []);
 
+  // `changes` moves when the boks view hides, restores or erases a boks.
   useEffect(() => {
-    const handle = window.setTimeout(() => {
-      refresh(query, sort, page).catch(() => undefined);
-    }, 200);
+    const handle = window.setTimeout(() => refresh(query, sort, page, scope).catch(() => undefined), 200);
     return () => window.clearTimeout(handle);
-  }, [query, sort, page, refresh]);
+  }, [query, sort, page, scope, refresh, changes]);
+
+  function changeScope(nextScope: ContentScope) {
+    if (nextScope === scope) return;
+    setRows([]);
+    setTotal(0);
+    setStatus("Loading...");
+    setScope(nextScope);
+    setPage(0);
+    setNotice("");
+  }
+
+  function openAction(kind: BokLifecycleAction, row: BoksContentRow) {
+    setPending({ kind, bok: { id: row.id, title: row.title } });
+    setNotice("");
+  }
+
+  async function afterAction({ kind, bok }: BokLifecycleTarget) {
+    setPending(null);
+    setNotice(
+      kind === "archive"
+        ? `“${bok.title}” moved to Deleted.`
+        : kind === "restore"
+          ? `“${bok.title}” restored to the reader feed.`
+          : `“${bok.title}” permanently deleted.`
+    );
+    await refresh(query, sort, page, scope);
+  }
 
   const pageStart = total ? page * pageSize + 1 : 0;
   const pageEnd = Math.min((page + 1) * pageSize, total);
@@ -61,29 +92,27 @@ export function ContentOperations() {
         <div>
           <h2 className="text-xl font-semibold tracking-normal">Content</h2>
           <p className="text-sm text-[var(--muted-foreground)]">
-            {pageStart}-{pageEnd} of {total} published boks · ranked by reading time {status && `· ${status}`}
+            {pageStart}-{pageEnd} of {total} {scope === "published" ? "published" : "deleted"} boks
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <div className="admin-segmented" aria-label="Content status">
+            <button type="button" aria-pressed={scope === "published"} onClick={() => changeScope("published")}>Published</button>
+            <button type="button" aria-pressed={scope === "archived"} onClick={() => changeScope("archived")}>Deleted</button>
+          </div>
           <label className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
             <Input
               className="w-[220px] pl-9"
-              placeholder="Search boks"
+              placeholder={`Search ${scope === "published" ? "boks" : "deleted boks"}`}
               value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPage(0);
-              }}
+              onChange={(event) => { setQuery(event.target.value); setPage(0); }}
             />
           </label>
           <select
             className="field-control w-[180px]"
             value={sort}
-            onChange={(event) => {
-              setSort(event.target.value);
-              setPage(0);
-            }}
+            onChange={(event) => { setSort(event.target.value); setPage(0); }}
           >
             <option value="minutes">Reading time</option>
             <option value="readers">Readers</option>
@@ -91,25 +120,34 @@ export function ContentOperations() {
             <option value="newest">Newest</option>
             <option value="title">Title</option>
           </select>
-          <Button variant="outline" onClick={() => refresh(query, sort, page)} disabled={busy}>
+          <Button variant="outline" onClick={() => refresh(query, sort, page, scope)} disabled={busy}>
             <RefreshCw className="size-4" /> Refresh
           </Button>
         </div>
       </div>
 
+      {(status || notice) && (
+        <p className="border-b border-[var(--border)] p-4 text-sm text-[var(--muted-foreground)]" aria-live="polite">
+          {status || notice}
+        </p>
+      )}
+
       <div className="content-table">
         <div className="content-row content-head">
-          <span>Boks</span>
-          <span>Minutes</span>
-          <span>Readers</span>
-          <span>Finished</span>
-          <span>Length</span>
-          <span>Likes</span>
+          <span>Boks</span><span>Minutes</span><span>Readers</span><span>Finished</span>
+          <span>Length</span><span>{scope === "archived" ? "Removed" : "Likes"}</span><span>Actions</span>
         </div>
         {rows.map((row) => (
           <div key={row.id} className="content-row">
             <span>
-              <strong>{row.title}</strong>
+              <button
+                type="button"
+                className="inspector-link inspector-link--title"
+                onClick={() => openBok(row.id)}
+                title="Open this boks"
+              >
+                {row.title}
+              </button>
               <small>
                 {row.authorHandle ? `@${row.authorHandle.replace(/^@+/, "")}` : row.authorName} · {row.genre} · {row.mood}
               </small>
@@ -117,38 +155,54 @@ export function ContentOperations() {
             <span>{row.minutes}</span>
             <span>{row.readers}</span>
             <span>
-              {row.starts >= 10 && row.finishRate !== null ? (
-                `${row.finishRate}%`
+              {row.starts >= 10 && row.finishRate !== null ? `${row.finishRate}%` : <>{row.completes}<small>of {row.starts} starts</small></>}
+            </span>
+            <span>{row.estimatedMinutes} min<small>{row.wordCount} words</small></span>
+            <span>
+              {scope === "archived" ? (
+                <>{row.archivedAt ? new Date(row.archivedAt).toLocaleDateString() : "Unknown"}<small title={row.archiveReason ?? undefined}>{row.archiveReason || "No reason recorded"}</small></>
+              ) : row.likes}
+            </span>
+            <span className="admin-row-actions">
+              {scope === "published" ? (
+                <Button size="sm" variant="outline" onClick={() => openAction("archive", row)} disabled={busy}>
+                  <Archive /> Delete
+                </Button>
               ) : (
                 <>
-                  {row.completes}
-                  <small>of {row.starts} starts</small>
+                  <Button size="sm" variant="outline" onClick={() => openAction("restore", row)} disabled={busy}>
+                    <RotateCcw /> Restore
+                  </Button>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => openAction("delete", row)}
+                    disabled={busy}
+                    title="Delete permanently"
+                    aria-label={`Permanently delete ${row.title}`}
+                  >
+                    <Trash2 />
+                  </Button>
                 </>
               )}
             </span>
-            <span>
-              {row.estimatedMinutes} min
-              <small>{row.wordCount} words</small>
-            </span>
-            <span>{row.likes}</span>
           </div>
         ))}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] p-4">
         <p className="text-sm text-[var(--muted-foreground)]">
-          Finish rate appears once at least ten readers have started a boks. Below that it shows the
-          raw counts, because a percentage off three readers is not a rate.
+          {scope === "published"
+            ? "Delete first moves a boks out of the reader feed without erasing its data."
+            : "Only this Deleted view offers permanent deletion. Restore returns a boks to recommendations."}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>
-            Previous
-          </Button>
-          <Button variant="outline" disabled={pageEnd >= total} onClick={() => setPage(page + 1)}>
-            Next
-          </Button>
+          <Button variant="outline" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>Previous</Button>
+          <Button variant="outline" disabled={pageEnd >= total} onClick={() => setPage(page + 1)}>Next</Button>
         </div>
       </div>
+
+      <BokLifecycleDialog target={pending} onClose={() => setPending(null)} onDone={afterAction} />
     </section>
   );
 }

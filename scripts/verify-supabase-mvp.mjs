@@ -56,12 +56,30 @@ const commentsResult = await supabase
   .eq("reel_id", reel.id);
 if (commentsResult.error) throw commentsResult.error;
 
+const conversationResult = await supabase.rpc("get_bok_comments", { p_reel_id: reel.id });
+if (conversationResult.error) throw conversationResult.error;
+assertOk(Array.isArray(conversationResult.data), "Comment conversation RPC did not return a list.");
+
 const blockedCommentResult = await supabase.rpc("create_bok_comment", {
   p_reel_id: reel.id,
   p_body: "Anonymous comments must be blocked.",
 });
 assertOk(blockedCommentResult.error, "Anonymous auth could comment on a bok.");
 assertOk(blockedCommentResult.error.code !== "PGRST202", "Bok comment RPC is missing.");
+
+const blockedCommentLikeResult = await supabase.rpc("set_bok_comment_like", {
+  p_comment_id: commentsResult.data?.[0]?.id ?? -1,
+  p_liked: true,
+});
+assertOk(blockedCommentLikeResult.error, "Anonymous auth could like a comment.");
+assertOk(blockedCommentLikeResult.error.code !== "PGRST202", "Comment like RPC is missing.");
+
+const anonymousLibraryResult = await supabase.rpc("get_my_reader_library", { p_limit: 10 });
+if (anonymousLibraryResult.error) throw anonymousLibraryResult.error;
+assertOk(
+  Array.isArray(anonymousLibraryResult.data) && anonymousLibraryResult.data.length === 0,
+  "Anonymous auth could read a permanent account library."
+);
 
 const blockedProfileUpdateResult = await supabase.rpc("update_boks_user_profile", {
   p_display_name: "Anonymous check",
@@ -105,6 +123,35 @@ const blockedAdminGrantResult = await supabase.rpc("set_boks_admin_role", {
 });
 assertOk(blockedAdminGrantResult.error, "Anonymous auth could grant admin access.");
 assertOk(blockedAdminGrantResult.error.code !== "PGRST202", "Admin grant RPC is missing.");
+
+const blockedPeopleResult = await supabase.rpc("get_boks_people", {
+  p_limit: 10,
+  p_offset: 0,
+  p_query: "",
+});
+assertOk(blockedPeopleResult.error, "Anonymous auth could read the People list.");
+
+const blockedContentResult = await supabase.rpc("get_boks_content", {
+  p_limit: 10,
+  p_offset: 0,
+  p_query: "",
+  p_sort: "newest",
+  p_status: "archived",
+});
+assertOk(blockedContentResult.error, "Anonymous auth could read deleted boks.");
+assertOk(blockedContentResult.error.code !== "PGRST202", "Deleted boks RPC is missing.");
+
+const lifecycleChecks = [
+  await supabase.rpc("archive_bok", { p_reel_id: reel.id, p_reason: "Blocked check" }),
+  await supabase.rpc("restore_archived_bok", { p_reel_id: reel.id }),
+  await supabase.rpc("delete_archived_bok", { p_reel_id: reel.id, p_confirm: reel.title }),
+  await supabase.rpc("set_boks_user_ban", { p_user_id: userId, p_banned: true, p_reason: "Blocked check" }),
+  await supabase.rpc("delete_boks_user", { p_user_id: userId, p_confirm: userId }),
+];
+for (const result of lifecycleChecks) {
+  assertOk(result.error, "Anonymous auth could use an admin lifecycle action.");
+  assertOk(result.error.code !== "PGRST202", "An admin lifecycle RPC is missing.");
+}
 
 const authorSubmissionsResult = await supabase.rpc("get_my_bok_submissions", {
   p_limit: 10,
@@ -212,14 +259,19 @@ console.log(
       publishedReelsReadable: true,
       viewRecorded: true,
       rlsBlocksAnonymousLikes: true,
-      commentsReadable: true,
-      rlsBlocksAnonymousComments: true,
+  commentsReadable: true,
+  commentThreadsReadable: true,
+  rlsBlocksAnonymousComments: true,
+  rlsBlocksAnonymousCommentLikes: true,
       rlsBlocksAnonymousProfileUpdates: true,
       rlsBlocksOtherUserWrites: true,
       rlsBlocksBrowserReelWrites: true,
       anonymousProfileContext: true,
       rlsBlocksAnonymousAdminSnapshot: true,
       rlsBlocksAnonymousAdminGrant: true,
+      rlsBlocksAnonymousPeople: true,
+      rlsBlocksAnonymousDeletedBoks: true,
+      rlsBlocksAnonymousLifecycleActions: true,
       authorSubmissionsRpcReadable: true,
       rlsBlocksAnonymousBokSubmit: true,
       rlsBlocksAnonymousBokReview: true,

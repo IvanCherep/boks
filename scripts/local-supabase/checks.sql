@@ -44,7 +44,18 @@ declare
   v_author uuid := '11111111-1111-4111-8111-111111111111';
   v_admin uuid := '22222222-2222-4222-8222-222222222222';
   v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_managed uuid := '44444444-4444-4444-8444-444444444444';
+  -- An admin whose account is suspended: holds the role, must not use it.
+  v_suspended_admin uuid := '55555555-5555-4555-8555-555555555555';
   v_reel uuid;
+  -- The boks the admin inspector and the hide button are proven on.
+  v_inspected uuid;
+  v_row jsonb;
+  v_lifecycle uuid;
+  -- Its own boks, so the reaction checks never move `v_reel`, which later checks rely on.
+  v_counted uuid;
+  v_root_comment bigint;
+  v_reply_comment bigint;
   v_result jsonb;
   v_quota jsonb;
   v_error text;
@@ -55,8 +66,9 @@ begin
   delete from public.recommendation_events;
   delete from public.recommendation_assignments;
   delete from public.reels where author_user_id is not null;
-  delete from public.user_profiles where user_id in (v_author, v_admin, v_reader);
-  delete from auth.users where id in (v_author, v_admin, v_reader);
+  delete from public.deleted_boks_users where user_id in (v_author, v_admin, v_reader, v_managed, v_suspended_admin);
+  delete from public.user_profiles where user_id in (v_author, v_admin, v_reader, v_managed, v_suspended_admin);
+  delete from auth.users where id in (v_author, v_admin, v_reader, v_managed, v_suspended_admin);
 
   -- The split a fresh database starts on, asserted before any test touches it.
   perform public.boks_assert(
@@ -73,7 +85,8 @@ begin
   insert into auth.users (id, email, is_anonymous) values
     (v_author, 'author@boks.test', false),
     (v_admin, 'admin@boks.test', false),
-    (v_reader, 'reader@boks.test', false);
+    (v_reader, 'reader@boks.test', false),
+    (v_managed, 'managed@boks.test', false);
 
   -- ---------------------------------------------------------------- authoring
   perform public.boks_test_login(v_author);
@@ -204,6 +217,119 @@ begin
   select id into v_reel from public.reels where author_user_id = v_author order by created_at limit 1;
   v_result := public.review_bok_submission(v_reel, 'approve', '');
   perform public.boks_assert(v_result ->> 'status' = 'published', 'an approved bok is published');
+
+  -- ---------------------------------------------------- account governance
+  perform public.boks_test_login(v_managed);
+  perform public.ensure_boks_user_profile();
+  perform public.boks_test_login(v_admin);
+
+  v_result := public.set_boks_admin_role(v_managed, true);
+  perform public.boks_assert(
+    v_result ->> 'role' = 'admin' and public.is_boks_admin(v_managed),
+    'an admin can grant admin access to another permanent account'
+  );
+  v_result := public.set_boks_admin_role(v_managed, false);
+  perform public.boks_assert(
+    v_result ->> 'role' = 'reader' and not public.is_boks_admin(v_managed),
+    'an admin can revoke admin access from another account'
+  );
+
+  v_result := public.set_boks_user_ban(v_managed, true, 'Repeated abuse in comments.');
+  perform public.boks_assert(
+    (v_result ->> 'banned')::boolean
+      and (select ban_reason from public.user_profiles where user_id = v_managed) = 'Repeated abuse in comments.',
+    'an admin can suspend an account with a reason'
+  );
+  v_result := public.get_boks_people(50, 0, 'managed');
+  perform public.boks_assert(
+    v_result -> 'rows' -> 0 ->> 'bannedAt' is not null,
+    'the People list exposes the suspended state'
+  );
+
+  perform public.boks_test_login(v_managed);
+  begin
+    insert into public.likes (user_id, reel_id) values (v_managed, v_reel);
+    perform public.boks_assert(false, 'a suspended account cannot like a boks');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a suspended account cannot like a boks');
+  end;
+
+  perform public.boks_test_login(v_admin);
+  perform public.set_boks_user_ban(v_managed, false, '');
+  perform public.boks_assert(
+    (select banned_at from public.user_profiles where user_id = v_managed) is null,
+    'an admin can restore a suspended account'
+  );
+
+  perform public.boks_test_login(v_managed);
+  insert into public.likes (user_id, reel_id) values (v_managed, v_reel);
+  delete from public.likes where user_id = v_managed and reel_id = v_reel;
+  perform public.boks_assert(true, 'a restored account can interact again');
+
+  perform public.boks_test_login(v_admin);
+  insert into public.reels (title, author_name, hook, text, genre, mood, status, author_user_id)
+  values (
+    'Lifecycle test bok', null, 'Only for lifecycle checks.',
+    'This boks exists only to prove account and content deletion behavior.',
+    'literary', 'quiet', 'published', v_managed
+  ) returning id into v_lifecycle;
+  insert into public.bok_rights (reel_id, confirmed, note, confirmed_by)
+  values (v_lifecycle, true, 'Lifecycle test rights.', v_managed);
+
+  begin
+    perform public.delete_boks_user(v_managed, 'wrong');
+    perform public.boks_assert(false, 'account deletion requires the exact nickname');
+  exception when others then
+    perform public.boks_assert(true, 'account deletion requires the exact nickname');
+  end;
+
+  v_result := public.delete_boks_user(v_managed, 'managed');
+  perform public.boks_assert(
+    (v_result ->> 'archivedBoks')::integer = 1
+      and not exists (select 1 from auth.users where id = v_managed),
+    'deleting an account removes Auth data and reports how many boks were archived'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from public.reels
+      where id = v_lifecycle and status = 'archived' and author_user_id is null
+        and author_name = 'Deleted author'
+    ),
+    'an account deletion anonymises and archives authored boks instead of erasing them'
+  );
+  perform public.boks_assert(
+    public.is_boks_user_blocked(v_managed),
+    'a UUID-only tombstone blocks the deleted account while an old JWT can still exist'
+  );
+
+  v_result := public.get_boks_content(50, 0, 'Lifecycle test', 'newest', 'archived');
+  perform public.boks_assert(
+    v_result -> 'rows' -> 0 ->> 'id' = v_lifecycle::text,
+    'deleted boks are available in the admin Deleted view'
+  );
+
+  perform public.restore_archived_bok(v_lifecycle);
+  perform public.boks_assert(
+    (select status from public.reels where id = v_lifecycle) = 'published',
+    'an admin can restore a deleted boks to the reader feed'
+  );
+  perform public.archive_bok(v_lifecycle, 'Lifecycle test removal.');
+  perform public.boks_assert(
+    (select archive_reason from public.reels where id = v_lifecycle) = 'Lifecycle test removal.',
+    'soft deletion records the admin reason'
+  );
+
+  begin
+    perform public.delete_archived_bok(v_lifecycle, 'wrong');
+    perform public.boks_assert(false, 'permanent boks deletion requires the exact title');
+  exception when others then
+    perform public.boks_assert(true, 'permanent boks deletion requires the exact title');
+  end;
+  perform public.delete_archived_bok(v_lifecycle, 'Lifecycle test bok');
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where id = v_lifecycle),
+    'a confirmed permanent deletion removes an already archived boks'
+  );
 
   select id into v_reel from public.reels where author_user_id = v_author and status = 'pending_review' limit 1;
   v_result := public.review_bok_submission(v_reel, 'reject', 'Needs a stronger ending.');
@@ -1105,6 +1231,142 @@ begin
     'the catalogue reports what it holds per language'
   );
 
+  -- ---------------------------------------------- public reaction counts
+  -- The rail shows how many liked and how many replied, next to each icon.
+  -- A like row is private (a reader sees only their own), so the number has
+  -- to come from an aggregate - never from counting the rows a client can see,
+  -- which would give the reader's own 0 or 1.
+  perform public.boks_test_logout();
+  insert into public.reels (title, hook, text, genre, mood, minutes, status, author_user_id, author_name, language)
+  values ('Counted', 'A hook.', 'A piece that people react to, long enough to be a piece.', 'literary', 'quiet', 1, 'published', v_admin, 'Counted Author', 'en')
+  returning id into v_counted;
+  insert into public.likes (user_id, reel_id) values (v_reader, v_counted), (v_author, v_counted);
+  insert into public.comments (user_id, reel_id, body)
+  values (v_reader, v_counted, 'A root comment.')
+  returning id into v_root_comment;
+
+  perform public.boks_test_login(v_reader);
+  v_result := public.get_my_reader_library();
+  perform public.boks_assert(
+    exists (
+      select 1
+      from jsonb_array_elements(v_result) item
+      where item.value ->> 'storyId' = v_counted::text
+        and (item.value ->> 'liked')::boolean
+        and (item.value ->> 'commented')::boolean
+        and item.value ->> 'readAt' is null
+    ),
+    'likes and comments reach their account library even without a view row'
+  );
+  insert into public.views (user_id, reel_id) values (v_reader, v_counted);
+  v_result := public.get_my_reader_library();
+  perform public.boks_assert(
+    exists (
+      select 1
+      from jsonb_array_elements(v_result) item
+      where item.value ->> 'storyId' = v_counted::text
+        and item.value ->> 'readAt' is not null
+        and item.value ->> 'likedAt' is not null
+        and item.value ->> 'commentedAt' is not null
+    ),
+    'the account library reports each action time independently'
+  );
+  perform public.boks_test_login(v_reader, true);
+  perform public.boks_assert(
+    public.get_my_reader_library() = '[]'::jsonb,
+    'an anonymous session cannot read a permanent account library'
+  );
+  perform public.boks_test_login(v_reader);
+
+  v_result := public.get_bok_reactions(array[v_counted]);
+  perform public.boks_assert(
+    (v_result -> 0 ->> 'likes')::int = 2 and (v_result -> 0 ->> 'comments')::int = 1,
+    'reaction counts are the totals, not the reader''s own like'
+  );
+  perform public.boks_assert(
+    not (v_result -> 0 ? 'user_id') and v_result::text not like '%' || v_author::text || '%',
+    'reaction counts say how many, never who'
+  );
+  -- One number whichever way the boks was reached: opened from the feed or
+  -- from a library or a shared link.
+  perform public.boks_assert(
+    (
+      select (c.value ->> 'likes')::int
+      from jsonb_array_elements(public.get_recommendation_candidates(400, array[]::text[])) c
+      where c.value ->> 'id' = v_counted::text
+    ) = 2,
+    'the feed and the single-boks path report the same like count'
+  );
+
+  -- ------------------------------------------------ comment conversations
+  v_result := public.create_bok_comment(v_counted, 'A reply to the root.', v_root_comment);
+  v_reply_comment := (v_result ->> 'id')::bigint;
+  perform public.boks_assert(
+    (v_result ->> 'parentCommentId')::bigint = v_root_comment,
+    'a signed-in reader can reply to a root comment'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(public.get_bok_comments(v_counted)) = 2
+      and exists (
+        select 1 from jsonb_array_elements(public.get_bok_comments(v_counted)) c
+        where (c.value ->> 'id')::bigint = v_reply_comment
+          and (c.value ->> 'parentCommentId')::bigint = v_root_comment
+      ),
+    'the public comment model keeps a reply under its conversation'
+  );
+
+  begin
+    perform public.create_bok_comment(v_counted, 'Too deeply nested.', v_reply_comment);
+    perform public.boks_assert(false, 'comment conversations stay one level deep');
+  exception when others then
+    perform public.boks_assert(true, 'comment conversations stay one level deep');
+  end;
+
+  v_result := public.set_bok_comment_like(v_root_comment, true);
+  perform public.boks_assert(
+    (v_result ->> 'likedByMe')::boolean and (v_result ->> 'likesCount')::integer = 1,
+    'a signed-in reader can like a comment once'
+  );
+  v_result := public.set_bok_comment_like(v_root_comment, true);
+  perform public.boks_assert(
+    (v_result ->> 'likesCount')::integer = 1,
+    'liking the same comment twice is idempotent'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(public.get_bok_comments(v_counted)) c
+      where (c.value ->> 'id')::bigint = v_root_comment
+        and (c.value ->> 'likesCount')::integer = 1
+        and (c.value ->> 'likedByMe')::boolean
+    ),
+    'the comment model returns totals and only the caller own like state'
+  );
+
+  perform public.boks_test_login(v_reader, true);
+  begin
+    perform public.set_bok_comment_like(v_root_comment, true);
+    perform public.boks_assert(false, 'an anonymous reader cannot like a comment');
+  exception when others then
+    perform public.boks_assert(true, 'an anonymous reader cannot like a comment');
+  end;
+  perform public.boks_test_login(v_reader);
+
+  update public.reels set status = 'pending_review' where id = v_counted;
+  perform public.boks_assert(
+    jsonb_array_length(public.get_bok_comments(v_counted)) = 0,
+    'comments disappear with an unpublished boks'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(public.get_bok_reactions(array[v_counted])) = 0,
+    'an unpublished boks has no public counts'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(public.get_bok_reactions(array[]::uuid[])) = 0
+      and jsonb_array_length(public.get_bok_reactions(null)) = 0,
+    'no ids asks for nothing'
+  );
+  delete from public.reels where id = v_counted;
+
   -- ------------------------------------------- reading a writer, not a feed
   -- A publishing account holds many writers, and both halves of a byline are
   -- tapped. They have to lead to different places.
@@ -1366,6 +1628,221 @@ begin
     perform public.boks_assert(true, 'a reader cannot rewrite a rights record');
   end;
 
+  -- -------------------------------------------------------- the admin inspector
+  -- One boks and one person, as the console's detail views read them. Every
+  -- number must match the list row the view is opened from.
+  perform public.boks_test_login(v_reader);
+  perform public.ensure_boks_user_profile();
+  perform public.boks_test_login(v_admin);
+  insert into public.reels (title, author_name, hook, text, genre, mood, status, author_user_id)
+  values (
+    'Inspector test bok', null, 'Only for inspector checks.',
+    'This boks exists only to prove the admin inspector and the admin hide action.',
+    'literary', 'quiet', 'published', v_author
+  ) returning id into v_inspected;
+  insert into public.bok_rights (reel_id, confirmed, note, confirmed_by)
+  values (v_inspected, true, 'Inspector test rights.', v_author);
+  insert into public.recommendation_events (user_id, reel_id, session_id, event_type, surface, active_seconds) values
+    (v_reader, v_inspected, 'inspector-1', 'impression', 'reader', 0),
+    (v_reader, v_inspected, 'inspector-1', 'start', 'reader', 30),
+    (v_reader, v_inspected, 'inspector-1', 'complete', 'reader', 150),
+    (v_reader, v_inspected, 'inspector-2', 'start', 'reader', 45),
+    (v_admin, v_inspected, 'inspector-3', 'skip', 'reader', 5);
+  perform public.boks_test_login(v_reader);
+  insert into public.likes (user_id, reel_id) values (v_reader, v_inspected);
+  insert into public.comments (user_id, reel_id, body) values (v_reader, v_inspected, 'Inspector test comment.');
+
+  perform public.boks_test_login(v_admin);
+  v_result := public.get_admin_bok(v_inspected);
+  v_row := public.get_boks_content(50, 0, 'Inspector test bok', 'newest', 'published') -> 'rows' -> 0;
+  perform public.boks_assert(v_row ->> 'id' = v_inspected::text, 'the inspected boks is in the Content list');
+  perform public.boks_assert(
+    (v_result -> 'metrics' ->> 'minutes') = (v_row ->> 'minutes')
+      and (v_result -> 'metrics' ->> 'readers') = (v_row ->> 'readers')
+      and (v_result -> 'metrics' ->> 'starts') = (v_row ->> 'starts')
+      and (v_result -> 'metrics' ->> 'completes') = (v_row ->> 'completes')
+      and (v_result -> 'metrics' ->> 'skips') = (v_row ->> 'skips')
+      and (v_result -> 'metrics' ->> 'likes') = (v_row ->> 'likes')
+      and (v_result -> 'metrics' ->> 'comments') = (v_row ->> 'comments')
+      and (v_result -> 'metrics' -> 'finishRate') = (v_row -> 'finishRate'),
+    'the boks view reports the same numbers as the Content row it opens from'
+  );
+  -- 150 + 45 + 5 active seconds over three sessions is 3 minutes; two people;
+  -- one finish from two starts.
+  perform public.boks_assert(
+    (v_result -> 'metrics' ->> 'minutes')::integer = 3
+      and (v_result -> 'metrics' ->> 'readers')::integer = 2
+      and (v_result -> 'metrics' ->> 'finishRate')::integer = 50,
+    'boks minutes sum each session''s furthest active time; readers count people'
+  );
+  perform public.boks_assert(
+    v_result ->> 'body' like 'This boks exists only%'
+      and v_result ->> 'authorUserId' = v_author::text
+      and (v_result -> 'rights' ->> 'confirmed')::boolean
+      and v_result -> 'comments' -> 0 ->> 'body' = 'Inspector test comment.'
+      and v_result -> 'likers' -> 0 ->> 'userId' = v_reader::text,
+    'the boks view carries the text, the author, rights, comments and likers'
+  );
+
+  v_result := public.get_admin_person(v_reader);
+  select value into v_row
+  from jsonb_array_elements(public.get_boks_people(500, 0, '') -> 'rows')
+  where value ->> 'userId' = v_reader::text;
+  perform public.boks_assert(
+    v_row is not null
+      and (v_result -> 'metrics' ->> 'minutes') = (v_row ->> 'minutes')
+      and (v_result -> 'metrics' ->> 'sessions') = (v_row ->> 'sessions')
+      and (v_result -> 'metrics' ->> 'boksOpened') = (v_row ->> 'boksOpened')
+      and (v_result -> 'metrics' ->> 'boksFinished') = (v_row ->> 'boksFinished'),
+    'the person view reports the same numbers as the People row it opens from'
+  );
+  perform public.boks_assert(
+    exists (select 1 from jsonb_array_elements(v_result -> 'likedBoks') x where x ->> 'id' = v_inspected::text)
+      and exists (select 1 from jsonb_array_elements(v_result -> 'comments') x
+                  where x ->> 'reelId' = v_inspected::text and x ->> 'body' = 'Inspector test comment.')
+      and exists (select 1 from jsonb_array_elements(v_result -> 'readBoks') x
+                  where x ->> 'id' = v_inspected::text and (x ->> 'finished')::boolean),
+    'the person view lists what they liked, commented on and read'
+  );
+  v_result := public.get_admin_person(v_author);
+  perform public.boks_assert(
+    exists (select 1 from jsonb_array_elements(v_result -> 'authoredBoks') x where x ->> 'id' = v_inspected::text)
+      and (v_result -> 'metrics' ->> 'likesReceived')::integer >= 1
+      and (v_result -> 'metrics' ->> 'readersReached')::integer >= 1,
+    'the person view lists what they wrote and what it received'
+  );
+  begin
+    perform public.get_admin_bok(gen_random_uuid());
+    perform public.boks_assert(false, 'the boks view refuses an id that does not exist');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'the boks view refuses an id that does not exist');
+  end;
+
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.get_admin_bok(v_inspected);
+    perform public.boks_assert(false, 'a reader cannot open the admin boks view');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot open the admin boks view');
+  end;
+  begin
+    perform public.get_admin_person(v_reader);
+    perform public.boks_assert(false, 'a reader cannot open the admin person view, not even their own');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot open the admin person view, not even their own');
+  end;
+
+  -- ------------------------------------------- hiding a boks is for admins only
+  -- The reader feed offers admins a Hide button. Its whole safety is here: the
+  -- RPC reads the role from `user_profiles`, not from anything the client
+  -- sends, and every other kind of caller is refused - with the admin error
+  -- specifically, so a refusal can never be mistaken for a missing boks.
+  perform public.boks_test_logout();
+  begin
+    perform public.archive_bok(v_inspected, 'Guest attempt.');
+    perform public.boks_assert(false, 'a guest cannot hide a boks');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a guest cannot hide a boks');
+  end;
+
+  perform public.boks_test_login(gen_random_uuid(), true);
+  begin
+    perform public.archive_bok(v_inspected, 'Anonymous attempt.');
+    perform public.boks_assert(false, 'an anonymous session cannot hide a boks');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'an anonymous session cannot hide a boks');
+  end;
+
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.archive_bok(v_inspected, 'Reader attempt.');
+    perform public.boks_assert(false, 'a reader cannot hide a boks');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot hide a boks');
+  end;
+
+  perform public.boks_test_login(v_author);
+  begin
+    perform public.archive_bok(v_inspected, 'Author attempt.');
+    perform public.boks_assert(false, 'an author cannot hide a boks through the admin action, not even their own');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'an author cannot hide a boks through the admin action, not even their own');
+  end;
+
+  insert into auth.users (id, email, is_anonymous) values (v_suspended_admin, 'suspended-admin@boks.test', false);
+  perform public.boks_test_login(v_suspended_admin);
+  perform public.ensure_boks_user_profile();
+  perform public.boks_test_login(v_admin);
+  update public.user_profiles
+  set role = 'admin', banned_at = now(), ban_reason = 'Suspended for the hide check.'
+  where user_id = v_suspended_admin;
+  perform public.boks_test_login(v_suspended_admin);
+  begin
+    perform public.archive_bok(v_inspected, 'Suspended admin attempt.');
+    perform public.boks_assert(false, 'a suspended admin cannot hide a boks');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a suspended admin cannot hide a boks');
+  end;
+
+  perform public.boks_assert(
+    (select status from public.reels where id = v_inspected) = 'published',
+    'every refused attempt left the boks published'
+  );
+
+  perform public.boks_test_login(v_admin);
+  v_result := public.archive_bok(v_inspected, 'Hidden from the feed by an admin.');
+  perform public.boks_assert(
+    (select status = 'archived' and archived_by = v_admin
+            and archive_reason = 'Hidden from the feed by an admin.' and archived_at is not null
+     from public.reels where id = v_inspected),
+    'an admin hides a boks: archived, with who, when and why recorded'
+  );
+  perform public.boks_assert(
+    exists (select 1 from public.likes where reel_id = v_inspected)
+      and exists (select 1 from public.comments where reel_id = v_inspected)
+      and exists (select 1 from public.recommendation_events where reel_id = v_inspected),
+    'hiding keeps the boks, its likes, comments and reading history in the database'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.published_boks where id = v_inspected),
+    'a hidden boks leaves the published view readers are served from'
+  );
+  perform public.boks_assert(
+    jsonb_array_length(public.get_bok_reactions(array[v_inspected])) = 0,
+    'a hidden boks has no public reaction counts'
+  );
+  perform public.boks_assert(
+    not exists (
+      select 1 from jsonb_array_elements(public.get_recommendation_candidates(400, null)) c
+      where c ->> 'id' = v_inspected::text
+    ),
+    'a hidden boks is never a feed candidate'
+  );
+  v_row := public.get_boks_content(50, 0, 'Inspector test bok', 'newest', 'archived') -> 'rows' -> 0;
+  perform public.boks_assert(
+    v_row ->> 'id' = v_inspected::text and v_row ->> 'archiveReason' = 'Hidden from the feed by an admin.',
+    'a hidden boks is listed under Deleted with its reason'
+  );
+  perform public.boks_assert(
+    public.get_admin_bok(v_inspected) ->> 'status' = 'archived',
+    'the admin boks view still opens a hidden boks'
+  );
+  begin
+    perform public.archive_bok(v_inspected, 'Twice.');
+    perform public.boks_assert(false, 'hiding an already hidden boks is refused, not repeated');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'hiding an already hidden boks is refused, not repeated');
+  end;
+  perform public.restore_archived_bok(v_inspected);
+  perform public.boks_assert(
+    exists (select 1 from public.published_boks where id = v_inspected),
+    'a hidden boks can be restored to the feed'
+  );
+
+  delete from public.reels where id = v_inspected;
+  delete from public.user_profiles where user_id = v_suspended_admin;
+  delete from auth.users where id = v_suspended_admin;
+
   perform public.boks_test_logout();
   raise notice 'ALL CHECKS PASSED';
 end $$;
@@ -1401,6 +1878,76 @@ begin
     perform public.boks_assert(false, 'a reader cannot insert events directly, only through the RPC');
   exception when others then
     perform public.boks_assert(true, 'a reader cannot insert events directly, only through the RPC');
+  end;
+
+  -- No way around the admin RPCs: a session has no write privilege on the
+  -- table at all, so status cannot be flipped with a plain PostgREST PATCH.
+  begin
+    update public.reels set status = 'archived' where status = 'published';
+    perform public.boks_assert(false, 'a reader cannot hide a boks by updating the table directly');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot hide a boks by updating the table directly');
+  end;
+  begin
+    delete from public.reels where status = 'published';
+    perform public.boks_assert(false, 'a reader cannot delete a boks from the table directly');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot delete a boks from the table directly');
+  end;
+  begin
+    perform public.archive_bok((select id from public.reels where status = 'published' limit 1), 'Session attempt.');
+    perform public.boks_assert(false, 'a plain reader session cannot call the hide RPC to effect');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a plain reader session cannot call the hide RPC to effect');
+  end;
+end $$;
+
+reset role;
+
+-- A guest reads the counts, and still cannot read who liked. The ids are
+-- taken before the role switch: a guest has no access to `reels` itself and
+-- gets ids from the feed, never by querying the table.
+select set_config(
+  'boks.published_ids',
+  (select coalesce(string_agg(id::text, ','), '') from (select id from public.reels where status = 'published' limit 3) s),
+  false
+);
+set role anon;
+select set_config('request.jwt.claims', '{}', false);
+
+do $$
+declare
+  v_ids uuid[] := string_to_array(nullif(current_setting('boks.published_ids'), ''), ',')::uuid[];
+  v_result jsonb;
+begin
+  v_result := public.get_bok_reactions(v_ids);
+  perform public.boks_assert(
+    cardinality(v_ids) > 0 and jsonb_array_length(v_result) = cardinality(v_ids),
+    'a guest can read public reaction counts'
+  );
+  -- Either answer is right: no privilege on the table at all, which is what a
+  -- guest has today, or row-level security leaving nothing visible. What must
+  -- never happen is a guest seeing a row - who liked what.
+  begin
+    perform public.boks_assert(
+      (select count(*) from public.likes) = 0,
+      'a guest cannot read the like rows the counts are made from'
+    );
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a guest cannot read the like rows the counts are made from');
+  end;
+  -- A guest may not even call the admin functions.
+  begin
+    perform public.archive_bok(v_ids[1], 'Guest attempt.');
+    perform public.boks_assert(false, 'a guest cannot call the hide RPC at all');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a guest cannot call the hide RPC at all');
+  end;
+  begin
+    perform public.get_admin_bok(v_ids[1]);
+    perform public.boks_assert(false, 'a guest cannot call the admin boks view');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a guest cannot call the admin boks view');
   end;
 end $$;
 

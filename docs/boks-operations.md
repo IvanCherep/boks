@@ -11,7 +11,7 @@ Use `docs/testing.md` for structured reader, author, admin, and technical test s
 
 During interviews, watch whether readers discover that a tap brings the reaction buttons back. The default reading state intentionally hides most interface elements after the story starts. Completion is inferred when the reader leaves a story after meaningful time or scroll progress.
 
-Guest readers can read immediately. The product shows a gentle notice after 5 viewed boks, repeats after 10, and requires sign-up or sign-in after 15. The boks wordmark opens the optional account panel for settings and recently read boks.
+Guest readers can read immediately. The product shows a gentle notice after 5 viewed boks, repeats after 10, and requires sign-up or sign-in after 15. The account button opens settings; permanent accounts also get searchable Read, Liked, and Comments views. Opening one of those boks returns to the recommendation sequence on the next navigation gesture.
 
 ## What to Watch
 
@@ -61,9 +61,9 @@ Rules:
 
 ## Prototype URLs
 
-- `https://read.tryboks.workers.dev/`: swipe-first reader experience.
-- `https://read.tryboks.workers.dev/author`: author submission cabinet.
-- `https://read.tryboks.workers.dev/admin`: founder/business console for moderation, content operations, and experiment analysis.
+- `https://tryboks.com/`: swipe-first reader experience.
+- `https://tryboks.com/author`: author submission cabinet.
+- `https://tryboks.com/admin`: founder/business console for moderation, content operations, and experiment analysis.
 
 ## Maintenance
 

@@ -4,15 +4,17 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Flag,
   Heart,
   Link as LinkIcon,
   MessageCircle,
   MoreHorizontal,
-  Send,
   Share2,
+  Trash2,
   UserRound,
   X,
 } from "lucide-react";
@@ -21,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { initialMetrics, initialProfile } from "@/components/boks/constants";
 import type {
   BoksUserContext,
+  Comment,
   Metrics,
   ReaderProfile,
   FeedProvenance,
@@ -41,12 +44,19 @@ import {
   saveAnonymousNoticeState,
   saveProfile,
 } from "@/components/boks/reader-behavior";
-import { recoverReaderPlace } from "@/components/boks/reader-place";
 import {
-  edgeTapIntent,
+  composeReaderRanking,
+  recoverReaderPlace,
+  type HeldPlace,
+} from "@/components/boks/reader-place";
+import {
+  readerKeyAction,
+  readerTapAction,
   getScrollBoundary,
   horizontalNavigationIntent,
+  horizontalWheelIntent,
   verticalBoundaryIntent,
+  verticalBoundaryPull,
   type ReaderNavigationDirection,
 } from "@/components/boks/reader-navigation";
 import { ActionButton } from "@/components/boks/shared-ui";
@@ -59,11 +69,13 @@ import {
   readingLanguageNames,
   rememberReadingLanguages,
 } from "@/components/boks/reading-languages";
-import { shortTimeAgo } from "@/components/boks/client-format";
+import { displayedLikeCount } from "@/components/boks/client-format";
 import { attachReaderClock, createReaderClock, type ReaderClock } from "@/components/boks/reader-clock";
 import { formatReaderBody } from "@/components/boks/reader-text";
 import { haptic } from "@/components/boks/reader-haptics";
 import { AuthorSheet } from "@/components/boks/author-sheet";
+import { CommentsSheet } from "@/components/boks/comments-sheet";
+import { BokLifecycleDialog, type BokLifecycleTarget } from "@/components/boks/admin/bok-lifecycle-dialog";
 import {
   createReaderEventQueue,
   flushReaderEventsOnExit,
@@ -99,10 +111,50 @@ type ReadOutcomeReason = "swipe" | "button" | "keyboard" | "exit";
 /** Foreground seconds between heartbeats while a boks is open. */
 const readerHeartbeatSeconds = 60;
 const storyTransitionDurationMs = 480;
+/**
+ * The pull that changes bok, tuned so it has to be meant.
+ *
+ * It used to be 104px from the first pixel. A short poem fits on one screen, so
+ * it is at its end the moment it opens, and an ordinary flick - the kind made
+ * to read - covered 104px and changed bok before the cue could be seen. Now the
+ * first stretch counts for nothing and the pull is half as long again.
+ */
+const touchBoundaryPullThreshold = 150;
+const touchBoundaryPullDeadZone = 18;
+const wheelBoundaryPullThreshold = 260;
+const wheelBoundaryPullDeadZone = 40;
+/**
+ * A wheel has no "let go", so the wheel going quiet stands in for it - and the
+ * armed cue is held on screen at least this long first. Before, a trackpad
+ * flick reached the end of its travel in a fraction of a second and changed bok
+ * mid-momentum, with the cue gone before it was ever seen.
+ */
+// Longer than the 300-400 ms pauses trackpad momentum takes in the middle of
+// a single swipe (see `onStoryWheel`), or "the wheel went quiet" would fire in
+// one of them and change bok mid-momentum - the very thing this replaces.
+const wheelReleaseMs = 450;
+const wheelArmedMinMs = 320;
+
+type StoryTransitionAxis = "horizontal" | "vertical";
 
 type StoryTransition =
-  | { phase: "idle"; direction: null }
-  | { phase: "entering"; direction: ReaderNavigationDirection };
+  | { phase: "idle"; direction: null; axis: null }
+  | { phase: "entering"; direction: ReaderNavigationDirection; axis: StoryTransitionAxis };
+
+type BoundaryPullState = {
+  direction: ReaderNavigationDirection;
+  progress: number;
+};
+
+type GestureStart = {
+  x: number;
+  y: number;
+  atTop: boolean;
+  atBottom: boolean;
+  /** `performance.now()` at the start, so a long press is not taken for a tap. */
+  at: number;
+  msSinceScroll: number;
+};
 
 export function ReaderFeed() {
   const {
@@ -123,11 +175,12 @@ export function ReaderFeed() {
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [commentOpen, setCommentOpen] = useState(false);
-  const [commentText, setCommentText] = useState("");
-  const [isSubmitting, setSubmitting] = useState(false);
-  const [readerChromeVisible, setReaderChromeVisible] = useState(true);
+  const [commentCountDeltas, setCommentCountDeltas] = useState<Record<string, number>>({});
+  // Hidden from the start. It used to open with the controls showing and
+  // flash them again on every new bok; now reading comes first and the
+  // controls appear when the reader asks, with a tap.
+  const [readerChromeVisible, setReaderChromeVisible] = useState(false);
   /** The boks the reader is on, held across a feed reload. See the effect below. */
-  const pinnedStoryId = useRef<string | null>(null);
   /**
    * The language filter in force. Held in a ref because the feed loader is
    * memoised on `load` alone, and a stale closure here would keep serving the
@@ -153,7 +206,29 @@ export function ReaderFeed() {
   const [authNotice, setAuthNotice] = useState("");
   const [guestReadCount, setGuestReadCount] = useState(0);
   const [guestNoticeStep, setGuestNoticeStep] = useState<"first" | "second" | null>(null);
-  const [libraryStories, setLibraryStories] = useState<Story[]>([]);
+  // A boks opened from account history is a one-item entry into the current
+  // recommendation sequence. Keeping only one prevents previously opened
+  // library items from becoming an accidental second feed after it.
+  const [libraryEntry, setLibraryEntry] = useState<HeldPlace | null>(null);
+  // The boks on screen, carried through reloads - see the block after
+  // `rankedStories` and `holdPinnedStory`. `place` applies to `feed`, the feed
+  // on screen, with `likedIds` its liked set; `next` is a boks the reader has
+  // just acted on, with its counts already settled, for whichever feed
+  // replaces this one. `release` marks a reload that changes what the feed may
+  // contain - the reading languages - where the boks on screen may no longer
+  // belong and is let go.
+  const [hold, setHold] = useState<{
+    place: HeldPlace | null;
+    next: HeldPlace | null;
+    feed: readonly Story[];
+    likedIds: readonly string[];
+    release: boolean;
+  }>(() => ({ place: null, next: null, feed: stories, likedIds: likedStoryIds, release: false }));
+  // Boks an admin hid from this page. They are gone on the server already;
+  // this takes them out of the sequence the page is holding.
+  const [hiddenStoryIds, setHiddenStoryIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [hideTarget, setHideTarget] = useState<BokLifecycleTarget | null>(null);
+  const [readerFlash, setReaderFlash] = useState("");
   const [followedAuthorIds, setFollowedAuthorIds] = useState<string[]>([]);
   const [followBusy, setFollowBusy] = useState(false);
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
@@ -163,13 +238,32 @@ export function ReaderFeed() {
   const [reportSending, setReportSending] = useState(false);
   const [reportDone, setReportDone] = useState<"received" | "already" | null>(null);
   const [storyHasMore, setStoryHasMore] = useState(false);
-  const [storyTransition, setStoryTransition] = useState<StoryTransition>({ phase: "idle", direction: null });
+  const [storyTransition, setStoryTransition] = useState<StoryTransition>({ phase: "idle", direction: null, axis: null });
+  const [boundaryPull, setBoundaryPull] = useState<BoundaryPullState | null>(null);
   const [pendingLibraryStoryId, setPendingLibraryStoryId] = useState<string | null>(null);
   const visitorId = useRef("anonymous");
   const sessionId = useRef("session");
-  const touchStart = useRef<{ x: number; y: number; atTop: boolean; atBottom: boolean } | null>(null);
-  const pointerStart = useRef<{ x: number; y: number; atTop: boolean; atBottom: boolean } | null>(null);
-  const wheelTravel = useRef({ x: 0, y: 0, lastAt: 0 });
+  const touchStart = useRef<GestureStart | null>(null);
+  const pointerStart = useRef<GestureStart | null>(null);
+  /** When the text last scrolled - to tell a tap from the touch that stops a flick. */
+  const lastScrollAt = useRef(0);
+  /** When the current wheel pull became armed, and the timer that commits it. */
+  const wheelArmedAt = useRef<number | null>(null);
+  const wheelReleaseTimer = useRef<number | null>(null);
+  /** Whether the pull cue is armed, so the haptic tick fires once per arming. */
+  const pullArmed = useRef(false);
+  const wheelTravel = useRef({
+    x: 0,
+    y: 0,
+    lastAt: 0,
+    atTop: false,
+    atBottom: false,
+    allowPrevious: false,
+    allowNext: false,
+  });
+  const wheelBoundaryArmed = useRef({ previous: false, next: false });
+  const wheelIdleTimer = useRef<number | null>(null);
+  const boundaryPullResetTimer = useRef<number | null>(null);
   const lastWheelNavigationAt = useRef(0);
   const readingClock = useRef<ReaderClock>(createReaderClock());
   const currentStoryRef = useRef<Story | null>(null);
@@ -210,6 +304,12 @@ export function ReaderFeed() {
       storyTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
       storyTransitionTimers.current = [];
       storyTransitionLocked.current = false;
+      if (boundaryPullResetTimer.current !== null) {
+        window.clearTimeout(boundaryPullResetTimer.current);
+      }
+      if (wheelIdleTimer.current !== null) {
+        window.clearTimeout(wheelIdleTimer.current);
+      }
     };
   }, []);
 
@@ -251,11 +351,6 @@ export function ReaderFeed() {
     [load]
   );
 
-  const reloadFeedKeepingPlace = useCallback(async () => {
-    pinnedStoryId.current = currentStoryRef.current?.id ?? null;
-    await loadFeed();
-  }, [loadFeed]);
-
   useEffect(() => {
     visitorId.current = getBrowserId("boks-reader");
     sessionId.current = `${Date.now()}-${crypto.randomUUID()}`;
@@ -290,6 +385,7 @@ export function ReaderFeed() {
         const accountLanguages = effectiveReadingLanguages(context?.readingLanguages);
         if (accountLanguages.join() !== readingLanguagesRef.current.join()) {
           readingLanguagesRef.current = accountLanguages;
+          setHold((current) => ({ ...current, release: true }));
           await loadFeed();
         }
         setGuestReadCount(getAnonymousBoksReadCount());
@@ -413,6 +509,18 @@ export function ReaderFeed() {
     if (!commentOpen) setReaderChromeVisible(false);
   }, [commentOpen]);
 
+  /**
+   * The explicit request for the controls: a tap shows them, the next tap
+   * hides them. No timer - someone who asked for the controls to like a piece
+   * should not watch them fade while deciding. Scrolling, which means reading
+   * has resumed, and changing bok both hide them.
+   */
+  const toggleReaderChrome = useCallback(() => {
+    if (chromeTimer.current) window.clearTimeout(chromeTimer.current);
+    chromeTimer.current = null;
+    setReaderChromeVisible((visible) => (visible && !commentOpen ? false : true));
+  }, [commentOpen]);
+
   const revealReaderChrome = useCallback((hideAfterMs = 5200) => {
     setReaderChromeVisible(true);
     if (chromeTimer.current) window.clearTimeout(chromeTimer.current);
@@ -490,13 +598,57 @@ export function ReaderFeed() {
   );
 
   /**
-   * Feed order comes from the ranking, not from the browser. Boks opened from
-   * the reader's history are appended so they can be reopened by id.
+   * Feed order comes from the ranking, not from the browser. A boks opened
+   * from the account is inserted at the reader's current place; the item after
+   * it remains the next recommendation.
    */
   const rankedStories = useMemo(() => {
-    const feedIds = new Set(stories.map((story) => story.id));
-    return [...stories, ...libraryStories.filter((story) => !feedIds.has(story.id))];
-  }, [libraryStories, stories]);
+    return composeReaderRanking(stories, libraryEntry, hold.place, hiddenStoryIds);
+  }, [hiddenStoryIds, hold.place, libraryEntry, stories]);
+
+  /*
+   * A new feed has landed. Whatever the reader was looking at stays under
+   * them: a reload re-ranks, so the old index can name a different boks in the
+   * new feed, and the boks itself may have left the slate.
+   *
+   * That was a family of bugs. A like pushed the liked boks out of the slate
+   * (fatigue) and the reader was moved to a stranger's piece. A shared link
+   * opened its boks and then lost it when the page's second feed request - the
+   * one that adopts the account's reading languages - landed on top.
+   *
+   * So the boks on screen is found by id in the new feed, or carried into it
+   * at the reader's place - unless the reload changed the reading languages,
+   * which is a new feed on purpose and may exclude the boks. A boks the reader has just acted on (`next`) is
+   * carried with the counts its action settled. Anything else carried out of
+   * the slate is given the same convention: its total without this reader's
+   * like, which moves to local state, because the new feed will not report a
+   * like on a boks it does not contain.
+   *
+   * Done during render - React's pattern for state that follows a prop - so no
+   * frame is committed with the wrong boks. Done in an effect, that frame
+   * existed, and the arrival effect logged an impression for it, scrolled to
+   * the top, and then did both again for the right one.
+   */
+  if (stories !== hold.feed) {
+    const shown = composeReaderRanking(hold.feed, libraryEntry, hold.place, hiddenStoryIds);
+    const onScreen: Story | undefined = shown[selectedIndex];
+    const acted = hold.next && (!onScreen || onScreen.id === hold.next.story.id) ? hold.next : null;
+    const likedOnScreen = Boolean(onScreen && hold.likedIds.includes(onScreen.id));
+    const place: HeldPlace | null =
+      acted ??
+      (onScreen && !hold.release
+        ? { story: { ...onScreen, likes: Math.max(0, onScreen.likes - (likedOnScreen ? 1 : 0)) }, index: selectedIndex }
+        : null);
+
+    setHold({ place, next: null, feed: stories, likedIds: likedStoryIds, release: false });
+    if (place && !acted && likedOnScreen) {
+      setLiked((state) => (onScreen.id in state ? state : { ...state, [onScreen.id]: true }));
+    }
+    if (place) {
+      const next = composeReaderRanking(stories, libraryEntry, place, hiddenStoryIds);
+      setSelectedIndex(recoverReaderPlace(next.map((story) => story.id), place.story.id, selectedIndex));
+    }
+  }
 
   const currentStory = rankedStories[selectedIndex] ?? rankedStories[0];
   /**
@@ -510,27 +662,76 @@ export function ReaderFeed() {
   );
   const currentStoryId = currentStory?.id;
   const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id);
+  const currentCommentCount = currentStory
+    ? currentStory.commentsCount + (commentCountDeltas[currentStory.id] ?? 0)
+    : 0;
   const currentAuthorLabel = currentStory?.authorName || (currentStory?.authorHandle ? `@${currentStory.authorHandle.replace(/^@+/, "")}` : "boks author");
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
   // Nobody is a guest before the account lookup has answered.
   const isGuestReader = identitySettled && isSupabaseReader && (!user || user.isAnonymous);
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);
-  const readerInteractionBlocked = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen);
+  const accountSuspended = Boolean(user?.bannedAt);
+  /**
+   * Whether to offer the admin Hide button. This only decides what is drawn:
+   * the role comes from `get_boks_user_context`, and the action itself is
+   * `archive_bok`, which checks `is_boks_admin` in the database on every call.
+   * Anyone who forces the button onto their screen gets "Admin access
+   * required." and the boks stays where it is.
+   */
+  const isAdminReader = Boolean(user && !user.isAnonymous && user.role === "admin" && !user.bannedAt);
+  const readerInteractionBlocked = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget);
+
+  useEffect(() => {
+    if (!readerFlash) return;
+    const handle = window.setTimeout(() => setReaderFlash(""), 6000);
+    return () => window.clearTimeout(handle);
+  }, [readerFlash]);
+
+  function openHideBok() {
+    if (!currentStory || !isAdminReader) return;
+    setHideTarget({ kind: "archive", bok: { id: currentStory.id, title: currentStory.title } });
+  }
+
+  /** Hidden for everyone; out of this page now, and the next boks moves up. */
+  function afterHideBok({ bok }: BokLifecycleTarget) {
+    setHideTarget(null);
+    setHiddenStoryIds((current) => new Set(current).add(bok.id));
+    setReaderFlash(`“${bok.title}” is hidden from readers. Restore it in Admin → Content → Deleted.`);
+  }
+
+  function showSuspension() {
+    setStatus(user?.banReason || "This account is suspended. Reading remains available.");
+    openAccount("manual", "signin");
+  }
 
   /**
-   * A reload re-ranks the feed, and the reader's place is an index into that
-   * ranking - so the same index can land on a different boks. Liking, sharing
-   * or commenting all refresh the feed, and none of them may move a reader off
-   * the piece they are acting on, so the boks id is pinned across the reload
-   * and the index is recovered from it.
+   * Liking, commenting and sharing refresh the feed. The boks acted on is
+   * handed to the feed that replaces this one as `hold.next`, which keeps the
+   * reader on it (see the block after `rankedStories`) with its counts settled
+   * here: after a like, fatigue usually ranks it out of the slate, and the new
+   * feed will not report a like on a boks it does not contain -
+   * `likedStoryIds` covers the slate only. So it carries its total without
+   * this reader's like, and the reader's own like is written into local state,
+   * which `displayedLikeCount` adds back on top.
    */
-  useEffect(() => {
-    const pinned = pinnedStoryId.current;
-    if (!pinned || !rankedStories.length) return;
-    pinnedStoryId.current = null;
-    setSelectedIndex((index) => recoverReaderPlace(rankedStories.map((story) => story.id), pinned, index));
-  }, [rankedStories]);
+  async function reloadFeedKeepingPlace(change: { comments?: number } = {}) {
+    const story = currentStory;
+    if (story) {
+      const likedOnServer = persistedLikedStoryIds.has(story.id);
+      setLiked((state) => (story.id in state ? state : { ...state, [story.id]: likedOnServer }));
+      const next: HeldPlace = {
+        story: {
+          ...story,
+          likes: Math.max(0, story.likes - (likedOnServer ? 1 : 0)),
+          commentsCount: story.commentsCount + (change.comments ?? 0),
+        },
+        index: selectedIndex,
+      };
+      setHold((current) => ({ ...current, next }));
+    }
+    await loadFeed();
+  }
 
   useEffect(() => {
     if (!pendingLibraryStoryId) return;
@@ -542,88 +743,146 @@ export function ReaderFeed() {
       setSelectedIndex(index);
       setAuthPanelOpen(false);
       setPendingLibraryStoryId(null);
-      revealReaderChrome(3800);
+      // The account panel held the controls open; landing on a bok to read it
+      // puts them away, the same as any other arrival.
+      hideReaderChrome();
     }, 0);
 
     return () => window.clearTimeout(handle);
-  }, [pendingLibraryStoryId, rankedStories, revealReaderChrome]);
+  }, [pendingLibraryStoryId, rankedStories, hideReaderChrome]);
 
+  // The latest values the arrival effect needs, without making them reasons
+  // to run it. See below.
+  const arrivalContext = useRef({ currentStory, hideReaderChrome, recordReaderEvent });
   useEffect(() => {
-    if (!currentStory || !currentStoryId) return;
+    arrivalContext.current = { currentStory, hideReaderChrome, recordReaderEvent };
+  }, [currentStory, hideReaderChrome, recordReaderEvent]);
+
+  /**
+   * Arriving at a boks: back to the top, a fresh reading clock, one
+   * impression, the controls put away.
+   *
+   * Keyed on the boks id alone. It used to depend on the story object and on
+   * callbacks that change whenever the comment sheet opens or closes, so a
+   * like - whose reload hands back a new object for the same boks - or simply
+   * closing the comments ran it again: the text jumped to the top, the rail
+   * the reader had just used vanished, the clock restarted and another
+   * impression was logged for a boks already on screen.
+   */
+  useEffect(() => {
+    const { currentStory: story, hideReaderChrome: hideChrome, recordReaderEvent: record } = arrivalContext.current;
+    if (!story || !currentStoryId) return;
     readingClock.current.restart();
     if (storyScroll.current) storyScroll.current.scrollTop = 0;
+    if (wheelIdleTimer.current !== null) {
+      window.clearTimeout(wheelIdleTimer.current);
+      wheelIdleTimer.current = null;
+    }
+    wheelBoundaryArmed.current = { previous: false, next: false };
+    wheelTravel.current = {
+      x: 0,
+      y: 0,
+      lastAt: 0,
+      atTop: false,
+      atBottom: false,
+      allowPrevious: false,
+      allowNext: false,
+    };
     const overflowTimer = window.setTimeout(updateStoryOverflow, 0);
-    const revealTimer = window.setTimeout(() => revealReaderChrome(5200), 0);
-    recordReaderEvent("impression", currentStory, 1, {
-      genre: currentStory.genre,
-      mood: currentStory.mood,
+    const wheelArmTimer = window.setTimeout(armWheelBoundary, 700);
+    // A new bok is for reading. The controls used to flash in here on every
+    // arrival and fade after a few seconds - which read as the interface
+    // popping up by itself. They now stay down until the reader taps.
+    const revealTimer = window.setTimeout(() => hideChrome(), 0);
+    record("impression", story, 1, {
+      genre: story.genre,
+      mood: story.mood,
       // How much was there to choose from, and how much of it was new. A feed
       // ranked over three unread boks is not a ranking.
       ...catalogContextRef.current,
     });
 
-    if (isGuestReader && !countedAnonymousStories.current.has(currentStoryId)) {
-      const anonymousState = readAnonymousReadState();
-      const alreadyRead = anonymousState.storyIds.includes(currentStoryId);
-
-      if (!alreadyRead && anonymousState.storyIds.length >= anonymousReadLimits.requiredSignup) {
-        window.setTimeout(() => {
-          setGuestReadCount(anonymousState.storyIds.length);
-          setAuthReason("required");
-          setAuthPanelOpen(true);
-          setGuestNoticeStep(null);
-        }, 0);
-      } else {
-        countedAnonymousStories.current.add(currentStoryId);
-        const nextCount = recordAnonymousBoksRead(currentStoryId);
-        window.setTimeout(() => setGuestReadCount(nextCount), 0);
-
-        const notices = readAnonymousNoticeState();
-        if (nextCount === anonymousReadLimits.firstNotice && !notices.first) {
-          window.setTimeout(() => setGuestNoticeStep("first"), 0);
-          saveAnonymousNoticeState({ ...notices, first: true });
-        } else if (nextCount === anonymousReadLimits.secondNotice && !notices.second) {
-          window.setTimeout(() => setGuestNoticeStep("second"), 0);
-          saveAnonymousNoticeState({ ...notices, second: true });
-        }
-      }
-    }
-
     const startTimer = window.setTimeout(() => {
-      recordReaderEvent("start", currentStory, 1, { genre: currentStory.genre, mood: currentStory.mood });
-      hideReaderChrome();
+      record("start", story, 1, { genre: story.genre, mood: story.mood });
     }, 2600);
 
     return () => {
       window.clearTimeout(overflowTimer);
+      window.clearTimeout(wheelArmTimer);
       window.clearTimeout(revealTimer);
       window.clearTimeout(startTimer);
     };
-  }, [
-    currentStory,
-    currentStoryId,
-    hideReaderChrome,
-    isGuestReader,
-    recordReaderEvent,
-    revealReaderChrome,
-  ]);
+  }, [currentStoryId]);
+
+  /**
+   * A guest's read count. Separate from arrival because it has a second
+   * trigger: nobody is a guest until the account lookup answers, so the first
+   * boks is counted when that answer arrives, not when the boks does.
+   */
+  useEffect(() => {
+    if (!currentStoryId || !isGuestReader || countedAnonymousStories.current.has(currentStoryId)) return;
+    const anonymousState = readAnonymousReadState();
+    const alreadyRead = anonymousState.storyIds.includes(currentStoryId);
+
+    if (!alreadyRead && anonymousState.storyIds.length >= anonymousReadLimits.requiredSignup) {
+      window.setTimeout(() => {
+        setGuestReadCount(anonymousState.storyIds.length);
+        setAuthReason("required");
+        setAuthPanelOpen(true);
+        setGuestNoticeStep(null);
+      }, 0);
+    } else {
+      countedAnonymousStories.current.add(currentStoryId);
+      const nextCount = recordAnonymousBoksRead(currentStoryId);
+      window.setTimeout(() => setGuestReadCount(nextCount), 0);
+
+      const notices = readAnonymousNoticeState();
+      if (nextCount === anonymousReadLimits.firstNotice && !notices.first) {
+        window.setTimeout(() => setGuestNoticeStep("first"), 0);
+        saveAnonymousNoticeState({ ...notices, first: true });
+      } else if (nextCount === anonymousReadLimits.secondNotice && !notices.second) {
+        window.setTimeout(() => setGuestNoticeStep("second"), 0);
+        saveAnonymousNoticeState({ ...notices, second: true });
+      }
+    }
+  }, [currentStoryId, isGuestReader]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (readerInteractionBlocked) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("button, a, input, textarea, select, [role='dialog'], [contenteditable='true']")) return;
+      // `instanceof` rather than a cast: a key event aimed at the window or
+      // the document has no `closest`, and calling it threw.
+      const target = event.target;
+      if (target instanceof Element && target.closest("button, a, input, textarea, select, [role='dialog'], [contenteditable='true']")) return;
 
-      if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " ") {
-        event.preventDefault();
-        revealReaderChrome(4200);
-        nextStory("keyboard");
+      // Leave the browser's own shortcuts alone.
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      // Space and the down arrow used to change bok outright, so the first
+      // press threw someone paging through a long story out of it. They
+      // scroll now, and change bok only from the end of the text - the rule
+      // the pull follows on a phone. See `readerKeyAction`.
+      const element = storyScroll.current;
+      const boundary = element ? getScrollBoundary(element) : { atTop: true, atBottom: true };
+      const action = readerKeyAction(event.key, event.shiftKey, boundary);
+      if (!action) return;
+      event.preventDefault();
+
+      if (action === "scroll-down" || action === "scroll-up") {
+        if (!element) return;
+        // A page for Space and the Page keys, a few lines for the arrows -
+        // what the browser does for a page that scrolls on its own.
+        const paging = event.key === " " || event.key === "PageDown" || event.key === "PageUp";
+        const step = paging ? Math.round(element.clientHeight * 0.85) : 72;
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        element.scrollBy({ top: action === "scroll-down" ? step : -step, behavior: reduceMotion ? "auto" : "smooth" });
+        return;
       }
-      if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-        event.preventDefault();
-        revealReaderChrome(4200);
-        previousStory("keyboard");
-      }
+
+      // Changing bok no longer flashes the controls in; see `toggleReaderChrome`.
+      const axis = event.key === "ArrowLeft" || event.key === "ArrowRight" ? "horizontal" : "vertical";
+      if (action === "next") void nextStory("keyboard", axis);
+      else previousStory("keyboard", axis);
     }
 
     window.addEventListener("keydown", onKey);
@@ -669,14 +928,14 @@ export function ReaderFeed() {
     storyTransitionTimers.current = [];
   }
 
-  function transitionToStory(targetIndex: number) {
+  function transitionToStory(targetIndex: number, axis: StoryTransitionAxis = "horizontal") {
     if (!rankedStories.length || storyTransitionLocked.current) return false;
 
     const boundedIndex = Math.max(0, Math.min(rankedStories.length - 1, targetIndex));
     if (boundedIndex === selectedIndex) return false;
 
     setCommentOpen(false);
-    revealReaderChrome(3800);
+    hideReaderChrome();
     const direction: ReaderNavigationDirection = boundedIndex < selectedIndex ? "previous" : "next";
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -690,22 +949,25 @@ export function ReaderFeed() {
     // an exit animation made the gesture feel ignored and the eventual change
     // feel like a short jump rather than one continuous response.
     setSelectedIndex(boundedIndex);
-    setStoryTransition({ phase: "entering", direction });
+    setStoryTransition({ phase: "entering", direction, axis });
 
     const transitionTimer = window.setTimeout(() => {
       storyTransitionLocked.current = false;
-      setStoryTransition({ phase: "idle", direction: null });
+      setStoryTransition({ phase: "idle", direction: null, axis: null });
       storyTransitionTimers.current = [];
     }, storyTransitionDurationMs);
     storyTransitionTimers.current.push(transitionTimer);
     return true;
   }
 
-  function move(delta: number) {
-    return transitionToStory(selectedIndex + delta);
+  function move(delta: number, axis: StoryTransitionAxis = "horizontal") {
+    return transitionToStory(selectedIndex + delta, axis);
   }
 
-  function previousStory(reason: "swipe" | "button" | "keyboard" = "swipe") {
+  function previousStory(
+    reason: "swipe" | "button" | "keyboard" = "swipe",
+    axis: StoryTransitionAxis = "horizontal"
+  ) {
     if (storyTransitionLocked.current) return;
     if (selectedIndex <= 0) {
       revealReaderChrome(2400);
@@ -713,12 +975,16 @@ export function ReaderFeed() {
     }
     recordReadingOutcome(reason);
     haptic("selection");
-    move(-1);
+    move(-1, axis);
   }
 
-  function navigateStory(direction: ReaderNavigationDirection, reason: "swipe" | "button" | "keyboard" = "swipe") {
-    if (direction === "previous") previousStory(reason);
-    else void nextStory(reason);
+  function navigateStory(
+    direction: ReaderNavigationDirection,
+    reason: "swipe" | "button" | "keyboard" = "swipe",
+    axis: StoryTransitionAxis = "horizontal"
+  ) {
+    if (direction === "previous") previousStory(reason, axis);
+    else void nextStory(reason, axis);
   }
 
   function openAccount(
@@ -739,28 +1005,29 @@ export function ReaderFeed() {
     if (currentStoryId === storyId) {
       if (storyScroll.current) storyScroll.current.scrollTop = 0;
       setAuthPanelOpen(false);
-      revealReaderChrome(3800);
+      hideReaderChrome();
       recordReaderEvent("impression", currentStory, 1, { from: "library", reread: true });
       return;
     }
 
-    const existingIndex = rankedStories.findIndex((story) => story.id === storyId);
-    if (existingIndex >= 0) {
-      setCommentOpen(false);
-      setSelectedIndex(existingIndex);
-      setAuthPanelOpen(false);
-      revealReaderChrome(3800);
-      return;
-    }
+    // Always fetched and resolved by id in the pending effect, against the
+    // ranking as it is when the effect runs. This used to jump to an index
+    // into this closure's ranking when the boks was already in it - but a
+    // shared link is opened straight after the page's second feed request,
+    // before that feed has rendered, and the index taken from the first feed
+    // pointed at a different boks once the second landed. If the feed has the
+    // boks too, the feed's copy wins in `rankedStories`.
 
     try {
-      const story = await loadSupabaseStory(storyId);
-      if (!story) {
+      const loaded = await loadSupabaseStory(storyId);
+      if (!loaded) {
         setStatus("This boks is no longer available.");
         return;
       }
 
-      setLibraryStories((current) => [story, ...current.filter((item) => item.id !== story.id)]);
+      const { story, likedByMe } = loaded;
+      setLiked((state) => ({ ...state, [story.id]: likedByMe }));
+      setLibraryEntry({ story, index: selectedIndex });
       setPendingLibraryStoryId(story.id);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not open this boks.");
@@ -816,7 +1083,10 @@ export function ReaderFeed() {
     });
   }
 
-  async function nextStory(reason: "swipe" | "button" | "keyboard" = "swipe") {
+  async function nextStory(
+    reason: "swipe" | "button" | "keyboard" = "swipe",
+    axis: StoryTransitionAxis = "horizontal"
+  ) {
     if (storyTransitionLocked.current) return;
     if (selectedIndex >= rankedStories.length - 1) {
       revealReaderChrome(2400);
@@ -828,7 +1098,7 @@ export function ReaderFeed() {
       return;
     }
     haptic("selection");
-    move(1);
+    move(1, axis);
   }
 
   /**
@@ -845,6 +1115,7 @@ export function ReaderFeed() {
         await setMyReadingLanguages(next);
         setUser(await loadBoksUserContext());
       }
+      setHold((current) => ({ ...current, release: true }));
       await loadFeed();
     } catch (error) {
       setStatus(readableBoksError(error, "Could not change your languages."));
@@ -873,6 +1144,10 @@ export function ReaderFeed() {
 
   async function sendReport() {
     if (!currentStory) return;
+    if (accountSuspended) {
+      showSuspension();
+      return;
+    }
 
     setReportSending(true);
     setStatus("");
@@ -893,6 +1168,10 @@ export function ReaderFeed() {
 
   async function likeStory() {
     if (!currentStory) return;
+    if (accountSuspended) {
+      showSuspension();
+      return;
+    }
     if (!hasSignedInAccount) {
       setCommentOpen(false);
       openAccount("manual", "signup", "like");
@@ -932,6 +1211,11 @@ export function ReaderFeed() {
   async function toggleFollow() {
     const authorUserId = currentStory?.authorUserId;
     if (!authorUserId) return;
+
+    if (accountSuspended) {
+      showSuspension();
+      return;
+    }
 
     if (!hasSignedInAccount) {
       openAccount("manual", "signup", "follow");
@@ -996,43 +1280,55 @@ export function ReaderFeed() {
     await reloadFeedKeepingPlace();
   }
 
-  async function submitComment() {
-    if (!currentStory || !commentText.trim()) return;
-
+  async function submitComment(body: string, parentCommentId: number | null): Promise<Comment> {
+    if (!currentStory) throw new Error("That boks is no longer open.");
+    if (accountSuspended) {
+      showSuspension();
+      throw new Error(user?.banReason || "This account is suspended.");
+    }
     if (!hasSignedInAccount) {
       openAccount("manual", "signup", "comment");
-      return;
+      throw new Error("Create a free account to join the conversation.");
     }
 
-    setSubmitting(true);
-    try {
-      if (isSupabaseReader) {
-        await submitSupabaseComment(currentStory.id, commentText);
-      } else {
-        const response = await fetch("/api/boks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "comment",
-            storyId: currentStory.id,
-            body: commentText,
-            visitorName: user?.handle || "reader",
-            visitorId: visitorId.current,
-            sessionId: sessionId.current,
-            surface: "reader",
-          }),
-        });
-        if (!response.ok) throw new Error("Could not send comment.");
-      }
-
-      recordReaderEvent("comment", currentStory);
-      setCommentText("");
-      await reloadFeedKeepingPlace();
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not send comment.");
-    } finally {
-      setSubmitting(false);
+    let created: Comment;
+    if (isSupabaseReader) {
+      created = await submitSupabaseComment(currentStory.id, body, parentCommentId);
+    } else {
+      if (parentCommentId != null) throw new Error("Replies are available in the hosted reader.");
+      const response = await fetch("/api/boks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "comment",
+          storyId: currentStory.id,
+          body,
+          visitorName: user?.handle || "reader",
+          visitorId: visitorId.current,
+          sessionId: sessionId.current,
+          surface: "reader",
+        }),
+      });
+      if (!response.ok) throw new Error("Could not send comment.");
+      created = {
+        id: Date.now(),
+        storyId: currentStory.id,
+        visitorName: user?.handle || "reader",
+        visitorHandle: user?.handle,
+        body,
+        createdAt: new Date().toISOString(),
+        parentCommentId: null,
+        likesCount: 0,
+        likedByMe: false,
+      };
     }
+
+    recordReaderEvent("comment", currentStory);
+    setCommentCountDeltas((current) => ({
+      ...current,
+      [currentStory.id]: (current[currentStory.id] ?? 0) + 1,
+    }));
+    return created;
   }
 
   /**
@@ -1053,6 +1349,71 @@ export function ReaderFeed() {
     }
   }, [loadFeed, setStatus]);
 
+  function clearBoundaryPull(immediate = false) {
+    pullArmed.current = false;
+    if (boundaryPullResetTimer.current !== null) {
+      window.clearTimeout(boundaryPullResetTimer.current);
+      boundaryPullResetTimer.current = null;
+    }
+    if (immediate) {
+      setBoundaryPull(null);
+      return;
+    }
+    setBoundaryPull((current) => current ? { ...current, progress: 0 } : null);
+    boundaryPullResetTimer.current = window.setTimeout(() => {
+      setBoundaryPull(null);
+      boundaryPullResetTimer.current = null;
+    }, 180);
+  }
+
+  function showBoundaryPull(next: BoundaryPullState) {
+    if (boundaryPullResetTimer.current !== null) {
+      window.clearTimeout(boundaryPullResetTimer.current);
+      boundaryPullResetTimer.current = null;
+    }
+    // One tick at the moment letting go would change bok, so the commitment is
+    // felt as well as seen - and one tick only, not one per touchmove.
+    const armed = next.progress >= 1;
+    if (armed && !pullArmed.current) haptic("selection");
+    pullArmed.current = armed;
+    setBoundaryPull(next);
+  }
+
+  function armWheelBoundary() {
+    const element = storyScroll.current;
+    if (!element) return;
+    const boundary = getScrollBoundary(element);
+    wheelBoundaryArmed.current = {
+      previous: boundary.atTop,
+      next: boundary.atBottom,
+    };
+    wheelIdleTimer.current = null;
+  }
+
+  function scheduleWheelBoundaryArm() {
+    if (wheelIdleTimer.current !== null) window.clearTimeout(wheelIdleTimer.current);
+    wheelIdleTimer.current = window.setTimeout(armWheelBoundary, 700);
+  }
+
+  function gestureStart(x: number, y: number): GestureStart {
+    const boundary = storyScroll.current
+      ? getScrollBoundary(storyScroll.current)
+      : { atTop: true, atBottom: true };
+    const now = performance.now();
+    return { x, y, ...boundary, at: now, msSinceScroll: now - lastScrollAt.current };
+  }
+
+  /** Mirrors a boundary pull on screen, or takes the cue away if it retreated. */
+  function followBoundaryPull(dx: number, dy: number, start: GestureStart) {
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      clearBoundaryPull();
+      return;
+    }
+    const pull = verticalBoundaryPull(dy, start, touchBoundaryPullThreshold, touchBoundaryPullDeadZone);
+    if (pull) showBoundaryPull(pull);
+    else clearBoundaryPull();
+  }
+
   function onTouchStart(event: React.TouchEvent<HTMLElement>) {
     if (readerInteractionBlocked) {
       touchStart.current = null;
@@ -1064,10 +1425,14 @@ export function ReaderFeed() {
       return;
     }
     const touch = event.touches[0];
-    const boundary = storyScroll.current
-      ? getScrollBoundary(storyScroll.current)
-      : { atTop: true, atBottom: true };
-    touchStart.current = { x: touch.clientX, y: touch.clientY, ...boundary };
+    touchStart.current = gestureStart(touch.clientX, touch.clientY);
+  }
+
+  function onTouchMove(event: React.TouchEvent<HTMLElement>) {
+    const start = touchStart.current;
+    if (!start || readerInteractionBlocked) return;
+    const touch = event.touches[0];
+    followBoundaryPull(touch.clientX - start.x, touch.clientY - start.y, start);
   }
 
   function onTouchEnd(event: React.TouchEvent<HTMLElement>) {
@@ -1083,8 +1448,36 @@ export function ReaderFeed() {
     touchStart.current = null;
 
     const horizontal = horizontalNavigationIntent(dx, dy);
-    const vertical = verticalBoundaryIntent(dy, start);
-    if (horizontal || vertical) navigateStory(horizontal ?? vertical!, "swipe");
+    const vertical = verticalBoundaryIntent(dy, start, touchBoundaryPullThreshold, touchBoundaryPullDeadZone);
+    clearBoundaryPull(Boolean(horizontal || vertical));
+    if (horizontal) {
+      navigateStory(horizontal, "swipe", "horizontal");
+      return;
+    }
+    if (vertical) {
+      navigateStory(vertical, "swipe", "vertical");
+      return;
+    }
+
+    // A tap. There used to be no branch for this at all on a phone - the
+    // touch handler looked only for swipes and the pointer handler returns for
+    // touch - so the one way to ask for the controls did nothing.
+    const tap = readerTapAction({
+      pointerType: "touch",
+      dx,
+      dy,
+      durationMs: performance.now() - start.at,
+      msSinceScroll: start.msSinceScroll,
+      clientX: touch.clientX,
+      left: 0,
+      width: window.innerWidth,
+    });
+    if (tap === "toggle-chrome" && !window.getSelection()?.toString()) toggleReaderChrome();
+  }
+
+  function onTouchCancel() {
+    touchStart.current = null;
+    clearBoundaryPull();
   }
 
   function onReaderPointerDown(event: React.PointerEvent<HTMLElement>) {
@@ -1095,10 +1488,18 @@ export function ReaderFeed() {
     if (event.pointerType === "touch") return;
     const target = event.target as HTMLElement;
     if (target.closest("button, a, input, textarea, select, [role='dialog']")) return;
-    const boundary = storyScroll.current
-      ? getScrollBoundary(storyScroll.current)
-      : { atTop: true, atBottom: true };
-    pointerStart.current = { x: event.clientX, y: event.clientY, ...boundary };
+    pointerStart.current = gestureStart(event.clientX, event.clientY);
+  }
+
+  function onReaderPointerMove(event: React.PointerEvent<HTMLElement>) {
+    const start = pointerStart.current;
+    if (!start || event.pointerType === "touch" || readerInteractionBlocked) return;
+    followBoundaryPull(event.clientX - start.x, event.clientY - start.y, start);
+  }
+
+  function onReaderPointerCancel() {
+    pointerStart.current = null;
+    clearBoundaryPull();
   }
 
   function onReaderPointerUp(event: React.PointerEvent<HTMLElement>) {
@@ -1116,47 +1517,161 @@ export function ReaderFeed() {
 
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    const moved = Math.hypot(dx, dy);
-    const dragged = horizontalNavigationIntent(dx, dy) ?? verticalBoundaryIntent(dy, start);
-    if (dragged) {
-      navigateStory(dragged, "swipe");
+    const horizontal = horizontalNavigationIntent(dx, dy);
+    const vertical = verticalBoundaryIntent(dy, start, touchBoundaryPullThreshold, touchBoundaryPullDeadZone);
+    clearBoundaryPull(Boolean(horizontal || vertical));
+    if (horizontal) {
+      navigateStory(horizontal, "swipe", "horizontal");
+      return;
+    }
+    if (vertical) {
+      navigateStory(vertical, "swipe", "vertical");
       return;
     }
 
-    if (moved <= 10) {
-      if (window.getSelection()?.toString()) return;
-      const bounds = event.currentTarget.getBoundingClientRect();
-      const edge = edgeTapIntent(event.clientX, bounds.left, bounds.width);
-      if (edge) navigateStory(edge, "button");
-      else revealReaderChrome(6200);
-    }
+    // Selecting a word with a double click must not also toggle the controls.
+    if (window.getSelection()?.toString()) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const tap = readerTapAction({
+      pointerType: event.pointerType === "pen" ? "pen" : "mouse",
+      dx,
+      dy,
+      durationMs: performance.now() - start.at,
+      msSinceScroll: start.msSinceScroll,
+      clientX: event.clientX,
+      left: bounds.left,
+      width: bounds.width,
+    });
+    if (tap === "toggle-chrome") toggleReaderChrome();
+    else if (tap) navigateStory(tap, "button");
   }
 
   function onStoryWheel(event: React.WheelEvent<HTMLDivElement>) {
     if (readerInteractionBlocked) return;
     const now = performance.now();
     if (now - lastWheelNavigationAt.current < 700) return;
-    if (now - wheelTravel.current.lastAt > 240) wheelTravel.current = { x: 0, y: 0, lastAt: now };
+    const currentBoundary = storyScroll.current
+      ? getScrollBoundary(storyScroll.current)
+      : { atTop: true, atBottom: true };
+    // Trackpad momentum often pauses for 300-400 ms while one physical swipe
+    // is still decelerating. Treat only a longer pause as a new boundary pull,
+    // otherwise the reading scroll itself can accidentally advance the feed.
+    if (now - wheelTravel.current.lastAt > 520) {
+      wheelTravel.current = {
+        x: 0,
+        y: 0,
+        lastAt: now,
+        ...currentBoundary,
+        allowPrevious: currentBoundary.atTop && wheelBoundaryArmed.current.previous,
+        allowNext: currentBoundary.atBottom && wheelBoundaryArmed.current.next,
+      };
+      wheelBoundaryArmed.current = { previous: false, next: false };
+      clearBoundaryPull(true);
+    }
+    scheduleWheelBoundaryArm();
 
     wheelTravel.current.x += event.deltaX;
     wheelTravel.current.y += event.deltaY;
     wheelTravel.current.lastAt = now;
 
-    const horizontal = horizontalNavigationIntent(wheelTravel.current.x, wheelTravel.current.y, 120);
-    const boundary = storyScroll.current
-      ? getScrollBoundary(storyScroll.current)
-      : { atTop: true, atBottom: true };
-    const vertical = verticalBoundaryIntent(-wheelTravel.current.y, boundary, 150);
-    const intent = horizontal ?? vertical;
-    if (!intent) return;
+    const horizontal = horizontalWheelIntent(wheelTravel.current.x, wheelTravel.current.y);
+    if (horizontal) {
+      cancelWheelRelease();
+      lastWheelNavigationAt.current = now;
+      wheelTravel.current = {
+        x: 0,
+        y: 0,
+        lastAt: now,
+        atTop: false,
+        atBottom: false,
+        allowPrevious: false,
+        allowNext: false,
+      };
+      clearBoundaryPull(true);
+      navigateStory(horizontal, "swipe", "horizontal");
+      return;
+    }
 
+    const pull = verticalBoundaryPull(
+      -wheelTravel.current.y,
+      { atTop: wheelTravel.current.atTop, atBottom: wheelTravel.current.atBottom },
+      wheelBoundaryPullThreshold,
+      wheelBoundaryPullDeadZone
+    );
+    const boundaryWasArmed = pull
+      ? pull.direction === "next"
+        ? wheelTravel.current.allowNext
+        : wheelTravel.current.allowPrevious
+      : false;
+    if (!pull || !boundaryWasArmed || Math.abs(wheelTravel.current.y) <= Math.abs(wheelTravel.current.x)) {
+      // Scrolled back, or never a boundary pull: an armed pull is let go.
+      cancelWheelRelease();
+      return;
+    }
+
+    showBoundaryPull(pull);
+    if (pull.progress < 1) {
+      cancelWheelRelease();
+      boundaryPullResetTimer.current = window.setTimeout(() => {
+        clearBoundaryPull();
+      }, 560);
+      return;
+    }
+
+    // Armed. It used to change bok right here, the instant the travel filled -
+    // which on a trackpad is a fraction of a second into a flick, so the cue
+    // vanished before anyone saw it. Now it commits when the wheel goes quiet,
+    // the wheel's version of letting go, and never before the armed cue has
+    // been on screen long enough to read.
+    if (wheelArmedAt.current === null) wheelArmedAt.current = now;
+    if (wheelReleaseTimer.current !== null) window.clearTimeout(wheelReleaseTimer.current);
+    const direction = pull.direction;
+    const wait = Math.max(wheelReleaseMs, wheelArmedMinMs - (now - wheelArmedAt.current));
+    wheelReleaseTimer.current = window.setTimeout(() => commitWheelPull(direction), wait);
+  }
+
+  function cancelWheelRelease() {
+    if (wheelReleaseTimer.current !== null) window.clearTimeout(wheelReleaseTimer.current);
+    wheelReleaseTimer.current = null;
+    wheelArmedAt.current = null;
+  }
+
+  function commitWheelPull(direction: ReaderNavigationDirection) {
+    const now = performance.now();
+    wheelReleaseTimer.current = null;
+    wheelArmedAt.current = null;
     lastWheelNavigationAt.current = now;
-    wheelTravel.current = { x: 0, y: 0, lastAt: now };
-    navigateStory(intent, "swipe");
+    wheelTravel.current = {
+      x: 0,
+      y: 0,
+      lastAt: now,
+      atTop: false,
+      atBottom: false,
+      allowPrevious: false,
+      allowNext: false,
+    };
+    clearBoundaryPull(true);
+    navigateStory(direction, "swipe", "vertical");
   }
 
   function onStoryScroll() {
+    lastScrollAt.current = performance.now();
+    // A pull at the edge can make the page bounce, and a bounce fires scroll
+    // events. Clearing the cue on every one of them is what made it flicker
+    // away in the middle of a pull - "sometimes it just isn't there". It goes
+    // only if the text has really left the edge the pull started from.
+    const element = storyScroll.current;
+    if (element) {
+      const boundary = getScrollBoundary(element);
+      setBoundaryPull((pull) => {
+        if (!pull) return pull;
+        const stillAtEdge = pull.direction === "next" ? boundary.atBottom : boundary.atTop;
+        if (!stillAtEdge) pullArmed.current = false;
+        return stillAtEdge ? pull : null;
+      });
+    }
     updateStoryProgress();
+    // Scrolling is reading. It puts the controls away and never brings them up.
     hideReaderChrome();
     updateStoryOverflow();
   }
@@ -1230,11 +1745,15 @@ export function ReaderFeed() {
       } ${guestNoticeStep ? "reader-shell--notice" : ""}`}
     >
       <section
-        className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_84px]"
+        className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_116px]"
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
         onPointerDown={onReaderPointerDown}
+        onPointerMove={onReaderPointerMove}
         onPointerUp={onReaderPointerUp}
+        onPointerCancel={onReaderPointerCancel}
       >
         <article
           className="reader-card relative grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[var(--reader)]"
@@ -1258,7 +1777,7 @@ export function ReaderFeed() {
             } ${
               storyTransition.phase === "idle"
                 ? ""
-                : `story-transition--${storyTransition.phase}-${storyTransition.direction}`
+                : `story-transition--${storyTransition.phase}-${storyTransition.direction} story-transition--${storyTransition.axis}`
             }`}
             onScroll={onStoryScroll}
             onWheel={onStoryWheel}
@@ -1333,6 +1852,49 @@ export function ReaderFeed() {
             </div>
           </div>
 
+          {boundaryPull && (
+            <div
+              className={`boundary-pull-cue boundary-pull-cue--${boundaryPull.direction}${
+                boundaryPull.progress >= 1 ? " boundary-pull-cue--armed" : ""
+              }`}
+              style={{
+                // Visible from the moment the pull engages. Opacity used to
+                // *equal* progress, so for most of a pull the cue was a faint
+                // ghost, and it was removed the instant it filled - nobody saw
+                // it full. The ring now shows progress; the cue is simply there.
+                opacity: 0.55 + boundaryPull.progress * 0.45,
+                transform: `translate(-50%, ${boundaryPull.direction === "next" ? "" : "-"}${Math.round((1 - boundaryPull.progress) * 20)}px)`,
+              }}
+              aria-hidden="true"
+            >
+              <span
+                className="boundary-pull-ring"
+                style={{
+                  background: `conic-gradient(var(--primary) ${Math.round(boundaryPull.progress * 360)}deg, var(--border) 0deg)`,
+                }}
+              >
+                <span className="boundary-pull-ring__inner">
+                  {boundaryPull.direction === "next" ? (
+                    <ChevronDown className="size-4" />
+                  ) : (
+                    <ChevronUp className="size-4" />
+                  )}
+                </span>
+              </span>
+              {/* Armed says what letting go will do, so the reader decides it
+                  rather than discovering it. */}
+              <span>
+                {boundaryPull.progress >= 1
+                  ? boundaryPull.direction === "next"
+                    ? "release for next bok"
+                    : "release for previous bok"
+                  : boundaryPull.direction === "next"
+                    ? "next bok"
+                    : "previous bok"}
+              </span>
+            </div>
+          )}
+
           <footer className="reader-footer reader-ui z-10 flex items-center justify-end gap-2 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-8 sm:pb-6">
             {selectedIndex > 0 && (
               <button className="swipe-cue" onClick={() => previousStory("button")} aria-label="Previous bok">
@@ -1353,23 +1915,37 @@ export function ReaderFeed() {
           className="action-rail reader-ui pointer-events-none absolute inset-x-4 z-20 flex justify-center gap-2 lg:static lg:inset-auto lg:flex-col lg:justify-center"
           inert={readerInteractionBlocked ? true : undefined}
         >
-          {/* Only the comment count is a real public number. A like is visible
-              to no one but the reader who made it, and a share cannot be
-              counted at all once the link leaves the app, so both are shown as
-              actions rather than as a tally that would always read 0 or 1. */}
+          {/* Likes and replies carry their counts to the right of the icon,
+              always. The like total is public as an aggregate - how many,
+              never who - and is reconciled with this reader's own like so the
+              number moves the moment the heart does. A share has no count: it
+              cannot be seen once the link leaves the app. */}
           <ActionButton
             label={isCurrentStoryLiked ? "Remove like" : "Like"}
+            value={displayedLikeCount(
+              currentStory.likes,
+              persistedLikedStoryIds.has(currentStory.id),
+              isCurrentStoryLiked
+            )}
             onClick={likeStory}
             active={isCurrentStoryLiked}
           >
-            <Heart className="size-5" />
+            {/* Filled when liked: the state has to read at a glance, not only
+                through a tinted background. */}
+            <Heart className="size-5" fill={isCurrentStoryLiked ? "currentColor" : "none"} />
           </ActionButton>
-          <ActionButton label="Comment" value={currentStory.commentsCount} onClick={() => setCommentOpen(true)}>
+          <ActionButton label="Comments" value={currentCommentCount} onClick={() => setCommentOpen(true)}>
             <MessageCircle className="size-5" />
           </ActionButton>
           <ActionButton label="Share" onClick={shareStory}>
             <Share2 className="size-5" />
           </ActionButton>
+          {/* Admins only, and only as a convenience: see `isAdminReader`. */}
+          {isAdminReader && (
+            <ActionButton label="Hide this boks from readers (admin)" onClick={openHideBok} tone="danger">
+              <Trash2 className="size-5" />
+            </ActionButton>
+          )}
         </aside>
 
         {guestNoticeStep && isGuestReader && !authPanelOpen && (
@@ -1418,82 +1994,20 @@ export function ReaderFeed() {
           />
         )}
 
-        {commentOpen && (
-          <ReaderSheet label="Responses" onClose={() => setCommentOpen(false)}>
-            <ReaderSheetHeader
-              label="Responses"
-              onClose={() => setCommentOpen(false)}
-              title={`Responses${currentComments.length ? ` · ${currentComments.length}` : ""}`}
-            />
-
-            {/* Takes the height the sheet actually has. A fixed 220px box left
-                most of a phone screen empty and made reading a scroll inside a
-                scroll. */}
-            <div className="comment-list min-h-0 flex-1 overflow-y-auto px-4 pb-2">
-              {currentComments.length ? (
-                <ul className="grid gap-3 py-1">
-                  {currentComments.map((comment) => {
-                    const handle = (comment.visitorHandle || comment.visitorName || "reader").replace(/^@+/, "");
-                    const isAuthor =
-                      Boolean(currentStory.authorHandle) &&
-                      handle.toLowerCase() === currentStory.authorHandle.replace(/^@+/, "").toLowerCase();
-
-                    return (
-                      <li key={comment.id} className="comment-item">
-                        <div className="flex flex-wrap items-baseline gap-x-2">
-                          <span className="text-sm font-semibold">@{handle}</span>
-                          {isAuthor && <span className="comment-author-tag">author</span>}
-                          <span className="text-xs text-[var(--muted-foreground)]">
-                            {shortTimeAgo(comment.createdAt)}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">{comment.body}</p>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
-                  No responses yet. Say the first thing.
-                </p>
-              )}
-            </div>
-
-            {/* One row, always reachable with a thumb. */}
-            <div className="comment-composer">
-              {hasSignedInAccount ? (
-                <>
-                  <Textarea
-                    aria-label="Comment"
-                    placeholder="One sentence after reading"
-                    rows={1}
-                    value={commentText}
-                    onChange={(event) => setCommentText(event.target.value)}
-                    onKeyDown={(event) => {
-                      // Enter sends; Shift+Enter keeps the line break. A one-line
-                      // reply should not need a reach for the button.
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        if (!isSubmitting && commentText.trim()) submitComment();
-                      }
-                    }}
-                  />
-                  <Button
-                    size="icon"
-                    onClick={submitComment}
-                    disabled={isSubmitting || !commentText.trim()}
-                    aria-label="Send response"
-                  >
-                    <Send className="size-4" />
-                  </Button>
-                </>
-              ) : (
-                <Button className="w-full" onClick={() => openAccount("manual", "signup", "comment")}>
-                  Create a free account to respond
-                </Button>
-              )}
-            </div>
-          </ReaderSheet>
+        {commentOpen && currentStory && (
+          <CommentsSheet
+            key={currentStory.id}
+            storyId={currentStory.id}
+            authorHandle={currentStory.authorHandle}
+            initialComments={currentComments}
+            hasSignedInAccount={hasSignedInAccount}
+            viewerHandle={user?.handle ?? null}
+            isSupabaseReader={isSupabaseReader}
+            onClose={() => setCommentOpen(false)}
+            onRequestAccount={() => openAccount("manual", "signup", "comment")}
+            onSubmit={submitComment}
+            onStatus={setStatus}
+          />
         )}
 
         {bokMenuOpen && currentStory && (
@@ -1595,6 +2109,18 @@ export function ReaderFeed() {
           onFollowsChanged={setFollowedAuthorIds}
           onUserChanged={handleUserChanged}
         />
+
+        {isAdminReader && (
+          <BokLifecycleDialog target={hideTarget} onClose={() => setHideTarget(null)} onDone={afterHideBok} />
+        )}
+        {readerFlash && (
+          <div className="reader-flash" role="status" aria-live="polite">
+            <span>{readerFlash}</span>
+            <button type="button" onClick={() => setReaderFlash("")} aria-label="Dismiss">
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
       </section>
     </main>
   );

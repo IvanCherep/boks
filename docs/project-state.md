@@ -1,7 +1,7 @@
 # Where boks Stands
 
 One page so a new session can orient without reading four handovers and two
-research reports. Updated 2026-09-17 (reader redesign in the current worktree).
+research reports. Updated 2026-09-19 (admin account and content lifecycle, account library, reader controls, threaded comments, reaction counts, share links).
 
 For *why* a thing is the way it is, the handovers and ADRs are the record. This
 says only what is true now.
@@ -27,14 +27,58 @@ is still the `site_url` in production auth. Two things to know about it:
   belongs behind a zone-level redirect rule to the apex. Production backend is the Supabase project
 `vcmrvnihbptostnzaean` (eu-west-2).
 
-All 32 migrations are applied to production. The production database is on the
+All 36 migrations are applied to production. The production database is on the
 current schema, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.
 
 Deployed and working: the reader, the `for_you` ranker behind `/api/feed` with
 served-feed provenance, author pages and follows, per-boks and per-author share
-links, the rebuilt comment sheet, handle-only identity, and the admin console.
+links, the lazy-loaded partial/full-screen comment sheet with one-level replies
+and per-comment likes, handle-only identity, and the admin console.
+
+**Admin governance is database-backed end to end.** Content has separate
+Published and Deleted views. Delete first archives a boks with an actor, time,
+and reason; restore requires a confirmed rights record; permanent deletion is
+available only from Deleted and requires the exact title. People can grant and
+revoke admin access, suspend and restore accounts with a user-visible reason,
+or permanently delete a non-admin account after typing its exact nickname.
+The acting admin and the last active admin are protected. Account deletion
+anonymises and archives authored boks, deletes personal and reaction data, and
+leaves only a UUID tombstone so a stale JWT cannot write until it expires.
+
+**One inspector for the whole console (2026-09-19).** Any boks in Moderation,
+Rights or Content, and any account in People, opens in the same side sheet:
+a boks view (text, review and hide history, rights, metrics, newest comments
+and likers) and a person view (reading and authoring metrics, 30-day
+activity, and the boks they wrote, liked, commented on and read, with a JSON
+export). Links inside it walk between the two with Back. Reads are
+`get_admin_bok` / `get_admin_person` (migration `20260919220000`), with metrics
+defined exactly as the Content and People rows - `checks.sql` asserts equality.
+Hide / restore / erase have one dialog, `admin/bok-lifecycle-dialog.tsx`.
+
+**Admins can hide a boks from the reader feed.** A fourth rail button, red,
+after Share, drawn only for an admin; a warning dialog that requires a reason;
+the boks leaves the feed for everyone and lands in Content → Deleted with who,
+when and why - nothing is erased. The protection is the database, not the
+button: `archive_bok` checks `is_boks_admin` (role read from `user_profiles`,
+suspended and deleted accounts refused), `authenticated` has only SELECT on
+`reels`, and `anon` cannot execute the function at all. `checks.sql` proves
+guest, anonymous session, reader, the boks's own author, a suspended admin and
+a direct table UPDATE/DELETE are all refused; production was probed the same
+way. See `docs/handover/2026-09-19-admin-inspector-and-feed-hide.md`.
+
+**A signed-in reader has one account library with Read, Liked, and Comments
+views.** The RPC selects up to 120 recent ids from each activity and returns
+their bounded union, searchable by title or byline and backed by the reader's
+private `views`, `likes`, and `comments` activity through
+`get_my_reader_library`. Opening an item inserts
+that single boks at the reader's current place; the next gesture resumes the
+recommendation slate, so the library cannot become a second selectable feed.
+Guests never see these views. Production QA covered the owner account on
+desktop and a 430 x 932 mobile viewport. It also found and fixed an old
+magic-link draft that could replay a retired nickname choice and prevent all
+account data from loading.
 
 Catalogue import landed on top of that: an admin loads a folder of files into a
 publisher account, each piece keeping its own byline. See
@@ -123,7 +167,7 @@ poems into paragraphs**. See the audit section below.
 |---|---|
 | Delivery to somebody other than the account owner | Applied on 2026-09-17: production `site_url` is `https://tryboks.com`, the redirect allow-list carries both origins with their `/**` forms, and the sender is `hello@tryboks.com` on a Resend-verified domain (`tryboks.com`, eu-west-1). What is **not** proven is delivery: the Resend log shows every email ever sent went from the `onboarding@resend.dev` sandbox to the account owner's own address and nowhere else. Until a magic link arrives in somebody else's inbox, "email works" stays an assumption. |
 | Inbound mail and DMARC on `tryboks.com` | No MX records, so anything a reader replies to `hello@tryboks.com` bounces; Cloudflare Email Routing would forward it. And no `_dmarc` record - not required, but Gmail and Yahoo treat a sender without one more harshly. Neither blocks sending. |
-| The current reader redesign | Source Serif 4, reversible edge/gesture navigation, boundary-only vertical transitions, the simplified reaction rail, and the in-app font license are implemented and verified locally but have not been deployed. |
+| The current reader redesign | Source Serif 4, reversible edge/gesture navigation, deliberate progress-ring boundary pulls, axis-matched transitions, the simplified reaction rail, and the in-app font license are implemented and deployed. |
 | Anything uncommitted | The worktree carries the current production code. There is no commit for it, so the only rollback is the previous Worker version in Cloudflare. |
 
 ---
@@ -216,6 +260,83 @@ and was removed. If you find yourself copying a name into another table, that is
 the mistake being repeated.
 
 ---
+
+## How the reader is operated
+
+Settled on 2026-09-19 after the controls and the pull to the next bok were
+reported as not working. The rules live as tested pure functions in
+`components/boks/reader-navigation.ts`; `reader-feed.tsx` only wires them.
+
+- **The page follows the finger.** A swipe from right to left opens the next
+  bok, left to right the previous one, and a trackpad agrees when two fingers
+  move the same way. It was backwards on every phone until 2026-09-19: the
+  product spec said "movement toward the left opens the previous bok", which
+  folded a tap on the left edge together with a finger moving left, and one
+  rule was shared by touch and trackpad although a wheel's delta has the
+  opposite sign of a finger's. The trackpad came out right, the phone wrong.
+  `horizontalWheelIntent` now converts the wheel into drag coordinates, the
+  way the vertical pull always did.
+- **The controls appear only when asked for.** A tap on the text toggles them;
+  nothing else brings them up - not a new bok arriving, not a scroll, not a key.
+  They used to flash in on every arrival, three separate times in the code, and
+  on a phone a tap did nothing at all: the touch handler looked only for swipes
+  and the pointer handler returns for touch.
+- **An explicit open stays open** until the next tap, a scroll, or a change of
+  bok. There is no fade timer - someone who opened the controls to like a piece
+  should not watch them vanish while deciding.
+- **On touch every tap toggles, even at the edges.** A phone is narrow, edge
+  zones would cover half of it, and reaching for the controls must not jump to
+  another bok. On touch, changing bok is a swipe or a pull. A mouse keeps its
+  edge clicks.
+- **Not a tap:** movement over 10px, a hold over 450ms (that is how a line gets
+  selected), or a touch within 150ms of the text scrolling (that touch stops a
+  flick; it is not a request).
+- **The pull to the next bok has to be meant.** The first 18px count for
+  nothing and the pull is 150px, where it used to be 104px from the first
+  pixel - which a short poem, being at its end the moment it opens, tripped on
+  an ordinary flick.
+- **The pull is visible and has an armed state.** The cue shows from the moment
+  the pull engages (its opacity used to equal progress, so it was a ghost for
+  most of the gesture and was removed the instant it filled). Full, it turns
+  solid, grows, says `release for next bok` and ticks once; letting go commits,
+  pulling back disarms.
+- **A trackpad commits on "release" too.** A wheel has no let-go, so the wheel
+  going quiet for 450ms stands in for it - longer than the 300-400ms pauses
+  trackpad momentum makes inside one swipe - and the armed cue is held at least
+  320ms. It used to change bok mid-flick, the moment the travel filled.
+- **Space and the down arrow scroll.** They used to change bok outright, so the
+  first press threw someone paging through a long story out of it. Now they
+  scroll a screen or a few lines, and change bok only from the end of the text.
+  The side arrows change bok from anywhere.
+- **Likes and replies show their count to the right of the icon, always** -
+  zero included, muted. The like total is the public aggregate (how many, never
+  who): the feed RPC already returned it to every client and the display row
+  dropped it; a boks opened outside the slate (shared link, history) gets it
+  from `get_bok_reactions` (migration `20260919140000`). The number on screen
+  is `displayedLikeCount(total, likedOnServer, likedNow)`, so it moves the
+  moment the heart does and does not double-count after the reload.
+- **Acting on a boks never moves the reader off it.** Liking, replying and
+  sharing reload the feed, and a like raises the boks's fatigue, which ranks it
+  out of the 80-item slate - so the reader used to land on a stranger's piece
+  after every like. The boks on screen is now found by id in each new feed, or
+  carried into it at the reader's place (`holdPinnedStory`, the `hold` state in
+  `reader-feed.tsx`, resolved during render so no wrong frame is committed).
+  Only a reload that changes the reading languages lets it go. A boks carried
+  out of the slate holds its total *without* this reader's like and keeps the
+  like in local state, because `likedStoryIds` covers the slate only.
+- **Arriving at a boks is keyed on its id alone.** The arrival effect - scroll
+  to top, restart the reading clock, one impression, controls down - used to
+  depend on the story object and on callbacks that change when the comment
+  sheet opens, so a like, a reply or just closing the replies re-ran it: the
+  text jumped to the top, the rail vanished, and a duplicate impression was
+  logged. Expect impression counts per reader to drop from here on; earlier
+  data is inflated by it.
+- **Never glue a Tailwind utility to an interpolation.** Tailwind finds classes
+  by scanning source text, so `` `pointer-events-auto${x}` `` generates nothing.
+  That shipped once on 2026-09-19: the rail buttons inherited the rail's
+  `pointer-events: none` and every tap on the heart fell through to the reader
+  (near the right edge, that turns the page). Build class lists from whole
+  literals; `ActionButton` joins an array.
 
 ## Deliberate product constraints
 
@@ -431,19 +552,17 @@ Small, real, and written down so they are not rediscovered:
 - **`RECSYS-SYSTEM-REPORT.md` §16-17 is stale by an order of magnitude** - it
   reasons about 38 published pieces where there are now 906, so its arm
   divergence table and its justification of the live split are no longer valid.
-- **A per-boks share link does not open the boks it names.** `/b/<id>` and
-  `/?bok=<id>` both serve whatever the ranker put first instead - always the
-  same piece, whichever id is asked for, so the id is being discarded rather
-  than mis-resolved. Verified on production for an English piece and a Russian
-  one, so it is neither language- nor corpus-specific, and nothing in the
-  reading-languages or corpus work touches this path. The redirect itself is
-  fine: `app/b/[id]/page.tsx` rewrites to `/?bok=<id>` correctly, and the
-  reader does read `params.get("bok")`. The failure is between that read and
-  `openReadBoks`, which is called through `openReadBoksRef` late in the init
-  chain - the two candidates are a stale closure (`rankedStories` still empty,
-  so it takes the `loadSupabaseStory` path) and the `pendingLibraryStoryId`
-  effect never finding its index. This is a shipped feature - every boks offers
-  the link - so it is worth fixing before a pilot.
+- **Fixed 2026-09-19: a per-boks share link opened a different boks.** Two
+  causes. `loadSupabaseStory` filtered `published_boks` on `status`, which the
+  view does not expose (it is published-only by definition), so PostgREST
+  answered 42703 for everyone - and it returned null for guests outright, who
+  are most of the people a link is sent to. Then, when the boks happened to be
+  in the first feed, `openReadBoks` jumped to an index taken from that feed
+  just as the page's second feed request (the one adopting the account's
+  reading languages) landed. It now always fetches by id and is open to guests,
+  and the reader stays on the boks on screen through a reload (see "How the
+  reader is operated"). The two degraded-feed fallbacks had the same `status`
+  filter and were fixed with it.
 - **A bilingual reader is served about two English pieces for every Russian
   one** (measured in the candidate pool: 132 to 68). Each piece carries its
   real publication year so the freshness signal has 115 distinct years to read,

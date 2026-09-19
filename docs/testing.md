@@ -17,7 +17,7 @@ The prototype must collect enough behavior to answer:
 
 ## Reader Test Script
 
-Use `https://read.tryboks.workers.dev/`.
+Use `https://tryboks.com/`.
 
 Ask each tester:
 
@@ -41,7 +41,7 @@ After the session, ask:
 
 ## Author Test Script
 
-Use `https://read.tryboks.workers.dev/author`.
+Use `https://tryboks.com/author`.
 
 Ask an author:
 
@@ -67,7 +67,7 @@ Watch for:
 
 ## Admin Test Script
 
-Use `https://read.tryboks.workers.dev/admin`.
+Use `https://tryboks.com/admin`.
 
 Sign in by email magic link with a permanent account that has `admin` role in Supabase. If this is the first admin, sign up as a reader first, open `/admin`, and use the first-admin claim. After one admin exists, new admins must be granted from the User management panel.
 
@@ -100,6 +100,10 @@ Reader:
 - Left/up and right/down keyboard arrows return and advance on desktop; Space advances only when focus is outside a control or text field.
 - Interface controls fade during reading.
 - Tapping/clicking reveals reactions.
+- Comments load only when their sheet opens. The sheet starts at partial height, expands to the full reader surface from the grip or expand control, and collapses without moving to another boks.
+- Guests can read every comment and reply. Trying to comment, reply, or like opens the gentle free-account flow while preserving the open conversation.
+- Signed-in readers can like and unlike each comment, reply to a root comment, reveal or hide replies, and cancel a reply before sending. Replies stay one level deep and use the account's `@nickname`.
+- With the comment sheet or account form open, Arrow keys, Space, edge taps, wheel gestures, and swipes do not navigate the background feed.
 - There is no finished button.
 - Text remains readable on small phones and desktop.
 - Source Serif 4 renders both Latin and Cyrillic story text without a network font request.
@@ -111,6 +115,9 @@ Reader:
 - At 15 distinct boks, the non-dismissible account form states that reading stays free and fits inside the phone viewport without horizontal scrolling.
 - Signed-in readers can open settings and recently read boks from the 44 x 44 account/settings button.
 - "Write a bok" in the account panel opens `/author`; "Admin" appears there only for admin accounts.
+- A permanent account sees separate Read, Liked, and Comments library tabs; a guest sees none of them.
+- Search filters only the active library tab by title or byline.
+- Opening a library boks shows that exact piece, and Next continues with the recommendation slate rather than another library item.
 - The author cabinet shows "Open admin" only for admin accounts.
 
 Author:
@@ -158,7 +165,8 @@ npm test
 
 `npm test` covers the parts where a mistake is expensive and invisible:
 recommendation ranking per strategy, deterministic experiment assignment,
-metric/uplift math, the reader event queue, and the daily submission quota.
+metric/uplift math, the reader event queue, comment thread ordering, and the
+daily submission quota.
 
 ### 1b. Can the experiment resolve anything?
 
@@ -188,9 +196,10 @@ npm run verify:schema
 Applies `scripts/local-supabase/shim.sql` plus every migration to a throwaway
 `postgres:17-alpine` container and runs `scripts/local-supabase/checks.sql`
 against it: the 3-per-day author limit and its daily reset, moderation approve
-and refuse, admin-only access to the lab and the traffic split, event batch
-validation, candidate rollups, and the RLS rules that keep readers out of the
-event stream. Any failing check aborts with the assertion text.
+and refuse, comment replies/likes and their guest gates, admin-only access to
+the lab and the traffic split, event batch validation, candidate rollups, and
+the RLS rules that keep readers out of private rows. Any failing check aborts
+with the assertion text.
 
 Add `-- --keep` to leave the container up for inspection, `-- --down` to remove it.
 
@@ -264,10 +273,10 @@ Check:
 - Action buttons do not cover important text while hidden or visible.
 - The mobile action bar is content-sized and centered rather than stretched across the viewport.
 - Left and right tap/swipe targets are large enough without blocking text selection or controls.
-- Next and previous transitions change the title immediately, move in opposite directions, settle without a flash or layout shift, and cannot skip a second bok when two inputs arrive during one transition.
+- Next and previous transitions change the title immediately, follow the input axis, settle without a flash or layout shift, and cannot skip a second bok when two inputs arrive during one transition.
 - With `prefers-reduced-motion: reduce`, changing boks is immediate rather than delayed by an invisible animation.
 - While the account form, comments, author view, or bok menu is open, Arrow keys, Space, edge taps, swipes, and pointer drags do not change the background bok.
-- Reaching the end of a long bok does not advance until a new boundary gesture begins.
+- Reaching the end of a long bok does not advance until a new boundary gesture begins. A partial second pull shows proportional progress and springs away without changing the bok; crossing the threshold changes exactly one bok. Trackpad momentum from the reading scroll cannot count as that second gesture.
 - Modals or comment fields fit on small screens.
 - The account/settings button remains visible when the reading chrome is shown and has a 44 x 44 target.
 - The 5/10-boks notice does not cover reaction controls or permanently hide unread lines; dismissing it restores the normal reading chrome.

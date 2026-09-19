@@ -31,7 +31,8 @@ The author experience is constrained: `/author` lets any permanent user submit a
 - `components/boks/client-format.ts`: word count, time estimate, percentage, numeric, seconds, and story signal helpers.
 - `components/boks/reader-behavior.ts`: local browser identity, reader profile persistence, and read-outcome inference.
 - `components/boks/reader-events.ts`: attributed reader event queue with batching, retry and flush on tab exit.
-- `components/boks/user-auth-panel.tsx`: reader account sheet for email sign-up/sign-in, settings, recent read boks, and admin shortcut.
+- `components/boks/user-auth-panel.tsx`: reader account sheet for email sign-up/sign-in, settings, the authenticated Read/Liked/Commented library, and admin shortcut.
+- `components/boks/reader-library.ts`: pure account-library filtering and per-action ordering.
 - `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, account, comment, and admin data access using anonymous auth, the publishable key, RLS, and narrowly scoped RPCs.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
@@ -82,9 +83,11 @@ The author experience is constrained: `/author` lets any permanent user submit a
 1. `/admin` first resolves `get_boks_user_context()`.
 2. Anonymous users must sign in. Permanent readers without admin role see access status but no metrics.
 3. If no admin exists, the first permanent user can claim admin from `/admin`. After that, only admins can grant or remove admin roles through `set_boks_admin_role()`.
-4. Admin users call `get_boks_admin_snapshot(limit, offset, query, sort)`.
-5. The RPC returns global aggregate metrics, genre and mood rollups, recent aggregate event rows, moderation queue rows, recent permanent users, and a paginated story operations table.
-6. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
+4. People is a bounded `get_boks_people()` projection. Role changes, suspension, restoration, and account deletion use separate admin-only RPCs; no browser writes role or ban columns directly.
+5. `Content -> Published` and `Content -> Deleted` are bounded views of `get_boks_content()`. `archive_bok()` is reversible, `restore_archived_bok()` requires a confirmed rights record, and `delete_archived_bok()` accepts only an already archived boks plus its exact title.
+6. Deleting an account archives and anonymises its authored boks before deleting `auth.users`. `deleted_boks_users` retains only the UUID and deletion audit fields so a stale JWT remains blocked until expiry.
+7. Admin users call `get_boks_admin_snapshot(limit, offset, query, sort)` only for the moderation queue; the remaining tabs have focused RPCs.
+8. Admin export uses the same backing metrics so the displayed console and exported JSON stay aligned.
 
 ## Author And Moderation Flow
 

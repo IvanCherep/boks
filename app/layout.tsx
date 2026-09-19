@@ -5,9 +5,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "boks",
   description:
-    "A prototype literature feed for short stories, author posting, and reader engagement metrics.",
+    "Short literature, one focused read at a time.",
   other: {
-    "product": "boks prototype",
+    "product": "boks",
   },
   icons: {
     icon: "/favicon.svg",

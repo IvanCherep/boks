@@ -1,7 +1,7 @@
 "use client";
 
-import type React from "react";
-import { X } from "lucide-react";
+import { useRef, type PointerEvent, type ReactNode } from "react";
+import { Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -17,27 +17,70 @@ export function ReaderSheet({
   label,
   onClose,
   children,
+  expandable = false,
+  expanded = false,
+  onExpandedChange,
+  className = "",
 }: {
   /** Names the dialog for a screen reader, and both close controls. */
   label: string;
   onClose: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
+  expandable?: boolean;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  className?: string;
 }) {
+  const dragStartY = useRef<number | null>(null);
+  const dragged = useRef(false);
+
+  function startGripDrag(event: PointerEvent<HTMLButtonElement>) {
+    dragStartY.current = event.clientY;
+    dragged.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function finishGripDrag(event: PointerEvent<HTMLButtonElement>) {
+    if (dragStartY.current == null) return;
+    const distance = event.clientY - dragStartY.current;
+    dragStartY.current = null;
+    dragged.current = Math.abs(distance) > 16;
+    if (!expandable || Math.abs(distance) < 32) return;
+    if (distance < 0) onExpandedChange?.(true);
+    else if (expanded) onExpandedChange?.(false);
+    else if (distance > 72) onClose();
+  }
+
   return (
     <div
-      className="reader-sheet absolute inset-x-2 bottom-2 z-30 flex flex-col rounded-[24px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_70px_rgb(40_29_18/18%)] sm:inset-x-auto sm:bottom-6 sm:right-24 sm:w-[380px]"
+      className={`reader-sheet${expanded ? " reader-sheet--expanded" : ""} ${className} absolute inset-x-2 bottom-2 z-30 flex flex-col rounded-[24px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_70px_rgb(40_29_18/18%)] sm:inset-x-auto sm:bottom-6 sm:right-24 sm:w-[380px]`}
       role="dialog"
+      aria-modal="true"
       aria-label={label}
-      onKeyDown={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+        if (event.key === "Escape") onClose();
+      }}
       onPointerDown={(event) => event.stopPropagation()}
       onPointerUp={(event) => event.stopPropagation()}
       onTouchStart={(event) => event.stopPropagation()}
       onTouchEnd={(event) => event.stopPropagation()}
     >
-      {/* A bottom sheet on a phone: the grip says it can be pulled away. It is
-          a real button so a keyboard and a screen reader get the same escape
-          the thumb has. */}
-      <button type="button" className="sheet-grip" onClick={onClose} aria-label={`Close ${label.toLowerCase()}`} />
+      <button
+        type="button"
+        className="sheet-grip"
+        onPointerDown={startGripDrag}
+        onPointerUp={finishGripDrag}
+        onClick={() => {
+          if (dragged.current) {
+            dragged.current = false;
+            return;
+          }
+          if (expandable) onExpandedChange?.(!expanded);
+          else onClose();
+        }}
+        aria-label={expandable ? `${expanded ? "Collapse" : "Expand"} ${label.toLowerCase()}` : `Close ${label.toLowerCase()}`}
+      />
       {children}
     </div>
   );
@@ -48,17 +91,33 @@ export function ReaderSheetHeader({
   title,
   onClose,
   label,
+  expanded,
+  onExpandedChange,
 }: {
-  title: React.ReactNode;
+  title: ReactNode;
   onClose: () => void;
   label: string;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 pt-1 sm:pt-4">
+    <div className="reader-sheet-header px-4 pt-1 sm:pt-4">
       <h2 className="text-lg font-semibold tracking-normal">{title}</h2>
-      <Button variant="ghost" size="icon" onClick={onClose} aria-label={`Close ${label.toLowerCase()}`}>
-        <X className="size-4" />
-      </Button>
+      <div className="reader-sheet-header__actions">
+        {onExpandedChange && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onExpandedChange(!expanded)}
+            aria-label={expanded ? `Collapse ${label.toLowerCase()}` : `Open ${label.toLowerCase()} full screen`}
+          >
+            {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          </Button>
+        )}
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={`Close ${label.toLowerCase()}`}>
+          <X className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }

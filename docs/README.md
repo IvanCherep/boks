@@ -47,6 +47,7 @@ is the one to update when something ships.
 - `docs/reading-languages.md`: which language a reader is offered and why - the browser-derived default, the mandatory setting, why the filter lives in retrieval, and why an undetermined language is not a yes. Read it before touching retrieval or the account panel.
 - `docs/analytics-and-thesis-readiness.md`: what the analytics can and cannot prove, claim by claim against the thesis title, the working loop for a comparison, and the ranked gaps.
 - `docs/admin-metrics.md`: every field in `/admin`, what it is computed from, and the decision it supports. Read this before adding a metric.
+- `specs/boks-product-spec.md`: admin account and content lifecycle rules, including reversible boks deletion, suspension, role changes, and permanent deletion safeguards.
 - `docs/hosting.md`: how the production Cloudflare Worker is hosted, deployed, and checked.
 - `docs/local-agent-infrastructure.md`: infrastructure and deployment handoff for local agents such as Claude, Cursor, or Codex CLI.
 - `docs/testing.md`: how to run reader tests, author tests, admin checks, and technical verification.
@@ -66,6 +67,6 @@ is the one to update when something ships.
 
 Use this URL for testers:
 
-`https://read.tryboks.workers.dev`
+`https://tryboks.com`
 
 Do not share old Worker URLs. Older Workers may exist as rollback backups, but their public `workers.dev` routes should remain disabled.

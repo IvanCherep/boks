@@ -5,6 +5,7 @@ import { Check, RefreshCw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { AdminModerationItem } from "@/components/boks/client-types";
+import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 
 export function ModerationQueue({
   items,
@@ -17,6 +18,7 @@ export function ModerationQueue({
 }) {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
+  const { openBok, openPerson } = useAdminInspector();
 
   async function review(item: AdminModerationItem, decision: "approve" | "reject") {
     const reason = reasons[item.id]?.trim() ?? "";
@@ -58,10 +60,26 @@ export function ModerationQueue({
                       {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : "not submitted"}
                     </span>
                   </div>
-                  <h3 className="mt-3 break-words text-lg font-semibold tracking-normal">{item.title}</h3>
+                  <h3 className="mt-3 break-words text-lg font-semibold tracking-normal">
+                    <button type="button" className="inspector-link inspector-link--title" onClick={() => openBok(item.id)}>
+                      {item.title}
+                    </button>
+                  </h3>
                   <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                     {item.authorName}
-                    {item.authorHandle ? ` · @${item.authorHandle.replace(/^@+/, "")}` : ""} · {item.authorEmail || "unknown email"} ·{" "}
+                    {item.authorHandle && (
+                      <>
+                        {" · "}
+                        {item.authorUserId ? (
+                          <button type="button" className="inspector-link" onClick={() => openPerson(item.authorUserId!)}>
+                            @{item.authorHandle.replace(/^@+/, "")}
+                          </button>
+                        ) : (
+                          `@${item.authorHandle.replace(/^@+/, "")}`
+                        )}
+                      </>
+                    )}{" "}
+                    · {item.authorEmail || "unknown email"} ·{" "}
                     {item.minutes} min · {item.genre} · {item.mood}
                   </p>
                   {item.hook && <p className="mt-3 text-sm leading-6 text-[var(--soft-foreground)]">{item.hook}</p>}

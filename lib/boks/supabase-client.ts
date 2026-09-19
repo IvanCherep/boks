@@ -378,12 +378,23 @@ export async function completePendingBoksMagicLinkProfile(termsVersion: string):
   });
   if (ensure.error) throw ensure.error;
 
-  const update = await supabase.rpc("update_boks_user_profile", {
-    p_display_name: pending.displayName || "Reader",
-    p_handle: pending.handle || "",
-  });
-  if (update.error) throw update.error;
+  const ensuredContext = ensure.data as BoksUserContext;
+  if (ensuredContext.termsAcceptedAt) {
+    // A sign-up draft can outlive the link that created it (for example after
+    // signing an existing account in on the same browser). Replaying that
+    // draft used to try to rename the real account on every settings open;
+    // one taken nickname then prevented history, follows and settings from
+    // loading at all. An account that already accepted terms is complete, so
+    // the draft has no remaining work and must not mutate it.
+    savePendingMagicLinkProfile(null);
+    return ensuredContext;
+  }
 
+  // The current sign-up form asks only for email and derives a unique handle
+  // in `ensure_boks_user_profile`. Older drafts may still carry a requested
+  // handle from the retired form; replaying it here can rename an existing
+  // account or fail on a name somebody else took. Nickname changes belong to
+  // the explicit Settings action, never to opening an email link.
   const accept = await supabase.rpc("accept_boks_terms", {
     p_terms_version: pending.acceptedTermsVersion || termsVersion,
   });

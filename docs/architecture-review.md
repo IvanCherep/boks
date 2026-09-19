@@ -23,7 +23,7 @@ The main architecture risk is not the current file structure. The main risk is u
 
 ### Reader Feed Size
 
-`components/boks/reader-feed.tsx` is the largest UI file. It currently owns story navigation, focus mode, event capture, likes, comments, sharing, keyboard control, and touch gestures.
+`components/boks/reader-feed.tsx` is the largest UI file. It currently owns story navigation, focus mode, event capture, boks likes, sharing, keyboard control, and touch gestures. Comment presentation and local interaction state moved to `components/boks/comments-sheet.tsx`; pure root/reply shaping lives in `components/boks/comment-threads.ts`.
 
 This is acceptable for MVP speed, but future work should extract only when the next feature creates repeated edits in the same area.
 
@@ -32,7 +32,7 @@ Preferred future split:
 - `components/boks/reader/reader-feed.tsx`: orchestration.
 - `components/boks/reader/story-viewport.tsx`: story layout and reading area.
 - `components/boks/reader/reaction-rail.tsx`: like, comment, share controls.
-- `components/boks/reader/comment-sheet.tsx`: comment capture.
+- ~~`components/boks/reader/comment-sheet.tsx`: comment capture.~~ Done at `components/boks/comments-sheet.tsx`; move it only if the whole reader is reorganized into a subfolder.
 - `components/boks/reader/use-reader-session.ts`: active story, timers, scroll progress, swipe outcomes.
 
 ### API Route Size
@@ -146,7 +146,8 @@ Owned by:
 Owned by:
 
 - `components/boks/user-auth-panel.tsx`
-- `components/boks/reader-feed.tsx`
+- `components/boks/comments-sheet.tsx`
+- `components/boks/comment-threads.ts`
 - `components/boks/supabase-browser-data.ts`
 - Supabase profile/comment RPC migrations
 - `scripts/verify-supabase-mvp.mjs`

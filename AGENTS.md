@@ -36,11 +36,16 @@ Business rules:
 - `app/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only.
 - `app/boks-client.tsx`: route compatibility exports for the three client surfaces.
 - `components/boks/reader-feed.tsx`: swipe-first reader experience and reaction controls.
+- `components/boks/comments-sheet.tsx`: lazy-loaded comment conversation, one-level replies, comment likes, guest gates, and partial/full-screen sheet state.
+- `components/boks/comment-threads.ts`: pure root/reply shaping and ordering rules.
 - `components/boks/reader-navigation.ts`: pure direction, edge-tap, and text-boundary navigation rules shared by touch, pointer, wheel, and keyboard behavior.
 - `components/boks/author-console.tsx`: author submission cabinet, review status, rejection reason, revision flow, and length guardrail.
 - `components/boks/admin-dashboard.tsx`: admin auth, the tab shell, and per-tab data loading.
 - `components/boks/admin/overview.tsx`: the weekly page - returning readers, reads-per-reader distribution, reading time decomposed, supply health, catalog headroom, data quality.
 - `components/boks/admin/moderation-queue.tsx`, `people.tsx`, `content-operations.tsx`: the remaining tabs.
+- `components/boks/admin/admin-inspector.tsx` + `inspector-context.tsx`: the console's one detail surface. Every tab opens a boks or a person with `useAdminInspector().openBok(id)` / `openPerson(userId)`; never build a per-tab detail view.
+- `components/boks/admin/bok-inspector.tsx`, `person-inspector.tsx`: the two views (`get_admin_bok`, `get_admin_person`), metrics defined exactly as in the Content and People rows.
+- `components/boks/admin/bok-lifecycle-dialog.tsx`: the only hide / restore / erase confirmation, shared by Content, the boks view and the reader's admin Hide button. Authority is the RPC's `is_boks_admin`, never this UI.
 - `components/boks/admin/recommendation-lab.tsx`: algorithm comparison, uplift against control, sample readiness, and the live traffic split.
 - `components/boks/admin/experiment-editor.tsx`: traffic weights per registered algorithm, control selection, minimum sample.
 - `components/boks/admin/metric-bars.tsx`: single-series comparison bars and per-algorithm sparklines.
@@ -49,8 +54,9 @@ Business rules:
 - `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
 - `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and word-count-based read/skip inference.
 - `components/boks/reader-clock.ts`: foreground-only reading clock. Time on platform must mean time a boks was on screen.
+- `components/boks/reader-library.ts`: pure Read/Liked/Commented account-library selection and ordering.
 - `components/boks/reader-events.ts`: attributed reader event queue, batching, retry, per-read dedupe, and keepalive flush on tab exit.
-- `components/boks/user-auth-panel.tsx`: reader email sign-up/sign-in, settings, recent read boks, and admin shortcut.
+- `components/boks/user-auth-panel.tsx`: reader email sign-up/sign-in, settings, the authenticated Read/Liked/Commented library, and admin shortcut.
 - `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, account, comment, and admin data access using only the publishable key, RLS, and narrowly scoped RPCs.
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, mutation helpers, metrics export, and WebMCP reporting.
 - `components/boks/shared-ui.tsx`: small reusable UI primitives for prototype surfaces.

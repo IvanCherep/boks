@@ -9,7 +9,7 @@ Use this guide before changing the app. It keeps updates small, testable, and ea
 - Keep reading focused. The story should own the screen after the reader starts reading; actions can appear on tap, hover, pause, or story change.
 - Do not add a finished button. Infer completion, skip, and drop-off from time, scroll progress, and swipe timing.
 - Keep visible reader copy minimal. Explain decisions in docs, not inside the reader surface.
-- Keep comment identity profile-owned. Guests may read comments, but writes require sign-up and must use the account's unique `@nickname`.
+- Keep comment identity profile-owned. Guests may read comments and replies, but writing, replying, and comment likes require sign-up and must use the account's unique `@nickname`.
 - Do not expose Supabase service role keys anywhere in source, browser code, Wrangler vars, screenshots, or docs.
 
 ## Start Every Update
@@ -35,7 +35,7 @@ Reader experience:
 Account and comments:
 
 - Start with `components/boks/user-auth-panel.tsx` for sign-up, sign-in, profile, unique handle, and recent reads.
-- Start with `components/boks/reader-feed.tsx` for comment sheet UX.
+- Start with `components/boks/comments-sheet.tsx` for comment sheet UX and `components/boks/comment-threads.ts` for root/reply ordering.
 - Start with `components/boks/supabase-browser-data.ts` and Supabase RPC migrations for persistence.
 - Do not let users type a separate commenter name.
 
@@ -108,8 +108,8 @@ For production deploys:
 
 ```bash
 npm run deploy
-curl -I https://read.tryboks.workers.dev/
-curl -I https://read.tryboks.workers.dev/admin
+curl -I https://tryboks.com/
+curl -I https://tryboks.com/admin
 ```
 
 Then open `/` and `/admin` in a fresh browser tab and confirm there are no console errors.

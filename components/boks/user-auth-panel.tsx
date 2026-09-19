@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, LogOut, Mail, PenLine, Search, Shield, UserRound, X } from "lucide-react";
+import { BookOpen, CheckCircle2, Heart, LogOut, Mail, MessageCircle, PenLine, Search, Shield, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
@@ -37,6 +37,11 @@ import {
   type FollowedAuthor,
 } from "@/components/boks/supabase-browser-data";
 import { clearLocalReaderState } from "@/components/boks/reader-behavior";
+import {
+  readerLibraryActivityAt,
+  selectReaderLibraryItems,
+  type ReaderLibraryView,
+} from "@/components/boks/reader-library";
 import {
   completePendingBoksMagicLinkProfile,
   explainBoksMagicLinkError,
@@ -139,18 +144,20 @@ export function UserAuthPanel({
     setReadingLanguages(effectiveReadingLanguages(context?.readingLanguages));
   }, []);
   const [libraryQuery, setLibraryQuery] = useState("");
+  const [libraryView, setLibraryView] = useState<ReaderLibraryView>("read");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [status, setStatus] = useState("");
   const [sentMagicLink, setSentMagicLink] = useState<SentMagicLink | null>(null);
   const [busy, setBusy] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
-  const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
   const visibleLibrary = useMemo(() => {
-    if (!normalizedLibraryQuery) return library;
-    return library.filter((item) =>
-      `${item.title} ${item.authorName}`.toLowerCase().includes(normalizedLibraryQuery)
-    );
-  }, [library, normalizedLibraryQuery]);
+    return selectReaderLibraryItems(library, libraryView, libraryQuery);
+  }, [library, libraryQuery, libraryView]);
+  const libraryCounts = useMemo(() => ({
+    read: selectReaderLibraryItems(library, "read").length,
+    liked: selectReaderLibraryItems(library, "liked").length,
+    commented: selectReaderLibraryItems(library, "commented").length,
+  }), [library]);
 
   /**
    * Unfollowing from the list.
@@ -454,6 +461,15 @@ export function UserAuthPanel({
           </div>
         ) : showingAccount ? (
           <div className="mt-6 grid gap-5">
+            {accountUser?.bannedAt && (
+              <div className="rounded-lg border border-[var(--destructive)]/35 bg-[var(--destructive)]/5 p-4" role="status">
+                <p className="text-sm font-semibold">This account is suspended</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
+                  You can keep reading, but reactions, comments, follows, reports, and publishing are unavailable.
+                  {accountUser.banReason ? ` Reason: ${accountUser.banReason}` : ""}
+                </p>
+              </div>
+            )}
             <div className="rounded-lg border border-[var(--border)] bg-[var(--reader)] p-4">
               <p className="text-sm text-[var(--muted-foreground)]">Signed in on this device as</p>
               <p className="mt-1 truncate text-lg font-semibold">@{accountUser?.handle || "reader"}</p>
@@ -468,9 +484,11 @@ export function UserAuthPanel({
                 <Button variant="outline" onClick={signOut} disabled={busy}>
                   <LogOut className="size-4" /> Sign out of this device
                 </Button>
-                <a className="surface-link" href="/author">
-                  <PenLine className="size-4" /> Write a bok
-                </a>
+                {!accountUser?.bannedAt && (
+                  <a className="surface-link" href="/author">
+                    <PenLine className="size-4" /> Write a bok
+                  </a>
+                )}
                 {accountUser?.role === "admin" && (
                   <a className="surface-link" href="/admin">
                     <Shield className="size-4" /> Admin
@@ -605,37 +623,73 @@ export function UserAuthPanel({
             </div>
 
             <div>
-              <h2 className="text-base font-semibold tracking-normal">Recently read</h2>
+              <h2 className="text-base font-semibold tracking-normal">Your boks</h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
+                Open one here, then keep reading from your recommendations.
+              </p>
+              <div className="library-tabs mt-3" role="tablist" aria-label="Your boks">
+                {(
+                  [
+                    ["read", "Read", BookOpen],
+                    ["liked", "Liked", Heart],
+                    ["commented", "Comments", MessageCircle],
+                  ] as const
+                ).map(([value, label, Icon]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={libraryView === value}
+                    aria-controls="boks-library-results"
+                    className={`library-tab${libraryView === value ? " is-active" : ""}`}
+                    onClick={() => setLibraryView(value)}
+                  >
+                    <Icon className="size-4" aria-hidden="true" />
+                    <span>{label}</span>
+                    <span className="library-tab__count">{libraryCounts[value]}</span>
+                  </button>
+                ))}
+              </div>
               <label className="relative mt-3 block" htmlFor="boks-library-search">
-                <span className="sr-only">Search read boks</span>
+                <span className="sr-only">Search {libraryView} boks</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
                 <Input
                   id="boks-library-search"
                   name="search-read-boks"
                   type="search"
                   autoComplete="off"
-                  placeholder="Search read boks"
+                  placeholder={`Search ${libraryView === "commented" ? "commented" : libraryView} boks`}
                   className="pl-9"
                   value={libraryQuery}
                   onChange={(event) => setLibraryQuery(event.target.value)}
                 />
               </label>
-              <div className="mt-3 grid max-h-[240px] gap-2 overflow-y-auto pr-1">
+              <div
+                id="boks-library-results"
+                role="tabpanel"
+                className="mt-3 grid max-h-[280px] gap-2 overflow-y-auto pr-1"
+              >
                 {visibleLibrary.length ? visibleLibrary.map((item) => (
                   <button
-                    key={`${item.storyId}-${item.readAt}`}
+                    key={`${item.storyId}-${readerLibraryActivityAt(item, libraryView)}`}
                     type="button"
                     className="library-item"
                     onClick={() => openReadBoks(item.storyId)}
                   >
                     <span className="font-medium">{item.title}</span>
                     <span className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      {item.authorName}{item.liked ? " · liked" : ""}
+                      {item.authorName || "boks author"} · {item.minutes} min
                     </span>
                   </button>
                 )) : (
                   <p className="text-sm text-[var(--muted-foreground)]">
-                    {library.length ? "No read boks match this search." : "Your read boks will appear here."}
+                    {libraryQuery.trim()
+                      ? `No ${libraryView === "commented" ? "commented" : libraryView} boks match this search.`
+                      : libraryView === "read"
+                        ? "Boks you read will appear here."
+                        : libraryView === "liked"
+                          ? "Boks you like will appear here."
+                          : "Boks you comment on will appear here."}
                   </p>
                 )}
               </div>

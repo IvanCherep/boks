@@ -237,21 +237,31 @@ textarea:focus-visible {
   touch-action: pan-y;
 }
 
-/* The new page responds immediately, then settles while the shell stays put. */
+/* The new page responds immediately, then settles along the gesture axis. */
 .reader-story-stage {
   transform: translate3d(0, 0, 0);
 }
 
-.story-transition--entering-next {
-  animation: story-enter-right 480ms cubic-bezier(0.4, 0, 0.2, 1) both;
+.story-transition--entering-next,
+.story-transition--entering-previous {
   pointer-events: none;
   will-change: transform, opacity;
 }
 
-.story-transition--entering-previous {
-  animation: story-enter-left 480ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  pointer-events: none;
-  will-change: transform, opacity;
+.story-transition--horizontal.story-transition--entering-next {
+  animation: story-enter-right 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.story-transition--horizontal.story-transition--entering-previous {
+  animation: story-enter-left 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.story-transition--vertical.story-transition--entering-next {
+  animation: story-enter-bottom 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.story-transition--vertical.story-transition--entering-previous {
+  animation: story-enter-top 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes story-enter-right {
@@ -265,6 +275,105 @@ textarea:focus-visible {
   from {
     opacity: 0.58;
     transform: translate3d(-2.25rem, 0, 0);
+  }
+}
+
+@keyframes story-enter-bottom {
+  from {
+    opacity: 0.58;
+    transform: translate3d(0, 2.75rem, 0);
+  }
+}
+
+@keyframes story-enter-top {
+  from {
+    opacity: 0.58;
+    transform: translate3d(0, -2.75rem, 0);
+  }
+}
+
+/*
+ * A second pull at a text boundary is the deliberate hand-off to another bok.
+ * The ring mirrors the gesture without turning reading into a progress UI.
+ */
+.boundary-pull-cue {
+  position: absolute;
+  left: 50%;
+  z-index: 15;
+  display: grid;
+  pointer-events: none;
+  justify-items: center;
+  gap: 0.3rem;
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  font-weight: 720;
+  line-height: 1;
+  /* Short: the cue follows a finger, and a long transition makes it trail
+     behind the gesture it is meant to mirror. */
+  transition: opacity 90ms linear, transform 90ms linear;
+}
+
+.boundary-pull-cue--next {
+  bottom: calc(5.75rem + env(safe-area-inset-bottom));
+}
+
+.boundary-pull-cue--previous {
+  top: calc(4.75rem + env(safe-area-inset-top));
+}
+
+.boundary-pull-ring {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgb(47 41 37 / 10%);
+}
+
+.boundary-pull-ring__inner {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: inherit;
+  background: var(--reader);
+  color: var(--foreground);
+  transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+.boundary-pull-ring {
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms var(--ease-out);
+}
+
+/*
+ * Armed: letting go now changes bok. The ring fills solid, grows a little and
+ * the label turns to "release for next bok". Without a distinct armed state a
+ * reader could not tell a pull that would commit from one that would not,
+ * which is how it came to feel as though it happened by itself.
+ */
+.boundary-pull-cue--armed {
+  color: var(--foreground);
+}
+
+.boundary-pull-cue--armed .boundary-pull-ring {
+  transform: scale(1.14);
+  box-shadow: 0 10px 26px rgb(138 64 44 / 24%);
+}
+
+.boundary-pull-cue--armed .boundary-pull-ring__inner {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boundary-pull-cue,
+  .boundary-pull-ring,
+  .boundary-pull-ring__inner {
+    transition: none;
+  }
+
+  .boundary-pull-cue--armed .boundary-pull-ring {
+    transform: none;
   }
 }
 
@@ -408,9 +517,104 @@ textarea:focus-visible {
   outline-offset: 3px;
 }
 
-.action-button span {
-  font-size: 0.78rem;
-  font-weight: 760;
+/*
+ * A count sits to the right of its icon, and is always shown - a boks nobody
+ * has reacted to yet reads "0" rather than looking as though it has no count.
+ * The number used to sit under the comment icon only; the like had none.
+ */
+.action-button--counted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  padding-inline: 0.85rem 1rem;
+}
+
+/* The icon keeps its size whatever the count beside it needs. In the narrow
+   desktop column a flex row otherwise shrinks the svg first - the heart and
+   the bubble collapsed to 3px dots while the numbers stayed full size. */
+.action-button--counted svg {
+  flex-shrink: 0;
+}
+
+.action-count {
+  /* Room for two digits before anything moves, so 0 -> 1 -> 12 does not
+     nudge the icon sideways under the reader's thumb. */
+  min-width: 1.4ch;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 720;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+/* Zero is there, but quieter than a real count. */
+.action-count--zero {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+/* The admin Hide button: set apart from the reader's own actions. */
+.action-button--danger {
+  color: var(--destructive);
+}
+
+.action-button--danger:hover {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+}
+
+/* A short confirmation in the reader, e.g. after an admin hides a boks. */
+.reader-flash {
+  position: fixed;
+  top: calc(4.25rem + env(safe-area-inset-top));
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  width: max-content;
+  max-width: min(92vw, 30rem);
+  align-items: center;
+  gap: 0.6rem;
+  translate: -50% 0;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: rgb(255 254 250 / 96%);
+  padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+  box-shadow: 0 14px 40px rgb(43 37 31 / 14%);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.reader-flash button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0.3rem;
+  color: var(--muted-foreground);
+}
+
+.reader-flash button:hover {
+  background: var(--muted);
+}
+
+.action-button.is-active .action-count {
+  color: var(--primary);
+}
+
+/*
+ * On a wide screen the rail is a column. Icons line up down its left edge and
+ * the counts trail after them, instead of each row centring on its own width -
+ * which set the heart, the bubble and the arrow on three different lines.
+ */
+@media (min-width: 1024px) {
+  /* The column is sized in reader-feed.tsx (116px) to hold icon + "1.2k". */
+  .action-rail .action-button {
+    justify-content: flex-start;
+    justify-items: start;
+    padding-inline: 0.95rem 0.85rem;
+  }
 }
 
 .swipe-cue {
@@ -619,6 +823,58 @@ textarea:focus-visible {
     transform 160ms ease;
 }
 
+.library-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--muted);
+  padding: 3px;
+}
+
+.library-tab {
+  min-width: 0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.library-tab.is-active {
+  background: var(--reader);
+  color: var(--foreground);
+  box-shadow: 0 1px 5px rgb(47 41 37 / 8%);
+}
+
+.library-tab:focus-visible {
+  outline: 3px solid rgb(143 63 36 / 28%);
+  outline-offset: 2px;
+}
+
+.library-tab__count {
+  min-width: 1.2rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  padding: 0.08rem 0.32rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
 .library-item:hover,
 .library-item:focus-visible {
   border-color: var(--border);
@@ -722,6 +978,33 @@ textarea:focus-visible {
 .reader-sheet {
   max-height: min(78svh, 620px);
   overflow: hidden;
+  transition:
+    inset 260ms var(--ease-out),
+    width 260ms var(--ease-out),
+    max-height 260ms var(--ease-out),
+    border-radius 260ms var(--ease-out);
+}
+
+.reader-sheet.reader-sheet--expanded {
+  inset: 0.5rem;
+  width: auto;
+  max-height: none;
+  border-radius: 18px;
+}
+
+.reader-sheet-header {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid transparent;
+}
+
+.reader-sheet-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
 }
 
 /*
@@ -738,6 +1021,7 @@ textarea:focus-visible {
   border-radius: 999px;
   background: var(--border);
   cursor: pointer;
+  touch-action: none;
 }
 
 .sheet-grip:focus-visible {
@@ -843,10 +1127,206 @@ textarea:focus-visible {
   color: var(--primary);
 }
 
-.comment-item {
-  border-radius: 12px;
+.comments-sheet {
+  height: min(72svh, 640px);
+}
+
+.comments-sheet.reader-sheet--expanded {
+  height: auto;
+}
+
+.comments-sheet .reader-sheet-header {
+  position: relative;
+  justify-content: flex-end;
+  border-bottom-color: var(--border);
+}
+
+.comments-sheet .reader-sheet-header h2 {
+  position: absolute;
+  left: 50%;
+  max-width: calc(100% - 7rem);
+  transform: translateX(-50%);
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment-list {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 0.35rem 0.35rem 1rem;
+}
+
+.comment-threads {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment-thread {
+  min-width: 0;
+  padding: 0.35rem 0.35rem 0.5rem;
+}
+
+.comment-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 40px;
+  align-items: start;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.55rem 0.35rem;
+}
+
+.comment-row--reply {
+  margin-left: 2.15rem;
+  grid-template-columns: 30px minmax(0, 1fr) 40px;
+}
+
+.comment-avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
   background: var(--muted);
-  padding: 0.7rem 0.8rem;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.comment-row--reply .comment-avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 0.7rem;
+}
+
+.comment-row__body {
+  min-width: 0;
+}
+
+.comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.45rem;
+  min-height: 1.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+.comment-handle {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment-copy {
+  margin-top: 0.18rem;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  line-height: 1.42;
+  white-space: pre-wrap;
+}
+
+.comment-reply,
+.comment-replies-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.comment-reply {
+  margin-top: 0.32rem;
+  padding: 0.15rem 0.25rem 0.15rem 0;
+}
+
+.comment-reply:hover,
+.comment-replies-toggle:hover {
+  color: var(--foreground);
+}
+
+.comment-like {
+  display: grid;
+  min-width: 40px;
+  min-height: 44px;
+  place-items: center;
+  align-content: center;
+  gap: 0.05rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.comment-like:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.comment-like:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.comment-like span {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.comment-like--active {
+  color: var(--primary);
+}
+
+.comment-replies-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.1rem 0 0.2rem 3.45rem;
+  padding: 0.35rem 0;
+}
+
+.comment-replies-toggle span {
+  width: 24px;
+  height: 1px;
+  background: var(--border);
+}
+
+.comment-replies-toggle--hide {
+  margin-left: 5.6rem;
+}
+
+.comment-empty {
+  display: grid;
+  min-height: 12rem;
+  place-content: center;
+  gap: 0.25rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.88rem;
+}
+
+.comment-empty p {
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 /* The person whose boks this is, so a reply from them reads as one. */
@@ -860,19 +1340,90 @@ textarea:focus-visible {
   color: var(--primary);
 }
 
+.comment-composer-shell {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.comment-replying {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem 0;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+
+.comment-replying button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.comment-replying button:hover {
+  background: var(--muted);
+}
+
 .comment-composer {
   display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  border-top: 1px solid var(--border);
-  padding: 0.75rem 1rem;
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
 }
 
 .comment-composer textarea {
   min-height: 44px;
   max-height: 120px;
+  border-radius: 22px;
   resize: none;
+}
+
+.comment-avatar--viewer {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+}
+
+.comment-signup {
+  display: flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  gap: 0.75rem;
+  border: 0;
+  background: transparent;
+  padding: 0.65rem 0.9rem;
+  text-align: left;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.comment-signup:hover {
+  background: var(--muted);
+}
+
+.comment-signup > span:last-child {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.comment-signup strong {
+  font-size: 0.86rem;
+}
+
+.comment-signup small {
+  color: var(--muted-foreground);
+  font-size: 0.73rem;
 }
 
 .panel {
@@ -1275,7 +1826,7 @@ textarea:focus-visible {
 
 .people-row {
   display: grid;
-  min-width: 1000px;
+  min-width: 1180px;
   grid-template-columns:
     minmax(220px, 1.6fr)
     minmax(76px, 0.5fr)
@@ -1284,7 +1835,7 @@ textarea:focus-visible {
     minmax(76px, 0.5fr)
     minmax(120px, 0.8fr)
     minmax(96px, 0.6fr)
-    minmax(120px, 0.7fr);
+    minmax(280px, 1.25fr);
   gap: 0.8rem;
   align-items: center;
   border-bottom: 1px solid var(--border);
@@ -1294,14 +1845,15 @@ textarea:focus-visible {
 
 .content-row {
   display: grid;
-  min-width: 860px;
+  min-width: 1040px;
   grid-template-columns:
     minmax(240px, 2fr)
     minmax(80px, 0.5fr)
     minmax(80px, 0.5fr)
     minmax(110px, 0.7fr)
     minmax(110px, 0.7fr)
-    minmax(70px, 0.45fr);
+    minmax(120px, 0.7fr)
+    minmax(150px, 0.8fr);
   gap: 0.8rem;
   align-items: center;
   border-bottom: 1px solid var(--border);
@@ -1332,6 +1884,281 @@ textarea:focus-visible {
   font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.admin-row-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-segmented {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--secondary);
+  padding: 0.16rem;
+}
+
+.admin-segmented button {
+  min-height: 2rem;
+  border-radius: 0.32rem;
+  padding: 0 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.admin-segmented button[aria-pressed="true"] {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 7%);
+}
+
+.admin-segmented--wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/*
+ * The admin inspector: one side sheet for a boks or a person, opened from any
+ * console tab. Unlayered, so it overrides the sheet's default narrow width.
+ */
+.admin-inspector {
+  width: min(100%, 46rem);
+  max-width: none;
+  gap: 0;
+  padding: 0;
+}
+
+.admin-inspector__header {
+  min-height: 3.25rem;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 3rem 0.6rem 1rem;
+}
+
+.admin-inspector__scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.inspector-body {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.25rem 1.25rem 3rem;
+}
+
+.inspector-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--secondary);
+  padding: 0.12rem 0.55rem;
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.inspector-chip--link {
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.inspector-chip--link:hover {
+  border-color: var(--foreground);
+}
+
+.inspector-link {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.18em;
+}
+
+.inspector-link:hover,
+.inspector-link:focus-visible {
+  color: var(--primary);
+  text-decoration-style: solid;
+}
+
+.inspector-link--title {
+  display: inline;
+  padding: 0;
+  font-weight: 650;
+  text-align: left;
+}
+
+.inspector-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.inspector-metric {
+  display: grid;
+  gap: 0.1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--card, var(--background));
+  padding: 0.6rem 0.7rem;
+}
+
+.inspector-metric span {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.inspector-metric strong {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.inspector-metric small {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+}
+
+.inspector-facts {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.inspector-fact {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.inspector-fact dt {
+  color: var(--muted-foreground);
+}
+
+.inspector-fact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.inspector-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.inspector-heading span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.inspector-text {
+  max-height: 22rem;
+  overflow-y: auto;
+  border-radius: 0.55rem;
+  background: var(--reader);
+  padding: 0.9rem 1rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.inspector-text p {
+  margin: 0 0 0.35rem;
+}
+
+.inspector-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-list > li {
+  border-bottom: 1px solid var(--border);
+  padding: 0.65rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.inspector-list > li:last-child {
+  border-bottom: 0;
+}
+
+.inspector-list > li p {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.inspector-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.inspector-list__meta strong {
+  color: var(--foreground);
+  font-size: 0.9rem;
+}
+
+.inspector-list > li:has(.inspector-row-button) {
+  padding: 0;
+}
+
+.inspector-row-button {
+  display: grid;
+  width: 100%;
+  gap: 0.15rem;
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+}
+
+.inspector-row-button:hover,
+.inspector-row-button:focus-visible {
+  background: var(--secondary);
+}
+
+.inspector-row-button small {
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+
+.inspector-activity {
+  display: grid;
+  height: 4.5rem;
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  align-items: end;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.inspector-activity span {
+  display: block;
+  border-radius: 2px 2px 0 0;
+  background: var(--primary);
+}
+
+.inspector-activity span[data-empty] {
+  background: var(--border);
 }
 
 .time-series {
@@ -1641,6 +2468,40 @@ textarea:focus-visible {
     border-radius: 22px 22px 0 0;
   }
 
+  .reader-sheet.reader-sheet--expanded {
+    inset: 0;
+    width: auto;
+    max-height: none;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  .comments-sheet {
+    inset-inline: 0;
+    bottom: 0;
+    height: min(72svh, 640px);
+  }
+
+  .comments-sheet.reader-sheet--expanded {
+    height: auto;
+  }
+
+  .comment-list {
+    padding-inline: 0.15rem;
+  }
+
+  .comment-row--reply {
+    margin-left: 1.35rem;
+  }
+
+  .comment-replies-toggle {
+    margin-left: 3rem;
+  }
+
+  .comment-replies-toggle--hide {
+    margin-left: 4.4rem;
+  }
+
   .sheet-grip {
     display: block;
   }
@@ -1660,6 +2521,15 @@ textarea:focus-visible {
 
   .auth-panel::before {
     display: block;
+  }
+
+  .library-tab {
+    gap: 0.25rem;
+    font-size: 0.78rem;
+  }
+
+  .library-tab svg {
+    display: none;
   }
 
   [data-slot="button"],

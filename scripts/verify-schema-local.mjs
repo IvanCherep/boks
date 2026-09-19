@@ -23,7 +23,9 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const containerName = "boks-local-pg";
 const image = "postgres:17-alpine";
-const hostPort = "55432";
+// Overridable because this machine runs other projects' databases too, and
+// one of them sat on 55432 and stopped the check from starting at all.
+const hostPort = process.env.BOKS_SCHEMA_PORT ?? "55432";
 const password = "boks";
 const database = "boks";
 

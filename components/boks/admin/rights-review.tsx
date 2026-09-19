@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MetricTile } from "@/components/boks/shared-ui";
 import { shortTimeAgo } from "@/components/boks/client-format";
 import { readableBoksError } from "@/lib/boks/errors";
+import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 import type { BoksRightsReview } from "@/components/boks/client-types";
 import {
   loadBoksRightsReview,
@@ -35,6 +36,9 @@ export function RightsReview() {
   const [rightsNotes, setRightsNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  // The reader can only open a published boks; a reported or unattested one is
+  // often not. The admin boks view opens any of them.
+  const { openBok } = useAdminInspector();
 
   const refresh = useCallback(async (next: "open" | "all") => {
     try {
@@ -144,9 +148,9 @@ export function RightsReview() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="break-words text-sm font-semibold">
-                      <a className="underline decoration-dotted" href={`/b/${report.reelId}`}>
+                      <button type="button" className="inspector-link inspector-link--title" onClick={() => openBok(report.reelId)}>
                         {report.title}
-                      </a>
+                      </button>
                     </p>
                     <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                       {[
@@ -237,9 +241,9 @@ export function RightsReview() {
             review.unattestedBoks.map((bok) => (
               <article key={bok.reelId} className="submission-card">
                 <p className="break-words text-sm font-semibold">
-                  <a className="underline decoration-dotted" href={`/b/${bok.reelId}`}>
+                  <button type="button" className="inspector-link inspector-link--title" onClick={() => openBok(bok.reelId)}>
                     {bok.title}
-                  </a>
+                  </button>
                 </p>
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                   {[bok.authorHandle ? `@${bok.authorHandle}` : null, `bok is ${bok.bokStatus}`, shortTimeAgo(bok.createdAt)]

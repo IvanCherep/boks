@@ -35,6 +35,15 @@ export type Comment = {
   visitorHandle?: string | null;
   body: string;
   createdAt: string;
+  parentCommentId: number | null;
+  likesCount: number;
+  likedByMe: boolean;
+};
+
+export type CommentLikeState = {
+  commentId: number;
+  likesCount: number;
+  likedByMe: boolean;
 };
 
 /**
@@ -198,6 +207,8 @@ export type BoksPersonRow = {
   boksFinished: number;
   sessions: number;
   algorithmId: string | null;
+  bannedAt: string | null;
+  banReason: string | null;
 };
 
 export type BoksContentRow = {
@@ -217,6 +228,126 @@ export type BoksContentRow = {
   likes: number;
   comments: number;
   finishRate: number | null;
+  status: "published" | "archived";
+  archivedAt: string | null;
+  archiveReason: string | null;
+  archivedBy: string | null;
+};
+
+/** Every state a boks can be in, as the admin inspector shows it. */
+export type AdminBokStatus = "draft" | "pending_review" | "published" | "rejected" | "archived";
+
+/**
+ * One boks as the admin inspector reads it (`get_admin_bok`). Metrics use the
+ * same definitions as `BoksContentRow`, so the two never disagree.
+ */
+export type AdminBokDetail = {
+  id: string;
+  title: string;
+  hook: string;
+  body: string;
+  status: AdminBokStatus;
+  language: string | null;
+  genre: string;
+  mood: string;
+  estimatedMinutes: number;
+  wordCount: number;
+  isSeed: boolean;
+  imported: boolean;
+  authorName: string;
+  authorHandle: string;
+  authorUserId: string | null;
+  authorEmail: string | null;
+  createdAt: string;
+  submittedAt: string | null;
+  updatedAt: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  reviewNote: string | null;
+  archivedAt: string | null;
+  archivedBy: string | null;
+  archiveReason: string | null;
+  rights: { confirmed: boolean; note: string | null; confirmedAt: string } | null;
+  metrics: {
+    minutes: number;
+    readers: number;
+    impressions: number;
+    starts: number;
+    completes: number;
+    skips: number;
+    shares: number;
+    likes: number;
+    comments: number;
+    reports: number;
+    openReports: number;
+    finishRate: number | null;
+    lastReadAt: string | null;
+  };
+  comments: {
+    id: number;
+    body: string;
+    createdAt: string;
+    userId: string;
+    handle: string | null;
+    parentCommentId: number | null;
+    likes: number;
+  }[];
+  likers: { userId: string; handle: string | null; likedAt: string }[];
+};
+
+/** A boks in one of the person inspector's lists. */
+export type AdminPersonBok = {
+  id: string;
+  title: string;
+  status: AdminBokStatus;
+  authorName?: string;
+  at: string;
+};
+
+/**
+ * One account as the admin inspector reads it (`get_admin_person`). Reading
+ * metrics use the same definitions as `BoksPersonRow`.
+ */
+export type AdminPersonDetail = {
+  userId: string;
+  email: string;
+  isAnonymous: boolean;
+  handle: string | null;
+  role: BoksUserRole;
+  joinedAt: string;
+  lastSignInAt: string;
+  termsAcceptedAt: string | null;
+  readingLanguages: string[];
+  bannedAt: string | null;
+  banReason: string | null;
+  bannedBy: string | null;
+  algorithmId: string | null;
+  metrics: {
+    minutes: number;
+    minutesLast7Days: number;
+    minutesLast30Days: number;
+    sessions: number;
+    boksOpened: number;
+    boksFinished: number;
+    skips: number;
+    activeDays: number;
+    firstReadAt: string | null;
+    lastReadAt: string | null;
+    likesGiven: number;
+    commentsWritten: number;
+    authored: { total: number; published: number; pending: number; rejected: number; archived: number };
+    likesReceived: number;
+    commentsReceived: number;
+    readersReached: number;
+    followers: number;
+    following: number;
+  };
+  /** Days with reading in the last 30; empty days are omitted. */
+  activity: { day: string; minutes: number; boks: number }[];
+  authoredBoks: { id: string; title: string; status: AdminBokStatus; createdAt: string; likes: number; comments: number; readers: number }[];
+  likedBoks: AdminPersonBok[];
+  comments: { id: number; body: string; at: string; isReply: boolean; reelId: string; title: string; status: AdminBokStatus }[];
+  readBoks: (AdminPersonBok & { activeSeconds: number; finished: boolean })[];
 };
 
 export type ReaderProfile = {
@@ -250,6 +381,9 @@ export type BoksUserContext = {
   readingLanguages: string[];
   /** Published boks per language, so an empty feed can explain itself. */
   languageCoverage: Record<string, number>;
+  /** A suspended account may continue reading, but cannot publish or interact. */
+  bannedAt: string | null;
+  banReason: string | null;
 };
 
 /** An author as the reader meets them: who they are, and what they have written. */
@@ -294,8 +428,11 @@ export type ReaderLibraryItem = {
   title: string;
   authorName: string;
   minutes: number;
-  readAt: string;
+  readAt: string | null;
+  likedAt: string | null;
+  commentedAt: string | null;
   liked: boolean;
+  commented: boolean;
 };
 
 export type BokReviewStatus = "draft" | "pending_review" | "published" | "rejected" | "archived";
