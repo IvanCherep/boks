@@ -161,7 +161,6 @@ assertOk(Array.isArray(authorSubmissionsResult.data), "Author submissions RPC di
 
 const blockedSubmitResult = await supabase.rpc("submit_bok_for_review", {
   p_title: "Blocked anonymous submit",
-  p_hook: "This should not be accepted.",
   p_text: "Anonymous users must create a permanent account before submitting boks.",
   p_genre: "literary",
   p_mood: "quiet",

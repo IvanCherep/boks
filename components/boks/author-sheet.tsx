@@ -37,6 +37,12 @@ export type AuthorSheetProps = {
   onFollowChanged?: (authorUserId: string, following: boolean) => void;
   /** Opens one writer from a publisher's list. */
   onOpenWriter?: (authorName: string) => void;
+  /**
+   * Leaves writer mode for the account that published them. Following, and
+   * everything else a reader can do with an author, belongs to the account,
+   * so a writer's list has to have a way back to it.
+   */
+  onOpenAccount?: () => void;
 };
 
 export function AuthorSheet({
@@ -49,6 +55,7 @@ export function AuthorSheet({
   onRequestAccount,
   onFollowChanged,
   onOpenWriter,
+  onOpenAccount,
 }: AuthorSheetProps) {
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
   const [status, setStatus] = useState("Loading");
@@ -109,6 +116,14 @@ export function AuthorSheet({
     }
   }
 
+  const meta = [
+    author ? countLabel(author.totalBoks, "bok") : null,
+    author?.writers.length ? countLabel(author.writers.length, "writer") : null,
+    author?.authorUserId && !author.byline ? countLabel(author.followers, "follower") : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <ReaderSheet
       label={author ? `${author.authorName || "@" + author.authorHandle}, author` : "Author"}
@@ -124,16 +139,25 @@ export function AuthorSheet({
           {/* Built as a list and joined, so a missing name never leaves the
               line starting with a separator. */}
           <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-            {[
-              // In writer mode the handle is the publisher, and saying so is
-              // the point; otherwise it is the account's own name.
-              author?.byline ? `published by @${author.authorHandle}` : author?.authorName ? `@${author.authorHandle}` : null,
-              author ? countLabel(author.totalBoks, "bok") : null,
-              author?.writers.length ? countLabel(author.writers.length, "writer") : null,
-              author?.authorUserId && !author.byline ? countLabel(author.followers, "follower") : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
+            {author?.byline ? (
+              <>
+                {/* In writer mode the handle is the publisher, and it is a way
+                    back rather than a caption: this writer is one of the many
+                    that account publishes, and the account is what a reader
+                    follows. */}
+                published by{" "}
+                {onOpenAccount ? (
+                  <button type="button" className="author-account-link" onClick={onOpenAccount}>
+                    @{author.authorHandle}
+                  </button>
+                ) : (
+                  `@${author.authorHandle}`
+                )}
+                {meta && ` · ${meta}`}
+              </>
+            ) : (
+              [author?.authorName ? `@${author.authorHandle}` : null, meta].filter(Boolean).join(" · ")
+            )}
           </p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close author">
@@ -144,7 +168,7 @@ export function AuthorSheet({
       {author?.byline && author.authorUserId && (
         <p className="px-4 pt-2 text-sm leading-6 text-[var(--muted-foreground)]">
           Following @{author.authorHandle} brings you everything they publish, not only{" "}
-          {author.byline}.
+          {author.byline}. Another account publishing {author.byline} is followed separately.
         </p>
       )}
 
@@ -217,14 +241,16 @@ export function AuthorSheet({
                   {!author.byline && bok.authorName && (
                     <span className="mt-0.5 text-sm text-[var(--muted-foreground)]">{bok.authorName}</span>
                   )}
-                  {bok.hook && (
-                    <span className="mt-1 line-clamp-2 text-sm text-[var(--muted-foreground)]">{bok.hook}</span>
-                  )}
                   {bok.id === currentStoryId && <span className="author-bok-now">reading now</span>}
                 </button>
               </li>
             ))}
           </ul>
+        )}
+        {author && author.boks.length > 0 && author.boks.length < author.totalBoks && (
+          <p className="pt-3 text-center text-sm text-[var(--muted-foreground)]">
+            Showing the newest {author.boks.length} of {author.totalBoks}.
+          </p>
         )}
       </div>
     </ReaderSheet>

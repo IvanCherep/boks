@@ -33,6 +33,8 @@ type FeedRequestBody = {
   profileSnapshot?: Record<string, unknown>;
   requestedAlgorithmId?: string | null;
   buildId?: string | null;
+  /** The reader's language filter; empty means no filter. */
+  readingLanguages?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -70,6 +72,7 @@ export async function POST(request: Request) {
     requestedAlgorithmId: body.requestedAlgorithmId ?? null,
     servingBackend: "worker",
     buildId: body.buildId ?? null,
+    readingLanguages: languagesFrom(body.readingLanguages),
   };
 
   try {
@@ -107,6 +110,14 @@ function bearerToken(header: string | null) {
   const [scheme, token] = header.split(" ");
   if (!token || scheme.toLowerCase() !== "bearer") return null;
   return token.trim() || null;
+}
+
+/** At most a handful of short language codes; anything else is dropped. */
+function languagesFrom(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((entry): entry is string => typeof entry === "string" && /^[a-z]{2,3}$/.test(entry))
+    .slice(0, 10);
 }
 
 function clampLimit(value: unknown) {

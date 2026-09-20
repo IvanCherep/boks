@@ -44,7 +44,11 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [reason, setReason] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  // Shown inside the open dialog: errors used to land on the page behind it.
+  const [dialogError, setDialogError] = useState("");
   const { openPerson } = useAdminInspector();
+  // "@ivan" and "ivan" are the same answer to "type @ivan".
+  const typedHandle = confirmation.trim().replace(/^@+/, "");
 
   const refresh = useCallback(async (search: string) => {
     setBusy(true);
@@ -75,6 +79,7 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
     setReason("");
     setConfirmation("");
     setNotice("");
+    setDialogError("");
   }
 
   async function applyAction() {
@@ -90,13 +95,13 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
         await setBoksUserBan(row.userId, kind === "ban", reason);
         setNotice(kind === "ban" ? `@${row.handle} is suspended.` : `@${row.handle} can use boks again.`);
       } else {
-        const result = await deleteBoksUser(row.userId, confirmation);
+        const result = await deleteBoksUser(row.userId, typedHandle);
         setNotice(`Account deleted. ${result.archivedBoks} authored boks moved to Deleted.`);
       }
       setPending(null);
       await refresh(query);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not update this account.");
+      setDialogError(error instanceof Error ? error.message : "Could not update this account.");
     } finally {
       setBusy(false);
     }
@@ -105,7 +110,7 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
   const actionReady =
     !pending ||
     ((pending.kind !== "ban" || reason.trim().length > 0) &&
-      (pending.kind !== "delete" || confirmation === expectedConfirmation));
+      (pending.kind !== "delete" || typedHandle === expectedConfirmation));
 
   return (
     <section className="panel overflow-hidden">
@@ -230,6 +235,11 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
               Type <strong>@{expectedConfirmation}</strong> to confirm
               <Input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoFocus />
             </label>
+          )}
+          {dialogError && (
+            <p className="text-sm text-[var(--destructive)]" role="alert">
+              {dialogError}
+            </p>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPending(null)} disabled={busy}>Cancel</Button>

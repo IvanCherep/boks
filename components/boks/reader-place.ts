@@ -46,9 +46,14 @@ export function placeEntryStory<T extends { id: string }>(
 ): T[] {
   if (!entry) return [...recommendations];
 
+  // When the feed has the boks too, its copy is the one placed: the feed's
+  // counts agree with the feed's record of this reader's likes, while the
+  // opened copy carries its total without the reader's own like. Placing the
+  // opened copy over a feed copy took that like off twice.
+  const own = recommendations.find((story) => story.id === entry.story.id) ?? entry.story;
   const withoutEntry = recommendations.filter((story) => story.id !== entry.story.id);
   const at = Math.min(Math.max(entry.index, 0), withoutEntry.length);
-  return [...withoutEntry.slice(0, at), entry.story, ...withoutEntry.slice(at)];
+  return [...withoutEntry.slice(0, at), own, ...withoutEntry.slice(at)];
 }
 
 export function holdPinnedStory<T extends { id: string }>(ranked: readonly T[], held: HeldPlace<T> | null): T[] {
@@ -75,4 +80,23 @@ export function composeReaderRanking<T extends { id: string }>(
 ): T[] {
   const ranked = holdPinnedStory(placeEntryStory(feed, entry), held);
   return removed.size ? ranked.filter((story) => !removed.has(story.id)) : ranked;
+}
+
+/** How close to the end of the feed the next slate is asked for. */
+export const loadMoreThreshold = 5;
+
+/** Whether the reader is close enough to the end to ask for the next slate. */
+export function shouldLoadMore(feedLength: number, selectedIndex: number, threshold = loadMoreThreshold) {
+  return feedLength > 0 && feedLength - 1 - selectedIndex <= threshold;
+}
+
+/**
+ * The next slate added after the current feed. Boks already in the feed are
+ * skipped, so nothing repeats and nothing the reader has passed moves; the
+ * same array comes back when nothing is new, so no re-render is caused.
+ */
+export function appendNewStories<T extends { id: string }>(current: T[], incoming: readonly T[]): T[] {
+  const seen = new Set(current.map((story) => story.id));
+  const fresh = incoming.filter((story) => !seen.has(story.id));
+  return fresh.length ? [...current, ...fresh] : current;
 }

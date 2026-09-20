@@ -32,6 +32,7 @@ import type {
 } from "@/components/boks/client-types";
 import {
   anonymousReadLimits,
+  guestReadDwellMs,
   expectedReadingSeconds,
   getAnonymousBoksReadCount,
   getBrowserId,
@@ -47,6 +48,7 @@ import {
 import {
   composeReaderRanking,
   recoverReaderPlace,
+  shouldLoadMore,
   type HeldPlace,
 } from "@/components/boks/reader-place";
 import {
@@ -98,6 +100,21 @@ import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendatio
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
+
+const firstVisitHintKey = "boks-first-visit-hint-seen";
+
+/** Drops focus after a mouse click so the reader's Space cannot press the button again. */
+function releaseFocus(event: React.MouseEvent<HTMLElement>) {
+  if (event.detail > 0) event.currentTarget.blur();
+}
+
+/** "Follow", or "Follow @boks" when the byline is a writer the account publishes. */
+function followLabel(following: boolean, authorName: string | undefined, authorHandle: string) {
+  const handle = authorHandle.replace(/^@+/, "");
+  const underByline = Boolean(authorName && handle && authorName.toLowerCase() !== handle.toLowerCase());
+  const verb = following ? "Following" : "Follow";
+  return underByline ? `${verb} @${handle}` : verb;
+}
 
 type AuthIntent = "general" | "like" | "comment" | "follow";
 
@@ -175,7 +192,11 @@ export function ReaderFeed() {
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [commentOpen, setCommentOpen] = useState(false);
-  const [commentCountDeltas, setCommentCountDeltas] = useState<Record<string, number>>({});
+  // Comments this reader added or removed, per boks, against the count they
+  // were added to. A fresher copy of the boks - a reload, opening it from the
+  // library - already includes them and has a different base, so the change
+  // stops applying instead of being counted twice.
+  const [commentCountDeltas, setCommentCountDeltas] = useState<Record<string, { base: number; added: number }>>({});
   // Hidden from the start. It used to open with the controls showing and
   // flash them again on every new bok; now reading comes first and the
   // controls appear when the reader asks, with a tap.
@@ -229,6 +250,24 @@ export function ReaderFeed() {
   const [hiddenStoryIds, setHiddenStoryIds] = useState<ReadonlySet<string>>(() => new Set());
   const [hideTarget, setHideTarget] = useState<BokLifecycleTarget | null>(null);
   const [readerFlash, setReaderFlash] = useState("");
+  const likesInFlight = useRef<Set<string>>(new Set());
+  // The one-time "how this works" line - see the effect near the render.
+  const [firstVisitHint, setFirstVisitHint] = useState<"touch" | "pointer" | null>(null);
+  /**
+   * A message for the reader: "Link copied", or why a like, follow, report or
+   * language change did not go through. These used to go only to `status`,
+   * which the reader shows on the empty-feed screen and nowhere else - so with
+   * a bok on screen every one of them vanished, and a failed action looked
+   * like a tap that did nothing. `status` still gets it, for that screen.
+   */
+  const notify = useCallback(
+    (message: string) => {
+      if (!message) return;
+      setReaderFlash(message);
+      setStatus(message);
+    },
+    [setStatus]
+  );
   const [followedAuthorIds, setFollowedAuthorIds] = useState<string[]>([]);
   const [followBusy, setFollowBusy] = useState(false);
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
@@ -351,6 +390,41 @@ export function ReaderFeed() {
     [load]
   );
 
+  /**
+   * The next slate, added after this one. A feed is 80 boks, and the reader
+   * used to stop dead at the 80th: swipes did nothing and the pull still said
+   * "release for next bok". The slate is ranked with everything read so far,
+   * so fatigue keeps what was seen out of it; boks already in the feed are
+   * skipped by the append. A slate that adds nothing means there is nothing
+   * left for this reader, and it is not asked for again this visit.
+   */
+  const loadingMore = useRef(false);
+  const feedExhausted = useRef(false);
+  const knownStoryIds = useRef<Set<string>>(new Set());
+  const loadMoreFeed = useCallback(async () => {
+    if (loadingMore.current || feedExhausted.current) return;
+    loadingMore.current = true;
+    try {
+      const data = await load({
+        view: "reader",
+        limit: 80,
+        visitorId: visitorId.current,
+        sessionId: sessionId.current,
+        reader: readerSignalsRef.current,
+        profileSnapshot: { ...readerSignalsRef.current },
+        readingLanguages: readingLanguagesRef.current,
+        append: true,
+      });
+      const fresh = (data?.stories ?? []).filter((story) => !knownStoryIds.current.has(String(story.id)));
+      if (!fresh.length) feedExhausted.current = true;
+    } catch {
+      // Silently: the reader still has boks ahead, and the next approach to
+      // the end tries again.
+    } finally {
+      loadingMore.current = false;
+    }
+  }, [load]);
+
   useEffect(() => {
     visitorId.current = getBrowserId("boks-reader");
     sessionId.current = `${Date.now()}-${crypto.randomUUID()}`;
@@ -389,10 +463,15 @@ export function ReaderFeed() {
           await loadFeed();
         }
         setGuestReadCount(getAnonymousBoksReadCount());
+        // A link that did not work. A reader who is signed in anyway - an old
+        // link tapped twice - has nothing to fix and is not interrupted. For
+        // anyone else the panel opens on sign-in with the reason, and can be
+        // closed: it used to open as the forced guest gate, with no way out
+        // and a message about having read 15 boks.
         const magicLinkNotice = consumeBoksMagicLinkRedirectNotice();
-        if (magicLinkNotice) {
+        if (magicLinkNotice && !(context && !context.isAnonymous)) {
           setAuthNotice(magicLinkNotice);
-          setAuthReason("required");
+          setAuthReason("manual");
           setAuthInitialMode("signin");
           setAuthIntent("general");
           setAuthPanelOpen(true);
@@ -407,12 +486,12 @@ export function ReaderFeed() {
         // A shared author link names an account, so it opens the publisher.
         if (sharedAuthor) setAuthorSheet({ handle: sharedAuthor.replace(/^@+/, "") });
       })
-      .catch((error) => setStatus(error.message))
+      .catch((error) => notify(error.message))
       // A failed feed load must still settle the identity, or a real guest
       // never meets the sign-up gate at all.
       .finally(() => setIdentitySettled(true));
     return () => window.clearTimeout(profileTimer);
-  }, [loadFeed, setStatus]);
+  }, [loadFeed, notify, setStatus]);
 
   useEffect(() => {
     const detach = attachReaderClock(readingClock.current);
@@ -534,19 +613,36 @@ export function ReaderFeed() {
   useEffect(() => {
     if (!supabase) return;
 
-    const result = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN") return;
+    /**
+     * Reload for a sign-in, not for every `SIGNED_IN`. auth-js emits it again
+     * whenever the tab becomes visible and the session is recovered, and when
+     * a guest session is created - so returning to the app, or a new guest's
+     * first load, fetched the whole feed a second time, wrote another served
+     * feed and rebuilt everything around the boks on screen. The identity is
+     * taken from `INITIAL_SESSION`, which every subscriber receives first.
+     */
+    let lastIdentity: string | null = null;
+    const result = supabase.auth.onAuthStateChange((event, session) => {
+      const identity = session?.user ? `${session.user.id}:${session.user.is_anonymous ? "guest" : "account"}` : "";
+      if (event === "INITIAL_SESSION") {
+        lastIdentity = identity;
+        return;
+      }
+      if (event !== "SIGNED_IN" || identity === lastIdentity) return;
+      lastIdentity = identity;
+      // A guest session being created: the first feed load already covers it.
+      if (!session?.user || session.user.is_anonymous) return;
       completePendingBoksMagicLinkProfile(currentBoksTermsVersion)
         .then(async (context) => {
           const nextUser = context ?? (await loadBoksUserContext());
           setUser(nextUser);
-          loadFeed().catch((error) => setStatus(error instanceof Error ? error.message : "Could not refresh feed."));
+          loadFeed().catch((error) => notify(error instanceof Error ? error.message : "Could not refresh feed."));
         })
-        .catch((error) => setStatus(error instanceof Error ? error.message : "Could not finish sign in."));
+        .catch((error) => notify(error instanceof Error ? error.message : "Could not finish sign in."));
     });
 
     return () => result.data.subscription.unsubscribe();
-  }, [loadFeed, setStatus]);
+  }, [loadFeed, notify, setStatus]);
 
   useEffect(() => {
     return () => {
@@ -647,6 +743,9 @@ export function ReaderFeed() {
     if (place) {
       const next = composeReaderRanking(stories, libraryEntry, place, hiddenStoryIds);
       setSelectedIndex(recoverReaderPlace(next.map((story) => story.id), place.story.id, selectedIndex));
+    } else if (hold.release) {
+      // A deliberately new feed starts at its beginning.
+      setSelectedIndex(0);
     }
   }
 
@@ -662,11 +761,23 @@ export function ReaderFeed() {
   );
   const currentStoryId = currentStory?.id;
   const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id);
+  const currentCommentDelta = currentStory ? commentCountDeltas[currentStory.id] : undefined;
   const currentCommentCount = currentStory
-    ? currentStory.commentsCount + (commentCountDeltas[currentStory.id] ?? 0)
+    ? Math.max(
+        0,
+        currentStory.commentsCount +
+          (currentCommentDelta && currentCommentDelta.base === currentStory.commentsCount ? currentCommentDelta.added : 0)
+      )
     : 0;
   const currentAuthorLabel = currentStory?.authorName || (currentStory?.authorHandle ? `@${currentStory.authorHandle.replace(/^@+/, "")}` : "boks author");
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
+
+  // Ask for the next slate a few boks before the end, so it is there in time.
+  useEffect(() => {
+    knownStoryIds.current = new Set(rankedStories.map((story) => story.id));
+    if (!isSupabaseReader || !shouldLoadMore(rankedStories.length, selectedIndex)) return;
+    void loadMoreFeed();
+  }, [isSupabaseReader, loadMoreFeed, rankedStories, selectedIndex]);
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
   // Nobody is a guest before the account lookup has answered.
   const isGuestReader = identitySettled && isSupabaseReader && (!user || user.isAnonymous);
@@ -681,6 +792,49 @@ export function ReaderFeed() {
    */
   const isAdminReader = Boolean(user && !user.isAnonymous && user.role === "admin" && !user.bannedAt);
   const readerInteractionBlocked = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget);
+
+  /**
+   * A first visit gets one line of how-to. With the controls hidden a new
+   * reader sees only the text, and on a phone the next/previous buttons are
+   * not there at all - moving on is a swipe nobody has been told about. Shown
+   * once per device, a moment after the first boks appears, and gone at the
+   * first swipe, tap or keypress, or after ten seconds.
+   */
+  useEffect(() => {
+    if (!currentStoryId) return;
+    let seen = true;
+    try {
+      seen = window.localStorage.getItem(firstVisitHintKey) === "1";
+    } catch {
+      seen = true;
+    }
+    if (seen) return;
+    const show = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(firstVisitHintKey, "1");
+      } catch {
+        // Shown this once anyway.
+      }
+      setFirstVisitHint(window.matchMedia("(pointer: coarse)").matches ? "touch" : "pointer");
+    }, 1200);
+    return () => window.clearTimeout(show);
+    // Once, for the first boks only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(currentStoryId)]);
+
+  useEffect(() => {
+    if (!firstVisitHint) return;
+    const hide = window.setTimeout(() => setFirstVisitHint(null), 10000);
+    return () => window.clearTimeout(hide);
+  }, [firstVisitHint]);
+
+  useEffect(() => {
+    if (!firstVisitHint) return;
+    const hide = window.setTimeout(() => setFirstVisitHint(null), 0);
+    return () => window.clearTimeout(hide);
+    // A swipe, a tap that opens the controls, or a key: the reader has it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex, readerChromeVisible]);
 
   useEffect(() => {
     if (!readerFlash) return;
@@ -701,37 +855,10 @@ export function ReaderFeed() {
   }
 
   function showSuspension() {
-    setStatus(user?.banReason || "This account is suspended. Reading remains available.");
+    notify(user?.banReason || "This account is suspended. Reading remains available.");
     openAccount("manual", "signin");
   }
 
-  /**
-   * Liking, commenting and sharing refresh the feed. The boks acted on is
-   * handed to the feed that replaces this one as `hold.next`, which keeps the
-   * reader on it (see the block after `rankedStories`) with its counts settled
-   * here: after a like, fatigue usually ranks it out of the slate, and the new
-   * feed will not report a like on a boks it does not contain -
-   * `likedStoryIds` covers the slate only. So it carries its total without
-   * this reader's like, and the reader's own like is written into local state,
-   * which `displayedLikeCount` adds back on top.
-   */
-  async function reloadFeedKeepingPlace(change: { comments?: number } = {}) {
-    const story = currentStory;
-    if (story) {
-      const likedOnServer = persistedLikedStoryIds.has(story.id);
-      setLiked((state) => (story.id in state ? state : { ...state, [story.id]: likedOnServer }));
-      const next: HeldPlace = {
-        story: {
-          ...story,
-          likes: Math.max(0, story.likes - (likedOnServer ? 1 : 0)),
-          commentsCount: story.commentsCount + (change.comments ?? 0),
-        },
-        index: selectedIndex,
-      };
-      setHold((current) => ({ ...current, next }));
-    }
-    await loadFeed();
-  }
 
   useEffect(() => {
     if (!pendingLibraryStoryId) return;
@@ -831,20 +958,26 @@ export function ReaderFeed() {
         setAuthPanelOpen(true);
         setGuestNoticeStep(null);
       }, 0);
-    } else {
-      countedAnonymousStories.current.add(currentStoryId);
-      const nextCount = recordAnonymousBoksRead(currentStoryId);
-      window.setTimeout(() => setGuestReadCount(nextCount), 0);
+      return;
+    }
+
+    // Counted once it has actually been read a while - see `guestReadDwellMs`.
+    const storyId = currentStoryId;
+    const handle = window.setTimeout(() => {
+      countedAnonymousStories.current.add(storyId);
+      const nextCount = recordAnonymousBoksRead(storyId);
+      setGuestReadCount(nextCount);
 
       const notices = readAnonymousNoticeState();
       if (nextCount === anonymousReadLimits.firstNotice && !notices.first) {
-        window.setTimeout(() => setGuestNoticeStep("first"), 0);
+        setGuestNoticeStep("first");
         saveAnonymousNoticeState({ ...notices, first: true });
       } else if (nextCount === anonymousReadLimits.secondNotice && !notices.second) {
-        window.setTimeout(() => setGuestNoticeStep("second"), 0);
+        setGuestNoticeStep("second");
         saveAnonymousNoticeState({ ...notices, second: true });
       }
-    }
+    }, guestReadDwellMs);
+    return () => window.clearTimeout(handle);
   }, [currentStoryId, isGuestReader]);
 
   useEffect(() => {
@@ -1021,7 +1154,7 @@ export function ReaderFeed() {
     try {
       const loaded = await loadSupabaseStory(storyId);
       if (!loaded) {
-        setStatus("This boks is no longer available.");
+        notify("This bok is no longer available.");
         return;
       }
 
@@ -1030,7 +1163,7 @@ export function ReaderFeed() {
       setLibraryEntry({ story, index: selectedIndex });
       setPendingLibraryStoryId(story.id);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not open this boks.");
+      notify(error instanceof Error ? error.message : "Could not open this bok.");
     }
   }
 
@@ -1090,6 +1223,12 @@ export function ReaderFeed() {
     if (storyTransitionLocked.current) return;
     if (selectedIndex >= rankedStories.length - 1) {
       revealReaderChrome(2400);
+      if (isSupabaseReader && !feedExhausted.current) {
+        notify("Finding more boks for you…");
+        void loadMoreFeed();
+      } else {
+        notify("That is everything boks has for you right now.");
+      }
       return;
     }
     recordReadingOutcome(reason);
@@ -1118,7 +1257,7 @@ export function ReaderFeed() {
       setHold((current) => ({ ...current, release: true }));
       await loadFeed();
     } catch (error) {
-      setStatus(readableBoksError(error, "Could not change your languages."));
+      notify(readableBoksError(error, "Could not change your languages."));
     }
   }
 
@@ -1136,9 +1275,9 @@ export function ReaderFeed() {
     const url = `${window.location.origin}/b/${currentStory.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      setStatus("Link copied");
+      notify("Link copied");
     } catch {
-      setStatus(url);
+      notify(url);
     }
   }
 
@@ -1160,7 +1299,7 @@ export function ReaderFeed() {
       setReportDone(result.status);
       setReportReason("");
     } catch (error) {
-      setStatus(readableBoksError(error, "Could not send that report."));
+      notify(readableBoksError(error, "Could not send that report."));
     } finally {
       setReportSending(false);
     }
@@ -1178,26 +1317,38 @@ export function ReaderFeed() {
       return;
     }
 
+    // One write per boks at a time: a quick second tap used to race an
+    // insert against a delete, and whichever landed last won.
+    const story = currentStory;
+    if (likesInFlight.current.has(story.id)) return;
+    likesInFlight.current.add(story.id);
+
     const nextLiked = !isCurrentStoryLiked;
     if (nextLiked) haptic("confirm");
-    setLiked((state) => ({ ...state, [currentStory.id]: nextLiked }));
+    setLiked((state) => ({ ...state, [story.id]: nextLiked }));
 
     try {
       if (isSupabaseReader) {
-        await setSupabaseLike(supabaseUserId, currentStory.id, nextLiked);
+        await setSupabaseLike(supabaseUserId, story.id, nextLiked);
       }
-
-      if (nextLiked) {
-        recordReaderEvent("like", currentStory);
-        persistProfile(profileBump(profile, currentStory, "like"));
-      }
-      await reloadFeedKeepingPlace();
-      const nextUser = await loadBoksUserContext();
-      setUser(nextUser);
     } catch (error) {
-      setLiked((state) => ({ ...state, [currentStory.id]: !nextLiked }));
-      setStatus(error instanceof Error ? error.message : "Could not update like");
+      // Rolled back only when the write itself failed. It used to be rolled
+      // back when the feed reload after it failed too, which showed a saved
+      // like as not liked for the rest of the visit.
+      setLiked((state) => ({ ...state, [story.id]: !nextLiked }));
+      notify(readableBoksError(error, "Could not update the like. Try again."));
+      return;
+    } finally {
+      likesInFlight.current.delete(story.id);
     }
+
+    if (nextLiked) {
+      recordReaderEvent("like", story);
+      persistProfile(profileBump(profile, story, "like"));
+    }
+    // No feed reload. The count and the heart are already right locally
+    // (`displayedLikeCount`), and reloading 80 boks for one tap was most of
+    // the Worker's CPU and the database's load; the next feed ranks with it.
   }
 
   const isFollowingCurrentAuthor = Boolean(
@@ -1242,7 +1393,7 @@ export function ReaderFeed() {
       setFollowedAuthorIds((current) =>
         next ? current.filter((id) => id !== authorUserId) : [...current, authorUserId]
       );
-      setStatus(error instanceof Error ? error.message : "Could not update following.");
+      notify(error instanceof Error ? error.message : "Could not update following.");
     } finally {
       setFollowBusy(false);
     }
@@ -1267,21 +1418,39 @@ export function ReaderFeed() {
 
   async function shareStory() {
     if (!currentStory) return;
-    const text = `Read "${currentStory.title}" on boks`;
-    // The feed URL would open a different boks for whoever received it.
-    const url = `${window.location.origin}/b/${currentStory.id}`;
-    if (navigator.share) {
-      await navigator.share({ title: currentStory.title, text, url });
-    } else {
-      await navigator.clipboard.writeText(`${text}: ${url}`);
-      setStatus("Link copied");
+    const story = currentStory;
+    const text = `Read "${story.title}" on boks`;
+    // The feed URL would open a different bok for whoever received it.
+    const url = `${window.location.origin}/b/${story.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: story.title, text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text}: ${url}`);
+        notify("Link copied");
+      }
+    } catch (error) {
+      // Closing the share sheet is not a failure.
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      // No clipboard (some in-app browsers) or it was refused: show the link
+      // so it can be copied by hand.
+      notify(url);
+      return;
     }
-    recordReaderEvent("share", currentStory);
-    await reloadFeedKeepingPlace();
+    recordReaderEvent("share", story);
+  }
+
+  function adjustCommentCount(story: Story, change: number) {
+    setCommentCountDeltas((current) => {
+      const previous = current[story.id];
+      const base = story.commentsCount;
+      const added = (previous && previous.base === base ? previous.added : 0) + change;
+      return { ...current, [story.id]: { base, added } };
+    });
   }
 
   async function submitComment(body: string, parentCommentId: number | null): Promise<Comment> {
-    if (!currentStory) throw new Error("That boks is no longer open.");
+    if (!currentStory) throw new Error("That bok is no longer open.");
     if (accountSuspended) {
       showSuspension();
       throw new Error(user?.banReason || "This account is suspended.");
@@ -1324,10 +1493,7 @@ export function ReaderFeed() {
     }
 
     recordReaderEvent("comment", currentStory);
-    setCommentCountDeltas((current) => ({
-      ...current,
-      [currentStory.id]: (current[currentStory.id] ?? 0) + 1,
-    }));
+    adjustCommentCount(currentStory, 1);
     return created;
   }
 
@@ -1343,11 +1509,25 @@ export function ReaderFeed() {
     setUser(nextUser);
     // Signing in or out is also an answer about who this is.
     setIdentitySettled(true);
-    if (nextUser && !nextUser.isAnonymous) {
-      setAuthReason("manual");
-      loadFeed().catch((error) => setStatus(error.message));
-    }
-  }, [loadFeed, setStatus]);
+    if (nextUser && !nextUser.isAnonymous) setAuthReason("manual");
+    // No feed reload: a saved nickname does not change what to read, sign-out
+    // reloads the page, and a sign-in arrives as an auth state change.
+  }, []);
+
+  /**
+   * Languages changed in Settings (already saved there). A new filter is a
+   * new feed, from its first boks: the one on screen may be in a language the
+   * reader just turned off. The reader used to keep the old filter here, and
+   * reload with it.
+   */
+  const adoptReadingLanguages = useCallback(
+    (languages: readonly string[]) => {
+      readingLanguagesRef.current = normalizeReadingLanguages(languages);
+      setHold((current) => ({ ...current, release: true }));
+      loadFeed().catch((error) => notify(readableBoksError(error, "Could not load the feed in those languages.")));
+    },
+    [loadFeed, notify]
+  );
 
   function clearBoundaryPull(immediate = false) {
     pullArmed.current = false;
@@ -1515,6 +1695,14 @@ export function ReaderFeed() {
     const target = event.target as HTMLElement;
     if (target.closest("button, a, input, textarea, select, [role='dialog']")) return;
 
+    // A mouse dragged across the text is selecting it - to copy a line - not
+    // swiping. The check used to come after the swipe and pull were worked
+    // out, so selecting a quote turned the page and recorded a skip.
+    if (window.getSelection()?.toString()) {
+      clearBoundaryPull();
+      return;
+    }
+
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     const horizontal = horizontalNavigationIntent(dx, dy);
@@ -1529,8 +1717,6 @@ export function ReaderFeed() {
       return;
     }
 
-    // Selecting a word with a double click must not also toggle the controls.
-    if (window.getSelection()?.toString()) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const tap = readerTapAction({
       pointerType: event.pointerType === "pen" ? "pen" : "mouse",
@@ -1760,7 +1946,12 @@ export function ReaderFeed() {
           inert={readerInteractionBlocked ? true : undefined}
         >
           <header className="reader-topbar z-10 grid grid-cols-[1fr_auto_1fr] items-center px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
-            <button className="reader-account-trigger reader-ui" onClick={() => openAccount("manual")} aria-label="Open settings">
+            <button
+              className="reader-account-trigger reader-ui"
+              onClick={() => openAccount("manual")}
+              aria-label={hasSignedInAccount ? "Open settings" : "Sign in or create an account"}
+              title={hasSignedInAccount ? "Settings" : "Sign in"}
+            >
               <UserRound className="size-5" />
             </button>
             <span className="brand-word reader-brand-mark" aria-label="boks">boks</span>
@@ -1822,11 +2013,19 @@ export function ReaderFeed() {
                   <button
                     type="button"
                     className={`follow-button${isFollowingCurrentAuthor ? " follow-button--following" : ""}`}
-                    onClick={toggleFollow}
+                    onClick={(event) => {
+                      releaseFocus(event);
+                      void toggleFollow();
+                    }}
                     disabled={followBusy}
                     aria-pressed={isFollowingCurrentAuthor}
                   >
-                    {isFollowingCurrentAuthor ? <><Check className="size-3.5" /> Following</> : "Follow"}
+                    {/* Following is per account. Under a byline - "Anton Chekhov,
+                        @boks" - a bare "Follow" read as following Chekhov and
+                        followed the whole publisher; say whose account it is,
+                        as the author sheet does. */}
+                    {isFollowingCurrentAuthor ? <Check className="size-3.5" /> : null}
+                    {followLabel(isFollowingCurrentAuthor, currentStory.authorName, currentStory.authorHandle)}
                   </button>
                 )}
               </div>
@@ -1834,12 +2033,7 @@ export function ReaderFeed() {
               <h1 className="reader-title max-w-[680px] break-words text-[var(--foreground)]">
                 {currentStory.title}
               </h1>
-              {currentStory.hook?.trim() && (
-                <p className="reader-hook mt-6 max-w-[650px] text-[var(--soft-foreground)]">
-                  {currentStory.hook}
-                </p>
-              )}
-              <div className={`story-copy max-w-[680px] text-[var(--foreground)] ${currentStory.hook?.trim() ? "mt-8" : "mt-7"}`}>
+              <div className="story-copy mt-7 max-w-[680px] text-[var(--foreground)]">
                 {storyBlocks.map((block, index) => (
                   <p
                     key={`${currentStory.id}-${index}`}
@@ -1897,13 +2091,13 @@ export function ReaderFeed() {
 
           <footer className="reader-footer reader-ui z-10 flex items-center justify-end gap-2 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-8 sm:pb-6">
             {selectedIndex > 0 && (
-              <button className="swipe-cue" onClick={() => previousStory("button")} aria-label="Previous bok">
+              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); previousStory("button"); }} aria-label="Previous bok">
                 <ChevronLeft className="size-4" />
                 <span>previous</span>
               </button>
             )}
             {selectedIndex < rankedStories.length - 1 && (
-              <button className="swipe-cue" onClick={() => nextStory("button")} aria-label="Next bok">
+              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); nextStory("button"); }} aria-label="Next bok">
                 <span>next bok</span>
                 <ChevronRight className="size-4" />
               </button>
@@ -1942,7 +2136,7 @@ export function ReaderFeed() {
           </ActionButton>
           {/* Admins only, and only as a convenience: see `isAdminReader`. */}
           {isAdminReader && (
-            <ActionButton label="Hide this boks from readers (admin)" onClick={openHideBok} tone="danger">
+            <ActionButton label="Hide this bok from readers (admin)" onClick={openHideBok} tone="danger">
               <Trash2 className="size-5" />
             </ActionButton>
           )}
@@ -1976,6 +2170,7 @@ export function ReaderFeed() {
             canFollow={hasSignedInAccount}
             onClose={() => setAuthorSheet(null)}
             onOpenWriter={(writer) => openAuthor(authorSheet.handle, writer)}
+            onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
             onOpenBok={(storyId) => {
               setAuthorSheet(null);
               void openReadBoks(storyId);
@@ -2006,7 +2201,9 @@ export function ReaderFeed() {
             onClose={() => setCommentOpen(false)}
             onRequestAccount={() => openAccount("manual", "signup", "comment")}
             onSubmit={submitComment}
-            onStatus={setStatus}
+            onStatus={notify}
+            canModerate={isAdminReader}
+            onDeleted={(removed) => adjustCommentCount(currentStory, -removed)}
           />
         )}
 
@@ -2108,10 +2305,18 @@ export function ReaderFeed() {
           onOpenReadBoks={openReadBoks}
           onFollowsChanged={setFollowedAuthorIds}
           onUserChanged={handleUserChanged}
+          onReadingLanguagesChanged={adoptReadingLanguages}
         />
 
         {isAdminReader && (
           <BokLifecycleDialog target={hideTarget} onClose={() => setHideTarget(null)} onDone={afterHideBok} />
+        )}
+        {firstVisitHint && (
+          <p className="reader-hint" role="status">
+            {firstVisitHint === "touch"
+              ? "Swipe left for the next bok. Tap the page for likes, comments and more."
+              : "Press → for the next bok. Click the page for likes, comments and more."}
+          </p>
         )}
         {readerFlash && (
           <div className="reader-flash" role="status" aria-live="polite">

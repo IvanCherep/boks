@@ -1,7 +1,7 @@
 # Where boks Stands
 
 One page so a new session can orient without reading four handovers and two
-research reports. Updated 2026-09-19 (admin account and content lifecycle, account library, reader controls, threaded comments, reaction counts, share links).
+research reports. Updated 2026-09-19 (pre-launch QA for the first 100 readers; admin account and content lifecycle, account library, reader controls, threaded comments, reaction counts, share links).
 
 For *why* a thing is the way it is, the handovers and ADRs are the record. This
 says only what is true now.
@@ -27,7 +27,7 @@ is still the `site_url` in production auth. Two things to know about it:
   belongs behind a zone-level redirect rule to the apex. Production backend is the Supabase project
 `vcmrvnihbptostnzaean` (eu-west-2).
 
-All 36 migrations are applied to production. The production database is on the
+All 39 migrations are applied to production. The production database is on the
 current schema, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.
@@ -56,6 +56,49 @@ export). Links inside it walk between the two with Back. Reads are
 `get_admin_bok` / `get_admin_person` (migration `20260919220000`), with metrics
 defined exactly as the Content and People rows - `checks.sql` asserts equality.
 Hide / restore / erase have one dialog, `admin/bok-lifecycle-dialog.tsx`.
+
+**Pre-launch QA for the first 100 readers (2026-09-19, Worker `066aad86`).**
+Every reader, author and admin flow was walked and two code reviews were
+verified; the full list with causes is
+`docs/handover/2026-09-19-pre-launch-qa.md`. What changed for a reader: a
+one-time hint on the first visit; Escape closes every sheet; reader messages
+(Link copied, errors) appear as a short flash instead of nowhere; guest reads
+count after 8 s on screen, not on arrival; the feed appends the next slate
+five boks before the end instead of stopping at 80; like and share no longer
+reload the feed; selecting text no longer turns the page; comment writers and
+admins can delete a comment. For an author: the draft survives sign-up and
+reloads, Revise edits the refused bok in place (`p_bok_id`), the title can be
+left empty. For accounts: an old or cross-browser email link shows a plain
+message and never signs anyone out; "Sign out of this device" is local; a
+reader can delete their own account (Settings, nickname to confirm); `/privacy`
+exists and Terms link to it. For admins: Approve requires confirmed rights,
+restore returns a bok to the status it had before it was hidden. Migration
+`20260919260000`; `checks.sql` 300 checks; 355 unit tests.
+
+**Dark theme, English-only interface, Escape closes Settings (2026-09-19).**
+Settings -> Appearance offers System (default), Light and Dark; guests get the
+same control at the foot of their sign-in panel. The choice is stored per
+device (`localStorage` key `boks-theme`) and applied by an inline script in
+`<head>` before first paint, which also follows the system and other tabs
+(`components/boks/theme.ts`, tested against the app's own rule). The palette is
+`:root[data-theme="dark"]` in `app/globals.css`; every colour the stylesheet
+used to hard-code (glass surfaces, shadows, primary tints, status badges) is
+now a token with a dark value, so new CSS should use tokens, never literals.
+The last Russian UI string ("Лицензии") is gone. The settings panel closes on
+Escape whenever it shows a close button.
+
+**A boks is a title and a text; the title is optional (2026-09-19).** The
+opening hook is retired: gone from the author form, the reader, the author
+sheet, moderation and the inspector; the one stored hook was cleared, and a
+trigger on `reels` keeps `hook` empty on every write path (the column stays so
+views and RPCs that select it keep working). An empty title becomes the text's
+first line with words on it - `boks_title_from_text` in the database (same
+trigger), mirrored by `lib/boks/bok-title.ts` so the form shows the title the
+author will get; shared vectors in its test and `checks.sql`. The catalogue
+import follows the same rule and ignores `hook`/`teaser`/`summary`. The form's
+"Story" field is now "Text". `submit_bok_for_review` keeps its signature
+(`p_hook` accepted and ignored) so an old open tab still submits. Migration
+`20260919240000`.
 
 **Admins can hide a boks from the reader feed.** A fourth rail button, red,
 after Share, drawn only for an admin; a warning dialog that requires a reason;
@@ -497,14 +540,10 @@ Small, real, and written down so they are not rediscovered:
   boks on two days is counted twice.
 - Reading fatigue for anonymous readers is per browser, so the same guest on two
   devices has one arm and two "already read" sets.
-- **Deleting an account now fails outright if any of its boks has no byline.**
-  `reels.author_user_id` is `on delete set null`, and
-  `reels_authorless_boks_has_a_byline` then refuses the row: `delete from
-  auth.users` reports `violates check constraint`. Failing is better than the
-  orphaned rows it replaced, but it means a delete-account flow has to decide
-  what happens to the work first - reassign it to a publisher account, or give
-  it the author's last @handle as a frozen byline. Found while clearing test
-  data, not hypothetical.
+- ~~Deleting an account failed if any of its boks had no byline.~~ Resolved:
+  both the admin delete (`20260919200000`) and a reader's own delete
+  (`20260919260000`) archive the work first and give it the byline
+  "Deleted author".
 - In the reader's focus mode the action buttons are `pointer-events: none`, so
   liking from a fully immersed state takes two taps.
 - **A cold Worker can leave the reader on `Loading` for eight seconds or more.**

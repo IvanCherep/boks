@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Archive, ExternalLink, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AdminBokDetail, AdminBokStatus } from "@/components/boks/client-types";
-import { loadAdminBok } from "@/components/boks/supabase-browser-data";
+import { deleteSupabaseComment, loadAdminBok } from "@/components/boks/supabase-browser-data";
 import { readableBoksError } from "@/lib/boks/errors";
 import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 import {
@@ -49,13 +49,30 @@ export function BokInspector({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [action, setAction] = useState<BokLifecycleTarget | null>(null);
+  const [confirmingComment, setConfirmingComment] = useState<number | null>(null);
+  const [deletingComment, setDeletingComment] = useState<number | null>(null);
+
+  async function deleteComment(commentId: number) {
+    setDeletingComment(commentId);
+    try {
+      const result = await deleteSupabaseComment(commentId);
+      setNotice(result.repliesRemoved ? "Comment and its replies deleted." : "Comment deleted.");
+      setConfirmingComment(null);
+      onChanged();
+      await refresh();
+    } catch (caught) {
+      setError(readableBoksError(caught, "Could not delete the comment."));
+    } finally {
+      setDeletingComment(null);
+    }
+  }
 
   const refresh = useCallback(async () => {
     try {
       setBok(await loadAdminBok(id));
       setError("");
     } catch (caught) {
-      setError(readableBoksError(caught, "Could not open this boks."));
+      setError(readableBoksError(caught, "Could not open this bok."));
     }
   }, [id]);
 
@@ -184,7 +201,6 @@ export function BokInspector({
 
       <section className="grid gap-2" aria-label="Text">
         <h3 className="inspector-heading">Text</h3>
-        {bok.hook && <p className="text-sm italic text-[var(--soft-foreground)]">{bok.hook}</p>}
         <div className="inspector-text">
           {bok.body.split("\n").map((paragraph, index) => (
             <p key={index}>{paragraph || " "}</p>
@@ -208,6 +224,28 @@ export function BokInspector({
                   {comment.likes > 0 && <span>♥ {comment.likes}</span>}
                 </div>
                 <p>{comment.body}</p>
+                <div className="mt-1 flex items-center gap-3 text-xs">
+                  {confirmingComment === comment.id ? (
+                    <>
+                      <span>Delete this comment{comment.parentCommentId ? "" : " and any replies"}?</span>
+                      <button
+                        type="button"
+                        className="inspector-link text-[var(--destructive)]"
+                        onClick={() => void deleteComment(comment.id)}
+                        disabled={deletingComment === comment.id}
+                      >
+                        {deletingComment === comment.id ? "Deleting…" : "Delete"}
+                      </button>
+                      <button type="button" className="inspector-link" onClick={() => setConfirmingComment(null)}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="inspector-link" onClick={() => setConfirmingComment(comment.id)}>
+                      Delete
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

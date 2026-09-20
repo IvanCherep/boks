@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { composeReaderRanking, holdPinnedStory, placeEntryStory, recoverReaderPlace } from "@/components/boks/reader-place";
+import {
+  appendNewStories,
+  composeReaderRanking,
+  holdPinnedStory,
+  placeEntryStory,
+  recoverReaderPlace,
+  shouldLoadMore,
+} from "@/components/boks/reader-place";
 
 describe("recoverReaderPlace", () => {
   it("keeps the reader on the boks they acted on when the reload re-ranks it", () => {
@@ -123,5 +130,41 @@ describe("composeReaderRanking", () => {
     const entry = { story: story("opened"), index: 1 };
     const held = { story: story("held"), index: 3 };
     expect(ids(composeReaderRanking(feed, entry, held))).toEqual(["a", "opened", "b", "held", "c"]);
+  });
+});
+
+describe("placeEntryStory keeps the feed's own copy", () => {
+  it("uses the feed's copy of an opened boks that the feed already has", () => {
+    const feed = [{ id: "a", likes: 5 }, { id: "b", likes: 3 }, { id: "c", likes: 1 }];
+    const opened = { id: "c", likes: 0 };
+    const placed = placeEntryStory(feed, { story: opened, index: 0 });
+    expect(placed.map((story) => story.id)).toEqual(["c", "a", "b"]);
+    expect(placed[0].likes).toBe(1);
+  });
+
+  it("uses the opened copy when the feed does not have it", () => {
+    const placed = placeEntryStory([{ id: "a", likes: 5 }], { story: { id: "z", likes: 2 }, index: 1 });
+    expect(placed).toEqual([{ id: "a", likes: 5 }, { id: "z", likes: 2 }]);
+  });
+});
+
+describe("loading more at the end of the feed", () => {
+  it("asks for the next slate five boks before the end, not earlier", () => {
+    expect(shouldLoadMore(80, 73)).toBe(false);
+    expect(shouldLoadMore(80, 74)).toBe(true);
+    expect(shouldLoadMore(80, 79)).toBe(true);
+    expect(shouldLoadMore(0, 0)).toBe(false);
+  });
+
+  it("adds only boks the feed does not have, after the ones already there", () => {
+    const current = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    const next = appendNewStories(current, [{ id: "c" }, { id: "d" }, { id: "b" }, { id: "e" }]);
+    expect(next.map((story) => story.id)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(next.slice(0, 3)).toEqual(current);
+  });
+
+  it("returns the same feed when the slate brings nothing new", () => {
+    const current = [{ id: "a" }, { id: "b" }];
+    expect(appendNewStories(current, [{ id: "b" }, { id: "a" }])).toBe(current);
   });
 });

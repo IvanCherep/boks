@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { BoksUserContext } from "@/components/boks/client-types";
+import { describeMagicLinkRedirectError } from "@/lib/boks/magic-link-errors";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -77,13 +78,22 @@ function clearStoredSupabaseSession() {
   }
 }
 
+/**
+ * A sign-in link that did not work: clean the URL and leave a plain-language
+ * notice for the page. The session already on this device is left alone. It
+ * used to be deleted here, so tapping an old link - a second tap, an email
+ * scanner that opened it first, the earlier of two emails - signed out a
+ * reader who was signed in.
+ */
 function rememberUnusableMagicLink(message?: string | null) {
   clearAuthRedirectFromUrl();
+  saveMagicLinkRedirectNotice(describeMagicLinkRedirectError(message));
+}
+
+/** The session stored on this device is itself broken: drop it as well. */
+function forgetBrokenSession(message?: string | null) {
   clearStoredSupabaseSession();
-  saveMagicLinkRedirectNotice(
-    message?.replace(/\+/g, " ") ||
-      "This boks email link has already been used or expired. Request a new free email link to continue."
-  );
+  rememberUnusableMagicLink(message);
 }
 
 function isUnusableMagicLinkError(message?: string | null) {
@@ -177,7 +187,7 @@ export async function getAnonymousSupabaseUserId() {
   const sessionResult = await supabase.auth.getSession();
   if (sessionResult.error) {
     if (!isUnusableMagicLinkError(sessionResult.error.message)) throw sessionResult.error;
-    rememberUnusableMagicLink(sessionResult.error.message);
+    forgetBrokenSession(sessionResult.error.message);
   }
   if (sessionResult.data.session?.user.id) return sessionResult.data.session.user.id;
 
@@ -195,7 +205,7 @@ export async function getCurrentSupabaseUser() {
   const sessionResult = await supabase.auth.getSession();
   if (sessionResult.error) {
     if (!isUnusableMagicLinkError(sessionResult.error.message)) throw sessionResult.error;
-    rememberUnusableMagicLink(sessionResult.error.message);
+    forgetBrokenSession(sessionResult.error.message);
     return null;
   }
 
@@ -333,7 +343,7 @@ export function explainBoksMagicLinkError(error: unknown, context: MagicLinkErro
     normalized.includes("email address not authorized") ||
     normalized.includes("smtp")
   ) {
-    return "boks could not send the email link right now. The current email sender is limited; try again in a few minutes or use an address already approved for this test.";
+    return "boks could not send the email right now. Try again in a few minutes.";
   }
 
   if (
@@ -342,7 +352,7 @@ export function explainBoksMagicLinkError(error: unknown, context: MagicLinkErro
     normalized.includes("email rate limit") ||
     normalized.includes("over email send rate limit")
   ) {
-    return "Please wait a minute before requesting another boks email link.";
+    return "Too many sign-in emails were requested just now. Try again in a few minutes.";
   }
 
   if (normalized.includes("invalid login")) return "This email could not be signed in.";
@@ -354,7 +364,7 @@ export function explainBoksMagicLinkError(error: unknown, context: MagicLinkErro
     normalized.includes("invalid jwt") ||
     normalized.includes("unrecognized jwt kid")
   ) {
-    return "This boks email link has already been used or expired. Request a new free email link to continue.";
+    return "This sign-in link has expired or was already used. Request a new one - only the newest link works.";
   }
 
   return message || "Could not send the boks email link.";
@@ -407,6 +417,8 @@ export async function completePendingBoksMagicLinkProfile(termsVersion: string):
 export async function signOutBoksUser() {
   if (!supabase) return;
 
-  const result = await supabase.auth.signOut();
+  // "Sign out of this device" means this device. The default scope is
+  // global, which also ended the reader's sessions on every other device.
+  const result = await supabase.auth.signOut({ scope: "local" });
   if (result.error) throw result.error;
 }

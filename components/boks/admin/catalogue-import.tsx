@@ -359,9 +359,8 @@ export function CatalogueImport() {
         </p>
 
         <pre className="mt-3 overflow-x-auto rounded-xl bg-[var(--muted)] p-3 text-xs leading-5">{`---
-title: The Lamplighter's Last Round
+title: The Lamplighter's Last Round   # optional: else the text's first line
 author: Abel Mensah        # optional: the byline for this piece
-hook: One night the city switched to electric.
 id: lamp-001               # optional: defaults to the file name
 date: 1998-04-02           # optional: keeps the catalogue's own date
 ---

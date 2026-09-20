@@ -78,6 +78,7 @@ const emptyLab: RecommendationLabPayload = {
  * detected if it were real.
  */
 export function RecommendationLab() {
+  const [experimentNotice, setExperimentNotice] = useState("");
   const [lab, setLab] = useState<RecommendationLabPayload>(emptyLab);
   const [metric, setMetric] = useState<ReaderMetricId>("active_seconds");
   const [days, setDays] = useState(30);
@@ -203,6 +204,7 @@ export function RecommendationLab() {
 
   async function saveExperiment(config: RecommendationExperimentConfig) {
     await saveActiveExperimentConfig(config);
+    setExperimentNotice("Saved. New readers are assigned with the updated split.");
     await refresh(days);
   }
 
@@ -401,6 +403,7 @@ export function RecommendationLab() {
             config={lab.experiment}
             disabled={!lab.available || busy}
             onSave={saveExperiment}
+            notice={experimentNotice}
           />
         </div>
       </div>

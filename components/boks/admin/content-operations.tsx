@@ -144,7 +144,7 @@ export function ContentOperations() {
                 type="button"
                 className="inspector-link inspector-link--title"
                 onClick={() => openBok(row.id)}
-                title="Open this boks"
+                title="Open this bok"
               >
                 {row.title}
               </button>
@@ -166,7 +166,7 @@ export function ContentOperations() {
             <span className="admin-row-actions">
               {scope === "published" ? (
                 <Button size="sm" variant="outline" onClick={() => openAction("archive", row)} disabled={busy}>
-                  <Archive /> Delete
+                  <Archive /> Hide
                 </Button>
               ) : (
                 <>
@@ -193,8 +193,8 @@ export function ContentOperations() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] p-4">
         <p className="text-sm text-[var(--muted-foreground)]">
           {scope === "published"
-            ? "Delete first moves a boks out of the reader feed without erasing its data."
-            : "Only this Deleted view offers permanent deletion. Restore returns a boks to recommendations."}
+            ? "Hide moves a bok out of the reader feed without erasing anything. Hidden boks are listed under Deleted."
+            : "Restore puts a bok back where it was before it was hidden. Only this view offers permanent deletion."}
         </p>
         <div className="flex gap-2">
           <Button variant="outline" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>Previous</Button>

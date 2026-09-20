@@ -1,4 +1,11 @@
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms of Use · boks",
+  description: "The basic rules for using boks during the pilot.",
+};
+
 const effectiveDate = "September 11, 2026";
 
 export default function TermsPage() {
@@ -26,7 +33,8 @@ export default function TermsPage() {
         <p>
           boks collects product signals such as viewed boks, reading time, scroll progress, likes, comments, shares,
           skips, and account settings. We use these signals to operate the prototype, improve recommendations, compare
-          recommendation algorithms, understand product demand, and prepare business analytics.
+          recommendation algorithms, understand product demand, and prepare business analytics. The{" "}
+          <a href="/privacy">Privacy</a> page lists what is kept and how to delete it.
         </p>
 
         <h2>Author Content</h2>
@@ -62,10 +70,6 @@ export default function TermsPage() {
           administrator running the current pilot.
         </p>
 
-        <p className="legal-note">
-          This starter agreement is practical MVP product copy. Before onboarding a large author base, paid users, or
-          commercial partners, have counsel adapt it to the company, jurisdiction, and monetization model.
-        </p>
       </article>
     </main>
   );

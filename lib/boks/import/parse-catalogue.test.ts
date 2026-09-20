@@ -24,8 +24,8 @@ describe("parseFrontMatter", () => {
   });
 
   it("folds a > block onto one line and keeps a | block's breaks", () => {
-    expect(parseFrontMatter("hook: >\n  one line\n  and another").hook).toBe("one line and another");
-    expect(parseFrontMatter("hook: |\n  one line\n  and another").hook).toBe("one line\nand another");
+    expect(parseFrontMatter("rights: >\n  one line\n  and another").rights).toBe("one line and another");
+    expect(parseFrontMatter("rights: |\n  one line\n  and another").rights).toBe("one line\nand another");
   });
 
   it("ignores comments and blank lines", () => {
@@ -59,9 +59,11 @@ describe("parseCatalogueFiles", () => {
       importKey: "lamplighter",
       title: "The Lamplighter",
       authorName: "Abel Mensah",
-      hook: "One night.",
     });
     expect(parsed.rows[0].text).toBe(story);
+    // The opening hook is retired; an old file that still has one loads fine
+    // and the hook goes nowhere.
+    expect(parsed.rows[0]).not.toHaveProperty("hook");
   });
 
   it("treats the byline as optional, because the publisher's @handle is the attribution", () => {
@@ -79,7 +81,6 @@ describe("parseCatalogueFiles", () => {
       importKey: "PEN-0042",
       title: "Exported",
       authorName: "R. Ochs",
-      hook: "A line.",
     });
   });
 
@@ -91,6 +92,32 @@ describe("parseCatalogueFiles", () => {
     expect(parsed.problems).toEqual([]);
     expect(parsed.rows[0].title).toBe("The Lamplighter");
     expect(parsed.rows[0].text).toBe(story);
+  });
+
+  it("titles a file with neither a title line nor a heading by its first line", () => {
+    const parsed = parseCatalogueFiles([
+      { name: "untitled.md", content: markdown("author: Abel Mensah", "* * *\n\nПод вечер шёл дождь,\nи было тихо.") },
+    ]);
+
+    expect(parsed.problems).toEqual([]);
+    expect(parsed.rows[0].title).toBe("Под вечер шёл дождь");
+    expect(parsed.rows[0].text).toBe("* * *\n\nПод вечер шёл дождь,\nи было тихо.");
+  });
+
+  it("titles a JSONL row without a title by its first line", () => {
+    const parsed = parseCatalogueFiles([
+      { name: "export.jsonl", content: JSON.stringify({ id: "u-1", text: "First line of it\nand more." }) },
+    ]);
+
+    expect(parsed.problems).toEqual([]);
+    expect(parsed.rows[0].title).toBe("First line of it");
+  });
+
+  it("refuses a file whose text has no words to take a title from", () => {
+    const parsed = parseCatalogueFiles([{ name: "empty.md", content: markdown("author: Nobody", "* * *") }]);
+
+    expect(parsed.rows).toEqual([]);
+    expect(parsed.problems[0].problem).toMatch(/no line in the text/);
   });
 
   it("names the file and the fix when a file cannot be read", () => {

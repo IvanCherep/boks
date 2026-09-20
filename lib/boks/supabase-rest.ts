@@ -33,7 +33,7 @@ export type SupabaseRestOptions = {
   accessToken: string;
 };
 
-const reelColumns = "id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at";
+const reelColumns = "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at";
 
 export function createSupabaseRestTransport(options: SupabaseRestOptions): FeedTransport {
   const headers = {

@@ -28,7 +28,11 @@ import { CatalogueImport } from "@/components/boks/admin/catalogue-import";
 import { RightsReview } from "@/components/boks/admin/rights-review";
 import { AdminInspectorProvider } from "@/components/boks/admin/admin-inspector";
 import { useBoksData } from "@/components/boks/use-boks-data";
-import { explainBoksMagicLinkError, requestBoksMagicLink } from "@/lib/boks/supabase-client";
+import {
+  consumeBoksMagicLinkRedirectNotice,
+  explainBoksMagicLinkError,
+  requestBoksMagicLink,
+} from "@/lib/boks/supabase-client";
 
 const adminTabs = [
   { id: "overview", label: "This week" },
@@ -53,7 +57,7 @@ const snapshotTabs = new Set<AdminTab>(["moderation"]);
 const pageSize = 100;
 
 export function AdminDashboard() {
-  const { metrics, setStatus, load } = useBoksData();
+  const { metrics, status, setStatus, load } = useBoksData();
   const [tab, setTab] = useState<AdminTab>("overview");
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -77,8 +81,11 @@ export function AdminDashboard() {
     });
   }, []);
 
+  // Loaded once on arrival as well as with the Moderation tab: the tab's
+  // waiting-count badge comes from it, and it used to appear only after the
+  // tab had been opened - the one place it was needed was the one it was not.
   useEffect(() => {
-    if (!authChecked || user?.role !== "admin" || !needsSnapshot) return;
+    if (!authChecked || user?.role !== "admin") return;
     const handle = window.setTimeout(() => {
       loadSnapshot().catch((error) => setStatus(error.message));
     }, 180);
@@ -94,6 +101,10 @@ export function AdminDashboard() {
     const context = await loadBoksUserContext();
     setUser(context);
     setAuthChecked(true);
+    // A sign-in link that did not work lands here too; say why rather than
+    // showing the sign-in form again with no explanation.
+    const linkNotice = consumeBoksMagicLinkRedirectNotice();
+    if (linkNotice && !(context && !context.isAnonymous)) setAuthStatus(linkNotice);
     return context;
   }
 
@@ -138,15 +149,22 @@ export function AdminDashboard() {
     }
   }
 
+  /** True when the decision went through, so the queue keeps a typed reason otherwise. */
   async function moderateBok(item: AdminModerationItem, decision: "approve" | "reject", reason: string) {
     setBusy(true);
     setStatus("");
     try {
       await reviewBokSubmission({ bokId: item.id, decision, reason });
       await loadSnapshot();
-      setStatus(decision === "approve" ? "Bok approved and published." : "Bok refused. The author can see the reason.");
+      setStatus(
+        decision === "approve"
+          ? `“${item.title}” approved and published.`
+          : `“${item.title}” refused. The author can see the reason.`
+      );
+      return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not review bok.");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -300,6 +318,12 @@ export function AdminDashboard() {
               <MetricTile label="Refused" value={numberValue(funnel.rejectedBoks)} />
               <MetricTile label="Approved from authors" value={numberValue(funnel.approvedAuthorBoks)} />
             </section>
+            {/* The result of the last decision. It was set and never shown. */}
+            {status && status !== "Loading" && status !== "Ready" && (
+              <p className="text-sm text-[var(--muted-foreground)]" role="status" aria-live="polite">
+                {status}
+              </p>
+            )}
             <ModerationQueue items={metrics.moderationQueue ?? []} busy={busy} onReview={moderateBok} />
           </>
         )}

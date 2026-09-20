@@ -22,7 +22,7 @@ export default function SharedBokPage() {
         <a href="/" className="brand-word brand-button">
           boks
         </a>
-        <p className="mt-8 text-sm text-[var(--muted-foreground)]">Opening this boks…</p>
+        <p className="mt-8 text-sm text-[var(--muted-foreground)]">Opening this bok…</p>
       </article>
     </main>
   );

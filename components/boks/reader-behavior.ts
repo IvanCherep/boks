@@ -10,6 +10,14 @@ export const anonymousReadLimits = {
   requiredSignup: 15,
 };
 
+/**
+ * How long a boks has to stay on screen before it counts toward a guest's
+ * limit. Every boks opened used to count on arrival, so a guest flicking
+ * through fifteen titles in half a minute met "You have read 15 boks" having
+ * read none of them.
+ */
+export const guestReadDwellMs = 8000;
+
 export type AnonymousReadState = {
   storyIds: string[];
 };

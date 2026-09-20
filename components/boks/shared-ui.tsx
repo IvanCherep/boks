@@ -64,7 +64,13 @@ export function ActionButton({
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={onClick}
+      onClick={(event) => {
+        // A mouse click leaves focus on the button, and the reader's Space -
+        // page down - then pressed it again: an accidental unlike. Keyboard
+        // activation (detail 0) keeps focus, as it should.
+        if (event.detail > 0) event.currentTarget.blur();
+        onClick();
+      }}
       aria-label={counted ? `${label}, ${value}` : label}
       title={counted ? undefined : label}
       aria-pressed={typeof active === "boolean" ? active : undefined}

@@ -8,7 +8,6 @@ function story(overrides: Partial<Story> = {}): Story {
     title: "A boks",
     authorName: "Mira Vale",
     authorHandle: "mira_vale",
-    hook: "",
     body: "",
     genre: "literary",
     mood: "quiet",

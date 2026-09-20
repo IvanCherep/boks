@@ -14,7 +14,8 @@ export function ModerationQueue({
 }: {
   items: AdminModerationItem[];
   busy: boolean;
-  onReview: (item: AdminModerationItem, decision: "approve" | "reject", reason: string) => Promise<void>;
+  /** Resolves true when the decision was saved. */
+  onReview: (item: AdminModerationItem, decision: "approve" | "reject", reason: string) => Promise<boolean>;
 }) {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
@@ -28,7 +29,9 @@ export function ModerationQueue({
     }
 
     setStatus("");
-    await onReview(item, decision, reason);
+    const saved = await onReview(item, decision, reason);
+    // A failed decision keeps the reason the admin typed.
+    if (!saved) return;
     setReasons((current) => {
       const next = { ...current };
       delete next[item.id];
@@ -82,7 +85,6 @@ export function ModerationQueue({
                     · {item.authorEmail || "unknown email"} ·{" "}
                     {item.minutes} min · {item.genre} · {item.mood}
                   </p>
-                  {item.hook && <p className="mt-3 text-sm leading-6 text-[var(--soft-foreground)]">{item.hook}</p>}
                   <div className="moderation-copy mt-3 max-h-[220px] overflow-y-auto rounded-lg bg-[var(--reader)] p-3 text-sm leading-7">
                     {item.body.split("\n").map((paragraph) => (
                       <p key={paragraph} className="mb-3 last:mb-0">

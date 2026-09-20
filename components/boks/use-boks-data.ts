@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { initialMetrics } from "@/components/boks/constants";
+import { appendNewStories } from "@/components/boks/reader-place";
 import type {
   Comment,
   FeedProvenance,
@@ -117,9 +118,14 @@ export function useBoksData() {
   }, []);
 
   const runLoad = useCallback(async (options: LoadOptions = {}) => {
-    setStatus("Loading");
-    setPhase("loading");
     const view = options.view ?? "reader";
+    const appending = Boolean(options.append) && view === "reader";
+    // Loading more at the end of a feed is not a new feed: the reader is
+    // mid-read, and the phase drives the empty-feed screen.
+    if (!appending) {
+      setStatus("Loading");
+      setPhase("loading");
+    }
 
     // No catch: a reader whose Supabase feed fails must see the failure. The
     // previous silent fall-through to /api/boks put their events in a second
@@ -134,12 +140,19 @@ export function useBoksData() {
         requestedAlgorithmId: options.algorithm,
         readingLanguages: options.readingLanguages,
       });
-      setStories(data.stories);
-      setComments(data.comments);
+      if (appending) {
+        setStories((current) => appendNewStories(current, data.stories));
+        setComments((current) => [...current, ...data.comments]);
+        setLikedStoryIds((current) => Array.from(new Set([...current, ...data.likedStoryIds])));
+      } else {
+        setStories(data.stories);
+        setComments(data.comments);
+        setLikedStoryIds(data.likedStoryIds);
+      }
       setMetrics(data.metrics);
       setExperiment(data.experiment);
-      setLikedStoryIds(data.likedStoryIds);
       setSupabaseUserId(data.supabaseUserId);
+      // Events from here on carry the newest serve's provenance.
       setProvenance(data.provenance);
       setIsSupabaseReader(true);
       setStatus("Ready");

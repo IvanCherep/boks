@@ -9,6 +9,7 @@ import type { Comment } from "@/components/boks/client-types";
 import { shortTimeAgo } from "@/components/boks/client-format";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import {
+  deleteSupabaseComment,
   loadSupabaseComments,
   setSupabaseCommentLike,
 } from "@/components/boks/supabase-browser-data";
@@ -30,6 +31,8 @@ export function CommentsSheet({
   onRequestAccount,
   onSubmit,
   onStatus,
+  canModerate = false,
+  onDeleted,
 }: {
   storyId: string;
   authorHandle: string;
@@ -41,17 +44,27 @@ export function CommentsSheet({
   onRequestAccount: () => void;
   onSubmit: (body: string, parentCommentId: number | null) => Promise<Comment>;
   onStatus: (message: string) => void;
+  /** An admin, who may delete anyone's comment. Everyone may delete their own. */
+  canModerate?: boolean;
+  /** How many comments went, the comment and its replies, for the rail's count. */
+  onDeleted?: (removed: number) => void;
 }) {
   const [comments, setComments] = useState(() =>
     initialComments.filter((comment) => comment.storyId === storyId)
   );
   const [loading, setLoading] = useState(isSupabaseReader);
+  // Not the same as no comments: a failed load used to say "No comments yet".
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState<Set<number>>(new Set());
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
+  const [confirmingDelete, setConfirmingDelete] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const normalizedViewerHandle = (viewerHandle ?? "").replace(/^@+/, "").toLowerCase();
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -62,10 +75,12 @@ export function CommentsSheet({
 
     loadSupabaseComments(storyId)
       .then((next) => {
-        if (active) setComments(next);
+        if (!active) return;
+        setComments(next);
+        setLoadFailed(false);
       })
-      .catch((error) => {
-        if (active) onStatus(error instanceof Error ? error.message : "Could not load comments.");
+      .catch(() => {
+        if (active) setLoadFailed(true);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -74,7 +89,7 @@ export function CommentsSheet({
     return () => {
       active = false;
     };
-  }, [isSupabaseReader, onStatus, storyId]);
+  }, [isSupabaseReader, loadAttempt, storyId]);
 
   const threads = useMemo(() => buildCommentThreads(comments), [comments]);
   const normalizedAuthorHandle = authorHandle.replace(/^@+/, "").toLowerCase();
@@ -166,9 +181,27 @@ export function CommentsSheet({
     }
   }
 
+  async function deleteComment(comment: Comment) {
+    setDeletingId(comment.id);
+    try {
+      const result = await deleteSupabaseComment(comment.id);
+      setComments((current) => current.filter((entry) => entry.id !== comment.id && entry.parentCommentId !== comment.id));
+      setConfirmingDelete(null);
+      onDeleted?.(1 + (result.repliesRemoved ?? 0));
+      onStatus(result.repliesRemoved ? "Comment and its replies deleted." : "Comment deleted.");
+    } catch (error) {
+      onStatus(error instanceof Error ? error.message : "Could not delete the comment.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   function renderComment(comment: Comment, isReply = false) {
     const handle = (comment.visitorHandle || comment.visitorName || "reader").replace(/^@+/, "");
     const isAuthor = Boolean(normalizedAuthorHandle) && handle.toLowerCase() === normalizedAuthorHandle;
+    const isMine = Boolean(normalizedViewerHandle) && handle.toLowerCase() === normalizedViewerHandle;
+    const canDelete = hasSignedInAccount && isSupabaseReader && (isMine || canModerate);
+    const replyCount = isReply ? 0 : comments.filter((entry) => entry.parentCommentId === comment.id).length;
 
     return (
       <article className={`comment-row${isReply ? " comment-row--reply" : ""}`}>
@@ -182,9 +215,37 @@ export function CommentsSheet({
             <time dateTime={comment.createdAt}>{shortTimeAgo(comment.createdAt)}</time>
           </div>
           <p className="comment-copy">{comment.body}</p>
-          <button type="button" className="comment-reply" onClick={() => beginReply(comment)}>
-            Reply
-          </button>
+          {confirmingDelete === comment.id ? (
+            <div className="comment-confirm" role="group" aria-label="Confirm deleting this comment">
+              <span>
+                {replyCount
+                  ? `Delete this comment and its ${replyCount === 1 ? "reply" : `${replyCount} replies`}?`
+                  : "Delete this comment?"}
+              </span>
+              <button
+                type="button"
+                className="comment-reply comment-reply--danger"
+                onClick={() => void deleteComment(comment)}
+                disabled={deletingId === comment.id}
+              >
+                {deletingId === comment.id ? "Deleting…" : "Delete"}
+              </button>
+              <button type="button" className="comment-reply" onClick={() => setConfirmingDelete(null)}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="comment-actions">
+              <button type="button" className="comment-reply" onClick={() => beginReply(comment)}>
+                Reply
+              </button>
+              {canDelete && (
+                <button type="button" className="comment-reply" onClick={() => setConfirmingDelete(comment.id)}>
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <button
           type="button"
@@ -256,10 +317,26 @@ export function CommentsSheet({
               );
             })}
           </ol>
+        ) : loadFailed ? (
+          <div className="comment-empty" role="status">
+            <p>Could not load the comments</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setLoadFailed(false);
+                setLoading(true);
+                setLoadAttempt((attempt) => attempt + 1);
+              }}
+            >
+              Try again
+            </Button>
+          </div>
         ) : (
           <div className="comment-empty">
             <p>No comments yet</p>
-            <span>Start the conversation about this boks.</span>
+            <span>Start the conversation about this bok.</span>
           </div>
         )}
       </div>

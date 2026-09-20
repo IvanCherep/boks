@@ -13,7 +13,6 @@ export type Story = {
   authorHandle: string;
   /** Account that published it. Empty for seeded demo boks, which cannot be followed. */
   authorUserId?: string;
-  hook: string;
   body: string;
   genre: string;
   mood: string;
@@ -244,7 +243,6 @@ export type AdminBokStatus = "draft" | "pending_review" | "published" | "rejecte
 export type AdminBokDetail = {
   id: string;
   title: string;
-  hook: string;
   body: string;
   status: AdminBokStatus;
   language: string | null;
@@ -415,7 +413,6 @@ export type AuthorProfile = {
 export type AuthorBok = {
   id: string;
   title: string;
-  hook: string;
   minutes: number;
   readingShape: string;
   createdAt: string;
@@ -427,6 +424,8 @@ export type ReaderLibraryItem = {
   storyId: string;
   title: string;
   authorName: string;
+  /** Every boks has one; shown when there is no byline. */
+  authorHandle?: string | null;
   minutes: number;
   readAt: string | null;
   likedAt: string | null;
@@ -440,7 +439,6 @@ export type BokReviewStatus = "draft" | "pending_review" | "published" | "reject
 export type AuthorBokSubmission = {
   id: string;
   title: string;
-  hook: string;
   body: string;
   genre: string;
   mood: string;
@@ -497,6 +495,12 @@ export type LoadOptions = {
   profileSnapshot?: Record<string, unknown>;
   /** Languages a guest accepts; a signed-in reader's stored set wins. */
   readingLanguages?: readonly string[];
+  /**
+   * Add the new slate after the one on screen instead of replacing it - how
+   * the reader keeps going past the end of a slate. Boks already in the feed
+   * are skipped, so nothing repeats and nothing the reader passed moves.
+   */
+  append?: boolean;
 };
 
 export type ReadOutcome = "complete" | "skip";

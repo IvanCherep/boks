@@ -24,18 +24,19 @@ export type BokLifecycleTarget = { kind: BokLifecycleAction; bok: { id: string; 
 
 const copy: Record<BokLifecycleAction, { title: string; description: string; action: string }> = {
   archive: {
-    title: "Hide this boks from readers?",
+    title: "Hide this bok from readers?",
     description:
       "It leaves the reader feed for everyone immediately and moves to Admin → Content → Deleted. Its text, likes, comments and reading history stay in the database, and it can be restored from there.",
-    action: "Hide boks",
+    action: "Hide bok",
   },
   restore: {
-    title: "Restore this boks?",
-    description: "It becomes eligible for the reader feed again.",
+    title: "Restore this bok?",
+    description:
+      "It goes back to where it was before it was hidden: the reader feed if it was published, the review queue if it was waiting, or refused.",
     action: "Restore",
   },
   delete: {
-    title: "Delete this boks permanently?",
+    title: "Delete this bok permanently?",
     description:
       "This erases the text and all related likes, comments, reports and metrics. It cannot be undone.",
     action: "Delete permanently",
@@ -85,7 +86,7 @@ function LifecycleForm({
   const [error, setError] = useState("");
   const { kind, bok } = target;
   const ready =
-    (kind !== "archive" || reason.trim().length > 0) && (kind !== "delete" || confirmation === bok.title);
+    (kind !== "archive" || reason.trim().length > 0) && (kind !== "delete" || confirmation.trim() === bok.title.trim());
 
   async function apply() {
     if (!ready || busy) return;
@@ -94,10 +95,10 @@ function LifecycleForm({
     try {
       if (kind === "archive") await archiveBok(bok.id, reason.trim());
       else if (kind === "restore") await restoreArchivedBok(bok.id);
-      else await permanentlyDeleteArchivedBok(bok.id, confirmation);
+      else await permanentlyDeleteArchivedBok(bok.id, confirmation.trim());
       await onDone(target);
     } catch (caught) {
-      setError(readableBoksError(caught, "Could not update this boks."));
+      setError(readableBoksError(caught, "Could not update this bok."));
     } finally {
       setBusy(false);
     }

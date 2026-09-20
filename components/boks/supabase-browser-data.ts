@@ -28,6 +28,12 @@ import type {
 } from "@/components/boks/client-types";
 import { normalizeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
 import { normalizeReadingLanguages } from "@/components/boks/reading-languages";
+import {
+  markWorkerFeedHealthy,
+  markWorkerFeedUnavailable,
+  shouldTryWorkerFeed,
+  workerFeedTimeoutMs,
+} from "@/components/boks/worker-feed-breaker";
 import type { CatalogueRow } from "@/lib/boks/import/parse-catalogue";
 import { serveReaderFeed, type FeedTransport } from "@/lib/boks/feed-service";
 import {
@@ -138,9 +144,19 @@ export async function loadSupabaseReaderFeed(request: SupabaseFeedRequest): Prom
   const userId = await getAnonymousSupabaseUserId();
   if (!userId) throw new Error("Could not create anonymous Supabase user.");
 
+  // A Worker that just failed is not asked again for a while - see
+  // `worker-feed-breaker.ts`. Otherwise every load and every reload after a
+  // like paid for its 503 before ranking here anyway.
+  if (!shouldTryWorkerFeed()) {
+    return loadBrowserReaderFeed(userId, request, "worker_feed_cooling_down");
+  }
+
   try {
-    return await loadWorkerReaderFeed(userId, request);
+    const payload = await loadWorkerReaderFeed(userId, request);
+    markWorkerFeedHealthy();
+    return payload;
   } catch (error) {
+    markWorkerFeedUnavailable();
     console.warn("Worker feed unavailable; ranking in the browser (degraded).", error);
     return loadBrowserReaderFeed(userId, request, describeFeedError(error));
   }
@@ -153,20 +169,40 @@ async function loadWorkerReaderFeed(
   const token = await currentAccessToken();
   if (!token) throw new Error("No Supabase session to authorise the feed request.");
 
-  const response = await fetch("/api/feed", {
-    method: "POST",
-    cache: "no-store",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({
-      limit: request.limit,
-      sessionId: request.sessionId,
-      reader: request.reader,
-      profileSnapshot: request.profileSnapshot ?? {},
-      requestedAlgorithmId: request.requestedAlgorithmId ?? null,
-    }),
-  });
-
-  const payload = (await response.json()) as WorkerFeedResponse;
+  // Bounded: a Worker stuck waiting on a slow database must not hold the
+  // reader on "Loading" when the browser can rank the same feed itself.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), workerFeedTimeoutMs);
+  let response: Response;
+  let payload: WorkerFeedResponse;
+  try {
+    response = await fetch("/api/feed", {
+      method: "POST",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        limit: request.limit,
+        sessionId: request.sessionId,
+        reader: request.reader,
+        profileSnapshot: request.profileSnapshot ?? {},
+        requestedAlgorithmId: request.requestedAlgorithmId ?? null,
+        // The language filter. It was sent only on the browser fallback path,
+        // so the normal Worker feed was unfiltered and the mix of languages
+        // changed depending on which path served it.
+        readingLanguages: request.readingLanguages ?? [],
+      }),
+    });
+    // Cloudflare answers a Worker over its limits with an HTML page, not JSON.
+    const text = await response.text();
+    try {
+      payload = JSON.parse(text) as WorkerFeedResponse;
+    } catch {
+      throw new Error(`Feed request failed (${response.status}, not JSON).`);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!response.ok) throw new Error(payload.error || `Feed request failed (${response.status}).`);
 
   return decorateServedFeed({
@@ -276,7 +312,7 @@ export function createBrowserFeedTransport(): FeedTransport {
       const result = await supabase
         // Published-only by definition; the view has no `status` to filter on.
         .from("published_boks")
-        .select("id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at")
+        .select("id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (result.error) throw asTransportError(result.error);
@@ -330,7 +366,7 @@ async function loadFeedCandidates(limit: number, languages?: readonly string[]) 
   const reelsResult = await supabase
     // Published-only by definition; the view has no `status` to filter on.
     .from("published_boks")
-    .select("id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at")
+    .select("id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at")
     .order("created_at", { ascending: false })
     .limit(Math.max(limit, 200));
 
@@ -457,6 +493,11 @@ export async function loadBoksAuthor(handle: string, authorName?: string): Promi
   const result = await supabase.rpc("get_boks_author", {
     p_handle: handle,
     p_author_name: authorName ?? null,
+    // The RPC's default was 40, while the sheet's heading states the full
+    // count - so a writer with 50 boks showed "50 boks" over a list of 40,
+    // and ten of them could not be reached from their own page. 200 is the
+    // RPC's ceiling; past it the sheet says how many it shows.
+    p_limit: 200,
   });
   if (result.error) {
     if (isMissingDatabaseObject(result.error)) return null;
@@ -733,8 +774,8 @@ export async function acceptBoksTerms(termsVersion: string): Promise<BoksUserCon
  * published under someone else's name.
  */
 export async function submitBokForReview(input: {
+  /** Optional: left empty, the database titles the boks by its first line. */
   title: string;
-  hook: string;
   body: string;
   /** Sent for compatibility; the database derives length from the text. */
   minutes: number;
@@ -744,12 +785,13 @@ export async function submitBokForReview(input: {
   rightsConfirmed: boolean;
   /** Why they may, in their own words. Admin-only, and optional. */
   rightsNote?: string;
+  /** A refused boks of this author's being revised: resubmitted in place. */
+  bokId?: string | null;
 }) {
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const result = await supabase.rpc("submit_bok_for_review", {
     p_title: input.title,
-    p_hook: input.hook,
     p_text: input.body,
     p_author_name: input.authorName ?? "",
     // Genre and mood are no longer asked of the author; the database defaults
@@ -759,6 +801,7 @@ export async function submitBokForReview(input: {
     p_minutes: input.minutes,
     p_rights_confirmed: input.rightsConfirmed,
     p_rights_note: input.rightsNote ?? "",
+    p_bok_id: input.bokId ?? null,
   });
 
   if (result.error) throw result.error;
@@ -1023,7 +1066,7 @@ export async function loadSupabaseStory(storyId: string): Promise<{ story: Story
 
   const reelResult = await supabase
     .from("published_boks")
-    .select("id,title,author_name,author_handle,author_user_id,hook,text,genre,mood,minutes,word_count,created_at")
+    .select("id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at")
     .eq("id", storyId)
     .maybeSingle();
 
@@ -1114,6 +1157,15 @@ export async function loadAdminPerson(userId: string) {
   const result = await supabase.rpc("get_admin_person", { p_user_id: userId });
   if (result.error) throw result.error;
   return result.data as AdminPersonDetail;
+}
+
+/** The signed-in reader deletes their own account. Admin accounts cannot. */
+export async function deleteMyBoksAccount(confirmation: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("delete_my_boks_account", { p_confirm: confirmation });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; archivedBoks: number };
 }
 
 export async function archiveBok(reelId: string, reason: string) {
@@ -1225,6 +1277,15 @@ export async function submitSupabaseComment(
   if (result.error) throw result.error;
 
   return result.data as Comment;
+}
+
+/** Deletes a comment and its replies. The writer may; an admin may delete any. */
+export async function deleteSupabaseComment(commentId: number) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("delete_boks_comment", { p_comment_id: commentId });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: number; reelId: string; repliesRemoved: number };
 }
 
 export async function setSupabaseCommentLike(

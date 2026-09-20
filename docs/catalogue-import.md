@@ -57,7 +57,6 @@ One file per bok, `.md` or `.txt`, starting with a front-matter block:
 ---
 title: The Lamplighter's Last Round
 author: Abel Mensah
-hook: One night the city switched to electric, and one man still walked his route.
 id: lamp-001
 date: 1998-04-02
 ---
@@ -69,17 +68,19 @@ He walked anyway.
 
 | Field | Required | What it does |
 |---|---|---|
-| `title` | yes | Also read from a leading `# Heading` if the field is absent |
+| `title` | no | Read from a leading `# Heading` if the field is absent, and otherwise the text's first line with words on it (cut at a word past 80 characters) - the same rule as the author form and `boks_title_from_text` |
 | `text` | yes | Everything below the second `---` |
 | `author` | no | The byline for **this piece**. Leave it out and the piece publishes under the account's `@handle` alone |
-| `hook` | no | One line shown before the piece. `>` folds a long one onto a single line |
 | `id` | no | The import key. Defaults to the file name, so `lamp-001.md` becomes `lamp-001` |
 | `date` | no | Keeps the catalogue's own publication date, so freshness and history are not all "today" |
 | `rights` | no | Where the right to publish this piece comes from. Admin-only. Overrides the batch note for this file |
 
+The opening hook was retired on 2026-09-19. A `hook`/`teaser`/`summary` field
+in an old file is ignored, and the database keeps `reels.hook` empty.
+
 Aliases are accepted, because a publisher's export will not use our words:
 `name`/`headline` for title, `body`/`story`/`content` for text,
-`byline`/`writer` for author, `subtitle`/`teaser`/`summary` for hook,
+`byline`/`writer` for author,
 `catalogue_id`/`slug`/`key` for id, `published`/`published_at` for date,
 `license`/`licence`/`source`/`permission`/`copyright` for rights.
 
@@ -89,7 +90,7 @@ For anything a machine produced — a publisher's export, generated fixtures:
 one JSON object per line.
 
 ```jsonl
-{"id":"pen-0001","title":"Nine Minutes to Kirkwall","author":"A. Weatherly","hook":"The ferry ran on time exactly once.","text":"The ferry to Kirkwall had been late every day…","date":"2019-06-11"}
+{"id":"pen-0001","title":"Nine Minutes to Kirkwall","author":"A. Weatherly","text":"The ferry to Kirkwall had been late every day…","date":"2019-06-11"}
 {"id":"pen-0002","title":"The Spare Key Committee","text":"Nobody remembered voting…"}
 ```
 
@@ -134,8 +135,8 @@ author form. There is nothing to fill in.
 | Reason | Fix |
 |---|---|
 | `An import key is required` | Give the file a name, or an `id:` |
-| `Title is required` | Add `title:`, or a leading `# Heading` |
-| `Story text is required` | The text goes below the second `---` |
+| `No title, and no line in the text to take one from` | The text has no line with words on it; check the file |
+| `No text` | The text goes below the second `---` |
 | `A bok must fit inside 15 minutes` | Over 20,000 characters. Split it into episodes |
 | `@x is not a publisher account` | Step 1.3 |
 | `Confirm the rights for this batch` | Tick the confirmation above the import button |

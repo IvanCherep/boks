@@ -51,6 +51,13 @@ declare
   -- The boks the admin inspector and the hide button are proven on.
   v_inspected uuid;
   v_row jsonb;
+  -- Boks submitted by the optional-title checks, removed again afterwards.
+  v_untitled uuid;
+  v_titled uuid;
+  -- Pre-launch fixes: a comment and its reply, a boks to revise in place.
+  v_qa_comment bigint;
+  v_qa_reply bigint;
+  v_qa_bok uuid;
   v_lifecycle uuid;
   -- Its own boks, so the reaction checks never move `v_reel`, which later checks rely on.
   v_counted uuid;
@@ -207,6 +214,105 @@ begin
     not exists (select 1 from public.reels where author_user_id = v_author and status = 'published'),
     'submitted boks are not published before review'
   );
+
+  -- ---------------------------------------------- optional title, no hook
+  -- The same vectors as lib/boks/bok-title.test.ts. Change one, change both.
+  perform public.boks_assert(
+    public.boks_title_from_text(E'\n\n   \nПод вечер\nшёл дождь') = 'Под вечер',
+    'title: the first line with words on it'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'  The   quiet    hour  \nand after') = 'The quiet hour',
+    'title: runs of spaces collapse'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'Дорогая, сядем рядом,\nПоглядим в глаза друг другу.') = 'Дорогая, сядем рядом',
+    'title: a verse line''s trailing comma is dropped'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'It was the last train —\nand nobody ran') = 'It was the last train',
+    'title: a trailing dash is dropped'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'Who knocked?\nNobody.') = 'Who knocked?',
+    'title: a sentence keeps its own question mark'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(
+      'In the charming place in which he found himself there were so many sympathetic faces that he felt more than ever convinced'
+    ) = 'In the charming place in which he found himself there were so many sympathetic…',
+    'title: a long first line is cut at a word and the cut is marked'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(repeat('x', 200)) = repeat('x', 80) || '…',
+    'title: one enormous word is cut at the limit'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'* * *\nПод вечер шёл дождь') = 'Под вечер шёл дождь',
+    'title: a * * * divider is skipped'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'***\n\n —\nText') = 'Text',
+    'title: lines with no words are skipped'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text('— Ой, рыба, — горячо говорит один.') = 'Ой, рыба, — горячо говорит один.',
+    'title: a dialogue dash is dropped'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text(E'First line\r\nSecond line') = 'First line',
+    'title: Windows line endings'
+  );
+  perform public.boks_assert(
+    public.boks_title_from_text('') = '' and public.boks_title_from_text(E' \n \n') = '',
+    'title: empty text has no title'
+  );
+
+  v_result := public.submit_bok_for_review(
+    p_title => '',
+    p_text => E'Untitled opening line,\nand the rest of the piece.',
+    p_rights_confirmed => true
+  );
+  v_untitled := (v_result ->> 'id')::uuid;
+  perform public.boks_assert(
+    v_result ->> 'title' = 'Untitled opening line'
+      and (select title from public.reels where id = v_untitled) = 'Untitled opening line',
+    'a boks submitted without a title is titled by its first line'
+  );
+
+  -- An old browser tab still sends a hook; it is not stored.
+  v_result := public.submit_bok_for_review(
+    'Given title', 'An old hook, from an old tab.', 'Body text.', '', '', 0, '', true
+  );
+  v_titled := (v_result ->> 'id')::uuid;
+  perform public.boks_assert(
+    v_result ->> 'title' = 'Given title' and (select hook from public.reels where id = v_titled) = '',
+    'a title the author gives is kept, and a hook sent by an old client is not stored'
+  );
+
+  update public.reels set hook = 'Sneaked in.' where id = v_titled;
+  perform public.boks_assert(
+    (select hook from public.reels where id = v_titled) = '',
+    'no write path can store a hook'
+  );
+  update public.reels set title = '   ' where id = v_titled;
+  perform public.boks_assert(
+    (select title from public.reels where id = v_titled) = 'Body text.',
+    'clearing a title falls back to the first line'
+  );
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where hook <> ''),
+    'no boks carries a hook'
+  );
+
+  begin
+    perform public.submit_bok_for_review('', '', E'* * *\n—', '', '', 0, '', true);
+    perform public.boks_assert(false, 'a text with no words in it is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a text with no words in it is refused');
+  end;
+
+  delete from public.reels where id in (v_untitled, v_titled);
 
   -- ------------------------------------------------------------- moderation
   perform public.boks_test_login(v_admin);
@@ -1842,6 +1948,152 @@ begin
   delete from public.reels where id = v_inspected;
   delete from public.user_profiles where user_id = v_suspended_admin;
   delete from auth.users where id = v_suspended_admin;
+
+  -- ---------------------------------------------------- pre-launch fixes
+  -- Titles with no words are replaced by the first line.
+  perform public.boks_test_login(v_admin);
+  insert into public.reels (title, author_name, text, genre, mood, status, author_user_id)
+  values ('* * *', null, E'Прощай, немытая Россия,\nСтрана рабов, страна господ.', 'literary', 'quiet', 'published', v_author)
+  returning id into v_qa_bok;
+  perform public.boks_assert(
+    (select title from public.reels where id = v_qa_bok) = 'Прощай, немытая Россия',
+    'a title with no words in it becomes the first line'
+  );
+  insert into public.bok_rights (reel_id, confirmed, note, confirmed_by) values (v_qa_bok, true, 'QA.', v_author);
+
+  -- Hide and restore give back the status the boks had.
+  update public.reels set status = 'pending_review' where id = v_qa_bok;
+  perform public.archive_bok(v_qa_bok, 'QA: hidden while waiting.');
+  v_result := public.restore_archived_bok(v_qa_bok);
+  perform public.boks_assert(
+    v_result ->> 'status' = 'pending_review' and (select status from public.reels where id = v_qa_bok) = 'pending_review',
+    'restoring a boks hidden while waiting puts it back in the queue, not in the feed'
+  );
+  update public.reels set status = 'published' where id = v_qa_bok;
+  perform public.archive_bok(v_qa_bok, 'QA: hidden while published.');
+  v_result := public.restore_archived_bok(v_qa_bok);
+  perform public.boks_assert(v_result ->> 'status' = 'published', 'restoring a published boks publishes it again');
+
+  -- Approval needs confirmed rights, and a deleted boks is restored, not approved.
+  update public.reels set status = 'rejected' where id = v_qa_bok;
+  update public.bok_rights set confirmed = false where reel_id = v_qa_bok;
+  begin
+    perform public.review_bok_submission(v_qa_bok, 'approve', '');
+    perform public.boks_assert(false, 'a boks without confirmed rights cannot be approved');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a boks without confirmed rights cannot be approved');
+  end;
+  update public.bok_rights set confirmed = true where reel_id = v_qa_bok;
+  perform public.archive_bok(v_qa_bok, 'QA: deleted.');
+  begin
+    perform public.review_bok_submission(v_qa_bok, 'approve', '');
+    perform public.boks_assert(false, 'a deleted boks cannot be approved around Restore');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a deleted boks cannot be approved around Restore');
+  end;
+  perform public.restore_archived_bok(v_qa_bok);
+  perform public.boks_assert(
+    (select status from public.reels where id = v_qa_bok) = 'rejected',
+    'restoring a boks deleted while refused leaves it refused'
+  );
+
+  -- Revising a refused boks resubmits the same row.
+  update public.reels set submitted_at = now() - interval '2 days' where author_user_id = v_author;
+  perform public.boks_test_login(v_author);
+  v_result := public.submit_bok_for_review(
+    'Revised title', '', 'A revised text for the refused boks.', '', '', 0, '', true, '', v_qa_bok
+  );
+  perform public.boks_assert(
+    (v_result ->> 'id')::uuid = v_qa_bok
+      and (select status from public.reels where id = v_qa_bok) = 'pending_review'
+      and (select text from public.reels where id = v_qa_bok) = 'A revised text for the refused boks.',
+    'revising a refused boks resubmits it in place instead of adding a copy'
+  );
+  begin
+    perform public.submit_bok_for_review('Again', '', 'Not refused any more.', '', '', 0, '', true, '', v_qa_bok);
+    perform public.boks_assert(false, 'only a refused boks can be revised');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'only a refused boks can be revised');
+  end;
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.submit_bok_for_review('Not mine', '', 'Someone else''s boks.', '', '', 0, '', true, '', v_qa_bok);
+    perform public.boks_assert(false, 'a reader cannot revise another author''s boks');
+  exception when others then
+    perform public.boks_assert(true, 'a reader cannot revise another author''s boks');
+  end;
+
+  -- Comments can be deleted by their writer or an admin, and only by them.
+  update public.reels set status = 'published' where id = v_qa_bok;
+  perform public.boks_test_login(v_reader);
+  insert into public.comments (user_id, reel_id, body) values (v_reader, v_qa_bok, 'QA comment.') returning id into v_qa_comment;
+  perform public.boks_test_login(v_author);
+  insert into public.comments (user_id, reel_id, body, parent_comment_id)
+  values (v_author, v_qa_bok, 'QA reply.', v_qa_comment) returning id into v_qa_reply;
+  begin
+    perform public.delete_boks_comment(v_qa_comment);
+    perform public.boks_assert(false, 'a reader cannot delete someone else''s comment');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot delete someone else''s comment');
+  end;
+  perform public.boks_test_logout();
+  begin
+    perform public.delete_boks_comment(v_qa_comment);
+    perform public.boks_assert(false, 'a guest with no session cannot delete a comment');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a guest with no session cannot delete a comment');
+  end;
+  perform public.boks_test_login(v_reader);
+  v_result := public.delete_boks_comment(v_qa_comment);
+  perform public.boks_assert(
+    (v_result ->> 'repliesRemoved')::integer = 1
+      and not exists (select 1 from public.comments where id in (v_qa_comment, v_qa_reply)),
+    'the writer deletes their comment, and the replies to it go with it'
+  );
+  perform public.boks_test_login(v_reader);
+  insert into public.comments (user_id, reel_id, body) values (v_reader, v_qa_bok, 'QA comment two.') returning id into v_qa_comment;
+  perform public.boks_test_login(v_admin);
+  perform public.delete_boks_comment(v_qa_comment);
+  perform public.boks_assert(
+    not exists (select 1 from public.comments where id = v_qa_comment),
+    'an admin can delete anyone''s comment'
+  );
+
+  delete from public.reels where id = v_qa_bok;
+
+  -- A reader can delete their own account; an admin cannot delete itself.
+  insert into auth.users (id, email, is_anonymous) values (v_suspended_admin, 'leaving@boks.test', false);
+  perform public.boks_test_login(v_suspended_admin);
+  perform public.ensure_boks_user_profile();
+  insert into public.reels (title, author_name, text, genre, mood, status, author_user_id)
+  values ('Leaving author bok', null, 'A piece by someone about to leave.', 'literary', 'quiet', 'published', v_suspended_admin)
+  returning id into v_qa_bok;
+  begin
+    perform public.delete_my_boks_account('not-my-name');
+    perform public.boks_assert(false, 'deleting your account needs your exact nickname');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'deleting your account needs your exact nickname');
+  end;
+  v_result := public.delete_my_boks_account('@' || (select handle from public.user_profiles where user_id = v_suspended_admin));
+  perform public.boks_assert(
+    (v_result ->> 'archivedBoks')::integer = 1
+      and not exists (select 1 from auth.users where id = v_suspended_admin)
+      and (select status = 'archived' and author_user_id is null from public.reels where id = v_qa_bok)
+      and public.is_boks_user_blocked(v_suspended_admin),
+    'a reader deletes their own account: boks anonymised and hidden, account gone, old session blocked'
+  );
+  -- The deleted account's session is blocked from writing, which is the point;
+  -- clean up as the admin.
+  perform public.boks_test_login(v_admin);
+  delete from public.reels where id = v_qa_bok;
+  delete from public.deleted_boks_users where user_id = v_suspended_admin;
+
+  begin
+    perform public.delete_my_boks_account((select handle from public.user_profiles where user_id = v_admin));
+    perform public.boks_assert(false, 'an admin cannot delete its own account');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'an admin cannot delete its own account');
+  end;
 
   perform public.boks_test_logout();
   raise notice 'ALL CHECKS PASSED';

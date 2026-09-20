@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { estimateMinutes, groupDigits, wordCount } from "@/components/boks/client-format";
 import { maxBokCharacters } from "@/lib/boks/contracts";
+import { titleFromText } from "@/lib/boks/bok-title";
 import type {
   AuthorBokQuota,
   AuthorBokSubmission,
@@ -25,6 +26,35 @@ import {
 } from "@/components/boks/supabase-browser-data";
 import { describeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
 import { type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
+
+const authorDraftKey = "boks-author-draft";
+
+type AuthorDraft = { title: string; body: string; authorName: string };
+
+/**
+ * The piece being written, kept on this device until it is submitted. A
+ * writer who is not signed in writes first and signs in to submit, which
+ * means following an email link and a fresh page load - and the text lived
+ * only in memory, so it was gone when they came back.
+ */
+function readAuthorDraft(): AuthorDraft | null {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(authorDraftKey) ?? "null") as Partial<AuthorDraft> | null;
+    if (!parsed || (!parsed.title && !parsed.body)) return null;
+    return { title: parsed.title ?? "", body: parsed.body ?? "", authorName: parsed.authorName ?? "" };
+  } catch {
+    return null;
+  }
+}
+
+function writeAuthorDraft(draft: AuthorDraft | null) {
+  try {
+    if (!draft || (!draft.title.trim() && !draft.body.trim())) window.localStorage.removeItem(authorDraftKey);
+    else window.localStorage.setItem(authorDraftKey, JSON.stringify(draft));
+  } catch {
+    // Storage unavailable: the draft simply is not kept.
+  }
+}
 
 function reviewStatusLabel(status: BokReviewStatus) {
   if (status === "pending_review") return "Waiting for review";
@@ -49,7 +79,6 @@ export function AuthorConsole() {
   const [authInitialMode, setAuthInitialMode] = useState<AuthPanelMode>("signup");
   const [authorForm, setAuthorForm] = useState({
     title: "",
-    hook: "",
     body: "",
     authorName: "",
     /**
@@ -62,15 +91,44 @@ export function AuthorConsole() {
   const [isSubmitting, setSubmitting] = useState(false);
   const [defaultAuthorName, setDefaultAuthorName] = useState("");
   const visitorId = useRef("anonymous");
+  const formSection = useRef<HTMLElement | null>(null);
+  // The refused boks being revised, which is resubmitted in place.
+  const [revising, setRevising] = useState<{ id: string; title: string } | null>(null);
   const sessionId = useRef("session");
   const authorMinutes = estimateMinutes(authorForm.body);
   const authorWords = wordCount(authorForm.body);
   const authorCharacters = authorForm.body.length;
   const overLength = authorCharacters > maxBokCharacters;
+  // What an empty title becomes: the text's first line. The database applies
+  // the same rule (`boks_title_from_text`); this is so the author sees it.
+  const titleFromFirstLine = titleFromText(authorForm.body);
   const publishedCount = submissions.filter((row) => row.status === "published").length;
   const pendingCount = submissions.filter((row) => row.status === "pending_review").length;
   const rejectedCount = submissions.filter((row) => row.status === "rejected").length;
   const signedInAuthor = user && !user.isAnonymous ? user : null;
+
+  // Restore a draft left on this device, then keep it saved as it changes.
+  useEffect(() => {
+    const draft = readAuthorDraft();
+    if (!draft) return;
+    const handle = window.setTimeout(() => {
+      setAuthorForm((current) => ({
+        ...current,
+        title: current.title || draft.title,
+        body: current.body || draft.body,
+        authorName: current.authorName || draft.authorName,
+      }));
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, []);
+
+  useEffect(() => {
+    const handle = window.setTimeout(
+      () => writeAuthorDraft({ title: authorForm.title, body: authorForm.body, authorName: authorForm.authorName }),
+      400
+    );
+    return () => window.clearTimeout(handle);
+  }, [authorForm.title, authorForm.body, authorForm.authorName]);
 
   useEffect(() => {
     visitorId.current = getBrowserId("boks-author");
@@ -113,7 +171,6 @@ export function AuthorConsole() {
   function editSubmission(submission: AuthorBokSubmission) {
     setAuthorForm((current) => ({
       title: submission.title,
-      hook: submission.hook,
       body: submission.body,
       // Reworking a rejected piece keeps the byline it was written under.
       authorName: submission.authorName || current.authorName,
@@ -124,7 +181,10 @@ export function AuthorConsole() {
       rightsConfirmed: false,
       rightsNote: "",
     }));
-    setStatus("Rejected bok loaded into the editor. Confirm the rights again and submit.");
+    setRevising({ id: submission.id, title: submission.title });
+    setStatus("Refused bok loaded into the editor. Confirm the rights again and submit.");
+    // Revise sits under the history, far below the form it fills.
+    formSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function submitForReview() {
@@ -149,12 +209,13 @@ export function AuthorConsole() {
       await submitBokForReview({
         ...authorForm,
         minutes: authorMinutes,
+        bokId: revising?.id ?? null,
       });
+      setRevising(null);
       // The byline survives the reset: an author who publishes a series should
       // not retype their pen name for every piece.
       setAuthorForm((current) => ({
         title: "",
-        hook: "",
         body: "",
         // The byline survives the reset: an author who publishes a series
         // should not retype their pen name for every piece. The attestation
@@ -175,7 +236,7 @@ export function AuthorConsole() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="panel p-5 sm:p-7">
+        <section ref={formSection} className="panel p-5 sm:p-7">
           <a href="/" className="brand-word">boks</a>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Author cabinet</h1>
           <p className="mt-3 max-w-2xl text-[var(--muted-foreground)]">
@@ -219,13 +280,40 @@ export function AuthorConsole() {
                 onChange={(event) => setAuthorForm({ ...authorForm, authorName: event.target.value })}
               />
             </Field>
-            <Field label="Title">
-              <Input value={authorForm.title} onChange={(event) => setAuthorForm({ ...authorForm, title: event.target.value })} />
+            {revising && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--reader)] p-3 text-sm">
+                <span>
+                  Revising <strong>&ldquo;{revising.title}&rdquo;</strong>. Submitting sends this same bok back for review.
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setRevising(null);
+                    setAuthorForm((current) => ({ ...current, title: "", body: "", rightsConfirmed: false, rightsNote: "" }));
+                    setStatus("Write a bok and submit it for review.");
+                  }}
+                >
+                  Start a new bok instead
+                </Button>
+              </div>
+            )}
+            <Field
+              label="Title (optional)"
+              hint={
+                authorForm.title.trim() || !titleFromFirstLine
+                  ? "Leave it empty and the first line of the text becomes the title."
+                  : `Left empty, the title will be “${titleFromFirstLine}”.`
+              }
+            >
+              <Input
+                value={authorForm.title}
+                placeholder={titleFromFirstLine || "Optional"}
+                onChange={(event) => setAuthorForm({ ...authorForm, title: event.target.value })}
+              />
             </Field>
-            <Field label="Opening hook">
-              <Textarea value={authorForm.hook} onChange={(event) => setAuthorForm({ ...authorForm, hook: event.target.value })} />
-            </Field>
-            <Field label="Story">
+            <Field label="Text">
               <Textarea className="min-h-[380px] text-base leading-7" value={authorForm.body} onChange={(event) => setAuthorForm({ ...authorForm, body: event.target.value })} />
             </Field>
 
@@ -266,8 +354,8 @@ export function AuthorConsole() {
               onClick={submitForReview}
               disabled={
                 isSubmitting ||
-                !authorForm.title.trim() ||
-                !authorForm.body.trim() ||
+                // A title is optional; words in the text are not.
+                !titleFromFirstLine ||
                 !authorForm.rightsConfirmed ||
                 overLength ||
                 Boolean(signedInAuthor && quota.exhausted) ||
@@ -276,6 +364,14 @@ export function AuthorConsole() {
             >
               <Send className="size-4" /> Submit for review
             </Button>
+            {/* The result of the last action, next to the button that caused
+                it. On a phone the Status panel is below the whole form, so a
+                refusal ("Daily limit reached") changed nothing visible. */}
+            {status && (
+              <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">
+                {status}
+              </p>
+            )}
           </div>
         </section>
         <aside className="grid content-start gap-4">

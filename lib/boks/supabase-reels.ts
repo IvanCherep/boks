@@ -19,7 +19,6 @@ export type SupabaseReelRow = {
   author_name: string;
   author_handle: string;
   author_user_id?: string | null;
-  hook: string;
   text: string;
   genre: string;
   mood: string;
@@ -58,7 +57,6 @@ export type SupabaseCandidateRow = {
   minutes: number;
   wordCount: number;
   createdAt: string;
-  hook: string;
   body: string;
   authorName: string;
   authorHandle: string;
@@ -165,7 +163,6 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
           author_name: row.authorName,
           author_handle: row.authorHandle,
           author_user_id: row.authorUserId ?? null,
-          hook: row.hook,
           text: row.body,
           genre: row.genre,
           mood: row.mood,
@@ -243,7 +240,6 @@ export function mapSupabaseReelToStory(
     authorName: reel.author_name,
     authorHandle: reel.author_handle,
     authorUserId: reel.author_user_id ?? "",
-    hook: reel.hook,
     body: reel.text,
     genre: reel.genre,
     mood: reel.mood,

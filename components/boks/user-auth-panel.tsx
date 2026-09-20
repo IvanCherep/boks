@@ -26,6 +26,7 @@ import {
   minHandleLength,
 } from "@/lib/boks/contracts";
 import { anonymousReadLimits } from "@/components/boks/reader-behavior";
+import { ThemeSetting } from "@/components/boks/theme-setting";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
 import {
   loadBoksUserContext,
@@ -35,6 +36,7 @@ import {
   setMyReadingLanguages,
   updateBoksProfile,
   type FollowedAuthor,
+  deleteMyBoksAccount,
 } from "@/components/boks/supabase-browser-data";
 import { clearLocalReaderState } from "@/components/boks/reader-behavior";
 import {
@@ -96,6 +98,8 @@ type UserAuthPanelProps = {
   onClose: () => void;
   onOpenReadBoks: (storyId: string) => void;
   onUserChanged: (user: BoksUserContext | null) => void;
+  /** Saved reading languages, for the reader to rebuild its feed with. */
+  onReadingLanguagesChanged?: (languages: readonly string[]) => void;
   /** So the Follow control in the reader stays in step with this list. */
   onFollowsChanged?: (authorUserIds: string[]) => void;
 };
@@ -112,6 +116,7 @@ export function UserAuthPanel({
   onClose,
   onOpenReadBoks,
   onUserChanged,
+  onReadingLanguagesChanged,
   onFollowsChanged,
 }: UserAuthPanelProps) {
   const [mode, setMode] = useState<AuthPanelMode>(initialMode);
@@ -287,7 +292,9 @@ export function UserAuthPanel({
         handle,
         acceptedTermsVersion: mode === "signup" ? currentBoksTermsVersion : null,
         shouldCreateUser: mode === "signup",
-        redirectPath: "/",
+        // Back to where the reader asked from: an author who signs up from
+        // /author to submit a piece used to land on the reader instead.
+        redirectPath: surface === "author" ? "/author" : "/",
       });
       recordMagicLinkSent(cleanEmail);
       setEmail(cleanEmail);
@@ -318,6 +325,11 @@ export function UserAuthPanel({
    */
   async function saveLanguages(next: readonly string[]) {
     const cleaned = normalizeReadingLanguages(next);
+    // At least one. An empty choice was meant as "no filter", but an empty
+    // stored list reads as "never chose" and fell back to the browser's
+    // languages, so the pills and the feed disagreed after a reload.
+    if (!cleaned.length) return;
+    const previous = readingLanguages;
     setReadingLanguages(cleaned);
     rememberReadingLanguages(cleaned);
     setBusy(true);
@@ -327,12 +339,12 @@ export function UserAuthPanel({
       const refreshed = await loadBoksUserContext();
       setUser(refreshed);
       onUserChanged(refreshed);
-      setStatus(
-        cleaned.length
-          ? `Reading in ${cleaned.map((l) => readingLanguageNames[l as "en" | "ru"]).join(" and ")}.`
-          : "No language filter. Everything is eligible."
-      );
+      onReadingLanguagesChanged?.(cleaned);
+      setStatus(`Reading in ${cleaned.map((l) => readingLanguageNames[l as "en" | "ru"]).join(" and ")}.`);
     } catch (error) {
+      // A failed save must not leave the pill showing a choice that was not kept.
+      setReadingLanguages(previous);
+      rememberReadingLanguages(previous);
       setStatus(readableBoksError(error, "Could not change your languages."));
     } finally {
       setBusy(false);
@@ -368,24 +380,63 @@ export function UserAuthPanel({
     onClose();
   }
 
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+
+  async function deleteAccount() {
+    setBusy(true);
+    setDeleteError("");
+    try {
+      await deleteMyBoksAccount(deleteConfirmation);
+      // The account is gone on the server; clear what this device holds.
+      await signOutBoksUser().catch(() => undefined);
+      clearLocalReaderState();
+      window.location.reload();
+    } catch (error) {
+      setDeleteError(readableBoksError(error, "Could not delete the account."));
+      setBusy(false);
+    }
+  }
+
   async function signOut() {
     setBusy(true);
     setStatus("");
     try {
       await signOutBoksUser();
       clearLocalReaderState();
-      setUser(null);
-      setLibrary([]);
-      setFollows([]);
-      onFollowsChanged?.([]);
-      onUserChanged(null);
-      setStatus("Signed out. This device no longer holds the account, and the reading profile on it has been cleared.");
+      // A fresh page, rather than patching this one: the reader holds the
+      // account's feed, likes, reading profile and session in memory, and
+      // after an in-place sign-out the next swipe wrote the old profile back
+      // to this device and ranked the next feed with it.
+      window.location.reload();
     } catch (error) {
       setStatus(readableBoksError(error, "Could not sign out."));
     } finally {
       setBusy(false);
     }
   }
+
+  /**
+   * Escape closes the panel, exactly when the cross is offered. A panel that
+   * asks for an account before reading can go on has no cross, and Escape
+   * does not get round it either. Listened to on the window in the capture
+   * phase, so it works wherever focus is - the panel opens from a tap and
+   * does not take focus - and the reader underneath never sees the key.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const closable = reason !== "required" || Boolean(user && !user.isAnonymous);
+    if (!closable) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    }
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [open, reason, user, onClose]);
 
   // Ticks down for the address being asked about, and survives a reload,
   // because the server's limit does too.
@@ -408,7 +459,7 @@ export function UserAuthPanel({
   const noticeText = required
     ? surface === "author"
       ? "Sign up or sign in to submit boks for review and track decisions."
-      : "You have read 15 boks without an account. Reading stays free; sign up or sign in to continue with saved history and more personal recommendations."
+      : "You have read 15 boks without an account. Reading stays free: sign up or sign in to keep going, with your history and recommendations saved from here on."
     : reason === "notice"
       ? `You can read ${remainingGuestBoks} more boks without an account. Reading stays free; an account saves your history and helps personalize your feed.`
       : intent === "like"
@@ -501,8 +552,7 @@ export function UserAuthPanel({
               <p className="text-sm font-medium">Languages you read</p>
               <p className="text-sm leading-6 text-[var(--muted-foreground)]">
                 boks only recommends what you can read. Started from your browser&apos;s languages;
-                change it whenever you like. Unticking everything means no filter at all, not an
-                empty feed.
+                change it whenever you like. Keep at least one.
               </p>
               <div className="flex flex-wrap gap-2">
                 {supportedReadingLanguages.map((language) => {
@@ -514,7 +564,8 @@ export function UserAuthPanel({
                       type="button"
                       className={`report-kind${on ? " report-kind--on" : ""}`}
                       aria-pressed={on}
-                      disabled={busy}
+                      disabled={busy || (on && readingLanguages.length === 1)}
+                      title={on && readingLanguages.length === 1 ? "Keep at least one language" : undefined}
                       onClick={() =>
                         void saveLanguages(
                           on
@@ -538,6 +589,8 @@ export function UserAuthPanel({
                   </p>
                 )}
             </div>
+
+            <ThemeSetting />
 
             <div className="grid gap-3">
               <label className="grid gap-1 text-sm font-medium" htmlFor="boks-handle">
@@ -678,7 +731,7 @@ export function UserAuthPanel({
                   >
                     <span className="font-medium">{item.title}</span>
                     <span className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      {item.authorName || "boks author"} · {item.minutes} min
+                      {item.authorName || (item.authorHandle ? `@${item.authorHandle.replace(/^@+/, "")}` : "boks author")} · {item.minutes} min
                     </span>
                   </button>
                 )) : (
@@ -695,12 +748,71 @@ export function UserAuthPanel({
               </div>
             </div>
 
+            {accountUser?.role !== "admin" && (
+              <div className="grid gap-2">
+                <h2 className="text-base font-semibold tracking-normal">Delete account</h2>
+                {!deletingAccount ? (
+                  <div>
+                    <Button variant="outline" onClick={() => setDeletingAccount(true)} disabled={busy}>
+                      Delete my account…
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-2 rounded-lg border border-[var(--destructive)]/35 p-3">
+                    <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+                      This deletes your account, email, likes, comments, follows and reading history. Boks you
+                      published are hidden and no longer carry your name. It cannot be undone.
+                    </p>
+                    <label className="grid gap-1 text-sm font-medium" htmlFor="boks-delete-confirm">
+                      Type @{accountUser?.handle} to confirm
+                      <Input
+                        id="boks-delete-confirm"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={deleteConfirmation}
+                        onChange={(event) => setDeleteConfirmation(event.target.value)}
+                      />
+                    </label>
+                    {deleteError && (
+                      <p className="text-sm text-[var(--destructive)]" role="alert">
+                        {deleteError}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={() => void deleteAccount()}
+                        disabled={
+                          busy ||
+                          deleteConfirmation.trim().replace(/^@+/, "").toLowerCase() !==
+                            (accountUser?.handle ?? "").toLowerCase()
+                        }
+                      >
+                        Delete my account
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setDeletingAccount(false);
+                          setDeleteConfirmation("");
+                          setDeleteError("");
+                        }}
+                        disabled={busy}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <details className="settings-disclosure">
               <summary>About</summary>
               <div className="settings-disclosure__body">
                 <p>boks is a focused feed for short literature.</p>
                 <details className="settings-disclosure settings-disclosure--nested">
-                  <summary>Open Source Licenses / Лицензии</summary>
+                  <summary>Open source licenses</summary>
                   <div className="settings-disclosure__body">
                     <p><strong>Source Serif 4</strong></p>
                     <p>
@@ -723,8 +835,14 @@ export function UserAuthPanel({
             <div>
               <h2 className="text-xl font-semibold tracking-normal">Check your email</h2>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                We sent a boks link to <strong>{sentMagicLink.email}</strong>. Open it on this device to{" "}
-                {sentMagicLink.mode === "signup" ? "finish your free account" : "sign in"}.
+                We sent a boks link to <strong>{sentMagicLink.email}</strong>. Open it on this device, in
+                this browser, to {sentMagicLink.mode === "signup" ? "finish your free account" : "sign in"}.
+              </p>
+              {/* The common way this fails on a phone: the mail app opens the
+                  link in its own browser, where this sign-in was never started. */}
+              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+                If your mail app opens links inside itself, choose &ldquo;Open in browser&rdquo; or copy the link
+                here.
               </p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
                 boks is free. The account keeps your reading history, comments, and recommendations connected to you.
@@ -740,8 +858,8 @@ export function UserAuthPanel({
               </Button>
               {waiting && (
                 <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">
-                  One link a minute per address, so a second request cannot
-                  invalidate the first. The link already in your inbox still works.
+                  One link a minute per address. Asking for a new link makes the
+                  older ones stop working, so always open the newest email.
                 </p>
               )}
               {!required && (
@@ -794,7 +912,11 @@ export function UserAuthPanel({
                   <a href="/terms" target="_blank" rel="noreferrer">
                     Terms
                   </a>
-                  , including the author content license.
+                  , including the author content license, and have read the{" "}
+                  <a href="/privacy" target="_blank" rel="noreferrer">
+                    Privacy
+                  </a>{" "}
+                  page.
                 </span>
               </label>
             )}
@@ -823,6 +945,10 @@ export function UserAuthPanel({
             )}
           </form>
         )}
+
+        {/* A guest has no settings page, and should not need an account to
+            read in the dark. */}
+        {!showingAccount && !sentMagicLink && !(accountLoading && !user) && <ThemeSetting compact />}
 
         {status && (
           <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">

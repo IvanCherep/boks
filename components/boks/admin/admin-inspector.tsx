@@ -65,7 +65,7 @@ export function AdminInspectorProvider({
             <SheetDescription className="sr-only">
               {current?.kind === "person"
                 ? "One account's profile, metrics, and the boks they wrote, liked, commented on and read."
-                : "One boks's text, history, metrics, comments and likes."}
+                : "One bok's text, history, metrics, comments and likes."}
             </SheetDescription>
           </SheetHeader>
           {/* Keyed by what it shows, so each boks or person opens at the top

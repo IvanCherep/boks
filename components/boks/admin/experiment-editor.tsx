@@ -26,17 +26,24 @@ export function ExperimentEditor({
   config,
   disabled,
   onSave,
+  notice = "",
 }: {
   config: RecommendationExperimentConfig;
   disabled: boolean;
   onSave: (config: RecommendationExperimentConfig) => Promise<void>;
+  /**
+   * Shown when the editor first renders. A save re-keys the editor so it
+   * starts from the saved values, which also wiped the "Saved." it had just
+   * set - so the parent carries the message across.
+   */
+  notice?: string;
 }) {
   const [weights, setWeights] = useState<Record<string, number>>(() =>
     Object.fromEntries(config.arms.map((arm) => [arm.algorithmId, arm.weight]))
   );
   const [control, setControl] = useState(config.controlAlgorithmId);
   const [minimumImpressions, setMinimumImpressions] = useState(config.minimumImpressionsPerArm);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(notice);
   const [saving, setSaving] = useState(false);
 
   const totalWeight = Object.values(weights).reduce((total, weight) => total + Math.max(0, weight), 0);

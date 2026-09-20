@@ -63,6 +63,101 @@
   --sidebar-accent-foreground: #1f1915;
   --sidebar-border: #c9c0b1;
   --sidebar-ring: #7f3b25;
+  /*
+   * Colours the stylesheet used to write out by hand - glass surfaces,
+   * shadows, tints of the primary, status badges - as tokens, so the dark
+   * theme below can swap them. The light values are the ones that were
+   * written out.
+   */
+  --shadow-rgb: 47 41 37;
+  --primary-rgb: 138 64 44;
+  --glass-rgb: 255 254 250;
+  --glass-warm-rgb: 255 250 241;
+  --glass-white-rgb: 255 255 255;
+  --border-rgb: 216 211 202;
+  --overlay: rgb(33 26 21 / 26%);
+  --grabber: #c9bdae;
+  --positive: #1d6f42;
+  --warning: #b26b16;
+  --badge-warn-border: rgb(169 107 41 / 28%);
+  --badge-warn-bg: rgb(255 244 220 / 84%);
+  --badge-warn-fg: rgb(112 73 35);
+  --badge-ok-border: rgb(45 125 90 / 24%);
+  --badge-ok-bg: rgb(232 247 239 / 86%);
+  --badge-ok-fg: rgb(37 101 74);
+  --badge-bad-border: rgb(182 77 70 / 24%);
+  --badge-bad-bg: rgb(255 237 234 / 86%);
+  --badge-bad-fg: rgb(143 54 48);
+  --badge-neutral-bg: rgb(244 241 235 / 90%);
+}
+
+/*
+ * The dark theme. Set by `data-theme="dark"` on <html>, which
+ * components/boks/theme.ts writes - from the reader's choice in Settings, or
+ * from the system when they left it on "System".
+ *
+ * Warm near-black rather than grey, to stay the same room as the light theme:
+ * paper becomes a dim reading lamp, not a terminal. Body text on the reading
+ * surface is ~13:1, muted text ~6.5:1, and the primary is lightened to ~7:1
+ * so links and the active heart stay legible.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #141210;
+  --foreground: #ebe5da;
+  --soft-foreground: #cfc6b9;
+  --card: #1c1916;
+  --card-foreground: #ebe5da;
+  --popover: #201c19;
+  --popover-foreground: #ebe5da;
+  --primary: #d98e6c;
+  --primary-foreground: #1a120d;
+  --secondary: #26211d;
+  --secondary-foreground: #ebe5da;
+  --muted: #24201c;
+  --muted-foreground: #a89e91;
+  --accent: #3b2b22;
+  --accent-foreground: #f2e8dd;
+  --destructive: #f07a6e;
+  --border: #342e28;
+  --input: #5c534a;
+  --ring: #d98e6c;
+  --chart-1: #e07a52;
+  --chart-2: #ebe5da;
+  --chart-3: #9a9487;
+  --chart-4: #d19a4f;
+  --chart-5: #a58bc4;
+  --reader: #1a1714;
+  --reader-edge: #2a2521;
+  --sidebar: #1c1916;
+  --sidebar-foreground: #ebe5da;
+  --sidebar-primary: #d98e6c;
+  --sidebar-primary-foreground: #1a120d;
+  --sidebar-accent: #3b2b22;
+  --sidebar-accent-foreground: #f2e8dd;
+  --sidebar-border: #3a332d;
+  --sidebar-ring: #d98e6c;
+
+  --shadow-rgb: 0 0 0;
+  --primary-rgb: 217 142 108;
+  --glass-rgb: 30 27 24;
+  --glass-warm-rgb: 34 30 26;
+  --glass-white-rgb: 38 34 30;
+  --border-rgb: 52 46 40;
+  --overlay: rgb(0 0 0 / 58%);
+  --grabber: #4d453e;
+  --positive: #7bd4a0;
+  --warning: #e0a458;
+  --badge-warn-border: rgb(224 164 88 / 35%);
+  --badge-warn-bg: rgb(224 164 88 / 14%);
+  --badge-warn-fg: #f0c27b;
+  --badge-ok-border: rgb(111 207 151 / 30%);
+  --badge-ok-bg: rgb(111 207 151 / 12%);
+  --badge-ok-fg: #86d9a8;
+  --badge-bad-border: rgb(240 113 103 / 32%);
+  --badge-bad-bg: rgb(240 113 103 / 12%);
+  --badge-bad-fg: #f4968d;
+  --badge-neutral-bg: rgb(255 255 255 / 6%);
 }
 
 @theme inline {
@@ -136,7 +231,7 @@ a,
 input,
 select,
 textarea {
-  -webkit-tap-highlight-color: rgb(127 59 37 / 12%);
+  -webkit-tap-highlight-color: rgb(var(--primary-rgb) / 12%);
 }
 
 button:focus-visible,
@@ -144,7 +239,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgb(127 59 37 / 30%);
+  outline: 3px solid rgb(var(--primary-rgb) / 30%);
   outline-offset: 3px;
 }
 
@@ -179,7 +274,7 @@ textarea:focus-visible {
 .reader-card {
   background: var(--reader);
   min-width: 0;
-  border-inline: 1px solid rgb(216 211 202 / 72%);
+  border-inline: 1px solid rgb(var(--border-rgb) / 72%);
   transition:
     border-color 220ms ease,
     box-shadow 220ms ease,
@@ -327,7 +422,7 @@ textarea:focus-visible {
   height: 38px;
   place-items: center;
   border-radius: 999px;
-  box-shadow: 0 8px 22px rgb(47 41 37 / 10%);
+  box-shadow: 0 8px 22px rgb(var(--shadow-rgb) / 10%);
 }
 
 .boundary-pull-ring__inner {
@@ -357,7 +452,7 @@ textarea:focus-visible {
 
 .boundary-pull-cue--armed .boundary-pull-ring {
   transform: scale(1.14);
-  box-shadow: 0 10px 26px rgb(138 64 44 / 24%);
+  box-shadow: 0 10px 26px rgb(var(--primary-rgb) / 24%);
 }
 
 .boundary-pull-cue--armed .boundary-pull-ring__inner {
@@ -396,8 +491,7 @@ textarea:focus-visible {
   margin-bottom: 1.55em;
 }
 
-.reader-title,
-.reader-hook {
+.reader-title {
   font-family: var(--font-serif);
   font-optical-sizing: auto;
 }
@@ -408,13 +502,6 @@ textarea:focus-visible {
   font-variation-settings: "wght" 570;
   font-weight: 570;
   line-height: 1.02;
-}
-
-.reader-hook {
-  font-size: 1.24rem;
-  font-variation-settings: "wght" 420;
-  font-weight: 420;
-  line-height: 1.55;
 }
 
 .reader-author-intro {
@@ -478,9 +565,9 @@ textarea:focus-visible {
   margin-right: 1rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgb(255 254 250 / 92%);
+  background: rgb(var(--glass-rgb) / 92%);
   padding: 0.35rem;
-  box-shadow: 0 14px 40px rgb(43 37 31 / 10%);
+  box-shadow: 0 14px 40px rgb(var(--shadow-rgb) / 10%);
   backdrop-filter: blur(16px);
 }
 
@@ -513,7 +600,7 @@ textarea:focus-visible {
 
 .action-button:focus-visible,
 .swipe-cue:focus-visible {
-  outline: 3px solid rgb(143 63 36 / 34%);
+  outline: 3px solid rgb(var(--primary-rgb) / 34%);
   outline-offset: 3px;
 }
 
@@ -565,6 +652,42 @@ textarea:focus-visible {
   background: color-mix(in srgb, var(--destructive) 10%, transparent);
 }
 
+/* The one-time first-visit line: how to move on, where the controls are. */
+.reader-hint {
+  position: fixed;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 40;
+  width: max-content;
+  max-width: min(92vw, 38rem);
+  translate: -50% 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(var(--glass-rgb) / 96%);
+  padding: 0.55rem 1rem;
+  box-shadow: 0 12px 34px rgb(var(--shadow-rgb) / 14%);
+  color: var(--foreground);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+  animation: reader-hint-in 320ms var(--ease-out) both;
+}
+
+@keyframes reader-hint-in {
+  from {
+    opacity: 0;
+    translate: -50% 8px;
+  }
+}
+
+@media (max-width: 720px) {
+  .reader-hint {
+    border-radius: 1rem;
+  }
+}
+
 /* A short confirmation in the reader, e.g. after an admin hides a boks. */
 .reader-flash {
   position: fixed;
@@ -579,9 +702,9 @@ textarea:focus-visible {
   translate: -50% 0;
   border: 1px solid var(--border);
   border-radius: 0.8rem;
-  background: rgb(255 254 250 / 96%);
+  background: rgb(var(--glass-rgb) / 96%);
   padding: 0.6rem 0.6rem 0.6rem 0.9rem;
-  box-shadow: 0 14px 40px rgb(43 37 31 / 14%);
+  box-shadow: 0 14px 40px rgb(var(--shadow-rgb) / 14%);
   font-size: 0.88rem;
   line-height: 1.4;
 }
@@ -624,7 +747,7 @@ textarea:focus-visible {
   gap: 0.45rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgb(255 254 250 / 92%);
+  background: rgb(var(--glass-rgb) / 92%);
   color: var(--foreground);
   padding: 0.45rem 0.8rem;
   font-size: 0.9rem;
@@ -665,7 +788,7 @@ textarea:focus-visible {
   align-items: center;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgb(255 250 241 / 92%);
+  background: rgb(var(--glass-warm-rgb) / 92%);
   color: var(--foreground);
   padding: 0.3rem 0.75rem;
   font-size: 0.82rem;
@@ -685,7 +808,7 @@ textarea:focus-visible {
 }
 
 .follow-button:focus-visible {
-  outline: 3px solid rgb(143 63 36 / 34%);
+  outline: 3px solid rgb(var(--primary-rgb) / 34%);
   outline-offset: 3px;
 }
 
@@ -695,7 +818,7 @@ textarea:focus-visible {
   z-index: 60;
   display: grid;
   place-items: center;
-  background: rgb(33 26 21 / 26%);
+  background: var(--overlay);
   padding: 1rem;
   backdrop-filter: blur(10px);
 }
@@ -709,7 +832,7 @@ textarea:focus-visible {
   background: var(--card);
   color: var(--foreground);
   padding: 1.25rem;
-  box-shadow: 0 24px 80px rgb(47 41 37 / 20%);
+  box-shadow: 0 24px 80px rgb(var(--shadow-rgb) / 20%);
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
@@ -724,7 +847,7 @@ textarea:focus-visible {
   height: 4px;
   margin: 0 auto 0.9rem;
   border-radius: 999px;
-  background: #c9bdae;
+  background: var(--grabber);
   content: "";
 }
 
@@ -741,7 +864,7 @@ textarea:focus-visible {
 .auth-tab.is-active {
   background: var(--card);
   color: var(--foreground);
-  box-shadow: 0 8px 18px rgb(47 41 37 / 8%);
+  box-shadow: 0 8px 18px rgb(var(--shadow-rgb) / 8%);
 }
 
 .auth-sent {
@@ -856,11 +979,11 @@ textarea:focus-visible {
 .library-tab.is-active {
   background: var(--reader);
   color: var(--foreground);
-  box-shadow: 0 1px 5px rgb(47 41 37 / 8%);
+  box-shadow: 0 1px 5px rgb(var(--shadow-rgb) / 8%);
 }
 
 .library-tab:focus-visible {
-  outline: 3px solid rgb(143 63 36 / 28%);
+  outline: 3px solid rgb(var(--primary-rgb) / 28%);
   outline-offset: 2px;
 }
 
@@ -945,9 +1068,9 @@ textarea:focus-visible {
   gap: 1rem;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgb(255 250 241 / 97%);
+  background: rgb(var(--glass-warm-rgb) / 97%);
   padding: 0.9rem;
-  box-shadow: 0 18px 60px rgb(47 41 37 / 16%);
+  box-shadow: 0 18px 60px rgb(var(--shadow-rgb) / 16%);
   backdrop-filter: blur(14px);
 }
 
@@ -1025,7 +1148,7 @@ textarea:focus-visible {
 }
 
 .sheet-grip:focus-visible {
-  outline: 3px solid rgb(143 63 36 / 34%);
+  outline: 3px solid rgb(var(--primary-rgb) / 34%);
   outline-offset: 4px;
 }
 
@@ -1050,7 +1173,7 @@ textarea:focus-visible {
 }
 
 .reader-byline:hover:not(:disabled) {
-  background: rgb(143 63 36 / 8%);
+  background: rgb(var(--primary-rgb) / 8%);
 }
 
 .reader-byline:disabled {
@@ -1058,7 +1181,7 @@ textarea:focus-visible {
 }
 
 .reader-byline:focus-visible {
-  outline: 3px solid rgb(143 63 36 / 34%);
+  outline: 3px solid rgb(var(--primary-rgb) / 34%);
   outline-offset: 2px;
 }
 
@@ -1070,7 +1193,7 @@ textarea:focus-visible {
   gap: 0.1rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgb(255 255 255 / 60%);
+  background: rgb(var(--glass-white-rgb) / 60%);
   padding: 0.7rem 0.8rem;
   text-align: left;
   color: inherit;
@@ -1085,20 +1208,20 @@ textarea:focus-visible {
 }
 
 .author-bok:focus-visible {
-  outline: 3px solid rgb(143 63 36 / 34%);
+  outline: 3px solid rgb(var(--primary-rgb) / 34%);
   outline-offset: 2px;
 }
 
 /* The one they are in the middle of, so they do not lose their place. */
 .author-bok--current {
   border-color: var(--primary);
-  background: rgb(143 63 36 / 8%);
+  background: rgb(var(--primary-rgb) / 8%);
 }
 
 .author-bok-now {
   margin-top: 0.35rem;
   border-radius: 999px;
-  background: rgb(143 63 36 / 12%);
+  background: rgb(var(--primary-rgb) / 12%);
   padding: 0.05rem 0.45rem;
   font-size: 0.68rem;
   font-weight: 760;
@@ -1113,7 +1236,7 @@ textarea:focus-visible {
   gap: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgb(255 255 255 / 60%);
+  background: rgb(var(--glass-white-rgb) / 60%);
   padding: 0.6rem 0.75rem;
 }
 
@@ -1123,7 +1246,7 @@ textarea:focus-visible {
  */
 .follow-button--following {
   border-color: transparent;
-  background: rgb(143 63 36 / 10%);
+  background: rgb(var(--primary-rgb) / 10%);
   color: var(--primary);
 }
 
@@ -1261,6 +1384,28 @@ textarea:focus-visible {
   color: var(--foreground);
 }
 
+.comment-actions,
+.comment-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.comment-confirm {
+  margin-top: 0.32rem;
+  color: var(--foreground);
+  font-size: 0.78rem;
+}
+
+.comment-confirm .comment-reply {
+  margin-top: 0;
+}
+
+.comment-reply--danger {
+  color: var(--destructive);
+}
+
 .comment-like {
   display: grid;
   min-width: 40px;
@@ -1332,7 +1477,7 @@ textarea:focus-visible {
 /* The person whose boks this is, so a reply from them reads as one. */
 .comment-author-tag {
   border-radius: 999px;
-  background: rgb(143 63 36 / 12%);
+  background: rgb(var(--primary-rgb) / 12%);
   padding: 0.05rem 0.4rem;
   font-size: 0.68rem;
   font-weight: 760;
@@ -1429,8 +1574,8 @@ textarea:focus-visible {
 .panel {
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: rgb(255 255 255 / 92%);
-  box-shadow: 0 16px 50px rgb(47 41 37 / 8%);
+  background: rgb(var(--glass-white-rgb) / 92%);
+  box-shadow: 0 16px 50px rgb(var(--shadow-rgb) / 8%);
 }
 
 .field-control {
@@ -1447,7 +1592,7 @@ textarea:focus-visible {
 .legal-page {
   min-height: 100svh;
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 70%), transparent 28%),
+    linear-gradient(180deg, rgb(var(--glass-white-rgb) / 70%), transparent 28%),
     var(--background);
   padding: clamp(1rem, 4vw, 3rem);
 }
@@ -1459,7 +1604,7 @@ textarea:focus-visible {
   border-radius: 18px;
   background: var(--card);
   padding: clamp(1.25rem, 4vw, 3rem);
-  box-shadow: 0 20px 70px rgb(47 41 37 / 12%);
+  box-shadow: 0 20px 70px rgb(var(--shadow-rgb) / 12%);
 }
 
 .legal-document h1 {
@@ -1494,7 +1639,7 @@ textarea:focus-visible {
 .metric-tile {
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgb(255 255 255 / 92%);
+  background: rgb(var(--glass-white-rgb) / 92%);
   padding: 0.9rem;
 }
 
@@ -1515,7 +1660,7 @@ textarea:focus-visible {
 .moderation-item {
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgb(255 255 255 / 82%);
+  background: rgb(var(--glass-white-rgb) / 82%);
 }
 
 .submission-card {
@@ -1557,26 +1702,26 @@ textarea:focus-visible {
 }
 
 .review-badge--pending_review {
-  border-color: rgb(169 107 41 / 28%);
-  background: rgb(255 244 220 / 84%);
-  color: rgb(112 73 35);
+  border-color: var(--badge-warn-border);
+  background: var(--badge-warn-bg);
+  color: var(--badge-warn-fg);
 }
 
 .review-badge--published {
-  border-color: rgb(45 125 90 / 24%);
-  background: rgb(232 247 239 / 86%);
-  color: rgb(37 101 74);
+  border-color: var(--badge-ok-border);
+  background: var(--badge-ok-bg);
+  color: var(--badge-ok-fg);
 }
 
 .review-badge--rejected {
-  border-color: rgb(182 77 70 / 24%);
-  background: rgb(255 237 234 / 86%);
-  color: rgb(143 54 48);
+  border-color: var(--badge-bad-border);
+  background: var(--badge-bad-bg);
+  color: var(--badge-bad-fg);
 }
 
 .review-badge--archived,
 .review-badge--draft {
-  background: rgb(244 241 235 / 90%);
+  background: var(--badge-neutral-bg);
 }
 
 .admin-table {
@@ -1771,7 +1916,7 @@ textarea:focus-visible {
 }
 
 .uplift--up {
-  color: #1d6f42;
+  color: var(--positive);
 }
 
 .uplift--down {
@@ -1916,6 +2061,85 @@ textarea:focus-visible {
   background: var(--background);
   color: var(--foreground);
   box-shadow: 0 1px 2px rgb(0 0 0 / 7%);
+}
+
+/*
+ * Settings -> Appearance. One segmented control over three native radios; the
+ * radio itself is visually hidden but still takes focus and arrow keys.
+ */
+.theme-setting {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.theme-setting legend {
+  margin-bottom: 0.1rem;
+  padding: 0;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--secondary);
+  padding: 0.2rem;
+}
+
+.theme-option {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.5rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 0.45rem;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.theme-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.theme-option:hover {
+  color: var(--foreground);
+}
+
+.theme-option:has(input:checked) {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 3px rgb(var(--shadow-rgb) / 14%);
+}
+
+.theme-option:has(input:focus-visible) {
+  outline: 3px solid rgb(var(--primary-rgb) / 34%);
+  outline-offset: 1px;
+}
+
+.theme-setting--compact {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.theme-setting--compact .theme-option {
+  min-height: 2.25rem;
+  font-size: 0.85rem;
 }
 
 .admin-segmented--wide {
@@ -2313,11 +2537,11 @@ textarea:focus-visible {
 }
 
 .divergence--weak {
-  border-left-color: #b26b16;
+  border-left-color: var(--warning);
 }
 
 .divergence--usable {
-  border-left-color: #1d6f42;
+  border-left-color: var(--positive);
 }
 
 .byline-note {
@@ -2393,9 +2617,9 @@ textarea:focus-visible {
     gap: 0.15rem;
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: rgb(255 254 250 / 94%);
+    background: rgb(var(--glass-rgb) / 94%);
     padding: 0.35rem;
-    box-shadow: 0 16px 44px rgb(47 41 37 / 16%);
+    box-shadow: 0 16px 44px rgb(var(--shadow-rgb) / 16%);
     backdrop-filter: blur(14px);
   }
 
@@ -2420,11 +2644,6 @@ textarea:focus-visible {
     margin-top: 2rem;
     font-size: 2.55rem;
     line-height: 1.03;
-  }
-
-  .reader-hook {
-    font-size: 1.2rem;
-    line-height: 1.55;
   }
 
   .story-copy {
@@ -2626,6 +2845,28 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* The publisher named under a writer's list: a link back to its catalogue. */
+.author-account-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.author-account-link:hover {
+  color: var(--foreground);
+}
+
+.author-account-link:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /*
  * The byline is two targets when a piece carries a printed name: the writer,
  * and the account that published them. They look like one line, because to a
@@ -2657,7 +2898,7 @@ textarea:focus-visible {
 
 .reader-byline-name:hover:not(:disabled),
 .reader-byline-handle:hover:not(:disabled) {
-  background: rgb(143 63 36 / 8%);
+  background: rgb(var(--primary-rgb) / 8%);
 }
 
 .reader-byline-name:disabled,

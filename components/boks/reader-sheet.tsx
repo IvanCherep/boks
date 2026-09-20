@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 import { Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -33,6 +33,27 @@ export function ReaderSheet({
 }) {
   const dragStartY = useRef<number | null>(null);
   const dragged = useRef(false);
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
+  /**
+   * Escape closes the sheet wherever focus is. The sheet opens from a tap on
+   * the rail, which leaves focus on the page, so a handler on the sheet alone
+   * never heard the key. A key pressed inside the sheet is handled there and
+   * stops, so this does not fire twice; the account panel, when it is open on
+   * top, takes Escape first in the capture phase and closes only itself.
+   */
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      closeRef.current();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function startGripDrag(event: PointerEvent<HTMLButtonElement>) {
     dragStartY.current = event.clientY;
@@ -53,7 +74,7 @@ export function ReaderSheet({
 
   return (
     <div
-      className={`reader-sheet${expanded ? " reader-sheet--expanded" : ""} ${className} absolute inset-x-2 bottom-2 z-30 flex flex-col rounded-[24px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_70px_rgb(40_29_18/18%)] sm:inset-x-auto sm:bottom-6 sm:right-24 sm:w-[380px]`}
+      className={`reader-sheet${expanded ? " reader-sheet--expanded" : ""} ${className} absolute inset-x-2 bottom-2 z-30 flex flex-col rounded-[24px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_70px_rgb(var(--shadow-rgb)/18%)] sm:inset-x-auto sm:bottom-6 sm:right-24 sm:w-[380px]`}
       role="dialog"
       aria-modal="true"
       aria-label={label}
