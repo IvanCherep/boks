@@ -2332,3 +2332,109 @@ begin
   delete from public.likes where user_id = v_reader and reel_id = v_one;
   perform public.boks_test_logout();
 end $$;
+
+
+-- Feedback (migration 20260921100000).
+--
+-- The promise of this feature is that a reader with no account can say
+-- something and that nobody but an admin can read it. Both halves are checked
+-- here, because both are the kind of thing that breaks quietly.
+do $$
+declare
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_result jsonb;
+  v_index integer;
+  v_odd_surface bigint;
+begin
+  -- A guest: no session at all, so `auth.uid()` is null and the device id is
+  -- the only thing tying their notes together.
+  perform public.boks_test_logout();
+  set local role anon;
+  v_result := public.submit_boks_feedback('The reader is lovely but I cannot find the light theme.', 'settings', 2, 'device-guest-1');
+  perform public.boks_assert((v_result ->> 'ok')::boolean, 'a reader with no account can send feedback');
+  reset role;
+
+  -- A signed-in reader, from a milestone prompt.
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  v_result := public.submit_boks_feedback('Three boks in and I am staying. More Chekhov please.', 'after_3', 3, 'device-reader-1');
+  perform public.boks_assert((v_result ->> 'ok')::boolean, 'a signed-in reader can send feedback');
+
+  -- Too short is refused, and an unknown surface is recorded rather than
+  -- rejected: losing a note over a bad label would be the wrong trade.
+  begin
+    perform public.submit_boks_feedback(' ', 'settings', 0, 'device-reader-1');
+    perform public.boks_assert(false, 'an empty note is refused');
+  exception when sqlstate '22023' then
+    perform public.boks_assert(true, 'an empty note is refused');
+  end;
+  -- Kept for a look after the role is dropped: a reader has no privilege on
+  -- the table itself, which the assertion further down proves.
+  v_result := public.submit_boks_feedback('Sent from somewhere new.', 'somewhere-else', 1, 'device-reader-1');
+  v_odd_surface := (v_result ->> 'id')::bigint;
+
+  -- Five an hour, then a friendly stop.
+  v_index := 0;
+  while v_index < 3 loop
+    v_index := v_index + 1;
+    begin
+      perform public.submit_boks_feedback(format('Filling the inbox, note %s.', v_index), 'settings', 3, 'device-reader-1');
+    exception when sqlstate '54023' then
+      null;
+    end;
+  end loop;
+  begin
+    perform public.submit_boks_feedback('One too many.', 'settings', 3, 'device-reader-1');
+    perform public.boks_assert(false, 'a sixth note in an hour is refused');
+  exception when sqlstate '54023' then
+    perform public.boks_assert(true, 'a sixth note in an hour is refused');
+  end;
+
+  -- A reader cannot read the inbox. Someone's complaint about another reader
+  -- is not public, and neither is a complaint about whoever runs this.
+  begin
+    perform public.get_boks_feedback(10, 0);
+    perform public.boks_assert(false, 'a reader cannot read the feedback inbox');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot read the feedback inbox');
+  end;
+  begin
+    perform public.boks_assert(
+      (select count(*) from public.boks_feedback) = 0,
+      'a reader cannot read the feedback table directly'
+    );
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot read the feedback table directly');
+  end;
+  reset role;
+
+  -- The admin can, and gets the context with it.
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  v_result := public.get_boks_feedback(50, 0);
+  perform public.boks_assert((v_result ->> 'total')::integer >= 3, 'an admin reads every note');
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result -> 'rows') r
+      where r.value ->> 'surface' = 'after_3' and (r.value ->> 'boksRead')::integer = 3
+    ),
+    'a note carries where it was written and how much had been read'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_result -> 'rows') r
+      where r.value ->> 'handle' is null and r.value ->> 'visitorId' = 'device-guest-1'
+    ),
+    'a note from a reader with no account carries the device, not a name'
+  );
+  reset role;
+  perform public.boks_test_logout();
+
+  perform public.boks_assert(
+    (select surface = 'other' from public.boks_feedback where id = v_odd_surface),
+    'an unrecognised surface is stored as other rather than refused'
+  );
+
+  delete from public.boks_feedback where visitor_id in ('device-guest-1', 'device-reader-1');
+end $$;

@@ -1,5 +1,10 @@
+import { BoksErrorBoundary } from "@/components/boks/error-boundary";
 import { AdminDashboard } from "../boks-client";
 
 export default function AdminPage() {
-  return <AdminDashboard />;
+  return (
+    <BoksErrorBoundary>
+      <AdminDashboard />
+    </BoksErrorBoundary>
+  );
 }

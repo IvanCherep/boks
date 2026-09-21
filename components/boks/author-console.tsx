@@ -1,5 +1,6 @@
 "use client";
 
+import { randomBoksId } from "@/lib/boks/browser-id";
 import { useEffect, useRef, useState } from "react";
 import { Clock3, Edit3, Send, ShieldCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -132,7 +133,7 @@ export function AuthorConsole() {
 
   useEffect(() => {
     visitorId.current = getBrowserId("boks-author");
-    sessionId.current = `${Date.now()}-${crypto.randomUUID()}`;
+    sessionId.current = `${Date.now()}-${randomBoksId()}`;
     refreshAuthor().catch((error) => setStatus(readableBoksError(error, "Could not load author cabinet.")));
   }, []);
 

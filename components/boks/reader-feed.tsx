@@ -1,5 +1,7 @@
 "use client";
 
+import { randomBoksId } from "@/lib/boks/browser-id";
+import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -64,6 +66,16 @@ import {
 } from "@/components/boks/reader-navigation";
 import { ActionButton } from "@/components/boks/shared-ui";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
+import { FeedbackForm } from "@/components/boks/feedback-form";
+import {
+  countRead,
+  dueMilestone,
+  markPrompted,
+  readFeedbackState,
+  saveFeedbackState,
+  surfaceForMilestone,
+  type FeedbackState,
+} from "@/components/boks/feedback";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
   emptyFeedNotice,
@@ -272,6 +284,9 @@ export function ReaderFeed() {
   const [followedAuthorIds, setFollowedAuthorIds] = useState<string[]>([]);
   const [followBusy, setFollowBusy] = useState(false);
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
+  /** The milestone being offered, or null. See `components/boks/feedback.ts`. */
+  const [feedbackMilestone, setFeedbackMilestone] = useState<number | null>(null);
+  const feedbackState = useRef<FeedbackState>({ reads: 0, prompted: [] });
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
   const [reportKind, setReportKind] = useState<"copyright" | "other">("copyright");
   const [reportReason, setReportReason] = useState("");
@@ -428,7 +443,8 @@ export function ReaderFeed() {
 
   useEffect(() => {
     visitorId.current = getBrowserId("boks-reader");
-    sessionId.current = `${Date.now()}-${crypto.randomUUID()}`;
+    feedbackState.current = readFeedbackState();
+    sessionId.current = `${Date.now()}-${randomBoksId()}`;
     const profileTimer = window.setTimeout(() => setProfile(readProfile()), 0);
     // A shared link carries the boks id. Strip it from the address bar once it
     // has been used, so a refresh does not reopen it over the reader's feed.
@@ -1169,6 +1185,13 @@ export function ReaderFeed() {
   }
 
 
+  /** Whether the text on screen has anywhere to scroll to. */
+  function isStoryScrollable() {
+    const node = storyScroll.current;
+    if (!node) return false;
+    return node.scrollHeight > node.clientHeight + 4;
+  }
+
   function updateStoryProgress() {
     if (!currentStory || !storyScroll.current) return 0;
     const node = storyScroll.current;
@@ -1205,9 +1228,24 @@ export function ReaderFeed() {
     trackedOutcomes.current.add(key);
     const elapsedSeconds = readingClock.current.activeSeconds();
     const progress = updateStoryProgress();
-    const outcome = inferReadOutcome(currentStory, elapsedSeconds, progress);
+    const outcome = inferReadOutcome(currentStory, elapsedSeconds, progress, {
+      // A bok that fits the screen never scrolls, and the outcome has to judge
+      // it on attention alone rather than on a progress that cannot move.
+      scrollable: isStoryScrollable(),
+    });
 
     persistProfile(profileBump(profile, currentStory, outcome));
+
+    // A bok actually read is the only thing that moves the feedback count, and
+    // the prompt waits for the third, tenth and thirtieth. Asking here rather
+    // than on a timer means the question always follows a finished piece.
+    if (outcome === "complete") {
+      const counted = countRead(feedbackState.current);
+      const milestone = dueMilestone(counted);
+      feedbackState.current = milestone ? markPrompted(counted, milestone) : counted;
+      saveFeedbackState(feedbackState.current);
+      if (milestone) setFeedbackMilestone(milestone);
+    }
     recordReaderEvent(outcome, currentStory, outcome === "complete" ? Math.max(5, elapsedSeconds) : 1, {
       from: reason,
       inferred: true,
@@ -1917,6 +1955,31 @@ export function ReaderFeed() {
                 Change my languages
               </Button>
             </>
+          ) : notice.kind === "unreachable" ? (
+            <>
+              {/* The reader can act on this one, so it says what to try. The
+                  page itself arrived, which means our server is up and the
+                  network is stopping the call the app makes next - on some
+                  providers that call is blocked while the site is not. */}
+              <h1 className="mt-4 text-2xl font-semibold tracking-normal">
+                boks cannot reach its server from this network
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+                The page loaded, so boks itself is running. What failed is the connection your browser
+                makes next, and that is usually the network in between: another Wi-Fi, mobile data, or a
+                VPN normally fixes it.
+              </p>
+              <Button className="mt-4" onClick={() => void loadFeed()}>
+                Try again
+              </Button>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
+                Still nothing? Write to{" "}
+                <a className="auth-link" href={supportMailto}>
+                  {supportEmail}
+                </a>{" "}
+                - tell us your provider and we will move the address boks talks to.
+              </p>
+            </>
           ) : (
             <p className="mt-3 text-[var(--muted-foreground)]">{notice.message}</p>
           )}
@@ -2206,6 +2269,38 @@ export function ReaderFeed() {
             canModerate={isAdminReader}
             onDeleted={(removed) => adjustCommentCount(currentStory, -removed)}
           />
+        )}
+
+        {feedbackMilestone !== null && (
+          <ReaderSheet label="Tell us what you think" onClose={() => setFeedbackMilestone(null)}>
+            <ReaderSheetHeader
+              label="Tell us what you think"
+              onClose={() => setFeedbackMilestone(null)}
+              title={
+                feedbackMilestone === 3
+                  ? "Three boks in - what do you think?"
+                  : feedbackMilestone === 10
+                    ? "Ten boks in - how is it going?"
+                    : "Thirty boks in - you know this place now"
+              }
+            />
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+              <FeedbackForm
+                surface={surfaceForMilestone(feedbackMilestone)}
+                boksRead={feedbackState.current.reads}
+                visitorId={visitorId.current}
+                autoFocus
+              />
+              <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">
+                This box is always in Settings, so you can come back to it whenever something occurs to
+                you. Honestly, it is the most useful thing anyone can send us right now.
+              </p>
+              <Button className="mt-3 w-full" variant="ghost" onClick={() => setFeedbackMilestone(null)}>
+                Not now - keep reading
+              </Button>
+            </div>
+          </ReaderSheet>
         )}
 
         {bokMenuOpen && currentStory && (

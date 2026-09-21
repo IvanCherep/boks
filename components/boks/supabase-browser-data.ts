@@ -1,7 +1,9 @@
 "use client";
 
 import { initialMetrics } from "@/components/boks/constants";
+import type { FeedbackSurface } from "@/components/boks/feedback";
 import type {
+  BoksFeedbackPage,
   AdminBokDetail,
   AdminPersonDetail,
   AuthorBokQuota,
@@ -1139,6 +1141,44 @@ export async function deleteBoksUser(userId: string, confirmation: string) {
   });
   if (result.error) throw result.error;
   return result.data as { ok: true; userId: string; archivedBoks: number };
+}
+
+/**
+ * One note from a reader.
+ *
+ * Works without an account: the RPC is granted to `anon`, and the visitor id
+ * is what groups a guest's notes. Everything the note needs to be read in
+ * context - where the box was opened, how many boks they had read - travels
+ * with it, because none of it can be reconstructed afterwards.
+ */
+export async function sendBoksFeedback(input: {
+  message: string;
+  surface: FeedbackSurface;
+  boksRead?: number;
+  visitorId?: string;
+}) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("submit_boks_feedback", {
+    p_message: input.message,
+    p_surface: input.surface,
+    p_boks_read: input.boksRead ?? null,
+    p_visitor_id: input.visitorId ?? null,
+  });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: number };
+}
+
+/** The feedback inbox. Admin-only on the server. */
+export async function loadBoksFeedback(options: { limit?: number; offset?: number } = {}) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("get_boks_feedback", {
+    p_limit: options.limit ?? 100,
+    p_offset: options.offset ?? 0,
+  });
+  if (result.error) throw result.error;
+  return result.data as BoksFeedbackPage;
 }
 
 /**

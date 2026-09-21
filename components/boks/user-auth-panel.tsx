@@ -28,6 +28,9 @@ import {
 import { anonymousReadLimits } from "@/components/boks/reader-behavior";
 import { ThemeSetting } from "@/components/boks/theme-setting";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
+import { FeedbackForm } from "@/components/boks/feedback-form";
+import { readFeedbackState } from "@/components/boks/feedback";
+import { getBrowserId } from "@/components/boks/reader-behavior";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
 import {
   loadBoksUserContext,
@@ -104,6 +107,25 @@ type UserAuthPanelProps = {
   /** So the Follow control in the reader stays in step with this list. */
   onFollowsChanged?: (authorUserIds: string[]) => void;
 };
+
+/**
+ * The way in to the feedback box from Settings.
+ *
+ * A disclosure rather than a separate screen: the box is two sentences and a
+ * text field, and a reader who came here to say something should not have to
+ * navigate to say it. Drawn for guests as well - the server accepts a note
+ * without an account on purpose.
+ */
+function FeedbackDisclosure() {
+  return (
+    <details className="settings-disclosure">
+      <summary>Send feedback</summary>
+      <div className="settings-disclosure__body">
+        <FeedbackForm surface="settings" boksRead={readFeedbackState().reads} visitorId={getBrowserId("boks-reader")} />
+      </div>
+    </details>
+  );
+}
 
 export function UserAuthPanel({
   open,
@@ -808,6 +830,8 @@ export function UserAuthPanel({
               </div>
             )}
 
+            <FeedbackDisclosure />
+
             <details className="settings-disclosure">
               <summary>About</summary>
               <div className="settings-disclosure__body">
@@ -961,11 +985,17 @@ export function UserAuthPanel({
             read in the dark. */}
         {!showingAccount && !sentMagicLink && !(accountLoading && !user) && <ThemeSetting compact />}
 
-        {/* A guest has no settings panel either, so the address lives here as
-            well - the sign-in screen is where people get stuck. */}
+        {/* A guest has no settings panel, so the box lives here too - and a
+            guest's note is the one this product can least afford to lose. */}
+        {!showingAccount && !sentMagicLink && <FeedbackDisclosure />}
+
+        {/* The address stays reachable - some people want a reply, and whoever
+            cannot sign in has nowhere else to turn - but it is deliberately
+            quieter than the box above it. Opening a mail client is work, and
+            work is how feedback stops arriving. */}
         {!showingAccount && (
-          <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">
-            Questions, or something not working? Write to{" "}
+          <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
+            Would rather write an email, or need a reply?{" "}
             <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
           </p>
         )}

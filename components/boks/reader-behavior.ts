@@ -1,3 +1,4 @@
+import { randomBoksId } from "@/lib/boks/browser-id";
 import { initialProfile } from "@/components/boks/constants";
 import type { ReadOutcome, ReaderProfile, Story } from "@/components/boks/client-types";
 
@@ -34,10 +35,18 @@ export type AnonymousReadState = {
  */
 export const readingWordsPerMinute = 238;
 
-/** Seconds a typical reader would need for this boks. */
+/**
+ * Seconds a typical reader would need for this boks.
+ *
+ * The floor was 20 seconds, which is longer than most of this catalogue takes
+ * to read: a quatrain is 30 words, about eight seconds, and the floor made it
+ * impossible to finish one. It is 12 now - still enough that a flick cannot
+ * clear the thresholds below, no longer a claim that every poem takes twenty
+ * seconds.
+ */
 export function expectedReadingSeconds(story: Pick<Story, "wordCount" | "minutes">) {
   const words = story.wordCount > 0 ? story.wordCount : Math.max(1, story.minutes) * 220;
-  return Math.max(20, Math.round((words / readingWordsPerMinute) * 60));
+  return Math.max(12, Math.round((words / readingWordsPerMinute) * 60));
 }
 
 /**
@@ -45,18 +54,41 @@ export function expectedReadingSeconds(story: Pick<Story, "wordCount" | "minutes
  *
  * `activeSeconds` is foreground-only time, so this judges attention rather than
  * how long a tab happened to be open.
+ *
+ * **`scrollable` is the fact that was missing, and its absence broke poetry.**
+ * A piece that fits the screen has no end to scroll to, so the reader's
+ * progress stays 0 however carefully they read - which left only the strictest
+ * branch, 70% of the expected time, and with the old 20-second floor that was
+ * 14 seconds for a quatrain. Measured on production before this change: 37
+ * skips to 4 completes in a day, and those skips averaged **9 seconds of
+ * foreground attention at 38% progress** - people reading, recorded as people
+ * leaving. Two thirds of this catalogue is verse.
+ *
+ * `progress` deliberately keeps its old meaning ("how far down did they get"),
+ * because the ranker pays for prior progress and treats a part-read piece as
+ * something to resume. Telling it that every short poem was read to the end
+ * would push flicked poems to the top of the feed instead.
  */
-export function inferReadOutcome(story: Story, activeSeconds: number, progress: number): ReadOutcome {
+export function inferReadOutcome(
+  story: Story,
+  activeSeconds: number,
+  progress: number,
+  options: { scrollable?: boolean } = {}
+): ReadOutcome {
   const expectedSeconds = expectedReadingSeconds(story);
+  const scrollable = options.scrollable ?? true;
 
   // Too little time for the length of the piece, whatever the scroll says.
   if (activeSeconds < Math.max(5, expectedSeconds * 0.25)) return "skip";
 
+  // Nothing to scroll: the whole text was on screen, so attention is the only
+  // evidence there is - and it is enough.
+  if (!scrollable) return activeSeconds >= expectedSeconds * 0.4 ? "complete" : "skip";
+
   // Reached the end and spent a plausible amount of time getting there.
   if (progress >= 0.85 && activeSeconds >= expectedSeconds * 0.4) return "complete";
 
-  // Stayed long enough that they read most of it, even without scrolling to the
-  // very end - short boks often fit on one screen and never scroll at all.
+  // Stayed long enough that they read most of it without reaching the very end.
   return activeSeconds >= expectedSeconds * 0.7 ? "complete" : "skip";
 }
 
@@ -90,7 +122,7 @@ export function getBrowserId(key: string) {
   if (typeof window === "undefined") return "server";
   const existing = window.localStorage.getItem(key);
   if (existing) return existing;
-  const id = `${key}-${crypto.randomUUID()}`;
+  const id = `${key}-${randomBoksId()}`;
   window.localStorage.setItem(key, id);
   return id;
 }

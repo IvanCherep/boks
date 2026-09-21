@@ -592,3 +592,23 @@ export type LanguageDemandRow = {
   /** Readers who accept only this language - an empty app if published is 0. */
   readersOnly: number;
 };
+
+/** One reader's note, as the admin console reads it. */
+export type BoksFeedbackRow = {
+  id: number;
+  message: string;
+  surface: "settings" | "after_3" | "after_10" | "after_30" | "other";
+  boksRead: number;
+  handle: string | null;
+  isAnonymous: boolean;
+  userId: string;
+  visitorId: string;
+  createdAt: string;
+};
+
+export type BoksFeedbackPage = {
+  total: number;
+  newToday: number;
+  bySurface: Record<string, number>;
+  rows: BoksFeedbackRow[];
+};

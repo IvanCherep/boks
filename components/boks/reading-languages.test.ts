@@ -114,3 +114,25 @@ describe("emptyFeedNotice", () => {
     expect(notice).toEqual({ kind: "message", message: "Ready" });
   });
 });
+
+describe("emptyFeedNotice and an unreachable server", () => {
+  it("names the network when the failure was a network one", () => {
+    const notice = emptyFeedNotice({
+      phase: "failed",
+      message: "boks-unreachable: the boks session did not answer within 8000 ms",
+      languages: ["ru"],
+      coverage: { ru: 348, en: 199 },
+    });
+    expect(notice.kind).toBe("unreachable");
+  });
+
+  it("leaves every other failure as the message it came with", () => {
+    const notice = emptyFeedNotice({
+      phase: "failed",
+      message: "This boks account is suspended.",
+      languages: ["ru"],
+      coverage: { ru: 348 },
+    });
+    expect(notice).toEqual({ kind: "message", message: "This boks account is suspended." });
+  });
+});

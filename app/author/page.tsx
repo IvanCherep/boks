@@ -1,5 +1,10 @@
+import { BoksErrorBoundary } from "@/components/boks/error-boundary";
 import { AuthorConsole } from "../boks-client";
 
 export default function AuthorPage() {
-  return <AuthorConsole />;
+  return (
+    <BoksErrorBoundary>
+      <AuthorConsole />
+    </BoksErrorBoundary>
+  );
 }

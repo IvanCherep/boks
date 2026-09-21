@@ -17,6 +17,7 @@ import { ModerationQueue } from "@/components/boks/admin/moderation-queue";
 import { AdminGrowth } from "@/components/boks/admin/growth";
 import { AdminOverview } from "@/components/boks/admin/overview";
 import { AdminPeople } from "@/components/boks/admin/people";
+import { FeedbackInbox } from "@/components/boks/admin/feedback-inbox";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { MetricTile } from "@/components/boks/shared-ui";
 import {
@@ -42,6 +43,7 @@ const adminTabs = [
   { id: "content", label: "Content" },
   { id: "catalogue", label: "Catalogue" },
   { id: "people", label: "People" },
+  { id: "feedback", label: "Feedback" },
   { id: "experiments", label: "Experiments" },
 ] as const;
 
@@ -339,6 +341,7 @@ export function AdminDashboard() {
         {tab === "catalogue" && <CatalogueImport />}
 
         {tab === "people" && <AdminPeople currentUserId={user.userId} />}
+        {tab === "feedback" && <FeedbackInbox />}
 
         {authStatus && <p className="text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
       </div>

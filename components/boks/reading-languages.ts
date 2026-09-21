@@ -1,3 +1,4 @@
+import { isUnreachableBoksError } from "@/lib/boks/network-errors";
 /**
  * Which languages a reader accepts.
  *
@@ -128,7 +129,9 @@ export type FeedLoadPhase = "loading" | "ready" | "failed";
 
 export type EmptyFeedNotice =
   | { kind: "language"; title: string; body: string; offer: ReadingLanguage[] }
-  | { kind: "message"; message: string };
+  | { kind: "message"; message: string }
+  /** The API host did not answer: the reader's network, not an empty feed. */
+  | { kind: "unreachable" };
 
 /**
  * What to show when the feed has nothing in it.
@@ -151,6 +154,10 @@ export function emptyFeedNotice(input: {
   languages: readonly string[];
   coverage: Record<string, number> | null | undefined;
 }): EmptyFeedNotice {
+  // A network that cannot reach our server is not a feed with nothing in it,
+  // and it is the one failure a reader can act on. Checked before the phase,
+  // because the phase says only that the load failed, never why.
+  if (isUnreachableBoksError(input.message)) return { kind: "unreachable" };
   if (input.phase !== "ready") return { kind: "message", message: input.message };
   const gap = describeEmptyLanguageFeed(input.languages, input.coverage);
   if (!gap) return { kind: "message", message: input.message };

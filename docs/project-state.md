@@ -57,6 +57,142 @@ export). Links inside it walk between the two with Back. Reads are
 defined exactly as the Content and People rows - `checks.sql` asserts equality.
 Hide / restore / erase have one dialog, `admin/bok-lifecycle-dialog.tsx`.
 
+**A blocked API host no longer looks like a broken app (2026-09-21).** A
+reader in Russia reported a white screen without a VPN and a connection error
+with one. The white screen was ours: the page is a "Loading" shell and the
+first thing the client does is call `…supabase.co`, that call had **no
+timeout**, so on a network that blocks the host the app sat on the word
+"Loading" indefinitely. Now the boot is bounded at 8 s
+(`lib/boks/network-errors.ts`, `withUnreachableTimeout`), a network failure is
+told apart from every other error by what browsers actually say ("Failed to
+fetch", "Load failed", "net::ERR_…", and our own marker), and the reader gets a
+screen that says the page loaded, the connection after it did not, that another
+network or a VPN usually fixes it, with **Try again** and the support address.
+Verified by building against an unreachable host and watching it: 8 s, then the
+screen. 377 unit tests.
+
+**A tab icon, and a shared bok that previews (2026-09-21).** Every icon and the
+share cover are built from one master, `assets/brand/boks-logo.png`, by
+`scripts/build-brand-assets.py` into `public/`: 16/32/48 PNGs, a 16/32/48
+`.ico` for the browsers that still ask (Yandex Browser among them), 192 and
+512 for the manifest, a flattened 180 for iOS, and `og-cover.png` at 1200x630.
+The cover is built rather than cropped - the background is the logo's own
+gradient taken from the strip above the wordmark, the tile sits on it whole -
+because a centre crop of a three-row wordmark cuts it in half, and because
+Telegram, WhatsApp and Slack give a wide image a large preview and a square one
+a thumbnail. The old `favicon.svg` is unreferenced: a stacked wordmark is
+unreadable at 16 px in any format.
+
+**`/b/<id>` is server-rendered now, and that was the whole problem.** It used to
+be a client-side redirect, so the HTML a messenger fetched carried no title, no
+description and no image: the most shareable thing in the product, one short
+poem, arrived as the bare word "boks". The route has `generateMetadata`, reads
+the piece with the publishable key from `published_boks` (so a draft or a hidden
+bok cannot reach a preview by construction), and returns `og:title` as
+"Title — Author", `og:description` as the opening 200 characters run into one
+line, `og:type: article` and the cover. Bounded at 2 s and swallowing every
+failure - a preview is never worth a broken page - with a generic fallback for
+an unknown id. A person still lands in the reader: the redirect moved into a
+client child, `open-shared-bok.tsx`.
+
+Verified on production with Telegram's user agent: "Незнакомка — Александр
+Блок" with Blok's first lines, absolute image URLs, every asset 200, an unknown
+id answering 200 with generic tags, and the shared link opening that exact bok
+in the reader. 397 unit tests, 11 of them on the preview shaping.
+
+**One caveat for whoever shares a link today:** Telegram caches a preview per
+URL, so a link shared before this deploy keeps its empty card. Sending it to
+`@WebpageBot` refreshes it.
+
+**Poetry could not be finished, and that was measured (2026-09-21).** A reader
+noticed that nothing was ever marked as read. Production agreed: in 24 hours,
+**37 skips to 4 completes**, and the skips averaged **9 seconds of foreground
+attention at 38% progress** - people reading, recorded as people leaving.
+
+Two causes, both in the outcome rule. A bok that fits the screen has nothing to
+scroll to, so its progress stays 0 however carefully it is read
+(`reader-feed.tsx`, `updateStoryProgress`), which left only the strictest
+branch - 70% of the expected time - and the expectation had a 20-second floor,
+so a 30-word quatrain needed 14 seconds, about twice what reading it takes.
+
+The fix keeps `progress` meaning what it meant, because the ranker pays for
+prior progress and treats a part-read piece as one to resume: telling it every
+short poem was read to the end would push flicked poems up the feed. Instead
+the outcome now receives the fact it was missing - whether there was anything
+to scroll (`inferReadOutcome(..., { scrollable })`) - and judges an
+unscrollable piece on attention alone, which is the only evidence it has. The
+floor drops 20 -> 12 seconds. A quatrain now counts as read after 5 seconds on
+screen and is still a flick at 3. Scrollable pieces are judged exactly as
+before, which a test asserts.
+
+Left alone deliberately: the skips already recorded. They are a measurement,
+wrong but real, and rewriting them would be worse than carrying them; they feed
+`for_you`'s skip penalty and fade as new events arrive, and the taste vector
+never read them (it is built from likes and completes).
+
+**The blocking hypothesis was wrong, and two real defects took its place
+(2026-09-21).** The reader was asked to open the API host directly and got
+`{"message":"No API key found in request"}` - which is PostgREST answering
+correctly. The host is reachable from his network, so nothing is blocked, and
+the blank screen was a crash rather than a timeout. Two causes, both ours:
+
+- **There was no error boundary anywhere in the app.** Any exception while the
+  reader booted left the page blank - no message, no retry, nothing anybody
+  could report. Added `components/boks/error-boundary.tsx` around the reader,
+  the author console and the admin console: it says the app stopped rather than
+  the network, offers a reload, and puts the error name, message and user agent
+  behind a "What went wrong" disclosure so a crash that only happens on someone
+  else's browser can be pasted into a message to support.
+- **`crypto.randomUUID()` was called unguarded while booting**
+  (`getBrowserId`, the reader's session id, the author console's). It needs a
+  **secure context** and Chromium 92+, so it is missing over plain HTTP and in
+  some proxying or in-app browsers - Yandex Browser's traffic-saving mode among
+  them - and a throw there was a blank page. `lib/boks/browser-id.ts` falls back
+  to `getRandomValues` and then to a timestamp; these ids are labels, not
+  secrets. 5 tests, including "never throws, whatever the browser does".
+- Also hardened: the Supabase auth store now tolerates a `localStorage` that
+  throws (blocked site data, private windows, in-app browsers) by falling back
+  to memory, rather than rejecting `getSession()` mid-boot.
+
+**An operational note worth knowing before a launch day:** for a few seconds
+after `npm run deploy`, a page load can be served HTML that references chunks
+the edge has not received yet, and vinext then shows "This page couldn't load".
+Seen once during this pass and gone on reload - all chunks answered 200 from
+the server at the same moment. It also means some of what this reader saw today
+may simply have been one of the eight deploys. Deploy when nobody is reading,
+or expect one reload.
+
+**Still open, and the actual fix for readers behind a block:** the browser
+talks to `vcmrvnihbptostnzaean.supabase.co` directly for auth and every RPC, so
+one blocked host takes the whole app down for that reader - `/api/feed` needs a
+token, and the token comes from the blocked host. Either Supabase's Custom
+Domain add-on ($10/month) on `api.tryboks.com`, or proxying the REST and auth
+paths through our own Worker on the zone that already reaches them. Owner's
+call; the second costs nothing but is ours to maintain.
+
+**Readers can say what they think, without an account (2026-09-21).** A text
+box, and nothing else: no mail client, no sign-up, no form to fill in. It
+appears in two places - Settings -> **Send feedback**, open at any time, and a
+sheet offered after the 3rd, 10th and 30th bok **actually read** (a `complete`
+outcome, so foreground reading time, not boks that crossed the screen). Each
+milestone is offered once; a reader whose count arrives already past one - a
+second device, a cleared browser - is asked once about where they are rather
+than walked through three prompts (`components/boks/feedback.ts`, 6 tests).
+
+The point of the design is that it costs a reader nothing: `submit_boks_feedback`
+is granted to `anon`, so a guest's note lands with no session at all, and the
+device's visitor id is what groups their notes instead of a name. Five notes an
+hour per account or device, 2-4000 characters, and a suspended account is
+refused. Nothing but an admin can read them: the table has row-level security
+with no policies, and `get_boks_feedback` checks `is_boks_admin()` - a note may
+be about another reader, or about whoever runs this. The inbox is the admin
+console's **Feedback** tab, newest first, each note beside where it was written
+and how many boks that reader had finished. `support@tryboks.com` stays
+reachable but is deliberately quieter than the box: opening a mail client is
+work, and work is how feedback stops arriving. Migration `20260921100000`; 8
+assertions in `checks.sql` cover the guest path, the rate limit and the fact
+that a reader can read nothing.
+
 **The ranker has a semantic source, and the catalogue is new (2026-09-20).**
 The full account, with the measurements behind every choice, is
 `docs/handover/2026-09-20-embeddings-and-catalogue.md`. In short:

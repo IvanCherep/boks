@@ -33,7 +33,9 @@ describe("expectedReadingSeconds", () => {
   });
 
   it("never expects less than a few seconds, so a one-line boks stays judgeable", () => {
-    expect(expectedReadingSeconds(story({ wordCount: 3 }))).toBe(20);
+    // Twelve, not twenty: twenty was longer than most of this catalogue takes
+    // to read, and it made a quatrain impossible to finish.
+    expect(expectedReadingSeconds(story({ wordCount: 3 }))).toBe(12);
   });
 });
 
@@ -56,6 +58,35 @@ describe("inferReadOutcome", () => {
     // it is read. Time is the only evidence available.
     const short = story({ wordCount: 200, minutes: 1 });
     expect(inferReadOutcome(short, 45, 0)).toBe("complete");
+  });
+
+  it("counts a quatrain that fits the screen and was read as read", () => {
+    // The production case that started this: 37 skips to 4 completes in a day,
+    // and the skips averaged nine seconds of foreground attention. A poem with
+    // nothing to scroll can never reach the progress branch, so before this it
+    // needed fourteen seconds - longer than reading it twice.
+    const quatrain = story({ wordCount: 30, minutes: 1 });
+    expect(inferReadOutcome(quatrain, 9, 0, { scrollable: false })).toBe("complete");
+    expect(inferReadOutcome(quatrain, 5, 0, { scrollable: false })).toBe("complete");
+  });
+
+  it("still calls a flick past a short poem a flick", () => {
+    const quatrain = story({ wordCount: 30, minutes: 1 });
+    expect(inferReadOutcome(quatrain, 3, 0, { scrollable: false })).toBe("skip");
+    expect(inferReadOutcome(quatrain, 1, 0, { scrollable: false })).toBe("skip");
+  });
+
+  it("does not credit a long piece just because it was not scrolled", () => {
+    // `scrollable: false` is a fact about the layout, not a discount: a 3000
+    // word piece that somehow reports no scrolling still needs the time.
+    const long = story({ wordCount: 3000, minutes: 14 });
+    expect(inferReadOutcome(long, 60, 0, { scrollable: false })).toBe("skip");
+    expect(inferReadOutcome(long, 400, 0, { scrollable: false })).toBe("complete");
+  });
+
+  it("judges a scrollable piece exactly as it did before", () => {
+    expect(inferReadOutcome(story(), 280, 0.95, { scrollable: true })).toBe("complete");
+    expect(inferReadOutcome(story(), 4, 1, { scrollable: true })).toBe("skip");
   });
 
   it("scales with length rather than using one fixed threshold", () => {

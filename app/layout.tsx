@@ -3,16 +3,59 @@ import "@fontsource-variable/source-serif-4/standard.css";
 import "./globals.css";
 import { themeBootScript, themeColor } from "@/components/boks/theme";
 
+/**
+ * The canonical origin, and the reason it is written down.
+ *
+ * Open Graph needs absolute URLs - a messenger fetching a shared link has no
+ * page to resolve `/og-cover.png` against - and `metadataBase` is what turns
+ * every relative path below into one. `read.tryboks.workers.dev` serves the
+ * same Worker, and a link shared from there still previews with tryboks.com
+ * images, which is right: that host is a fallback, not the brand.
+ */
+export const boksOrigin = "https://tryboks.com";
+
+const boksDescription = "Short literature, one focused read at a time.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(boksOrigin),
   title: "boks",
-  description:
-    "Short literature, one focused read at a time.",
+  description: boksDescription,
+  applicationName: "boks",
   other: {
     "product": "boks",
   },
+  manifest: "/manifest.webmanifest",
+  /**
+   * PNGs, not the SVG that used to be here: a wordmark stacked in three rows is
+   * unreadable at 16 px in any format, and these are rendered from the master
+   * rather than scaled by the browser. The `.ico` is for the browsers that
+   * still ask for one - Yandex Browser among them, which is what our first
+   * reported reader uses.
+   */
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "boks",
+    title: "boks",
+    description: boksDescription,
+    url: boksOrigin,
+    locale: "en_US",
+    images: [{ url: "/og-cover.png", width: 1200, height: 630, alt: "boks" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "boks",
+    description: boksDescription,
+    images: ["/og-cover.png"],
   },
 };
 

@@ -1,3 +1,4 @@
+import { withUnreachableTimeout } from "@/lib/boks/network-errors";
 import { createClient } from "@supabase/supabase-js";
 import type { BoksUserContext } from "@/components/boks/client-types";
 import { describeMagicLinkRedirectError } from "@/lib/boks/magic-link-errors";
@@ -10,6 +11,45 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKe
 export const supabaseRestUrl = supabaseUrl ? `${supabaseUrl as string}/rest/v1` : null;
 export const supabasePublishableApiKey = (supabasePublishableKey as string | undefined) ?? null;
 
+/**
+ * Session storage that cannot throw.
+ *
+ * `localStorage` is not always available even when it exists: a browser with
+ * site data blocked, a privacy mode, an in-app browser, and an iOS private
+ * window all raise on access rather than returning null. The default storage
+ * adapter does not catch that, so the throw surfaces from `getSession()` while
+ * the reader is booting - which is one of the ways this app reached a blank
+ * screen. Falling back to memory costs the reader their session when they close
+ * the tab, and keeps them reading now.
+ */
+const sessionMemory = new Map<string, string>();
+
+const resilientAuthStorage = {
+  getItem(key: string) {
+    try {
+      return typeof window === "undefined" ? null : window.localStorage.getItem(key);
+    } catch {
+      return sessionMemory.get(key) ?? null;
+    }
+  },
+  setItem(key: string, value: string) {
+    sessionMemory.set(key, value);
+    try {
+      if (typeof window !== "undefined") window.localStorage.setItem(key, value);
+    } catch {
+      // Memory already has it.
+    }
+  },
+  removeItem(key: string) {
+    sessionMemory.delete(key);
+    try {
+      if (typeof window !== "undefined") window.localStorage.removeItem(key);
+    } catch {
+      // Nothing else to do.
+    }
+  },
+};
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
       auth: {
@@ -17,6 +57,7 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: true,
         detectSessionInUrl: false,
         flowType: "pkce",
+        storage: resilientAuthStorage,
       },
     })
   : null;
@@ -184,14 +225,21 @@ export async function getAnonymousSupabaseUserId() {
 
   await settleBoksMagicLinkRedirect();
 
-  const sessionResult = await supabase.auth.getSession();
+  // Bounded, because this is the first thing the app does and a hanging call
+  // here is a blank screen for as long as the reader will tolerate one. On a
+  // network that blocks the API host it fails in eight seconds with a reason
+  // the reader screen can explain.
+  const sessionResult = await withUnreachableTimeout(supabase.auth.getSession(), "the boks session");
   if (sessionResult.error) {
     if (!isUnusableMagicLinkError(sessionResult.error.message)) throw sessionResult.error;
     forgetBrokenSession(sessionResult.error.message);
   }
   if (sessionResult.data.session?.user.id) return sessionResult.data.session.user.id;
 
-  const signInResult = await supabase.auth.signInAnonymously();
+  const signInResult = await withUnreachableTimeout(
+    supabase.auth.signInAnonymously(),
+    "signing in as a guest"
+  );
   if (signInResult.error) throw signInResult.error;
 
   return signInResult.data.user?.id ?? null;
@@ -202,7 +250,7 @@ export async function getCurrentSupabaseUser() {
 
   await settleBoksMagicLinkRedirect();
 
-  const sessionResult = await supabase.auth.getSession();
+  const sessionResult = await withUnreachableTimeout(supabase.auth.getSession(), "the boks session");
   if (sessionResult.error) {
     if (!isUnusableMagicLinkError(sessionResult.error.message)) throw sessionResult.error;
     forgetBrokenSession(sessionResult.error.message);
