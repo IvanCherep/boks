@@ -313,3 +313,67 @@ describe("for_you and the semantic source", () => {
     expect(ranked[0]?.candidate.id).toBe("unlike");
   });
 });
+
+describe("for_you and one publisher's catalogue", () => {
+  /**
+   * The shape of the real catalogue: every piece under one account, the writer
+   * in the byline. This is what made author taste impossible to learn.
+   */
+  function publishedByBoks(id: string, writer: string) {
+    return candidate({
+      id,
+      authorName: writer,
+      authorUserId: "boks-account",
+      authorHandle: "boks",
+    });
+  }
+
+  it("learns the writer, not the publisher", () => {
+    const set = [
+      publishedByBoks("chekhov-read-1", "Антон Чехов"),
+      publishedByBoks("chekhov-read-2", "Антон Чехов"),
+      publishedByBoks("chekhov-fresh", "Антон Чехов"),
+      publishedByBoks("blok-fresh-1", "Александр Блок"),
+      publishedByBoks("blok-fresh-2", "Александр Блок"),
+      publishedByBoks("grin-fresh", "Александр Грин"),
+    ];
+    const history = reader({
+      bokState: {
+        "chekhov-read-1": state({ completedAt: daysAgo(1), liked: true, maxProgress: 1, totalDwellSeconds: 300 }),
+        "chekhov-read-2": state({ completedAt: daysAgo(2), liked: true, maxProgress: 1, totalDwellSeconds: 280 }),
+      },
+    });
+
+    const ranked = rank(set, history).filter((entry) => !entry.candidate.id.includes("read"));
+    // A reader who liked two Chekhov stories should be offered the third one
+    // ahead of writers they have never met. Keyed on the account, all six of
+    // these shared one affinity value and this assertion was a coin toss.
+    expect(ranked[0]?.candidate.id).toBe("chekhov-fresh");
+  });
+
+  it("still keeps one writer from filling the slate", () => {
+    const set = [
+      ...Array.from({ length: 4 }, (_, index) => publishedByBoks(`chekhov-${index}`, "Антон Чехов")),
+      publishedByBoks("blok", "Александр Блок"),
+      publishedByBoks("grin", "Александр Грин"),
+    ];
+    const history = reader({
+      bokState: { "chekhov-0": state({ completedAt: daysAgo(1), liked: true, maxProgress: 1 }) },
+    });
+    const writers = rank(set, history, 4)
+      .slice(0, 3)
+      .map((entry) => entry.candidate.authorName);
+    // Affinity pulls Chekhov up; the spacing still refuses three in a row.
+    expect(new Set(writers).size).toBeGreaterThan(1);
+  });
+
+  it("falls back to the account for an author who publishes their own work", () => {
+    const own = candidate({ id: "own-1", authorName: "", authorUserId: "author-account", authorHandle: "ivan" });
+    const other = candidate({ id: "other-1", authorName: "", authorUserId: "other-account", authorHandle: "other" });
+    const history = reader({
+      bokState: { "own-1": state({ completedAt: daysAgo(1), liked: true, maxProgress: 1 }) },
+    });
+    const ranked = rank([own, other, candidate({ id: "third" })], history);
+    expect(ranked.map((entry) => entry.candidate.id)).toContain("other-1");
+  });
+});

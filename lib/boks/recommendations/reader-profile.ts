@@ -65,6 +65,34 @@ export function readerBokState(reader: ReaderSignals, storyId: string): ReaderBo
   return reader.bokState?.[storyId] ?? emptyReaderBokState;
 }
 
+/**
+ * Who wrote this, for the purpose of learning a reader's taste.
+ *
+ * **The byline first, the account second**, and that ordering is the whole
+ * point. This catalogue is 547 pieces by 138 writers published by one account,
+ * so keying taste on `authorUserId` meant one key for everything: the likes of
+ * Chekhov, Blok and Grin all landed in a single counter that answered "does
+ * this reader like @boks", which every candidate then matched equally. An
+ * affinity that is identical for every candidate cannot order anything, so
+ * author personalisation was dead while looking alive - measured on 200 live
+ * candidates: one distinct `authorUserId`, 97 distinct bylines.
+ *
+ * An author who publishes their own work has no byline, and then the account
+ * is the only identity there is, which is why it is the fallback rather than
+ * the key.
+ *
+ * Following stays on the account (`isFollowingAuthor` below): a reader follows
+ * a publisher, and that is a relationship with an account, not with a name
+ * printed on a page.
+ */
+export function authorIdentityKey(candidate: Pick<StoryCandidate, "authorName" | "authorUserId" | "authorHandle" | "id">) {
+  const byline = candidate.authorName?.trim().toLowerCase();
+  if (byline) return `byline:${byline}`;
+  if (candidate.authorUserId) return candidate.authorUserId;
+  const handle = candidate.authorHandle?.trim().toLowerCase();
+  return handle ? `handle:${handle}` : `bok:${candidate.id}`;
+}
+
 export function isFollowingAuthor(reader: ReaderSignals, candidate: StoryCandidate) {
   if (!candidate.authorUserId) return false;
   return (reader.followedAuthorIds ?? []).includes(candidate.authorUserId);
@@ -155,12 +183,11 @@ export function buildReaderProfile(input: ReaderProfileInput): ReaderProfile {
     personalizationStrength += positive;
     totalNegativeWeight += negative;
 
-    if (candidate.authorUserId) {
-      const entry = byAuthor.get(candidate.authorUserId) ?? { net: 0, count: 0 };
-      entry.net += net;
-      entry.count += 1;
-      byAuthor.set(candidate.authorUserId, entry);
-    }
+    const authorKey = authorIdentityKey(candidate);
+    const entry = byAuthor.get(authorKey) ?? { net: 0, count: 0 };
+    entry.net += net;
+    entry.count += 1;
+    byAuthor.set(authorKey, entry);
 
     const shape = candidate.readingShape ?? "unknown";
     byShape.set(shape, (byShape.get(shape) ?? 0) + net);

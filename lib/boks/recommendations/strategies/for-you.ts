@@ -1,5 +1,6 @@
 import { defineStrategy, type ScoredCandidate } from "@/lib/boks/recommendations/strategy";
 import {
+  authorIdentityKey,
   buildReaderProfile,
   compactnessBand,
   isFollowingAuthor,
@@ -182,9 +183,8 @@ function prepare(
   const following = isFollowingAuthor(reader, candidate);
   const shape = candidate.readingShape ?? "unknown";
   const bucket = lengthBucketFor(candidate.minutes);
-  const authorAffinity = candidate.authorUserId
-    ? profile.authorAffinity[candidate.authorUserId] ?? 0
-    : 0;
+  // The same key the profile aggregated under - the byline where there is one.
+  const authorAffinity = profile.authorAffinity[authorIdentityKey(candidate)] ?? 0;
   const shapeAffinity = profile.shapeAffinity[shape] ?? 0;
   const lengthAffinity = profile.lengthAffinity[bucket] ?? 0;
   const semanticZ = standing(candidate.tasteSimilarity, semantic.taste);
@@ -716,9 +716,7 @@ function coldStartPrior(candidate: StoryCandidate, now: Date) {
  * piece in a publisher's catalogue look like one author.
  */
 function authorKey(entry: Scored) {
-  const byline = entry.candidate.authorName?.trim().toLowerCase();
-  if (byline) return `byline:${byline}`;
-  return entry.candidate.authorUserId || `handle:${entry.candidate.authorHandle ?? ""}` || `bok:${entry.candidate.id}`;
+  return authorIdentityKey(entry.candidate);
 }
 
 function sameAuthor(left: Scored, right: Scored) {

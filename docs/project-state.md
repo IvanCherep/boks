@@ -71,6 +71,24 @@ network or a VPN usually fixes it, with **Try again** and the support address.
 Verified by building against an unreachable host and watching it: 8 s, then the
 screen. 377 unit tests.
 
+**Author taste now follows the writer, not the publisher (2026-09-21).**
+`authorAffinity` was keyed on `authorUserId`, and this catalogue is 547 pieces
+by 138 writers under one account - so there was one key for everything: the
+likes of Chekhov, Blok and Grin landed in a single counter answering "does this
+reader like @boks", identical for every candidate and therefore unable to order
+anything. Measured on 200 live candidates: one distinct `authorUserId`, 97
+distinct bylines. Author personalisation was dead while looking alive.
+
+The profile and the ranker now share one identity, `authorIdentityKey` in
+`reader-profile.ts`: the byline where there is one, the account behind it for an
+author who publishes their own work. Following stays on the account, which is
+right - a reader follows a publisher. Author spacing already used this rule, so
+the slate is unchanged; the test that proves the fix fails against the old
+keying, and a second test holds the spacing (one writer still cannot take three
+slots in a row). Still keyed on the account and still therefore constant:
+`authorTrust` and the cold-start priors, which would need a byline aggregation
+in `get_recommendation_candidates` - a separate, optional step.
+
 **A tab icon, and a shared bok that previews (2026-09-21).** Every icon and the
 share cover are built from one master, `assets/brand/boks-logo.png`, by
 `scripts/build-brand-assets.py` into `public/`: 16/32/48 PNGs, a 16/32/48
