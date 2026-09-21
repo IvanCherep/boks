@@ -27,6 +27,7 @@ import {
 } from "@/lib/boks/contracts";
 import { anonymousReadLimits } from "@/components/boks/reader-behavior";
 import { ThemeSetting } from "@/components/boks/theme-setting";
+import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
 import {
   loadBoksUserContext,
@@ -811,6 +812,10 @@ export function UserAuthPanel({
               <summary>About</summary>
               <div className="settings-disclosure__body">
                 <p>boks is a focused feed for short literature.</p>
+                <p>
+                  Something broken, or a question? Write to{" "}
+                  <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
+                </p>
                 <details className="settings-disclosure settings-disclosure--nested">
                   <summary>Open source licenses</summary>
                   <div className="settings-disclosure__body">
@@ -846,6 +851,12 @@ export function UserAuthPanel({
               </p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
                 boks is free. The account keeps your reading history, comments, and recommendations connected to you.
+              </p>
+              {/* Whoever never gets the email cannot reach anyone from inside
+                  the app, which is the one place they are stuck. */}
+              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+                No email after a few minutes? Check spam, then write to{" "}
+                <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
               </p>
             </div>
             <div className="mt-5 grid gap-2">
@@ -949,6 +960,15 @@ export function UserAuthPanel({
         {/* A guest has no settings page, and should not need an account to
             read in the dark. */}
         {!showingAccount && !sentMagicLink && !(accountLoading && !user) && <ThemeSetting compact />}
+
+        {/* A guest has no settings panel either, so the address lives here as
+            well - the sign-in screen is where people get stuck. */}
+        {!showingAccount && (
+          <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">
+            Questions, or something not working? Write to{" "}
+            <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
+          </p>
+        )}
 
         {status && (
           <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">

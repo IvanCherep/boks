@@ -27,12 +27,18 @@ import type {
  * Three deliberate differences from the original, all of them losses this
  * codebase cannot yet avoid:
  *
- *  - **No SEMANTIC source.** The original retrieved by embedding similarity to
- *    a reader's positive and negative taste vectors. That needs an embedding
- *    provider and a per-user budget; until then a candidate that would have
- *    been SEMANTIC is classified AFFINITY or DISCOVERY on behavioural evidence
- *    alone. The source is declared in the type so the gap is visible rather
- *    than quietly absent.
+ *  - ~~No SEMANTIC source.~~ **Closed on 2026-09-20.** Every bok carries a
+ *    384-dimension vector from Supabase's own `gte-small` model (the `embed`
+ *    Edge Function), the database averages what a reader liked or finished
+ *    into a taste vector, and `get_recommendation_candidates` returns two
+ *    numbers per candidate: similarity to that taste vector, and distance
+ *    from what the reader has been reading lately. Both are used below. Two
+ *    things about them are worth knowing: a raw cosine from this model sits
+ *    around 0.6-0.9 for almost any pair of short literary texts, so what is
+ *    scored here is a candidate's **standing within its own candidate set**
+ *    (a z-score), never the raw number; and a reader with nothing liked or
+ *    finished has no taste vector, so the semantic terms are absent rather
+ *    than zero, and the ranker is exactly what it was before them.
  *  - **No explicit negative feedback.** The original had `NOT_INTERESTED` and
  *    `HIDE_AUTHOR` events, worth 3.6 and 4.8 of negative weight. This product
  *    has neither control yet, so the negative side of the profile rests
@@ -70,11 +76,66 @@ const sourceExplanation: Record<CandidateSource, string> = {
 
 const compactShapes = new Set<ReadingShape>(["verse", "short_prose"]);
 
+/**
+ * Liked-or-finished boks the taste vector must be averaged from before the
+ * semantic terms are trusted. One like is a mood, not a taste.
+ */
+const minimumTasteSamples = 2;
+
+/** Standard deviations above the set's mean similarity to call a piece SEMANTIC. */
+const semanticSourceThreshold = 0.75;
+
+type Spread = { mean: number; spread: number };
+
+type SemanticStanding = {
+  /** How many liked or finished embedded boks the taste vector came from. */
+  samples: number;
+  taste: Spread;
+  novelty: Spread;
+};
+
+/**
+ * Where each candidate stands against the rest of the set.
+ *
+ * Raw cosine similarity from `gte-small` is nearly useless as an absolute
+ * number: two unrelated short poems still score around 0.7, so a threshold on
+ * the raw value either admits everything or nothing, and it moves with the
+ * model. The spread within one candidate set does not, and it is what ranking
+ * actually needs - "closer to this reader's taste than the alternatives".
+ */
+function semanticStanding(candidates: readonly StoryCandidate[]): SemanticStanding {
+  return {
+    samples: candidates.reduce((most, candidate) => Math.max(most, candidate.tasteSamples ?? 0), 0),
+    taste: spreadOf(candidates.map((candidate) => candidate.tasteSimilarity)),
+    novelty: spreadOf(candidates.map((candidate) => candidate.noveltyDistance)),
+  };
+}
+
+function spreadOf(values: readonly (number | null | undefined)[]): Spread {
+  const present = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (present.length < 4) return { mean: 0, spread: 0 };
+  const mean = present.reduce((sum, value) => sum + value, 0) / present.length;
+  const variance = present.reduce((sum, value) => sum + (value - mean) ** 2, 0) / present.length;
+  const spread = Math.sqrt(variance);
+  // A set whose similarities are all but identical carries no information, and
+  // dividing by that spread would turn rounding noise into a ranking signal.
+  return { mean, spread: spread >= 0.004 ? spread : 0 };
+}
+
+function standing(value: number | null | undefined, spread: Spread) {
+  if (typeof value !== "number" || !Number.isFinite(value) || spread.spread <= 0) return 0;
+  return (value - spread.mean) / spread.spread;
+}
+
 type Contribution = { value: number; explanation: string };
 
 type Scored = {
   candidate: StoryCandidate;
   source: CandidateSource;
+  /** How this candidate's taste similarity stands against the set, in sd. */
+  semanticZ: number;
+  /** How unlike the reader's recent stretch it is, against the set, in sd. */
+  noveltyZ: number;
   state: ReaderBokState;
   following: boolean;
   authorAffinity: number;
@@ -99,8 +160,11 @@ export const forYou = defineStrategy({
   rerank: (scored, context) => {
     const candidates = scored.map((entry) => entry.candidate);
     const profile = buildReaderProfile({ reader: context.reader, candidates, now: context.now });
+    // Computed once over the whole set: a semantic score only means something
+    // next to the other candidates it is competing with.
+    const semantic = semanticStanding(candidates);
     const prepared = scored.map((entry) =>
-      prepare(entry.candidate, context.reader, profile, context.now)
+      prepare(entry.candidate, context.reader, profile, context.now, semantic)
     );
 
     return selectSlate(prepared, scored, context.limit);
@@ -111,7 +175,8 @@ function prepare(
   candidate: StoryCandidate,
   reader: ReaderSignals,
   profile: ReaderProfile,
-  now: Date
+  now: Date,
+  semantic: SemanticStanding
 ): Scored {
   const state = readerBokState(reader, candidate.id);
   const following = isFollowingAuthor(reader, candidate);
@@ -122,11 +187,23 @@ function prepare(
     : 0;
   const shapeAffinity = profile.shapeAffinity[shape] ?? 0;
   const lengthAffinity = profile.lengthAffinity[bucket] ?? 0;
-  const source = classify(state, following, authorAffinity, shapeAffinity, lengthAffinity);
+  const semanticZ = standing(candidate.tasteSimilarity, semantic.taste);
+  const noveltyZ = standing(candidate.noveltyDistance, semantic.novelty);
+  const semanticEvidence = semantic.samples >= minimumTasteSamples;
+  const source = classify(
+    state,
+    following,
+    authorAffinity,
+    shapeAffinity,
+    lengthAffinity,
+    semanticEvidence ? semanticZ : 0
+  );
 
   return {
     candidate,
     source,
+    semanticZ,
+    noveltyZ,
     state,
     following,
     authorAffinity,
@@ -145,6 +222,8 @@ function prepare(
       shape,
       profile,
       now,
+      semanticZ: semanticEvidence ? semanticZ : null,
+      noveltyZ: semantic.novelty.spread > 0 ? noveltyZ : null,
     }),
   };
 }
@@ -162,13 +241,19 @@ function classify(
   following: boolean,
   authorAffinity: number,
   shapeAffinity: number,
-  lengthAffinity: number
+  lengthAffinity: number,
+  semanticZ: number
 ): CandidateSource {
   const unfinished = !state.completedAt;
   if (unfinished && (state.maxProgress >= 0.05 || state.totalDwellSeconds >= 10)) return "resume";
   if (following || authorAffinity > 0.05 || shapeAffinity > 0.05 || lengthAffinity > 0.05) {
     return "affinity";
   }
+  // Behavioural evidence first, meaning second - which is also the original's
+  // ordering of the two sources' boosts. This branch is what makes the fourth
+  // source real: a piece by an author the reader has never met, in a form they
+  // have no history with, that reads like what they keep finishing.
+  if (semanticZ >= semanticSourceThreshold) return "semantic";
   return "discovery";
 }
 
@@ -183,6 +268,10 @@ function baseContributions(input: {
   shape: ReadingShape;
   profile: ReaderProfile;
   now: Date;
+  /** Null when this reader has no taste vector yet: absent, not zero. */
+  semanticZ: number | null;
+  /** Null when the set's novelty distances carry no spread. */
+  noveltyZ: number | null;
 }): Contribution[] {
   const { candidate, source, state, profile, now } = input;
   const out: Contribution[] = [];
@@ -253,6 +342,25 @@ function baseContributions(input: {
     "preferred reading shape",
     "negative reading-shape affinity"
   );
+
+  // Meaning, as the model reads it. Scaled like the affinity terms above and
+  // bounded, so a single strange vector cannot decide a slate. The negative
+  // side is deliberately weaker: "unlike what you liked" is weak evidence
+  // against a piece, while "like what you liked" is decent evidence for it.
+  if (input.semanticZ !== null) {
+    const z = clamp(input.semanticZ, -1.6, 1.6);
+    signed(
+      z > 0 ? z * 1.05 : z * 0.55,
+      z >= 1 ? "reads like the boks this reader finishes" : "close, by meaning, to this reader's taste",
+      "unlike this reader's taste, by meaning"
+    );
+  }
+
+  // The way out of a rut. Only on discovery: nudging a resume or an affinity
+  // pick towards novelty would be arguing with better evidence.
+  if (source === "discovery" && input.noveltyZ !== null) {
+    add(clamp(input.noveltyZ, 0, 1.6) * 0.5, "unlike the stretch this reader has just been reading");
+  }
 
   // How far to trust the light content heuristics. A reader with no history
   // gets them at a fifth strength, so a cold start never looks like taste.

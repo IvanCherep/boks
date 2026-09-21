@@ -56,6 +56,26 @@ export type StoryCandidate = {
   shares: number;
   comments: number;
   readSecondsTotal: number;
+  /**
+   * Whether this boks has a semantic vector at all. A catalogue mid-embedding
+   * has both kinds, and a ranker must not read "no vector" as "no match".
+   */
+  hasEmbedding?: boolean;
+  /**
+   * Cosine similarity between this boks and the reader's taste vector, from
+   * `get_recommendation_candidates`. Null when either side has no vector: the
+   * reader has liked or finished nothing embedded, or this piece is not
+   * embedded yet. Roughly 0..1 for this model, which normalises.
+   */
+  tasteSimilarity?: number | null;
+  /** How many liked or finished boks the taste vector was averaged from. */
+  tasteSamples?: number;
+  /**
+   * Cosine distance from the mean of what the reader has been reading lately,
+   * halved into 0..1. High means unlike the current stretch - the way out of a
+   * rut of twenty near-identical lyric poems, which genre and mood cannot see.
+   */
+  noveltyDistance?: number | null;
 };
 
 /**
@@ -129,6 +149,8 @@ export const storySignalKeys = [
   "shortness",
   "longform",
   "tasteMatch",
+  "semanticTaste",
+  "semanticNovelty",
   "novelty",
   "fatigue",
   "jitter",
@@ -198,6 +220,11 @@ export function deriveFeedSignals(input: FeedSignalInput): Map<string, StorySign
         shortness: clamp01((maxBokMinutes - candidate.minutes) / (maxBokMinutes - 1)),
         longform: clamp01((candidate.minutes - 1) / (maxBokMinutes - 1)),
         tasteMatch,
+        // Measured in the database against the reader's own vectors, so a
+        // missing vector is 0 - the weighted sum then loses the term for every
+        // candidate equally, which leaves the order of the others untouched.
+        semanticTaste: clamp01(candidate.tasteSimilarity ?? 0),
+        semanticNovelty: clamp01(candidate.noveltyDistance ?? 0),
         novelty: completed.has(candidate.id) || skipped.has(candidate.id) ? 0 : 1,
         fatigue: fatigueScore(candidate.id, completed, skipped, liked),
         jitter: deterministicUnit(`${visitorId}:${candidate.id}`),

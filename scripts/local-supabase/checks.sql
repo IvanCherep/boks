@@ -2204,3 +2204,131 @@ begin
 end $$;
 
 reset role;
+
+
+-- Embeddings (migrations 20260920100000 / 20260920103000).
+--
+-- The semantic side of the ranker is only as good as these guarantees: the
+-- column really is a 384-dimension vector, a wrong-sized vector is refused
+-- rather than stored, an edited text loses its stale vector, and the candidate
+-- RPC actually computes a similarity for a reader who has liked something.
+do $$
+declare
+  v_ids uuid[] := string_to_array(nullif(current_setting('boks.published_ids'), ''), ',')::uuid[];
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_one uuid := v_ids[1];
+  v_two uuid := v_ids[2];
+  v_vector_a jsonb := (select jsonb_agg(case when n = 1 then 1 else 0 end) from generate_series(1, 384) n);
+  v_vector_b jsonb := (select jsonb_agg(case when n = 2 then 1 else 0 end) from generate_series(1, 384) n);
+  v_candidates jsonb;
+  v_entry jsonb;
+  v_coverage jsonb;
+  v_text text;
+begin
+  perform public.boks_assert(
+    exists (select 1 from pg_extension where extname = 'vector'),
+    'the vector extension is installed'
+  );
+  perform public.boks_assert(
+    (
+      select format_type(a.atttypid, a.atttypmod)
+      from pg_attribute a
+      where a.attrelid = 'public.reels'::regclass and a.attname = 'embedding'
+    -- Schema-qualified or not, depending on the search path this runs under:
+    -- the extension lives in `extensions`, so `format_type` may print either.
+    ) like '%vector(384)',
+    'reels.embedding is a 384-dimension vector'
+  );
+
+  -- A model swapped for one of another size must fail here, not silently
+  -- store vectors that no comparison can use.
+  begin
+    perform public.set_bok_embedding(v_one, '[0.1, 0.2, 0.3]'::jsonb, public.boks_embedding_model());
+    perform public.boks_assert(false, 'an embedding of the wrong size is refused');
+  exception when others then
+    perform public.boks_assert(sqlstate = '22023', 'an embedding of the wrong size is refused');
+  end;
+
+  -- Two models in one column would make every comparison meaningless, and
+  -- nothing about that failure is visible in a feed, so it is refused.
+  begin
+    perform public.set_bok_embedding(v_one, v_vector_a, 'some-other-model');
+    perform public.boks_assert(false, 'a vector from another model is refused');
+  exception when others then
+    perform public.boks_assert(sqlstate = '22023', 'a vector from another model is refused');
+  end;
+
+  perform public.set_bok_embedding(v_one, v_vector_a, public.boks_embedding_model());
+  perform public.set_bok_embedding(v_two, v_vector_b, public.boks_embedding_model());
+  perform public.boks_assert(
+    (select embedding is not null and embedding_model = public.boks_embedding_model() and embedded_at is not null
+     from public.reels where id = v_one),
+    'a stored embedding records its model and time'
+  );
+
+  -- Needs-embedding is "no vector", so the two just written are not in it.
+  perform public.boks_assert(
+    not exists (
+      select 1 from jsonb_array_elements(public.get_boks_needing_embedding(100)) e
+      where (e ->> 'id')::uuid in (v_one, v_two)
+    ),
+    'an embedded bok is not offered for embedding again'
+  );
+
+  v_coverage := public.boks_embedding_coverage();
+  perform public.boks_assert(
+    (v_coverage ->> 'publishedEmbedded')::integer >= 2
+      and (v_coverage ->> 'publishedTotal')::integer >=
+          (v_coverage ->> 'publishedEmbedded')::integer,
+    'coverage counts the embedded boks'
+  );
+
+  -- An edited text is a different text: the vector of the old words must go.
+  select text into v_text from public.reels where id = v_two;
+  update public.reels set text = v_text || E'\n\nOne more line, added by the checks.' where id = v_two;
+  perform public.boks_assert(
+    (select embedding is null and embedded_at is null from public.reels where id = v_two),
+    'editing the text clears the stale embedding'
+  );
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(public.get_boks_needing_embedding(100)) e
+      where (e ->> 'id')::uuid = v_two
+    ),
+    'a bok whose text changed is offered for embedding again'
+  );
+  perform public.set_bok_embedding(v_two, v_vector_b, public.boks_embedding_model());
+
+  -- The reader side. With nothing liked or finished there is no taste vector,
+  -- and the ranker must be given a null rather than a fabricated zero.
+  perform public.boks_test_login(v_reader);
+  delete from public.likes where user_id = v_reader;
+  v_candidates := public.get_recommendation_candidates(50, null);
+  select e into v_entry from jsonb_array_elements(v_candidates) e where (e ->> 'id')::uuid = v_one;
+  perform public.boks_assert(
+    (v_entry ->> 'hasEmbedding')::boolean,
+    'the candidate set reports which boks carry a vector'
+  );
+  perform public.boks_assert(
+    v_entry ->> 'tasteSimilarity' is null and (v_entry ->> 'tasteSamples')::integer = 0,
+    'a reader with no history gets no taste similarity at all'
+  );
+
+  -- One like is enough for the vectors to be compared, and a piece identical
+  -- to the liked one must score higher than an orthogonal one.
+  insert into public.likes (reel_id, user_id) values (v_one, v_reader)
+  on conflict do nothing;
+  v_candidates := public.get_recommendation_candidates(50, null);
+  select e into v_entry from jsonb_array_elements(v_candidates) e where (e ->> 'id')::uuid = v_one;
+  perform public.boks_assert(
+    (v_entry ->> 'tasteSamples')::integer >= 1 and (v_entry ->> 'tasteSimilarity')::numeric > 0.9,
+    'the boks a reader liked is closest to their own taste vector'
+  );
+  select e into v_entry from jsonb_array_elements(v_candidates) e where (e ->> 'id')::uuid = v_two;
+  perform public.boks_assert(
+    (v_entry ->> 'tasteSimilarity')::numeric < 0.5,
+    'an unrelated boks scores far from that taste vector'
+  );
+  delete from public.likes where user_id = v_reader and reel_id = v_one;
+  perform public.boks_test_logout();
+end $$;

@@ -1141,6 +1141,28 @@ export async function deleteBoksUser(userId: string, confirmation: string) {
   return result.data as { ok: true; userId: string; archivedBoks: number };
 }
 
+/**
+ * How much of the catalogue carries a current semantic vector.
+ *
+ * Worth a line in the console because nothing else says whether the semantic
+ * half of the ranking is switched on: a boks with no vector is ranked on
+ * behaviour alone, silently and correctly, so a catalogue that quietly stopped
+ * being embedded looks exactly like one that never was.
+ */
+export async function loadEmbeddingCoverage() {
+  if (!supabase) return null;
+  const result = await supabase.rpc("boks_embedding_coverage");
+  if (result.error) throw result.error;
+  return result.data as {
+    model: string;
+    publishedTotal: number;
+    publishedEmbedded: number;
+    publishedMissing: number;
+    pendingMissing: number;
+    lastEmbeddedAt: string | null;
+  };
+}
+
 /** One boks in any status, for the admin inspector. Admin-only on the server. */
 export async function loadAdminBok(reelId: string) {
   if (!supabase) throw new Error("Supabase is not configured.");

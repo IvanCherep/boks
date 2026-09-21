@@ -1,7 +1,7 @@
 # Where boks Stands
 
 One page so a new session can orient without reading four handovers and two
-research reports. Updated 2026-09-19 (pre-launch QA for the first 100 readers; admin account and content lifecycle, account library, reader controls, threaded comments, reaction counts, share links).
+research reports. Updated 2026-09-20 (embeddings, a new catalogue, one algorithm; pre-launch QA; admin account and content lifecycle, account library, reader controls, threaded comments, reaction counts, share links).
 
 For *why* a thing is the way it is, the handovers and ADRs are the record. This
 says only what is true now.
@@ -27,7 +27,7 @@ is still the `site_url` in production auth. Two things to know about it:
   belongs behind a zone-level redirect rule to the apex. Production backend is the Supabase project
 `vcmrvnihbptostnzaean` (eu-west-2).
 
-All 39 migrations are applied to production. The production database is on the
+All 43 migrations are applied to production. The production database is on the
 current schema, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.
@@ -56,6 +56,92 @@ export). Links inside it walk between the two with Back. Reads are
 `get_admin_bok` / `get_admin_person` (migration `20260919220000`), with metrics
 defined exactly as the Content and People rows - `checks.sql` asserts equality.
 Hide / restore / erase have one dialog, `admin/bok-lifecycle-dialog.tsx`.
+
+**The ranker has a semantic source, and the catalogue is new (2026-09-20).**
+The full account, with the measurements behind every choice, is
+`docs/handover/2026-09-20-embeddings-and-catalogue.md`. In short:
+
+- `reels.embedding` is `vector(384)` (pgvector, HNSW cosine).
+  `get_recommendation_candidates` returns `tasteSimilarity` (against the mean
+  embedding of what the reader liked or finished) and `noveltyDistance`
+  (against their last 24 reads), both computed in SQL because 200 candidates
+  times 384 floats is half a megabyte per request. `for_you` scores a
+  candidate's **standing within its set** (a z-score), never the raw cosine,
+  and labels the top of that standing its long-declared `semantic` source.
+- **The model is `multilingual-e5-small`, not Supabase's built-in
+  `gte-small`.** Measured on this catalogue: `gte-small` scored same-author
+  pairs 0.895 against 0.893 for different authors - no signal on Russian text,
+  which is two thirds of the catalogue. The multilingual model's gap is 0.0065
+  in a 0.018 spread, and its neighbours read correctly. `set_bok_embedding`
+  refuses any other model, so the column can never hold two incomparable kinds
+  of vector. Embedding runs through `scripts/embed-catalogue.mjs` (local ONNX,
+  7 boks a second); the `embed` Edge Function stays deployed but is refused by
+  that check until a multilingual model exists in a runtime we can call -
+  Cloudflare Workers AI `bge-m3` is the intended next step.
+- **547 curated public-domain boks** (348 Russian, 199 English, 138 authors;
+  447 on 2026-09-20, +100 canon on 2026-09-21)
+  replaced the 907 seeded ones, which were deleted with everything attached to
+  them. Loading is `scripts/build-catalogue-sql.mjs` from JSONL under
+  `work/catalogue-2026-09-20/`, idempotent on `import_key`. Publication dates
+  are synthetic, spread over 30 days **and interleaved by language**: dated in
+  file order, the newest half of every slate came out entirely English.
+- **One arm.** `for_you` takes 100% of traffic, in the code default and in the
+  `recommendation_experiments` row; `completion_first` is parked at 0. At 30
+  readers a split answers nothing and costs half of them a worse feed.
+
+**Both platforms are paid now, and what that changed (2026-09-20).**
+Cloudflare **Workers Paid**: the 10 ms CPU cap is gone, and with it error 1102 -
+177 requests were cut in the 24 h before the upgrade, none after. Supabase
+**Pro** ($25/month, already paid): the plan alone did **not** resize the
+database, which stayed on `NANO` (0.5 GB) - the instance that was swapping
+520 MB and stalling. Switched to `MICRO`: 1 GB memory at the same
+$0.01344/hour, **+$0.00 a month**, covered by Pro's included compute credits
+(the dashboard marks it "Free Upgrade"). Confirmed in the database:
+`effective_cache_size` 384 MB -> 768 MB, `shared_buffers` 224 MB -> 256 MB.
+Pro also brings daily backups, which Free never had.
+
+Three changes went with it, all about not needing a bigger instance:
+
+- **A slate is 30 boks, not 80** (`readerSlateSize` in `reader-behavior.ts`).
+  The whole slate ships with full texts, so 80 meant ~600 KB and most of the
+  Worker's CPU per reader, of which a session reads a handful. Safe now that
+  the feed appends the next slate five boks from the end. Measured after the
+  deploy: Worker CPU **p50 22.9 ms -> 8.3 ms, p99 139 ms -> 29 ms**, feed
+  response 136 KB on the wire.
+- **The breaker cools down for 2 minutes, not 15.** It was sized for a cap
+  that cut every request; a stalling database recovers in seconds, and 15
+  minutes of browser ranking cost more than the fault.
+- **`limits.cpu_ms: 1000` in `wrangler.jsonc`.** Paid bills CPU, so a runaway
+  loop should fail on one request instead of becoming an invoice.
+
+Still to do by hand in the dashboards, and neither costs anything: raise the
+auth rate limits (below), and check the Resend plan's **daily** email cap
+before inviting 100 people at once - Resend Free allows 100 a day, and one
+invite wave plus the "send again" taps will reach it.
+
+**Readers have an address to write to (2026-09-20).** `support@tryboks.com`
+is received by **Cloudflare Email Routing** on the `tryboks.com` zone and
+forwarded to the owner's inbox; the address is published on `/privacy`,
+`/terms`, in Settings -> About, on the "Check your email" screen and under the
+sign-in form (`lib/boks/contact.ts` holds the string once). Before this the
+apex had no MX record at all, so every reply to a sign-in email bounced.
+
+What is in DNS now: `MX` -> `route1/2/3.mx.cloudflare.net`, `TXT` ->
+`v=spf1 include:_spf.mx.cloudflare.net ~all`, and Cloudflare's forwarding DKIM
+at `cf2024-1._domainkey`. **This does not touch sending.** Resend signs with
+`resend._domainkey.tryboks.com` and uses a custom return path on
+`send.tryboks.com`, which carries its own SPF, so the apex SPF record is not
+consulted for magic-link mail. The catch-all rule exists but stays disabled -
+enabling it would collect spam as soon as the domain is crawled.
+
+Two things follow from this and are not done: production auth mail is still
+sent **from `hello@tryboks.com`**, which has no routing rule, so a reader who
+replies to a sign-in email gets a bounce - either route `hello@` as well or
+move the sender to `support@` in the Supabase dashboard (never with
+`supabase config push`, it wipes the SMTP password). And replying *as*
+`support@tryboks.com` needs Gmail's "Send mail as" over `smtp.resend.com`,
+which needs a fresh Resend API key - the owner does that, no key goes in this
+repo.
 
 **Pre-launch QA for the first 100 readers (2026-09-19, Worker `066aad86`).**
 Every reader, author and admin flow was walked and two code reviews were

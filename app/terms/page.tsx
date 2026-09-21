@@ -1,6 +1,8 @@
 
 import type { Metadata } from "next";
 
+import { supportEmail, supportMailto } from "@/lib/boks/contact";
+
 export const metadata: Metadata = {
   title: "Terms of Use · boks",
   description: "The basic rules for using boks during the pilot.",
@@ -66,8 +68,8 @@ export default function TermsPage() {
 
         <h2>Contact</h2>
         <p>
-          For questions about these Terms, access, or content removal, contact the boks team through the founder or
-          administrator running the current pilot.
+          For questions about these Terms, access, or content removal, write to{" "}
+          <a href={supportMailto}>{supportEmail}</a>.
         </p>
 
       </article>

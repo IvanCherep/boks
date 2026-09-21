@@ -158,6 +158,58 @@ reports 500 *skipped* and writes nothing. So:
 
 ---
 
+## 4b. Adding a curated batch (the 2026-09-20 route)
+
+The admin importer above reads a folder of plain text files and knows nothing
+about `genre`, `mood` or `language`. A curated batch knows all three, and the
+language decides which readers may be served the piece at all, so it takes a
+different path:
+
+```bash
+# 1. validate the JSONL and build one SQL file (nothing is sent yet)
+node scripts/build-catalogue-sql.mjs /tmp/add.sql work/<batch>/ru2.jsonl work/<batch>/en2.jsonl
+# 2. load it - inserts the bok and its rights record in one transaction
+npx supabase db query --linked --file /tmp/add.sql
+# 3. re-spread the publication dates so both languages stay mixed (see below)
+# 4. embed whatever has no vector yet
+node scripts/embed-catalogue.mjs
+```
+
+The validator rejects, with file and line named: anything outside
+400-20000 characters after cleaning, leftover markup, a title carrying page
+structure (`[`, `<`, ` / `), an editorial page ("От автора", "Preface"), and a
+first line that only repeats the title. It repairs what is mechanical - an
+editor's angle brackets, a trailing footnote bracket, a subpage path.
+
+**Three duplicate guards, all in SQL**, because a second pass is how a
+catalogue grows: the `import_key` (a byte-identical reload), the byline plus
+title (the same work from a different page), and the normalised first 200
+characters (the same work scraped from a different layout). Verified by
+re-running the first batch against the loaded catalogue: 447 offered, nothing
+written.
+
+**Publication dates are synthetic.** They are spread over the last 30 days and
+**interleaved per language** - retrieval takes half a slate as "the newest", so
+dating a batch in file order puts one language in that half. After adding a
+batch, re-spread across the whole table:
+
+```sql
+with ranked as (
+  select id, row_number() over (partition by language order by md5(id::text))::numeric as within_language,
+         count(*) over (partition by language)::numeric as language_total
+  from public.reels
+), placed as (select id, within_language / language_total as position from ranked)
+update public.reels r
+set created_at = now() - (30 * (1 - p.position) * interval '1 day'),
+    submitted_at = now() - (30 * (1 - p.position) * interval '1 day')
+from placed p where p.id = r.id;
+```
+
+Check it landed: the newest 60 boks should hold both languages in the
+catalogue's own proportion.
+
+---
+
 ## 5. Test data
 
 ```bash

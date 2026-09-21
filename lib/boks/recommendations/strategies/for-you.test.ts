@@ -240,3 +240,76 @@ describe("for_you ranking", () => {
     expect(rank([], reader())).toEqual([]);
   });
 });
+
+describe("for_you and the semantic source", () => {
+  /**
+   * A set whose similarities differ, so the standing has a spread to measure.
+   * Everything else about these candidates is identical, which is the point:
+   * the only thing separating them is what the model says they mean.
+   */
+  function semanticSet(top: number) {
+    const spread = [0.52, 0.55, 0.58, 0.61, 0.64, 0.67];
+    return [
+      candidate({ id: "near", tasteSimilarity: top, tasteSamples: 6, noveltyDistance: 0.3 }),
+      ...spread.map((similarity, index) =>
+        candidate({ id: `far${index}`, tasteSimilarity: similarity, tasteSamples: 6, noveltyDistance: 0.3 })
+      ),
+    ];
+  }
+
+  it("ranks the piece closest to the reader's taste vector first", () => {
+    const ranked = rank(semanticSet(0.92), reader());
+    expect(ranked[0]?.candidate.id).toBe("near");
+    expect(ranked[0]?.candidateSource).toBe("semantic");
+    expect(ranked[0]?.explanations?.join(" ")).toContain("semantic similarity");
+  });
+
+  it("ignores the vectors until the taste vector has enough samples behind it", () => {
+    const thin = semanticSet(0.92).map((entry) => ({ ...entry, tasteSamples: 1 }));
+    const ranked = rank(thin, reader());
+    expect(ranked.every((entry) => entry.candidateSource !== "semantic")).toBe(true);
+  });
+
+  it("is unchanged when nothing is embedded", () => {
+    const bare = semanticSet(0.92).map((entry) => ({
+      ...entry,
+      tasteSimilarity: null,
+      noveltyDistance: null,
+      tasteSamples: 0,
+    }));
+    const withVectors = rank(bare, reader()).map((entry) => entry.candidate.id);
+    // The same set with the fields absent rather than null: a build that
+    // predates the embeddings must rank identically.
+    const stripped = bare.map((entry) => {
+      const copy: Record<string, unknown> = { ...entry };
+      delete copy.tasteSimilarity;
+      delete copy.noveltyDistance;
+      delete copy.tasteSamples;
+      return copy as unknown as StoryCandidate;
+    });
+    const withoutFields = rank(stripped, reader()).map((entry) => entry.candidate.id);
+    expect(withVectors).toEqual(withoutFields);
+  });
+
+  it("does not let one similar piece outrank something the reader was part-way through", () => {
+    const resumeId = "far2";
+    const ranked = rank(
+      semanticSet(0.95),
+      reader({ bokState: { [resumeId]: state({ maxProgress: 0.6, totalDwellSeconds: 90 }) } })
+    );
+    expect(ranked[0]?.candidate.id).toBe(resumeId);
+    expect(ranked[0]?.candidateSource).toBe("resume");
+  });
+
+  it("prefers the piece unlike the recent stretch among otherwise equal discoveries", () => {
+    const flat = [0.6, 0.6, 0.6, 0.6, 0.6, 0.6];
+    const set = [
+      candidate({ id: "unlike", tasteSimilarity: 0.6, tasteSamples: 6, noveltyDistance: 0.72 }),
+      ...flat.map((similarity, index) =>
+        candidate({ id: `same${index}`, tasteSimilarity: similarity, tasteSamples: 6, noveltyDistance: 0.2 })
+      ),
+    ];
+    const ranked = rank(set, reader());
+    expect(ranked[0]?.candidate.id).toBe("unlike");
+  });
+});

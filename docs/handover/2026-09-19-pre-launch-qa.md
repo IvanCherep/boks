@@ -133,15 +133,27 @@ never per byline:
 - Test guest `ddc9334c-36c0-4ea4-91d3-c5b4eb99a522` produced ~27 skip events
   on production analytics - exclude it.
 
+## Settled on 2026-09-20
+
+1. ~~Cloudflare Workers Paid~~ - bought; no CPU-limit errors since.
+2. ~~Supabase compute~~ - Pro was already paid, project moved Nano -> Micro
+   (1 GB) at +$0.00; slate cut to 30 boks, breaker to 2 min, `cpu_ms` capped.
+3. ~~A real contact address~~ - `support@tryboks.com` receives through
+   Cloudflare Email Routing and is published in the app.
+
 ## Owner decisions still open
 
 1. Cloudflare Workers Paid ($5/month): the Worker uses 30-97 ms CPU per
    request against the Free plan's 10 ms; error 1102 took whole pages down.
    This is the one blocker for 100 readers.
 2. Supabase compute upgrade (planned): Free Nano is swapping.
-3. Auth rate limits: email_sent 30/hour and anonymous sign-ins 30/hour/IP. A
-   group invited together (one Wi-Fi, one IP) will hit the anonymous limit.
-   Raise in Supabase -> Authentication -> Rate Limits.
+3. **Auth rate limits, still at their defaults** (Supabase ->
+   Authentication -> Rate Limits). Changing them from this session is blocked
+   by policy, so the owner sets them: sending emails 30/h -> **100/h**;
+   anonymous sign-ins 30/h per IP -> **300/h** (every guest gets one, and a
+   group on one Wi-Fi shares an IP); token verifications 30 per 5 min ->
+   **100**; sign-ups and sign-ins 30 per 5 min -> **100**. Leave SMS and Web3
+   alone. Also check Resend's daily email cap before a 100-person invite.
 4. Sign-in by 6-digit code in the email (works across browsers and mail apps)
    needs an email template change in the Supabase dashboard.
 5. A real contact address for Privacy/Terms (hello@tryboks.com has no MX);

@@ -37,7 +37,8 @@ browser (fallback) serve 13:16; last Worker serve 13:29; the deploy
 ## What was changed
 
 - `components/boks/worker-feed-breaker.ts` (+ tests): one Worker failure makes
-  the browser skip `/api/feed` for 15 minutes and rank locally; a success
+  the browser skip `/api/feed` for 2 minutes (15 while the CPU cap was in
+  force) and rank locally; a success
   clears it. Served feeds are still labelled `serving_backend = 'browser'`,
   degraded, with `fallback_reason = 'worker_feed_cooling_down'`.
 - `/api/feed` call bounded at 4 s (AbortController), and a non-JSON (Cloudflare

@@ -18,6 +18,13 @@
   "observability": {
     "enabled": true
   },
+  // Workers Paid allows 30 s of CPU per request. Nothing here needs a tenth of
+  // that - a served feed costs 66-97 ms, page renders 30 ms at P50 - and CPU
+  // time is what the plan bills, so a runaway loop should fail loudly on one
+  // request instead of quietly becoming an invoice.
+  "limits": {
+    "cpu_ms": 1000
+  },
   // The apex only, on purpose. Attaching `www` as a second custom domain would
   // serve the app from two origins, and an origin is a separate browser storage
   // bucket - sign in on one and the other still looks signed out. `www` belongs

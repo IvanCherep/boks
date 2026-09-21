@@ -22,7 +22,17 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const containerName = "boks-local-pg";
-const image = "postgres:17-alpine";
+// pgvector, not plain postgres: since `20260920100000` the schema declares
+// `create extension vector` and a `vector(384)` column, which the official
+// image cannot install. This image is the same Postgres 17 with the extension
+// available, so the checks still run against the real types.
+// pgvector, not plain postgres: since `20260920100000` the schema declares
+// `create extension vector` and a `vector(384)` column, which the official
+// image cannot install. Supabase's own image has the extension and is the one
+// production runs, but it is amd64-only and exits immediately on an Apple
+// Silicon machine, so this multi-architecture image is the one that works on
+// both. First run pulls ~400 MB.
+const image = "pgvector/pgvector:pg17";
 // Overridable because this machine runs other projects' databases too, and
 // one of them sat on 55432 and stopped the check from starting at all.
 const hostPort = process.env.BOKS_SCHEMA_PORT ?? "55432";

@@ -37,38 +37,45 @@ export type RecommendationExperiment = {
 };
 
 /**
- * Two arms, and two arms that actually differ.
+ * One arm, for the launch.
  *
- * Three decisions are baked in here, all of them measurements rather than
- * opinions (`npm run verify:divergence`, measured 2026-09-14 on 38 boks):
+ * Until 2026-09-20 this was a 50/50 split between `for_you` and
+ * `completion_first`, and the reasoning for two arms is still sound and still
+ * written down below - it is simply not what the first weeks are for.
  *
- * 1. Two arms, not four. Splitting a few dozen readers four ways leaves ~12 per
- *    arm, where the power to detect even a doubling of reading time is around
- *    50%. Two arms doubles the sample behind every comparison for free.
+ * The decision, taken with the founder before opening the platform to real
+ * readers: **everyone gets `for_you`**, the strongest ranker in the registry,
+ * now that it has the semantic source it was designed around (embeddings from
+ * Supabase's `gte-small`, see `strategies/for-you.ts`). Nothing is measured by
+ * splitting traffic at this size anyway - at 30 readers, an arm holds 15, and
+ * the power to detect even a large difference in reading time is near nothing
+ * - so a split would cost half the audience a worse feed and return no answer.
+ * The other strategies stay registered and parked at weight 0, which is one
+ * number away from being live again.
  *
- * 2. `for_you` is the control. It is the product ranker - ported from the
- *    original backend, with retrieval families, reader history, author trust
- *    and a greedy diverse slate. Everything else is a challenger to it.
+ * When to reopen the split: once the catalogue and the audience are steady and
+ * there are enough readers that an arm is a sample rather than an anecdote.
+ * The pairing to run then is what the divergence check measured
+ * (`npm run verify:divergence`): `for_you` against `completion_first`, because
+ * `recency` shares 80-100% of `for_you`'s top ten on this corpus and cannot
+ * resolve anything. Retired reasoning, kept because it will be needed again:
  *
- * 3. The challenger is `completion_first`, and **not** `recency`, which is the
- *    pairing a young product would normally want. It was measured and rejected:
- *    against a cold reader `for_you` and `recency` share 100% of their top ten,
- *    and even against a reader with two weeks of history they share 80%. On
- *    this corpus almost nothing distinguishes them - every seeded boks is the
- *    same length, no author has published enough to move the cold-start prior,
- *    and what remains for both rankers is freshness. `completion_first` shares
- *    30-40%, so it is the only live pairing that can resolve anything at all.
- *
- * Revisit (3) once the catalog carries varied lengths and real authors: at that
- * point `for_you` vs `recency` becomes the question worth asking, because it
- * asks whether ranking is worth anything against showing the newest boks.
+ *  - Two arms, not four. Splitting a few dozen readers four ways leaves ~12
+ *    per arm, where the power to detect even a doubling of reading time is
+ *    around 50%.
+ *  - `for_you` is the control: it is the product ranker, so everything else is
+ *    a challenger to it.
+ *  - `completion_first` is the challenger that diverges (30-40% overlap),
+ *    which `recency` does not.
  */
 export const defaultExperimentConfig: RecommendationExperimentConfig = {
   key: "boks-feed-v1",
   controlAlgorithmId,
   arms: [
-    { algorithmId: "for_you", weight: 50 },
-    { algorithmId: "completion_first", weight: 50 },
+    { algorithmId: "for_you", weight: 100 },
+    // Parked, not deleted: raising a weight here is the whole change needed to
+    // start comparing again.
+    { algorithmId: "completion_first", weight: 0 },
   ],
   minimumImpressionsPerArm: 40,
 };

@@ -166,3 +166,19 @@ export function profileBump(profile: ReaderProfile, story: Story, event: "comple
   }
   return next;
 }
+
+/**
+ * How many boks one slate carries.
+ *
+ * It was 80, which is also what the response weighed: the whole slate ships
+ * with full texts, so a feed was ~600 KB, and building it was most of the
+ * Worker's CPU and of the database's work per reader. Almost none of it was
+ * read - a session is a handful of boks.
+ *
+ * 30 is the compromise: deep enough that a long sitting never reaches the end
+ * before the next slate is fetched (asked for 5 boks from the end,
+ * `shouldLoadMore`), and about a third of the payload, CPU and egress per
+ * reader. Raising it costs all three again; lowering it risks a reader
+ * outrunning the prefetch on a slow network.
+ */
+export const readerSlateSize = 30;

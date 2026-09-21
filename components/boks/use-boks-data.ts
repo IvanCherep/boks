@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { initialMetrics } from "@/components/boks/constants";
+import { readerSlateSize } from "@/components/boks/reader-behavior";
 import { appendNewStories } from "@/components/boks/reader-place";
 import type {
   Comment,
@@ -90,7 +91,7 @@ export function useBoksData() {
     setIsSupabaseReader(false);
     const params = new URLSearchParams({
       view,
-      limit: String(options.limit ?? (view === "admin" ? 100 : 80)),
+      limit: String(options.limit ?? (view === "admin" ? 100 : readerSlateSize)),
     });
     if (options.offset) params.set("offset", String(options.offset));
     if (options.q?.trim()) params.set("q", options.q.trim());
@@ -132,7 +133,7 @@ export function useBoksData() {
     // store under a locally recomputed arm, where no comparison could see them.
     if (canUseSupabaseBrowserData() && view === "reader") {
       const data = await loadSupabaseReaderFeed({
-        limit: options.limit ?? 80,
+        limit: options.limit ?? readerSlateSize,
         visitorId: options.visitorId ?? "anonymous",
         sessionId: options.sessionId ?? "",
         reader: options.reader,

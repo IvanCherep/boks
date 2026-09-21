@@ -41,6 +41,7 @@ import {
   readAnonymousReadState,
   readAnonymousNoticeState,
   readProfile,
+  readerSlateSize,
   recordAnonymousBoksRead,
   saveAnonymousNoticeState,
   saveProfile,
@@ -375,7 +376,7 @@ export function ReaderFeed() {
     () =>
       load({
         view: "reader",
-        limit: 80,
+        limit: readerSlateSize,
         visitorId: visitorId.current,
         sessionId: sessionId.current,
         reader: readerSignalsRef.current,
@@ -391,8 +392,8 @@ export function ReaderFeed() {
   );
 
   /**
-   * The next slate, added after this one. A feed is 80 boks, and the reader
-   * used to stop dead at the 80th: swipes did nothing and the pull still said
+   * The next slate, added after this one. The reader used to stop dead at the
+   * end of the first slate: swipes did nothing and the pull still said
    * "release for next bok". The slate is ranked with everything read so far,
    * so fatigue keeps what was seen out of it; boks already in the feed are
    * skipped by the append. A slate that adds nothing means there is nothing
@@ -407,7 +408,7 @@ export function ReaderFeed() {
     try {
       const data = await load({
         view: "reader",
-        limit: 80,
+        limit: readerSlateSize,
         visitorId: visitorId.current,
         sessionId: sessionId.current,
         reader: readerSignalsRef.current,

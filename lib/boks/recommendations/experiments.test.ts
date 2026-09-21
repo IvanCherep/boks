@@ -44,9 +44,13 @@ describe("normalizeExperimentConfig", () => {
 });
 
 describe("defaultExperimentConfig", () => {
-  it("runs two arms, because a few dozen readers cannot fill four", () => {
-    expect(defaultExperimentConfig.arms).toHaveLength(2);
-    expect(defaultExperimentConfig.arms.every((arm) => arm.weight > 0)).toBe(true);
+  it("runs one live arm for the launch, and parks the challenger rather than deleting it", () => {
+    const live = defaultExperimentConfig.arms.filter((arm) => arm.weight > 0);
+    expect(live).toHaveLength(1);
+    expect(live[0]?.algorithmId).toBe(defaultExperimentConfig.controlAlgorithmId);
+    // Parked arms stay in the config: reopening the comparison is a weight,
+    // not a code change.
+    expect(defaultExperimentConfig.arms.length).toBeGreaterThan(live.length);
   });
 
   it("includes the control among the live arms", () => {
@@ -64,12 +68,26 @@ describe("assignExperimentArm", () => {
     expect(first.userSegment).toBe(second.userSegment);
   });
 
-  it("spreads visitors across every live arm", () => {
+  it("sends every visitor to the one live arm", () => {
     const seen = new Set<string>();
     for (let index = 0; index < 400; index += 1) {
       seen.add(assignExperimentArm(`visitor-${index}`).algorithmId);
     }
-    expect([...seen].sort()).toEqual(defaultExperimentConfig.arms.map((arm) => arm.algorithmId).sort());
+    expect([...seen]).toEqual([defaultExperimentConfig.controlAlgorithmId]);
+  });
+
+  it("spreads visitors across the arms that are live, whenever more than one is", () => {
+    const config = normalizeExperimentConfig({
+      arms: [
+        { algorithmId: "for_you", weight: 50 },
+        { algorithmId: "completion_first", weight: 50 },
+      ],
+    });
+    const seen = new Set<string>();
+    for (let index = 0; index < 400; index += 1) {
+      seen.add(assignExperimentArm(`visitor-${index}`, config).algorithmId);
+    }
+    expect([...seen].sort()).toEqual(["completion_first", "for_you"]);
   });
 
   it("respects a zero-weight arm", () => {

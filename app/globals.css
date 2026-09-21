@@ -923,6 +923,7 @@ textarea:focus-visible {
 }
 
 .auth-legal-check a,
+.auth-link,
 .legal-document a {
   color: var(--primary);
   font-weight: 700;

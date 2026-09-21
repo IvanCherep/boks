@@ -12,11 +12,17 @@
  * So one failure opens the breaker: for the next `cooldownMs` this browser
  * goes straight to browser ranking, then tries the Worker again. Nothing is
  * decided here about where ranking should live - when the Worker is healthy
- * again (a paid plan, a lighter ranking), the next probe finds it and every
- * serve goes back to it on its own.
+ * again, the next probe finds it and every serve goes back to it on its own.
+ *
+ * The cooldown was 15 minutes, sized for a cap that cut every request for as
+ * long as it lasted. Workers Paid lifted that cap on 2026-09-20, so the
+ * remaining reason to fail is a database that stalls for seconds - and 15
+ * minutes of browser ranking, which cannot use the server-side rollups, was a
+ * heavier price than the fault. Two minutes still protects a struggling
+ * database from being asked 80 times a minute.
  */
 
-export const workerFeedCooldownMs = 15 * 60 * 1000;
+export const workerFeedCooldownMs = 2 * 60 * 1000;
 /** A Worker that has not answered by now is treated as unavailable. */
 export const workerFeedTimeoutMs = 4000;
 

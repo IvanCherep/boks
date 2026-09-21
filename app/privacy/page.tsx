@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { supportEmail, supportMailto } from "@/lib/boks/contact";
+
 export const metadata: Metadata = {
   title: "Privacy · boks",
   description: "What boks collects during the pilot, why, where it is kept, and how to delete it.",
@@ -75,7 +77,8 @@ export default function PrivacyPage() {
 
         <h2>Contact</h2>
         <p>
-          For questions about your data, contact the boks team through the person who invited you to the pilot.
+          Write to <a href={supportMailto}>{supportEmail}</a> about anything on this page: what is stored about
+          you, a copy of it, or deleting it. One person reads that mailbox during the pilot.
         </p>
       </article>
     </main>

@@ -5,7 +5,7 @@ import { Archive, RefreshCw, RotateCcw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { BoksContentRow } from "@/components/boks/client-types";
-import { loadBoksContent } from "@/components/boks/supabase-browser-data";
+import { loadBoksContent, loadEmbeddingCoverage } from "@/components/boks/supabase-browser-data";
 import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 import {
   BokLifecycleDialog,
@@ -28,6 +28,7 @@ export function ContentOperations() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<BokLifecycleTarget | null>(null);
+  const [coverage, setCoverage] = useState<{ model: string; publishedTotal: number; publishedEmbedded: number; publishedMissing: number } | null>(null);
   const { openBok, changes } = useAdminInspector();
 
   const refresh = useCallback(async (search: string, order: string, pageIndex: number, nextScope: ContentScope) => {
@@ -49,6 +50,13 @@ export function ContentOperations() {
       setBusy(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadEmbeddingCoverage()
+      .then(setCoverage)
+      // A missing coverage line is not worth an error in a moderation screen.
+      .catch(() => setCoverage(null));
+  }, [changes]);
 
   // `changes` moves when the boks view hides, restores or erases a boks.
   useEffect(() => {
@@ -94,6 +102,13 @@ export function ContentOperations() {
           <p className="text-sm text-[var(--muted-foreground)]">
             {pageStart}-{pageEnd} of {total} {scope === "published" ? "published" : "deleted"} boks
           </p>
+          {coverage && (
+            <p className="text-sm text-[var(--muted-foreground)]">
+              {coverage.publishedMissing === 0
+                ? `All ${coverage.publishedEmbedded} published boks are embedded (${coverage.model}).`
+                : `${coverage.publishedEmbedded} of ${coverage.publishedTotal} embedded — ${coverage.publishedMissing} waiting. Run scripts/embed-catalogue.mjs.`}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="admin-segmented" aria-label="Content status">

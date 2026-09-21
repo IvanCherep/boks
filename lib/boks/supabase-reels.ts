@@ -68,6 +68,10 @@ export type SupabaseCandidateRow = {
   shares: number;
   comments: number;
   readSecondsTotal: number;
+  hasEmbedding?: boolean;
+  tasteSimilarity?: number | string | null;
+  tasteSamples?: number;
+  noveltyDistance?: number | string | null;
   authorUserId?: string;
   readingShape?: string;
   lineBreakCount?: number;
@@ -93,6 +97,12 @@ export type CandidateSet = {
 };
 
 const readingShapes = new Set<ReadingShape>(["verse", "short_prose", "long_prose", "unknown"]);
+
+function toSimilarity(value: number | string | null | undefined) {
+  if (value === null || value === undefined) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 function toReadingShape(value: unknown): ReadingShape {
   return typeof value === "string" && readingShapes.has(value as ReadingShape)
@@ -152,6 +162,12 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
         shares: Number(row.shares) || 0,
         comments: Number(row.comments) || 0,
         readSecondsTotal: Number(row.readSecondsTotal) || 0,
+        // `numeric` arrives as a string over PostgREST, and null means "no
+        // vector on one side of the comparison", which is not the same as 0.
+        hasEmbedding: Boolean(row.hasEmbedding),
+        tasteSimilarity: toSimilarity(row.tasteSimilarity),
+        tasteSamples: Number(row.tasteSamples) || 0,
+        noveltyDistance: toSimilarity(row.noveltyDistance),
       })
     ),
     reelsById: new Map(

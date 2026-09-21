@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Deno, with its own globals and its own runtime.
+    "supabase/functions/**",
   ]),
   {
     // boks navigates between reader, author and admin with plain anchors.
