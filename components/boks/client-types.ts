@@ -612,3 +612,39 @@ export type BoksFeedbackPage = {
   bySurface: Record<string, number>;
   rows: BoksFeedbackRow[];
 };
+
+/** The guest funnel, counted by device. See `get_guest_funnel`. */
+export type GuestFunnel = {
+  days: number;
+  since: string;
+  /** When sign-up prompts and link requests started being recorded. */
+  journeySince: string | null;
+  funnel: {
+    guests: number;
+    startedReading: number;
+    finishedOne: number;
+    finishedThree: number;
+    cameBack: number;
+    sawSignup: number;
+    requestedLink: number;
+    createdAccount: number;
+  };
+  readsPerGuest: { none: number; oneOrTwo: number; threeToNine: number; tenToFourteen: number; fifteenPlus: number };
+  medianGuestMinutes: number | null;
+  limit: { hit: number; requested: number; converted: number };
+  prompts: { reason: string; prompts: number; requests: number }[];
+  sources: {
+    landing: { value: string; visits: number }[];
+    referrer: { value: string; visits: number }[];
+    campaign: { value: string; visits: number }[];
+  };
+  daily: {
+    day: string;
+    guests: number;
+    newGuests: number;
+    readers: number;
+    prompts: number;
+    requests: number;
+    newAccounts: number;
+  }[];
+};

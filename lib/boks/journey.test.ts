@@ -1,0 +1,62 @@
+import { describe, expect, it } from "vitest";
+import { journeyAttribution, signupReason } from "@/lib/boks/journey";
+
+describe("where a visit came from", () => {
+  it("names a bok shared in Telegram, which the /b page passes on because its redirect loses the referrer", () => {
+    const visit = journeyAttribution("https://tryboks.com/?bok=a1e3baf7-44da-4867-a817-088f1cdfbd26&from=share&ref=t.me", "");
+    expect(visit).toEqual({
+      landing: "shared_bok",
+      referrerHost: "t.me",
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+    });
+  });
+
+  it("keeps the campaign a link was posted with", () => {
+    const visit = journeyAttribution(
+      "https://tryboks.com/?utm_source=telegram&utm_medium=channel&utm_campaign=launch",
+      "https://t.me/"
+    );
+    expect(visit.landing).toBe("home");
+    expect(visit.utmSource).toBe("telegram");
+    expect(visit.utmCampaign).toBe("launch");
+    expect(visit.referrerHost).toBe("t.me");
+  });
+
+  it("does not call boks its own source", () => {
+    // Moving from /b to the reader is navigation, not an arrival from anywhere.
+    expect(journeyAttribution("https://tryboks.com/?bok=x", "https://tryboks.com/b/x").referrerHost).toBeNull();
+    expect(journeyAttribution("https://tryboks.com/", "https://www.tryboks.com/").referrerHost).toBeNull();
+  });
+
+  it("calls a visit with no referrer direct", () => {
+    expect(journeyAttribution("https://tryboks.com/", "")).toEqual({
+      landing: "home",
+      referrerHost: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+    });
+  });
+
+  it("survives an address it cannot parse", () => {
+    expect(() => journeyAttribution("not a url", "also not")).not.toThrow();
+  });
+});
+
+describe("why a guest met the sign-up", () => {
+  it("tells the limit from a gated action from the reader's own choice", () => {
+    expect(signupReason({ reason: "required" })).toBe("limit");
+    expect(signupReason({ reason: "manual", intent: "like" })).toBe("like");
+    expect(signupReason({ reason: "manual", intent: "comment" })).toBe("comment");
+    expect(signupReason({ reason: "manual", intent: "follow" })).toBe("follow");
+    expect(signupReason({ reason: "notice" })).toBe("notice");
+    expect(signupReason({ reason: "manual", intent: "general" })).toBe("manual");
+    expect(signupReason({ reason: "manual", mode: "signin" })).toBe("signin");
+  });
+
+  it("puts the limit first, because it is the wall that ends a guest's reading", () => {
+    expect(signupReason({ reason: "required", intent: "like" })).toBe("limit");
+  });
+});

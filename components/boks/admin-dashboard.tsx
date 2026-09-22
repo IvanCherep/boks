@@ -18,6 +18,7 @@ import { AdminGrowth } from "@/components/boks/admin/growth";
 import { AdminOverview } from "@/components/boks/admin/overview";
 import { AdminPeople } from "@/components/boks/admin/people";
 import { FeedbackInbox } from "@/components/boks/admin/feedback-inbox";
+import { GuestFunnelPanel } from "@/components/boks/admin/guest-funnel";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { MetricTile } from "@/components/boks/shared-ui";
 import {
@@ -37,6 +38,7 @@ import {
 
 const adminTabs = [
   { id: "overview", label: "This week" },
+  { id: "guests", label: "Guests" },
   { id: "growth", label: "Growth" },
   { id: "moderation", label: "Moderation" },
   { id: "rights", label: "Rights" },
@@ -334,6 +336,7 @@ export function AdminDashboard() {
 
         {tab === "experiments" && <RecommendationLab />}
 
+        {tab === "guests" && <GuestFunnelPanel />}
         {tab === "growth" && <AdminGrowth />}
 
         {tab === "content" && <ContentOperations />}

@@ -2438,3 +2438,88 @@ begin
 
   delete from public.boks_feedback where visitor_id in ('device-guest-1', 'device-reader-1');
 end $$;
+
+
+-- The guest journey (migration 20260922100000).
+--
+-- What has to hold: a visitor with no session can be recorded, a reload is not
+-- a second visit, nothing it does not recognise can break a page, a reader
+-- cannot read the funnel, and a device that was a guest and then an account is
+-- counted as a conversion - which is the number the whole feature exists for.
+do $$
+declare
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_guest uuid := '66666666-6666-4666-8666-666666666666';
+  v_reel uuid;
+  v_funnel jsonb;
+begin
+  select id into v_reel from public.reels where status = 'published' limit 1;
+
+  -- A guest device: an anonymous user reads, meets the limit, asks for a link,
+  -- and the same device then reads as a signed-in reader.
+  insert into auth.users (id, is_anonymous) values (v_guest, true) on conflict (id) do nothing;
+  insert into public.recommendation_events (user_id, reel_id, visitor_id, session_id, event_type, surface, value)
+  values
+    (v_guest, v_reel, 'device-journey-1', 'session-journey-1', 'start', 'reader', 1),
+    (v_guest, v_reel, 'device-journey-1', 'session-journey-1', 'complete', 'reader', 40),
+    (v_reader, v_reel, 'device-journey-1', 'session-journey-2', 'start', 'reader', 1);
+
+  perform public.boks_test_logout();
+  set local role anon;
+  perform public.record_boks_journey_event('visit', 'device-journey-1', 'session-journey-1', null, 'shared_bok', 't.me', 'tg', 'social', 'launch');
+  perform public.record_boks_journey_event('visit', 'device-journey-1', 'session-journey-1', null, 'shared_bok', 't.me', null, null, null);
+  perform public.record_boks_journey_event('signup_prompt', 'device-journey-1', 'session-journey-1', 'limit');
+  perform public.record_boks_journey_event('signup_request', 'device-journey-1', 'session-journey-1', 'limit');
+  -- Unknown events are dropped, not raised: analytics must never fail a page.
+  perform public.record_boks_journey_event('drop table reels', 'device-journey-1', 'session-journey-1');
+  reset role;
+
+  perform public.boks_assert(
+    (select count(*) from public.boks_journey_events where visitor_id = 'device-journey-1' and event = 'visit') = 1,
+    'a reload in the same session is not a second visit'
+  );
+  perform public.boks_assert(
+    (select count(*) from public.boks_journey_events where visitor_id = 'device-journey-1') = 3,
+    'a visitor with no session is recorded, and an unknown event is dropped silently'
+  );
+
+  -- A reader cannot read the funnel, and cannot read the journey table.
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  begin
+    perform public.get_guest_funnel(14);
+    perform public.boks_assert(false, 'a reader cannot read the guest funnel');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot read the guest funnel');
+  end;
+  begin
+    perform public.boks_assert((select count(*) from public.boks_journey_events) = 0, 'a reader cannot read journey rows');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot read journey rows');
+  end;
+  reset role;
+
+  -- The admin sees the conversion, counted by device.
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  v_funnel := public.get_guest_funnel(14);
+  reset role;
+  perform public.boks_test_logout();
+
+  perform public.boks_assert((v_funnel -> 'funnel' ->> 'guests')::integer >= 1, 'the funnel counts guest devices');
+  perform public.boks_assert((v_funnel -> 'funnel' ->> 'finishedOne')::integer >= 1, 'a guest who finished a bok is counted as having read');
+  perform public.boks_assert((v_funnel -> 'funnel' ->> 'requestedLink')::integer >= 1, 'a guest who asked for a link is counted');
+  perform public.boks_assert(
+    (v_funnel -> 'funnel' ->> 'createdAccount')::integer >= 1,
+    'a device that was a guest and then an account is a conversion'
+  );
+  perform public.boks_assert((v_funnel -> 'limit' ->> 'hit')::integer >= 1, 'hitting the guest limit is counted');
+  perform public.boks_assert(
+    exists (select 1 from jsonb_array_elements(v_funnel -> 'sources' -> 'referrer') r where r ->> 'value' = 't.me'),
+    'the referrer of a visit reaches the sources table'
+  );
+
+  delete from public.boks_journey_events where visitor_id = 'device-journey-1';
+  delete from public.recommendation_events where visitor_id = 'device-journey-1';
+end $$;

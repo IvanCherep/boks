@@ -71,6 +71,39 @@ network or a VPN usually fixes it, with **Try again** and the support address.
 Verified by building against an unreachable host and watching it: 8 s, then the
 screen. 377 unit tests.
 
+**Guests: who they are and where they stop (2026-09-22).** The founder's
+question was "we bring people and nobody registers - why?", and the reading
+events could not answer it, because the moments that decide it are not reading
+moments. Three are now recorded in `boks_journey_events` through
+`record_boks_journey_event` (open to guests, silent on anything it does not
+recognise): a **visit** once per session with its landing (home or a shared bok
+link) and source (referrer host, utm tags), a **sign-up prompt** with its reason
+(the 15-bok limit, like, comment, follow, the guest notice, the account button)
+and a **link request** with the same reason. The `/b` page carries the referrer
+and the utm tags across its redirect as `ref` and `from=share`, because a
+redirect drops them; the reader captures them before it cleans the address bar,
+and sends the visit only once the reader's identity has settled, so a
+signed-in visit can never be counted as a guest's.
+
+`get_guest_funnel` (admin-only) counts by **device**, not by person or by
+anonymous user. The device id survives sign-up while the anonymous user is
+abandoned, so a device with both an anonymous and a real account in its history
+is a guest who converted - measured before building on it: all 492 reader
+events carried a device id, and two devices already showed the conversion.
+The console's **Guests** tab shows the funnel (arrived -> started reading ->
+finished one -> finished three -> saw the sign-up -> asked for a link ->
+created an account), names the step that loses the most, and breaks it down by
+reads per guest, the limit, the wall each guest met, sources and day.
+
+The first reading of it, on 14 days of production data: 26 guest devices, 24
+started reading, **3 finished a single bok**, median guest reading time **24
+seconds**, and nobody reached the 15-bok limit. Caveats it states itself:
+finishing was only recorded correctly from 21 September, prompts and sources
+only from 22 September, and the team's own testing is inside every number. But
+the shape is already clear enough to act on: guests leave before any sign-up
+wall is shown, so the wall is not what is losing them. 10 schema checks, 13
+unit tests.
+
 **Licences and terms, audited (2026-09-22).** Three findings, all fixed:
 
 - **Only the font's licence was published.** Everything else boks ships to a

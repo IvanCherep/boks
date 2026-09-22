@@ -4,6 +4,7 @@ import { initialMetrics } from "@/components/boks/constants";
 import type { FeedbackSurface } from "@/components/boks/feedback";
 import type {
   BoksFeedbackPage,
+  GuestFunnel,
   AdminBokDetail,
   AdminPersonDetail,
   AuthorBokQuota,
@@ -1167,6 +1168,15 @@ export async function sendBoksFeedback(input: {
   });
   if (result.error) throw result.error;
   return result.data as { ok: true; id: number };
+}
+
+/** Guests, counted by device, and how they meet the sign-up. Admin-only on the server. */
+export async function loadGuestFunnel(days = 14) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("get_guest_funnel", { p_days: days });
+  if (result.error) throw result.error;
+  return result.data as GuestFunnel;
 }
 
 /** The feedback inbox. Admin-only on the server. */

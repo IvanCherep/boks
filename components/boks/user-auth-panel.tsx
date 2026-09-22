@@ -31,6 +31,7 @@ import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { readFeedbackState } from "@/components/boks/feedback";
 import { getBrowserId } from "@/components/boks/reader-behavior";
+import { recordJourneyEvent, signupReason } from "@/lib/boks/journey";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
 import {
   loadBoksUserContext,
@@ -320,6 +321,14 @@ export function UserAuthPanel({
         redirectPath: surface === "author" ? "/author" : "/",
       });
       recordMagicLinkSent(cleanEmail);
+      // The step between "asked to sign up" and "has an account": the form is
+      // only ever shown to someone without one, so every request is a guest's.
+      // A request that never becomes an account is the email not arriving, or
+      // not being opened - which is a different fix from the prompt itself.
+      recordJourneyEvent(
+        { event: "signup_request", reason: signupReason({ reason, intent, mode }) },
+        { visitorId: getBrowserId("boks-reader") }
+      );
       setEmail(cleanEmail);
       setSentMagicLink({ email: cleanEmail, mode });
       setStatus("");

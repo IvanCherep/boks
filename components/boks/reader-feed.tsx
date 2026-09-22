@@ -67,6 +67,7 @@ import {
 import { ActionButton } from "@/components/boks/shared-ui";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
+import { journeyAttribution, recordJourneyEvent, signupReason, type JourneyAttribution } from "@/lib/boks/journey";
 import {
   countRead,
   dueMilestone,
@@ -284,6 +285,9 @@ export function ReaderFeed() {
   const [followedAuthorIds, setFollowedAuthorIds] = useState<string[]>([]);
   const [followBusy, setFollowBusy] = useState(false);
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
+  /** Where this visit came from; sent once the reader's identity is known. */
+  const visitAttribution = useRef<JourneyAttribution | null>(null);
+  const visitRecorded = useRef(false);
   /** The milestone being offered, or null. See `components/boks/feedback.ts`. */
   const [feedbackMilestone, setFeedbackMilestone] = useState<number | null>(null);
   const feedbackState = useRef<FeedbackState>({ reads: 0, prompted: [] });
@@ -446,6 +450,9 @@ export function ReaderFeed() {
     feedbackState.current = readFeedbackState();
     sessionId.current = `${Date.now()}-${randomBoksId()}`;
     const profileTimer = window.setTimeout(() => setProfile(readProfile()), 0);
+    // Read before the address bar is cleaned below, which would take the utm
+    // tags and the shared-link marker with it.
+    visitAttribution.current = journeyAttribution(window.location.href, document.referrer);
     // A shared link carries the boks id. Strip it from the address bar once it
     // has been used, so a refresh does not reopen it over the reader's feed.
     const params = new URLSearchParams(window.location.search);
@@ -798,6 +805,19 @@ export function ReaderFeed() {
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
   // Nobody is a guest before the account lookup has answered.
   const isGuestReader = identitySettled && isSupabaseReader && (!user || user.isAnonymous);
+
+  // One visit per page load, sent only once the reader's identity has settled:
+  // recorded earlier, a signed-in reader's visit would arrive with no user and
+  // be counted as a guest's, and the funnel would be wrong in the direction
+  // that flatters it.
+  useEffect(() => {
+    if (!identitySettled || visitRecorded.current || !visitAttribution.current) return;
+    visitRecorded.current = true;
+    recordJourneyEvent(
+      { event: "visit", attribution: visitAttribution.current },
+      { visitorId: visitorId.current, sessionId: sessionId.current }
+    );
+  }, [identitySettled]);
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);
   const accountSuspended = Boolean(user?.bannedAt);
   /**
@@ -1142,6 +1162,15 @@ export function ReaderFeed() {
     initialMode: AuthPanelMode = "signup",
     intent: AuthIntent = "general"
   ) {
+    // The moment a guest meets the sign-up, and why - the limit, a like, a
+    // follow, a comment, the notice, or their own tap on the account button.
+    // An account holder opening Settings is not a sign-up prompt.
+    if (!hasSignedInAccount) {
+      recordJourneyEvent(
+        { event: "signup_prompt", reason: signupReason({ reason, intent, mode: initialMode }) },
+        { visitorId: visitorId.current, sessionId: sessionId.current }
+      );
+    }
     setAuthReason(reason);
     setAuthInitialMode(initialMode);
     setAuthIntent(intent);
