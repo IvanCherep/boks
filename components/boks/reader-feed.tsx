@@ -1458,14 +1458,19 @@ export function ReaderFeed() {
   async function shareStory() {
     if (!currentStory) return;
     const story = currentStory;
-    const text = `Read "${story.title}" on boks`;
     // The feed URL would open a different bok for whoever received it.
     const url = `${window.location.origin}/b/${story.id}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: story.title, text, url });
+        // The link alone. Given a text as well, Telegram joins the two with no
+        // space - `…/b/<id>Read "Конкурс" on boks` - and then links everything up
+        // to the first space, so the id is damaged and the preview is empty.
+        // Nothing is lost by sending less: the preview itself now carries the
+        // title, the writer and the opening lines. `title` stays, because
+        // targets use it as a subject rather than joining it to the link.
+        await navigator.share({ title: story.title, url });
       } else {
-        await navigator.clipboard.writeText(`${text}: ${url}`);
+        await navigator.clipboard.writeText(url);
         notify("Link copied");
       }
     } catch (error) {

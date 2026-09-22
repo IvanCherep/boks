@@ -24,6 +24,30 @@ export type SharedBok = {
   language: string | null;
 };
 
+const uuidPrefix = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+/**
+ * The bok id in a `/b/...` path segment, even when a messenger damaged it.
+ *
+ * Found in the wild on the second day: the share button handed the system share
+ * sheet both a text and a URL, Telegram joined them with no space, and a link
+ * went out as `/b/a1e3baf7-…-088f1cdfbd26Read "Конкурс" on boks`. Telegram
+ * links everything up to the first space, so the id arrived as `…cdfbd26Read`,
+ * matched nothing, and the card was the bare word "boks". The share button no
+ * longer sends text, but links already in chats are what they are - so the id is
+ * read as the UUID the segment starts with, and whatever follows is ignored.
+ */
+export function sharedBokIdFrom(segment: string) {
+  let decoded = segment;
+  try {
+    decoded = decodeURIComponent(segment);
+  } catch {
+    // A malformed escape is still worth reading as far as it goes.
+  }
+  const match = decoded.trim().match(uuidPrefix);
+  return match ? match[0].toLowerCase() : decoded;
+}
+
 /** "«Title» — Author", which is how a reader would say it out loud. */
 export function shareTitle(bok: Pick<SharedBok, "title" | "authorName">) {
   const title = bok.title.trim() || "A bok";

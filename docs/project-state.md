@@ -118,6 +118,18 @@ Verified on production with Telegram's user agent: "Незнакомка — А�
 id answering 200 with generic tags, and the shared link opening that exact bok
 in the reader. 397 unit tests, 11 of them on the preview shaping.
 
+**The share button was damaging its own links (2026-09-22).** It handed the
+system share sheet both a text ("Read "Конкурс" on boks") and the URL, and
+Telegram joined them with no space - `/b/<id>Read "Конкурс" on boks` - then
+linked everything up to the first space. The id arrived as `…cdfbd26Read`,
+matched nothing, and the card was the bare word "boks": every link shared from
+the button previewed as nothing, however good the preview behind it. Fixed on
+both sides. The button sends the URL alone (the preview already carries the
+title, the writer and the opening, so nothing is lost), and the copy fallback
+copies the URL alone. And the server reads the id as the UUID a path segment
+*starts with* (`sharedBokIdFrom`), so the links already sitting in chats
+preview correctly and open the right bok; `og:url` stays the clean one.
+
 **One caveat for whoever shares a link today:** Telegram caches a preview per
 URL, so a link shared before this deploy keeps its empty card. Sending it to
 `@WebpageBot` refreshes it.

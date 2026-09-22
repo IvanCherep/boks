@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { boksOrigin } from "@/app/layout";
-import { loadBokForShare, shareDescription, shareReadingNote, shareTitle } from "@/lib/boks/share-preview";
+import {
+  loadBokForShare,
+  shareDescription,
+  shareReadingNote,
+  shareTitle,
+  sharedBokIdFrom,
+} from "@/lib/boks/share-preview";
 import { OpenSharedBok } from "./open-shared-bok";
 
 /**
@@ -19,7 +25,8 @@ type RouteParams = { id: string };
 
 async function idFrom(params: RouteParams | Promise<RouteParams>) {
   const resolved = await params;
-  return String(resolved?.id ?? "");
+  // Repairs what messengers do to a shared link - see `sharedBokIdFrom`.
+  return sharedBokIdFrom(String(resolved?.id ?? ""));
 }
 
 export async function generateMetadata({

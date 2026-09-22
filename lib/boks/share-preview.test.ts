@@ -6,6 +6,7 @@ import {
   shareReadingNote,
   shareTitle,
   sharedBokFromRow,
+  sharedBokIdFrom,
 } from "@/lib/boks/share-preview";
 
 const chekhov = {
@@ -103,5 +104,25 @@ describe("reading a bok for a preview", () => {
   it("drops a row with no text, which cannot be previewed", () => {
     expect(sharedBokFromRow({ id: chekhov.id, title: "x", text: "   " })).toBeNull();
     expect(sharedBokFromRow(null)).toBeNull();
+  });
+});
+
+describe("reading the id out of a link a messenger damaged", () => {
+  const id = "a1e3baf7-44da-4867-a817-088f1cdfbd26";
+
+  it("reads the id out of the link Telegram actually sent", () => {
+    // Verbatim from a real share: the share text glued to the URL, no space.
+    expect(sharedBokIdFrom(`${id}Read`)).toBe(id);
+    expect(sharedBokIdFrom(`${id}Read%20%22%D0%9A%D0%BE%D0%BD%D0%BA%D1%83%D1%80%D1%81%22%20on%20boks`)).toBe(id);
+  });
+
+  it("leaves a clean id as it is", () => {
+    expect(sharedBokIdFrom(id)).toBe(id);
+    expect(sharedBokIdFrom(id.toUpperCase())).toBe(id);
+  });
+
+  it("does not invent an id where there is none", () => {
+    expect(sharedBokIdFrom("not-a-uuid")).toBe("not-a-uuid");
+    expect(sharedBokIdFrom("%E0%A4%A")).toBe("%E0%A4%A");
   });
 });
