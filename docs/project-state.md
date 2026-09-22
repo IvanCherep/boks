@@ -14,9 +14,19 @@ says only what is true now.
 on 2026-09-17. The zone is registered through Cloudflare Registrar in the same
 account, so no nameserver change was needed.
 
-`https://read.tryboks.workers.dev` still serves the same Worker and stays on
-until nothing live points at it: magic links already in inboxes name it, and it
-is still the `site_url` in production auth. Two things to know about it:
+`https://read.tryboks.workers.dev` still runs the same Worker, but since
+2026-09-22 **every page on it redirects (308) to the same path on
+tryboks.com** (`proxy.ts`, rule in `lib/boks/canonical-host.ts`). Keeping it
+reachable was a bug, not a courtesy: a sign-in link returns to the address it
+was requested from, and a session lives in one address's storage, so a reader
+who landed on the old host signed in there and stayed signed out on
+tryboks.com. Found in the auth log - the link request for a real account came
+from `read.tryboks.workers.dev`, the link went back there, the account never
+appeared on tryboks.com. `/api/` and `/_next/` are left alone so a tab already
+open on the old host keeps working. Production auth's `site_url` is
+tryboks.com (checked in the dashboard; an older note here said otherwise), and
+the redirect allow-list keeps the old host only for links already sent. Two
+things to know about it:
 
 - **`workers_dev` has to be declared in `wrangler.jsonc`.** Omitting it defaults
   it to false, and the first `wrangler triggers deploy` turned the workers.dev
