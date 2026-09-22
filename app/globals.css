@@ -2846,6 +2846,21 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* A hidden filter in the admin console: tap to show it again. */
+.admin-chip {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+  padding: 0.15rem 0.6rem;
+  color: var(--foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-chip:hover {
+  border-color: var(--foreground);
+}
+
 /* The publisher named under a writer's list: a link back to its catalogue. */
 .author-account-link {
   border: 0;

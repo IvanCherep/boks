@@ -4,10 +4,33 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { GuestFunnel } from "@/components/boks/client-types";
-import { loadGuestFunnel } from "@/components/boks/supabase-browser-data";
+import { loadGuestFunnel, markTeamDevice, unmarkTeamDevice } from "@/components/boks/supabase-browser-data";
+import { countryLabel } from "@/components/boks/admin/country-label";
+import { getBrowserId } from "@/components/boks/reader-behavior";
 import { biggestDrop, funnelSteps, percent } from "@/components/boks/admin/guest-funnel-steps";
 
 const windows = [7, 14, 30] as const;
+
+/** Remembered per admin browser: a filter you set yesterday should still be set. */
+const hiddenCountriesKey = "boks-guests-hidden-countries";
+
+function readHiddenCountries(): string[] {
+  try {
+    const raw = window.localStorage.getItem(hiddenCountriesKey);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(parsed) ? parsed.filter((code): code is string => typeof code === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHiddenCountries(codes: string[]) {
+  try {
+    window.localStorage.setItem(hiddenCountriesKey, JSON.stringify(codes));
+  } catch {
+    // A filter that does not persist is still a filter.
+  }
+}
 
 const reasonLabels: Record<string, string> = {
   limit: "Hit the 15-bok limit",
@@ -41,14 +64,18 @@ const landingLabels: Record<string, string> = {
  */
 export function GuestFunnelPanel() {
   const [days, setDays] = useState<(typeof windows)[number]>(14);
+  const [includeTeam, setIncludeTeam] = useState(false);
+  const [hiddenCountries, setHiddenCountries] = useState<string[]>([]);
+  const [filtersRead, setFiltersRead] = useState(false);
   const [data, setData] = useState<GuestFunnel | null>(null);
   const [status, setStatus] = useState("Loading…");
   const [busy, setBusy] = useState(false);
+  const [teamNote, setTeamNote] = useState("");
 
-  const refresh = useCallback(async (window: number) => {
+  const refresh = useCallback(async (window: number, team: boolean, hidden: string[]) => {
     setBusy(true);
     try {
-      setData(await loadGuestFunnel(window));
+      setData(await loadGuestFunnel(window, { includeTeam: team, hideCountries: hidden }));
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not load the guest funnel.");
@@ -57,11 +84,43 @@ export function GuestFunnelPanel() {
     }
   }, []);
 
+  // The stored filter is read once, before the first load, so the first
+  // numbers on screen are already the filtered ones.
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setHiddenCountries(readHiddenCountries());
+      setFiltersRead(true);
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, []);
+
   // Off the render path, like the other admin tables.
   useEffect(() => {
-    const handle = window.setTimeout(() => refresh(days).catch(() => undefined), 0);
+    if (!filtersRead) return;
+    const handle = window.setTimeout(() => refresh(days, includeTeam, hiddenCountries).catch(() => undefined), 0);
     return () => window.clearTimeout(handle);
-  }, [days, refresh]);
+  }, [days, includeTeam, hiddenCountries, filtersRead, refresh]);
+
+  function toggleCountry(code: string) {
+    if (code === "unknown") return;
+    setHiddenCountries((current) => {
+      const next = current.includes(code) ? current.filter((entry) => entry !== code) : [...current, code];
+      saveHiddenCountries(next);
+      return next;
+    });
+  }
+
+  async function markThisBrowser(mark: boolean) {
+    const visitorId = getBrowserId("boks-reader");
+    try {
+      if (mark) await markTeamDevice(visitorId, "marked from the Guests tab");
+      else await unmarkTeamDevice(visitorId);
+      setTeamNote(mark ? "This browser is now counted as the team's." : "This browser is counted as a visitor again.");
+      await refresh(days, includeTeam, hiddenCountries);
+    } catch (error) {
+      setTeamNote(error instanceof Error ? error.message : "Could not update this browser.");
+    }
+  }
 
   const steps = data ? funnelSteps(data.funnel) : [];
   const drop = biggestDrop(steps);
@@ -75,7 +134,11 @@ export function GuestFunnelPanel() {
             Visitors without an account, counted by device, over the last {days} days.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={includeTeam} onChange={(event) => setIncludeTeam(event.target.checked)} />
+            Include the team{data ? ` (${data.team.devices} devices)` : ""}
+          </label>
           <div className="admin-segmented" aria-label="Window">
             {windows.map((window) => (
               <button key={window} type="button" aria-pressed={days === window} onClick={() => setDays(window)}>
@@ -83,7 +146,7 @@ export function GuestFunnelPanel() {
               </button>
             ))}
           </div>
-          <Button variant="outline" onClick={() => void refresh(days)} disabled={busy}>
+          <Button variant="outline" onClick={() => void refresh(days, includeTeam, hiddenCountries)} disabled={busy}>
             <RefreshCw className="size-4" /> Refresh
           </Button>
         </div>
@@ -100,6 +163,84 @@ export function GuestFunnelPanel() {
               {drop.from.count}).
             </p>
           )}
+
+          <div>
+            <h3 className="text-sm font-semibold">Where they are</h3>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              By the country each device was last seen from. Click a country to hide it from every number on this
+              page - for a developer&apos;s private window, which nothing else can tell apart from a stranger.
+            </p>
+            <table className="mt-2 w-full text-sm">
+              <thead>
+                <tr className="text-left text-[var(--muted-foreground)]">
+                  <th className="py-1 font-medium">Country</th>
+                  <th className="py-1 text-right font-medium">Devices</th>
+                  <th className="py-1 text-right font-medium">Share</th>
+                  <th className="py-1 text-right font-medium">Guests</th>
+                  <th className="py-1 text-right font-medium">Finished a bok</th>
+                  <th className="py-1 text-right font-medium">With an account</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.countries.map((row) => {
+                  const total = data.countries.reduce((sum, entry) => sum + entry.devices, 0);
+                  return (
+                    <tr key={row.country} className="border-t border-[var(--border)]">
+                      <td className="py-2">
+                        {row.country === "unknown" ? (
+                          <span className="text-[var(--muted-foreground)]">
+                            Unknown - seen before countries were recorded
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="author-account-link"
+                            onClick={() => toggleCountry(row.country)}
+                            title="Hide this country from the numbers"
+                          >
+                            {countryLabel(row.country)}
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-2 text-right tabular-nums">{row.devices}</td>
+                      <td className="py-2 text-right tabular-nums">{percent(total ? row.devices / total : null)}</td>
+                      <td className="py-2 text-right tabular-nums">{row.guests}</td>
+                      <td className="py-2 text-right tabular-nums">{row.readers}</td>
+                      <td className="py-2 text-right tabular-nums">{row.accounts}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {hiddenCountries.length > 0 && (
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-[var(--muted-foreground)]">Hidden:</span>
+                {hiddenCountries.map((code) => (
+                  <button key={code} type="button" className="admin-chip" onClick={() => toggleCountry(code)}>
+                    {countryLabel(code)} ✕
+                  </button>
+                ))}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] p-4 text-sm leading-6">
+            <p>
+              <strong>Telling the team from visitors.</strong> A device ever used by an admin account is the
+              team&apos;s and is left out automatically ({data.team.devices} so far, {data.team.marked} marked by hand).
+              A browser the team reads in without signing in as an admin cannot be recognised that way - mark it here
+              from that browser, or hide its country above.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => void markThisBrowser(true)}>
+                Mark this browser as the team&apos;s
+              </Button>
+              <Button variant="ghost" onClick={() => void markThisBrowser(false)}>
+                Unmark it
+              </Button>
+            </div>
+            {teamNote && <p className="mt-2 text-[var(--muted-foreground)]">{teamNote}</p>}
+          </div>
 
           <div>
             <h3 className="text-sm font-semibold">From arriving to an account</h3>

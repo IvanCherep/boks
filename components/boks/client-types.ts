@@ -619,6 +619,12 @@ export type GuestFunnel = {
   since: string;
   /** When sign-up prompts and link requests started being recorded. */
   journeySince: string | null;
+  /** When visits started carrying a country. */
+  countriesSince: string | null;
+  team: { devices: number; marked: number; included: boolean };
+  hiddenCountries: string[];
+  countries: { country: string; devices: number; guests: number; readers: number; accounts: number }[];
+  knownCountries: { country: string; devices: number }[];
   funnel: {
     guests: number;
     startedReading: number;

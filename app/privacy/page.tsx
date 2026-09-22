@@ -48,6 +48,12 @@ export default function PrivacyPage() {
           activity under it. It is not linked to an email.
         </p>
         <p>
+          <strong>How you arrived:</strong> for each visit, the country your connection comes from (worked out by
+          Cloudflare from your network - boks never sees or keeps your IP address), whether you came through a
+          shared link, the site that sent you, and any campaign tag in the link. This tells us who our readers are
+          and which languages to add next.
+        </p>
+        <p>
           <strong>Feedback you send:</strong> the text you write in the feedback box, where you opened it, how many
           boks you had read at the time, your browser&apos;s anonymous id, and your @nickname if you are signed in.
           Only the boks team can read it. An email to our address reaches us through Cloudflare, which forwards it to

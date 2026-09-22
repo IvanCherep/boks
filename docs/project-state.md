@@ -104,6 +104,31 @@ the shape is already clear enough to act on: guests leave before any sign-up
 wall is shown, so the wall is not what is losing them. 10 schema checks, 13
 unit tests.
 
+**Countries, and telling the team from strangers (2026-09-22).** Two
+questions the Guests tab could not answer: where the audience is (which decides
+the next reading languages), and which visitors are the team - two developers
+in Serbia test daily, and at 1-5 real newcomers a day a developer's private
+window looks exactly like a stranger.
+
+The country comes from Cloudflare, which adds `CF-IPCountry` to every request
+the Worker receives; `/api/geo` returns just the two-letter code (`XX` and Tor's
+`T1` become nothing), the reader attaches it to the visit, and the IP address is
+never read or stored. Verified before building on it: the probe answered `RS`.
+Team devices are recognised automatically - any device ever used by an admin
+account, over all time, including what it did as a guest before the admin
+signed in - and by hand through `boks_team_devices` ("Mark this browser as the
+team's" in the tab). What neither can see, a private window or a cleared
+browser, is what hiding a country is for: click a country in the new "Where
+they are" table and every number on the page leaves it out; the choice is
+remembered per admin browser. `get_guest_funnel(days, include_team,
+hide_countries)` excludes the team by default and applies both filters at the
+source, so the funnel, the daily table and new accounts all agree.
+
+On production right after the deploy: 3 team devices recognised automatically;
+27 guest devices without the team, 28 with it, 26 with Serbia hidden. Devices
+seen before today show as "unknown" - countries start now. Privacy states the
+new field. 8 schema checks (46 migrations, 341), 5 unit tests.
+
 **Licences and terms, audited (2026-09-22).** Three findings, all fixed:
 
 - **Only the font's licence was published.** Everything else boks ships to a

@@ -67,7 +67,13 @@ import {
 import { ActionButton } from "@/components/boks/shared-ui";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
-import { journeyAttribution, recordJourneyEvent, signupReason, type JourneyAttribution } from "@/lib/boks/journey";
+import {
+  fetchVisitorCountry,
+  journeyAttribution,
+  recordJourneyEvent,
+  signupReason,
+  type JourneyAttribution,
+} from "@/lib/boks/journey";
 import {
   countRead,
   dueMilestone,
@@ -813,9 +819,14 @@ export function ReaderFeed() {
   useEffect(() => {
     if (!identitySettled || visitRecorded.current || !visitAttribution.current) return;
     visitRecorded.current = true;
-    recordJourneyEvent(
-      { event: "visit", attribution: visitAttribution.current },
-      { visitorId: visitorId.current, sessionId: sessionId.current }
+    const attribution = visitAttribution.current;
+    // The country comes from our own Worker, off the reading path: the visit
+    // waits for it, the reader does not.
+    void fetchVisitorCountry().then((country) =>
+      recordJourneyEvent(
+        { event: "visit", attribution, country },
+        { visitorId: visitorId.current, sessionId: sessionId.current }
+      )
     );
   }, [identitySettled]);
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);

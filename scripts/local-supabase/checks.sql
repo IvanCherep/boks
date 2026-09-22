@@ -2523,3 +2523,100 @@ begin
   delete from public.boks_journey_events where visitor_id = 'device-journey-1';
   delete from public.recommendation_events where visitor_id = 'device-journey-1';
 end $$;
+
+
+-- Countries and team devices (migration 20260922120000).
+--
+-- The point of both is telling strangers from ourselves, so each check is a
+-- way that could go wrong: a garbage country stored as a country, the team's
+-- own devices counted as guests, a hidden country still counted.
+do $$
+declare
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_guest uuid := '77777777-7777-4777-8777-777777777777';
+  v_reel uuid;
+  v_funnel jsonb;
+begin
+  select id into v_reel from public.reels where status = 'published' limit 1;
+  insert into auth.users (id, is_anonymous) values (v_guest, true) on conflict (id) do nothing;
+
+  -- Three guest devices: a stranger in Russia, a developer's device that an
+  -- admin also used, and a developer's private window in Serbia.
+  insert into public.recommendation_events (user_id, reel_id, visitor_id, session_id, event_type, surface, value)
+  values
+    (v_guest, v_reel, 'geo-stranger', 'geo-s1', 'start', 'reader', 1),
+    (v_guest, v_reel, 'geo-dev-phone', 'geo-s2', 'start', 'reader', 1),
+    (v_admin, v_reel, 'geo-dev-phone', 'geo-s3', 'start', 'reader', 1),
+    (v_guest, v_reel, 'geo-dev-private', 'geo-s4', 'start', 'reader', 1);
+
+  perform public.boks_test_logout();
+  set local role anon;
+  perform public.record_boks_journey_event('visit', 'geo-stranger', 'geo-s1', null, 'home', null, null, null, null, 'ru');
+  perform public.record_boks_journey_event('visit', 'geo-dev-private', 'geo-s4', null, 'home', null, null, null, null, 'RS');
+  perform public.record_boks_journey_event('visit', 'geo-junk-1', 'geo-s5', null, 'home', null, null, null, null, 'XX');
+  perform public.record_boks_journey_event('visit', 'geo-junk-2', 'geo-s6', null, 'home', null, null, null, null, 'Russia');
+  reset role;
+
+  perform public.boks_assert(
+    (select country from public.boks_journey_events where visitor_id = 'geo-stranger') = 'RU',
+    'a country code is stored upper-case'
+  );
+  perform public.boks_assert(
+    (select count(*) from public.boks_journey_events where visitor_id in ('geo-junk-1', 'geo-junk-2') and country is not null) = 0,
+    'an unknown or malformed country is stored as nothing, not as a country'
+  );
+
+  -- Marking a device is for admins only.
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  begin
+    perform public.mark_team_device('geo-stranger');
+    perform public.boks_assert(false, 'a reader cannot mark a device as the team''s');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot mark a device as the team''s');
+  end;
+  reset role;
+
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+
+  v_funnel := public.get_guest_funnel(14);
+  perform public.boks_assert(
+    not exists (select 1 from jsonb_array_elements(v_funnel -> 'countries') c where c ->> 'country' = 'RS')
+      or (select (c ->> 'devices')::integer from jsonb_array_elements(v_funnel -> 'countries') c where c ->> 'country' = 'RS') >= 1,
+    'the funnel answers with countries'
+  );
+  -- A device an admin ever used is the team's, including its guest history.
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(v_funnel -> 'countries') c) >= 1
+      and (v_funnel -> 'team' ->> 'devices')::integer >= 1,
+    'a device used by an admin is recognised as the team''s'
+  );
+  perform public.boks_assert(
+    (public.get_guest_funnel(14, true) -> 'funnel' ->> 'guests')::integer
+      > (v_funnel -> 'funnel' ->> 'guests')::integer,
+    'team devices are left out unless asked for, and counted when they are'
+  );
+
+  -- A private window cannot be linked to anyone; hiding its country is the tool.
+  perform public.boks_assert(
+    (public.get_guest_funnel(14, false, array['rs']) -> 'funnel' ->> 'guests')::integer
+      < (v_funnel -> 'funnel' ->> 'guests')::integer,
+    'hiding a country removes its devices from the funnel'
+  );
+
+  -- Marking by hand works too.
+  perform public.mark_team_device('geo-stranger', 'check');
+  perform public.boks_assert(
+    (public.get_guest_funnel(14) -> 'funnel' ->> 'guests')::integer
+      < (v_funnel -> 'funnel' ->> 'guests')::integer,
+    'a device marked by hand is left out'
+  );
+  perform public.unmark_team_device('geo-stranger');
+  reset role;
+  perform public.boks_test_logout();
+
+  delete from public.boks_journey_events where visitor_id like 'geo-%';
+  delete from public.recommendation_events where visitor_id like 'geo-%';
+end $$;

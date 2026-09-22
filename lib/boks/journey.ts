@@ -89,8 +89,29 @@ export function signupReason(input: { reason?: string | null; intent?: string | 
 }
 
 type JourneyEvent =
-  | { event: "visit"; attribution: JourneyAttribution }
+  | { event: "visit"; attribution: JourneyAttribution; country?: string | null }
   | { event: "signup_prompt" | "signup_request"; reason: SignupReason };
+
+/**
+ * The visitor's country, from our own Worker (`/api/geo`), which reads the
+ * header Cloudflare adds. The browser cannot know this itself. Bounded and
+ * silent: a visit without a country is still a visit.
+ */
+export async function fetchVisitorCountry(timeoutMs = 2500): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch("/api/geo", { signal: controller.signal, cache: "no-store" });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { country?: unknown };
+    return typeof body.country === "string" && /^[A-Z]{2}$/.test(body.country) ? body.country : null;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
 
 /** Sends one step. Never throws, never waits on the caller. */
 export function recordJourneyEvent(step: JourneyEvent, context: { visitorId?: string; sessionId?: string }) {
@@ -107,6 +128,7 @@ export function recordJourneyEvent(step: JourneyEvent, context: { visitorId?: st
       p_utm_source: attribution?.utmSource ?? null,
       p_utm_medium: attribution?.utmMedium ?? null,
       p_utm_campaign: attribution?.utmCampaign ?? null,
+      p_country: step.event === "visit" ? step.country ?? null : null,
     })
     .then(
       () => undefined,

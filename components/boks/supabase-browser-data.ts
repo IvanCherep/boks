@@ -1171,12 +1171,39 @@ export async function sendBoksFeedback(input: {
 }
 
 /** Guests, counted by device, and how they meet the sign-up. Admin-only on the server. */
-export async function loadGuestFunnel(days = 14) {
+export async function loadGuestFunnel(
+  days = 14,
+  options: { includeTeam?: boolean; hideCountries?: string[] } = {}
+) {
   if (!supabase) throw new Error("Supabase is not configured.");
 
-  const result = await supabase.rpc("get_guest_funnel", { p_days: days });
+  const result = await supabase.rpc("get_guest_funnel", {
+    p_days: days,
+    p_include_team: options.includeTeam ?? false,
+    p_hide_countries: options.hideCountries?.length ? options.hideCountries : null,
+  });
   if (result.error) throw result.error;
   return result.data as GuestFunnel;
+}
+
+/** Keeps this browser out of the guest numbers. Admin-only on the server. */
+export async function markTeamDevice(visitorId: string, label?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("mark_team_device", { p_visitor_id: visitorId, p_label: label ?? null });
+  if (result.error) throw result.error;
+}
+
+export async function unmarkTeamDevice(visitorId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("unmark_team_device", { p_visitor_id: visitorId });
+  if (result.error) throw result.error;
+}
+
+export async function listTeamDevices() {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("list_team_devices");
+  if (result.error) throw result.error;
+  return (result.data ?? []) as { visitorId: string; label: string | null; createdAt: string }[];
 }
 
 /** The feedback inbox. Admin-only on the server. */
