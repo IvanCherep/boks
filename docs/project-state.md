@@ -71,6 +71,35 @@ network or a VPN usually fixes it, with **Try again** and the support address.
 Verified by building against an unreachable host and watching it: 8 s, then the
 screen. 377 unit tests.
 
+**Licences and terms, audited (2026-09-22).** Three findings, all fixed:
+
+- **Only the font's licence was published.** Everything else boks ships to a
+  browser is open source under MIT, ISC, BSD or Apache-2.0, and each of those
+  asks that its notice travel with copies - which a minified bundle is.
+  `scripts/build-third-party-notices.mjs` now writes
+  `/licenses/third-party-notices.txt` from the real installed tree (183
+  packages, nested copies included) plus the build tools compiled into the
+  pages, linked from Settings -> About. It **refuses to run on a copyleft
+  licence**, and it caught one on its first run: `sharp`'s libvips binary,
+  LGPL-3.0, pulled in by `next`. It is never distributed - a Worker cannot load
+  a native binary - so it is excluded with a reason, and the script greps
+  `dist/` for it, so the exclusion stops working the day it is bundled.
+- **Two authors may still be protected in Russia.** The 70-year rule plus the
+  four-year wartime extension (Civil Code art. 1281(4)) protects Bunin until the
+  end of 2027 and Teffi until the end of 2026. 21 texts hidden through
+  `archive_bok` with the reason and restore date; 526 remain published. The
+  other 65 Russian authors were checked against the extended rule and are clear.
+- **The Terms said nothing about the catalogue, copyright complaints, feedback
+  or liability.** They now cover where the texts come from and what "public
+  domain" does not promise across borders, a notice-and-takedown procedure
+  (hide on report, tell the publisher, remove if it holds, close repeat
+  infringers), acceptable use including bulk copying, a free licence to use
+  feedback, a minimum age of 16, an "as is" disclaimer and a limitation of
+  liability to the extent the law allows, and how the Terms change. Privacy
+  now lists feedback as data, says how recommendations are computed, how long
+  things are kept, and the age rule. Governing law is deliberately absent: it
+  depends on the legal entity that operates boks.
+
 **Author taste now follows the writer, not the publisher (2026-09-21).**
 `authorAffinity` was keyed on `authorUserId`, and this catalogue is 547 pieces
 by 138 writers under one account - so there was one key for everything: the

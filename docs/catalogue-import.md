@@ -181,6 +181,19 @@ structure (`[`, `<`, ` / `), an editorial page ("От автора", "Preface"),
 first line that only repeats the title. It repairs what is mechanical - an
 editor's angle brackets, a trailing footnote bracket, a subpage path.
 
+**The licence rule, and the trap in it (2026-09-22).** "Public domain" is a
+fact about a country, not a text. The rule this catalogue uses: the author died
+at least 70 years ago *and*, for anyone who was creatively active in 1941-1945,
+**four more years** - Russian Civil Code art. 1281(4) extends the term for
+authors who worked during the Great Patriotic War, and courts read "worked"
+broadly, emigrés included. The first two batches admitted Bunin (d. 1953) and
+Teffi (d. 1952) on the plain 70-year rule; by the extended one they are
+protected in Russia until the end of 2027 and 2026. Their 21 texts were hidden
+through `archive_bok`, each with the reason and the date it can be restored -
+Content -> Deleted in the admin console. For English: published before 1930
+(the US 95-year rule) and the author dead long enough by the same arithmetic.
+Translations count separately: the translator's death is what matters.
+
 **Three duplicate guards, all in SQL**, because a second pass is how a
 catalogue grows: the `import_key` (a byte-identical reload), the byline plus
 title (the same work from a different page), and the normalised first 200

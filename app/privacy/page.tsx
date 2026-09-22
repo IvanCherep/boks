@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "What boks collects during the pilot, why, where it is kept, and how to delete it.",
 };
 
-const effectiveDate = "September 19, 2026";
+const effectiveDate = "September 22, 2026";
 
 /**
  * Written from what the product actually does - the tables, the event stream,
@@ -47,11 +47,23 @@ export default function PrivacyPage() {
           <strong>Without an account:</strong> boks gives your browser an anonymous id and keeps the same reading
           activity under it. It is not linked to an email.
         </p>
+        <p>
+          <strong>Feedback you send:</strong> the text you write in the feedback box, where you opened it, how many
+          boks you had read at the time, your browser&apos;s anonymous id, and your @nickname if you are signed in.
+          Only the boks team can read it. An email to our address reaches us through Cloudflare, which forwards it to
+          the team&apos;s inbox.
+        </p>
 
         <h2>Why</h2>
         <p>
           To run the service, to recommend boks you are likely to enjoy, to compare ways of recommending them, and to
           understand how the pilot is used. boks does not sell your data and shows no advertising.
+        </p>
+        <p>
+          <strong>How recommendations are made:</strong> the texts themselves are analysed to find pieces that
+          resemble one another, and what you have read, finished and liked is compared against them on boks&apos;s own
+          servers when your feed is built. Nothing about you is sent to anyone else to do this, and nothing is
+          decided about you beyond which bok to show next.
         </p>
 
         <h2>What others can see</h2>
@@ -68,6 +80,12 @@ export default function PrivacyPage() {
           third-party trackers.
         </p>
 
+        <h2>How long it is kept</h2>
+        <p>
+          For as long as your account exists, or for the length of the pilot for activity recorded without an
+          account. Backups made by the database provider are kept for a few days and then replaced.
+        </p>
+
         <h2>Deleting it</h2>
         <p>
           Signed in, open Settings and choose <strong>Delete account</strong>. That removes your email, profile,
@@ -75,10 +93,17 @@ export default function PrivacyPage() {
           As a guest, clearing this site&apos;s data in your browser removes what is stored on your device.
         </p>
 
+        <h2>Age</h2>
+        <p>
+          Accounts are for people aged 16 and over, and boks does not knowingly keep data about anyone younger. If you
+          believe a child has created an account, tell us and we will delete it.
+        </p>
+
         <h2>Contact</h2>
         <p>
           Write to <a href={supportMailto}>{supportEmail}</a> about anything on this page: what is stored about
-          you, a copy of it, or deleting it. One person reads that mailbox during the pilot.
+          you, a copy of it, correcting it, or deleting it - including feedback you sent or activity recorded without
+          an account. One person reads that mailbox during the pilot.
         </p>
       </article>
     </main>

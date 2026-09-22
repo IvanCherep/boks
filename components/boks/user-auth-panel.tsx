@@ -850,6 +850,21 @@ export function UserAuthPanel({
                     <a href="/licenses/source-serif-4-OFL.txt" target="_blank" rel="noreferrer">
                       Read the complete license
                     </a>
+                    <p className="mt-3"><strong>Software</strong></p>
+                    <p>
+                      boks is built on open-source software - React, Supabase, Radix, Lucide and others - under the
+                      MIT, ISC, BSD and Apache 2.0 licenses.
+                    </p>
+                    <a href="/licenses/third-party-notices.txt" target="_blank" rel="noreferrer">
+                      Every package and its license
+                    </a>
+                    <p className="mt-3"><strong>Texts</strong></p>
+                    <p>
+                      The catalogue is literature in the public domain, transcribed by the volunteers of Wikisource.
+                    </p>
+                    <a href="/terms#catalogue" target="_blank" rel="noreferrer">
+                      Where the texts come from
+                    </a>
                   </div>
                 </details>
               </div>
