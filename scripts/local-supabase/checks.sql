@@ -2620,3 +2620,78 @@ begin
   delete from public.boks_journey_events where visitor_id like 'geo-%';
   delete from public.recommendation_events where visitor_id like 'geo-%';
 end $$;
+
+
+-- The Data API surface (migration 20260925100000).
+--
+-- Two mistakes this makes impossible. A reader able to write through a view -
+-- which is how `boks_public_identity` came to let anyone rename any @handle,
+-- because a view without `security_invoker` runs as its owner and row-level
+-- security never sees the write. And a table the app needs that nobody granted:
+-- from 30 October Supabase stops granting new tables automatically, so a
+-- migration that forgets leaves the table unreachable on any rebuilt project.
+do $$
+declare
+  v_writable text;
+  v_missing text;
+  v_expected text[][] := array[
+    array['published_boks', 'anon', 'SELECT'],
+    array['published_boks', 'authenticated', 'SELECT'],
+    array['boks_comments', 'anon', 'SELECT'],
+    array['boks_public_identity', 'anon', 'SELECT'],
+    array['reels', 'authenticated', 'SELECT'],
+    array['comments', 'authenticated', 'SELECT'],
+    array['bok_rights', 'authenticated', 'SELECT'],
+    array['bok_reports', 'authenticated', 'SELECT'],
+    array['likes', 'authenticated', 'INSERT'],
+    array['likes', 'authenticated', 'DELETE'],
+    array['views', 'authenticated', 'INSERT'],
+    array['user_profiles', 'authenticated', 'INSERT'],
+    array['comment_likes', 'authenticated', 'INSERT']
+  ];
+  v_row text[];
+begin
+  -- Nothing a browser can hold may write through a view.
+  select string_agg(format('%s→%s:%s', g.table_name, g.grantee, g.privilege_type), ', ')
+  into v_writable
+  from information_schema.role_table_grants g
+  join pg_class c on c.relname = g.table_name
+  join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
+  where g.table_schema = 'public'
+    and c.relkind = 'v'
+    and g.grantee in ('anon', 'authenticated')
+    and g.privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');
+  perform public.boks_assert(
+    v_writable is null,
+    coalesce('no view in public is writable by a reader; found: ' || v_writable, 'no view in public is writable by a reader')
+  );
+
+  -- And nothing a guest holds may write anywhere: a guest reads, and every
+  -- change a guest is allowed to make goes through a function.
+  select string_agg(format('%s:%s', g.table_name, g.privilege_type), ', ')
+  into v_writable
+  from information_schema.role_table_grants g
+  where g.table_schema = 'public' and g.grantee = 'anon'
+    and g.privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');
+  perform public.boks_assert(
+    v_writable is null,
+    coalesce('the anonymous role cannot write anywhere in public; found: ' || v_writable, 'the anonymous role cannot write anywhere in public')
+  );
+
+  -- Everything the app addresses through the Data API is granted, by a
+  -- migration rather than by a platform default.
+  foreach v_row slice 1 in array v_expected loop
+    if not exists (
+      select 1 from information_schema.role_table_grants g
+      where g.table_schema = 'public' and g.table_name = v_row[1]
+        and g.grantee = v_row[2] and g.privilege_type = v_row[3]
+    ) then
+      v_missing := concat_ws(', ', v_missing, format('%s→%s:%s', v_row[1], v_row[2], v_row[3]));
+    end if;
+  end loop;
+  perform public.boks_assert(
+    v_missing is null,
+    coalesce('every object the Data API reaches is granted explicitly; missing: ' || v_missing,
+             'every object the Data API reaches is granted explicitly')
+  );
+end $$;

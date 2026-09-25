@@ -109,7 +109,7 @@ Business rules:
 - Recommendation metrics or attribution: `lib/boks/recommendations/metrics.ts`, `lib/boks/contracts.ts`, the Supabase migration, and `specs/boks-recommendation-experiments.md` together.
 - Author submission limits: `lib/boks/contracts.ts`, `lib/boks/author/submission-quota.ts`, the Supabase `submit_bok_for_review` / `get_my_bok_quota` migration, and `components/boks/author-console.tsx`.
 - Seed/demo content: update `lib/boks/seed-stories.ts`.
-- Supabase persistent data: update `supabase/migrations/` with RLS and indexes, then run `npm run verify:supabase`.
+- Supabase persistent data: update `supabase/migrations/` with RLS and indexes, then run `npm run verify:supabase`. A new table or view the Data API must reach needs its own `grant` in the same migration that creates it - Supabase stopped granting new objects in `public` automatically on 30 October 2026, and `scripts/local-supabase/checks.sql` asserts the whole grant matrix. Prefer a security-definer function over a grant, and never grant a write on a view: a view without `security_invoker` runs as its owner and bypasses RLS.
 - D1 compatibility data: update `db/schema.ts`, then generate a Drizzle migration.
 - Product decisions: update `specs/boks-product-spec.md` before or with implementation.
 - Hosting/deployment: update `wrangler.jsonc`, `docs/hosting.md`, and `docs/future-updates-playbook.md` together.

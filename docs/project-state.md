@@ -551,6 +551,54 @@ of 457, so 257 pieces could never be served to anyone); **tapping a writer's
 name opened the publisher** rather than the writer; and **the reader reflowed
 poems into paragraphs**. See the audit section below.
 
+
+### Who the Data API may reach
+
+Supabase wrote on 2026-09-24 that from **30 October** a new table in `public`
+no longer receives automatic `anon`/`authenticated` grants; it asked that each
+table be granted in the migration that creates it. Auditing for that turned up
+something worse than a build problem.
+
+**`boks_public_identity` was writable by anyone holding the publishable key** -
+which is every browser that loads the app. The view is `select user_id, handle
+from user_profiles`, simple enough that Postgres makes it updatable, and `anon`
+held INSERT, UPDATE and DELETE on it by inheritance. A view without
+`security_invoker` runs as its owner, so row-level security on `user_profiles`
+never saw those writes. Probed against production before the fix: `PATCH
+/rest/v1/boks_public_identity?user_id=eq.<id>` answered **200**, `DELETE`
+answered **204**. They changed nothing only because the id passed did not
+exist; a real one would have renamed or erased that reader's @handle.
+`bok_rights` and `bok_reports` carried the same full grant for `anon`, where
+the policies allow an admin to read and nothing else. Nothing in the source
+asked for any of this - it arrived with Supabase's default on new objects, and
+the RLS policies underneath read as if it had not.
+
+`supabase/migrations/20260925100000_boks_data_api_grants.sql` revokes
+everything `anon` and `authenticated` hold in `public` and grants back exactly
+what the app uses: three objects readable by guests (`published_boks`,
+`boks_comments`, `boks_public_identity`), eleven readable by a signed-in
+reader, four written directly by the client (`likes`, `comment_likes`, `views`,
+`user_profiles`), and the sequences. Everything else - feedback, journey
+events, team devices, the reels table itself - is reached only through
+security-definer functions, which run as their owner and need the caller to
+hold nothing. `service_role` is untouched; it never leaves the Edge Function.
+
+After applying it, the same probes answer **401 `permission denied for view
+boks_public_identity`**, `bok_rights` for `anon` answers 401, and the reads the
+app depends on still answer 200. Verified as a guest on tryboks.com afterwards:
+a bok opens, and the network log shows `200 likes`, `201 views`, `200
+rpc/get_boks_user_context`, `200 rpc/get_my_followed_authors`, `204
+rpc/record_boks_journey_event`, `200 rpc/record_recommendation_events`, with
+zero failed requests.
+
+No `alter default privileges` is set, deliberately: restoring an automatic
+grant would recreate the thing that caused this. **A new table or view that the
+Data API should reach now grants explicitly, in the migration that creates
+it** - and `scripts/local-supabase/checks.sql` asserts the whole surface, plus
+two invariants that make the original defect unrepeatable: no view in `public`
+grants a write to `anon` or `authenticated`, and `anon` can write nowhere in
+`public` at all. A missing grant fails `npm run verify:schema` rather than
+appearing as a 401 in somebody's browser.
 ---
 
 ## Not in production
