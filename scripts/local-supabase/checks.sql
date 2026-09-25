@@ -10,6 +10,7 @@
 create or replace function public.boks_test_login(p_user_id uuid, p_is_anonymous boolean default false)
 returns void
 language plpgsql
+set search_path = ''
 as $$
 begin
   perform set_config(
@@ -23,6 +24,7 @@ $$;
 create or replace function public.boks_test_logout()
 returns void
 language sql
+set search_path = ''
 as $$
   select set_config('request.jwt.claims', '{}', false);
 $$;
@@ -30,6 +32,7 @@ $$;
 create or replace function public.boks_assert(p_condition boolean, p_message text)
 returns void
 language plpgsql
+set search_path = ''
 as $$
 begin
   if p_condition is not true then
@@ -2695,3 +2698,96 @@ begin
              'every object the Data API reaches is granted explicitly')
   );
 end $$;
+
+-- What the Security Advisor reports, asserted here so it stays reported clean.
+-- Three things: every function in `public` pins its search path, no reader role
+-- can call a trigger function over HTTP, and embedding coverage is not a guest's
+-- to read. See 20260925120000_boks_advisor_hardening.sql.
+do $$
+declare
+  v_unpinned text;
+  v_callable text;
+begin
+  select string_agg(p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', ', ' order by p.proname)
+  into v_unpinned
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace and n.nspname = 'public'
+  where p.prokind = 'f'
+    and not exists (
+      select 1 from unnest(coalesce(p.proconfig, '{}'::text[])) as c(setting)
+      where c.setting like 'search\_path=%'
+    );
+  perform public.boks_assert(
+    v_unpinned is null,
+    coalesce('every function in public pins its search_path; unpinned: ' || v_unpinned,
+             'every function in public pins its search_path')
+  );
+
+  -- A function returning `trigger` is fired by a trigger, never called. Postgres
+  -- checks EXECUTE when the trigger is created, so revoking costs the trigger
+  -- nothing and takes the function off the Data API.
+  select string_agg(format('%s→%s', p.proname, r.rolname), ', ')
+  into v_callable
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace and n.nspname = 'public'
+  cross join (values ('anon'), ('authenticated')) as r(rolname)
+  where p.prorettype = 'pg_catalog.trigger'::regtype
+    and has_function_privilege(r.rolname, p.oid, 'EXECUTE');
+  perform public.boks_assert(
+    v_callable is null,
+    coalesce('no reader role can execute a trigger function; found: ' || v_callable,
+             'no reader role can execute a trigger function')
+  );
+
+  perform public.boks_assert(
+    not has_function_privilege('anon', 'public.boks_embedding_coverage()', 'EXECUTE'),
+    'a guest cannot read embedding coverage'
+  );
+  perform public.boks_assert(
+    has_function_privilege('authenticated', 'public.boks_embedding_coverage()', 'EXECUTE'),
+    'the admin console can still read embedding coverage'
+  );
+end $$;
+
+-- Revoking EXECUTE on a trigger function must not stop the trigger.
+--
+-- Postgres checks EXECUTE when a trigger is created, not each time it fires, so
+-- this should hold - but "should" is what the previous grant mistake also said.
+-- A probe table carrying the columns the reels trigger writes, a reader who
+-- cannot call that function, one insert.
+create table public.boks_trigger_probe (
+  id bigserial primary key,
+  text text,
+  author_handle text,
+  word_count integer,
+  minutes integer,
+  reading_shape text,
+  line_break_count integer,
+  language text
+);
+create trigger boks_trigger_probe_derive
+before insert on public.boks_trigger_probe
+for each row execute function public.boks_set_reel_word_count();
+grant insert, select on public.boks_trigger_probe to authenticated;
+grant usage, select on sequence public.boks_trigger_probe_id_seq to authenticated;
+
+set role authenticated;
+do $$
+begin
+  perform public.boks_assert(
+    not has_function_privilege('authenticated', 'public.boks_set_reel_word_count()', 'EXECUTE'),
+    'the writing reader holds no EXECUTE on the trigger function'
+  );
+  insert into public.boks_trigger_probe (text, author_handle)
+  values (E'Two short lines here,\nand a second one after the break.', '@someone');
+  perform public.boks_assert(
+    (select word_count from public.boks_trigger_probe order by id desc limit 1) = 11
+      and (select line_break_count from public.boks_trigger_probe order by id desc limit 1) = 1
+      and (select author_handle from public.boks_trigger_probe order by id desc limit 1) = 'someone'
+      and (select language from public.boks_trigger_probe order by id desc limit 1) = 'en',
+    'the trigger still fires, and still derives, for a reader who cannot call it'
+  );
+end $$;
+reset role;
+
+drop table public.boks_trigger_probe;

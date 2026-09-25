@@ -180,3 +180,81 @@ If `tryboks.com` fails after a deploy:
 3. Check `Workers & Pages -> read -> Domains`.
 4. Re-run `npm run deploy` from the last known good source.
 5. If needed, rollback the active Worker version in Cloudflare dashboard.
+
+## The Supabase Pro Plan, and What It Must Not Cost
+
+Audited 2026-09-25 against the dashboard and the Management API. The rule for
+this project is one subscription and nothing else on the invoice, so every line
+below is either "included" or "do not turn on".
+
+**On, included, already in use**
+
+| Perk | State |
+|---|---|
+| Micro compute | Applied. 125 compute hours this cycle, $1.68 against the $10 of compute credits the plan includes - Micro for a whole month costs about $9.81, so it fits, but **only for one instance**. |
+| Daily backups | Running. Nine kept, most recent 2026-09-25 02:17 UTC. |
+| 8 GB disk | 2 GB provisioned, 0.32 GB used, auto-expands to 8 GB. |
+| No project pausing | Automatic on paid plans. |
+| 7-day log retention, 20 GB ingestion, 2 000 GB log query | 0.06 GB ingested, 1.43 GB queried. Barely touched; the Logs Explorer is the tool for an auth or PostgREST question nothing in the app records. |
+| Advisors | Free on every plan. We had never opened them; see below. |
+| Email support | Available to the account owner. |
+
+**Headroom, at the traffic we expect.** 250 GB egress (used 0.02), 100 000 MAU
+(used 4), 2 M Edge Function invocations (used 113), 100 GB Storage (unused),
+500 Realtime connections and 5 M messages (both unused). A hundred readers do
+not come close to any of these. Realtime and Storage are included and idle: if
+live comment counts or bok images are ever wanted, they cost nothing extra.
+
+**Off, and each one must stay off**
+
+| Thing | Why it would cost money |
+|---|---|
+| Spend cap disabled | It is **enabled**, and the dashboard confirms "you are currently not billed for overages". Turning it off is what converts every limit above into a bill. |
+| Branching | The welcome email lists it as a Pro feature. Each preview branch runs its own compute and is billed by the hour, and it eats the same $10 credit Micro already uses. There are no branches; keep it that way. |
+| Point-in-time recovery, dedicated IPv4, custom domain | All three are paid add-ons, all three disabled. `api.tryboks.com` costs $10/mo through this door. |
+| Read replicas, io2 disk, disk above 8 GB | Paid. Nothing to do but watch `served_feed`, which is the fastest-growing table at roughly 10 KB per feed load. |
+
+**The dedicated pooler: deliberately not used.** The welcome email recommends
+it, and it is included. It does not apply here: nothing opens a Postgres
+connection to this project except the CLI during a migration. The browser and
+the Worker both speak HTTP to PostgREST. The dedicated pooler would run
+Supavisor on the same 1 GB Micro instance to shorten a hop we do not take. The
+shared pooler (`aws-0-eu-west-2.pooler.supabase.com`) stays.
+
+**Two free settings still off, both needing the owner's hand.** Direct Postgres
+access does not enforce SSL (`npx supabase ssl-enforcement get --experimental`
+reports `database: false`), and network restrictions - a Pro entitlement this
+project is allowed but has never set - leave the database reachable from
+`0.0.0.0/0`. Neither touches the app, which never opens a direct connection, so
+both are about the migration path and the database password. SSL enforcement is
+safe to turn on; restricting CIDRs is not, unless the address `supabase db push`
+runs from is stable, or the lockout is acceptable.
+
+### What the Advisors found the first time we read them
+
+Free, and worth the five minutes. The Security Advisor reported 3 errors and
+106 warnings; `supabase/migrations/20260925120000_boks_advisor_hardening.sql`
+acts on them and argues the case for what is left alone. In short: thirteen
+function signatures had no fixed `search_path` (now pinned), four trigger
+functions were callable over HTTP as RPCs (now revoked - and the assertion
+written for it found the fourth, which the truncated dashboard list had not
+shown), and `boks_embedding_coverage` - which reports the count of boks waiting
+in review - was granted to `anon` (now admin-only). The three "Security Definer
+View" errors are deliberate and stay.
+
+The Performance Advisor reported 0 errors and 0 warnings. One thing it does not
+say, which `supabase inspect db index-stats --linked` does: **the HNSW index
+`reels_embedding_cosine` has never been scanned.** At 547 rows Postgres reads
+the table instead, and the ranker fetches embeddings rather than asking the
+database for nearest neighbours, so nothing is broken - but the index earns
+nothing today and should be re-checked before the catalogue grows.
+
+Re-run any of this with:
+
+```bash
+npx supabase inspect db db-stats --linked        # size, cache hit, WAL
+npx supabase inspect db index-stats --linked     # what the indexes are doing
+npx supabase inspect db traffic-profile --linked # which tables take the writes
+npx supabase backups list                        # daily backups, PITR state
+npx supabase branches list                       # must stay empty
+```
