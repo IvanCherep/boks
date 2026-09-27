@@ -271,3 +271,37 @@ npx supabase inspect db traffic-profile --linked # which tables take the writes
 npx supabase backups list                        # daily backups, PITR state
 npx supabase branches list                       # must stay empty
 ```
+
+## Signing In With A Code
+
+The reader can type a code instead of following the link, because the link
+cannot land everywhere: opened from a mail app, or from the app installed to a
+home screen, it arrives in a different browser context from the one that asked
+for it, and the PKCE verifier stays behind in the context nobody is looking at.
+That is issue #6 - in the web app there was no way in at all.
+
+Both come from the same `signInWithOtp` call and arrive in the same email;
+nothing extra is sent. **The code only appears if the Magic Link template asks
+for it.** Supabase does not add `{{ .Token }}` on its own, and the templates are
+not in `supabase/config.toml` - the commented-out blocks there are examples, and
+`supabase config push` must never be run, because `pass = "env(RESEND_API_KEY)"`
+means a push without that variable clears the SMTP password and stops every
+auth email.
+
+So it is one paste in the dashboard: **Authentication -> Emails -> Magic Link**.
+
+```html
+<h2>Sign in to boks</h2>
+<p>Your code:</p>
+<p style="font-size:28px;letter-spacing:6px"><strong>{{ .Token }}</strong></p>
+<p>Or open this link: <a href="{{ .ConfirmationURL }}">Sign in</a></p>
+<p>The code lasts an hour.</p>
+```
+
+Set the OTP length to 6 on the same screen if it is anything else; six digits is
+Supabase's default and what `boksEmailCodeLength` expects. (`otp_length = 8` in
+`supabase/config.toml` applies to a local stack only.)
+
+Until that paste, the code field on the "check your email" screen has nothing to
+accept, and the screen tells the reader to use a code that is not in their
+email - so the client change waits for it rather than shipping ahead of it.

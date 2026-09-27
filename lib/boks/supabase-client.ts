@@ -2,6 +2,7 @@ import { withUnreachableTimeout } from "@/lib/boks/network-errors";
 import { createClient } from "@supabase/supabase-js";
 import type { BoksUserContext } from "@/components/boks/client-types";
 import { describeMagicLinkRedirectError } from "@/lib/boks/magic-link-errors";
+import { readableBoksError } from "@/lib/boks/errors";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -371,6 +372,69 @@ export async function requestBoksMagicLink(input: {
       createdAt: new Date().toISOString(),
     });
   }
+}
+
+/**
+ * The code from the email, as a reader hands it over.
+ *
+ * They paste it with a space in the middle, or with the full stop that ended
+ * the sentence around it, or they read it aloud to themselves and type it with
+ * a dash. Keeping only the digits costs nothing and removes every one of those
+ * as a reason to be refused.
+ */
+export function normalizeBoksEmailCode(value: string) {
+  return (value ?? "").replace(/\D+/g, "").slice(0, boksEmailCodeLength);
+}
+
+/** Supabase's email OTP. Six digits is its default and what we ask it for. */
+export const boksEmailCodeLength = 6;
+
+/**
+ * Sign in with the code instead of the link.
+ *
+ * The link cannot work everywhere. Opened from a mail app, or from an app
+ * installed to the home screen, it lands in a different browser context from
+ * the one that asked for it - and the PKCE verifier that proves the request
+ * was ours stays behind in the context that is now not being used. That is
+ * https://github.com/IvanCherep/boks/issues/6: in the web app there was no way
+ * in at all. A code is typed where the sign-in started, so there is nothing to
+ * carry between contexts.
+ *
+ * Both arrive in the same email from the same `signInWithOtp` call; nothing
+ * extra is sent. The code only appears in the email if the Magic Link template
+ * asks for `{{ .Token }}` - see docs/hosting.md.
+ */
+export async function verifyBoksEmailCode(input: { email: string; code: string }) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const email = normalizedEmail(input.email);
+  const token = normalizeBoksEmailCode(input.code);
+  if (!email) throw new Error("Enter your email.");
+  if (token.length < boksEmailCodeLength) {
+    throw new Error(`Enter the ${boksEmailCodeLength} digits from the email.`);
+  }
+
+  const result = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (result.error) throw result.error;
+}
+
+/** What a refused code means, in words a reader can act on. */
+export function explainBoksEmailCodeError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("expired") || normalized.includes("invalid")) {
+    // Supabase answers the same way for a wrong code and a code that has run
+    // out, and it is right to: saying which would tell someone guessing that
+    // they had the right address and the wrong digits.
+    return "That code did not work. Check the newest email, or send a new one - asking for a new code stops the old one working.";
+  }
+
+  if (normalized.includes("rate limit") || normalized.includes("too many")) {
+    return "Too many tries just now. Wait a minute and use the code from the newest email.";
+  }
+
+  return readableBoksError(error, "Could not sign you in with that code.");
 }
 
 export function explainBoksMagicLinkError(error: unknown, context: MagicLinkErrorContext) {

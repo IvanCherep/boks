@@ -50,7 +50,11 @@ import {
   type ReaderLibraryView,
 } from "@/components/boks/reader-library";
 import {
+  boksEmailCodeLength,
   completePendingBoksMagicLinkProfile,
+  explainBoksEmailCodeError,
+  normalizeBoksEmailCode,
+  verifyBoksEmailCode,
   explainBoksMagicLinkError,
   requestBoksMagicLink,
   signOutBoksUser,
@@ -177,6 +181,10 @@ export function UserAuthPanel({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [status, setStatus] = useState("");
   const [sentMagicLink, setSentMagicLink] = useState<SentMagicLink | null>(null);
+  /** The code from that same email, for the contexts where the link cannot land. */
+  const [emailCode, setEmailCode] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeError, setCodeError] = useState("");
   const [busy, setBusy] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
   const visibleLibrary = useMemo(() => {
@@ -347,7 +355,36 @@ export function UserAuthPanel({
   function editEmail() {
     setSentMagicLink(null);
     setStatus("");
+    setEmailCode("");
+    setCodeError("");
     window.setTimeout(() => document.getElementById(emailInputId)?.focus(), 0);
+  }
+
+  /**
+   * The code from the email, typed here rather than followed there.
+   *
+   * Verifying creates the session in this browser, which is the whole point:
+   * the link creates it wherever the mail app decided to open it. Everything
+   * after that is the path the link already takes - `refreshUser` finishes the
+   * account off the pending sign-up draft.
+   */
+  async function submitEmailCode(event: React.FormEvent) {
+    event.preventDefault();
+    if (!sentMagicLink || codeBusy) return;
+
+    setCodeBusy(true);
+    setCodeError("");
+    try {
+      await verifyBoksEmailCode({ email: sentMagicLink.email, code: emailCode });
+      const context = await refreshUser();
+      onUserChanged(context);
+      setSentMagicLink(null);
+      setEmailCode("");
+    } catch (error) {
+      setCodeError(explainBoksEmailCodeError(error));
+    } finally {
+      setCodeBusy(false);
+    }
   }
 
   /**
@@ -509,6 +546,7 @@ export function UserAuthPanel({
       ? "Email sign in"
       : "Create your boks account";
   const emailInputId = mode === "signin" ? "boks-signin-email" : "boks-signup-email";
+  const emailCodeInputId = "boks-email-code";
 
   return (
     <div
@@ -892,13 +930,11 @@ export function UserAuthPanel({
                 this browser, to {sentMagicLink.mode === "signup" ? "finish your free account" : "sign in"}.
               </p>
               {/* The common way this fails on a phone: the mail app opens the
-                  link in its own browser, where this sign-in was never started. */}
+                  link in its own browser, where this sign-in was never
+                  started. That is what the code below is for. */}
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                If your mail app opens links inside itself, choose &ldquo;Open in browser&rdquo; or copy the link
-                here.
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                boks is free. The account keeps your reading history, comments, and recommendations connected to you.
+                If the link opens somewhere else and nothing happens, use the code from the same email
+                instead.
               </p>
               {/* Whoever never gets the email cannot reach anyone from inside
                   the app, which is the one place they are stuck. */}
@@ -907,6 +943,35 @@ export function UserAuthPanel({
                 <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
               </p>
             </div>
+            {/* The link first, because it is one tap and it works wherever the
+                mail app and the browser agree. The code is for where they do
+                not - see `verifyBoksEmailCode`. */}
+            <form className="mt-5 grid gap-2" onSubmit={submitEmailCode}>
+              <label className="text-sm font-medium" htmlFor={emailCodeInputId}>
+                Or enter the {boksEmailCodeLength}-digit code from that email
+              </label>
+              <Input
+                id={emailCodeInputId}
+                value={emailCode}
+                onChange={(event) => {
+                  setEmailCode(normalizeBoksEmailCode(event.target.value));
+                  setCodeError("");
+                }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={boksEmailCodeLength}
+                placeholder={"0".repeat(boksEmailCodeLength)}
+              />
+              {codeError && (
+                <p className="text-sm leading-6 text-[var(--destructive)]" role="alert">
+                  {codeError}
+                </p>
+              )}
+              <Button type="submit" disabled={codeBusy || emailCode.length < boksEmailCodeLength}>
+                {codeBusy ? "Signing in…" : "Sign in with the code"}
+              </Button>
+            </form>
+
             <div className="mt-5 grid gap-2">
               <Button type="button" variant="outline" onClick={editEmail}>
                 Use another email
