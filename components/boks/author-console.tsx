@@ -26,7 +26,7 @@ import {
   submitBokForReview,
 } from "@/components/boks/supabase-browser-data";
 import { describeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
-import { type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
+import { UserAuthPanel } from "@/components/boks/user-auth-panel";
 
 const authorDraftKey = "boks-author-draft";
 
@@ -77,7 +77,6 @@ export function AuthorConsole() {
   const [submissions, setSubmissions] = useState<AuthorBokSubmission[]>([]);
   const [quota, setQuota] = useState<AuthorBokQuota>(() => describeBokSubmissionQuota(0));
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
-  const [authInitialMode, setAuthInitialMode] = useState<AuthPanelMode>("signup");
   const [authorForm, setAuthorForm] = useState({
     title: "",
     body: "",
@@ -164,8 +163,7 @@ export function AuthorConsole() {
     return context;
   }
 
-  function openAuth(initialMode: AuthPanelMode) {
-    setAuthInitialMode(initialMode);
+  function openAuth() {
     setAuthPanelOpen(true);
   }
 
@@ -190,7 +188,7 @@ export function AuthorConsole() {
 
   async function submitForReview() {
     if (!signedInAuthor) {
-      openAuth("signup");
+      openAuth();
       return;
     }
 
@@ -250,8 +248,9 @@ export function AuthorConsole() {
                 This lets you track whether each bok is waiting, approved, or refused with a reason.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button onClick={() => openAuth("signup")}>Create account</Button>
-                <Button variant="outline" onClick={() => openAuth("signin")}>Sign in</Button>
+                {/* One button: signing in and signing up are the same act -
+                    an address, and an account if there is not one yet. */}
+                <Button onClick={() => openAuth()}>Continue with email</Button>
               </div>
             </div>
           )}
@@ -480,7 +479,6 @@ export function AuthorConsole() {
         open={authPanelOpen}
         surface="author"
         reason="manual"
-        initialMode={authInitialMode}
         guestReadCount={0}
         currentUser={user}
         onClose={() => setAuthPanelOpen(false)}

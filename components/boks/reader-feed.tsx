@@ -119,7 +119,7 @@ import {
 import type { ReaderEvent, ReaderEventType } from "@/lib/boks/contracts";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
-import { currentBoksTermsVersion, type AuthPanelMode, UserAuthPanel } from "@/components/boks/user-auth-panel";
+import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
 
 const firstVisitHintKey = "boks-first-visit-hint-seen";
@@ -243,7 +243,6 @@ export function ReaderFeed() {
    */
   const [identitySettled, setIdentitySettled] = useState(false);
   const [authReason, setAuthReason] = useState<"manual" | "notice" | "required">("manual");
-  const [authInitialMode, setAuthInitialMode] = useState<AuthPanelMode>("signup");
   const [authIntent, setAuthIntent] = useState<AuthIntent>("general");
   const [authNotice, setAuthNotice] = useState("");
   const [guestReadCount, setGuestReadCount] = useState(0);
@@ -505,7 +504,6 @@ export function ReaderFeed() {
         if (magicLinkNotice && !(context && !context.isAnonymous)) {
           setAuthNotice(magicLinkNotice);
           setAuthReason("manual");
-          setAuthInitialMode("signin");
           setAuthIntent("general");
           setAuthPanelOpen(true);
           setReaderChromeVisible(true);
@@ -908,7 +906,7 @@ export function ReaderFeed() {
 
   function showSuspension() {
     notify(user?.banReason || "This account is suspended. Reading remains available.");
-    openAccount("manual", "signin");
+    openAccount("manual");
   }
 
 
@@ -1175,22 +1173,17 @@ export function ReaderFeed() {
     else void nextStory(reason, axis);
   }
 
-  function openAccount(
-    reason: "manual" | "notice" | "required" = "manual",
-    initialMode: AuthPanelMode = "signup",
-    intent: AuthIntent = "general"
-  ) {
+  function openAccount(reason: "manual" | "notice" | "required" = "manual", intent: AuthIntent = "general") {
     // The moment a guest meets the sign-up, and why - the limit, a like, a
     // follow, a comment, the notice, or their own tap on the account button.
     // An account holder opening Settings is not a sign-up prompt.
     if (!hasSignedInAccount) {
       recordJourneyEvent(
-        { event: "signup_prompt", reason: signupReason({ reason, intent, mode: initialMode }) },
+        { event: "signup_prompt", reason: signupReason({ reason, intent }) },
         { visitorId: visitorId.current, sessionId: sessionId.current }
       );
     }
     setAuthReason(reason);
-    setAuthInitialMode(initialMode);
     setAuthIntent(intent);
     setAuthNotice("");
     setAuthPanelOpen(true);
@@ -1405,7 +1398,7 @@ export function ReaderFeed() {
     }
     if (!hasSignedInAccount) {
       setCommentOpen(false);
-      openAccount("manual", "signup", "like");
+      openAccount("manual", "like");
       return;
     }
 
@@ -1461,7 +1454,7 @@ export function ReaderFeed() {
     }
 
     if (!hasSignedInAccount) {
-      openAccount("manual", "signup", "follow");
+      openAccount("manual", "follow");
       return;
     }
 
@@ -1553,7 +1546,7 @@ export function ReaderFeed() {
       throw new Error(user?.banReason || "This account is suspended.");
     }
     if (!hasSignedInAccount) {
-      openAccount("manual", "signup", "comment");
+      openAccount("manual", "comment");
       throw new Error("Create a free account to join the conversation.");
     }
 
@@ -2310,7 +2303,7 @@ export function ReaderFeed() {
             <button className="guest-notice__dismiss" type="button" onClick={() => setGuestNoticeStep(null)} aria-label="Not now">
               <X className="size-4" />
             </button>
-            <Button className="guest-notice__action" onClick={() => openAccount("notice", "signup")}>Create free account</Button>
+            <Button className="guest-notice__action" onClick={() => openAccount("notice")}>Create free account</Button>
           </div>
         )}
 
@@ -2330,7 +2323,7 @@ export function ReaderFeed() {
             }}
             onRequestAccount={() => {
               setAuthorSheet(null);
-              openAccount("manual", "signup", "follow");
+              openAccount("manual", "follow");
             }}
             onFollowChanged={(authorUserId, following) =>
               setFollowedAuthorIds((current) =>
@@ -2352,7 +2345,7 @@ export function ReaderFeed() {
             viewerHandle={user?.handle ?? null}
             isSupabaseReader={isSupabaseReader}
             onClose={() => setCommentOpen(false)}
-            onRequestAccount={() => openAccount("manual", "signup", "comment")}
+            onRequestAccount={() => openAccount("manual", "comment")}
             onSubmit={submitComment}
             onStatus={notify}
             canModerate={isAdminReader}
@@ -2485,7 +2478,6 @@ export function ReaderFeed() {
           open={authPanelOpen}
           intent={authIntent}
           reason={authReason}
-          initialMode={authInitialMode}
           notice={authNotice}
           guestReadCount={guestReadCount}
           currentUser={user}

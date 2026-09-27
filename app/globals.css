@@ -936,22 +936,6 @@ textarea:focus-visible {
   content: "";
 }
 
-.auth-tab {
-  min-height: 2.75rem;
-  border: 0;
-  border-radius: 0.45rem;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.auth-tab.is-active {
-  background: var(--card);
-  color: var(--foreground);
-  box-shadow: 0 8px 18px rgb(var(--shadow-rgb) / 8%);
-}
-
 .auth-sent {
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -987,27 +971,6 @@ textarea:focus-visible {
   text-underline-offset: 0.2rem;
 }
 
-.auth-legal-check {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--reader);
-  padding: 0.8rem;
-  color: var(--muted-foreground);
-  font-size: 0.88rem;
-  line-height: 1.5;
-}
-
-.auth-legal-check input {
-  margin-top: 0.18rem;
-  min-height: 1.05rem;
-  min-width: 1.05rem;
-  accent-color: var(--primary);
-}
-
-.auth-legal-check a,
 .auth-link,
 .legal-document a {
   color: var(--primary);

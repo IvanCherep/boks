@@ -53,7 +53,13 @@ describe("why a guest met the sign-up", () => {
     expect(signupReason({ reason: "manual", intent: "follow" })).toBe("follow");
     expect(signupReason({ reason: "notice" })).toBe("notice");
     expect(signupReason({ reason: "manual", intent: "general" })).toBe("manual");
-    expect(signupReason({ reason: "manual", mode: "signin" })).toBe("signin");
+  });
+
+  it("has nothing to say about signing in versus signing up", () => {
+    // There is one way in now - an address, and an account if there is not
+    // one - so a reader's own tap on the account button is "manual" whether or
+    // not they already have an account.
+    expect(signupReason({ reason: "manual" })).toBe("manual");
   });
 
   it("puts the limit first, because it is the wall that ends a guest's reading", () => {

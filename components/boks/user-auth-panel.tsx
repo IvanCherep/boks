@@ -69,12 +69,20 @@ import {
 
 export const currentBoksTermsVersion = "2026-09-11";
 
-export type AuthPanelMode = "signin" | "signup";
-
-
+/**
+ * One way in.
+ *
+ * There used to be a Sign up tab and a Sign in tab, and they were the same act
+ * with two names: a reader types an address, and whether that address already
+ * has an account is something the server knows and the reader should not have
+ * to. Choosing wrong was not a wrong guess, it was a refusal - Sign in with a
+ * new address answered "No boks account exists for this email yet", which is
+ * what https://github.com/IvanCherep/boks/issues/6 came in as "it does not
+ * send". Now the address is entered once and an account is made if there is
+ * none.
+ */
 type SentMagicLink = {
   email: string;
-  mode: AuthPanelMode;
 };
 
 /**
@@ -100,7 +108,6 @@ type UserAuthPanelProps = {
   surface?: "reader" | "author";
   intent?: "general" | "like" | "comment" | "follow";
   reason: "manual" | "notice" | "required";
-  initialMode: AuthPanelMode;
   notice?: string;
   guestReadCount: number;
   currentUser: BoksUserContext | null;
@@ -137,7 +144,6 @@ export function UserAuthPanel({
   surface = "reader",
   intent = "general",
   reason,
-  initialMode,
   notice = "",
   guestReadCount,
   currentUser,
@@ -147,7 +153,6 @@ export function UserAuthPanel({
   onReadingLanguagesChanged,
   onFollowsChanged,
 }: UserAuthPanelProps) {
-  const [mode, setMode] = useState<AuthPanelMode>(initialMode);
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [library, setLibrary] = useState<ReaderLibraryItem[]>([]);
   const [follows, setFollows] = useState<FollowedAuthor[]>([]);
@@ -178,7 +183,6 @@ export function UserAuthPanel({
   }, []);
   const [libraryQuery, setLibraryQuery] = useState("");
   const [libraryView, setLibraryView] = useState<ReaderLibraryView>("read");
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [status, setStatus] = useState("");
   const [sentMagicLink, setSentMagicLink] = useState<SentMagicLink | null>(null);
   /** The code from that same email, for the contexts where the link cannot land. */
@@ -243,13 +247,11 @@ export function UserAuthPanel({
   useEffect(() => {
     if (!open) return;
     const handle = window.setTimeout(() => {
-      setMode(initialMode);
       setStatus("");
       setSentMagicLink(null);
-      setTermsAccepted(false);
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [open, initialMode]);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !notice) return;
@@ -286,24 +288,13 @@ export function UserAuthPanel({
     return () => window.clearTimeout(handle);
   }, [open, refreshUser]);
 
-  function switchMode(nextMode: AuthPanelMode) {
-    setMode(nextMode);
-    setStatus("");
-    setSentMagicLink(null);
-  }
-
   function friendlyAuthError(error: unknown) {
-    return explainBoksMagicLinkError(error, { flow: mode });
+    return explainBoksMagicLinkError(error, { flow: "signup" });
   }
 
   async function sendMagicLink() {
     if (!email.trim()) {
       setStatus("Enter your email.");
-      return;
-    }
-
-    if (mode === "signup" && !termsAccepted) {
-      setStatus("Please accept the Terms to create an account.");
       return;
     }
 
@@ -322,8 +313,10 @@ export function UserAuthPanel({
       await requestBoksMagicLink({
         email: cleanEmail,
         handle,
-        acceptedTermsVersion: mode === "signup" ? currentBoksTermsVersion : null,
-        shouldCreateUser: mode === "signup",
+        // Always. Whether this address already has an account is the server's
+        // to know; a reader who types theirs is asking to get in either way.
+        acceptedTermsVersion: currentBoksTermsVersion,
+        shouldCreateUser: true,
         // Back to where the reader asked from: an author who signs up from
         // /author to submit a piece used to land on the reader instead.
         redirectPath: surface === "author" ? "/author" : "/",
@@ -334,11 +327,11 @@ export function UserAuthPanel({
       // A request that never becomes an account is the email not arriving, or
       // not being opened - which is a different fix from the prompt itself.
       recordJourneyEvent(
-        { event: "signup_request", reason: signupReason({ reason, intent, mode }) },
+        { event: "signup_request", reason: signupReason({ reason, intent }) },
         { visitorId: getBrowserId("boks-reader") }
       );
       setEmail(cleanEmail);
-      setSentMagicLink({ email: cleanEmail, mode });
+      setSentMagicLink({ email: cleanEmail });
       setStatus("");
     } catch (error) {
       setStatus(friendlyAuthError(error));
@@ -527,25 +520,21 @@ export function UserAuthPanel({
   const remainingGuestBoks = Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount);
   const noticeText = required
     ? surface === "author"
-      ? "Sign up or sign in to submit boks for review and track decisions."
-      : "You have read 15 boks without an account. Reading stays free: sign up or sign in to keep going, with your history and recommendations saved from here on."
+      ? "Your email, to submit boks for review and follow the decisions."
+      : "You have read 15 boks without an account. Reading stays free - your email keeps it going, with your history and recommendations saved from here on."
     : reason === "notice"
       ? `You can read ${remainingGuestBoks} more boks without an account. Reading stays free; an account saves your history and helps personalize your feed.`
       : intent === "like"
-        ? "Create a free account. Likes help boks tune recommendations to your taste and keep your reading history connected to you."
+        ? "Likes tune your recommendations and stay connected to you. boks is free."
         : intent === "comment"
-          ? "Create a free account. It keeps comments connected to your @nickname and helps boks understand what stories work for you."
+          ? "Comments carry your @nickname, and they tell boks which pieces work for you. boks is free."
         : intent === "follow"
-          ? "Create a free account to follow authors. Following keeps their new boks coming to you and tells the feed whose work you want more of."
+          ? "Following brings an author\u2019s new boks to you and tells the feed whose work you want more of. boks is free."
       : surface === "author"
-        ? "Create an account to submit boks for review."
-        : "Create a free account to save your reading history and improve recommendations.";
-  const title = showingAccount
-    ? "Settings"
-    : mode === "signin"
-      ? "Email sign in"
-      : "Create your boks account";
-  const emailInputId = mode === "signin" ? "boks-signin-email" : "boks-signup-email";
+        ? "Your email, to submit boks for review."
+        : "One address. If you have been here before it signs you in; if not, it makes your account.";
+  const title = showingAccount ? "Settings" : "Your email";
+  const emailInputId = "boks-email";
   const emailCodeInputId = "boks-email-code";
 
   return (
@@ -919,37 +908,23 @@ export function UserAuthPanel({
 
           </div>
         ) : sentMagicLink ? (
-          <div className="auth-sent mt-6" role="status" aria-live="polite">
+          /* The code first. It is the path that works everywhere - a link
+             opened by a mail app lands in a browser this sign-in was never
+             started in, and in an installed app it cannot land at all. The
+             link is still in the same email and still works; it is just no
+             longer the thing being asked for. */
+          <div className="auth-sent mt-6">
             <div className="auth-sent-icon" aria-hidden="true">
               <CheckCircle2 className="size-6" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold tracking-normal">Check your email</h2>
+              <h2 className="text-xl font-semibold tracking-normal">Enter the code</h2>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                We sent a boks link to <strong>{sentMagicLink.email}</strong>. Open it on this device, in
-                this browser, to {sentMagicLink.mode === "signup" ? "finish your free account" : "sign in"}.
-              </p>
-              {/* The common way this fails on a phone: the mail app opens the
-                  link in its own browser, where this sign-in was never
-                  started. That is what the code below is for. */}
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                If the link opens somewhere else and nothing happens, use the code from the same email
-                instead.
-              </p>
-              {/* Whoever never gets the email cannot reach anyone from inside
-                  the app, which is the one place they are stuck. */}
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                No email after a few minutes? Check spam, then write to{" "}
-                <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
+                We sent a {boksEmailCodeLength}-digit code to <strong>{sentMagicLink.email}</strong>.
               </p>
             </div>
-            {/* The link first, because it is one tap and it works wherever the
-                mail app and the browser agree. The code is for where they do
-                not - see `verifyBoksEmailCode`. */}
+
             <form className="mt-5 grid gap-2" onSubmit={submitEmailCode}>
-              <label className="text-sm font-medium" htmlFor={emailCodeInputId}>
-                Or enter the {boksEmailCodeLength}-digit code from that email
-              </label>
               <Input
                 id={emailCodeInputId}
                 value={emailCode}
@@ -961,6 +936,8 @@ export function UserAuthPanel({
                 autoComplete="one-time-code"
                 maxLength={boksEmailCodeLength}
                 placeholder={"0".repeat(boksEmailCodeLength)}
+                aria-label={`The ${boksEmailCodeLength}-digit code from the email`}
+                autoFocus
               />
               {codeError && (
                 <p className="text-sm leading-6 text-[var(--destructive)]" role="alert">
@@ -968,51 +945,44 @@ export function UserAuthPanel({
                 </p>
               )}
               <Button type="submit" disabled={codeBusy || emailCode.length < boksEmailCodeLength}>
-                {codeBusy ? "Signing in…" : "Sign in with the code"}
+                {codeBusy ? "Signing in…" : "Continue"}
               </Button>
             </form>
 
             <div className="mt-5 grid gap-2">
+              <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+                The same email has a link as well - opening it here works too.
+              </p>
               <Button type="button" variant="outline" onClick={editEmail}>
                 Use another email
               </Button>
-              <Button type="button" onClick={() => void sendMagicLink()} disabled={busy || waiting}>
+              <Button type="button" variant="outline" onClick={() => void sendMagicLink()} disabled={busy || waiting}>
                 <Mail className="size-4" />
                 {waiting ? `Send again in ${formatCooldown(cooldownSeconds)}` : "Send again"}
               </Button>
-              {waiting && (
-                <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">
-                  One link a minute per address. Asking for a new link makes the
-                  older ones stop working, so always open the newest email.
-                </p>
-              )}
               {!required && (
                 <Button type="button" variant="ghost" onClick={onClose}>
                   Continue reading
                 </Button>
               )}
+              {/* Whoever never gets the email cannot reach anyone from inside
+                  the app, which is the one place they are stuck. */}
+              <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+                Nothing after a few minutes? Check spam, then write to{" "}
+                <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
+              </p>
             </div>
           </div>
         ) : (
-          <form key={mode} className="mt-6 grid gap-4" autoComplete="on" data-auth-mode={mode} onSubmit={submitAuth}>
-            <div className="grid grid-cols-2 rounded-lg bg-[var(--muted)] p-1">
-              <button type="button" className={`auth-tab ${mode === "signup" ? "is-active" : ""}`} onClick={() => switchMode("signup")}>
-                Sign up
-              </button>
-              <button type="button" className={`auth-tab ${mode === "signin" ? "is-active" : ""}`} onClick={() => switchMode("signin")}>
-                Sign in
-              </button>
-            </div>
-
+          <form className="mt-6 grid gap-4" autoComplete="on" onSubmit={submitAuth}>
             <label className="grid gap-1 text-sm font-medium" htmlFor={emailInputId}>
               Email
               <Input
-                key={emailInputId}
                 id={emailInputId}
                 name="email"
                 type="email"
                 inputMode="email"
-                autoComplete={mode === "signin" ? "username" : "email"}
+                autoComplete="email"
                 autoCapitalize="none"
                 spellCheck={false}
                 required
@@ -1024,41 +994,34 @@ export function UserAuthPanel({
               />
             </label>
 
-            {mode === "signup" && (
-              <label className="auth-legal-check">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(event) => setTermsAccepted(event.target.checked)}
-                />
-                <span>
-                  I agree to the{" "}
-                  <a href="/terms" target="_blank" rel="noreferrer">
-                    Terms
-                  </a>
-                  , including the author content license, and have read the{" "}
-                  <a href="/privacy" target="_blank" rel="noreferrer">
-                    Privacy
-                  </a>{" "}
-                  page.
-                </span>
-              </label>
-            )}
+            <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+              We email you a {boksEmailCodeLength}-digit code to type back here.
+            </p>
 
             <Button type="submit" disabled={busy || waiting}>
               <Mail className="size-4" />
-              {busy
-                ? "Sending…"
-                : waiting
-                  ? `Send again in ${formatCooldown(cooldownSeconds)}`
-                  : mode === "signup"
-                    ? "Send sign-up link"
-                    : "Send sign-in link"}
+              {busy ? "Sending…" : waiting ? `Send again in ${formatCooldown(cooldownSeconds)}` : "Continue"}
             </Button>
+
+            {/* No checkbox, because there is no longer a step that is only for
+                new accounts to put one in. The sentence is the acceptance, and
+                the version the reader was shown is what gets recorded. */}
+            <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+              By continuing you accept the{" "}
+              <a className="auth-link" href="/terms" target="_blank" rel="noreferrer">
+                Terms
+              </a>
+              , including the author content licence, and the{" "}
+              <a className="auth-link" href="/privacy" target="_blank" rel="noreferrer">
+                Privacy
+              </a>{" "}
+              page.
+            </p>
+
             {waiting && (
               <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">
-                A link was just sent to this address. One a minute, so a second
-                request cannot invalidate the first.
+                A code was just sent to this address. One a minute, so a second request cannot
+                invalidate the first.
               </p>
             )}
 

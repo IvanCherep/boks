@@ -79,12 +79,16 @@ export type SignupReason = "limit" | "like" | "comment" | "follow" | "notice" | 
  * The panel knows two things - a `reason` (manual, notice, required) and an
  * `intent` (general, like, comment, follow) - and the question the console
  * asks is simpler: which wall did this guest hit.
+ *
+ * It used to know a third, whether the reader had picked Sign up or Sign in,
+ * and that produced a `signin` reason. There is no such choice any more: one
+ * address, and an account if there is not one. The value stays in the type
+ * because rows recorded under it are still in the table.
  */
-export function signupReason(input: { reason?: string | null; intent?: string | null; mode?: string | null }): SignupReason {
+export function signupReason(input: { reason?: string | null; intent?: string | null }): SignupReason {
   if (input.reason === "required") return "limit";
   if (input.intent === "like" || input.intent === "comment" || input.intent === "follow") return input.intent;
   if (input.reason === "notice") return "notice";
-  if (input.mode === "signin") return "signin";
   return "manual";
 }
 
