@@ -6,7 +6,18 @@ describe("security headers", () => {
     const policy = contentSecurityPolicy("https://project.supabase.co");
     expect(policy).toContain("default-src 'self'");
     expect(policy).toContain("frame-ancestors 'none'");
-    expect(policy).toContain("connect-src 'self' https://project.supabase.co wss://project.supabase.co");
+    expect(policy).toContain(
+      "connect-src 'self' https://project.supabase.co wss://project.supabase.co https://cloudflareinsights.com"
+    );
+  });
+
+  it("lets Cloudflare's analytics beacon load and report", () => {
+    // Cloudflare injects the beacon at the edge, so leaving it out of the
+    // policy does not remove the script - it blocks it, and the analytics go
+    // quiet without anything failing loudly.
+    const policy = contentSecurityPolicy("https://project.supabase.co");
+    expect(policy).toContain("script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com");
+    expect(policy).toContain("https://cloudflareinsights.com");
   });
 
   it("adds HSTS only to HTTPS responses", () => {

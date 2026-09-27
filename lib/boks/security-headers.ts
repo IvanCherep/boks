@@ -8,7 +8,13 @@ const baseDirectives = [
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   // vinext currently emits the RSC bootstrap as inline scripts.
-  "script-src 'self' 'unsafe-inline'",
+  //
+  // Cloudflare injects its Web Analytics beacon into every response from the
+  // edge, so a policy that names only 'self' silently turns that analytics off
+  // - which is what happened here between 25 and 27 September, found by
+  // reading the console on production rather than by anyone noticing the
+  // numbers stop. The beacon is named exactly, not by a wildcard.
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
 ];
@@ -25,7 +31,9 @@ function supabaseConnectSources(supabaseUrl?: string) {
 }
 
 export function contentSecurityPolicy(supabaseUrl?: string) {
-  const connectSources = ["'self'", ...supabaseConnectSources(supabaseUrl)];
+  // The beacon reports to `cloudflareinsights.com/cdn-cgi/rum`, a different
+  // host from the one it is served from.
+  const connectSources = ["'self'", ...supabaseConnectSources(supabaseUrl), "https://cloudflareinsights.com"];
   return [...baseDirectives, `connect-src ${connectSources.join(" ")}`, "upgrade-insecure-requests"].join("; ");
 }
 
