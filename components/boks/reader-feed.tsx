@@ -622,7 +622,8 @@ export function ReaderFeed() {
    * The explicit request for the controls: a tap shows them, the next tap
    * hides them. No timer - someone who asked for the controls to like a piece
    * should not watch them fade while deciding. Scrolling, which means reading
-   * has resumed, and changing bok both hide them.
+   * has resumed, hides them. Changing boks does not: the controls belong to
+   * the reader and follow them through the feed.
    */
   const toggleReaderChrome = useCallback(() => {
     if (chromeTimer.current) window.clearTimeout(chromeTimer.current);
@@ -918,8 +919,10 @@ export function ReaderFeed() {
       setSelectedIndex(index);
       setAuthPanelOpen(false);
       setPendingLibraryStoryId(null);
-      // The account panel held the controls open; landing on a bok to read it
-      // puts them away, the same as any other arrival.
+      // Not the same as moving through the feed, which now leaves the controls
+      // alone: here they are only up because the account panel put them up, and
+      // the reader has just asked to read something. Closing the panel closes
+      // what came with it.
       hideReaderChrome();
     }, 0);
 
@@ -928,14 +931,14 @@ export function ReaderFeed() {
 
   // The latest values the arrival effect needs, without making them reasons
   // to run it. See below.
-  const arrivalContext = useRef({ currentStory, hideReaderChrome, recordReaderEvent });
+  const arrivalContext = useRef({ currentStory, recordReaderEvent });
   useEffect(() => {
-    arrivalContext.current = { currentStory, hideReaderChrome, recordReaderEvent };
-  }, [currentStory, hideReaderChrome, recordReaderEvent]);
+    arrivalContext.current = { currentStory, recordReaderEvent };
+  }, [currentStory, recordReaderEvent]);
 
   /**
    * Arriving at a boks: back to the top, a fresh reading clock, one
-   * impression, the controls put away.
+   * impression. The controls are left exactly as the reader had them.
    *
    * Keyed on the boks id alone. It used to depend on the story object and on
    * callbacks that change whenever the comment sheet opens or closes, so a
@@ -945,7 +948,7 @@ export function ReaderFeed() {
    * impression was logged for a boks already on screen.
    */
   useEffect(() => {
-    const { currentStory: story, hideReaderChrome: hideChrome, recordReaderEvent: record } = arrivalContext.current;
+    const { currentStory: story, recordReaderEvent: record } = arrivalContext.current;
     if (!story || !currentStoryId) return;
     readingClock.current.restart();
     if (storyScroll.current) storyScroll.current.scrollTop = 0;
@@ -965,10 +968,11 @@ export function ReaderFeed() {
     };
     const overflowTimer = window.setTimeout(updateStoryOverflow, 0);
     const wheelArmTimer = window.setTimeout(armWheelBoundary, 700);
-    // A new bok is for reading. The controls used to flash in here on every
-    // arrival and fade after a few seconds - which read as the interface
-    // popping up by itself. They now stay down until the reader taps.
-    const revealTimer = window.setTimeout(() => hideChrome(), 0);
+    // Arriving at a boks neither shows the controls nor hides them. Showing
+    // them read as the interface popping up by itself; hiding them took away
+    // a rail the reader had deliberately opened, one boks after another, which
+    // is what https://github.com/IvanCherep/boks/issues/1 reports. The reader
+    // decides, and their decision carries across the whole feed.
     record("impression", story, 1, {
       genre: story.genre,
       mood: story.mood,
@@ -984,7 +988,6 @@ export function ReaderFeed() {
     return () => {
       window.clearTimeout(overflowTimer);
       window.clearTimeout(wheelArmTimer);
-      window.clearTimeout(revealTimer);
       window.clearTimeout(startTimer);
     };
   }, [currentStoryId]);
@@ -1115,8 +1118,9 @@ export function ReaderFeed() {
     const boundedIndex = Math.max(0, Math.min(rankedStories.length - 1, targetIndex));
     if (boundedIndex === selectedIndex) return false;
 
+    // The comment sheet belongs to the boks being left; the controls belong to
+    // the reader, and moving to the next boks is not a reason to take them away.
     setCommentOpen(false);
-    hideReaderChrome();
     const direction: ReaderNavigationDirection = boundedIndex < selectedIndex ? "previous" : "next";
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
