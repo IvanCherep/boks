@@ -88,6 +88,7 @@ import {
   emptyFeedNotice,
   effectiveReadingLanguages,
   normalizeReadingLanguages,
+  readingLanguageChangeKeepsFeed,
   readingLanguageNames,
   rememberReadingLanguages,
 } from "@/components/boks/reading-languages";
@@ -1630,8 +1631,7 @@ export function ReaderFeed() {
       const next = normalizeReadingLanguages(languages);
       readingLanguagesRef.current = next;
 
-      const stillAllowed = new Set<string>(next);
-      if (previous.every((language) => stillAllowed.has(language))) {
+      if (readingLanguageChangeKeepsFeed(previous, next)) {
         feedExhausted.current = false;
         return;
       }

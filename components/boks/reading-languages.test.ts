@@ -4,6 +4,7 @@ import {
   effectiveReadingLanguages,
   emptyFeedNotice,
   normalizeReadingLanguages,
+  readingLanguageChangeKeepsFeed,
 } from "@/components/boks/reading-languages";
 
 describe("normalizeReadingLanguages", () => {
@@ -134,5 +135,26 @@ describe("emptyFeedNotice and an unreachable server", () => {
       coverage: { ru: 348 },
     });
     expect(notice).toEqual({ kind: "message", message: "This boks account is suspended." });
+  });
+});
+
+describe("what a change of languages does to the feed", () => {
+  it("keeps the feed when a language is added", () => {
+    // The piece being read is still in a language the reader reads, and so is
+    // everything queued behind it. Rebuilding here threw them out of it.
+    expect(readingLanguageChangeKeepsFeed(["ru"], ["ru", "en"])).toBe(true);
+    expect(readingLanguageChangeKeepsFeed(["en"], ["en", "ru"])).toBe(true);
+  });
+
+  it("keeps the feed when nothing actually changed", () => {
+    expect(readingLanguageChangeKeepsFeed(["en", "ru"], ["ru", "en"])).toBe(true);
+    expect(readingLanguageChangeKeepsFeed([], ["en"])).toBe(true);
+  });
+
+  it("rebuilds when a language is taken away", () => {
+    // Now the boks on screen may be one the reader has just said they do not
+    // read, so the feed has to go.
+    expect(readingLanguageChangeKeepsFeed(["en", "ru"], ["ru"])).toBe(false);
+    expect(readingLanguageChangeKeepsFeed(["en"], ["ru"])).toBe(false);
   });
 });

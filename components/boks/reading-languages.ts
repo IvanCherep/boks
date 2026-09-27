@@ -50,6 +50,27 @@ export function normalizeReadingLanguages(values: readonly string[] | null | und
  * browser, say - and the honest response is to filter nothing rather than to
  * show that reader an empty app.
  */
+/**
+ * Does a change of languages leave the feed standing?
+ *
+ * Turning one off does not: what is on screen, and much of what is queued
+ * behind it, may be in the language just refused. Turning one on does: nothing
+ * has stopped being readable, and the feed extends itself with the wider
+ * filter, so the reader keeps the piece they were in the middle of and the new
+ * language arrives on its own. Rebuilding on both was
+ * https://github.com/IvanCherep/boks/issues/5.
+ *
+ * Kept as a rule of its own because the reader cannot be asked about it in a
+ * test: the pills are in an account that a test has no way to sign in to.
+ */
+export function readingLanguageChangeKeepsFeed(
+  previous: readonly string[],
+  next: readonly string[]
+) {
+  const stillAllowed = new Set<string>(next);
+  return previous.every((language) => stillAllowed.has(language));
+}
+
 export function readingLanguagesFromBrowser(): ReadingLanguage[] {
   if (typeof navigator === "undefined") return [];
   const declared = navigator.languages?.length ? navigator.languages : [navigator.language];
