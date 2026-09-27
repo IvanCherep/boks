@@ -314,9 +314,6 @@ textarea:focus-visible {
   opacity: 0.62;
 }
 
-.reader-shell--focus .reader-footer {
-  justify-content: flex-end;
-}
 
 .reader-shell--focus .swipe-cue {
   border-color: transparent;
@@ -556,19 +553,57 @@ textarea:focus-visible {
   background: var(--muted);
 }
 
-.reader-brand-mark {
-  justify-self: center;
+/*
+ * What this boks can be done with, and where to go from it: one cluster in the
+ * bottom right corner, out of the page's flow.
+ *
+ * It used to be a 116px grid column beside the text plus a row beneath it. The
+ * column took its width off a 1120px page, so the reading measure was centred
+ * in what was left and sat left of the middle of the screen with a wide empty
+ * band between the words and the buttons; the row took a strip of height the
+ * text wanted. Both are what issue #2 reports. Floating them leaves the page
+ * to the text, and they read as controls rather than as an empty column.
+ */
+.reader-dock {
+  /* Fixed to the screen, not to the 1120px page, so it sits against the window
+     edge as the proposal in issue #2 draws it - and the width that the page
+     leaves unused on a wide monitor carries the controls instead of nothing.
+     Every sheet and overlay in the reader is z-index 40 or above, so this
+     never covers one. */
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  pointer-events: none;
 }
 
 .action-rail {
-  align-self: center;
-  margin-right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: rgb(var(--glass-rgb) / 92%);
-  padding: 0.35rem;
+  padding: 0.3rem;
   box-shadow: 0 14px 40px rgb(var(--shadow-rgb) / 10%);
   backdrop-filter: blur(16px);
+}
+
+/* Stacked, right-aligned, and only as wide as their own words. */
+.reader-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.reader-footer .swipe-cue {
+  pointer-events: auto;
 }
 
 .action-button {
@@ -727,16 +762,66 @@ textarea:focus-visible {
 }
 
 /*
- * On a wide screen the rail is a column. Icons line up down its left edge and
- * the counts trail after them, instead of each row centring on its own width -
- * which set the heart, the bubble and the arrow on three different lines.
+ * In the rail a count sits under its icon, not beside it.
+ *
+ * Beside it, every row had to be as wide as "1.2k", so the rail was a slab
+ * wide enough to read as a column of the page - the "широкий остров" of issue
+ * #2. Under it, the rail is as wide as an icon and the counts still line up.
  */
+.action-rail .action-button {
+  min-width: 52px;
+  min-height: 52px;
+  padding: 0.5rem 0.3rem;
+}
+
+.action-rail .action-button--counted {
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.action-rail .action-count {
+  min-width: 0;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+/*
+ * Above 1024px the top bar lifts out of the flow. Its row was held whether or
+ * not anything was in it, and in focus mode it held an almost invisible bar -
+ * height the text wanted, and the second half of issue #2. The reading column
+ * is 720px and centred, so the two corner buttons sit clear of every line.
+ */
+/*
+ * Between a phone and a full desktop the controls are at the right edge but
+ * the page is not wide enough to hold a 720px measure beside them: at 820px
+ * the rail sat on top of the last words of every line. The measure gives way,
+ * not the controls - a narrower column between wider margins is what a page
+ * this size wants anyway.
+ */
+@media (min-width: 721px) and (max-width: 1023px) {
+  .reader-content {
+    max-width: min(720px, calc(100vw - 16rem));
+  }
+}
+
 @media (min-width: 1024px) {
-  /* The column is sized in reader-feed.tsx (116px) to hold icon + "1.2k". */
-  .action-rail .action-button {
-    justify-content: flex-start;
-    justify-items: start;
-    padding-inline: 0.95rem 0.85rem;
+  .reader-topbar {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+  }
+
+  /* And the page stops being a card on a background. The two hairlines down
+     the sides of the reading area used to say "the boks ends here"; with the
+     controls now outside them, the right-hand one fell between the text and
+     the rail and drew the very boundary issue #2 is about. The window is the
+     page. (A phone has had no side borders for the same reason.) */
+  .reader-shell {
+    background: var(--reader);
+  }
+
+  .reader-card {
+    border-inline: 0;
   }
 }
 
@@ -2607,17 +2692,23 @@ textarea:focus-visible {
     touch-action: pan-y;
   }
 
-  .action-rail {
+  /* A phone keeps the bar across the bottom, and keeps its counts beside
+     their icons: there is width to spare across a bar and none down a column,
+     which is the opposite of the desktop problem. */
+  .reader-dock {
     right: auto;
     left: 50%;
-    width: max-content;
-    max-width: calc(100% - 2rem);
     translate: -50% 0;
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
-    margin-right: 0;
+    max-width: calc(100vw - 2rem);
+    align-items: center;
+  }
+
+  .action-rail {
+    flex-direction: row;
+    width: max-content;
+    max-width: 100%;
     gap: 0.15rem;
-    border: 1px solid var(--border);
-    border-radius: 999px;
     background: rgb(var(--glass-rgb) / 94%);
     padding: 0.35rem;
     box-shadow: 0 16px 44px rgb(var(--shadow-rgb) / 16%);
@@ -2630,6 +2721,23 @@ textarea:focus-visible {
     min-width: 56px;
     min-height: 56px;
     padding: 0.55rem 0.48rem;
+  }
+
+  .action-rail .action-button {
+    min-width: 56px;
+    min-height: 56px;
+    padding: 0.55rem 0.48rem;
+  }
+
+  .action-rail .action-button--counted {
+    flex-direction: row;
+    gap: 0.42rem;
+  }
+
+  .action-rail .action-count {
+    min-width: 1.4ch;
+    text-align: left;
+    font-size: 0.9rem;
   }
 
   .reader-card {

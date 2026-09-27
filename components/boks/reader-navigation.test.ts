@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  edgeTapIntent,
   getScrollBoundary,
   horizontalNavigationIntent,
   horizontalWheelIntent,
@@ -61,12 +60,6 @@ describe("reader navigation", () => {
     expect(verticalBoundaryPull(-52, { atTop: true, atBottom: false })).toBeNull();
   });
 
-  it("reserves the center of the page for revealing controls", () => {
-    expect(edgeTapIntent(10, 0, 400)).toBe("previous");
-    expect(edgeTapIntent(390, 0, 400)).toBe("next");
-    expect(edgeTapIntent(200, 0, 400)).toBeNull();
-  });
-
   it("recognizes the top and bottom of a scroll container", () => {
     expect(getScrollBoundary({ scrollTop: 0, scrollHeight: 1000, clientHeight: 500 })).toEqual({
       atTop: true,
@@ -81,33 +74,22 @@ describe("reader navigation", () => {
 
 describe("what a tap means", () => {
   const tap = {
-    pointerType: "touch" as const,
     dx: 2,
     dy: 3,
     durationMs: 120,
     msSinceScroll: 5_000,
-    clientX: 200,
-    left: 0,
-    width: 400,
   };
 
-  it("toggles the interface on a phone, wherever the finger lands", () => {
+  it("asks for the controls, and never for another boks", () => {
     // On touch a tap used to do nothing at all: the touch handler only looked
     // for swipes and the pointer handler returned early for touch. So the one
     // way a reader could ask for the controls did not exist on a phone.
+    //
+    // A click in the outer quarter used to turn the page for a mouse, which
+    // nobody asked for beside the words they were reading (issue #4). There is
+    // no position in the input any more, so there is nothing left to get wrong:
+    // a tap that passes the checks below means the controls, wherever it fell.
     expect(readerTapAction(tap)).toBe("toggle-chrome");
-    // And near an edge too. A phone is narrow, the edge zones would be large,
-    // and a reader tapping to see the controls must not be sent to the next
-    // bok instead. On touch, changing bok is a swipe or a pull.
-    expect(readerTapAction({ ...tap, clientX: 10 })).toBe("toggle-chrome");
-    expect(readerTapAction({ ...tap, clientX: 390 })).toBe("toggle-chrome");
-  });
-
-  it("keeps edge clicks as navigation for a mouse, and toggles in the middle", () => {
-    const click = { ...tap, pointerType: "mouse" as const };
-    expect(readerTapAction({ ...click, clientX: 10 })).toBe("previous");
-    expect(readerTapAction({ ...click, clientX: 390 })).toBe("next");
-    expect(readerTapAction(click)).toBe("toggle-chrome");
   });
 
   it("does not treat a scroll, a drag or a long press as a request for the interface", () => {

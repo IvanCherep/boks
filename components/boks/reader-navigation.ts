@@ -89,20 +89,6 @@ export function verticalBoundaryIntent(
   return pull?.progress === 1 ? pull.direction : null;
 }
 
-/** Taps in the outer quarters navigate; the middle keeps its focus-mode role. */
-export function edgeTapIntent(
-  clientX: number,
-  left: number,
-  width: number,
-  edgeRatio = 0.24
-): ReaderNavigationDirection | null {
-  if (width <= 0) return null;
-  const position = (clientX - left) / width;
-  if (position <= edgeRatio) return "previous";
-  if (position >= 1 - edgeRatio) return "next";
-  return null;
-}
-
 /** Movement beyond this is a scroll or a drag, not a tap. */
 const tapSlop = 10;
 /** Held longer than this, a touch is a long press - how a line gets selected. */
@@ -114,38 +100,34 @@ const longPressMs = 450;
 const scrollSettleMs = 150;
 
 export type ReaderTapInput = {
-  pointerType: "touch" | "mouse" | "pen";
   dx: number;
   dy: number;
   durationMs: number;
   msSinceScroll: number;
-  clientX: number;
-  left: number;
-  width: number;
 };
 
-export type ReaderTapAction = "toggle-chrome" | ReaderNavigationDirection;
+export type ReaderTapAction = "toggle-chrome";
 
 /**
- * What a tap on the reading surface is asking for.
+ * What a tap on the reading surface is asking for: the controls. Only ever the
+ * controls, on any pointer, wherever it lands.
  *
- * The interface is hidden while someone reads, and the only thing that brings
- * it back is a tap: never a new bok arriving, never a scroll. So the one rule
- * that matters is that a tap *is* recognised - on a phone it was not, at all.
+ * The interface is hidden while someone reads, and a tap is the only thing
+ * that brings it back: never a new boks arriving, never a scroll. So the one
+ * rule that matters is that a tap *is* recognised - on a phone it was not, at
+ * all.
  *
- * On touch every tap toggles, wherever it lands. A phone is narrow, edge zones
- * would take half of it, and a reader reaching for the controls must not be
- * sent to another bok instead; changing bok on touch is a swipe or a pull. A
- * mouse keeps its edge clicks, which people who read with one already use.
+ * A click in the outer quarter of the page used to turn it instead, for a
+ * mouse. Nobody asked a page to turn by clicking beside the words they were
+ * reading, and it fired on the click that dismissed something or put the
+ * cursor down - https://github.com/IvanCherep/boks/issues/4. A mouse turns the
+ * page with the two buttons or the arrow keys; a finger swipes or pulls. That
+ * leaves the tap free to mean one thing.
  */
 export function readerTapAction(input: ReaderTapInput): ReaderTapAction | null {
   if (Math.hypot(input.dx, input.dy) > tapSlop) return null;
   if (input.durationMs > longPressMs) return null;
   if (input.msSinceScroll < scrollSettleMs) return null;
-  if (input.pointerType !== "touch") {
-    const edge = edgeTapIntent(input.clientX, input.left, input.width);
-    if (edge) return edge;
-  }
   return "toggle-chrome";
 }
 

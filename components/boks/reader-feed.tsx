@@ -296,6 +296,8 @@ export function ReaderFeed() {
   const visitRecorded = useRef(false);
   /** The milestone being offered, or null. See `components/boks/feedback.ts`. */
   const [feedbackMilestone, setFeedbackMilestone] = useState<number | null>(null);
+  /** Once the note is away the sheet stops asking and starts thanking. */
+  const [feedbackSent, setFeedbackSent] = useState(false);
   const feedbackState = useRef<FeedbackState>({ reads: 0, prompted: [] });
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
   const [reportKind, setReportKind] = useState<"copyright" | "other">("copyright");
@@ -1353,6 +1355,12 @@ export function ReaderFeed() {
     revealReaderChrome(0);
   }
 
+  /** Closing forgets the thank-you, so the next milestone opens asking again. */
+  function closeFeedbackSheet() {
+    setFeedbackMilestone(null);
+    setFeedbackSent(false);
+  }
+
   async function copyBokLink() {
     if (!currentStory) return;
     const url = `${window.location.origin}/b/${currentStory.id}`;
@@ -1603,14 +1611,31 @@ export function ReaderFeed() {
   }, []);
 
   /**
-   * Languages changed in Settings (already saved there). A new filter is a
-   * new feed, from its first boks: the one on screen may be in a language the
-   * reader just turned off. The reader used to keep the old filter here, and
-   * reload with it.
+   * Languages changed in Settings (already saved there).
+   *
+   * Turning a language *off* is a new feed, from its first boks: what is on
+   * screen, and much of what is queued behind it, may be in a language the
+   * reader has just said they do not read.
+   *
+   * Turning one *on* is not. Nothing on the feed has stopped being readable,
+   * so rebuilding it only threw the reader out of the piece they were in the
+   * middle of - https://github.com/IvanCherep/boks/issues/5. The feed extends
+   * itself as the reader approaches its end (`loadMoreFeed`) and reads the
+   * filter from this same ref, so the new language arrives on its own; the
+   * exhausted flag is cleared because there is more to fetch than there was.
    */
   const adoptReadingLanguages = useCallback(
     (languages: readonly string[]) => {
-      readingLanguagesRef.current = normalizeReadingLanguages(languages);
+      const previous = readingLanguagesRef.current;
+      const next = normalizeReadingLanguages(languages);
+      readingLanguagesRef.current = next;
+
+      const stillAllowed = new Set<string>(next);
+      if (previous.every((language) => stillAllowed.has(language))) {
+        feedExhausted.current = false;
+        return;
+      }
+
       setHold((current) => ({ ...current, release: true }));
       loadFeed().catch((error) => notify(readableBoksError(error, "Could not load the feed in those languages.")));
     },
@@ -1731,16 +1756,12 @@ export function ReaderFeed() {
     // touch handler looked only for swipes and the pointer handler returns for
     // touch - so the one way to ask for the controls did nothing.
     const tap = readerTapAction({
-      pointerType: "touch",
       dx,
       dy,
       durationMs: performance.now() - start.at,
       msSinceScroll: start.msSinceScroll,
-      clientX: touch.clientX,
-      left: 0,
-      width: window.innerWidth,
     });
-    if (tap === "toggle-chrome" && !window.getSelection()?.toString()) toggleReaderChrome();
+    if (tap && !window.getSelection()?.toString()) toggleReaderChrome();
   }
 
   function onTouchCancel() {
@@ -1805,19 +1826,15 @@ export function ReaderFeed() {
       return;
     }
 
-    const bounds = event.currentTarget.getBoundingClientRect();
+    // A click asks for the controls and nothing else. It used to turn the page
+    // when it landed in the outer quarter - see `readerTapAction`.
     const tap = readerTapAction({
-      pointerType: event.pointerType === "pen" ? "pen" : "mouse",
       dx,
       dy,
       durationMs: performance.now() - start.at,
       msSinceScroll: start.msSinceScroll,
-      clientX: event.clientX,
-      left: bounds.left,
-      width: bounds.width,
     });
-    if (tap === "toggle-chrome") toggleReaderChrome();
-    else if (tap) navigateStory(tap, "button");
+    if (tap && !window.getSelection()?.toString()) toggleReaderChrome();
   }
 
   function onStoryWheel(event: React.WheelEvent<HTMLDivElement>) {
@@ -2044,7 +2061,12 @@ export function ReaderFeed() {
       } ${guestNoticeStep ? "reader-shell--notice" : ""}`}
     >
       <section
-        className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_116px]"
+        // One column, always. A second column for the controls took 116px off
+        // the right of a 1120px page, so the text was centred in what was left
+        // and sat left of the middle of the screen with an empty band beside
+        // it - https://github.com/IvanCherep/boks/issues/2. The controls float
+        // over the page now, and the reading column is centred on the screen.
+        className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -2055,10 +2077,14 @@ export function ReaderFeed() {
         onPointerCancel={onReaderPointerCancel}
       >
         <article
-          className="reader-card relative grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[var(--reader)]"
+          className="reader-card relative grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[var(--reader)]"
           inert={readerInteractionBlocked ? true : undefined}
         >
-          <header className="reader-topbar z-10 grid grid-cols-[1fr_auto_1fr] items-center px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
+          {/* Account and the bok menu, one in each corner. On a wide screen
+              they lift out of the flow (see `.reader-topbar` at 1024px) so the
+              row they used to hold goes back to the text; the reading column
+              is narrow and centred, so nothing ever scrolls under them. */}
+          <header className="reader-topbar z-10 flex items-center justify-between px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
             <button
               className="reader-account-trigger reader-ui"
               onClick={() => openAccount("manual")}
@@ -2067,8 +2093,7 @@ export function ReaderFeed() {
             >
               <UserRound className="size-5" />
             </button>
-            <span className="brand-word reader-brand-mark" aria-label="boks">boks</span>
-            <button type="button" className="reader-more reader-ui justify-self-end" onClick={openBokMenu} aria-label="More about this bok">
+            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label="More about this bok">
               <MoreHorizontal className="size-5" />
             </button>
           </header>
@@ -2076,7 +2101,7 @@ export function ReaderFeed() {
           <div
             key={currentStory.id}
             ref={storyScroll}
-            className={`story-scroll reader-story-stage min-h-0 min-w-0 overflow-y-auto px-6 pb-32 sm:px-10 sm:pb-16 lg:px-16 ${
+            className={`story-scroll reader-story-stage min-h-0 min-w-0 overflow-y-auto px-6 pb-32 sm:px-10 sm:pb-16 lg:px-16 lg:pb-6 ${
               storyHasMore ? "story-scroll--more" : ""
             } ${
               storyTransition.phase === "idle"
@@ -2086,7 +2111,11 @@ export function ReaderFeed() {
             onScroll={onStoryScroll}
             onWheel={onStoryWheel}
           >
-            <div className="reader-content mx-auto flex min-h-full max-w-[720px] flex-col justify-start pb-16 pt-5 sm:pb-20 sm:pt-10">
+            {/* At 1024px the top bar floats, so the column takes its own room
+                above the byline - enough to clear the two corner buttons -
+                and gives back what the bar and the old footer row were
+                holding. */}
+            <div className="reader-content mx-auto flex min-h-full max-w-[720px] flex-col justify-start pb-16 pt-5 sm:pb-20 sm:pt-10 lg:pb-10 lg:pt-[4.5rem]">
               <div className="reader-author reader-author-intro">
                 <span className="reader-author-avatar" aria-hidden="true">
                   {currentAuthorLabel.replace(/^@/, "").slice(0, 1).toUpperCase()}
@@ -2202,26 +2231,21 @@ export function ReaderFeed() {
             </div>
           )}
 
-          <footer className="reader-footer reader-ui z-10 flex items-center justify-end gap-2 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-8 sm:pb-6">
-            {selectedIndex > 0 && (
-              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); previousStory("button"); }} aria-label="Previous bok">
-                <ChevronLeft className="size-4" />
-                <span>previous</span>
-              </button>
-            )}
-            {selectedIndex < rankedStories.length - 1 && (
-              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); nextStory("button"); }} aria-label="Next bok">
-                <span>next bok</span>
-                <ChevronRight className="size-4" />
-              </button>
-            )}
-          </footer>
         </article>
 
-        <aside
-          className="action-rail reader-ui pointer-events-none absolute inset-x-4 z-20 flex justify-center gap-2 lg:static lg:inset-auto lg:flex-col lg:justify-center"
-          inert={readerInteractionBlocked ? true : undefined}
-        >
+        {/*
+         * One cluster, bottom right: what this boks can be done with, and
+         * where to go from it. They used to be a column of the page and a row
+         * under it - which pushed the reading column off centre and took a
+         * strip of height that the text wanted. Floating them leaves the page
+         * to the text. On a phone the rail returns to a bar across the bottom
+         * and the two buttons go away, because a swipe is the way there.
+         */}
+        <div className="reader-dock">
+          <aside
+            className="action-rail reader-ui pointer-events-none"
+            inert={readerInteractionBlocked ? true : undefined}
+          >
           {/* Likes and replies carry their counts to the right of the icon,
               always. The like total is public as an aggregate - how many,
               never who - and is reconciled with this reader's own like so the
@@ -2253,7 +2277,23 @@ export function ReaderFeed() {
               <Trash2 className="size-5" />
             </ActionButton>
           )}
-        </aside>
+          </aside>
+
+          <nav className="reader-footer reader-ui" aria-label="Move through the feed">
+            {selectedIndex > 0 && (
+              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); previousStory("button"); }} aria-label="Previous bok">
+                <ChevronLeft className="size-4" />
+                <span>previous</span>
+              </button>
+            )}
+            {selectedIndex < rankedStories.length - 1 && (
+              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); nextStory("button"); }} aria-label="Next bok">
+                <span>next bok</span>
+                <ChevronRight className="size-4" />
+              </button>
+            )}
+          </nav>
+        </div>
 
         {guestNoticeStep && isGuestReader && !authPanelOpen && (
           <div className="guest-notice" role="status" aria-live="polite">
@@ -2320,17 +2360,23 @@ export function ReaderFeed() {
           />
         )}
 
+        {/* Asked mid-story, so it asks for one thing and then gets out of the
+            way. Once the note is sent the sheet has nothing left to ask: the
+            heading thanks, and the button that used to say "Not now" - still
+            offering to decline something already done - says Close. */}
         {feedbackMilestone !== null && (
-          <ReaderSheet label="Tell us what you think" onClose={() => setFeedbackMilestone(null)}>
+          <ReaderSheet label="Tell us what you think" onClose={closeFeedbackSheet}>
             <ReaderSheetHeader
               label="Tell us what you think"
-              onClose={() => setFeedbackMilestone(null)}
+              onClose={closeFeedbackSheet}
               title={
-                feedbackMilestone === 3
-                  ? "Three boks in - what do you think?"
-                  : feedbackMilestone === 10
-                    ? "Ten boks in - how is it going?"
-                    : "Thirty boks in - you know this place now"
+                feedbackSent
+                  ? "Thank you"
+                  : feedbackMilestone === 3
+                    ? "Three boks in - what do you think?"
+                    : feedbackMilestone === 10
+                      ? "Ten boks in - how is it going?"
+                      : "Thirty boks in - you know this place now"
               }
             />
 
@@ -2339,14 +2385,11 @@ export function ReaderFeed() {
                 surface={surfaceForMilestone(feedbackMilestone)}
                 boksRead={feedbackState.current.reads}
                 visitorId={visitorId.current}
+                onSent={() => setFeedbackSent(true)}
                 autoFocus
               />
-              <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">
-                This box is always in Settings, so you can come back to it whenever something occurs to
-                you. Honestly, it is the most useful thing anyone can send us right now.
-              </p>
-              <Button className="mt-3 w-full" variant="ghost" onClick={() => setFeedbackMilestone(null)}>
-                Not now - keep reading
+              <Button className="mt-4 w-full" variant="ghost" onClick={closeFeedbackSheet}>
+                {feedbackSent ? "Close" : "Not now"}
               </Button>
             </div>
           </ReaderSheet>

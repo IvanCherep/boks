@@ -13,10 +13,17 @@ import type { FeedbackSurface } from "@/components/boks/feedback";
  * Settings, where a reader goes to say something unprompted, and inside a sheet
  * the reader is offered after their third, tenth and thirtieth bok.
  *
- * A guest can send. That is deliberate and it is enforced on the server
- * (`submit_boks_feedback` is granted to `anon`), because the readers most worth
- * hearing from are the ones who have not signed up - asking them to register
- * first is asking them to leave.
+ * A guest can send without an account, because the readers most worth hearing
+ * from are the ones who have not signed up - asking them to register first is
+ * asking them to leave. Since 20260925160420 the RPC wants a Supabase session
+ * rather than the bare publishable key; a guest always has an anonymous one,
+ * so nothing is asked of them.
+ *
+ * The words here are short on purpose. This used to open with five lines about
+ * why feedback matters, and a reader interrupted mid-story reads none of them -
+ * https://github.com/IvanCherep/boks/issues/3. What is left is the one line
+ * that answers "what do you want from me" and the one that answers "what will
+ * this cost me".
  */
 export function FeedbackForm({
   surface,
@@ -57,8 +64,7 @@ export function FeedbackForm({
   if (sent) {
     return (
       <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status">
-        Sent — thank you. It is read, all of it. If something else comes to mind, Settings has this box
-        whenever you want it.
+        Sent. Every note is read.
       </p>
     );
   }
@@ -72,9 +78,7 @@ export function FeedbackForm({
       }}
     >
       <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        Write anything at all: what you liked, what irritated you, what is missing, the boldest idea you
-        have. Nothing is too small and nothing is too far-fetched. This is how boks becomes a genuinely
-        good place to read, and how the experience gets better for everyone who comes here.
+        What you liked, what annoyed you, what is missing. Nothing is too small.
       </p>
       <Textarea
         value={message}
@@ -95,8 +99,7 @@ export function FeedbackForm({
         {busy ? "Sending…" : "Send feedback"}
       </Button>
       <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        No account, no email, nothing to fill in but this box. No name is attached unless you are signed
-        in.
+        No account or email needed. Your name is attached only if you are signed in.
       </p>
     </form>
   );
