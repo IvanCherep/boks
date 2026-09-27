@@ -288,7 +288,17 @@ not in `supabase/config.toml` - the commented-out blocks there are examples, and
 means a push without that variable clears the SMTP password and stops every
 auth email.
 
-So it is one paste in the dashboard: **Authentication -> Emails -> Magic Link**.
+Two ways to do it, both about a minute.
+
+**A script, so nothing is clicked twice.** `bash scripts/set-magic-link-template.sh`
+asks for a Supabase personal access token (made at
+https://supabase.com/dashboard/account/tokens, revokable straight afterwards),
+types it hidden, and PATCHes exactly two fields of the auth config through the
+Management API: the Magic Link template and the OTP length. It touches nothing
+else, and it prints back whether the code is in the template and whether SMTP is
+still set. The token never goes into a file, a commit, or a chat.
+
+**Or by hand:** **Authentication -> Emails -> Magic Link** in the dashboard.
 
 ```html
 <h2>Sign in to boks</h2>
