@@ -109,7 +109,7 @@ function licenceText(dir) {
   const files = readdirSync(dir).filter((file) => /^(licen[cs]e|copying|notice)(\..*)?$/i.test(file));
   return files
     .sort()
-    .map((file) => readFileSync(path.join(dir, file), "utf8").trim())
+    .map((file) => readFileSync(path.join(dir, file), "utf8").trim().replace(/[ \t]+$/gm, ""))
     .filter(Boolean)
     .join("\n\n");
 }

@@ -14,6 +14,9 @@ For every AI coding assistant:
 6. `specs/boks-product-spec.md`
 7. The focused guide for the change: hosting, testing, standards, architecture, or growth
 
+For authentication, authorization, dependency, API, or database-boundary work,
+read `docs/security.md` before editing.
+
 For founder/operator work:
 
 1. `docs/admin-metrics.md`
@@ -49,6 +52,7 @@ is the one to update when something ships.
 - `docs/admin-metrics.md`: every field in `/admin`, what it is computed from, and the decision it supports. Read this before adding a metric.
 - `specs/boks-product-spec.md`: admin account and content lifecycle rules, including reversible boks deletion, suspension, role changes, and permanent deletion safeguards.
 - `docs/hosting.md`: how the production Cloudflare Worker is hosted, deployed, and checked.
+- `docs/security.md`: trust boundaries, implemented controls, release checks, Advisor exceptions, and residual risks.
 - `docs/local-agent-infrastructure.md`: infrastructure and deployment handoff for local agents such as Claude, Cursor, or Codex CLI.
 - `docs/testing.md`: how to run reader tests, author tests, admin checks, and technical verification.
 - `docs/ai-agent-guide.md`: fast onboarding, ownership map, spec-driven workflow, validation, and deployment rules for any AI agent.

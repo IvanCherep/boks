@@ -8,6 +8,7 @@ import {
   SupabaseRestError,
 } from "@/lib/boks/supabase-rest";
 import type { ReaderSignals } from "@/lib/boks/recommendations";
+import { HttpRequestError, readBoundedJsonObject } from "@/lib/boks/http-security";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,6 @@ type FeedRequestBody = {
   sessionId?: string;
   reader?: ReaderSignals;
   profileSnapshot?: Record<string, unknown>;
-  requestedAlgorithmId?: string | null;
   buildId?: string | null;
   /** The reader's language filter; empty means no filter. */
   readingLanguages?: unknown;
@@ -50,8 +50,9 @@ export async function POST(request: Request) {
 
   let body: FeedRequestBody;
   try {
-    body = ((await request.json()) ?? {}) as FeedRequestBody;
-  } catch {
+    body = (await readBoundedJsonObject(request)) as FeedRequestBody;
+  } catch (error) {
+    if (error instanceof HttpRequestError) return jsonError(error.message, error.status);
     return jsonError("Feed request body must be JSON.", 400);
   }
 
@@ -67,9 +68,6 @@ export async function POST(request: Request) {
     limit: clampLimit(body.limit),
     reader: body.reader,
     profileSnapshot: body.profileSnapshot,
-    // A reader may not pick their own arm; only an admin preview may, and that
-    // request is authorised by the RPCs it goes on to call.
-    requestedAlgorithmId: body.requestedAlgorithmId ?? null,
     servingBackend: "worker",
     buildId: body.buildId ?? null,
     readingLanguages: languagesFrom(body.readingLanguages),
@@ -101,15 +99,16 @@ export async function POST(request: Request) {
       // The client refreshes its session and retries once on a 401.
       return jsonError("Supabase rejected the reader session.", 401);
     }
-    return jsonError(describeError(error), 502);
+    console.error("Could not build a reader feed.", safeErrorDetails(error));
+    return jsonError("Could not build a feed. Please try again.", 502);
   }
 }
 
 function bearerToken(header: string | null) {
   if (!header) return null;
-  const [scheme, token] = header.split(" ");
-  if (!token || scheme.toLowerCase() !== "bearer") return null;
-  return token.trim() || null;
+  const match = /^Bearer ([^\s]+)$/i.exec(header.trim());
+  if (!match || match[1].length > 16_384) return null;
+  return match[1];
 }
 
 /** At most a handful of short language codes; anything else is dropped. */
@@ -130,7 +129,9 @@ function jsonError(message: string, status: number) {
   return Response.json({ error: message }, { status });
 }
 
-function describeError(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return "Could not build a feed.";
+function safeErrorDetails(error: unknown) {
+  if (error instanceof SupabaseRestError) {
+    return { name: error.name, status: error.status, code: error.code };
+  }
+  return { name: error instanceof Error ? error.name : "UnknownError" };
 }

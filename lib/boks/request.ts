@@ -1,14 +1,3 @@
-export function routeError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Unexpected error";
-  if (message.includes("no such table")) {
-    return "The prototype database is not ready yet. Run the D1 migration locally or publish the saved version so the platform can apply it.";
-  }
-  if (message.includes("no such column")) {
-    return "The prototype database needs the latest migration before these metrics can run.";
-  }
-  return message;
-}
-
 export function cleanText(value: unknown, fallback = "") {
   return typeof value === "string" ? value.trim() : fallback;
 }

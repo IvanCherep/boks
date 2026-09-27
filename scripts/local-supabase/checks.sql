@@ -101,6 +101,7 @@ begin
   -- ---------------------------------------------------------------- authoring
   perform public.boks_test_login(v_author);
   perform public.ensure_boks_user_profile();
+  perform public.accept_boks_terms('security-test');
 
   -- The @handle comes from the email, with nothing asked of the reader.
   perform public.boks_assert(
@@ -320,8 +321,13 @@ begin
   -- ------------------------------------------------------------- moderation
   perform public.boks_test_login(v_admin);
   perform public.ensure_boks_user_profile('Test Admin');
-  perform public.claim_initial_boks_admin();
-  perform public.boks_assert(public.is_boks_admin(v_admin), 'first admin can claim the role');
+  perform public.accept_boks_terms('security-test');
+  update public.user_profiles set role = 'admin' where user_id = v_admin;
+  perform public.boks_assert(public.is_boks_admin(v_admin), 'an operator can bootstrap the first admin');
+  perform public.boks_assert(
+    not has_function_privilege('authenticated', 'public.claim_initial_boks_admin()', 'EXECUTE'),
+    'a reader cannot claim the first admin role over the Data API'
+  );
 
   select id into v_reel from public.reels where author_user_id = v_author order by created_at limit 1;
   v_result := public.review_bok_submission(v_reel, 'approve', '');
@@ -330,6 +336,13 @@ begin
   -- ---------------------------------------------------- account governance
   perform public.boks_test_login(v_managed);
   perform public.ensure_boks_user_profile();
+  begin
+    insert into public.likes (user_id, reel_id) values (v_managed, v_reel);
+    perform public.boks_assert(false, 'an account without accepted terms cannot react');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'an account without accepted terms cannot react');
+  end;
+  perform public.accept_boks_terms('security-test');
   perform public.boks_test_login(v_admin);
 
   v_result := public.set_boks_admin_role(v_managed, true);
@@ -455,6 +468,7 @@ begin
   -- A reader must not be able to review or grant admin.
   perform public.boks_test_login(v_reader);
   perform public.ensure_boks_user_profile('Test Reader');
+  perform public.accept_boks_terms('security-test');
   begin
     perform public.review_bok_submission(v_reel, 'approve', '');
     perform public.boks_assert(false, 'a reader cannot approve a bok');
@@ -508,6 +522,18 @@ begin
     jsonb_build_object('eventType', 'start', 'storyId', 'not-a-uuid', 'algorithmId', 'discovery')
   ));
   perform public.boks_assert(v_count = 3, 'the event batch accepts three valid events and drops two invalid ones');
+
+  begin
+    perform public.record_recommendation_events(jsonb_build_array(
+      jsonb_build_object(
+        'eventType', 'start', 'storyId', v_reel::text,
+        'metadata', jsonb_build_object('payload', repeat('x', 9000))
+      )
+    ));
+    perform public.boks_assert(false, 'oversized event metadata is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'oversized event metadata is refused');
+  end;
 
   perform public.boks_assert(
     not exists (select 1 from public.recommendation_events where user_id <> v_reader),
@@ -937,6 +963,16 @@ begin
     )
   );
   perform public.boks_assert(v_feed_id is not null, 'a reader can record the feed they were served');
+  begin
+    perform public.record_served_feed(
+      jsonb_build_object('sessionId', 'oversized-feed'),
+      (select jsonb_agg(jsonb_build_object('reelId', v_reel::text, 'deliveredRank', n))
+       from generate_series(1, 201) n)
+    );
+    perform public.boks_assert(false, 'a feed cannot write more than 200 slots');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a feed cannot write more than 200 slots');
+  end;
   perform public.boks_assert(
     (select count(*) from public.served_feed_item where feed_id = v_feed_id) = 1,
     'a served feed keeps one row per delivered slot'
@@ -1881,6 +1917,7 @@ begin
   insert into auth.users (id, email, is_anonymous) values (v_suspended_admin, 'suspended-admin@boks.test', false);
   perform public.boks_test_login(v_suspended_admin);
   perform public.ensure_boks_user_profile();
+  perform public.accept_boks_terms('security-test');
   perform public.boks_test_login(v_admin);
   update public.user_profiles
   set role = 'admin', banned_at = now(), ban_reason = 'Suspended for the hide check.'
@@ -2068,6 +2105,7 @@ begin
   insert into auth.users (id, email, is_anonymous) values (v_suspended_admin, 'leaving@boks.test', false);
   perform public.boks_test_login(v_suspended_admin);
   perform public.ensure_boks_user_profile();
+  perform public.accept_boks_terms('security-test');
   insert into public.reels (title, author_name, text, genre, mood, status, author_user_id)
   values ('Leaving author bok', null, 'A piece by someone about to leave.', 'literary', 'quiet', 'published', v_suspended_admin)
   returning id into v_qa_bok;
@@ -2346,16 +2384,18 @@ do $$
 declare
   v_reader uuid := '33333333-3333-4333-8333-333333333333';
   v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_guest uuid := '88888888-8888-4888-8888-888888888888';
   v_result jsonb;
   v_index integer;
   v_odd_surface bigint;
 begin
-  -- A guest: no session at all, so `auth.uid()` is null and the device id is
-  -- the only thing tying their notes together.
-  perform public.boks_test_logout();
-  set local role anon;
+  -- A guest has an anonymous Supabase session. Bare publishable-key calls are
+  -- not accepted, so every write has an accountable, rate-limited identity.
+  insert into auth.users (id, is_anonymous) values (v_guest, true) on conflict (id) do nothing;
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
   v_result := public.submit_boks_feedback('The reader is lovely but I cannot find the light theme.', 'settings', 2, 'device-guest-1');
-  perform public.boks_assert((v_result ->> 'ok')::boolean, 'a reader with no account can send feedback');
+  perform public.boks_assert((v_result ->> 'ok')::boolean, 'an anonymous signed-in reader can send feedback');
   reset role;
 
   -- A signed-in reader, from a milestone prompt.
@@ -2440,6 +2480,7 @@ begin
   );
 
   delete from public.boks_feedback where visitor_id in ('device-guest-1', 'device-reader-1');
+  delete from auth.users where id = v_guest;
 end $$;
 
 
@@ -2468,8 +2509,8 @@ begin
     (v_guest, v_reel, 'device-journey-1', 'session-journey-1', 'complete', 'reader', 40),
     (v_reader, v_reel, 'device-journey-1', 'session-journey-2', 'start', 'reader', 1);
 
-  perform public.boks_test_logout();
-  set local role anon;
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
   perform public.record_boks_journey_event('visit', 'device-journey-1', 'session-journey-1', null, 'shared_bok', 't.me', 'tg', 'social', 'launch');
   perform public.record_boks_journey_event('visit', 'device-journey-1', 'session-journey-1', null, 'shared_bok', 't.me', null, null, null);
   perform public.record_boks_journey_event('signup_prompt', 'device-journey-1', 'session-journey-1', 'limit');
@@ -2484,7 +2525,7 @@ begin
   );
   perform public.boks_assert(
     (select count(*) from public.boks_journey_events where visitor_id = 'device-journey-1') = 3,
-    'a visitor with no session is recorded, and an unknown event is dropped silently'
+    'an anonymous signed-in visitor is recorded, and an unknown event is dropped silently'
   );
 
   -- A reader cannot read the funnel, and cannot read the journey table.
@@ -2553,8 +2594,8 @@ begin
     (v_admin, v_reel, 'geo-dev-phone', 'geo-s3', 'start', 'reader', 1),
     (v_guest, v_reel, 'geo-dev-private', 'geo-s4', 'start', 'reader', 1);
 
-  perform public.boks_test_logout();
-  set local role anon;
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
   perform public.record_boks_journey_event('visit', 'geo-stranger', 'geo-s1', null, 'home', null, null, null, null, 'ru');
   perform public.record_boks_journey_event('visit', 'geo-dev-private', 'geo-s4', null, 'home', null, null, null, null, 'RS');
   perform public.record_boks_journey_event('visit', 'geo-junk-1', 'geo-s5', null, 'home', null, null, null, null, 'XX');
@@ -2679,6 +2720,31 @@ begin
   perform public.boks_assert(
     v_writable is null,
     coalesce('the anonymous role cannot write anywhere in public; found: ' || v_writable, 'the anonymous role cannot write anywhere in public')
+  );
+
+  perform public.boks_assert(
+    not has_function_privilege(
+      'anon',
+      'public.submit_boks_feedback(text,text,integer,text)',
+      'EXECUTE'
+    ) and not has_function_privilege(
+      'anon',
+      'public.record_boks_journey_event(text,text,text,text,text,text,text,text,text,text)',
+      'EXECUTE'
+    ),
+    'bare anonymous requests cannot write feedback or journey telemetry'
+  );
+  perform public.boks_assert(
+    has_function_privilege(
+      'authenticated',
+      'public.submit_boks_feedback(text,text,integer,text)',
+      'EXECUTE'
+    ) and has_function_privilege(
+      'authenticated',
+      'public.record_boks_journey_event(text,text,text,text,text,text,text,text,text,text)',
+      'EXECUTE'
+    ),
+    'anonymous Supabase sessions can still write guest feedback and telemetry'
   );
 
   -- Everything the app addresses through the Data API is granted, by a

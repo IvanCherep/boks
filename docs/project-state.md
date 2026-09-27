@@ -1,7 +1,8 @@
 # Where boks Stands
 
 One page so a new session can orient without reading four handovers and two
-research reports. Updated 2026-09-20 (embeddings, a new catalogue, one algorithm; pre-launch QA; admin account and content lifecycle, account library, reader controls, threaded comments, reaction counts, share links).
+research reports. Updated 2026-09-26 (security audit, dependency refresh,
+request/database limits, confirmed email auth, and admin bootstrap hardening).
 
 For *why* a thing is the way it is, the handovers and ADRs are the record. This
 says only what is true now.
@@ -13,6 +14,9 @@ says only what is true now.
 **https://tryboks.com** — Cloudflare Worker `read`, attached as a custom domain
 on 2026-09-17. The zone is registered through Cloudflare Registrar in the same
 account, so no nameserver change was needed.
+
+The security-audited build was deployed on 2026-09-26 as Worker version
+`9b1546e9-e453-4858-adf5-b73445243aa0` and smoke-tested on the custom domain.
 
 `https://read.tryboks.workers.dev` still runs the same Worker, but since
 2026-09-22 **every page on it redirects (308) to the same path on
@@ -37,7 +41,7 @@ things to know about it:
   belongs behind a zone-level redirect rule to the apex. Production backend is the Supabase project
 `vcmrvnihbptostnzaean` (eu-west-2).
 
-All 43 migrations are applied to production. The production database is on the
+All 49 migrations are applied to production. The production database is on the
 current schema, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.
@@ -46,6 +50,25 @@ Deployed and working: the reader, the `for_you` ranker behind `/api/feed` with
 served-feed provenance, author pages and follows, per-boks and per-author share
 links, the lazy-loaded partial/full-screen comment sheet with one-level replies
 and per-comment likes, handle-only identity, and the admin console.
+
+**Security boundary audit (2026-09-26).** The review covered the 301-file,
+roughly 74k-line expansion since the original baseline, the dependency tree,
+public Worker routes, Auth configuration, every Data API grant, RLS/RPC
+authority, Supabase Advisors, and production headers. Runtime dependencies were
+updated and exact-version pinned; `npm audit` is now 0. Reader routes can no
+longer choose an experiment arm, API JSON is stream-limited, internal database
+errors do not reach clients, and the D1 compatibility endpoint can no longer
+publish or impersonate a commenter. Production now sends CSP, HSTS, frame,
+MIME, referrer, and permissions headers.
+
+Migration `20260925160420` wraps high-volume feed/event RPCs with size, batch,
+metadata, and hourly limits; requires terms for social/author writes; removes
+bare-anon telemetry writes; closes browser first-admin claiming; and supplies
+all missing foreign-key indexes. Auth now confirms email, disables manual
+linking, and rejects leaked passwords. Verified with 434 unit tests, 356 schema
+checks from a clean database, production RLS probes, Advisor review, build, and
+live header/API checks. `docs/security.md` is the standing threat model and
+records the intentional Advisor exceptions and remaining CAPTCHA/CSP work.
 
 **Admin governance is database-backed end to end.** Content has separate
 Published and Deleted views. Delete first archives a boks with an actor, time,
@@ -85,7 +108,7 @@ screen. 377 unit tests.
 question was "we bring people and nobody registers - why?", and the reading
 events could not answer it, because the moments that decide it are not reading
 moments. Three are now recorded in `boks_journey_events` through
-`record_boks_journey_event` (open to guests, silent on anything it does not
+`record_boks_journey_event` (open to authenticated anonymous guests, silent on anything it does not
 recognise): a **visit** once per session with its landing (home or a shared bok
 link) and source (referrer host, utm tags), a **sign-up prompt** with its reason
 (the 15-bok limit, like, comment, follow, the guest notice, the account button)
@@ -137,7 +160,8 @@ source, so the funnel, the daily table and new accounts all agree.
 On production right after the deploy: 3 team devices recognised automatically;
 27 guest devices without the team, 28 with it, 26 with Serbia hidden. Devices
 seen before today show as "unknown" - countries start now. Privacy states the
-new field. 8 schema checks (46 migrations, 341), 5 unit tests.
+new field. At that stage: 46 migrations, 341 schema checks, and 5 focused unit
+tests; the current totals are in the security-audit entry above.
 
 **Licences and terms, audited (2026-09-22).** Three findings, all fixed:
 
@@ -306,9 +330,11 @@ milestone is offered once; a reader whose count arrives already past one - a
 second device, a cleared browser - is asked once about where they are rather
 than walked through three prompts (`components/boks/feedback.ts`, 6 tests).
 
-The point of the design is that it costs a reader nothing: `submit_boks_feedback`
-is granted to `anon`, so a guest's note lands with no session at all, and the
-device's visitor id is what groups their notes instead of a name. Five notes an
+The point of the design is that it costs a reader nothing:
+`submit_boks_feedback` accepts the anonymous Supabase session the reader already
+has, so no permanent account is required; bare publishable-key calls without a
+session are refused. The device visitor id still groups notes instead of a
+name. Five notes an
 hour per account or device, 2-4000 characters, and a suspended account is
 refused. Nothing but an admin can read them: the table has row-level security
 with no policies, and `get_boks_feedback` checks `is_boks_admin()` - a note may

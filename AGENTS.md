@@ -75,6 +75,8 @@ Business rules:
 - `lib/boks/author/submission-quota.ts`: the daily submission limit mirrored for the UI; the database stays the authority.
 - `lib/boks/analytics.ts`: reusable D1 SQL rollups, admin sorting, and algorithm counter queries.
 - `lib/boks/request.ts`: request parsing, validation, and API error helpers.
+- `lib/boks/http-security.ts`: bounded JSON request parsing and safe HTTP error boundaries.
+- `lib/boks/security-headers.ts`: CSP, HSTS, frame, referrer, MIME, and permissions headers applied by `proxy.ts`.
 - `lib/boks/seed-stories.ts`: demo story inventory for local and production seeding.
 - `lib/boks/supabase-client.ts`: browser Supabase client factory and anonymous auth helper.
 - `db/schema.ts` and `drizzle/`: D1 schema and migrations.

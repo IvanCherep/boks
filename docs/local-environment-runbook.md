@@ -149,9 +149,10 @@ stack has to be restarted for Auth to notice.
 
 ## 3. Getting an admin account locally
 
-Admin lives in `user_profiles.role`. `claim_initial_boks_admin()` works only
-while **no** admin exists; after that, grant from `/admin`. The local database
-usually already has one from the flow tests, so the claim path will refuse.
+Admin lives in `user_profiles.role`. There is no reader-accessible first-admin
+claim: bootstrap is an operator action, and every later grant comes from an
+existing admin in `/admin`. The local database usually already has an admin
+from the flow tests.
 
 Create one directly - local only, never a pattern for production:
 

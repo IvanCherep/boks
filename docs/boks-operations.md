@@ -78,5 +78,8 @@ Rules:
 - Use browser storage only for anonymous visitor/session ids, Supabase session persistence, and lightweight profile state. Production reader metrics stay in Supabase.
 - Export metrics before resetting or changing the production database.
 - Run `npm run verify:supabase` after Supabase config or migration changes.
-- After auth config changes, check Supabase dashboard settings for production redirect URL and manual anonymous-user linking. Avoid `supabase config push` when it would overwrite unrelated remote settings.
+- After auth config changes, check the production redirect URL, Confirm email,
+  leaked-password protection, and that manual linking remains off. Run
+  `supabase config diff` first; config push leaves undeclared remote properties
+  unchanged but can still overwrite declared rate limits.
 - For future AI-assisted changes, start with `AGENTS.md`, `docs/README.md`, `docs/ai-agent-guide.md`, and the relevant spec in `specs/`.

@@ -37,7 +37,14 @@ The author experience is constrained: `/author` lets any permanent user submit a
 - `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, API mutations, exports, and WebMCP metrics exposure.
 - `components/boks/shared-ui.tsx`: reusable form, action, metric, and admin comparison UI primitives.
 - `app/globals.css`: theme, typography, responsive behavior, focus mode, and reading layout.
-- `app/api/boks/route.ts`: request orchestration for reader feed, author publish, comments, events, admin metrics, and exports.
+- `app/api/boks/route.ts`: legacy D1 reader and bounded telemetry compatibility;
+  it is not an author, comment, or admin write surface.
+- `app/api/feed/route.ts`: canonical authenticated feed orchestration. The
+  Worker assigns the experiment arm and records the served slate.
+- `lib/boks/http-security.ts`: bounded request-body parsing and public API
+  error types.
+- `lib/boks/security-headers.ts`: browser security headers applied by
+  `proxy.ts`.
 - `lib/boks/contracts.ts`: product vocabulary, event types, the attributed `ReaderEvent` contract, and the daily submission limit. Imports nothing, so it is safe in browser, worker and test code.
 - `lib/boks/recommendations/`: signals, strategy contract, strategy files, registry, experiment assignment, feed ranking, and metric derivation. Browser-safe.
 - `lib/boks/author/submission-quota.ts`: the daily author limit mirrored for the UI.
@@ -45,7 +52,8 @@ The author experience is constrained: `/author` lets any permanent user submit a
 - `lib/boks/request.ts`: request parsing, validation, and error response helpers.
 - `lib/boks/seed-stories.ts`: demo story content used by database seeding.
 - `lib/boks/supabase-client.ts`: browser Supabase client and anonymous auth helper.
-- `supabase/config.toml`: Supabase config with anonymous sign-ins, email sign-up, production redirect URL, and manual linking documented.
+- `supabase/config.toml`: Supabase config with anonymous sign-ins, confirmed
+  email magic links, production redirect URL, and manual linking disabled.
 - `supabase/migrations/`: production MVP tables, user profiles, indexes, RLS policies, seed reels, moderation, author quota, recommendation experiments/assignments/events, and admin aggregate functions.
 - `scripts/local-supabase/`: the Supabase platform shim and behavior checks used by `npm run verify:schema`.
 - `db/schema.ts`: Drizzle schema for D1.

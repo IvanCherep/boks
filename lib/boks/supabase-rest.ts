@@ -102,6 +102,7 @@ export function createSupabaseRestTransport(options: SupabaseRestOptions): FeedT
  * — and its requests fail, which the caller surfaces as a 401.
  */
 export function readerIdFromAccessToken(token: string): string | null {
+  if (token.length > 16_384) return null;
   const payload = token.split(".")[1];
   if (!payload) return null;
 
@@ -109,7 +110,10 @@ export function readerIdFromAccessToken(token: string): string | null {
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
     const claims = JSON.parse(atob(padded)) as { sub?: string };
-    return claims.sub ?? null;
+    const subject = claims.sub ?? "";
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(subject)
+      ? subject
+      : null;
   } catch {
     return null;
   }

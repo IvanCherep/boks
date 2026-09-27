@@ -69,7 +69,10 @@ Watch for:
 
 Use `https://tryboks.com/admin`.
 
-Sign in by email magic link with a permanent account that has `admin` role in Supabase. If this is the first admin, sign up as a reader first, open `/admin`, and use the first-admin claim. After one admin exists, new admins must be granted from the User management panel.
+Sign in by email magic link with a permanent account that has `admin` role in
+Supabase. The first admin is bootstrapped by an operator as described in
+`docs/local-environment-runbook.md`; the browser cannot claim it. Every later
+admin must be granted from the People panel by an existing admin.
 
 After each small testing batch:
 

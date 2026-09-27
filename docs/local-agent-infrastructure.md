@@ -22,6 +22,7 @@ Read these first:
 5. The focused spec for the change:
    - `specs/boks-product-spec.md`
    - `specs/boks-recommendation-experiments.md`
+6. `docs/security.md` for any auth, API, dependency, RLS, RPC, or deployment-boundary change.
 
 Before editing:
 
@@ -178,6 +179,19 @@ Only apply migrations after reviewing the SQL and RLS impact.
 ### Supabase Auth
 
 boks uses passwordless email magic links.
+
+Production Auth rules:
+
+- Confirm email is enabled.
+- Manual identity linking is disabled; browser visitor identity preserves the
+  guest-to-account funnel.
+- Leaked-password protection is enabled as defense in depth for direct Auth API
+  clients, even though boks has no password UI.
+- Anonymous sign-ins remain enabled. Guest writes require that anonymous
+  Supabase session; the bare `anon` role is read-only.
+
+Run `npx supabase config diff` before every `config push`. Undeclared remote
+properties are preserved, but declared local rate limits are authoritative.
 
 Current rules:
 

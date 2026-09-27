@@ -108,8 +108,6 @@ export type SupabaseFeedRequest = {
   sessionId: string;
   reader?: ReaderSignals;
   profileSnapshot?: Record<string, unknown>;
-  /** Admin preview only. The reader surface never sets this. */
-  requestedAlgorithmId?: string | null;
   /** The guest's language filter; a signed-in reader's stored one wins. */
   readingLanguages?: readonly string[];
 };
@@ -189,7 +187,6 @@ async function loadWorkerReaderFeed(
         sessionId: request.sessionId,
         reader: request.reader,
         profileSnapshot: request.profileSnapshot ?? {},
-        requestedAlgorithmId: request.requestedAlgorithmId ?? null,
         // The language filter. It was sent only on the browser fallback path,
         // so the normal Worker feed was unfiltered and the mix of languages
         // changed depending on which path served it.
@@ -235,7 +232,6 @@ async function loadBrowserReaderFeed(
     limit: request.limit,
     reader: request.reader,
     profileSnapshot: request.profileSnapshot ?? {},
-    requestedAlgorithmId: request.requestedAlgorithmId ?? null,
     readingLanguages: request.readingLanguages,
     servingBackend: "browser",
   });
@@ -1099,15 +1095,6 @@ export async function loadSupabaseStory(storyId: string): Promise<{ story: Story
     }),
     likedByMe,
   };
-}
-
-export async function claimInitialBoksAdmin(): Promise<BoksUserContext | null> {
-  if (!supabase) return null;
-
-  const result = await supabase.rpc("claim_initial_boks_admin");
-  if (result.error) throw result.error;
-
-  return result.data as BoksUserContext;
 }
 
 export async function setBoksAdminRole(userId: string, isAdmin: boolean) {

@@ -6,7 +6,8 @@ import {
   describeRecommendationStrategies,
   type StoryCandidate,
 } from "@/lib/boks/recommendations";
-import { cleanText, estimateMinutes, integerPayload, numberParam, routeError, searchPattern } from "@/lib/boks/request";
+import { cleanText, integerPayload, numberParam, searchPattern } from "@/lib/boks/request";
+import { HttpRequestError, readBoundedJsonObject } from "@/lib/boks/http-security";
 import { seedStories } from "@/lib/boks/seed-stories";
 
 export const dynamic = "force-dynamic";
@@ -287,7 +288,6 @@ export async function GET(request: Request) {
 
     const limit = numberParam(url, "limit", 80, 20, 120);
     const visitorId = cleanText(url.searchParams.get("visitorId"), "anonymous").slice(0, 120);
-    const requestedAlgorithmId = url.searchParams.get("algorithm");
     let db: D1Database;
 
     try {
@@ -296,7 +296,6 @@ export async function GET(request: Request) {
       const fallback = buildReaderFeed({
         visitorId,
         candidates: seedStoryCandidates(limit),
-        requestedAlgorithmId,
         limit,
       });
       const rankedIds = fallback.entries.map((entry) => entry.candidate.id);
@@ -318,7 +317,7 @@ export async function GET(request: Request) {
       getAdminStoryCount(db, ""),
     ]);
 
-    const feed = buildReaderFeed({ visitorId, candidates, requestedAlgorithmId, limit });
+    const feed = buildReaderFeed({ visitorId, candidates, limit });
     const stories = await getStoriesByRankedIds(db, feed.entries.map((entry) => entry.candidate.id));
     const comments = await getComments(
       db,
@@ -333,15 +332,20 @@ export async function GET(request: Request) {
 
     return Response.json({ stories, comments, metrics, experiment: feed.experiment });
   } catch (error) {
-    return Response.json({ error: routeError(error) }, { status: 500 });
+    console.error("Could not load the D1 compatibility feed.", safeErrorDetails(error));
+    return Response.json({ error: "Could not load boks. Please try again." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const db = getD1();
-    const payload = (await request.json()) as Record<string, unknown>;
+    const payload = await readBoundedJsonObject(request);
     const action = cleanText(payload.action);
+    if (action !== "events" && action !== "event") {
+      return Response.json({ error: "Unsupported action." }, { status: 400 });
+    }
+
+    const db = getD1();
     const visitorId = cleanText(payload.visitorId, "anonymous").slice(0, 120);
     const sessionId = cleanText(payload.sessionId).slice(0, 120);
     const algorithmId = cleanText(payload.algorithmId, "unassigned").slice(0, 60);
@@ -351,78 +355,6 @@ export async function POST(request: Request) {
     const rank = integerPayload(payload.rank);
     const clientElapsedSeconds = integerPayload(payload.clientElapsedSeconds);
     const estimatedSeconds = integerPayload(payload.estimatedSeconds);
-
-    if (action === "create-story") {
-      const title = cleanText(payload.title).slice(0, 90);
-      const authorName = cleanText(payload.authorName, "Guest author").slice(0, 60);
-      const authorHandle = cleanText(payload.authorHandle).slice(0, 40);
-      const hook = cleanText(payload.hook).slice(0, 180);
-      const body = cleanText(payload.body).slice(0, 9000);
-      const genre = cleanText(payload.genre, "literary").slice(0, 30);
-      const mood = cleanText(payload.mood, "quiet").slice(0, 30);
-      const minutes = Number(payload.minutes) || estimateMinutes(body);
-
-      if (!title || !body) {
-        return Response.json({ error: "Title and story body are required." }, { status: 400 });
-      }
-
-      if (estimateMinutes(body) > 15 || minutes > 15) {
-        return Response.json(
-          { error: "boks stories must fit inside a 15 minute reading session." },
-          { status: 400 }
-        );
-      }
-
-      const id = `story-${crypto.randomUUID()}`;
-      await db
-        .prepare(
-          `INSERT INTO stories
-          (id, title, author_name, author_handle, hook, body, genre, mood, minutes, status, is_seed)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', 0)`
-        )
-        .bind(id, title, authorName, authorHandle, hook, body, genre, mood, minutes)
-        .run();
-
-      await db
-        .prepare(
-          `INSERT INTO events
-          (story_id, visitor_id, session_id, event_type, metadata, algorithm_id, user_segment, surface)
-          VALUES (?, ?, ?, 'publish', ?, 'author_console', 'author', 'author')`
-        )
-        .bind(id, visitorId, sessionId, JSON.stringify({ genre, mood, minutes }))
-        .run();
-
-      return Response.json({ storyId: id }, { status: 201 });
-    }
-
-    if (action === "comment") {
-      const storyId = cleanText(payload.storyId).slice(0, 120);
-      const body = cleanText(payload.body).slice(0, 700);
-      const visitorName = cleanText(payload.visitorName, "Reader").slice(0, 50);
-
-      if (!storyId || !body) {
-        return Response.json({ error: "Story and comment text are required." }, { status: 400 });
-      }
-
-      await db
-        .prepare(
-          `INSERT INTO comments (story_id, visitor_id, visitor_name, body)
-          VALUES (?, ?, ?, ?)`
-        )
-        .bind(storyId, visitorId, visitorName, body)
-        .run();
-
-      await db
-        .prepare(
-          `INSERT INTO events
-          (story_id, visitor_id, session_id, event_type, algorithm_id, experiment_key, user_segment, surface, rank, client_elapsed_seconds, estimated_seconds)
-          VALUES (?, ?, ?, 'comment', ?, ?, ?, ?, ?, ?, ?)`
-        )
-        .bind(storyId, visitorId, sessionId, algorithmId, experimentKey, userSegment, surface, rank, clientElapsedSeconds, estimatedSeconds)
-        .run();
-
-      return Response.json({ ok: true }, { status: 201 });
-    }
 
     // Batch write used by the reader event queue. One request per reading burst
     // instead of one per signal; the same contract as the Supabase RPC.
@@ -501,6 +433,14 @@ export async function POST(request: Request) {
 
     return Response.json({ error: "Unsupported action." }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: routeError(error) }, { status: 500 });
+    if (error instanceof HttpRequestError) {
+      return Response.json({ error: error.message }, { status: error.status });
+    }
+    console.error("Could not record a D1 compatibility event.", safeErrorDetails(error));
+    return Response.json({ error: "Could not record the event. Please try again." }, { status: 500 });
   }
+}
+
+function safeErrorDetails(error: unknown) {
+  return { name: error instanceof Error ? error.name : "UnknownError" };
 }

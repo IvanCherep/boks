@@ -97,7 +97,6 @@ export function useBoksData() {
     if (options.q?.trim()) params.set("q", options.q.trim());
     if (options.sort) params.set("sort", options.sort);
     if (options.visitorId) params.set("visitorId", options.visitorId);
-    if (options.algorithm) params.set("algorithm", options.algorithm);
 
     const response = await fetch(`/api/boks?${params.toString()}`, { cache: "no-store" });
     const data = (await response.json()) as ReaderApiResponse;
@@ -138,7 +137,6 @@ export function useBoksData() {
         sessionId: options.sessionId ?? "",
         reader: options.reader,
         profileSnapshot: options.profileSnapshot,
-        requestedAlgorithmId: options.algorithm,
         readingLanguages: options.readingLanguages,
       });
       if (appending) {

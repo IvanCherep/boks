@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, RefreshCw, Shield, UserPlus } from "lucide-react";
+import { Download, RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   formatCooldown,
@@ -22,7 +22,6 @@ import { GuestFunnelPanel } from "@/components/boks/admin/guest-funnel";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { MetricTile } from "@/components/boks/shared-ui";
 import {
-  claimInitialBoksAdmin,
   loadBoksUserContext,
   reviewBokSubmission,
 } from "@/components/boks/supabase-browser-data";
@@ -141,18 +140,6 @@ export function AdminDashboard() {
     }
   }
 
-  async function claimFirstAdmin() {
-    setBusy(true);
-    setAuthStatus("");
-    try {
-      setUser(await claimInitialBoksAdmin());
-    } catch (error) {
-      setAuthStatus(error instanceof Error ? error.message : "Could not claim first admin.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   /** True when the decision went through, so the queue keeps a typed reason otherwise. */
   async function moderateBok(item: AdminModerationItem, decision: "approve" | "reject", reason: string) {
     setBusy(true);
@@ -250,20 +237,9 @@ export function AdminDashboard() {
         <section className="auth-panel mx-auto mt-12">
           <a href="/" className="brand-word">boks</a>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal">Admin access</h1>
-          {user.hasAnyAdmin ? (
-            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              This account is signed in as a reader. Ask an existing admin to grant access from this panel.
-            </p>
-          ) : (
-            <>
-              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                No admin exists yet. The first permanent account can become admin here; after that, only admins can grant admin access.
-              </p>
-              <Button className="mt-6" onClick={claimFirstAdmin} disabled={busy}>
-                <UserPlus className="size-4" /> Claim first admin
-              </Button>
-            </>
-          )}
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            This account is signed in as a reader. Ask an existing admin to grant access from this panel.
+          </p>
           {authStatus && <p className="mt-4 text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
         </section>
       </main>

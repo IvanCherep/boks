@@ -37,9 +37,12 @@ Supabase Auth should allow:
 
 - anonymous sign-ins for guest reading;
 - email sign-up/sign-in for permanent reader accounts;
+- email confirmation and leaked-password protection, including for callers
+  that bypass the passwordless boks UI;
 - production redirect URL `https://tryboks.com`, with the workers.dev origin
   kept on the allow-list while live links still name it;
-- manual anonymous-user linking when preserving guest history during sign-up is required.
+- no manual identity linking. Guest history is joined by the stable browser
+  visitor id, while Supabase creates a fresh permanent identity from the link.
 
 ## Email Delivery
 
@@ -117,6 +120,8 @@ Expected:
 - `/admin` returns `200`.
 - Reader API returns a bounded story payload.
 - Admin API returns `403`; admin metrics load inside `/admin` through Supabase role-checked RPCs.
+- HTML responses include CSP, HSTS, `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, Referrer-Policy, and Permissions-Policy.
 
 Then open these routes in a browser:
 
@@ -221,14 +226,14 @@ the Worker both speak HTTP to PostgREST. The dedicated pooler would run
 Supavisor on the same 1 GB Micro instance to shorten a hop we do not take. The
 shared pooler (`aws-0-eu-west-2.pooler.supabase.com`) stays.
 
-**Two free settings still off, both needing the owner's hand.** Direct Postgres
-access does not enforce SSL (`npx supabase ssl-enforcement get --experimental`
-reports `database: false`), and network restrictions - a Pro entitlement this
-project is allowed but has never set - leave the database reachable from
-`0.0.0.0/0`. Neither touches the app, which never opens a direct connection, so
-both are about the migration path and the database password. SSL enforcement is
-safe to turn on; restricting CIDRs is not, unless the address `supabase db push`
-runs from is stable, or the lockout is acceptable.
+**Direct Postgres requires SSL.** Enabled during the 2026-09-25 security audit;
+`npx supabase ssl-enforcement get --experimental --project-ref
+vcmrvnihbptostnzaean` reports `database: true`. Network restrictions - a Pro
+entitlement this project is allowed but has never set - still leave direct
+Postgres reachable from `0.0.0.0/0`. The app never opens a direct connection;
+restricting CIDRs would affect the migration path and is unsafe until the
+address running `supabase db push` is stable or a deliberate lockout/recovery
+procedure exists.
 
 ### What the Advisors found the first time we read them
 
@@ -241,6 +246,14 @@ written for it found the fourth, which the truncated dashboard list had not
 shown), and `boks_embedding_coverage` - which reports the count of boks waiting
 in review - was granted to `anon` (now admin-only). The three "Security Definer
 View" errors are deliberate and stay.
+
+The 2026-09-25 follow-up audit added migration `20260925160420`: browser
+first-admin claiming and bare-anon writes were revoked, high-volume ingestion
+RPCs were bounded, terms are enforced below the UI, and all eleven missing
+foreign-key indexes were added. Confirm email, leaked-password protection, and
+database SSL are enabled. The remaining Advisor warnings are the intentional
+public projections/read RPCs and anonymous Auth needed by the guest feed; see
+`docs/security.md` for the decision record.
 
 The Performance Advisor reported 0 errors and 0 warnings. One thing it does not
 say, which `supabase inspect db index-stats --linked` does: **the HNSW index

@@ -485,8 +485,6 @@ export type LoadOptions = {
   q?: string;
   sort?: string;
   visitorId?: string;
-  /** Admin preview only. The reader surface never requests an algorithm. */
-  algorithm?: string;
   /** Behavioral affinity used by personalized strategies. */
   reader?: ReaderSignals;
   /** Reading session this feed belongs to, recorded with its provenance. */
