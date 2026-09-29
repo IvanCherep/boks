@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Clapperboard,
   Flag,
   Heart,
   Link as LinkIcon,
@@ -67,6 +68,7 @@ import {
 import { ActionButton } from "@/components/boks/shared-ui";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
+import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
 import {
   fetchVisitorCountry,
   journeyAttribution,
@@ -300,6 +302,8 @@ export function ReaderFeed() {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const feedbackState = useRef<FeedbackState>({ reads: 0, prompted: [] });
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
+  /** The admin-only "listen and read" prototype. See `components/boks/cinema`. */
+  const [cinemaOpen, setCinemaOpen] = useState(false);
   const [reportKind, setReportKind] = useState<"copyright" | "other">("copyright");
   const [reportReason, setReportReason] = useState("");
   const [reportSending, setReportSending] = useState(false);
@@ -841,7 +845,9 @@ export function ReaderFeed() {
    * required." and the boks stays where it is.
    */
   const isAdminReader = Boolean(user && !user.isAnonymous && user.role === "admin" && !user.bannedAt);
-  const readerInteractionBlocked = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget);
+  const readerInteractionBlocked = Boolean(
+    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen
+  );
 
   /**
    * A first visit gets one line of how-to. With the controls hidden a new
@@ -2264,6 +2270,13 @@ export function ReaderFeed() {
           <ActionButton label="Share" onClick={shareStory}>
             <Share2 className="size-5" />
           </ActionButton>
+          {/* Admins only: the prototype of a boks read aloud over pictures that
+              change as it goes. It takes the whole screen and records nothing. */}
+          {isAdminReader && (
+            <ActionButton label="Listen and read (prototype, admins only)" onClick={() => setCinemaOpen(true)}>
+              <Clapperboard className="size-5" />
+            </ActionButton>
+          )}
           {/* Admins only, and only as a convenience: see `isAdminReader`. */}
           {isAdminReader && (
             <ActionButton label="Hide this bok from readers (admin)" onClick={openHideBok} tone="danger">
@@ -2505,6 +2518,21 @@ export function ReaderFeed() {
               <X className="size-4" />
             </button>
           </div>
+        )}
+
+        {/* Above everything, and only for an admin. Nothing in here writes a
+            reading event, so a demo does not become recommendation data. */}
+        {cinemaOpen && currentStory && isAdminReader && (
+          <CinemaMode
+            story={currentStory}
+            liked={isCurrentStoryLiked}
+            onLike={() => void likeStory()}
+            onNext={() => {
+              setCinemaOpen(false);
+              void nextStory("button");
+            }}
+            onClose={() => setCinemaOpen(false)}
+          />
         )}
       </section>
     </main>
