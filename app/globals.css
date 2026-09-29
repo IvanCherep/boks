@@ -3190,13 +3190,20 @@ textarea:focus-visible {
   to { transform: translate3d(var(--cinema-drift, 0px), 112vh, 0); }
 }
 
-/* Darkens the edges and, more usefully, the bottom third where the words go. */
+/*
+ * Darkens the edges and, more usefully, the bottom third where the words go.
+ *
+ * The horizon in some palettes is a bright amber band, and the question under
+ * "The story has ended" sat straight on it - a text shadow is not enough
+ * against a light background. The floor starts higher and ends darker than it
+ * looks like it needs to, because the words have to hold on all five palettes.
+ */
 .cinema-scene__vignette {
   position: absolute;
   inset: 0;
   background:
     radial-gradient(130% 90% at 50% 35%, transparent 38%, rgb(3 5 10 / 62%) 100%),
-    linear-gradient(to bottom, transparent 42%, rgb(3 5 10 / 78%) 100%);
+    linear-gradient(to bottom, transparent 34%, rgb(3 5 10 / 55%) 68%, rgb(3 5 10 / 90%) 100%);
 }
 
 .cinema__backdrop {
