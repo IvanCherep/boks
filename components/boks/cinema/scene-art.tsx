@@ -8,22 +8,26 @@ import { useMemo } from "react";
  * The idea this prototype is testing is "read it, hear it, and look at
  * something while you do". The obvious way to get the something is to generate
  * images and serve them, which means an image pipeline, storage, a bill, and a
- * content policy for pictures nobody has reviewed - none of which a prototype
- * needs in order to answer the question it is asking.
+ * review process for pictures nobody has seen - none of which is needed to
+ * answer the question being asked.
  *
- * So the scene is drawn in the browser from the boks's own id: a skyline with
- * lit windows, domes and spires, a lamp with a real glow, snow, and a palette
- * that moves from dusk to deep night to first light as the story runs. It
- * costs nothing, it needs no network, it never shows the wrong picture for the
- * words, and because it is seeded it is the same picture every time.
+ * So the scene is drawn in the browser from the boks's own id: three ranks of
+ * roofs, domes and spires receding into haze, lit windows, a lamp that casts
+ * the light actually in the frame, snow, and a palette that walks from dusk to
+ * first light as the story runs. It costs nothing, needs no network, can never
+ * illustrate the wrong words, and is the same picture every time.
+ *
+ * The canvas is tall on purpose. A landscape frame cropped to a phone showed
+ * three enormous buildings; depth needs room above the roofline.
  */
 
 type Palette = {
   name: string;
   skyTop: string;
-  skyBottom: string;
-  haze: string;
-  silhouette: string;
+  skyMid: string;
+  horizon: string;
+  near: string;
+  far: string;
   window: string;
   glow: string;
   snow: string;
@@ -33,53 +37,58 @@ type Palette = {
 const palettes: Palette[] = [
   {
     name: "dusk",
-    skyTop: "#1a2340",
-    skyBottom: "#5a4a52",
-    haze: "#c98f5a",
-    silhouette: "#0f1320",
-    window: "#ffcf8a",
-    glow: "#ffb865",
-    snow: "#f4ecdf",
+    skyTop: "#131a33",
+    skyMid: "#3b3550",
+    horizon: "#c07b46",
+    near: "#0b0e1a",
+    far: "#3a3346",
+    window: "#ffd190",
+    glow: "#ffae5c",
+    snow: "#f6eddf",
   },
   {
     name: "night",
-    skyTop: "#0b1225",
-    skyBottom: "#24304f",
-    haze: "#3c5580",
-    silhouette: "#060a14",
+    skyTop: "#070c1c",
+    skyMid: "#16203c",
+    horizon: "#405c86",
+    near: "#04060f",
+    far: "#212c49",
     window: "#ffc879",
-    glow: "#ffad57",
-    snow: "#e8eefc",
+    glow: "#ffa64f",
+    snow: "#e9effc",
   },
   {
     name: "snowlight",
-    skyTop: "#111d38",
-    skyBottom: "#41547d",
-    haze: "#7d97c4",
-    silhouette: "#0a1020",
+    skyTop: "#0d1730",
+    skyMid: "#2c3c63",
+    horizon: "#7e99c6",
+    near: "#070c19",
+    far: "#33446b",
     window: "#ffd79a",
-    glow: "#ffc06b",
+    glow: "#ffbe66",
     snow: "#ffffff",
   },
   {
     name: "small hours",
-    skyTop: "#070b16",
-    skyBottom: "#161f39",
-    haze: "#2b3a5e",
-    silhouette: "#04070e",
-    window: "#ffbf6d",
-    glow: "#ff9f45",
-    snow: "#dce6fb",
+    skyTop: "#04070f",
+    skyMid: "#0e1526",
+    horizon: "#26344f",
+    near: "#02040a",
+    far: "#151f36",
+    window: "#ffbc66",
+    glow: "#ff9a3d",
+    snow: "#dbe5fa",
   },
   {
     name: "first light",
-    skyTop: "#243055",
-    skyBottom: "#a8825f",
-    haze: "#e0a86a",
-    silhouette: "#101527",
+    skyTop: "#1d2951",
+    skyMid: "#6b5f74",
+    horizon: "#dda066",
+    near: "#0d1222",
+    far: "#41405c",
     window: "#fff0c4",
     glow: "#ffd089",
-    snow: "#fff6e8",
+    snow: "#fff7ea",
   },
 ];
 
@@ -94,50 +103,115 @@ function mulberry32(seed: number) {
   };
 }
 
+type Roof = "flat" | "pitched" | "dome" | "spire";
+
 type Building = {
   x: number;
   width: number;
   height: number;
-  roof: "flat" | "pitched" | "dome" | "spire";
+  roof: Roof;
   windows: { x: number; y: number }[];
 };
 
-function buildSkyline(random: () => number, width: number, baseline: number, scale: number) {
-  const buildings: Building[] = [];
-  let x = -20;
-  while (x < width + 20) {
-    const w = (18 + random() * 46) * scale;
-    const h = (40 + random() * 150) * scale;
-    const roll = random();
-    const roof: Building["roof"] = roll > 0.92 ? "spire" : roll > 0.82 ? "dome" : roll > 0.6 ? "pitched" : "flat";
+const canvasWidth = 400;
+const canvasHeight = 800;
 
-    // Lit windows, sparse: a street where every window is on reads as an
-    // office block, not as somewhere people live.
+function buildRank(
+  random: () => number,
+  baseline: number,
+  scale: number,
+  lit: number
+): Building[] {
+  const buildings: Building[] = [];
+  let x = -30 * scale;
+  while (x < canvasWidth + 30) {
+    const width = (26 + random() * 52) * scale;
+    const height = (52 + random() * 130) * scale;
+    const roll = random();
+    const roof: Roof = roll > 0.9 ? "spire" : roll > 0.78 ? "dome" : roll > 0.52 ? "pitched" : "flat";
+
     const windows: { x: number; y: number }[] = [];
-    const columns = Math.max(1, Math.floor(w / (11 * scale)));
-    const rows = Math.max(1, Math.floor(h / (17 * scale)));
+    const columns = Math.max(1, Math.round(width / (13 * scale)));
+    const rows = Math.max(1, Math.round(height / (20 * scale)));
+    const inset = (width - (columns - 1) * 13 * scale) / 2;
     for (let c = 0; c < columns; c += 1) {
       for (let r = 0; r < rows; r += 1) {
-        if (random() > 0.72) {
+        if (random() < lit) {
           windows.push({
-            x: x + 5 * scale + c * 11 * scale,
-            y: baseline - h + 10 * scale + r * 17 * scale,
+            x: x + inset + c * 13 * scale - 2 * scale,
+            y: baseline - height + 14 * scale + r * 20 * scale,
           });
         }
       }
     }
-    buildings.push({ x, width: w, height: h, roof, windows });
-    x += w + random() * 8 * scale;
+    buildings.push({ x, width, height, roof, windows });
+    x += width + random() * 10 * scale;
   }
   return buildings;
 }
 
-function buildingPath(b: Building, baseline: number, scale: number) {
+function roofPath(b: Building, baseline: number) {
   const top = baseline - b.height;
+  const shoulder = Math.min(16, b.width * 0.3);
   if (b.roof === "pitched") {
-    return `M${b.x} ${baseline} L${b.x} ${top + 12 * scale} L${b.x + b.width / 2} ${top} L${b.x + b.width} ${top + 12 * scale} L${b.x + b.width} ${baseline} Z`;
+    return `M${b.x} ${baseline} L${b.x} ${top + shoulder} L${b.x + b.width / 2} ${top} L${b.x + b.width} ${top + shoulder} L${b.x + b.width} ${baseline} Z`;
   }
   return `M${b.x} ${baseline} L${b.x} ${top} L${b.x + b.width} ${top} L${b.x + b.width} ${baseline} Z`;
+}
+
+function Rank({
+  buildings,
+  baseline,
+  fill,
+  windowFill,
+  windowSize,
+  opacity,
+}: {
+  buildings: Building[];
+  baseline: number;
+  fill: string;
+  windowFill: string;
+  windowSize: number;
+  opacity: number;
+}) {
+  return (
+    <g opacity={opacity}>
+      {buildings.map((b, index) => {
+        const top = baseline - b.height;
+        return (
+          <g key={index}>
+            <path d={roofPath(b, baseline)} fill={fill} />
+            {b.roof === "dome" && (
+              <>
+                <path
+                  d={`M${b.x + b.width * 0.18} ${top} Q${b.x + b.width / 2} ${top - b.width * 0.72} ${b.x + b.width * 0.82} ${top} Z`}
+                  fill={fill}
+                />
+                <rect x={b.x + b.width / 2 - 0.9} y={top - b.width * 0.62} width="1.8" height={b.width * 0.2} fill={fill} />
+              </>
+            )}
+            {b.roof === "spire" && (
+              <path
+                d={`M${b.x + b.width * 0.4} ${top} L${b.x + b.width / 2} ${top - b.width * 1.15} L${b.x + b.width * 0.6} ${top} Z`}
+                fill={fill}
+              />
+            )}
+            {b.windows.map((w, windowIndex) => (
+              <rect
+                key={windowIndex}
+                x={w.x}
+                y={w.y}
+                width={windowSize}
+                height={windowSize * 1.35}
+                rx={windowSize * 0.22}
+                fill={windowFill}
+              />
+            ))}
+          </g>
+        );
+      })}
+    </g>
+  );
 }
 
 export function SceneArt({ seed, scene, className }: { seed: number; scene: number; className?: string }) {
@@ -145,122 +219,123 @@ export function SceneArt({ seed, scene, className }: { seed: number; scene: numb
     const random = mulberry32(seed + scene * 9176);
     const palette = palettes[(seed + scene) % palettes.length];
 
-    const far = buildSkyline(random, 400, 250, 0.62);
-    const near = buildSkyline(random, 400, 300, 1);
+    // Three ranks, each lower and larger than the one behind it.
+    const far = buildRank(random, 556, 0.5, 0.1);
+    const mid = buildRank(random, 624, 0.78, 0.16);
+    const near = buildRank(random, 706, 1.08, 0.2);
 
-    const stars = Array.from({ length: 70 }, () => ({
-      x: random() * 400,
-      y: random() * 190,
-      r: random() * 0.9 + 0.25,
-      o: random() * 0.7 + 0.15,
+    const stars = Array.from({ length: 110 }, () => ({
+      x: random() * canvasWidth,
+      y: random() * 470,
+      r: random() * 1.1 + 0.2,
+      o: random() * 0.75 + 0.1,
     }));
 
-    // The lamp anchors the light. It moves across the frame from scene to
-    // scene so the pictures do not look like one picture recoloured.
-    const lampX = 40 + ((seed + scene * 57) % 320);
-    const lampY = 150 + (((seed >> 3) + scene * 13) % 40);
+    // The lamp anchors the light and moves across the frame from scene to
+    // scene, so six pictures do not look like one picture recoloured.
+    const lampX = 46 + ((seed + scene * 83) % 310);
+    const lampY = 512 + (((seed >> 3) + scene * 29) % 70);
+    const moonX = ((seed >> 5) + scene * 61) % canvasWidth;
+    const moonY = 90 + (((seed >> 7) + scene * 17) % 120);
 
-    const flakes = Array.from({ length: 34 }, (_, index) => ({
+    const flakes = Array.from({ length: 46 }, (_, index) => ({
       left: random() * 100,
-      delay: -random() * 18,
-      duration: 12 + random() * 14,
-      size: 1 + random() * 2.6,
-      drift: (random() - 0.5) * 60,
-      opacity: 0.25 + random() * 0.5,
+      delay: -random() * 20,
+      duration: 13 + random() * 16,
+      size: 1.2 + random() * 3,
+      drift: (random() - 0.5) * 80,
+      opacity: 0.2 + random() * 0.55,
       key: index,
     }));
 
-    return { palette, far, near, stars, lampX, lampY, flakes };
+    return { palette, far, mid, near, stars, lampX, lampY, moonX, moonY, flakes };
   }, [seed, scene]);
 
-  const { palette, far, near, stars, lampX, lampY, flakes } = art;
-  const gradientId = `cinema-sky-${seed}-${scene}`;
-  const glowId = `cinema-glow-${seed}-${scene}`;
-  const hazeId = `cinema-haze-${seed}-${scene}`;
+  const { palette, far, mid, near, stars, lampX, lampY, moonX, moonY, flakes } = art;
+  const uid = `${seed}-${scene}`;
 
   return (
     <div className={`cinema-scene ${className ?? ""}`} aria-hidden="true">
-      <svg className="cinema-scene__art" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+      <svg
+        className="cinema-scene__art"
+        viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+        preserveAspectRatio="xMidYMid slice"
+      >
         <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={palette.skyTop} />
-            <stop offset="62%" stopColor={palette.skyBottom} />
-            <stop offset="100%" stopColor={palette.haze} />
+            <stop offset="44%" stopColor={palette.skyMid} />
+            <stop offset="72%" stopColor={palette.horizon} />
+            <stop offset="100%" stopColor={palette.near} />
           </linearGradient>
-          <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={palette.glow} stopOpacity="0.95" />
-            <stop offset="35%" stopColor={palette.glow} stopOpacity="0.35" />
+          <radialGradient id={`bloom-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={palette.glow} stopOpacity="0.9" />
+            <stop offset="22%" stopColor={palette.glow} stopOpacity="0.4" />
             <stop offset="100%" stopColor={palette.glow} stopOpacity="0" />
           </radialGradient>
-          <radialGradient id={hazeId} cx="50%" cy="95%" r="70%">
-            <stop offset="0%" stopColor={palette.haze} stopOpacity="0.5" />
-            <stop offset="100%" stopColor={palette.haze} stopOpacity="0" />
+          <radialGradient id={`moon-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={palette.snow} stopOpacity="0.85" />
+            <stop offset="18%" stopColor={palette.snow} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={palette.snow} stopOpacity="0" />
           </radialGradient>
+          {/* Air between the ranks, so the far roofs sit behind something. */}
+          <linearGradient id={`haze-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={palette.horizon} stopOpacity="0" />
+            <stop offset="100%" stopColor={palette.horizon} stopOpacity="0.55" />
+          </linearGradient>
+          {/* The grain that stops flat vector colour looking like flat vector colour. */}
+          <filter id={`grain-${uid}`} x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed={seed % 100} />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
         </defs>
 
-        <rect width="400" height="300" fill={`url(#${gradientId})`} />
+        <rect width={canvasWidth} height={canvasHeight} fill={`url(#sky-${uid})`} />
 
         {stars.map((star, index) => (
           <circle key={index} cx={star.x} cy={star.y} r={star.r} fill={palette.snow} opacity={star.o} />
         ))}
 
-        {/* Air, so the far buildings sit behind something rather than being cut out of it. */}
-        <rect width="400" height="300" fill={`url(#${hazeId})`} />
+        <circle cx={moonX} cy={moonY} r="150" fill={`url(#moon-${uid})`} />
+        <circle cx={moonX} cy={moonY} r="13" fill={palette.snow} opacity="0.92" />
 
-        <g opacity="0.55">
-          {far.map((b, index) => (
-            <path key={index} d={buildingPath(b, 250, 0.62)} fill={palette.silhouette} />
-          ))}
-        </g>
+        <Rank buildings={far} baseline={556} fill={palette.far} windowFill={palette.window} windowSize={1.9} opacity={0.75} />
+        <rect x="0" y="360" width={canvasWidth} height="230" fill={`url(#haze-${uid})`} />
 
-        {/* The lamp's light, under the near silhouettes so it spills from behind them. */}
-        <circle cx={lampX} cy={lampY} r="118" fill={`url(#${glowId})`} />
+        <Rank buildings={mid} baseline={624} fill={palette.near} windowFill={palette.window} windowSize={2.7} opacity={0.82} />
+        <rect x="0" y="470" width={canvasWidth} height="180" fill={`url(#haze-${uid})`} opacity="0.55" />
 
+        {/* The lamp's light, under the nearest roofs so it spills from behind them. */}
+        <circle cx={lampX} cy={lampY} r="210" fill={`url(#bloom-${uid})`} />
+
+        <Rank buildings={near} baseline={706} fill={palette.near} windowFill={palette.window} windowSize={3.6} opacity={1} />
+
+        {/* The lamp itself: post, hood, and a small fierce source. */}
         <g>
-          {near.map((b, index) => (
-            <g key={index}>
-              <path d={buildingPath(b, 300, 1)} fill={palette.silhouette} />
-              {b.roof === "dome" && (
-                <path
-                  d={`M${b.x + b.width * 0.2} ${300 - b.height} Q${b.x + b.width / 2} ${300 - b.height - b.width * 0.62} ${b.x + b.width * 0.8} ${300 - b.height} Z`}
-                  fill={palette.silhouette}
-                />
-              )}
-              {b.roof === "spire" && (
-                <path
-                  d={`M${b.x + b.width * 0.42} ${300 - b.height} L${b.x + b.width / 2} ${300 - b.height - 34} L${b.x + b.width * 0.58} ${300 - b.height} Z`}
-                  fill={palette.silhouette}
-                />
-              )}
-              {b.windows.map((w, windowIndex) => (
-                <rect
-                  key={windowIndex}
-                  x={w.x}
-                  y={w.y}
-                  width="3.4"
-                  height="4.6"
-                  rx="0.6"
-                  fill={palette.window}
-                  opacity={0.85}
-                />
-              ))}
-            </g>
-          ))}
-        </g>
-
-        {/* The lamp itself: post, arm, and a small fierce source. */}
-        <g>
-          <rect x={lampX - 1.4} y={lampY} width="2.8" height={300 - lampY} fill={palette.silhouette} />
+          <rect x={lampX - 1.8} y={lampY} width="3.6" height={720 - lampY} fill={palette.near} />
           <path
-            d={`M${lampX - 7} ${lampY} L${lampX - 4.5} ${lampY - 9} L${lampX + 4.5} ${lampY - 9} L${lampX + 7} ${lampY} Z`}
-            fill={palette.silhouette}
+            d={`M${lampX - 9} ${lampY} L${lampX - 5.5} ${lampY - 12} L${lampX + 5.5} ${lampY - 12} L${lampX + 9} ${lampY} Z`}
+            fill={palette.near}
           />
-          <circle cx={lampX} cy={lampY - 4} r="3.4" fill={palette.window} />
-          <circle cx={lampX} cy={lampY - 4} r="9" fill={palette.glow} opacity="0.4" />
+          <circle cx={lampX} cy={lampY - 5} r="4.4" fill={palette.window} />
+          <circle cx={lampX} cy={lampY - 5} r="13" fill={palette.glow} opacity="0.45" />
         </g>
 
-        {/* Snow on the ground, catching the lamp. */}
-        <path d="M0 300 L0 284 Q100 272 200 282 Q300 292 400 278 L400 300 Z" fill={palette.snow} opacity="0.16" />
+        {/* Snow on the ground, catching the lamp above it. */}
+        <path
+          d={`M0 ${canvasHeight} L0 726 Q100 706 200 720 Q300 734 400 712 L400 ${canvasHeight} Z`}
+          fill={palette.snow}
+          opacity="0.14"
+        />
+        <ellipse cx={lampX} cy="742" rx="120" ry="30" fill={palette.glow} opacity="0.16" />
+
+        <rect
+          width={canvasWidth}
+          height={canvasHeight}
+          filter={`url(#grain-${uid})`}
+          opacity="0.055"
+          style={{ mixBlendMode: "overlay" }}
+        />
       </svg>
 
       <div className="cinema-scene__snow">

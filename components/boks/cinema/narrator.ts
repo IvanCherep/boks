@@ -75,6 +75,14 @@ export function createNarrator(input: {
   // not mistaken for a line finishing on its own and does not advance.
   let cancelling = false;
   let silentTimer: number | null = null;
+  /**
+   * Set when the platform claims a speech API but has no voice behind it - a
+   * headless browser, a stripped Linux, a Chrome without the language pack.
+   * Every utterance then fails the moment it is handed over, and following
+   * `error` to the next line raced through a six-minute story in seconds.
+   * After the first such failure the clock takes over instead.
+   */
+  let voiceless = false;
 
   const state = (): NarratorState => {
     const current = input.lines[Math.min(line, input.lines.length - 1)];
@@ -121,7 +129,7 @@ export function createNarrator(input: {
 
     // No voice on this browser - the pictures and the words still run, on the
     // clock. A prototype shown on the wrong laptop should be quiet, not blank.
-    if (!speechSupported()) {
+    if (!speechSupported() || voiceless) {
       const seconds = (input.lines[index].end - input.lines[index].start) / input.charactersPerSecond;
       lineStartedAt = performance.now();
       speaking = true;
@@ -147,7 +155,9 @@ export function createNarrator(input: {
     utterance.rate = 0.96;
     utterance.pitch = 1;
 
+    let started = false;
     utterance.onstart = () => {
+      started = true;
       lineStartedAt = performance.now();
       speaking = true;
       startTicking();
@@ -159,7 +169,16 @@ export function createNarrator(input: {
     };
     utterance.onerror = () => {
       if (cancelling) return;
-      // A voice that refuses one line should not end the story.
+      if (!started) {
+        // It never got as far as speaking, so there is no voice here. Reading
+        // that as "this line is finished" is how a story ran to its end in the
+        // time it takes to read one card.
+        voiceless = true;
+        speakLine(index);
+        return;
+      }
+      // A voice that gives up part way through one line should not end the
+      // story; the next line usually speaks.
       speakLine(index + 1);
     };
 

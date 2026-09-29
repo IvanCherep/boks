@@ -202,7 +202,10 @@ export function CinemaMode({
           <p className="cinema__author">{story.authorName || "boks"}</p>
           <h1 className="cinema__title">{story.title}</h1>
           <span className="cinema__rule" aria-hidden="true" />
-          <p className="cinema__meta">{words.minutes(Math.max(1, story.minutes))}</p>
+          {/* The length of the reading, not of the reading-by-eye estimate the
+              feed shows. The cover promised "5 minutes" over a player that then
+              ran for 6:30. */}
+          <p className="cinema__meta">{words.minutes(Math.max(1, Math.round(totalSeconds / 60)))}</p>
           <button type="button" className="cinema__primary" onClick={begin}>
             {words.listen}
           </button>
