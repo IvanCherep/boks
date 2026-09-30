@@ -109,6 +109,8 @@ const copy = {
     scrub: "Перемотка",
     resume: (at: string) => `Продолжить с ${at}`,
     fromStart: "Сначала",
+    hideWords: "Убрать текст",
+    showWords: "Показать текст",
     pause: "Пауза",
     play: "Продолжить",
     silent: "Браузер без голоса — история идёт без звука",
@@ -129,6 +131,8 @@ const copy = {
     scrub: "Position",
     resume: (at: string) => `Continue from ${at}`,
     fromStart: "From the beginning",
+    hideWords: "Hide the words",
+    showWords: "Show the words",
     pause: "Pause",
     play: "Resume",
     silent: "This browser has no voice - the story runs without sound",
@@ -217,6 +221,8 @@ export function CinemaMode({
   // only ever mounts after a tap, so there is no server render to disagree
   // with, and an effect here would set state during the first paint.
   const [savedAt] = useState(() => readPosition(story.id));
+  /** Tapped the picture: the words step aside and the painting has the screen. */
+  const [bare, setBare] = useState(false);
 
   /**
    * The recording for this boks, if there is one. Fetched on open rather than
@@ -332,7 +338,12 @@ export function CinemaMode({
   const fraction = total > 0 ? Math.min(1, elapsed / total) : 0;
 
   return (
-    <div className="cinema" role="dialog" aria-modal="true" aria-label={story.title}>
+    <div
+      className={`cinema ${bare ? "cinema--bare" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={story.title}
+    >
       <Backdrop
         seed={plan.seed}
         scene={phase === "cover" ? 0 : scene}
@@ -378,24 +389,33 @@ export function CinemaMode({
 
       {phase === "playing" && (
         <>
+          {/* The whole picture, on one tap. Somebody who wants to look at it
+              should not have to read around a page laid over it - and the
+              voice carries on, so nothing is lost by looking. */}
+          <button
+            type="button"
+            className="cinema__peek"
+            onClick={() => setBare((hidden) => !hidden)}
+            aria-label={bare ? words.showWords : words.hideWords}
+            aria-pressed={bare}
+          />
           {/* Where the story is, as a column of scenes rather than a number. */}
-          <ol className="cinema__scenes" aria-hidden="true">
+          <ol className={`cinema__scenes ${bare ? "is-bare" : ""}`} aria-hidden="true">
             {plan.sceneStarts.map((start, index) => (
               <li key={start} className={index === scene ? "is-current" : index < scene ? "is-past" : ""} />
             ))}
           </ol>
 
-          <div className="cinema__stage">
+          <div className={`cinema__stage ${bare ? "is-bare" : ""}`}>
+            {/* The line being spoken, and only that one. The line before it has
+                already been heard and the line after it is a small spoiler that
+                pulls the eye down the page; carrying all three made the paper
+                a third of the screen tall and put it over the part of the
+                painting the painter composed. */}
             <div className="cinema__card">
-              {[line - 1, line, line + 1].map((index) => {
-                const entry = plan.lines[index];
-                if (!entry) return <p key={index} className="cinema__line cinema__line--empty" />;
-                return (
-                  <p key={index} className={`cinema__line ${index === line ? "is-current" : ""}`}>
-                    <span>{entry.text}</span>
-                  </p>
-                );
-              })}
+              <p className="cinema__line" key={line}>
+                <span>{plan.lines[line]?.text ?? ""}</span>
+              </p>
             </div>
 
             <div className="cinema__transport">

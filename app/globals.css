@@ -3170,12 +3170,19 @@ textarea:focus-visible {
 
 /* The illustration, over the drawn scene and under the weather. It fades in,
    so the drawn scene is what is on screen until it has arrived. */
+/*
+ * Biased upward. `cover` crops somewhere, and centred it put the middle of the
+ * painting - which is where a painter puts the subject - directly behind the
+ * page. Higher, the subject sits in the clear and the crop falls on the floor
+ * of the frame, which is usually stone, straw or snow.
+ */
 .cinema-scene__picture {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: 50% 38%;
   animation: cinema-picture-in 900ms var(--ease-out) both;
 }
 
@@ -3236,8 +3243,17 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(130% 90% at 50% 35%, transparent 38%, rgb(3 5 10 / 62%) 100%),
-    linear-gradient(to bottom, transparent 34%, rgb(3 5 10 / 55%) 68%, rgb(3 5 10 / 90%) 100%);
+    radial-gradient(130% 90% at 50% 35%, transparent 38%, rgb(3 5 10 / 58%) 100%),
+    linear-gradient(to bottom, transparent 38%, rgb(3 5 10 / 48%) 72%, rgb(3 5 10 / 84%) 100%);
+  transition: opacity 320ms var(--ease-out);
+}
+
+/*
+ * The darkening exists so that words can be read over a painting. With the
+ * words away it is just a shadow over somebody's picture, so most of it lifts.
+ */
+.cinema--bare .cinema-scene__vignette {
+  opacity: 0.4;
 }
 
 .cinema__backdrop {
@@ -3455,30 +3471,67 @@ textarea:focus-visible {
   scale: 1.5;
 }
 
+/* Tapping the picture puts the words and the controls away; the voice carries
+   on, and one more tap brings them back. */
 .cinema__stage {
   position: absolute;
   inset: auto 0 0;
   z-index: 2;
   display: grid;
-  gap: 1.1rem;
+  gap: 0.6rem;
   padding: 0 0.55rem max(1.5rem, env(safe-area-inset-bottom));
+  transition: opacity 320ms var(--ease-out), translate 320ms var(--ease-out);
+}
+
+.cinema__stage.is-bare {
+  opacity: 0;
+  translate: 0 14px;
+  pointer-events: none;
+}
+
+.cinema__scenes.is-bare {
+  opacity: 0;
+}
+
+.cinema__scenes {
+  transition: opacity 320ms var(--ease-out);
+}
+
+/* Everything the words do not cover, listening for a tap. */
+.cinema__peek {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: transparent;
+  cursor: pointer;
 }
 
 /*
  * The card the words sit on. Paper rather than glass: the picture behind it is
  * painted, and a frosted panel over a painting looks like an interface over a
  * picture instead of a page inside one.
+ *
+ * It floats. Pinned to the bottom it cut the painting off, like a panel; with
+ * the picture running on underneath it reads as a page laid on a table, which
+ * is the thing this format is trying to feel like. It also holds one line
+ * instead of three, so it is about half the height it was.
+ *
+ * The height is fixed at three lines and the text sits in the middle of it: a
+ * card that resizes every time a sentence is longer than the last is restless
+ * to read over.
  */
 .cinema__card {
   display: grid;
-  gap: 0.2rem;
-  margin: 0 auto;
-  width: min(780px, 100%);
+  align-content: center;
+  min-height: 7.4rem;
+  margin: 0 auto 1.1rem;
+  width: min(720px, 100%);
   border-radius: 6px;
-  background: linear-gradient(180deg, #f7f0e2 0%, #efe5d3 100%);
-  padding: 1.2rem 1.5rem;
+  background: linear-gradient(180deg, #f9f3e7 0%, #f0e7d6 100%);
+  padding: 1.15rem 1.5rem;
   color: #201a12;
-  box-shadow: 0 26px 60px rgb(0 0 0 / 55%);
+  box-shadow: 0 22px 54px rgb(0 0 0 / 52%), 0 2px 0 rgb(255 255 255 / 30%) inset;
+  transition: opacity 320ms var(--ease-out), translate 320ms var(--ease-out);
   /* Torn top and bottom edges, so it reads as a page rather than a box. */
   clip-path: polygon(
     0% 4%, 6% 1%, 14% 3%, 23% 0%, 34% 3%, 46% 1%, 58% 3%, 69% 0%, 80% 3%, 90% 1%, 100% 4%,
@@ -3488,25 +3541,23 @@ textarea:focus-visible {
 
 .cinema__line {
   font-family: var(--font-serif);
-  font-size: clamp(1.02rem, 4.1vw, 1.22rem);
-  line-height: 1.55;
+  font-size: clamp(1.06rem, 4.3vw, 1.28rem);
+  line-height: 1.6;
   white-space: pre-line;
-  color: rgb(32 26 18 / 42%);
-  transition: color 320ms var(--ease-out);
-}
-
-.cinema__line--empty {
-  min-height: 1.55em;
-}
-
-.cinema__line.is-current {
   color: #201a12;
+  /* Each line is its own element (keyed on the line), so it arrives rather
+     than swapping - the voice has a rhythm and the page should keep it. */
+  animation: cinema-line-in 420ms var(--ease-out) both;
 }
 
-/* The warm band under the line being spoken, drawn as a growing background so
-   it arrives with the voice rather than blinking on. */
-.cinema__line.is-current span {
-  background: linear-gradient(180deg, rgb(240 205 142 / 0%) 52%, rgb(240 205 142 / 78%) 52%);
+@keyframes cinema-line-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* The warm band under the words, as under a pencil. */
+.cinema__line span {
+  background: linear-gradient(180deg, rgb(240 205 142 / 0%) 54%, rgb(240 205 142 / 70%) 54%);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   padding: 0 0.12em;
