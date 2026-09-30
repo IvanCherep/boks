@@ -13,10 +13,15 @@ import {
 import {
   estimateNarrationSeconds,
   formatClock,
-  lineAtCharacter,
   planScenes,
   sceneAtLine,
 } from "@/components/boks/cinema/scene-plan";
+import { createAudioNarrator } from "@/components/boks/cinema/audio-narrator";
+import {
+  lineStartTimes,
+  narrationTrackFor,
+  type NarrationAlignment,
+} from "@/components/boks/cinema/narration-track";
 import { sceneImageFor } from "@/components/boks/cinema/scene-image";
 import type { Story } from "@/components/boks/client-types";
 
@@ -103,6 +108,7 @@ const copy = {
     play: "Продолжить",
     silent: "Браузер без голоса — история идёт без звука",
     placeholder: "иллюстрация временная, одна для всех боков",
+    recorded: (voice: string) => `голос записан — ${voice}`,
   },
   en: {
     listen: "Listen and read",
@@ -118,6 +124,7 @@ const copy = {
     play: "Resume",
     silent: "This browser has no voice - the story runs without sound",
     placeholder: "placeholder art, the same for every boks",
+    recorded: (voice: string) => `read by a real voice — ${voice}`,
   },
 };
 
@@ -155,11 +162,36 @@ export function CinemaMode({
   const [phase, setPhase] = useState<Phase>("cover");
   const [progress, setProgress] = useState<NarratorState>({
     line: 0,
-    character: 0,
+    elapsedSeconds: 0,
+    totalSeconds,
     speaking: false,
     done: false,
   });
   const narrator = useRef<Narrator | null>(null);
+
+  /**
+   * The recording for this boks, if there is one. Fetched on open rather than
+   * on first play, so pressing the button starts the voice instead of starting
+   * a download.
+   */
+  const track = narrationTrackFor(story.id);
+  const [lineStarts, setLineStarts] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (!track) return;
+    let cancelled = false;
+    void fetch(track.alignment)
+      .then((response) => (response.ok ? (response.json() as Promise<NarrationAlignment>) : null))
+      .then((alignment) => {
+        if (cancelled || !alignment) return;
+        // Null when the words and the recording have drifted apart: better the
+        // browser voice than a highlight in the wrong place.
+        setLineStarts(lineStartTimes(plan.lines, alignment));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [track, plan.lines]);
 
   useEffect(() => {
     primeVoices();
@@ -180,7 +212,14 @@ export function CinemaMode({
 
   function ensureNarrator() {
     if (!narrator.current) {
-      narrator.current = createNarrator({ lines: plan.lines, language, charactersPerSecond });
+      narrator.current =
+        track && lineStarts
+          ? createAudioNarrator({
+              audioUrl: track.audio,
+              lineStarts,
+              estimatedSeconds: totalSeconds,
+            })
+          : createNarrator({ lines: plan.lines, language, charactersPerSecond, totalSeconds });
       narrator.current.subscribe((next) => {
         setProgress(next);
         if (next.done) setPhase("ended");
@@ -200,10 +239,13 @@ export function CinemaMode({
     onClose();
   }
 
-  const line = progress.done ? plan.lines.length - 1 : lineAtCharacter(plan.lines, progress.character);
+  // The narrator knows which line it is on - the recording to the character,
+  // the browser voice because it speaks one line at a time.
+  const line = progress.done ? plan.lines.length - 1 : progress.line;
   const scene = sceneAtLine(plan.sceneStarts, line);
-  const elapsed = Math.min(totalSeconds, progress.character / charactersPerSecond);
-  const fraction = plan.spoken.length ? Math.min(1, progress.character / plan.spoken.length) : 0;
+  const elapsed = progress.elapsedSeconds;
+  const total = progress.totalSeconds || totalSeconds;
+  const fraction = total > 0 ? Math.min(1, elapsed / total) : 0;
 
   return (
     <div className="cinema" role="dialog" aria-modal="true" aria-label={story.title}>
@@ -230,8 +272,11 @@ export function CinemaMode({
           <button type="button" className="cinema__primary" onClick={begin}>
             {words.listen}
           </button>
-          {!speechSupported() && <p className="cinema__note">{words.silent}</p>}
-          {picture.placeholder && <p className="cinema__stamp">{words.placeholder}</p>}
+          {!track && !speechSupported() && <p className="cinema__note">{words.silent}</p>}
+          <p className="cinema__stamp">
+            {track && `${words.recorded(track.voice)} · `}
+            {picture.placeholder && words.placeholder}
+          </p>
         </div>
       )}
 
@@ -264,7 +309,7 @@ export function CinemaMode({
               </div>
               <div className="cinema__times">
                 <span>{formatClock(elapsed)}</span>
-                <span>{formatClock(totalSeconds)}</span>
+                <span>{formatClock(total)}</span>
               </div>
               <button
                 type="button"

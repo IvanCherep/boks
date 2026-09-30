@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   estimateNarrationSeconds,
   formatClock,
-  lineAtCharacter,
   looksLikeVerse,
   planScenes,
   planSceneStarts,
@@ -82,16 +81,6 @@ describe("cutting a boks into scenes", () => {
 });
 
 describe("following the voice", () => {
-  const plan = planScenes({ id: "a", text: prose });
-
-  it("finds the line being spoken from how far the voice has read", () => {
-    expect(lineAtCharacter(plan.lines, 0)).toBe(0);
-    expect(lineAtCharacter(plan.lines, plan.lines[1].start)).toBe(1);
-    expect(lineAtCharacter(plan.lines, plan.lines[1].end - 1)).toBe(1);
-    // Past the end stays on the last line rather than running off it.
-    expect(lineAtCharacter(plan.lines, 10_000)).toBe(plan.lines.length - 1);
-  });
-
   it("finds the scene a line belongs to", () => {
     expect(sceneAtLine([0, 3, 6], 0)).toBe(0);
     expect(sceneAtLine([0, 3, 6], 2)).toBe(0);

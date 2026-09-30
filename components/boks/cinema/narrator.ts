@@ -19,8 +19,9 @@ import type { NarrationLine } from "@/components/boks/cinema/scene-plan";
 
 export type NarratorState = {
   line: number;
-  /** Characters into the spoken text, for the progress bar. */
-  character: number;
+  /** Seconds, so a recording and an estimate are read the same way. */
+  elapsedSeconds: number;
+  totalSeconds: number;
   speaking: boolean;
   done: boolean;
 };
@@ -62,6 +63,7 @@ export function createNarrator(input: {
   lines: readonly NarrationLine[];
   language: string;
   charactersPerSecond: number;
+  totalSeconds: number;
 }): Narrator {
   const listeners = new Set<(state: NarratorState) => void>();
   const totalCharacters = input.lines.length ? input.lines[input.lines.length - 1].end : 0;
@@ -97,12 +99,14 @@ export function createNarrator(input: {
 
   const state = (): NarratorState => {
     const current = input.lines[Math.min(line, input.lines.length - 1)];
-    if (!current) return { line: 0, character: 0, speaking, done };
-    const elapsed = speaking && lineStartedAt ? (performance.now() - lineStartedAt) / 1000 : 0;
-    const within = Math.min(current.end - current.start, elapsed * input.charactersPerSecond);
+    if (!current) return { line: 0, elapsedSeconds: 0, totalSeconds: input.totalSeconds, speaking, done };
+    const sinceLineStart = speaking && lineStartedAt ? (performance.now() - lineStartedAt) / 1000 : 0;
+    const within = Math.min(current.end - current.start, sinceLineStart * input.charactersPerSecond);
+    const character = Math.min(totalCharacters, current.start + within);
     return {
       line,
-      character: Math.min(totalCharacters, current.start + within),
+      elapsedSeconds: Math.min(input.totalSeconds, character / input.charactersPerSecond),
+      totalSeconds: input.totalSeconds,
       speaking,
       done,
     };

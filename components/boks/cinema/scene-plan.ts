@@ -223,15 +223,6 @@ export function planSceneStarts(
   return starts;
 }
 
-/** Which line is being spoken, from how far the voice has read. */
-export function lineAtCharacter(lines: readonly NarrationLine[], character: number) {
-  if (!lines.length) return 0;
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
-    if (character >= lines[index].start) return index;
-  }
-  return 0;
-}
-
 /** Which scene a line belongs to. */
 export function sceneAtLine(sceneStarts: readonly number[], line: number) {
   let scene = 0;
