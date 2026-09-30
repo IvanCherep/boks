@@ -115,6 +115,14 @@ export function createAudioNarrator(input: {
     restart() {
       start(0);
     },
+    seek(seconds) {
+      if (!audio) return;
+      const total = Number.isFinite(audio.duration) ? audio.duration : input.estimatedSeconds;
+      audio.currentTime = Math.max(0, Math.min(total - 0.05, seconds));
+      // Seeking back from the end makes it playable again.
+      if (done && seconds < total - 0.5) done = false;
+      emit();
+    },
     subscribe(listener) {
       listeners.add(listener);
       listener(state());

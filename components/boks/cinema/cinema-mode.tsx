@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Bookmark, BookmarkCheck, Pause, Play, RotateCcw, X } from "lucide-react";
+import { ArrowRight, Bookmark, BookmarkCheck, Pause, Play, RotateCcw, RotateCw, X } from "lucide-react";
 import { SceneArt } from "@/components/boks/cinema/scene-art";
 import {
   createNarrator,
@@ -104,6 +104,11 @@ const copy = {
     saved: "Сохранено",
     next: "Выбрать следующую",
     close: "Закрыть",
+    back: "Назад на 15 секунд",
+    forward: "Вперёд на 15 секунд",
+    scrub: "Перемотка",
+    resume: (at: string) => `Продолжить с ${at}`,
+    fromStart: "Сначала",
     pause: "Пауза",
     play: "Продолжить",
     silent: "Браузер без голоса — история идёт без звука",
@@ -119,12 +124,53 @@ const copy = {
     saved: "Saved",
     next: "Choose the next one",
     close: "Close",
+    back: "Back 15 seconds",
+    forward: "Forward 15 seconds",
+    scrub: "Position",
+    resume: (at: string) => `Continue from ${at}`,
+    fromStart: "From the beginning",
     pause: "Pause",
     play: "Resume",
     silent: "This browser has no voice - the story runs without sound",
     placeholder: "placeholder art, the same for every boks",
   },
 };
+
+const skipSeconds = 15;
+
+/**
+ * Where this boks was left, on this device.
+ *
+ * Closing the window by accident half way through a story and having to find
+ * the place again by dragging is the kind of small insult that stops people
+ * coming back. Kept per boks, forgotten once it has been finished, and never
+ * acted on silently - the cover offers to continue rather than just doing it,
+ * because a reader who meant to start again should not have to fight it.
+ */
+const positionKey = (storyId: string) => `boks-cinema-at:${storyId}`;
+
+function readPosition(storyId: string) {
+  try {
+    const raw = window.localStorage.getItem(positionKey(storyId));
+    const seconds = raw ? Number(raw) : 0;
+    return Number.isFinite(seconds) && seconds > 5 ? seconds : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writePosition(storyId: string, seconds: number, total: number) {
+  try {
+    // Almost at the end is finished; nobody wants to be offered the last line.
+    if (!seconds || seconds < 5 || (total && seconds > total - 8)) {
+      window.localStorage.removeItem(positionKey(storyId));
+      return;
+    }
+    window.localStorage.setItem(positionKey(storyId), String(Math.floor(seconds)));
+  } catch {
+    // A reader with storage turned off simply starts from the beginning.
+  }
+}
 
 /** Cyrillic against Latin. The catalogue holds exactly these two. */
 function languageOf(text: string) {
@@ -166,6 +212,11 @@ export function CinemaMode({
     done: false,
   });
   const narrator = useRef<Narrator | null>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  // Read once, as the initial value rather than in an effect: this component
+  // only ever mounts after a tap, so there is no server render to disagree
+  // with, and an effect here would set state during the first paint.
+  const [savedAt] = useState(() => readPosition(story.id));
 
   /**
    * The recording for this boks, if there is one. Fetched on open rather than
@@ -244,12 +295,29 @@ export function CinemaMode({
     return narrator.current;
   }
 
-  function begin() {
+  function begin(from = 0) {
     setPhase("playing");
-    ensureNarrator().play();
+    const player = ensureNarrator();
+    player.play();
+    if (from > 0) player.seek(from);
+  }
+
+  /** Dragging anywhere along the bar, in one handler for pointer and touch. */
+  function scrubTo(clientX: number) {
+    const bar = barRef.current;
+    if (!bar) return;
+    const box = bar.getBoundingClientRect();
+    if (box.width <= 0) return;
+    const fractionAcross = Math.max(0, Math.min(1, (clientX - box.left) / box.width));
+    narrator.current?.seek(fractionAcross * (progress.totalSeconds || totalSeconds));
+  }
+
+  function skip(seconds: number) {
+    narrator.current?.seek(Math.max(0, progress.elapsedSeconds + seconds));
   }
 
   function close() {
+    writePosition(story.id, progress.elapsedSeconds, progress.totalSeconds);
     narrator.current?.stop();
     narrator.current = null;
     onClose();
@@ -285,9 +353,16 @@ export function CinemaMode({
               feed shows. The cover promised "5 minutes" over a player that then
               ran for 6:30. */}
           <p className="cinema__meta">{words.minutes(Math.max(1, Math.round(totalSeconds / 60)))}</p>
-          <button type="button" className="cinema__primary" onClick={begin}>
-            {words.listen}
+          {/* Offered, never taken: a reader who came back to start again
+              should not have to fight their way out of where they stopped. */}
+          <button type="button" className="cinema__primary" onClick={() => begin(savedAt)}>
+            {savedAt > 0 ? words.resume(formatClock(savedAt)) : words.listen}
           </button>
+          {savedAt > 0 && (
+            <button type="button" className="cinema__quiet" onClick={() => begin(0)}>
+              {words.fromStart}
+            </button>
+          )}
           {!track && !speechSupported() && <p className="cinema__note">{words.silent}</p>}
           {/* A piece that has its own pictures and its own voice is one of
               ours, made for this text, and says so as a mark rather than as a
@@ -324,7 +399,33 @@ export function CinemaMode({
             </div>
 
             <div className="cinema__transport">
-              <div className="cinema__bar" role="presentation">
+              {/* The whole strip takes the pointer, not the three-pixel line:
+                  a bar you have to hit exactly is a bar nobody uses. */}
+              <div
+                ref={barRef}
+                className="cinema__bar"
+                role="slider"
+                tabIndex={0}
+                aria-label={words.scrub}
+                aria-valuemin={0}
+                aria-valuemax={Math.round(total)}
+                aria-valuenow={Math.round(elapsed)}
+                aria-valuetext={`${formatClock(elapsed)} / ${formatClock(total)}`}
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  scrubTo(event.clientX);
+                }}
+                onPointerMove={(event) => {
+                  if (event.currentTarget.hasPointerCapture(event.pointerId)) scrubTo(event.clientX);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowLeft") skip(-skipSeconds);
+                  else if (event.key === "ArrowRight") skip(skipSeconds);
+                  else return;
+                  event.preventDefault();
+                }}
+              >
+                <span className="cinema__bar-track" />
                 <span className="cinema__bar-fill" style={{ width: `${fraction * 100}%` }} />
                 <span className="cinema__bar-head" style={{ left: `${fraction * 100}%` }} />
               </div>
@@ -332,14 +433,34 @@ export function CinemaMode({
                 <span>{formatClock(elapsed)}</span>
                 <span>{formatClock(total)}</span>
               </div>
-              <button
-                type="button"
-                className="cinema__transport-button"
-                onClick={() => (progress.speaking ? narrator.current?.pause() : narrator.current?.resume())}
-                aria-label={progress.speaking ? words.pause : words.play}
-              >
-                {progress.speaking ? <Pause className="size-6" /> : <Play className="size-6" />}
-              </button>
+              <div className="cinema__controls">
+                <button
+                  type="button"
+                  className="cinema__skip"
+                  onClick={() => skip(-skipSeconds)}
+                  aria-label={words.back}
+                >
+                  <RotateCcw className="size-5" />
+                  <span>{skipSeconds}</span>
+                </button>
+                <button
+                  type="button"
+                  className="cinema__transport-button"
+                  onClick={() => (progress.speaking ? narrator.current?.pause() : narrator.current?.resume())}
+                  aria-label={progress.speaking ? words.pause : words.play}
+                >
+                  {progress.speaking ? <Pause className="size-6" /> : <Play className="size-6" />}
+                </button>
+                <button
+                  type="button"
+                  className="cinema__skip"
+                  onClick={() => skip(skipSeconds)}
+                  aria-label={words.forward}
+                >
+                  <RotateCw className="size-5" />
+                  <span>{skipSeconds}</span>
+                </button>
+              </div>
             </div>
           </div>
         </>

@@ -32,6 +32,12 @@ export type Narrator = {
   resume: () => void;
   stop: () => void;
   restart: () => void;
+  /**
+   * Move to a moment. A recording goes exactly there; the browser voice can
+   * only start a line, so it goes to the start of the line that moment is in -
+   * which is what a reader who missed something wants anyway.
+   */
+  seek: (seconds: number) => void;
   /** Called on every change worth repainting for. */
   subscribe: (listener: (state: NarratorState) => void) => () => void;
   supported: boolean;
@@ -249,6 +255,31 @@ export function createNarrator(input: {
       done = false;
       speaking = true;
       speakLine(0);
+      emit();
+    },
+    seek(seconds) {
+      const character = Math.max(0, seconds) * input.charactersPerSecond;
+      let target = 0;
+      for (let index = input.lines.length - 1; index >= 0; index -= 1) {
+        if (character >= input.lines[index].start) {
+          target = index;
+          break;
+        }
+      }
+      // Dragging the bar asks for this many times a second; re-speaking the
+      // same line on every one of them would stutter rather than scrub.
+      if (target === line && !done) return;
+      const wasSpeaking = speaking;
+      hardStop();
+      line = target;
+      done = false;
+      if (wasSpeaking) {
+        speaking = true;
+        speakLine(target);
+      } else {
+        speaking = false;
+        lineStartedAt = 0;
+      }
       emit();
     },
     subscribe(listener) {

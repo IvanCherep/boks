@@ -3521,17 +3521,43 @@ textarea:focus-visible {
   padding: 0 0.55rem;
 }
 
+/*
+ * The strip is 28px tall and takes the pointer; the line drawn inside it is
+ * still three. A progress bar you have to hit exactly is one nobody drags, and
+ * being able to go back is the difference between missing a paragraph and
+ * losing the story.
+ */
 .cinema__bar {
   position: relative;
+  display: flex;
   width: 100%;
+  height: 28px;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.cinema__bar:focus-visible {
+  outline: 2px solid rgb(240 205 142 / 70%);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.cinema__bar-track {
+  position: absolute;
+  inset: 50% 0 auto 0;
   height: 3px;
+  translate: 0 -50%;
   border-radius: 999px;
   background: rgb(246 239 227 / 22%);
 }
 
 .cinema__bar-fill {
   position: absolute;
-  inset: 0 auto 0 0;
+  top: 50%;
+  left: 0;
+  height: 3px;
+  translate: 0 -50%;
   border-radius: 999px;
   background: linear-gradient(90deg, #d9a860, #f0cd8e);
 }
@@ -3556,11 +3582,60 @@ textarea:focus-visible {
   color: rgb(246 239 227 / 68%);
 }
 
+/* Fifteen seconds either side of the pause button: the answer to "I was
+   listening and then I was not". */
+.cinema__controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.15rem;
+}
+
+.cinema__skip {
+  position: relative;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 999px;
+  color: rgb(246 239 227 / 82%);
+  transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+.cinema__skip:hover {
+  background: rgb(8 10 16 / 45%);
+  color: #f6efe3;
+}
+
+/* The number sits inside the arrow's loop, as it does in every player. */
+.cinema__skip span {
+  position: absolute;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  padding-top: 1px;
+}
+
+.cinema__quiet {
+  margin-top: 0.7rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgb(246 239 227 / 66%);
+  text-shadow: 0 1px 12px rgb(0 0 0 / 80%);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.cinema__quiet:hover {
+  color: #f6efe3;
+}
+
 .cinema__transport-button {
   display: grid;
   width: 60px;
   height: 60px;
-  margin-top: 0.3rem;
+  margin-top: 0;
   place-items: center;
   border: 1px solid rgb(246 239 227 / 38%);
   border-radius: 999px;
