@@ -69,6 +69,7 @@ import { ActionButton } from "@/components/boks/shared-ui";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
+import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 import {
   fetchVisitorCountry,
   journeyAttribution,
@@ -845,6 +846,9 @@ export function ReaderFeed() {
    * required." and the boks stays where it is.
    */
   const isAdminReader = Boolean(user && !user.isAnonymous && user.role === "admin" && !user.bannedAt);
+  /** Finished pieces are for everyone; the prototype stays with the admins. */
+  const cinemaIsFinished = Boolean(currentStory && isBoksSeriesPiece(currentStory.id));
+  const cinemaOffered = cinemaIsFinished || isAdminReader;
   const readerInteractionBlocked = Boolean(
     authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen
   );
@@ -2270,10 +2274,15 @@ export function ReaderFeed() {
           <ActionButton label="Share" onClick={shareStory}>
             <Share2 className="size-5" />
           </ActionButton>
-          {/* Admins only: the prototype of a boks read aloud over pictures that
-              change as it goes. It takes the whole screen and records nothing. */}
-          {isAdminReader && (
-            <ActionButton label="Listen and read (prototype, admins only)" onClick={() => setCinemaOpen(true)}>
+          {/* A boks read aloud over pictures that change as it goes. Open to
+              everyone on a piece that is finished - its own paintings and its
+              own voice - and to admins alone on every other, where it is still
+              a prototype dressed in a shared stand-in. */}
+          {cinemaOffered && (
+            <ActionButton
+              label={cinemaIsFinished ? "Listen and read" : "Listen and read (prototype, admins only)"}
+              onClick={() => setCinemaOpen(true)}
+            >
               <Clapperboard className="size-5" />
             </ActionButton>
           )}
@@ -2522,7 +2531,7 @@ export function ReaderFeed() {
 
         {/* Above everything, and only for an admin. Nothing in here writes a
             reading event, so a demo does not become recommendation data. */}
-        {cinemaOpen && currentStory && isAdminReader && (
+        {cinemaOpen && currentStory && cinemaOffered && (
           <CinemaMode
             story={currentStory}
             liked={isCurrentStoryLiked}
