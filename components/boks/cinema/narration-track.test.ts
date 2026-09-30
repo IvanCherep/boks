@@ -54,7 +54,7 @@ describe("lining a recording up with the lines on screen", () => {
 
   it("has a recording for the Tolstoy piece and none for anything else", () => {
     expect(narrationTrackFor("ee470590-a93c-467e-aaeb-87ae00c0745e")?.audio).toBe(
-      "/cinema/lion/narration.m4a"
+      "/cinema/lion/narration.mp3"
     );
     expect(narrationTrackFor("no-such-boks")).toBeNull();
   });

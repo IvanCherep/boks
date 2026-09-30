@@ -19,7 +19,16 @@ import type { NarrationLine } from "@/components/boks/cinema/scene-plan";
  */
 
 export type NarrationTrack = {
-  /** Audio served from our own origin; the policy allows no other. */
+  /**
+   * Audio served from our own origin; the policy allows no other.
+   *
+   * MP3, deliberately. The same reading as AAC in an .m4a was a third smaller
+   * and played perfectly from its own address - but fed to a media element as
+   * a blob it failed to decode at all, `MEDIA_ERR_SRC_NOT_SUPPORTED`, and the
+   * blob is not optional: it is what makes the recording seekable when the
+   * server will not answer a range request. MP3 decodes everywhere, from
+   * anywhere.
+   */
   audio: string;
   /** Per-character timings for the same text. */
   alignment: string;
@@ -30,7 +39,7 @@ const tracks: Record<string, NarrationTrack> = {
   // Read by ElevenLabs (voice "George", eleven_multilingual_v2), with the
   // alignment that reading returned.
   "ee470590-a93c-467e-aaeb-87ae00c0745e": {
-    audio: "/cinema/lion/narration.m4a",
+    audio: "/cinema/lion/narration.mp3",
     alignment: "/cinema/lion/alignment.json",
   },
 };
