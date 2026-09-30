@@ -38,6 +38,8 @@ export type Narrator = {
    * which is what a reader who missed something wants anyway.
    */
   seek: (seconds: number) => void;
+  /** Point at a different copy of the same recording. The browser voice has none. */
+  setSource?: (url: string) => void;
   /** Called on every change worth repainting for. */
   subscribe: (listener: (state: NarratorState) => void) => () => void;
   supported: boolean;

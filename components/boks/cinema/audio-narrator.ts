@@ -15,6 +15,13 @@ import type { Narrator, NarratorState } from "@/components/boks/cinema/narrator"
  * position from a reading rate and the highlight drifts across a long
  * paragraph; here the line comes from the recording's own per-character
  * timings, so the words light up exactly when they are said.
+ *
+ * The source is expected to be an object URL over a downloaded blob, not the
+ * file's address. Seeking a streamed file needs the server to answer range
+ * requests, and ours answers a range request with the whole file and a 200 -
+ * so the element reported `seekable` as an empty range and clamped every seek
+ * to zero. Pressing "forward 15 seconds" started the story again. A blob is
+ * held in memory and is seekable whatever the server does.
  */
 export function createAudioNarrator(input: {
   audioUrl: string;
@@ -114,6 +121,25 @@ export function createAudioNarrator(input: {
     },
     restart() {
       start(0);
+    },
+    /**
+     * Swap in the downloaded copy, keeping the moment and whether it was
+     * playing. Only used when the reader pressed play before the download
+     * finished; the gap is a frame or two and it buys them a bar they can drag.
+     */
+    setSource(url) {
+      if (!audio || audio.src === url) return;
+      const at = audio.currentTime;
+      const wasPlaying = !audio.paused && !audio.ended;
+      audio.src = url;
+      audio.load();
+      const resume = () => {
+        audio.currentTime = at;
+        if (wasPlaying) void audio.play().then(startTicking, () => emit());
+        emit();
+      };
+      if (audio.readyState >= 1) resume();
+      else audio.addEventListener("loadedmetadata", resume, { once: true });
     },
     seek(seconds) {
       if (!audio) return;

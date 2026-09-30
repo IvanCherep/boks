@@ -231,6 +231,36 @@ export function CinemaMode({
    */
   const track = narrationTrackFor(story.id);
   const [lineStarts, setLineStarts] = useState<number[] | null>(null);
+  /**
+   * The recording, downloaded whole and held as an object URL.
+   *
+   * Streaming it straight from its address cannot be seeked: the server
+   * answers a range request with the entire file and a 200, so the element
+   * reports an empty `seekable` range and clamps every seek to zero - pressing
+   * "forward 15 seconds" started the story from the beginning. Downloading
+   * first costs 1.2MB while the cover is on screen and makes the bar real.
+   */
+  const [localAudio, setLocalAudio] = useState<string | null>(null);
+  useEffect(() => {
+    if (!track) return;
+    let objectUrl = "";
+    void fetch(track.audio)
+      .then((response) => (response.ok ? response.blob() : null))
+      .then((blob) => {
+        if (!blob) return;
+        objectUrl = URL.createObjectURL(blob);
+        setLocalAudio(objectUrl);
+      })
+      .catch(() => undefined);
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [track]);
+
+  // If the reader pressed play before the download finished, hand the copy over.
+  useEffect(() => {
+    if (localAudio) narrator.current?.setSource?.(localAudio);
+  }, [localAudio]);
   useEffect(() => {
     if (!track) return;
     let cancelled = false;
@@ -288,7 +318,7 @@ export function CinemaMode({
       narrator.current =
         track && lineStarts
           ? createAudioNarrator({
-              audioUrl: track.audio,
+              audioUrl: localAudio ?? track.audio,
               lineStarts,
               estimatedSeconds: totalSeconds,
             })
