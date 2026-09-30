@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowRight,
-  Bookmark,
-  BookmarkCheck,
-  Pause,
-  Play,
-  RotateCcw,
-  RotateCw,
-  Send,
-  X,
-} from "lucide-react";
+import { ArrowRight, Heart, Pause, Play, RotateCcw, RotateCw, Share2, X } from "lucide-react";
 import { SceneArt } from "@/components/boks/cinema/scene-art";
 import {
   createNarrator,
@@ -130,10 +120,10 @@ const copy = {
     ended: "История закончилась",
     endedSub: "Что осталось с вами?",
     again: "Послушать снова",
-    save: "Сохранить",
-    saved: "Сохранено",
+    like: "Нравится",
+    liked: "Понравилось",
     next: "Выбрать следующую",
-    share: "Отправить другу",
+    share: "Поделиться",
     close: "Закрыть",
     back: "Назад на 15 секунд",
     forward: "Вперёд на 15 секунд",
@@ -153,10 +143,10 @@ const copy = {
     ended: "The story has ended",
     endedSub: "What stayed with you?",
     again: "Listen again",
-    save: "Save",
-    saved: "Saved",
+    like: "Like",
+    liked: "Liked",
     next: "Choose the next one",
-    share: "Send to a friend",
+    share: "Share",
     close: "Close",
     back: "Back 15 seconds",
     forward: "Forward 15 seconds",
@@ -566,17 +556,12 @@ export function CinemaMode({
               attention. Anywhere else in the app a share button competes with
               reading; here it competes with nothing.
 
-              The wording is "send to a friend", not "share". Broadcasting is
-              not what happens to a short story someone just finished: they
-              think of one particular person. Naming that is both truer and a
-              smaller thing to ask.
-
               Listening again keeps its place but gives up the accent - it is
               the rarer wish of the two, and it was only ever primary because
               it happened to be written first.
             */}
             <button type="button" className="cinema__primary" onClick={onShare}>
-              <Send className="size-4" />
+              <Share2 className="size-4" />
               {words.share}
             </button>
             <div className="cinema__ended-row">
@@ -591,9 +576,16 @@ export function CinemaMode({
                 <RotateCcw className="size-4" />
                 {words.again}
               </button>
+              {/*
+                A like, because that is what this button has always called -
+                the same `likeStory` the feed's heart calls. It said "save",
+                which is a word this product does not have: the feed labels it
+                Like, and the reader's own shelf calls the collection Liked.
+                One heart, filled when it is on, exactly as the feed draws it.
+              */}
               <button type="button" className="cinema__secondary" onClick={onLike}>
-                {liked ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}
-                {liked ? words.saved : words.save}
+                <Heart className="size-4" fill={liked ? "currentColor" : "none"} />
+                {liked ? words.liked : words.like}
               </button>
             </div>
             <button
