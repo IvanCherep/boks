@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Bookmark, BookmarkCheck, Pause, Play, RotateCcw, RotateCw, X } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  BookmarkCheck,
+  Pause,
+  Play,
+  RotateCcw,
+  RotateCw,
+  Send,
+  X,
+} from "lucide-react";
 import { SceneArt } from "@/components/boks/cinema/scene-art";
 import {
   createNarrator,
@@ -103,6 +113,7 @@ const copy = {
     save: "Сохранить",
     saved: "Сохранено",
     next: "Выбрать следующую",
+    share: "Отправить другу",
     close: "Закрыть",
     back: "Назад на 15 секунд",
     forward: "Вперёд на 15 секунд",
@@ -125,6 +136,7 @@ const copy = {
     save: "Save",
     saved: "Saved",
     next: "Choose the next one",
+    share: "Send to a friend",
     close: "Close",
     back: "Back 15 seconds",
     forward: "Forward 15 seconds",
@@ -189,12 +201,14 @@ export function CinemaMode({
   liked,
   onLike,
   onNext,
+  onShare,
   onClose,
 }: {
   story: Story;
   liked: boolean;
   onLike: () => void;
   onNext: () => void;
+  onShare: () => void;
   onClose: () => void;
 }) {
   const language = useMemo(() => languageOf(story.body), [story.body]);
@@ -522,21 +536,46 @@ export function CinemaMode({
           <h2 className="cinema__ended-title">{words.ended}</h2>
           <p className="cinema__ended-sub">{words.endedSub}</p>
           <div className="cinema__ended-actions">
-            <button
-              type="button"
-              className="cinema__primary"
-              onClick={() => {
-                setPhase("playing");
-                ensureNarrator().restart();
-              }}
-            >
-              <RotateCcw className="size-4" />
-              {words.again}
+            {/*
+              Sending it on is the first thing offered here, and the only one
+              wearing the accent.
+
+              This is the one moment the reader has just been moved by
+              something and has not yet moved on - the story is over, the
+              picture is still up, and there is nothing else asking for
+              attention. Anywhere else in the app a share button competes with
+              reading; here it competes with nothing.
+
+              The wording is "send to a friend", not "share". Broadcasting is
+              not what happens to a short story someone just finished: they
+              think of one particular person. Naming that is both truer and a
+              smaller thing to ask.
+
+              Listening again keeps its place but gives up the accent - it is
+              the rarer wish of the two, and it was only ever primary because
+              it happened to be written first.
+            */}
+            <button type="button" className="cinema__primary" onClick={onShare}>
+              <Send className="size-4" />
+              {words.share}
             </button>
-            <button type="button" className="cinema__secondary" onClick={onLike}>
-              {liked ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}
-              {liked ? words.saved : words.save}
-            </button>
+            <div className="cinema__ended-row">
+              <button
+                type="button"
+                className="cinema__secondary"
+                onClick={() => {
+                  setPhase("playing");
+                  ensureNarrator().restart();
+                }}
+              >
+                <RotateCcw className="size-4" />
+                {words.again}
+              </button>
+              <button type="button" className="cinema__secondary" onClick={onLike}>
+                {liked ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}
+                {liked ? words.saved : words.save}
+              </button>
+            </div>
             <button
               type="button"
               className="cinema__secondary"

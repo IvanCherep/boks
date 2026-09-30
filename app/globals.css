@@ -728,7 +728,12 @@ textarea:focus-visible {
   position: fixed;
   top: calc(4.25rem + env(safe-area-inset-top));
   left: 50%;
-  z-index: 60;
+  /* Above the cinema overlay (z-index 90), which is opaque. Every message
+     this carries is the result of something the reader just pressed - a link
+     copied, a save that failed, the link itself when the clipboard refused -
+     and underneath the overlay all of them were pressed into silence. A
+     status message outranks whatever it is reporting on. */
+  z-index: 100;
   display: flex;
   width: max-content;
   max-width: min(92vw, 30rem);
@@ -3734,6 +3739,31 @@ textarea:focus-visible {
   gap: 0.6rem;
   width: min(420px, 100%);
   justify-items: center;
+}
+
+/* Listening again and saving sit side by side, so that adding the share
+   button did not make this a column of four and push the picture off a small
+   phone. */
+.cinema__ended-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.cinema__ended-row .cinema__secondary {
+  width: 100%;
+  gap: 0.45rem;
+  padding: 0 0.5rem;
+  font-size: 0.93rem;
+  line-height: 1.15;
+}
+
+/* Half-width pills, so "Послушать снова" is wider than its button on a small
+   phone. Let the label wrap instead - the icon would otherwise be shrunk
+   first, which is the same trap as the counted action buttons above. */
+.cinema__ended-row .cinema__secondary svg {
+  flex-shrink: 0;
 }
 
 /* On a wide screen the whole thing stays a portrait: a picture book, not a

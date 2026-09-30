@@ -2540,6 +2540,7 @@ export function ReaderFeed() {
               setCinemaOpen(false);
               void nextStory("button");
             }}
+            onShare={() => void shareStory()}
             onClose={() => setCinemaOpen(false)}
           />
         )}
