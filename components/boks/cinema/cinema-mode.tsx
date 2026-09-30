@@ -22,7 +22,7 @@ import {
   narrationTrackFor,
   type NarrationAlignment,
 } from "@/components/boks/cinema/narration-track";
-import { sceneImageFor } from "@/components/boks/cinema/scene-image";
+import { sceneImageFor, sceneImagesFor } from "@/components/boks/cinema/scene-image";
 import type { Story } from "@/components/boks/client-types";
 
 /**
@@ -157,7 +157,7 @@ export function CinemaMode({
     [plan.spoken, language]
   );
   const charactersPerSecond = Math.max(1, plan.spoken.length / totalSeconds);
-  const picture = sceneImageFor(story.id);
+  const picture = sceneImageFor(story.id, 0);
 
   const [phase, setPhase] = useState<Phase>("cover");
   const [progress, setProgress] = useState<NarratorState>({
@@ -197,6 +197,24 @@ export function CinemaMode({
     primeVoices();
     return () => narrator.current?.stop();
   }, []);
+
+  /**
+   * Fetch every picture while the cover is still up.
+   *
+   * They are about 380KB each and the scene changes on a dissolve, so one that
+   * begins downloading when its scene starts arrives after the scene does -
+   * the crossfade would land on nothing. Two minutes of reading is plenty of
+   * time to have fetched all six, and the browser cache serves them instantly
+   * when their turn comes.
+   */
+  useEffect(() => {
+    const warmed = sceneImagesFor(story.id).map((src) => {
+      const image = new Image();
+      image.src = src;
+      return image;
+    });
+    return () => warmed.forEach((image) => { image.src = ""; });
+  }, [story.id]);
 
   // Escape closes, as it does for every other sheet in the reader.
   useEffect(() => {

@@ -266,11 +266,16 @@ export function SceneArt({
 
   const { palette, far, mid, near, stars, lampX, lampY, moonX, moonY, flakes } = art;
   const uid = `${seed}-${scene}`;
-  const picture = sceneImageFor(storyId);
-  const framing = sceneImageFraming(scene, sceneCount);
+  const picture = sceneImageFor(storyId, scene);
+  // The stand-in is moved around to give six scenes six frames; real art is
+  // shown as it was painted.
+  const framing = picture.placeholder ? sceneImageFraming(scene, sceneCount) : null;
 
   return (
-    <div className={`cinema-scene ${className ?? ""}`} aria-hidden="true">
+    <div
+      className={`cinema-scene ${picture.placeholder ? "" : "cinema-scene--painted"} ${className ?? ""}`}
+      aria-hidden="true"
+    >
       <svg
         className="cinema-scene__art"
         viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
@@ -364,13 +369,17 @@ export function SceneArt({
         src={picture.src}
         alt=""
         decoding="async"
-        style={{
-          objectPosition: framing.objectPosition,
-          filter: framing.filter,
-          scale: String(framing.scale),
-        }}
+        style={
+          framing
+            ? { objectPosition: framing.objectPosition, filter: framing.filter, scale: String(framing.scale) }
+            : undefined
+        }
       />
 
+      {/* Weather belongs to the drawn scene, which is a winter street. A
+          painting has its own - the sixth scene of the lion is inside a cage,
+          and snow was falling through the roof of it. */}
+      {picture.placeholder && (
       <div className="cinema-scene__snow">
         {flakes.map((flake) => (
           <span
@@ -388,6 +397,7 @@ export function SceneArt({
           />
         ))}
       </div>
+      )}
 
       <div className="cinema-scene__vignette" />
     </div>
