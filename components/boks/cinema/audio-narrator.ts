@@ -25,6 +25,13 @@ import type { Narrator, NarratorState } from "@/components/boks/cinema/narrator"
  */
 export function createAudioNarrator(input: {
   audioUrl: string;
+  /**
+   * The plain address, kept as a way back. The downloaded copy is what makes
+   * seeking possible, but a copy that will not decode is worse than a story
+   * you cannot scrub - so if the element refuses it, the narrator returns to
+   * this and carries on reading.
+   */
+  streamUrl?: string;
   /** When each line begins, in seconds. See `lineStartTimes`. */
   lineStarts: readonly number[];
   /** Used until the file has loaded and can say its own length. */
@@ -38,6 +45,7 @@ export function createAudioNarrator(input: {
 
   let frame: number | null = null;
   let done = false;
+  let fellBack = false;
 
   const state = (): NarratorState => {
     const seconds = audio?.currentTime ?? 0;
@@ -76,6 +84,27 @@ export function createAudioNarrator(input: {
     done = true;
     stopTicking();
     emit();
+  });
+
+  // The copy would not decode. Go back to the address it came from, at the
+  // same moment, still playing if it was.
+  audio?.addEventListener("error", () => {
+    const stream = input.streamUrl;
+    if (!audio || fellBack || !stream || audio.src.endsWith(stream)) return;
+    fellBack = true;
+    const at = audio.currentTime;
+    const wasPlaying = !audio.paused && !audio.ended;
+    audio.src = stream;
+    audio.load();
+    audio.addEventListener(
+      "loadedmetadata",
+      () => {
+        audio.currentTime = at;
+        if (wasPlaying) void audio.play().then(startTicking, () => emit());
+        emit();
+      },
+      { once: true }
+    );
   });
   // Without this the clock reads the estimate until the first frame plays.
   audio?.addEventListener("loadedmetadata", emit);
@@ -128,7 +157,7 @@ export function createAudioNarrator(input: {
      * finished; the gap is a frame or two and it buys them a bar they can drag.
      */
     setSource(url) {
-      if (!audio || audio.src === url) return;
+      if (!audio || fellBack || audio.src === url) return;
       const at = audio.currentTime;
       const wasPlaying = !audio.paused && !audio.ended;
       audio.src = url;

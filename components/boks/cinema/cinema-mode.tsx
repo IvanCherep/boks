@@ -319,6 +319,7 @@ export function CinemaMode({
         track && lineStarts
           ? createAudioNarrator({
               audioUrl: localAudio ?? track.audio,
+              streamUrl: track.audio,
               lineStarts,
               estimatedSeconds: totalSeconds,
             })
