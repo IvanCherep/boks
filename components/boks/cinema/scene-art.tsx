@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { sceneImageFor, sceneImageFraming } from "@/components/boks/cinema/scene-image";
 
 /**
  * The picture behind the words, drawn rather than fetched.
@@ -214,7 +215,19 @@ function Rank({
   );
 }
 
-export function SceneArt({ seed, scene, className }: { seed: number; scene: number; className?: string }) {
+export function SceneArt({
+  seed,
+  scene,
+  sceneCount,
+  storyId,
+  className,
+}: {
+  seed: number;
+  scene: number;
+  sceneCount: number;
+  storyId: string;
+  className?: string;
+}) {
   const art = useMemo(() => {
     const random = mulberry32(seed + scene * 9176);
     const palette = palettes[(seed + scene) % palettes.length];
@@ -253,6 +266,8 @@ export function SceneArt({ seed, scene, className }: { seed: number; scene: numb
 
   const { palette, far, mid, near, stars, lampX, lampY, moonX, moonY, flakes } = art;
   const uid = `${seed}-${scene}`;
+  const picture = sceneImageFor(storyId);
+  const framing = sceneImageFraming(scene, sceneCount);
 
   return (
     <div className={`cinema-scene ${className ?? ""}`} aria-hidden="true">
@@ -337,6 +352,24 @@ export function SceneArt({ seed, scene, className }: { seed: number; scene: numb
           style={{ mixBlendMode: "overlay" }}
         />
       </svg>
+
+      {/* The illustration, over the drawn scene so that one is what is seen
+          while this loads and what is seen if it never arrives. */}
+      {/* A plain <img>: this is a full-bleed backdrop served from our own
+          origin, already sized for the job, and the optimiser this rule points
+          at is not configured on the Worker. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="cinema-scene__picture"
+        src={picture.src}
+        alt=""
+        decoding="async"
+        style={{
+          objectPosition: framing.objectPosition,
+          filter: framing.filter,
+          scale: String(framing.scale),
+        }}
+      />
 
       <div className="cinema-scene__snow">
         {flakes.map((flake) => (

@@ -73,7 +73,18 @@ export function createNarrator(input: {
   let frame: number | null = null;
   // Set while we stop the voice on purpose, so the `end` event that follows is
   // not mistaken for a line finishing on its own and does not advance.
-  let cancelling = false;
+  /**
+   * Bumped by every stop. Each utterance and each timer remembers the number
+   * it was born under and does nothing once that number has moved on.
+   *
+   * A boolean here did not work, and the way it failed is worth keeping: it
+   * was raised, `speechSynthesis.cancel()` was called, and it was lowered
+   * again on the same line - but `cancel()` delivers its `end` events on a
+   * later tick, by which time the flag said "not cancelling", so the handler
+   * dutifully started the next line. Closing the window left the voice reading
+   * the story to an empty screen.
+   */
+  let generation = 0;
   let silentTimer: number | null = null;
   /**
    * Set when the platform claims a speech API but has no voice behind it - a
@@ -130,6 +141,7 @@ export function createNarrator(input: {
     // No voice on this browser - the pictures and the words still run, on the
     // clock. A prototype shown on the wrong laptop should be quiet, not blank.
     if (!speechSupported() || voiceless) {
+      const mine = generation;
       const seconds = (input.lines[index].end - input.lines[index].start) / input.charactersPerSecond;
       lineStartedAt = performance.now();
       speaking = true;
@@ -137,7 +149,7 @@ export function createNarrator(input: {
       emit();
       silentTimer = window.setTimeout(() => {
         silentTimer = null;
-        if (!cancelling) speakLine(index + 1);
+        if (mine === generation) speakLine(index + 1);
       }, Math.max(900, seconds * 1000));
       return;
     }
@@ -155,8 +167,10 @@ export function createNarrator(input: {
     utterance.rate = 0.96;
     utterance.pitch = 1;
 
+    const mine = generation;
     let started = false;
     utterance.onstart = () => {
+      if (mine !== generation) return;
       started = true;
       lineStartedAt = performance.now();
       speaking = true;
@@ -164,11 +178,11 @@ export function createNarrator(input: {
       emit();
     };
     utterance.onend = () => {
-      if (cancelling) return;
+      if (mine !== generation) return;
       speakLine(index + 1);
     };
     utterance.onerror = () => {
-      if (cancelling) return;
+      if (mine !== generation) return;
       if (!started) {
         // It never got as far as speaking, so there is no voice here. Reading
         // that as "this line is finished" is how a story ran to its end in the
@@ -186,13 +200,13 @@ export function createNarrator(input: {
   }
 
   function hardStop() {
-    cancelling = true;
+    // Everything already scheduled belongs to a past life from here on.
+    generation += 1;
     if (silentTimer !== null) {
       window.clearTimeout(silentTimer);
       silentTimer = null;
     }
     if (speechSupported()) window.speechSynthesis.cancel();
-    cancelling = false;
   }
 
   return {

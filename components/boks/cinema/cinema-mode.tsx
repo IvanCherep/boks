@@ -17,6 +17,7 @@ import {
   planScenes,
   sceneAtLine,
 } from "@/components/boks/cinema/scene-plan";
+import { sceneImageFor } from "@/components/boks/cinema/scene-image";
 import type { Story } from "@/components/boks/client-types";
 
 /**
@@ -47,7 +48,17 @@ type Phase = "cover" | "playing" | "ended";
  * film. The outgoing layer is kept mounted for the length of the fade and then
  * dropped, so there are never more than two skylines on the page.
  */
-function Backdrop({ seed, scene }: { seed: number; scene: number }) {
+function Backdrop({
+  seed,
+  scene,
+  sceneCount,
+  storyId,
+}: {
+  seed: number;
+  scene: number;
+  sceneCount: number;
+  storyId: string;
+}) {
   const [layers, setLayers] = useState([{ scene, key: 0 }]);
   const nextKey = useRef(0);
 
@@ -68,6 +79,8 @@ function Backdrop({ seed, scene }: { seed: number; scene: number }) {
           key={layer.key}
           seed={seed}
           scene={layer.scene}
+          sceneCount={sceneCount}
+          storyId={storyId}
           className={`cinema__backdrop ${index < layers.length - 1 ? "cinema__backdrop--leaving" : ""}`}
         />
       ))}
@@ -89,6 +102,7 @@ const copy = {
     pause: "Пауза",
     play: "Продолжить",
     silent: "Браузер без голоса — история идёт без звука",
+    placeholder: "Заглушка — одна на все боки",
   },
   en: {
     listen: "Listen and read",
@@ -103,6 +117,7 @@ const copy = {
     pause: "Pause",
     play: "Resume",
     silent: "This browser has no voice - the story runs without sound",
+    placeholder: "Placeholder art, shared by every boks",
   },
 };
 
@@ -135,6 +150,7 @@ export function CinemaMode({
     [plan.spoken, language]
   );
   const charactersPerSecond = Math.max(1, plan.spoken.length / totalSeconds);
+  const picture = sceneImageFor(story.id);
 
   const [phase, setPhase] = useState<Phase>("cover");
   const [progress, setProgress] = useState<NarratorState>({
@@ -191,7 +207,12 @@ export function CinemaMode({
 
   return (
     <div className="cinema" role="dialog" aria-modal="true" aria-label={story.title}>
-      <Backdrop seed={plan.seed} scene={phase === "cover" ? 0 : scene} />
+      <Backdrop
+        seed={plan.seed}
+        scene={phase === "cover" ? 0 : scene}
+        sceneCount={plan.sceneStarts.length}
+        storyId={story.id}
+      />
 
       <button type="button" className="cinema__close" onClick={close} aria-label={words.close}>
         <X className="size-5" />
@@ -210,6 +231,7 @@ export function CinemaMode({
             {words.listen}
           </button>
           {!speechSupported() && <p className="cinema__note">{words.silent}</p>}
+          {picture.placeholder && <p className="cinema__stamp">{words.placeholder}</p>}
         </div>
       )}
 
