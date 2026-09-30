@@ -228,9 +228,29 @@ export function SceneArt({
   storyId: string;
   className?: string;
 }) {
+  const picture = sceneImageFor(storyId, scene);
+  /**
+   * A painted boks does not draw the city underneath it.
+   *
+   * The drawn scene was written to be what you see while the illustration
+   * loads and what you see if it never arrives, and for a boks with no art of
+   * its own it is still the whole picture. But where six real paintings exist
+   * it is covered completely - the illustration is opaque and full bleed - and
+   * every one of its ~270 nodes, its infinite drift and its fractal-noise
+   * grain over 400x800 was being rasterised to be seen by nobody. Two of them
+   * during a dissolve, which is exactly when there is least to spare.
+   *
+   * What it was for survives as a wash in the scene's own palette: something
+   * behind the picture while it decodes, in the right colours, for the cost of
+   * a gradient.
+   */
+  const painted = !picture.placeholder;
+
   const art = useMemo(() => {
-    const random = mulberry32(seed + scene * 9176);
     const palette = palettes[(seed + scene) % palettes.length];
+    if (painted) return { palette, drawn: null };
+
+    const random = mulberry32(seed + scene * 9176);
 
     // Three ranks, each lower and larger than the one behind it.
     const far = buildRank(random, 556, 0.5, 0.1);
@@ -261,102 +281,110 @@ export function SceneArt({
       key: index,
     }));
 
-    return { palette, far, mid, near, stars, lampX, lampY, moonX, moonY, flakes };
-  }, [seed, scene]);
+    return { palette, drawn: { far, mid, near, stars, lampX, lampY, moonX, moonY, flakes } };
+  }, [seed, scene, painted]);
 
-  const { palette, far, mid, near, stars, lampX, lampY, moonX, moonY, flakes } = art;
+  const { palette, drawn } = art;
   const uid = `${seed}-${scene}`;
-  const picture = sceneImageFor(storyId, scene);
   // The stand-in is moved around to give six scenes six frames; real art is
   // shown as it was painted.
   const framing = picture.placeholder ? sceneImageFraming(scene, sceneCount) : null;
 
   return (
     <div
-      className={`cinema-scene ${picture.placeholder ? "" : "cinema-scene--painted"} ${className ?? ""}`}
+      className={`cinema-scene ${painted ? "cinema-scene--painted" : ""} ${className ?? ""}`}
       aria-hidden="true"
     >
-      <svg
-        className="cinema-scene__art"
-        viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={palette.skyTop} />
-            <stop offset="44%" stopColor={palette.skyMid} />
-            <stop offset="72%" stopColor={palette.horizon} />
-            <stop offset="100%" stopColor={palette.near} />
-          </linearGradient>
-          <radialGradient id={`bloom-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={palette.glow} stopOpacity="0.9" />
-            <stop offset="22%" stopColor={palette.glow} stopOpacity="0.4" />
-            <stop offset="100%" stopColor={palette.glow} stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id={`moon-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={palette.snow} stopOpacity="0.85" />
-            <stop offset="18%" stopColor={palette.snow} stopOpacity="0.28" />
-            <stop offset="100%" stopColor={palette.snow} stopOpacity="0" />
-          </radialGradient>
-          {/* Air between the ranks, so the far roofs sit behind something. */}
-          <linearGradient id={`haze-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={palette.horizon} stopOpacity="0" />
-            <stop offset="100%" stopColor={palette.horizon} stopOpacity="0.55" />
-          </linearGradient>
-          {/* The grain that stops flat vector colour looking like flat vector colour. */}
-          <filter id={`grain-${uid}`} x="0" y="0" width="100%" height="100%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed={seed % 100} />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-        </defs>
+      {drawn ? (
+        <svg
+          className="cinema-scene__art"
+          viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <defs>
+            <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={palette.skyTop} />
+              <stop offset="44%" stopColor={palette.skyMid} />
+              <stop offset="72%" stopColor={palette.horizon} />
+              <stop offset="100%" stopColor={palette.near} />
+            </linearGradient>
+            <radialGradient id={`bloom-${uid}`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={palette.glow} stopOpacity="0.9" />
+              <stop offset="22%" stopColor={palette.glow} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={palette.glow} stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id={`moon-${uid}`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={palette.snow} stopOpacity="0.85" />
+              <stop offset="18%" stopColor={palette.snow} stopOpacity="0.28" />
+              <stop offset="100%" stopColor={palette.snow} stopOpacity="0" />
+            </radialGradient>
+            {/* Air between the ranks, so the far roofs sit behind something. */}
+            <linearGradient id={`haze-${uid}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={palette.horizon} stopOpacity="0" />
+              <stop offset="100%" stopColor={palette.horizon} stopOpacity="0.55" />
+            </linearGradient>
+            {/* The grain that stops flat vector colour looking like flat vector colour. */}
+            <filter id={`grain-${uid}`} x="0" y="0" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed={seed % 100} />
+              <feColorMatrix type="saturate" values="0" />
+            </filter>
+          </defs>
 
-        <rect width={canvasWidth} height={canvasHeight} fill={`url(#sky-${uid})`} />
+          <rect width={canvasWidth} height={canvasHeight} fill={`url(#sky-${uid})`} />
 
-        {stars.map((star, index) => (
-          <circle key={index} cx={star.x} cy={star.y} r={star.r} fill={palette.snow} opacity={star.o} />
-        ))}
+          {drawn.stars.map((star, index) => (
+            <circle key={index} cx={star.x} cy={star.y} r={star.r} fill={palette.snow} opacity={star.o} />
+          ))}
 
-        <circle cx={moonX} cy={moonY} r="150" fill={`url(#moon-${uid})`} />
-        <circle cx={moonX} cy={moonY} r="13" fill={palette.snow} opacity="0.92" />
+          <circle cx={drawn.moonX} cy={drawn.moonY} r="150" fill={`url(#moon-${uid})`} />
+          <circle cx={drawn.moonX} cy={drawn.moonY} r="13" fill={palette.snow} opacity="0.92" />
 
-        <Rank buildings={far} baseline={556} fill={palette.far} windowFill={palette.window} windowSize={1.9} opacity={0.75} />
-        <rect x="0" y="360" width={canvasWidth} height="230" fill={`url(#haze-${uid})`} />
+          <Rank buildings={drawn.far} baseline={556} fill={palette.far} windowFill={palette.window} windowSize={1.9} opacity={0.75} />
+          <rect x="0" y="360" width={canvasWidth} height="230" fill={`url(#haze-${uid})`} />
 
-        <Rank buildings={mid} baseline={624} fill={palette.near} windowFill={palette.window} windowSize={2.7} opacity={0.82} />
-        <rect x="0" y="470" width={canvasWidth} height="180" fill={`url(#haze-${uid})`} opacity="0.55" />
+          <Rank buildings={drawn.mid} baseline={624} fill={palette.near} windowFill={palette.window} windowSize={2.7} opacity={0.82} />
+          <rect x="0" y="470" width={canvasWidth} height="180" fill={`url(#haze-${uid})`} opacity="0.55" />
 
-        {/* The lamp's light, under the nearest roofs so it spills from behind them. */}
-        <circle cx={lampX} cy={lampY} r="210" fill={`url(#bloom-${uid})`} />
+          {/* The lamp's light, under the nearest roofs so it spills from behind them. */}
+          <circle cx={drawn.lampX} cy={drawn.lampY} r="210" fill={`url(#bloom-${uid})`} />
 
-        <Rank buildings={near} baseline={706} fill={palette.near} windowFill={palette.window} windowSize={3.6} opacity={1} />
+          <Rank buildings={drawn.near} baseline={706} fill={palette.near} windowFill={palette.window} windowSize={3.6} opacity={1} />
 
-        {/* The lamp itself: post, hood, and a small fierce source. */}
-        <g>
-          <rect x={lampX - 1.8} y={lampY} width="3.6" height={720 - lampY} fill={palette.near} />
+          {/* The lamp itself: post, hood, and a small fierce source. */}
+          <g>
+            <rect x={drawn.lampX - 1.8} y={drawn.lampY} width="3.6" height={720 - drawn.lampY} fill={palette.near} />
+            <path
+              d={`M${drawn.lampX - 9} ${drawn.lampY} L${drawn.lampX - 5.5} ${drawn.lampY - 12} L${drawn.lampX + 5.5} ${drawn.lampY - 12} L${drawn.lampX + 9} ${drawn.lampY} Z`}
+              fill={palette.near}
+            />
+            <circle cx={drawn.lampX} cy={drawn.lampY - 5} r="4.4" fill={palette.window} />
+            <circle cx={drawn.lampX} cy={drawn.lampY - 5} r="13" fill={palette.glow} opacity="0.45" />
+          </g>
+
+          {/* Snow on the ground, catching the lamp above it. */}
           <path
-            d={`M${lampX - 9} ${lampY} L${lampX - 5.5} ${lampY - 12} L${lampX + 5.5} ${lampY - 12} L${lampX + 9} ${lampY} Z`}
-            fill={palette.near}
+            d={`M0 ${canvasHeight} L0 726 Q100 706 200 720 Q300 734 400 712 L400 ${canvasHeight} Z`}
+            fill={palette.snow}
+            opacity="0.14"
           />
-          <circle cx={lampX} cy={lampY - 5} r="4.4" fill={palette.window} />
-          <circle cx={lampX} cy={lampY - 5} r="13" fill={palette.glow} opacity="0.45" />
-        </g>
+          <ellipse cx={drawn.lampX} cy="742" rx="120" ry="30" fill={palette.glow} opacity="0.16" />
 
-        {/* Snow on the ground, catching the lamp above it. */}
-        <path
-          d={`M0 ${canvasHeight} L0 726 Q100 706 200 720 Q300 734 400 712 L400 ${canvasHeight} Z`}
-          fill={palette.snow}
-          opacity="0.14"
+          <rect
+            width={canvasWidth}
+            height={canvasHeight}
+            filter={`url(#grain-${uid})`}
+            opacity="0.055"
+            style={{ mixBlendMode: "overlay" }}
+          />
+        </svg>
+      ) : (
+        <div
+          className="cinema-scene__wash"
+          style={{
+            background: `linear-gradient(180deg, ${palette.skyTop} 0%, ${palette.skyMid} 46%, ${palette.near} 100%)`,
+          }}
         />
-        <ellipse cx={lampX} cy="742" rx="120" ry="30" fill={palette.glow} opacity="0.16" />
-
-        <rect
-          width={canvasWidth}
-          height={canvasHeight}
-          filter={`url(#grain-${uid})`}
-          opacity="0.055"
-          style={{ mixBlendMode: "overlay" }}
-        />
-      </svg>
+      )}
 
       {/* The illustration, over the drawn scene so that one is what is seen
           while this loads and what is seen if it never arrives. */}
@@ -369,6 +397,9 @@ export function SceneArt({
         src={picture.src}
         alt=""
         decoding="async"
+        // Scene one is the frame the reader is waiting on; the rest arrive
+        // while something is already on screen.
+        fetchPriority={scene === 0 ? "high" : "low"}
         style={
           framing
             ? { objectPosition: framing.objectPosition, filter: framing.filter, scale: String(framing.scale) }
@@ -379,24 +410,24 @@ export function SceneArt({
       {/* Weather belongs to the drawn scene, which is a winter street. A
           painting has its own - the sixth scene of the lion is inside a cage,
           and snow was falling through the roof of it. */}
-      {picture.placeholder && (
-      <div className="cinema-scene__snow">
-        {flakes.map((flake) => (
-          <span
-            key={flake.key}
-            style={{
-              left: `${flake.left}%`,
-              width: `${flake.size}px`,
-              height: `${flake.size}px`,
-              opacity: flake.opacity,
-              animationDelay: `${flake.delay}s`,
-              animationDuration: `${flake.duration}s`,
-              // Read by the keyframes, so each flake falls its own way.
-              ["--cinema-drift" as string]: `${flake.drift}px`,
-            }}
-          />
-        ))}
-      </div>
+      {drawn && (
+        <div className="cinema-scene__snow">
+          {drawn.flakes.map((flake) => (
+            <span
+              key={flake.key}
+              style={{
+                left: `${flake.left}%`,
+                width: `${flake.size}px`,
+                height: `${flake.size}px`,
+                opacity: flake.opacity,
+                animationDelay: `${flake.delay}s`,
+                animationDuration: `${flake.duration}s`,
+                // Read by the keyframes, so each flake falls its own way.
+                ["--cinema-drift" as string]: `${flake.drift}px`,
+              }}
+            />
+          ))}
+        </div>
       )}
 
       <div className="cinema-scene__vignette" />

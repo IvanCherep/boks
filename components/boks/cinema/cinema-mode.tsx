@@ -87,6 +87,26 @@ function Backdrop({
     return () => window.clearTimeout(timer);
   }, [scene]);
 
+  /**
+   * Read the next picture while this one is still on screen.
+   *
+   * A scene image is around 400 KB, and `decoding="async"` only says the
+   * decode may not block - it does not say it has happened. Mounted at the
+   * moment the dissolve begins, the decode lands inside the animation, and a
+   * dissolve that has to wait for a JPEG is the dissolve the reader calls
+   * laggy. Decoded a scene early, the fade has nothing left to do but
+   * composite two layers.
+   *
+   * Failures are ignored on purpose: this is a cache warm, and the real
+   * `<img>` will report anything that actually matters.
+   */
+  useEffect(() => {
+    const next = sceneImageFor(storyId, scene + 1);
+    const image = new Image();
+    image.src = next.src;
+    void image.decode?.().catch(() => {});
+  }, [storyId, scene]);
+
   return (
     <>
       {layers.map((layer, index) => (

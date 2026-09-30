@@ -3181,6 +3181,14 @@ textarea:focus-visible {
  * page. Higher, the subject sits in the clear and the crop falls on the floor
  * of the frame, which is usually stone, straw or snow.
  */
+/* What stands behind a real painting while it decodes: the scene's own
+   palette as a gradient, in place of the ~270-node drawn city that used to
+   be rasterised there and then covered up completely. */
+.cinema-scene__wash {
+  position: absolute;
+  inset: 0;
+}
+
 .cinema-scene__picture {
   position: absolute;
   inset: 0;
@@ -3203,10 +3211,13 @@ textarea:focus-visible {
  * is the difference between this and the drift over the drawn scene, where
  * there is nothing composed to lose.
  */
+/* One dissolve, not two. The layer itself already fades in over 1100ms; the
+   picture fading in over 900ms inside it multiplied the two curves, so the
+   image arrived late and soft and read as a stall. That inner fade exists to
+   dissolve the illustration onto the drawn scene - with no drawn scene under
+   it, there is nothing for it to dissolve onto. */
 .cinema-scene--painted .cinema-scene__picture {
-  animation:
-    cinema-picture-in 900ms var(--ease-out) both,
-    cinema-art-drift 46s ease-in-out infinite alternate;
+  animation: cinema-art-drift 46s ease-in-out infinite alternate;
 }
 
 @keyframes cinema-art-drift {
@@ -3273,6 +3284,8 @@ textarea:focus-visible {
 /* The outgoing scene, fading under the incoming one. */
 .cinema__backdrop--leaving {
   animation: cinema-scene-out 1100ms var(--ease-out) both;
+  /* Dropped 1200ms later, and does nothing but fade on the way out. */
+  will-change: opacity;
 }
 
 @keyframes cinema-scene-out {
