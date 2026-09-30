@@ -21,18 +21,17 @@ import type { NarrationLine } from "@/components/boks/cinema/scene-plan";
 export type NarrationTrack = {
   /** Audio served from our own origin; the policy allows no other. */
   audio: string;
-  /** ElevenLabs alignment for the same text. */
+  /** Per-character timings for the same text. */
   alignment: string;
-  /** Said on screen, because a demo should not imply every boks has this. */
-  voice: string;
 };
 
 const tracks: Record<string, NarrationTrack> = {
   // Лев Толстой — Лев и собачка
+  // Read by ElevenLabs (voice "George", eleven_multilingual_v2), with the
+  // alignment that reading returned.
   "ee470590-a93c-467e-aaeb-87ae00c0745e": {
     audio: "/cinema/lion/narration.m4a",
     alignment: "/cinema/lion/alignment.json",
-    voice: "ElevenLabs",
   },
 };
 

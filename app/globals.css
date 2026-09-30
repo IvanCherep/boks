@@ -3360,6 +3360,22 @@ textarea:focus-visible {
  * pill with a dot it sat under the cover button looking like something to
  * press. A line of small type under everything else is what it is.
  */
+/*
+ * The mark on a piece made for this text - its own pictures, its own voice.
+ * Small, spaced and warm rather than grey: it is a signature, not a footnote,
+ * and it is the one thing on the cover that is about boks and not about the
+ * story.
+ */
+.cinema__series {
+  margin-top: 1.1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(233 190 122 / 76%);
+  text-shadow: 0 1px 12px rgb(0 0 0 / 85%);
+}
+
 .cinema__stamp {
   margin-top: 1rem;
   font-size: 0.7rem;

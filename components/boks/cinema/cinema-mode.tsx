@@ -108,7 +108,6 @@ const copy = {
     play: "Продолжить",
     silent: "Браузер без голоса — история идёт без звука",
     placeholder: "иллюстрация временная, одна для всех боков",
-    recorded: (voice: string) => `голос записан — ${voice}`,
   },
   en: {
     listen: "Listen and read",
@@ -124,7 +123,6 @@ const copy = {
     play: "Resume",
     silent: "This browser has no voice - the story runs without sound",
     placeholder: "placeholder art, the same for every boks",
-    recorded: (voice: string) => `read by a real voice — ${voice}`,
   },
 };
 
@@ -291,10 +289,15 @@ export function CinemaMode({
             {words.listen}
           </button>
           {!track && !speechSupported() && <p className="cinema__note">{words.silent}</p>}
-          <p className="cinema__stamp">
-            {track && `${words.recorded(track.voice)} · `}
-            {picture.placeholder && words.placeholder}
-          </p>
+          {/* A piece that has its own pictures and its own voice is one of
+              ours, made for this text, and says so as a mark rather than as a
+              technical note. A piece still wearing the shared stand-in cannot
+              claim that, and says what it actually is instead. */}
+          {picture.placeholder ? (
+            <p className="cinema__stamp">{words.placeholder}</p>
+          ) : (
+            <p className="cinema__series">boks series</p>
+          )}
         </div>
       )}
 
