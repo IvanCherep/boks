@@ -5,6 +5,7 @@ import {
   lineAtCharacter,
   looksLikeVerse,
   planScenes,
+  planSceneStarts,
   sceneAtLine,
   seedFrom,
 } from "@/components/boks/cinema/scene-plan";
@@ -110,5 +111,56 @@ describe("following the voice", () => {
     expect(formatClock(62)).toBe("01:02");
     expect(formatClock(188)).toBe("03:08");
     expect(formatClock(-5)).toBe("00:00");
+  });
+});
+
+describe("where the pictures change", () => {
+  // "Лев и собачка" - the text the prototype is being built on. Its paragraphs
+  // are the story's own turns: the cage, the friendship, the owner, the death.
+  const lion = [
+    "В Лондоне показывали диких зверей и за смотренье брали деньгами или собаками и кошками на корм диким зверям.",
+    "Одному человеку захотелось поглядеть зверей: он ухватил на улице собачонку и принес ее в зверинец.",
+    "Собачка поджала хвост и прижалась в угол клетки. Лев подошел к ней и понюхал ее.",
+    "Через год собачка заболела и издохла. Лев перестал есть, а все нюхал, лизал собачку и трогал ее лапой.",
+    "На шестой день лев умер.",
+  ].join("\n\n");
+
+  it("changes scene where the author started a paragraph", () => {
+    const plan = planScenes({ id: "lion", text: lion });
+    // Every scene after the first opens a paragraph rather than landing on
+    // whatever line the arithmetic reached.
+    const openings = plan.sceneStarts.map((start) => plan.lines[start].text);
+    for (const opening of openings) {
+      expect(
+        ["В Лондоне", "Одному человеку", "Собачка поджала", "Через год", "На шестой день"].some((start) =>
+          opening.startsWith(start)
+        )
+      ).toBe(true);
+    }
+  });
+
+  it("keeps the arithmetic when no paragraph is near enough to be the turn", () => {
+    // Nothing to snap to: the even spacing stands.
+    expect(planSceneStarts(12, 3, new Set([0]))).toEqual([0, 4, 8]);
+  });
+
+  it("never puts two scenes on the same line, or one past the end", () => {
+    const starts = planSceneStarts(9, 4, new Set([0, 1, 2, 3, 8]));
+    expect(new Set(starts).size).toBe(starts.length);
+    expect(starts).toEqual([...starts].sort((a, b) => a - b));
+    for (const start of starts) expect(start).toBeLessThan(9);
+  });
+});
+
+describe("breaking a long sentence", () => {
+  it("cuts where the author already paused", () => {
+    // Breaking at any space put the seam between "стал хлестать" and "себя,
+    // хвостом по бокам" - across the middle of a phrase.
+    const sentence =
+      "Когда он понял, что она умерла, он вдруг вспрыгнул, ощетинился, стал хлестать себя, хвостом по бокам, бросился на стену клетки и стал грызть засовы и пол.";
+    const lines = planScenes({ id: "x", text: sentence }).lines.map((line) => line.text);
+    expect(lines.length).toBeGreaterThan(1);
+    // Every piece but the last ends on the punctuation it was cut at.
+    for (const line of lines.slice(0, -1)) expect(line).toMatch(/[,;:—–-]$/);
   });
 });

@@ -54,26 +54,26 @@ function splitSentences(paragraph: string) {
 }
 
 /**
- * A sentence too long for one card, split into balanced pieces.
+ * A sentence too long for one card, split into balanced pieces at its own
+ * punctuation.
  *
- * Filling each card to the brim and letting the remainder fall onto the next
- * one leaves an orphan: a 103-character sentence became 91 characters and then
- * a card holding "сиянием луны." for a second and a half, which on screen
- * looks like a mistake. Aiming at an even share instead gives two half-cards.
+ * Two things had to be got right. Filling each card to the brim and letting
+ * the remainder fall onto the next leaves an orphan - a 103-character sentence
+ * became 91 characters and then a card holding "сиянием луны." for a second
+ * and a half, which reads as a fault. And breaking at any space at all put the
+ * cut between "стал хлестать" and "себя, хвостом по бокам", which is a seam
+ * across the middle of a phrase.
+ *
+ * So the sentence is first cut where its author already paused - at commas,
+ * semicolons, colons and dashes - and those pieces are packed onto cards. Only
+ * a clause too long to fit on its own falls back to breaking at a space.
  */
-function breakLongSentence(sentence: string) {
-  if (sentence.length <= maxLineCharacters) return [sentence];
-
-  const pieceCount = Math.ceil(sentence.length / maxLineCharacters);
-  const target = Math.ceil(sentence.length / pieceCount);
-
+function splitAtWords(text: string, target: number, remainingPieces: number) {
   const pieces: string[] = [];
   let current = "";
-  for (const word of sentence.split(/\s+/)) {
+  for (const word of text.split(/\s+/)) {
     const candidate = current ? `${current} ${word}` : word;
-    // Overshoot the target rather than the card, and only when there is
-    // already something to leave behind.
-    if (current && candidate.length > target && pieces.length < pieceCount - 1) {
+    if (current && candidate.length > target && pieces.length < remainingPieces - 1) {
       pieces.push(current);
       current = word;
     } else {
@@ -82,6 +82,35 @@ function breakLongSentence(sentence: string) {
   }
   if (current) pieces.push(current);
   return pieces;
+}
+
+function breakLongSentence(sentence: string) {
+  if (sentence.length <= maxLineCharacters) return [sentence];
+
+  const pieceCount = Math.ceil(sentence.length / maxLineCharacters);
+  const target = Math.ceil(sentence.length / pieceCount);
+
+  // The author's own pauses, kept with the words they follow.
+  const clauses = sentence.split(/(?<=[,;:—–-])\s+/).filter(Boolean);
+
+  const pieces: string[] = [];
+  let current = "";
+  for (const clause of clauses) {
+    const candidate = current ? `${current} ${clause}` : clause;
+    if (current && candidate.length > target && pieces.length < pieceCount - 1) {
+      pieces.push(current);
+      current = clause;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) pieces.push(current);
+
+  // A single clause longer than a card has no pause to use; that one is cut at
+  // a space, as before.
+  return pieces.flatMap((piece) =>
+    piece.length <= maxLineCharacters ? [piece] : splitAtWords(piece, target, Math.ceil(piece.length / maxLineCharacters))
+  );
 }
 
 /**
@@ -112,24 +141,35 @@ export function planScenes(input: { id: string; text: string }): ScenePlan {
   const clean = input.text.replace(/\r/g, "").trim();
   const verse = looksLikeVerse(clean);
 
-  const rawLines = verse
-    ? clean.split("\n").map((line) => line.trim()).filter(Boolean)
-    : clean
-        .split(/\n{2,}/)
-        .flatMap((paragraph) => splitSentences(paragraph.replace(/\n/g, " ")))
-        .flatMap(breakLongSentence);
+  // Which lines open a paragraph, because that is where the story itself
+  // changes scene. Prose paragraphs; in verse, stanzas.
+  const paragraphs = verse ? clean.split(/\n{2,}/) : clean.split(/\n{2,}/);
+  const rawLines: string[] = [];
+  const paragraphStarts = new Set<number>();
+  for (const paragraph of paragraphs) {
+    const lines = verse
+      ? paragraph.split("\n").map((line) => line.trim()).filter(Boolean)
+      : splitSentences(paragraph.replace(/\n/g, " ")).flatMap(breakLongSentence);
+    if (!lines.length) continue;
+    paragraphStarts.add(rawLines.length);
+    rawLines.push(...lines);
+  }
 
   // Verse lines are short, and one short line per scene-change would strobe.
   // Pairing them gives a card with something on it.
   const grouped: string[] = [];
-  for (const line of rawLines) {
+  const groupedParagraphStarts = new Set<number>();
+  rawLines.forEach((line, rawIndex) => {
     const previous = grouped[grouped.length - 1];
-    if (verse && previous && previous.length + line.length <= maxLineCharacters) {
+    const pairs = verse && previous && previous.length + line.length <= maxLineCharacters
+      && !paragraphStarts.has(rawIndex);
+    if (pairs) {
       grouped[grouped.length - 1] = `${previous}\n${line}`;
-    } else {
-      grouped.push(line);
+      return;
     }
-  }
+    if (paragraphStarts.has(rawIndex)) groupedParagraphStarts.add(grouped.length);
+    grouped.push(line);
+  });
 
   const lines: NarrationLine[] = [];
   let spoken = "";
@@ -141,12 +181,46 @@ export function planScenes(input: { id: string; text: string }): ScenePlan {
   }
 
   const sceneCount = Math.max(1, Math.min(targetSceneCount, Math.ceil(lines.length / 3)));
-  const perScene = Math.ceil(lines.length / sceneCount);
-  const sceneStarts = Array.from({ length: sceneCount }, (_, index) => index * perScene).filter(
-    (start) => start < lines.length
-  );
+  const sceneStarts = planSceneStarts(lines.length, sceneCount, groupedParagraphStarts);
 
   return { lines, sceneStarts, spoken: spoken.trim(), seed: seedFrom(input.id) };
+}
+
+/**
+ * Where the pictures change.
+ *
+ * Evenly spaced would be arithmetic: every fifth line, wherever that lands.
+ * "Лев и собачка" would have changed scene in the middle of the lion's grief,
+ * because line twenty-five happened to fall there. Each even position is moved
+ * to the nearest paragraph the author wrote - the story's own turns - and only
+ * falls back to the arithmetic one when there is no paragraph near enough to
+ * be that turn.
+ */
+export function planSceneStarts(
+  lineCount: number,
+  sceneCount: number,
+  paragraphStarts: ReadonlySet<number>
+) {
+  const perScene = lineCount / sceneCount;
+  // Far enough to find the real break, near enough not to bunch the scenes up.
+  const reach = Math.max(1, Math.round(perScene * 0.6));
+  const candidates = [...paragraphStarts].sort((a, b) => a - b);
+
+  const starts: number[] = [];
+  for (let index = 0; index < sceneCount; index += 1) {
+    const ideal = Math.round(index * perScene);
+    if (index === 0) {
+      starts.push(0);
+      continue;
+    }
+    const previous = starts[starts.length - 1];
+    const snapped = candidates
+      .filter((line) => line > previous && Math.abs(line - ideal) <= reach)
+      .sort((a, b) => Math.abs(a - ideal) - Math.abs(b - ideal))[0];
+    const start = snapped ?? ideal;
+    if (start > previous && start < lineCount) starts.push(start);
+  }
+  return starts;
 }
 
 /** Which line is being spoken, from how far the voice has read. */

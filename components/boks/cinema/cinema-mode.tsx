@@ -102,7 +102,7 @@ const copy = {
     pause: "Пауза",
     play: "Продолжить",
     silent: "Браузер без голоса — история идёт без звука",
-    placeholder: "Заглушка — одна на все боки",
+    placeholder: "иллюстрация временная, одна для всех боков",
   },
   en: {
     listen: "Listen and read",
@@ -117,7 +117,7 @@ const copy = {
     pause: "Pause",
     play: "Resume",
     silent: "This browser has no voice - the story runs without sound",
-    placeholder: "Placeholder art, shared by every boks",
+    placeholder: "placeholder art, the same for every boks",
   },
 };
 

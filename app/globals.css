@@ -3336,31 +3336,19 @@ textarea:focus-visible {
 }
 
 /*
- * Says that the picture is a stand-in. Quiet, but on the screen rather than
- * only in a commit message: a prototype demonstrated without this reads as a
- * promise that every boks has art chosen for it.
+ * Says that the picture is a stand-in. It has to be on the screen and not only
+ * in a commit message - a prototype demonstrated without it promises that every
+ * boks has art chosen for it - but it is an annotation, not a control. As a
+ * pill with a dot it sat under the cover button looking like something to
+ * press. A line of small type under everything else is what it is.
  */
 .cinema__stamp {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.85rem;
-  border: 1px solid rgb(246 239 227 / 22%);
-  border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-  color: rgb(246 239 227 / 68%);
-  background: rgb(8 10 16 / 42%);
-  backdrop-filter: blur(8px);
-}
-
-.cinema__stamp::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #e9be7a;
+  margin-top: 1rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: rgb(246 239 227 / 42%);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 80%);
 }
 
 .cinema__primary,
