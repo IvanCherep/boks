@@ -10,12 +10,22 @@ import {
   Play,
   RotateCcw,
   RotateCw,
+  Music,
+  Music4,
   Share2,
   Smile,
   X,
 } from "lucide-react";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 import { StoryMomentScene } from "@/components/boks/cinema/story-moment";
+import {
+  rememberScoreWanted,
+  scoreFor,
+  scoreLevels,
+  scoreWanted,
+  startScore,
+  type ScoreBed,
+} from "@/components/boks/cinema/score";
 import {
   momentDueAt,
   momentsToRearm,
@@ -168,6 +178,8 @@ const copy = {
     next: "Выбрать следующую",
     share: "Поделиться",
     close: "Закрыть",
+    musicOn: "Выключить музыку",
+    musicOff: "Включить музыку",
     back: "Назад на 15 секунд",
     forward: "Вперёд на 15 секунд",
     scrub: "Перемотка",
@@ -200,6 +212,8 @@ const copy = {
     next: "Choose the next one",
     share: "Share",
     close: "Close",
+    musicOn: "Turn the music off",
+    musicOff: "Turn the music on",
     back: "Back 15 seconds",
     forward: "Forward 15 seconds",
     scrub: "Position",
@@ -296,6 +310,9 @@ export function CinemaMode({
 
   const [phase, setPhase] = useState<Phase>("cover");
   const [picked, setPicked] = useState<AftertasteTag[]>([]);
+  const score = useRef<ScoreBed | null>(null);
+  const [scoreOn, setScoreOn] = useState(true);
+  const hasScore = Boolean(scoreFor(story.id));
   /** The moment on screen, if the story has stopped to ask for something. */
   const [moment, setMoment] = useState<StoryMoment | null>(null);
   const momentsDone = useRef<Set<string>>(new Set());
@@ -412,6 +429,20 @@ export function CinemaMode({
     return () => warmed.forEach((image) => { image.src = ""; });
   }, [story.id]);
 
+  useEffect(() => {
+    const handle = window.setTimeout(() => setScoreOn(scoreWanted()), 0);
+    return () => window.clearTimeout(handle);
+  }, []);
+
+  // Whatever happens, the music does not outlive the window.
+  useEffect(() => {
+    const bed = score;
+    return () => {
+      bed.current?.stop();
+      bed.current = null;
+    };
+  }, []);
+
   // Escape closes, as it does for every other sheet in the reader.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -464,6 +495,8 @@ export function CinemaMode({
             // Ridden down rather than cut off. A recording can do this; the
             // browser voice cannot, so it falls back to stopping.
             resumeFrom.current = Math.max(0, next.elapsedSeconds - rewindOnResumeSeconds);
+            // The voice is about to stop, so the music has room to be heard.
+            score.current?.to(scoreLevels.open, 1.6);
             const player = narrator.current;
             if (player?.fadeOutAndPause) player.fadeOutAndPause(600);
             else player?.pause();
@@ -483,6 +516,12 @@ export function CinemaMode({
     const player = ensureNarrator();
     player.play();
     if (from > 0) player.seek(from);
+    // Started from the same gesture that started the voice, which is the only
+    // moment a browser will allow either.
+    if (!score.current && scoreOn) {
+      score.current = startScore(story.id);
+      score.current?.to(scoreLevels.under, 3);
+    }
   }
 
   /** Dragging anywhere along the bar, in one handler for pointer and touch. */
@@ -500,6 +539,8 @@ export function CinemaMode({
   }
 
   function close() {
+    score.current?.stop();
+    score.current = null;
     writePosition(story.id, progress.elapsedSeconds, progress.totalSeconds);
     narrator.current?.stop();
     narrator.current = null;
@@ -527,6 +568,31 @@ export function CinemaMode({
         sceneCount={plan.sceneStarts.length}
         storyId={story.id}
       />
+
+      {/* Music is not for everyone, and somebody who does not want it over a
+          story is not wrong. The choice is remembered, so it is asked once. */}
+      {hasScore && (
+        <button
+          type="button"
+          className="cinema__music"
+          onClick={() => {
+            const next = !scoreOn;
+            setScoreOn(next);
+            rememberScoreWanted(next);
+            if (next) {
+              if (!score.current) score.current = startScore(story.id);
+              score.current?.to(moment ? scoreLevels.open : scoreLevels.under, 1.4);
+            } else {
+              score.current?.stop();
+              score.current = null;
+            }
+          }}
+          aria-label={scoreOn ? words.musicOn : words.musicOff}
+          aria-pressed={scoreOn}
+        >
+          {scoreOn ? <Music className="size-5" /> : <Music4 className="size-5" />}
+        </button>
+      )}
 
       <button type="button" className="cinema__close" onClick={close} aria-label={words.close}>
         <X className="size-5" />
@@ -689,6 +755,7 @@ export function CinemaMode({
             setMoment(null);
             // Back to the voice exactly where it stopped, brought up out of the
             // silence rather than snapped back into it.
+            score.current?.to(scoreLevels.under, 1.6);
             const player = narrator.current;
             player?.seek(resumeFrom.current);
             if (player?.fadeInAndResume) player.fadeInAndResume(700);
@@ -808,6 +875,8 @@ export function CinemaMode({
               onClick={() => {
                 narrator.current?.stop();
                 narrator.current = null;
+                score.current?.stop();
+                score.current = null;
                 onNext();
               }}
             >
