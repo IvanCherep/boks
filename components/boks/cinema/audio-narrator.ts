@@ -123,6 +123,12 @@ export function createAudioNarrator(input: {
     emit();
   }
 
+  let fadeTimer = 0;
+  function clearFade() {
+    if (fadeTimer) window.clearInterval(fadeTimer);
+    fadeTimer = 0;
+  }
+
   return {
     supported: Boolean(audio),
     play() {
@@ -138,7 +144,46 @@ export function createAudioNarrator(input: {
       void audio.play().then(startTicking, () => emit());
       emit();
     },
+    /**
+     * Ride the volume down, then stop.
+     *
+     * Stepped on a timer rather than ramped, because an HTMLAudioElement has no
+     * automation: `volume` is a plain number. Forty milliseconds a step is well
+     * under what an ear hears as a staircase, and the whole thing is over
+     * before anybody could count the steps.
+     */
+    fadeOutAndPause(ms: number) {
+      if (!audio) return;
+      const element = audio;
+      clearFade();
+      const from = element.volume;
+      const started = performance.now();
+      fadeTimer = window.setInterval(() => {
+        const t = Math.min(1, (performance.now() - started) / Math.max(1, ms));
+        element.volume = Math.max(0, from * (1 - t));
+        if (t < 1) return;
+        clearFade();
+        element.pause();
+        stopTicking();
+        emit();
+      }, 40);
+    },
+    fadeInAndResume(ms: number) {
+      if (!audio) return;
+      const element = audio;
+      clearFade();
+      element.volume = 0;
+      void element.play().then(startTicking, () => emit());
+      emit();
+      const started = performance.now();
+      fadeTimer = window.setInterval(() => {
+        const t = Math.min(1, (performance.now() - started) / Math.max(1, ms));
+        element.volume = Math.min(1, t);
+        if (t >= 1) clearFade();
+      }, 40);
+    },
     stop() {
+      clearFade();
       stopTicking();
       if (audio) {
         audio.pause();

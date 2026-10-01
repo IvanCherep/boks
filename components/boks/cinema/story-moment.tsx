@@ -73,11 +73,18 @@ export function StoryMomentScene({
   const finish = useCallback(() => {
     if (finished.current) return;
     finished.current = true;
+    // The crowd does not stop, it dies away: about a third of a second.
     silence();
     setLeaving(true);
-    // Long enough for the picture to settle before the voice comes back, so the
-    // story does not resume over an animation.
-    window.setTimeout(onDone, 520);
+    /*
+     * Then quiet, on purpose.
+     *
+     * The gap is the best part. The crowd has gone, the picture is settling,
+     * and for most of a second there is nothing at all before the voice comes
+     * back up - which is what makes having moved them feel like it did
+     * something. Resuming the instant the gesture lands throws that away.
+     */
+    window.setTimeout(onDone, 1150);
   }, [onDone, silence]);
 
   function onPointerDown(event: React.PointerEvent) {
@@ -156,12 +163,40 @@ export function StoryMomentScene({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="moment__layer moment__before" src={moment.before} alt="" draggable={false} />
 
+      {/*
+        Shown where the gesture happens, not only written at the bottom. A
+        swipe gets a hand that keeps making the swipe; a hold gets a ring on
+        the chest that keeps closing. Words say what, the demonstration says
+        how, and between them nothing is left to work out.
+      */}
+      {moment.hotspot && (
+        <div
+          className="moment__gesture"
+          aria-hidden="true"
+          style={{ left: `${moment.hotspot.x * 100}%`, top: `${moment.hotspot.y * 100}%` }}
+        >
+          {moment.kind === "swipe" ? (
+            <>
+              <span className="moment__trail" />
+              <span className="moment__finger" />
+            </>
+          ) : (
+            <>
+              <span className="moment__press" />
+              <span className="moment__press" />
+              <span className="moment__finger moment__finger--still" />
+            </>
+          )}
+        </div>
+      )}
+
       <div className="moment__cue">
         <span className="iscene__badge">
           <span className="iscene__badge-dot" aria-hidden="true" />
           {language === "ru" ? "Доступно действие" : "Something to do"}
         </span>
         <span className="moment__hint">{hint}</span>
+        <span className="moment__how">{moment.how[language]}</span>
         <i className="moment__rule" aria-hidden="true" />
       </div>
 

@@ -223,63 +223,141 @@ export function startInteractionLoop(profile: LoopProfile): () => void {
   const stoppers: Array<() => void> = [];
 
   if (profile === "crowd") {
-    // A room of people, not voices: broad noise low in the spectrum, with a
-    // second, slower layer so it breathes instead of hissing.
-    const source = ctx.createBufferSource();
-    source.buffer = noiseBuffer(ctx, 2.5);
-    source.loop = true;
+    // A room of people enjoying themselves, which is two things: a floor of
+    // murmur that is always there, and bursts of laughter over the top of it.
+    // The murmur alone was too polite to notice - and being noticed is the
+    // point, since this is what tells the reader the story has stopped.
+    const murmur = ctx.createBufferSource();
+    murmur.buffer = noiseBuffer(ctx, 2.5);
+    murmur.loop = true;
     const body = ctx.createBiquadFilter();
     body.type = "bandpass";
     body.frequency.value = 520;
     body.Q.value = 0.6;
     const roll = ctx.createBiquadFilter();
     roll.type = "lowpass";
-    roll.frequency.value = 1400;
+    roll.frequency.value = 1600;
 
-    // Slow swell, so a held crowd does not become a flat hiss the ear edits out.
     const lfo = ctx.createOscillator();
     const lfoDepth = ctx.createGain();
     lfo.frequency.value = 0.23;
     lfoDepth.gain.value = 0.35;
     const swell = ctx.createGain();
-    swell.gain.value = 0.65;
+    swell.gain.value = 0.62;
     lfo.connect(lfoDepth);
     lfoDepth.connect(swell.gain);
 
-    source.connect(body);
+    murmur.connect(body);
     body.connect(roll);
     roll.connect(swell);
     swell.connect(bus);
-    source.start();
+    murmur.start();
     lfo.start();
+
+    /*
+     * A laugh: noise in the range a voice lives in, chopped into three or four
+     * quick syllables. Crude, and it does not need to be anything else - heard
+     * through a murmur at this level the ear fills in a person.
+     */
+    const laugh = (at: number) => {
+      const source = ctx.createBufferSource();
+      source.buffer = noiseBuffer(ctx, 0.9);
+      const voice = ctx.createBiquadFilter();
+      voice.type = "bandpass";
+      voice.frequency.setValueAtTime(760 + Math.random() * 520, at);
+      voice.Q.value = 3.4;
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, at);
+      const syllables = 3 + Math.floor(Math.random() * 2);
+      const step = 0.115;
+      for (let i = 0; i < syllables; i += 1) {
+        const peak = at + i * step;
+        env.gain.linearRampToValueAtTime(0.5 - i * 0.09, peak + 0.035);
+        env.gain.exponentialRampToValueAtTime(0.03, peak + step * 0.85);
+      }
+      env.gain.exponentialRampToValueAtTime(0.0001, at + syllables * step + 0.2);
+      source.connect(voice);
+      voice.connect(env);
+      env.connect(bus);
+      source.start(at);
+      source.stop(at + syllables * step + 0.3);
+    };
+
+    let nextLaugh = ctx.currentTime + 0.35;
+    const laughter = () => {
+      if (stopped) return;
+      while (nextLaugh < ctx.currentTime + 0.6) {
+        laugh(nextLaugh);
+        nextLaugh += 0.8 + Math.random() * 1.3;
+      }
+    };
+    laughter();
+    const laughTimer = window.setInterval(laughter, 240);
+
     stoppers.push(() => {
+      window.clearInterval(laughTimer);
       try {
-        source.stop();
+        murmur.stop();
         lfo.stop();
       } catch {
         // Already stopped: nothing to undo.
       }
     });
-    bus.gain.setTargetAtTime(0.085, ctx.currentTime, 0.25);
+    bus.gain.setTargetAtTime(0.26, ctx.currentTime, 0.45);
   }
 
   if (profile === "heartbeat") {
-    // Lub-dub at sixty: the first beat louder and lower than the second, and
-    // the gap between the pair shorter than the gap to the next pair. Get that
-    // ratio wrong and it reads as a drum.
-    const beat = (at: number, frequency: number, gain: number) => {
-      const osc = ctx.createOscillator();
-      const env = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(frequency, at);
-      osc.frequency.exponentialRampToValueAtTime(frequency * 0.6, at + 0.14);
-      env.gain.setValueAtTime(0, at);
-      env.gain.linearRampToValueAtTime(gain, at + 0.012);
-      env.gain.exponentialRampToValueAtTime(0.0001, at + 0.2);
-      osc.connect(env);
-      env.connect(bus);
-      osc.start(at);
-      osc.stop(at + 0.24);
+    /*
+     * Lub-dub at sixty, built in three layers because one will not survive a
+     * phone.
+     *
+     * A heart is around fifty hertz, which a phone speaker simply does not
+     * reproduce - on headphones the first version was right and on a handset it
+     * was silence. So the low layer stays, for anyone listening properly, and
+     * above it sits a mid thump that a small speaker can actually move, plus a
+     * soft transient that gives the beat its edge. On a phone you hear the top
+     * two; on headphones all three arrive as one sound.
+     */
+    const thump = (at: number, gain: number) => {
+      const low = ctx.createOscillator();
+      const lowEnv = ctx.createGain();
+      low.type = "sine";
+      low.frequency.setValueAtTime(52, at);
+      low.frequency.exponentialRampToValueAtTime(32, at + 0.16);
+      lowEnv.gain.setValueAtTime(0, at);
+      lowEnv.gain.linearRampToValueAtTime(gain, at + 0.012);
+      lowEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.22);
+      low.connect(lowEnv);
+      lowEnv.connect(bus);
+      low.start(at);
+      low.stop(at + 0.26);
+
+      const mid = ctx.createOscillator();
+      const midEnv = ctx.createGain();
+      mid.type = "triangle";
+      mid.frequency.setValueAtTime(132, at);
+      mid.frequency.exponentialRampToValueAtTime(84, at + 0.12);
+      midEnv.gain.setValueAtTime(0, at);
+      midEnv.gain.linearRampToValueAtTime(gain * 0.6, at + 0.01);
+      midEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.17);
+      mid.connect(midEnv);
+      midEnv.connect(bus);
+      mid.start(at);
+      mid.stop(at + 0.2);
+
+      const knock = ctx.createBufferSource();
+      knock.buffer = noiseBuffer(ctx, 0.08);
+      const muffle = ctx.createBiquadFilter();
+      muffle.type = "lowpass";
+      muffle.frequency.value = 420;
+      const knockEnv = ctx.createGain();
+      knockEnv.gain.setValueAtTime(gain * 0.5, at);
+      knockEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
+      knock.connect(muffle);
+      muffle.connect(knockEnv);
+      knockEnv.connect(bus);
+      knock.start(at);
+      knock.stop(at + 0.09);
     };
 
     const period = 1; // 60 BPM
@@ -289,15 +367,17 @@ export function startInteractionLoop(profile: LoopProfile): () => void {
       // Scheduled a little ahead on the audio clock, so a busy main thread
       // cannot make the heart stumble.
       while (next < ctx.currentTime + 0.4) {
-        beat(next, 54, 0.5);
-        beat(next + 0.3, 44, 0.28);
+        // The pair is closer together than it is to the next pair. Get that
+        // ratio wrong and it stops being a heart and becomes a drum.
+        thump(next, 0.75);
+        thump(next + 0.3, 0.42);
         next += period;
       }
     };
     schedule();
     const timer = window.setInterval(schedule, 180);
     stoppers.push(() => window.clearInterval(timer));
-    bus.gain.setTargetAtTime(0.5, ctx.currentTime, 0.2);
+    bus.gain.setTargetAtTime(0.85, ctx.currentTime, 0.2);
   }
 
   return () => {

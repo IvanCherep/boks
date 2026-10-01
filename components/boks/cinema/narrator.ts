@@ -38,6 +38,16 @@ export type Narrator = {
    * which is what a reader who missed something wants anyway.
    */
   seek: (seconds: number) => void;
+  /**
+   * Take the voice down to nothing, then pause - and bring it back on resume.
+   *
+   * A story that stops dead to ask something reads as a fault; the same stop
+   * with half a second of fade reads as the story drawing breath. Only a
+   * recording can do this, since a browser voice has no volume to ride, so the
+   * caller must cope with it being absent.
+   */
+  fadeOutAndPause?: (ms: number) => void;
+  fadeInAndResume?: (ms: number) => void;
   /** Point at a different copy of the same recording. The browser voice has none. */
   setSource?: (url: string) => void;
   /** Called on every change worth repainting for. */

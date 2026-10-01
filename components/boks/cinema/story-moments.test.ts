@@ -32,6 +32,31 @@ describe("where a story stops to ask something", () => {
     }
   });
 
+  it("says what will happen and which fingers to move, in both languages", () => {
+    // One clever imperative reads well and leaves the reader guessing, and a
+    // reader who is guessing has stopped being inside the story.
+    for (const moment of all) {
+      for (const language of ["ru", "en"] as const) {
+        expect(moment.hint[language].length, moment.id).toBeGreaterThan(0);
+        expect(moment.how[language].length, moment.id).toBeGreaterThan(0);
+        // The instruction is the longer of the two: it names the gesture.
+        expect(moment.how[language].length, moment.id).toBeGreaterThanOrEqual(
+          moment.hint[language].length
+        );
+      }
+    }
+  });
+
+  it("points somewhere inside the frame", () => {
+    for (const moment of all) {
+      expect(moment.hotspot, moment.id).toBeDefined();
+      expect(moment.hotspot!.x).toBeGreaterThan(0);
+      expect(moment.hotspot!.x).toBeLessThan(1);
+      expect(moment.hotspot!.y).toBeGreaterThan(0);
+      expect(moment.hotspot!.y).toBeLessThan(1);
+    }
+  });
+
   it("is ordered, so the first one due is the first one found", () => {
     for (let i = 1; i < all.length; i += 1) {
       expect(all[i].atSeconds).toBeGreaterThan(all[i - 1].atSeconds);

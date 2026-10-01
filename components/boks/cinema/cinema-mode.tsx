@@ -430,7 +430,11 @@ export function CinemaMode({
           const due = momentDueAt(momentsHere, next.elapsedSeconds, momentsDone.current);
           if (due) {
             momentOpen.current = true;
-            narrator.current?.pause();
+            // Ridden down rather than cut off. A recording can do this; the
+            // browser voice cannot, so it falls back to stopping.
+            const player = narrator.current;
+            if (player?.fadeOutAndPause) player.fadeOutAndPause(600);
+            else player?.pause();
             setMoment(due);
           }
         }
@@ -635,8 +639,11 @@ export function CinemaMode({
             momentsDone.current.add(moment.id);
             momentOpen.current = false;
             setMoment(null);
-            // Back to the voice exactly where it stopped.
-            narrator.current?.resume();
+            // Back to the voice exactly where it stopped, brought up out of the
+            // silence rather than snapped back into it.
+            const player = narrator.current;
+            if (player?.fadeInAndResume) player.fadeInAndResume(700);
+            else player?.resume();
           }}
         />
       )}

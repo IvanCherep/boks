@@ -23,8 +23,17 @@ export type StoryMoment = {
   kind: "swipe" | "hold";
   before: string;
   after: string;
-  /** One imperative, in the language of the piece. */
+  /**
+   * Two lines, not one.
+   *
+   * The short one names what will happen; the long one says which fingers to
+   * move and where. A single clever imperative reads well and leaves the reader
+   * guessing, and a reader who is guessing has stopped being inside the story.
+   */
   hint: { ru: string; en: string };
+  how: { ru: string; en: string };
+  /** Where to point, as a fraction of the frame. The whole frame still works. */
+  hotspot?: { x: number; y: number };
   /** What is heard while the story waits. */
   loop: LoopProfile;
   /** Swipe: travel that completes it, and how far counts as committed. */
@@ -51,6 +60,11 @@ const lionMoments: StoryMoment[] = [
     before: "/cinema/lion/moments/crowd/before.webp",
     after: "/cinema/lion/moments/crowd/after.webp",
     hint: { ru: "Раздвиньте толпу", en: "Part the crowd" },
+    how: {
+      ru: "Проведите пальцем вправо",
+      en: "Swipe to the right",
+    },
+    hotspot: { x: 0.5, y: 0.72 },
     loop: "crowd",
     distancePx: 170,
     snapThreshold: 0.45,
@@ -69,7 +83,14 @@ const lionMoments: StoryMoment[] = [
     kind: "hold",
     before: "/cinema/lion/moments/heartbeat/before.webp",
     after: "/cinema/lion/moments/heartbeat/after.webp",
-    hint: { ru: "Задержите на груди", en: "Hold on his chest" },
+    hint: { ru: "Послушайте сердце", en: "Listen to his heart" },
+    how: {
+      ru: "Нажмите и держите палец на груди льва",
+      en: "Press and hold on the lion's chest",
+    },
+    // His chest, left of the sleeping puppy. Pressing anywhere works - the cue
+    // points, it does not fence.
+    hotspot: { x: 0.33, y: 0.6 },
     loop: "heartbeat",
     activationDelayMs: 280,
   },
