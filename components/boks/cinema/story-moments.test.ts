@@ -1,0 +1,70 @@
+import { describe, expect, it } from "vitest";
+import {
+  momentDueAt,
+  momentGraceSeconds,
+  storyMomentsFor,
+} from "@/components/boks/cinema/story-moments";
+
+const lion = "ee470590-a93c-467e-aaeb-87ae00c0745e";
+const narrationSeconds = 128.6;
+
+describe("where a story stops to ask something", () => {
+  const all = storyMomentsFor(lion);
+
+  it("has two moments for the lion and none for anything else", () => {
+    expect(all.map((m) => m.id)).toEqual(["crowd", "heartbeat"]);
+    expect(storyMomentsFor("any-other-boks")).toHaveLength(0);
+  });
+
+  it("keeps them away from the opening and the close", () => {
+    // A pause before the story has earned one is an interruption, and nothing
+    // may interrupt the ending.
+    for (const moment of all) {
+      expect(moment.atSeconds, moment.id).toBeGreaterThan(narrationSeconds * 0.2);
+      expect(moment.atSeconds, moment.id).toBeLessThan(narrationSeconds * 0.8);
+    }
+  });
+
+  it("keeps them well apart", () => {
+    // Two in quick succession turn a story into a sequence of tasks.
+    for (let i = 1; i < all.length; i += 1) {
+      expect(all[i].atSeconds - all[i - 1].atSeconds).toBeGreaterThan(20);
+    }
+  });
+
+  it("is ordered, so the first one due is the first one found", () => {
+    for (let i = 1; i < all.length; i += 1) {
+      expect(all[i].atSeconds).toBeGreaterThan(all[i - 1].atSeconds);
+    }
+  });
+});
+
+describe("deciding when a moment opens", () => {
+  const all = storyMomentsFor(lion);
+  const none = new Set<string>();
+
+  it("stays shut before its mark", () => {
+    expect(momentDueAt(all, 0, none)).toBeNull();
+    expect(momentDueAt(all, 52.1, none)).toBeNull();
+  });
+
+  it("opens on the mark", () => {
+    expect(momentDueAt(all, 52.2, none)?.id).toBe("crowd");
+    expect(momentDueAt(all, 53.5, none)?.id).toBe("crowd");
+  });
+
+  it("never opens the same one twice", () => {
+    expect(momentDueAt(all, 53, new Set(["crowd"]))).toBeNull();
+  });
+
+  it("does not ambush a reader who sought past it", () => {
+    // Dragged from the start to the last minute: the crowd is behind them now.
+    expect(momentDueAt(all, 52.2 + momentGraceSeconds + 0.1, none)).toBeNull();
+    // ...but a later moment they have not reached still waits for them.
+    expect(momentDueAt(all, 81.2, new Set(["crowd"]))?.id).toBe("heartbeat");
+  });
+
+  it("gives the earlier one first when both are behind", () => {
+    expect(momentDueAt(all, 52.2, none)?.id).toBe("crowd");
+  });
+});

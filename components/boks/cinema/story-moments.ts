@@ -1,0 +1,110 @@
+import type { LoopProfile } from "@/lib/boks/interactions/sound";
+
+/**
+ * Places where a story stops and asks something of the reader.
+ *
+ * A moment is not an illustration with a button on it. It is a hole cut in the
+ * narration at a line that can carry the weight of a pause, and the gesture has
+ * to be the thing the sentence is about - otherwise it is a quiz between
+ * paragraphs and the reader learns to resent it.
+ *
+ * Two rules decided the placements below, and both are worth keeping for the
+ * next story:
+ *
+ * - Never at the opening or the close. The beginning has not earned a pause and
+ *   the ending must not be interrupted by anything at all.
+ * - Far apart. Two in quick succession turn a story into a sequence of tasks.
+ */
+
+export type StoryMoment = {
+  id: string;
+  /** Where the recording stops, in seconds. */
+  atSeconds: number;
+  kind: "swipe" | "hold";
+  before: string;
+  after: string;
+  /** One imperative, in the language of the piece. */
+  hint: { ru: string; en: string };
+  /** What is heard while the story waits. */
+  loop: LoopProfile;
+  /** Swipe: travel that completes it, and how far counts as committed. */
+  distancePx?: number;
+  snapThreshold?: number;
+  /** Hold: how long before the sound starts, so a brush of the screen is not it. */
+  activationDelayMs?: number;
+};
+
+const lionMoments: StoryMoment[] = [
+  /*
+   * 52.2s - straight after "собачка легла подле него и положила свою голову
+   * ему на лапу".
+   *
+   * The picture is the pair asleep, seen past the top hats of people who have
+   * come to gawp at them. That is the whole point of putting it here: the
+   * tenderest line in the story is the one a crowd would queue to stare at, and
+   * the reader gets to push them out of the way.
+   */
+  {
+    id: "crowd",
+    atSeconds: 52.2,
+    kind: "swipe",
+    before: "/cinema/lion/moments/crowd/before.webp",
+    after: "/cinema/lion/moments/crowd/after.webp",
+    hint: { ru: "Раздвиньте толпу", en: "Part the crowd" },
+    loop: "crowd",
+    distancePx: 170,
+    snapThreshold: 0.45,
+  },
+  /*
+   * 81.2s - after "Так прожили лев и собачка целый год в одной клетке", and
+   * immediately before "Через год собачка заболела и издохла".
+   *
+   * The reader holds a finger on a living chest, feels it beating, lets go -
+   * and the next sentence kills her. The placement is the effect; anywhere else
+   * this is a nice animation.
+   */
+  {
+    id: "heartbeat",
+    atSeconds: 81.2,
+    kind: "hold",
+    before: "/cinema/lion/moments/heartbeat/before.webp",
+    after: "/cinema/lion/moments/heartbeat/after.webp",
+    hint: { ru: "Задержите на груди", en: "Hold on his chest" },
+    loop: "heartbeat",
+    activationDelayMs: 280,
+  },
+];
+
+const moments: Record<string, readonly StoryMoment[]> = {
+  // Лев Толстой — Лев и собачка
+  "ee470590-a93c-467e-aaeb-87ae00c0745e": lionMoments,
+};
+
+export function storyMomentsFor(storyId: string): readonly StoryMoment[] {
+  return moments[storyId] ?? [];
+}
+
+/**
+ * How late a moment may still open, in seconds.
+ *
+ * Playback reports often enough that crossing the mark is always caught inside
+ * this. Seeking is the case it exists for: a reader who drags past a moment has
+ * skipped it, and having it ambush them several lines later would be worse than
+ * never showing it.
+ */
+export const momentGraceSeconds = 4;
+
+/** The moment that should open now, if any. */
+export function momentDueAt(
+  all: readonly StoryMoment[],
+  elapsedSeconds: number,
+  done: ReadonlySet<string>
+): StoryMoment | null {
+  for (const moment of all) {
+    if (done.has(moment.id)) continue;
+    if (elapsedSeconds < moment.atSeconds) continue;
+    if (elapsedSeconds > moment.atSeconds + momentGraceSeconds) continue;
+    return moment;
+  }
+  return null;
+}

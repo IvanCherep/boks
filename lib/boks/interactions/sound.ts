@@ -194,3 +194,126 @@ export function playInteractionSound(profile: SoundProfile) {
 export function shouldRepeat(lastAt: number, now: number, everyMs: number) {
   return now - lastAt >= everyMs;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Sustained sounds
+
+   The one-shots above answer a tap. These two answer a situation: a crowd is
+   in the way until you move it, a heart beats for as long as you hold on. They
+   run until stopped, and the caller is given the stopper rather than a handle
+   to lose.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+export type LoopProfile = "crowd" | "heartbeat";
+
+/**
+ * Start a sustained sound. The returned function stops it, and is safe to call
+ * twice - which matters, because the gesture that ends one of these can end in
+ * several ways and every one of them must leave silence.
+ */
+export function startInteractionLoop(profile: LoopProfile): () => void {
+  const ctx = unlockInteractionSound();
+  if (!ctx) return () => {};
+
+  const bus = ctx.createGain();
+  bus.gain.value = 0;
+  bus.connect(out(ctx));
+
+  let stopped = false;
+  const stoppers: Array<() => void> = [];
+
+  if (profile === "crowd") {
+    // A room of people, not voices: broad noise low in the spectrum, with a
+    // second, slower layer so it breathes instead of hissing.
+    const source = ctx.createBufferSource();
+    source.buffer = noiseBuffer(ctx, 2.5);
+    source.loop = true;
+    const body = ctx.createBiquadFilter();
+    body.type = "bandpass";
+    body.frequency.value = 520;
+    body.Q.value = 0.6;
+    const roll = ctx.createBiquadFilter();
+    roll.type = "lowpass";
+    roll.frequency.value = 1400;
+
+    // Slow swell, so a held crowd does not become a flat hiss the ear edits out.
+    const lfo = ctx.createOscillator();
+    const lfoDepth = ctx.createGain();
+    lfo.frequency.value = 0.23;
+    lfoDepth.gain.value = 0.35;
+    const swell = ctx.createGain();
+    swell.gain.value = 0.65;
+    lfo.connect(lfoDepth);
+    lfoDepth.connect(swell.gain);
+
+    source.connect(body);
+    body.connect(roll);
+    roll.connect(swell);
+    swell.connect(bus);
+    source.start();
+    lfo.start();
+    stoppers.push(() => {
+      try {
+        source.stop();
+        lfo.stop();
+      } catch {
+        // Already stopped: nothing to undo.
+      }
+    });
+    bus.gain.setTargetAtTime(0.085, ctx.currentTime, 0.25);
+  }
+
+  if (profile === "heartbeat") {
+    // Lub-dub at sixty: the first beat louder and lower than the second, and
+    // the gap between the pair shorter than the gap to the next pair. Get that
+    // ratio wrong and it reads as a drum.
+    const beat = (at: number, frequency: number, gain: number) => {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(frequency, at);
+      osc.frequency.exponentialRampToValueAtTime(frequency * 0.6, at + 0.14);
+      env.gain.setValueAtTime(0, at);
+      env.gain.linearRampToValueAtTime(gain, at + 0.012);
+      env.gain.exponentialRampToValueAtTime(0.0001, at + 0.2);
+      osc.connect(env);
+      env.connect(bus);
+      osc.start(at);
+      osc.stop(at + 0.24);
+    };
+
+    const period = 1; // 60 BPM
+    let next = ctx.currentTime + 0.05;
+    const schedule = () => {
+      if (stopped) return;
+      // Scheduled a little ahead on the audio clock, so a busy main thread
+      // cannot make the heart stumble.
+      while (next < ctx.currentTime + 0.4) {
+        beat(next, 54, 0.5);
+        beat(next + 0.3, 44, 0.28);
+        next += period;
+      }
+    };
+    schedule();
+    const timer = window.setInterval(schedule, 180);
+    stoppers.push(() => window.clearInterval(timer));
+    bus.gain.setTargetAtTime(0.5, ctx.currentTime, 0.2);
+  }
+
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    const end = ctx.currentTime;
+    bus.gain.cancelScheduledValues(end);
+    bus.gain.setTargetAtTime(0, end, 0.12);
+    for (const stop of stoppers) stop();
+    // Left connected for the fade, then let go.
+    window.setTimeout(() => {
+      try {
+        bus.disconnect();
+      } catch {
+        // Already gone.
+      }
+    }, 700);
+  };
+}

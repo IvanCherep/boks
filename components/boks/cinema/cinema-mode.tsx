@@ -15,6 +15,12 @@ import {
   X,
 } from "lucide-react";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
+import { StoryMomentScene } from "@/components/boks/cinema/story-moment";
+import {
+  momentDueAt,
+  storyMomentsFor,
+  type StoryMoment,
+} from "@/components/boks/cinema/story-moments";
 import { SceneArt } from "@/components/boks/cinema/scene-art";
 import {
   createNarrator,
@@ -281,6 +287,12 @@ export function CinemaMode({
 
   const [phase, setPhase] = useState<Phase>("cover");
   const [picked, setPicked] = useState<AftertasteTag[]>([]);
+  /** The moment on screen, if the story has stopped to ask for something. */
+  const [moment, setMoment] = useState<StoryMoment | null>(null);
+  const momentsDone = useRef<Set<string>>(new Set());
+  /** Guards the trigger: pausing emits one more update, which is still due. */
+  const momentOpen = useRef(false);
+  const momentsHere = useMemo(() => storyMomentsFor(story.id), [story.id]);
   /**
    * Answered once per opening, however many times it is replayed.
    *
@@ -407,6 +419,21 @@ export function CinemaMode({
           : createNarrator({ lines: plan.lines, language, charactersPerSecond, totalSeconds });
       narrator.current.subscribe((next) => {
         setProgress(next);
+
+        /*
+         * A moment stops the voice where the text stops being description and
+         * starts being a situation. Checked here rather than in an effect
+         * because this is the only place the recording's own clock is read,
+         * and a moment that opened a beat late would open over the wrong line.
+         */
+        if (!next.done && !momentOpen.current) {
+          const due = momentDueAt(momentsHere, next.elapsedSeconds, momentsDone.current);
+          if (due) {
+            momentOpen.current = true;
+            narrator.current?.pause();
+            setMoment(due);
+          }
+        }
         // The ending lands here, not on the menu: the question only means
         // anything while the last line is still in the air.
         if (next.done) setPhase("aftertaste");
@@ -600,6 +627,20 @@ export function CinemaMode({
         </>
       )}
 
+      {moment && (
+        <StoryMomentScene
+          moment={moment}
+          language={language}
+          onDone={() => {
+            momentsDone.current.add(moment.id);
+            momentOpen.current = false;
+            setMoment(null);
+            // Back to the voice exactly where it stopped.
+            narrator.current?.resume();
+          }}
+        />
+      )}
+
       {phase === "aftertaste" && (
         <div className="cinema__ended cinema__after">
           <span className="cinema__after-eyebrow">{words.aftertasteEyebrow}</span>
@@ -682,6 +723,10 @@ export function CinemaMode({
                 className="cinema__secondary"
                 onClick={() => {
                   setPicked([]);
+                  // A second listen is a second telling: the crowd gathers
+                  // again and the heart beats again.
+                  momentsDone.current.clear();
+                  momentOpen.current = false;
                   setPhase("playing");
                   ensureNarrator().restart();
                 }}
