@@ -3808,3 +3808,371 @@ textarea:focus-visible {
     display: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Interactive scenes
+
+   One set of rules for twelve scenes. Everything the finger controls arrives
+   as `--p` (0 to 1) and, for the light, `--mx`/`--my`. No rule here animates
+   a blur or a filter: those are the ones that cost frames on a cheap phone,
+   and the spec asks for 45-50 FPS on exactly that phone.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.iscene {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #05070d;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Only travelling gestures take the scroll away. A tap or a hold leaves it. */
+.iscene[data-touch="none"] {
+  touch-action: none;
+}
+
+.iscene__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Own layer, so a progress change composites instead of repainting. */
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+.iscene--fade .iscene__before {
+  opacity: calc(1 - var(--p));
+}
+
+/* The seam: before on the left of it, after on the right. */
+.iscene--seam .iscene__before {
+  clip-path: inset(0 calc(100% - var(--p) * 100%) 0 0);
+}
+
+/* The line wipes away left to right, so the ink underneath comes up. */
+.iscene--wipe .iscene__before {
+  clip-path: inset(0 0 0 calc(var(--p) * 100%));
+}
+
+/* The lamp: a hole in the dark that follows the finger. */
+.iscene--radial .iscene__before {
+  -webkit-mask-image: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    transparent 0,
+    transparent var(--mask-inner),
+    #000 var(--mask-outer)
+  );
+  mask-image: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    transparent 0,
+    transparent var(--mask-inner),
+    #000 var(--mask-outer)
+  );
+  opacity: calc(1 - var(--p) * 0.08);
+}
+
+.iscene__frost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The seam and its handle, as drawn in the reference. */
+.iscene__seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--p) * 100%);
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(
+    to bottom,
+    rgb(240 205 142 / 10%),
+    rgb(240 205 142 / 92%) 22%,
+    rgb(240 205 142 / 92%) 78%,
+    rgb(240 205 142 / 10%)
+  );
+  box-shadow: 0 0 18px rgb(240 205 142 / 55%);
+  pointer-events: none;
+}
+
+.iscene__handle {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--p) * 100%);
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  justify-content: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  translate: -50% -50%;
+  border: 1.5px solid rgb(240 205 142 / 85%);
+  border-radius: 999px;
+  background: rgb(8 10 18 / 42%);
+  box-shadow: 0 0 22px rgb(240 205 142 / 45%);
+  color: #f0cd8e;
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+
+/* The ring that says "here". Three rings breathing out of one point. */
+.iscene__hotspot {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.iscene__hotspot i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3.2rem;
+  height: 3.2rem;
+  translate: -50% -50%;
+  border: 1.5px solid rgb(240 205 142 / 70%);
+  border-radius: 999px;
+  animation: iscene-ring 2.6s ease-out infinite;
+}
+
+.iscene__hotspot i:nth-child(2) {
+  animation-delay: 0.85s;
+}
+
+.iscene__hotspot i:nth-child(3) {
+  animation-delay: 1.7s;
+}
+
+@keyframes iscene-ring {
+  from {
+    opacity: 0.85;
+    scale: 0.55;
+  }
+  to {
+    opacity: 0;
+    scale: 1.75;
+  }
+}
+
+.iscene__hint {
+  position: absolute;
+  right: 0;
+  bottom: 2.1rem;
+  left: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  color: #f4ecdc;
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 85%);
+  pointer-events: none;
+  transition: opacity 420ms var(--ease-out);
+}
+
+.iscene__hint.is-faded {
+  opacity: 0;
+}
+
+/* The small diamond on a hairline, from the reference frames. */
+.iscene__hint i {
+  position: relative;
+  width: 8.5rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgb(240 205 142 / 70%), transparent);
+}
+
+.iscene__hint i::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  background: #f0cd8e;
+  content: "";
+}
+
+.iscene__state {
+  position: absolute;
+  inset: auto 1.5rem 2rem;
+  color: rgb(246 239 227 / 78%);
+  font-size: 0.9rem;
+  text-align: center;
+  text-shadow: 0 2px 14px rgb(0 0 0 / 80%);
+}
+
+.iscene__reset {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 999px;
+  background: rgb(8 10 18 / 62%);
+  padding: 0.4rem 0.9rem;
+  color: #f6efe3;
+  font-size: 0.82rem;
+  backdrop-filter: blur(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iscene__hotspot i {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .iscene__layer {
+    transition: none;
+  }
+}
+
+/* Interaction sandbox: the admin screen that judges the twelve. */
+
+.isandbox__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0;
+}
+
+.isandbox__card {
+  position: relative;
+  display: grid;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--card);
+  text-align: left;
+}
+
+.isandbox__card img {
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  object-fit: cover;
+}
+
+.isandbox__card-title {
+  padding: 0.55rem 0.7rem 0.1rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.isandbox__card-meta {
+  padding: 0 0.7rem 0.6rem;
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+}
+
+.isandbox__tag {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.isandbox__tag--keep {
+  background: #1d7a4c;
+  color: #fff;
+}
+
+.isandbox__tag--shelve {
+  background: #6b5b3a;
+  color: #fff;
+}
+
+.isandbox__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #05070d;
+  color: #f6efe3;
+}
+
+.isandbox__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.9rem;
+}
+
+.isandbox__primitive {
+  margin-left: 0.5rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  color: rgb(246 239 227 / 70%);
+  font-size: 0.72rem;
+}
+
+.isandbox__stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0 0.75rem;
+}
+
+/* Fit by height, but never spill past the edges: on a tall narrow phone a
+   9/16 box sized from the height is wider than the screen. */
+.isandbox__stage .iscene {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+}
+
+.isandbox__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem max(1rem, env(safe-area-inset-bottom));
+}
+
+.isandbox__meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Anything over 50ms is a frame a reader sees go missing. */
+.isandbox__meter.is-bad {
+  border-color: rgb(220 120 90 / 60%);
+  color: #ffb49a;
+}
+
+.isandbox__worst {
+  color: rgb(246 239 227 / 62%);
+  font-size: 0.76rem;
+}
+
+.isandbox__verdict {
+  display: flex;
+  gap: 0.5rem;
+}
