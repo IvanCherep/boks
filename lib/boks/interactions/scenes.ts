@@ -19,7 +19,18 @@
  * pointers, canvas and animation, and owns no story logic at all.
  */
 
+import type { SoundProfile } from "@/lib/boks/interactions/sound";
+
 export type ScenePrimitive = "toggle" | "hold" | "drag" | "mask" | "slider";
+
+/**
+ * The shape of the "you can do something here" cue.
+ *
+ * Derived from the primitive rather than stored, because a scene that said
+ * `drag` and drew a tap ring would be a scene lying to the reader, and there
+ * is no case where we would want that.
+ */
+export type Affordance = "tap" | "hold" | "drag" | "seam" | "glow" | "scrub";
 
 export type Axis = "x" | "y";
 
@@ -32,6 +43,9 @@ export type InteractionScene = {
   hint: string;
   /** Where the reader is meant to press, as a fraction of the frame. */
   hotspot?: { x: number; y: number };
+  /** The sound the action makes. Keyed to the mechanic unless a story needs
+      its own - see `lib/boks/interactions/sound.ts`. */
+  sound: SoundProfile;
   axis?: Axis;
   /** Up means dragging up increases progress. */
   direction?: "up" | "down";
@@ -62,6 +76,7 @@ export const interactionScenes: readonly InteractionScene[] = [
     primitive: "toggle",
     hint: "Коснитесь лампы",
     hotspot: { x: 0.4, y: 0.27 },
+    sound: "chime",
     enterMs: 450,
     exitMs: 450,
   },
@@ -70,6 +85,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Свет в туманном переулке",
     primitive: "mask",
     hint: "Проведите светом",
+    hotspot: { x: 0.5, y: 0.55 },
+    sound: "hum",
     radiusPx: 120,
     featherPx: 36,
   },
@@ -78,6 +95,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Лев и щенок в толпе",
     primitive: "hold",
     hint: "Задержите",
+    hotspot: { x: 0.5, y: 0.5 },
+    sound: "hum",
     enterMs: 350,
     exitMs: 500,
   },
@@ -86,6 +105,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Иней на окне ночного поезда",
     primitive: "mask",
     hint: "Сотрите иней",
+    hotspot: { x: 0.5, y: 0.45 },
+    sound: "scrape",
     brushRadiusPx: 56,
     completionThreshold: 0.55,
   },
@@ -94,6 +115,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Дверь в свечную гостиную",
     primitive: "drag",
     hint: "Откройте дверь",
+    hotspot: { x: 0.59, y: 0.44 },
+    sound: "slide",
     axis: "y",
     direction: "down",
     distancePx: 220,
@@ -104,6 +127,7 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "От бала к холодному рассвету",
     primitive: "slider",
     hint: "Проведите вправо",
+    sound: "tick",
     axis: "x",
     initialProgress: 0.5,
   },
@@ -113,6 +137,7 @@ export const interactionScenes: readonly InteractionScene[] = [
     primitive: "toggle",
     hint: "Коснитесь колокола",
     hotspot: { x: 0.5, y: 0.34 },
+    sound: "bell",
     enterMs: 120,
     holdMs: 320,
     exitMs: 650,
@@ -123,6 +148,7 @@ export const interactionScenes: readonly InteractionScene[] = [
     primitive: "toggle",
     hint: "Коснитесь воды",
     hotspot: { x: 0.5, y: 0.62 },
+    sound: "water",
     enterMs: 180,
     holdMs: 650,
     exitMs: 500,
@@ -132,6 +158,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Ожившая строка при свечах",
     primitive: "drag",
     hint: "Проявите строку",
+    hotspot: { x: 0.45, y: 0.5 },
+    sound: "paper",
     axis: "x",
     distancePx: 260,
     snapThreshold: 0.7,
@@ -141,6 +169,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Смахните толпу",
     primitive: "drag",
     hint: "Раздвиньте толпу",
+    hotspot: { x: 0.5, y: 0.55 },
+    sound: "slide",
     axis: "x",
     distancePx: 180,
     snapThreshold: 0.45,
@@ -150,6 +180,8 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Исчезающее мгновение",
     primitive: "hold",
     hint: "Не отпускайте",
+    hotspot: { x: 0.5, y: 0.5 },
+    sound: "hum",
     activationDelayMs: 250,
     enterMs: 600,
     exitMs: 900,
@@ -159,12 +191,39 @@ export const interactionScenes: readonly InteractionScene[] = [
     title: "Бордовая закладка на рассвете",
     primitive: "drag",
     hint: "Потяните закладку",
+    hotspot: { x: 0.5, y: 0.71 },
+    sound: "paper",
     axis: "y",
     direction: "up",
     distancePx: 220,
     snapThreshold: 0.7,
   },
 ];
+
+/**
+ * Which cue to draw. Every primitive has one: a reader must never have to
+ * discover that a picture was touchable by touching it at random.
+ */
+export function affordanceFor(scene: InteractionScene): Affordance {
+  switch (scene.primitive) {
+    case "toggle":
+      return "tap";
+    case "hold":
+      return "hold";
+    case "drag":
+      return "drag";
+    case "slider":
+      return "seam";
+    default:
+      return scene.brushRadiusPx === undefined ? "glow" : "scrub";
+  }
+}
+
+/** The direction a drag cue points, in degrees, 0 being to the right. */
+export function dragCueAngle(scene: InteractionScene): number {
+  if (scene.axis === "y") return scene.direction === "up" ? -90 : 90;
+  return 0;
+}
 
 export function sceneById(id: string): InteractionScene | null {
   return interactionScenes.find((scene) => scene.id === id) ?? null;

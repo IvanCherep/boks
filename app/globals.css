@@ -3925,31 +3925,37 @@ textarea:focus-visible {
   pointer-events: none;
 }
 
-/* The ring that says "here". Three rings breathing out of one point. */
-.iscene__hotspot {
+/* ── The cue ──────────────────────────────────────────────────────────────
+   Three rings breathing out of one point says "here". What the rings then do
+   says what kind of control it is: pulse for a tap, fill for a hold, throw a
+   chevron for a drag. A reader should never have to find that out by poking
+   at the picture.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.iscene__cue {
   position: absolute;
   width: 0;
   height: 0;
   pointer-events: none;
 }
 
-.iscene__hotspot i {
+.iscene__cue-ring {
   position: absolute;
   top: 0;
   left: 0;
   width: 3.2rem;
   height: 3.2rem;
-  translate: -50% -50%;
+  margin: -1.6rem 0 0 -1.6rem;
   border: 1.5px solid rgb(240 205 142 / 70%);
   border-radius: 999px;
   animation: iscene-ring 2.6s ease-out infinite;
 }
 
-.iscene__hotspot i:nth-child(2) {
+.iscene__cue-ring:nth-child(2) {
   animation-delay: 0.85s;
 }
 
-.iscene__hotspot i:nth-child(3) {
+.iscene__cue-ring:nth-child(3) {
   animation-delay: 1.7s;
 }
 
@@ -3961,6 +3967,69 @@ textarea:focus-visible {
   to {
     opacity: 0;
     scale: 1.75;
+  }
+}
+
+/* Hold: a ring that closes as the press takes, so the wait is visible rather
+   than a second of wondering whether anything is happening. */
+.iscene__cue-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3.2rem;
+  height: 3.2rem;
+  margin: -1.6rem 0 0 -1.6rem;
+  border: 2.5px solid #f0cd8e;
+  border-radius: 999px;
+  box-shadow: 0 0 20px rgb(240 205 142 / 55%);
+  opacity: calc(0.25 + var(--p) * 0.75);
+  scale: calc(0.55 + var(--p) * 0.6);
+}
+
+/* Drag: the whole cue is turned to face the way the finger should travel, and
+   the chevron is thrown that way. Circles do not mind being rotated. */
+.iscene__cue--drag {
+  rotate: var(--cue-angle, 0deg);
+}
+
+.iscene__cue-arrow {
+  position: absolute;
+  top: -1.05rem;
+  left: -0.45rem;
+  color: #f0cd8e;
+  font-size: 2rem;
+  line-height: 1;
+  text-shadow: 0 0 16px rgb(240 205 142 / 70%);
+  animation: iscene-drag-cue 1.9s ease-in-out infinite;
+}
+
+@keyframes iscene-drag-cue {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 2.1rem 0;
+  }
+}
+
+/* The light, and the frost: both are "move your finger about", so both get a
+   ring that will not sit still. */
+.iscene__cue--glow .iscene__cue-ring,
+.iscene__cue--scrub .iscene__cue-ring {
+  animation: iscene-ring 2.6s ease-out infinite, iscene-sweep 3.4s ease-in-out infinite alternate;
+}
+
+@keyframes iscene-sweep {
+  from {
+    translate: -2.4rem 0;
+  }
+  to {
+    translate: 2.4rem 0;
   }
 }
 
@@ -3982,6 +4051,43 @@ textarea:focus-visible {
 
 .iscene__hint.is-faded {
   opacity: 0;
+}
+
+/* "There is something to do here", in words. The dot keeps time with the
+   rings so the two read as one statement. */
+.iscene__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgb(240 205 142 / 38%);
+  border-radius: 999px;
+  background: rgb(8 10 18 / 46%);
+  padding: 0.22rem 0.75rem;
+  color: #f0cd8e;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.iscene__badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f0cd8e;
+  animation: iscene-badge-dot 2.6s ease-out infinite;
+}
+
+@keyframes iscene-badge-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* The small diamond on a hairline, from the reference frames. */
@@ -4027,9 +4133,21 @@ textarea:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .iscene__hotspot i {
+  /* Still, but still there: the cue is the thing that says the picture can be
+     touched, so it is the last thing to remove. */
+  .iscene__cue-ring,
+  .iscene__cue-arrow,
+  .iscene__badge-dot {
     animation: none;
-    opacity: 0.5;
+  }
+
+  .iscene__cue-ring {
+    opacity: 0.55;
+  }
+
+  .iscene__cue-ring:nth-child(2),
+  .iscene__cue-ring:nth-child(3) {
+    display: none;
   }
 
   .iscene__layer {
@@ -4175,4 +4293,19 @@ textarea:focus-visible {
 .isandbox__verdict {
   display: flex;
   gap: 0.5rem;
+}
+
+.isandbox__bar-actions {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.isandbox__bar-actions button {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  color: inherit;
 }

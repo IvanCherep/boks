@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Gauge, X } from "lucide-react";
+import { Check, Gauge, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InteractiveScene } from "@/components/boks/interactions/interactive-scene";
 import { interactionScenes, type InteractionScene } from "@/lib/boks/interactions/scenes";
+import { setInteractionSoundMuted } from "@/lib/boks/interactions/sound";
 
 /**
  * Twelve mechanics, one at a time, with a frame counter running.
@@ -97,6 +98,7 @@ function SceneOverlay({
   onClose: () => void;
 }) {
   const { fps, worstMs } = useFrameMeter(true);
+  const [muted, setMuted] = useState(false);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -111,9 +113,23 @@ function SceneOverlay({
           <strong>{scene.title}</strong>
           <span className="isandbox__primitive">{scene.primitive}</span>
         </div>
-        <button type="button" onClick={onClose} aria-label="Закрыть">
-          <X className="size-5" />
-        </button>
+        <div className="isandbox__bar-actions">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !muted;
+              setMuted(next);
+              setInteractionSoundMuted(next);
+            }}
+            aria-label={muted ? "Включить звук" : "Выключить звук"}
+            aria-pressed={muted}
+          >
+            {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+          </button>
+          <button type="button" onClick={onClose} aria-label="Закрыть">
+            <X className="size-5" />
+          </button>
+        </div>
       </div>
 
       <div className="isandbox__stage">

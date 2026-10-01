@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  affordanceFor,
   brushCells,
   clearedFraction,
+  dragCueAngle,
   dragProgress,
   initialProgressFor,
   sceneAssets,
@@ -11,6 +13,11 @@ import {
   snapTarget,
   type InteractionScene,
 } from "@/lib/boks/interactions/scenes";
+import {
+  playInteractionSound,
+  shouldRepeat,
+  unlockInteractionSound,
+} from "@/lib/boks/interactions/sound";
 
 /**
  * One engine for every interactive scene.
@@ -84,6 +91,7 @@ export function InteractiveScene({
   const holdTimer = useRef(0);
   const springTimer = useRef(0);
   const lastBrush = useRef<{ x: number; y: number } | null>(null);
+  const lastSoundAt = useRef(0);
   const cells = useRef<boolean[]>([]);
   const reducedMotion = useRef(false);
 
@@ -229,6 +237,10 @@ export function InteractiveScene({
   function onPointerDown(event: React.PointerEvent) {
     if (status !== "ready") return;
     event.currentTarget.setPointerCapture(event.pointerId);
+    // A browser will not give out an AudioContext that nobody asked for, and
+    // sound that starts on its own is a bug. So it is unlocked here, inside a
+    // real gesture, and never before one.
+    unlockInteractionSound();
     setEngaged(true);
     const point = localPoint(event);
 
@@ -236,6 +248,7 @@ export function InteractiveScene({
       const springs = (scene.holdMs ?? 0) > 0;
       if (springs) {
         window.clearTimeout(springTimer.current);
+        playInteractionSound(scene.sound);
         tween.current.run(progress.current, 1, scene.enterMs ?? 200, paint, () => {
           markCompleted();
           springTimer.current = window.setTimeout(
@@ -246,6 +259,8 @@ export function InteractiveScene({
         return;
       }
       const target = progress.current > 0.5 ? 0 : 1;
+      // Only going on makes a sound. A lamp switched off is quiet.
+      if (target === 1) playInteractionSound(scene.sound);
       tween.current.run(
         progress.current,
         target,
@@ -257,8 +272,10 @@ export function InteractiveScene({
     }
 
     if (scene.primitive === "hold") {
-      const start = () =>
+      const start = () => {
+        playInteractionSound(scene.sound);
         tween.current.run(progress.current, 1, scene.enterMs ?? 350, paint, markCompleted);
+      };
       if (scene.activationDelayMs) {
         holdTimer.current = window.setTimeout(start, scene.activationDelayMs);
         return;
@@ -286,6 +303,7 @@ export function InteractiveScene({
     if (isMaskRadial) {
       frame.current?.style.setProperty("--mx", `${point.x}px`);
       frame.current?.style.setProperty("--my", `${point.y}px`);
+      playInteractionSound(scene.sound);
       paint(1);
       markCompleted();
     }
@@ -296,7 +314,14 @@ export function InteractiveScene({
     const point = localPoint(event);
 
     if (scene.primitive === "slider") {
-      paint(sliderProgress(point.x, point.width));
+      const next = sliderProgress(point.x, point.width);
+      // A tick every so often, not one per pointer event: a good screen sends
+      // over a hundred a second and they would arrive as a buzz.
+      if (Math.abs(next - progress.current) > 0.004 && shouldRepeat(lastSoundAt.current, performance.now(), 90)) {
+        lastSoundAt.current = performance.now();
+        playInteractionSound(scene.sound);
+      }
+      paint(next);
       return;
     }
     if (scene.primitive === "drag" && dragStart.current) {
@@ -304,6 +329,10 @@ export function InteractiveScene({
       return;
     }
     if (isMaskBrush) {
+      if (shouldRepeat(lastSoundAt.current, performance.now(), 110)) {
+        lastSoundAt.current = performance.now();
+        playInteractionSound(scene.sound);
+      }
       rub(point.x, point.y);
       return;
     }
@@ -325,6 +354,9 @@ export function InteractiveScene({
     }
     if (scene.primitive === "drag") {
       const target = snapTarget(progress.current, scene.snapThreshold);
+      // The sound belongs to the thing opening, so it waits for the latch
+      // rather than firing on a swipe that falls back.
+      if (target === 1) playInteractionSound(scene.sound);
       tween.current.run(progress.current, target, 320, paint, () => target === 1 && markCompleted());
       dragStart.current = null;
       return;
@@ -346,6 +378,7 @@ export function InteractiveScene({
     if (isMaskBrush) paintFrost();
   }
 
+  const affordance = affordanceFor(scene);
   const mode =
     scene.primitive === "slider"
       ? "seam"
@@ -397,15 +430,30 @@ export function InteractiveScene({
         </>
       )}
 
-      {scene.hotspot && !completed && (
+      {/*
+        The cue says what kind of thing this is, not merely that something is
+        here. A ring that pulses means tap; a ring that fills means hold; a
+        ring with a chevron drifting out of it means drag, and it drifts the
+        way the finger should go. Guessing by poking at the picture is not an
+        interaction, it is a puzzle, and a reader only plays that once.
+      */}
+      {scene.hotspot && status === "ready" && !completed && (
         <div
-          className="iscene__hotspot"
+          className={`iscene__cue iscene__cue--${affordance}`}
           aria-hidden="true"
-          style={{ left: `${scene.hotspot.x * 100}%`, top: `${scene.hotspot.y * 100}%` }}
+          style={
+            {
+              left: `${scene.hotspot.x * 100}%`,
+              top: `${scene.hotspot.y * 100}%`,
+              "--cue-angle": `${dragCueAngle(scene)}deg`,
+            } as React.CSSProperties
+          }
         >
-          <i />
-          <i />
-          <i />
+          <span className="iscene__cue-ring" />
+          <span className="iscene__cue-ring" />
+          <span className="iscene__cue-ring" />
+          {affordance === "hold" && <span className="iscene__cue-fill" />}
+          {affordance === "drag" && <span className="iscene__cue-arrow">›</span>}
         </div>
       )}
 
@@ -416,7 +464,14 @@ export function InteractiveScene({
 
       {status === "ready" && (
         <div className={`iscene__hint ${completed ? "is-faded" : ""}`}>
-          <span>{scene.hint}</span>
+          {/* Said out loud, because the ring alone is decoration until you
+              know it is a control. It is the first thing to go once the
+              reader has done it: a label that stays is nagging. */}
+          <span className="iscene__badge">
+            <span className="iscene__badge-dot" aria-hidden="true" />
+            Доступно действие
+          </span>
+          <span className="iscene__hint-text">{scene.hint}</span>
           <i aria-hidden="true" />
         </div>
       )}

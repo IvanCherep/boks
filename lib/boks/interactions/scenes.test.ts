@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  affordanceFor,
   brushCells,
+  dragCueAngle,
   clearedFraction,
   dragProgress,
   initialProgressFor,
@@ -10,6 +12,7 @@ import {
   sliderProgress,
   snapTarget,
 } from "@/lib/boks/interactions/scenes";
+import { shouldRepeat } from "@/lib/boks/interactions/sound";
 
 describe("the scene manifest", () => {
   it("has twelve scenes with unique ids", () => {
@@ -137,5 +140,61 @@ describe("rubbing the frost away", () => {
     expect(clearedFraction(cells)).toBeLessThan(scene.completionThreshold!);
     cells[54] = true;
     expect(clearedFraction(cells)).toBeGreaterThanOrEqual(scene.completionThreshold!);
+  });
+});
+
+describe("telling the reader there is something to do", () => {
+  it("gives every scene a cue and somewhere to put it", () => {
+    // A scene with no hotspot draws no ring, and then the only way to find
+    // the interaction is to poke the picture at random. The slider is the one
+    // exception: its handle sits on the seam and is the cue.
+    for (const scene of interactionScenes) {
+      if (scene.primitive === "slider") continue;
+      expect(scene.hotspot, scene.id).toBeDefined();
+      expect(scene.hotspot!.x).toBeGreaterThanOrEqual(0);
+      expect(scene.hotspot!.x).toBeLessThanOrEqual(1);
+      expect(scene.hotspot!.y).toBeGreaterThanOrEqual(0);
+      expect(scene.hotspot!.y).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("draws the cue that matches the mechanic", () => {
+    expect(affordanceFor(sceneById("tap-light")!)).toBe("tap");
+    expect(affordanceFor(sceneById("hold-moment")!)).toBe("hold");
+    expect(affordanceFor(sceneById("pull-bookmark")!)).toBe("drag");
+    expect(affordanceFor(sceneById("time-slider")!)).toBe("seam");
+    // Both are masks; only one of them remembers what it uncovered.
+    expect(affordanceFor(sceneById("move-light")!)).toBe("glow");
+    expect(affordanceFor(sceneById("wipe-frost")!)).toBe("scrub");
+  });
+
+  it("points the drag cue the way the finger should go", () => {
+    expect(dragCueAngle(sceneById("reveal-ink")!)).toBe(0);
+    // Screen y grows downwards, so a pull upwards points at -90.
+    expect(dragCueAngle(sceneById("pull-bookmark")!)).toBe(-90);
+    expect(dragCueAngle(sceneById("drag-door")!)).toBe(90);
+  });
+});
+
+describe("the sound of an interaction", () => {
+  it("gives every scene a voice, keyed to the mechanic where it can be", () => {
+    for (const scene of interactionScenes) {
+      expect(scene.sound, scene.id).toBeDefined();
+    }
+    // Shared by mechanic: both drags of something heavy sound the same, which
+    // is the whole reason a thirteenth story is cheap.
+    expect(sceneById("drag-door")!.sound).toBe(sceneById("swipe-crowd")!.sound);
+    expect(sceneById("hold-focus")!.sound).toBe(sceneById("hold-moment")!.sound);
+    // And the ones a story owns rather than a mechanic.
+    expect(sceneById("tap-bell")!.sound).toBe("bell");
+    expect(sceneById("water-ripples")!.sound).toBe("water");
+  });
+
+  it("spaces out a repeating sound instead of firing per event", () => {
+    // A good screen sends well over a hundred pointer events a second, and one
+    // grain each would be a buzz, not a scrape.
+    expect(shouldRepeat(1000, 1050, 110)).toBe(false);
+    expect(shouldRepeat(1000, 1110, 110)).toBe(true);
+    expect(shouldRepeat(0, 0, 110)).toBe(false);
   });
 });
