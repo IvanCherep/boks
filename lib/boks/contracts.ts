@@ -18,9 +18,35 @@ export const readerEventTypes = [
    * lingers and then closes the tab contributes no reading time at all.
    */
   "heartbeat",
+  /**
+   * What a boks left the reader with, in their own words from a short list.
+   * Carries `metadata.tags`; see `aftertasteTags`.
+   */
+  "aftertaste",
 ] as const;
 
 export type ReaderEventType = (typeof readerEventTypes)[number];
+
+/**
+ * The aftertaste vocabulary.
+ *
+ * Four words, chosen so that none of them is "good" or "bad". A reader who
+ * wants to think about a piece has not enjoyed it less than one who smiled,
+ * and a rating would flatten that difference into a number which is exactly
+ * the thing the recommender should not be learning from here.
+ *
+ * Several may be picked, and picking none is an answer too - it just is not
+ * one anybody has to give.
+ */
+export const aftertasteTags = ["smiled", "moved", "surprised", "pondering"] as const;
+
+export type AftertasteTag = (typeof aftertasteTags)[number];
+
+const aftertasteTagSet = new Set<string>(aftertasteTags);
+
+export function isAftertasteTag(value: unknown): value is AftertasteTag {
+  return typeof value === "string" && aftertasteTagSet.has(value);
+}
 
 export const eventTypes = new Set<string>(readerEventTypes);
 

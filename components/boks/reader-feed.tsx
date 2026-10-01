@@ -2541,6 +2541,12 @@ export function ReaderFeed() {
               void nextStory("button");
             }}
             onShare={() => void shareStory()}
+            onAftertaste={(tags) => {
+              // The one thing the cinema records. Reading outcomes stay out of
+              // it deliberately - see the note on the component - but this is
+              // a reader telling us something no clock can.
+              if (currentStory) recordReaderEvent("aftertaste", currentStory, tags.length, { tags });
+            }}
             onClose={() => setCinemaOpen(false)}
           />
         )}

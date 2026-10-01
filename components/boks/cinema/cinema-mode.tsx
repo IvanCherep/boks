@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Heart, Pause, Play, RotateCcw, RotateCw, Share2, X } from "lucide-react";
+import {
+  ArrowRight,
+  Heart,
+  Lightbulb,
+  MessageCircle,
+  Pause,
+  Play,
+  RotateCcw,
+  RotateCw,
+  Share2,
+  Smile,
+  X,
+} from "lucide-react";
+import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 import { SceneArt } from "@/components/boks/cinema/scene-art";
 import {
   createNarrator,
@@ -44,7 +57,21 @@ import type { Story } from "@/components/boks/client-types";
  *   recommendation data as thirty finished boks.
  */
 
-type Phase = "cover" | "playing" | "ended";
+type Phase = "cover" | "playing" | "aftertaste" | "ended";
+
+/**
+ * The four words, and the icon each wears.
+ *
+ * None of them is "good" or "bad" on purpose. A reader who wants to think
+ * about a piece has not enjoyed it less than one who smiled, and a rating
+ * would flatten exactly the difference worth keeping.
+ */
+const aftertasteIcons: Record<AftertasteTag, typeof Smile> = {
+  smiled: Smile,
+  moved: Heart,
+  surprised: Lightbulb,
+  pondering: MessageCircle,
+};
 
 /**
  * Two scene layers, so one picture dissolves into the next.
@@ -117,8 +144,17 @@ const copy = {
   ru: {
     listen: "Слушать и читать",
     minutes: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "минута" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "минуты" : "минут"}`,
-    ended: "История закончилась",
-    endedSub: "Что осталось с вами?",
+    ended: "Куда дальше?",
+    aftertasteEyebrow: "Послевкусие",
+    aftertasteTitle: "Что осталось?",
+    aftertaste: {
+      smiled: "Улыбнуло",
+      moved: "Задело",
+      surprised: "Удивило",
+      pondering: "Хочу обдумать",
+    },
+    onward: "Дальше",
+    skip: "Пропустить",
     again: "Послушать снова",
     like: "Нравится",
     liked: "Понравилось",
@@ -140,8 +176,17 @@ const copy = {
   en: {
     listen: "Listen and read",
     minutes: (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`,
-    ended: "The story has ended",
-    endedSub: "What stayed with you?",
+    ended: "Where next?",
+    aftertasteEyebrow: "Aftertaste",
+    aftertasteTitle: "What stayed with you?",
+    aftertaste: {
+      smiled: "Made me smile",
+      moved: "Moved me",
+      surprised: "Surprised me",
+      pondering: "Want to think",
+    },
+    onward: "Onward",
+    skip: "Skip",
     again: "Listen again",
     like: "Like",
     liked: "Liked",
@@ -212,6 +257,7 @@ export function CinemaMode({
   onLike,
   onNext,
   onShare,
+  onAftertaste,
   onClose,
 }: {
   story: Story;
@@ -219,6 +265,8 @@ export function CinemaMode({
   onLike: () => void;
   onNext: () => void;
   onShare: () => void;
+  /** Called once, with whatever was picked. Never called with nothing. */
+  onAftertaste: (tags: AftertasteTag[]) => void;
   onClose: () => void;
 }) {
   const language = useMemo(() => languageOf(story.body), [story.body]);
@@ -232,6 +280,15 @@ export function CinemaMode({
   const picture = sceneImageFor(story.id, 0);
 
   const [phase, setPhase] = useState<Phase>("cover");
+  const [picked, setPicked] = useState<AftertasteTag[]>([]);
+  /**
+   * Answered once per opening, however many times it is replayed.
+   *
+   * Listening again and landing on the question a second time is not a second
+   * opinion - it is the same reader on the same evening - and the recommender
+   * would count it twice.
+   */
+  const aftertasteSent = useRef(false);
   const [progress, setProgress] = useState<NarratorState>({
     line: 0,
     elapsedSeconds: 0,
@@ -350,7 +407,9 @@ export function CinemaMode({
           : createNarrator({ lines: plan.lines, language, charactersPerSecond, totalSeconds });
       narrator.current.subscribe((next) => {
         setProgress(next);
-        if (next.done) setPhase("ended");
+        // The ending lands here, not on the menu: the question only means
+        // anything while the last line is still in the air.
+        if (next.done) setPhase("aftertaste");
       });
     }
     return narrator.current;
@@ -541,10 +600,63 @@ export function CinemaMode({
         </>
       )}
 
+      {phase === "aftertaste" && (
+        <div className="cinema__ended cinema__after">
+          <span className="cinema__after-eyebrow">{words.aftertasteEyebrow}</span>
+          <h2 className="cinema__ended-title">{words.aftertasteTitle}</h2>
+
+          {/*
+            Several may be picked and none is a complete answer, so these are
+            not radio buttons and there is no "submit". Moving on is the only
+            required act, which is why the button says "onward" rather than
+            "done": nothing here is owed.
+          */}
+          <div className="cinema__after-grid">
+            {aftertasteTags.map((tag) => {
+              const Icon = aftertasteIcons[tag];
+              const on = picked.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`cinema__chip ${on ? "is-on" : ""}`}
+                  aria-pressed={on}
+                  onClick={() =>
+                    setPicked((current) =>
+                      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
+                    )
+                  }
+                >
+                  <Icon className="size-4" fill={on && tag === "moved" ? "currentColor" : "none"} />
+                  {words.aftertaste[tag]}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className={picked.length > 0 ? "cinema__primary" : "cinema__secondary"}
+            onClick={() => {
+              // An empty answer is allowed but not worth a row: how many
+              // declined is already the difference between this and the
+              // finishes the feed counts anyway.
+              if (picked.length > 0 && !aftertasteSent.current) {
+                aftertasteSent.current = true;
+                onAftertaste(picked);
+              }
+              setPhase("ended");
+            }}
+          >
+            {picked.length > 0 ? words.onward : words.skip}
+            <ArrowRight className="size-4" />
+          </button>
+        </div>
+      )}
+
       {phase === "ended" && (
         <div className="cinema__ended">
           <h2 className="cinema__ended-title">{words.ended}</h2>
-          <p className="cinema__ended-sub">{words.endedSub}</p>
           <div className="cinema__ended-actions">
             {/*
               Sending it on is the first thing offered here, and the only one
@@ -569,6 +681,7 @@ export function CinemaMode({
                 type="button"
                 className="cinema__secondary"
                 onClick={() => {
+                  setPicked([]);
                   setPhase("playing");
                   ensureNarrator().restart();
                 }}

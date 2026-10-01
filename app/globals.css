@@ -4309,3 +4309,73 @@ textarea:focus-visible {
   border-radius: 999px;
   color: inherit;
 }
+
+/* ── Aftertaste ───────────────────────────────────────────────────────────
+   The screen between the last line and the menu. It borrows the ending's
+   layout so the two read as one moment rather than as two screens.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.cinema__after-eyebrow {
+  color: rgb(240 205 142 / 82%);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px rgb(0 0 0 / 80%);
+}
+
+.cinema__after .cinema__ended-title {
+  margin-bottom: 1.2rem;
+}
+
+.cinema__after-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  width: min(420px, 100%);
+  margin-bottom: 1rem;
+}
+
+.cinema__chip {
+  display: inline-flex;
+  min-height: 3.1rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(240 205 142 / 34%);
+  border-radius: 999px;
+  background: rgb(10 12 20 / 58%);
+  padding: 0 0.7rem;
+  color: #f4ecdc;
+  font-size: 0.93rem;
+  font-weight: 600;
+  line-height: 1.15;
+  backdrop-filter: blur(10px);
+  transition:
+    background 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.cinema__chip svg {
+  flex-shrink: 0;
+}
+
+.cinema__chip:active {
+  transform: scale(0.97);
+}
+
+/* Burgundy for the chosen one, from the reference: warm enough to read as
+   agreement rather than as a selected row in a form. */
+.cinema__chip.is-on {
+  border-color: rgb(214 138 128 / 72%);
+  background: linear-gradient(180deg, #6e1f2a 0%, #551520 100%);
+  color: #ffe9df;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinema__chip {
+    transition: none;
+  }
+}
