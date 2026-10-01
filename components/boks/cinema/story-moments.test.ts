@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { existsSync } from "node:fs";
 import {
   momentDueAt,
   momentGraceSeconds,
@@ -91,5 +92,31 @@ describe("deciding when a moment opens", () => {
 
   it("gives the earlier one first when both are behind", () => {
     expect(momentDueAt(all, 52.2, none)?.id).toBe("crowd");
+  });
+});
+
+describe("the files a moment needs", () => {
+  const all = storyMomentsFor(lion);
+
+  it("has both frames on disk for every moment", () => {
+    // A missing picture is a black rectangle with a hint over it, and nothing
+    // in the console to say why.
+    for (const moment of all) {
+      expect(existsSync(`public${moment.before}`), moment.before).toBe(true);
+      expect(existsSync(`public${moment.after}`), moment.after).toBe(true);
+    }
+  });
+
+  it("has the recording each one plays", () => {
+    // A missing sound is silence, which is exactly what this screen looks like
+    // when it is working, so nobody would notice until a reader did.
+    const sounds: Record<string, string> = {
+      crowd: "public/cinema/lion/moments/crowd.mp3",
+      heartbeat: "public/cinema/lion/moments/heartbeat.mp3",
+    };
+    for (const moment of all) {
+      expect(sounds[moment.loop], moment.id).toBeDefined();
+      expect(existsSync(sounds[moment.loop]), sounds[moment.loop]).toBe(true);
+    }
   });
 });

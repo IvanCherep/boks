@@ -207,193 +207,78 @@ export function shouldRepeat(lastAt: number, now: number, everyMs: number) {
 export type LoopProfile = "crowd" | "heartbeat";
 
 /**
+ * The two sustained sounds, and what they must be played at.
+ *
+ * Recordings, not oscillators. Three layers of synthesis got a heartbeat that
+ * was recognisably a heartbeat and still sounded like a synthesiser, and no
+ * amount of partials was going to fix that - a crowd especially is a thing you
+ * record or do without.
+ *
+ * `gain` is measured rather than chosen. The narration sits at -21.5 dBFS once
+ * the pauses are excluded; the crowd came back at -19.1 and the heart at -39.5,
+ * so these are the numbers that put all three at the same loudness. The heart
+ * needs amplifying by eight, which is why this goes through a gain node at all:
+ * an audio element's `volume` stops at 1.
+ */
+const loops: Record<LoopProfile, { src: string; gain: number }> = {
+  crowd: { src: "/cinema/lion/moments/crowd.mp3", gain: 0.76 },
+  heartbeat: { src: "/cinema/lion/moments/heartbeat.mp3", gain: 7.95 },
+};
+
+/**
  * Start a sustained sound. The returned function stops it, and is safe to call
  * twice - which matters, because the gesture that ends one of these can end in
  * several ways and every one of them must leave silence.
  */
 export function startInteractionLoop(profile: LoopProfile): () => void {
-  const ctx = unlockInteractionSound();
-  if (!ctx) return () => {};
+  if (typeof window === "undefined" || muted) return () => {};
+  const { src, gain } = loops[profile];
 
-  const bus = ctx.createGain();
-  bus.gain.value = 0;
-  bus.connect(out(ctx));
+  const element = new window.Audio(src);
+  element.loop = true;
+  element.preload = "auto";
+
+  const ctx = unlockInteractionSound();
+  let stop: () => void;
+
+  if (ctx) {
+    const source = ctx.createMediaElementSource(element);
+    const volume = ctx.createGain();
+    volume.gain.value = 0;
+    source.connect(volume);
+    volume.connect(out(ctx));
+    // Up over a third of a second: a crowd that snaps on at full level is as
+    // abrupt as the cut this whole thing exists to avoid.
+    volume.gain.setTargetAtTime(gain, ctx.currentTime, 0.12);
+    stop = () => {
+      volume.gain.cancelScheduledValues(ctx.currentTime);
+      volume.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+      window.setTimeout(() => {
+        element.pause();
+        try {
+          source.disconnect();
+          volume.disconnect();
+        } catch {
+          // Already torn down.
+        }
+      }, 420);
+    };
+  } else {
+    // No Web Audio at all: play it plainly. The heart cannot be lifted above
+    // the file's own level here, so it is quieter than intended rather than
+    // missing.
+    element.volume = Math.min(1, gain);
+    stop = () => element.pause();
+  }
+
+  void element.play().catch(() => {
+    // Refused - no gesture, or no codec. Silence is the correct failure.
+  });
 
   let stopped = false;
-  const stoppers: Array<() => void> = [];
-
-  if (profile === "crowd") {
-    // A room of people enjoying themselves, which is two things: a floor of
-    // murmur that is always there, and bursts of laughter over the top of it.
-    // The murmur alone was too polite to notice - and being noticed is the
-    // point, since this is what tells the reader the story has stopped.
-    const murmur = ctx.createBufferSource();
-    murmur.buffer = noiseBuffer(ctx, 2.5);
-    murmur.loop = true;
-    const body = ctx.createBiquadFilter();
-    body.type = "bandpass";
-    body.frequency.value = 520;
-    body.Q.value = 0.6;
-    const roll = ctx.createBiquadFilter();
-    roll.type = "lowpass";
-    roll.frequency.value = 1600;
-
-    const lfo = ctx.createOscillator();
-    const lfoDepth = ctx.createGain();
-    lfo.frequency.value = 0.23;
-    lfoDepth.gain.value = 0.35;
-    const swell = ctx.createGain();
-    swell.gain.value = 0.62;
-    lfo.connect(lfoDepth);
-    lfoDepth.connect(swell.gain);
-
-    murmur.connect(body);
-    body.connect(roll);
-    roll.connect(swell);
-    swell.connect(bus);
-    murmur.start();
-    lfo.start();
-
-    /*
-     * A laugh: noise in the range a voice lives in, chopped into three or four
-     * quick syllables. Crude, and it does not need to be anything else - heard
-     * through a murmur at this level the ear fills in a person.
-     */
-    const laugh = (at: number) => {
-      const source = ctx.createBufferSource();
-      source.buffer = noiseBuffer(ctx, 0.9);
-      const voice = ctx.createBiquadFilter();
-      voice.type = "bandpass";
-      voice.frequency.setValueAtTime(760 + Math.random() * 520, at);
-      voice.Q.value = 3.4;
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(0, at);
-      const syllables = 3 + Math.floor(Math.random() * 2);
-      const step = 0.115;
-      for (let i = 0; i < syllables; i += 1) {
-        const peak = at + i * step;
-        env.gain.linearRampToValueAtTime(0.5 - i * 0.09, peak + 0.035);
-        env.gain.exponentialRampToValueAtTime(0.03, peak + step * 0.85);
-      }
-      env.gain.exponentialRampToValueAtTime(0.0001, at + syllables * step + 0.2);
-      source.connect(voice);
-      voice.connect(env);
-      env.connect(bus);
-      source.start(at);
-      source.stop(at + syllables * step + 0.3);
-    };
-
-    let nextLaugh = ctx.currentTime + 0.35;
-    const laughter = () => {
-      if (stopped) return;
-      while (nextLaugh < ctx.currentTime + 0.6) {
-        laugh(nextLaugh);
-        nextLaugh += 0.8 + Math.random() * 1.3;
-      }
-    };
-    laughter();
-    const laughTimer = window.setInterval(laughter, 240);
-
-    stoppers.push(() => {
-      window.clearInterval(laughTimer);
-      try {
-        murmur.stop();
-        lfo.stop();
-      } catch {
-        // Already stopped: nothing to undo.
-      }
-    });
-    bus.gain.setTargetAtTime(0.26, ctx.currentTime, 0.45);
-  }
-
-  if (profile === "heartbeat") {
-    /*
-     * Lub-dub at sixty, built in three layers because one will not survive a
-     * phone.
-     *
-     * A heart is around fifty hertz, which a phone speaker simply does not
-     * reproduce - on headphones the first version was right and on a handset it
-     * was silence. So the low layer stays, for anyone listening properly, and
-     * above it sits a mid thump that a small speaker can actually move, plus a
-     * soft transient that gives the beat its edge. On a phone you hear the top
-     * two; on headphones all three arrive as one sound.
-     */
-    const thump = (at: number, gain: number) => {
-      const low = ctx.createOscillator();
-      const lowEnv = ctx.createGain();
-      low.type = "sine";
-      low.frequency.setValueAtTime(52, at);
-      low.frequency.exponentialRampToValueAtTime(32, at + 0.16);
-      lowEnv.gain.setValueAtTime(0, at);
-      lowEnv.gain.linearRampToValueAtTime(gain, at + 0.012);
-      lowEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.22);
-      low.connect(lowEnv);
-      lowEnv.connect(bus);
-      low.start(at);
-      low.stop(at + 0.26);
-
-      const mid = ctx.createOscillator();
-      const midEnv = ctx.createGain();
-      mid.type = "triangle";
-      mid.frequency.setValueAtTime(132, at);
-      mid.frequency.exponentialRampToValueAtTime(84, at + 0.12);
-      midEnv.gain.setValueAtTime(0, at);
-      midEnv.gain.linearRampToValueAtTime(gain * 0.6, at + 0.01);
-      midEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.17);
-      mid.connect(midEnv);
-      midEnv.connect(bus);
-      mid.start(at);
-      mid.stop(at + 0.2);
-
-      const knock = ctx.createBufferSource();
-      knock.buffer = noiseBuffer(ctx, 0.08);
-      const muffle = ctx.createBiquadFilter();
-      muffle.type = "lowpass";
-      muffle.frequency.value = 420;
-      const knockEnv = ctx.createGain();
-      knockEnv.gain.setValueAtTime(gain * 0.5, at);
-      knockEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
-      knock.connect(muffle);
-      muffle.connect(knockEnv);
-      knockEnv.connect(bus);
-      knock.start(at);
-      knock.stop(at + 0.09);
-    };
-
-    const period = 1; // 60 BPM
-    let next = ctx.currentTime + 0.05;
-    const schedule = () => {
-      if (stopped) return;
-      // Scheduled a little ahead on the audio clock, so a busy main thread
-      // cannot make the heart stumble.
-      while (next < ctx.currentTime + 0.4) {
-        // The pair is closer together than it is to the next pair. Get that
-        // ratio wrong and it stops being a heart and becomes a drum.
-        thump(next, 0.75);
-        thump(next + 0.3, 0.42);
-        next += period;
-      }
-    };
-    schedule();
-    const timer = window.setInterval(schedule, 180);
-    stoppers.push(() => window.clearInterval(timer));
-    bus.gain.setTargetAtTime(0.85, ctx.currentTime, 0.2);
-  }
-
   return () => {
     if (stopped) return;
     stopped = true;
-    const end = ctx.currentTime;
-    bus.gain.cancelScheduledValues(end);
-    bus.gain.setTargetAtTime(0, end, 0.12);
-    for (const stop of stoppers) stop();
-    // Left connected for the fade, then let go.
-    window.setTimeout(() => {
-      try {
-        bus.disconnect();
-      } catch {
-        // Already gone.
-      }
-    }, 700);
+    stop();
   };
 }

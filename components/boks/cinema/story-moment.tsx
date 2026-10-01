@@ -23,7 +23,24 @@ import type { StoryMoment } from "@/components/boks/cinema/story-moments";
  * paragraph would be a horrible thing to ship.
  */
 
-const escapeAfterMs = 6500;
+const escapeAfterMs = 9000;
+
+/**
+ * Once a hold takes, it keeps going for this long whatever the finger does.
+ *
+ * A press and an immediate release used to show the second picture and take it
+ * away inside a few hundred milliseconds - long enough to register that
+ * something flickered, nowhere near long enough to hear a heart or to work out
+ * that holding was the thing that did it. At around a beat a second this is
+ * four beats, which is the point where it stops being a noise and becomes a
+ * heart. Releasing after that ends it immediately: nobody is held hostage,
+ * they are only stopped from missing it.
+ */
+const minimumListenMs = 4000;
+
+/** How long the result stays up, in silence, before the story resumes. */
+const dwellAfterSwipeMs = 1700;
+const dwellAfterHoldMs = 900;
 
 export function StoryMomentScene({
   moment,
@@ -40,6 +57,8 @@ export function StoryMomentScene({
   const holdTimer = useRef(0);
   const finished = useRef(false);
 
+  const activatedAt = useRef(0);
+  const releaseTimer = useRef(0);
   const [active, setActive] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [canSkip, setCanSkip] = useState(false);
@@ -66,26 +85,40 @@ export function StoryMomentScene({
     if (moment.kind === "swipe") stopLoop.current = startInteractionLoop(moment.loop);
     return () => {
       window.clearTimeout(holdTimer.current);
+      window.clearTimeout(releaseTimer.current);
       silence();
     };
   }, [moment.kind, moment.loop, silence]);
 
-  const finish = useCallback(() => {
-    if (finished.current) return;
-    finished.current = true;
-    // The crowd does not stop, it dies away: about a third of a second.
-    silence();
-    setLeaving(true);
-    /*
-     * Then quiet, on purpose.
-     *
-     * The gap is the best part. The crowd has gone, the picture is settling,
-     * and for most of a second there is nothing at all before the voice comes
-     * back up - which is what makes having moved them feel like it did
-     * something. Resuming the instant the gesture lands throws that away.
-     */
-    window.setTimeout(onDone, 1150);
-  }, [onDone, silence]);
+  /**
+   * End the moment: sound away, result held, then back to the story.
+   *
+   * The dwell is the part that was missing. The crowd has gone, the picture is
+   * finally clear, and the reader is given time to look at it in silence before
+   * the voice returns - which is what makes having moved them feel like it did
+   * something. Resuming the instant the gesture lands throws that away, and
+   * leaves someone who tapped by accident with no idea what happened.
+   */
+  const finish = useCallback(
+    (dwellMs: number) => {
+      if (finished.current) return;
+      finished.current = true;
+      window.clearTimeout(releaseTimer.current);
+      // The sound does not stop, it dies away: about four tenths of a second.
+      silence();
+      window.setTimeout(() => {
+        setLeaving(true);
+        window.setTimeout(onDone, 950);
+      }, dwellMs);
+    },
+    [onDone, silence]
+  );
+
+  /** The hold is over: let the heart fade, hold the picture, then go on. */
+  const endHold = useCallback(() => {
+    setActive(false);
+    finish(dwellAfterHoldMs);
+  }, [finish]);
 
   function onPointerDown(event: React.PointerEvent) {
     if (finished.current) return;
@@ -96,12 +129,21 @@ export function StoryMomentScene({
       return;
     }
 
+    // Pressed again while it was finishing by itself: they want to keep
+    // listening, so take the ending back.
+    if (releaseTimer.current) {
+      window.clearTimeout(releaseTimer.current);
+      releaseTimer.current = 0;
+      return;
+    }
+
     // Hold: a brush of the screen is not a hand on a chest.
     holdTimer.current = window.setTimeout(() => {
       setActive(true);
       paint(1);
+      activatedAt.current = performance.now();
       if (!stopLoop.current) stopLoop.current = startInteractionLoop(moment.loop);
-    }, moment.activationDelayMs ?? 280);
+    }, moment.activationDelayMs ?? 350);
   }
 
   function onPointerMove(event: React.PointerEvent) {
@@ -127,7 +169,7 @@ export function StoryMomentScene({
       start.current = null;
       if (snapTarget(progress, moment.snapThreshold) === 1) {
         paint(1);
-        finish();
+        finish(dwellAfterSwipeMs);
         return;
       }
       // Short of it: the crowd closes back in and keeps murmuring.
@@ -136,14 +178,24 @@ export function StoryMomentScene({
     }
 
     window.clearTimeout(holdTimer.current);
-    silence();
     if (!active) {
-      // Never took. Let them try again rather than moving the story on.
+      // Never took. Let them try again rather than moving the story on, and
+      // leave the sound alone - there is none yet.
       paint(0);
       return;
     }
-    setActive(false);
-    finish();
+
+    // Lifted early: the heart keeps going until it has been a heart.
+    const held = performance.now() - activatedAt.current;
+    const remaining = Math.max(0, minimumListenMs - held);
+    if (remaining > 0) {
+      releaseTimer.current = window.setTimeout(() => {
+        releaseTimer.current = 0;
+        endHold();
+      }, remaining);
+      return;
+    }
+    endHold();
   }
 
   const hint = moment.hint[language];
@@ -201,7 +253,7 @@ export function StoryMomentScene({
       </div>
 
       {canSkip && !leaving && (
-        <button type="button" className="moment__skip" onClick={finish}>
+        <button type="button" className="moment__skip" onClick={() => finish(0)}>
           {language === "ru" ? "Продолжить" : "Continue"}
         </button>
       )}
