@@ -215,14 +215,19 @@ export type LoopProfile = "crowd" | "heartbeat";
  * record or do without.
  *
  * `gain` is measured rather than chosen. The narration sits at -21.5 dBFS once
- * the pauses are excluded; the crowd came back at -19.1 and the heart at -39.5,
- * so these are the numbers that put all three at the same loudness. The heart
- * needs amplifying by eight, which is why this goes through a gain node at all:
- * an audio element's `volume` stops at 1.
+ * the pauses are excluded; the crowd came back at -19.1 and the heart at -19.8,
+ * so these are the numbers that put all three at the same loudness. It still
+ * goes through a gain node rather than the element's `volume`, which stops at
+ * 1 and would not survive a quieter recording next time.
+ *
+ * The heart is the third take. The first was a correct fifty-eight a minute and
+ * nobody could tell what it was: at rest, from outside, a heart is too slow and
+ * too even to read as alive. This one runs at eighty with its intervals
+ * genuinely uneven, which is what a listener recognises.
  */
 const loops: Record<LoopProfile, { src: string; gain: number }> = {
   crowd: { src: "/cinema/lion/moments/crowd.mp3", gain: 0.76 },
-  heartbeat: { src: "/cinema/lion/moments/heartbeat.mp3", gain: 7.95 },
+  heartbeat: { src: "/cinema/lion/moments/heartbeat.mp3", gain: 0.83 },
 };
 
 /**

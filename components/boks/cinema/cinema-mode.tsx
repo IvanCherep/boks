@@ -216,6 +216,14 @@ const copy = {
 const skipSeconds = 15;
 
 /**
+ * How far back the voice picks up after a moment.
+ *
+ * Russian runs at around thirteen characters a second, so this is two or three
+ * words: enough to re-enter the sentence, not enough to feel like a repeat.
+ */
+const rewindOnResumeSeconds = 1.6;
+
+/**
  * Where this boks was left, on this device.
  *
  * Closing the window by accident half way through a story and having to find
@@ -292,6 +300,15 @@ export function CinemaMode({
   const momentsDone = useRef<Set<string>>(new Set());
   /** Guards the trigger: pausing emits one more update, which is still due. */
   const momentOpen = useRef(false);
+  /**
+   * Where to pick the reading back up, which is not where it stopped.
+   *
+   * Coming back exactly on the cut leaves the reader holding half a sentence
+   * they heard a quarter of a minute ago. A second and a half is two or three
+   * words in Russian - enough to catch the thread, short enough that nobody
+   * notices they have heard it twice.
+   */
+  const resumeFrom = useRef(0);
   const momentsHere = useMemo(() => storyMomentsFor(story.id), [story.id]);
   /**
    * Answered once per opening, however many times it is replayed.
@@ -432,6 +449,7 @@ export function CinemaMode({
             momentOpen.current = true;
             // Ridden down rather than cut off. A recording can do this; the
             // browser voice cannot, so it falls back to stopping.
+            resumeFrom.current = Math.max(0, next.elapsedSeconds - rewindOnResumeSeconds);
             const player = narrator.current;
             if (player?.fadeOutAndPause) player.fadeOutAndPause(600);
             else player?.pause();
@@ -591,6 +609,22 @@ export function CinemaMode({
                 }}
               >
                 <span className="cinema__bar-track" />
+                {/*
+                  Where the story will stop and ask for something.
+                  Knowing it is coming is most of the pleasure: a reader who
+                  can see the mark arrives ready and curious, where the same
+                  interruption unannounced is something going wrong. It stays
+                  lit after the event, dimmed, so the bar reads as a map of the
+                  piece rather than a list of chores.
+                */}
+                {momentsHere.map((mark) => (
+                  <span
+                    key={mark.id}
+                    className={`cinema__bar-mark ${elapsed >= mark.atSeconds ? "is-past" : ""}`}
+                    style={{ left: `${total > 0 ? (mark.atSeconds / total) * 100 : 0}%` }}
+                    aria-hidden="true"
+                  />
+                ))}
                 <span className="cinema__bar-fill" style={{ width: `${fraction * 100}%` }} />
                 <span className="cinema__bar-head" style={{ left: `${fraction * 100}%` }} />
               </div>
@@ -642,6 +676,7 @@ export function CinemaMode({
             // Back to the voice exactly where it stopped, brought up out of the
             // silence rather than snapped back into it.
             const player = narrator.current;
+            player?.seek(resumeFrom.current);
             if (player?.fadeInAndResume) player.fadeInAndResume(700);
             else player?.resume();
           }}

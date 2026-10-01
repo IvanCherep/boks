@@ -4661,3 +4661,45 @@ textarea:focus-visible {
     display: none;
   }
 }
+
+/* A moment waiting further along the bar.
+   Sits above the fill, so passing it dims the mark rather than burying it. */
+.cinema__bar-mark {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  border-radius: 2px;
+  background: #ffd98a;
+  box-shadow: 0 0 10px rgb(255 217 138 / 85%);
+  /* Breathing, because a still dot on a progress bar is read as a scale tick
+     and not as something about to happen. */
+  animation: cinema-mark 2.4s ease-in-out infinite;
+}
+
+.cinema__bar-mark.is-past {
+  background: rgb(246 239 227 / 45%);
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes cinema-mark {
+  0%,
+  100% {
+    opacity: 0.65;
+    scale: 1;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinema__bar-mark {
+    animation: none;
+  }
+}
