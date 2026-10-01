@@ -60,6 +60,8 @@ export function StoryMomentScene({
   const activatedAt = useRef(0);
   const releaseTimer = useRef(0);
   const [active, setActive] = useState(false);
+  /** Done it. Separate from `leaving`, which only starts after the dwell. */
+  const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [canSkip, setCanSkip] = useState(false);
 
@@ -103,6 +105,9 @@ export function StoryMomentScene({
     (dwellMs: number) => {
       if (finished.current) return;
       finished.current = true;
+      // Instructions for a thing already done are clutter over the picture the
+      // reader has just earned, and the dwell is nearly two seconds of it.
+      setSucceeded(true);
       window.clearTimeout(releaseTimer.current);
       // The sound does not stop, it dies away: about four tenths of a second.
       silence();
@@ -203,7 +208,7 @@ export function StoryMomentScene({
   return (
     <div
       ref={frame}
-      className={`moment moment--${moment.kind} ${active ? "is-active" : ""} ${leaving ? "is-leaving" : ""}`}
+      className={`moment moment--${moment.kind} ${active ? "is-active" : ""} ${succeeded ? "is-done" : ""} ${leaving ? "is-leaving" : ""}`}
       style={{ "--p": "0" } as React.CSSProperties}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

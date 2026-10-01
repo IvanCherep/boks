@@ -4470,6 +4470,7 @@ textarea:focus-visible {
 }
 
 .moment.is-active .moment__cue,
+.moment.is-done .moment__cue,
 .moment.is-leaving .moment__cue {
   opacity: 0;
 }
@@ -4556,6 +4557,7 @@ textarea:focus-visible {
 }
 
 .moment.is-active .moment__gesture,
+.moment.is-done .moment__gesture,
 .moment.is-leaving .moment__gesture {
   opacity: 0;
 }

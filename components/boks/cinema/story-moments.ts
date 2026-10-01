@@ -115,6 +115,24 @@ export function storyMomentsFor(storyId: string): readonly StoryMoment[] {
  */
 export const momentGraceSeconds = 4;
 
+/**
+ * Moments the playhead is now behind, which should be available again.
+ *
+ * Someone who missed one, or liked it, should be able to drag back and have it
+ * happen: there is nothing here to protect, and refusing would make the mark on
+ * the bar a liar. Stated as a rule about where the playhead is rather than by
+ * watching for a jump, so it holds for a scrub, a fifteen-second button and a
+ * replay alike.
+ */
+export function momentsToRearm(
+  all: readonly StoryMoment[],
+  elapsedSeconds: number
+): string[] {
+  return all
+    .filter((moment) => elapsedSeconds + momentGraceSeconds < moment.atSeconds)
+    .map((moment) => moment.id);
+}
+
 /** The moment that should open now, if any. */
 export function momentDueAt(
   all: readonly StoryMoment[],

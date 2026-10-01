@@ -18,6 +18,7 @@ import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 import { StoryMomentScene } from "@/components/boks/cinema/story-moment";
 import {
   momentDueAt,
+  momentsToRearm,
   storyMomentsFor,
   type StoryMoment,
 } from "@/components/boks/cinema/story-moments";
@@ -444,6 +445,19 @@ export function CinemaMode({
          * and a moment that opened a beat late would open over the wrong line.
          */
         if (!next.done && !momentOpen.current) {
+          /*
+           * Rewinding past a moment makes it available again.
+           *
+           * Someone who missed it, or liked it, should be able to drag back and
+           * have it happen - there is nothing to protect here, and refusing
+           * would make the mark on the bar a liar. Stated as a rule about where
+           * the playhead is rather than by watching for a jump, so it holds for
+           * a scrub, the fifteen-second button and a replay alike.
+           */
+          for (const id of momentsToRearm(momentsHere, next.elapsedSeconds)) {
+            momentsDone.current.delete(id);
+          }
+
           const due = momentDueAt(momentsHere, next.elapsedSeconds, momentsDone.current);
           if (due) {
             momentOpen.current = true;

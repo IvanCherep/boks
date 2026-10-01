@@ -214,21 +214,41 @@ export type LoopProfile = "crowd" | "heartbeat";
  * amount of partials was going to fix that - a crowd especially is a thing you
  * record or do without.
  *
- * `gain` is measured rather than chosen. The narration sits at -21.5 dBFS once
- * the pauses are excluded; the crowd came back at -19.1 and the heart at -19.8,
- * so these are the numbers that put all three at the same loudness. It still
- * goes through a gain node rather than the element's `volume`, which stops at
- * 1 and would not survive a quieter recording next time.
+ * `gain` is measured rather than chosen, and the measurement that matters is
+ * not the obvious one. Matching full-band RMS put the heart at the voice's
+ * level and it was still inaudible, because a heart is almost entirely below
+ * 300 Hz and a phone speaker does not reproduce that: 57% of the narration's
+ * energy is above 300 Hz against 2% of the heartbeat's, a gap of 25 dB in the
+ * only band a handset can actually move.
  *
- * The heart is the third take. The first was a correct fifty-eight a minute and
- * nobody could tell what it was: at rest, from outside, a heart is too slow and
- * too even to read as alive. This one runs at eighty with its intervals
- * genuinely uneven, which is what a listener recognises.
+ * Generating a brighter heartbeat did not work either - a real heart has no
+ * mid-range to record - so `excite` says to make one. The thump is driven into
+ * a soft clip, which turns a 60 Hz fundamental into harmonics at 120, 180, 240
+ * and up, and a band-pass keeps the ones a small speaker can play. It is the
+ * same trick phones use for bass. On headphones the body arrives as well and
+ * the two read as one sound.
+ *
+ * The heart is also the third take by rhythm. The first was a correct
+ * fifty-eight a minute and nobody could tell what it was: at rest, from
+ * outside, a heart is too slow and too even to read as alive. This one runs at
+ * eighty with genuinely uneven intervals.
  */
-const loops: Record<LoopProfile, { src: string; gain: number }> = {
+const loops: Record<LoopProfile, { src: string; gain: number; excite?: boolean }> = {
   crowd: { src: "/cinema/lion/moments/crowd.mp3", gain: 0.76 },
-  heartbeat: { src: "/cinema/lion/moments/heartbeat.mp3", gain: 0.83 },
+  // Louder than the voice on purpose: nothing else is playing while it does.
+  heartbeat: { src: "/cinema/lion/moments/heartbeat.mp3", gain: 1, excite: true },
 };
+
+/** tanh, as a lookup table: soft clipping, which is what makes the harmonics. */
+function saturationCurve(drive: number) {
+  const size = 1024;
+  const curve = new Float32Array(size);
+  for (let i = 0; i < size; i += 1) {
+    const x = (i / (size - 1)) * 2 - 1;
+    curve[i] = Math.tanh(drive * x);
+  }
+  return curve;
+}
 
 /**
  * Start a sustained sound. The returned function stops it, and is safe to call
@@ -250,8 +270,48 @@ export function startInteractionLoop(profile: LoopProfile): () => void {
     const source = ctx.createMediaElementSource(element);
     const volume = ctx.createGain();
     volume.gain.value = 0;
-    source.connect(volume);
-    volume.connect(out(ctx));
+
+    if (loops[profile].excite) {
+      // The body, for anyone on headphones.
+      const body = ctx.createGain();
+      body.gain.value = 0.9;
+      source.connect(body);
+      body.connect(volume);
+
+      // And the harmonics of it, for everyone else.
+      const isolate = ctx.createBiquadFilter();
+      isolate.type = "lowpass";
+      isolate.frequency.value = 180;
+      const drive = ctx.createGain();
+      drive.gain.value = 2.5;
+      const shaper = ctx.createWaveShaper();
+      shaper.curve = saturationCurve(12);
+      shaper.oversample = "2x";
+      const keep = ctx.createBiquadFilter();
+      keep.type = "bandpass";
+      keep.frequency.value = 620;
+      keep.Q.value = 0.9;
+      const excited = ctx.createGain();
+      excited.gain.value = 0.9;
+      source.connect(isolate);
+      isolate.connect(drive);
+      drive.connect(shaper);
+      shaper.connect(keep);
+      keep.connect(excited);
+      excited.connect(volume);
+    } else {
+      source.connect(volume);
+    }
+
+    // Catches whatever the sum of the two paths peaks at, so a loud beat
+    // cannot clip into a crackle.
+    const safety = ctx.createDynamicsCompressor();
+    safety.threshold.value = -6;
+    safety.ratio.value = 8;
+    safety.attack.value = 0.003;
+    safety.release.value = 0.12;
+    volume.connect(safety);
+    safety.connect(out(ctx));
     // Up over a third of a second: a crowd that snaps on at full level is as
     // abrupt as the cut this whole thing exists to avoid.
     volume.gain.setTargetAtTime(gain, ctx.currentTime, 0.12);
@@ -263,6 +323,7 @@ export function startInteractionLoop(profile: LoopProfile): () => void {
         try {
           source.disconnect();
           volume.disconnect();
+          safety.disconnect();
         } catch {
           // Already torn down.
         }

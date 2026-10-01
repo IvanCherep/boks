@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import {
   momentDueAt,
+  momentsToRearm,
   momentGraceSeconds,
   storyMomentsFor,
 } from "@/components/boks/cinema/story-moments";
@@ -118,5 +119,30 @@ describe("the files a moment needs", () => {
       expect(sounds[moment.loop], moment.id).toBeDefined();
       expect(existsSync(sounds[moment.loop]), sounds[moment.loop]).toBe(true);
     }
+  });
+});
+
+describe("going back over a moment", () => {
+  const all = storyMomentsFor(lion);
+
+  it("arms the ones the reader has rewound past", () => {
+    // Dragged back to the beginning: both are ahead again.
+    expect(momentsToRearm(all, 0)).toEqual(["crowd", "heartbeat"]);
+    // Back to the middle: only the later one is still to come.
+    expect(momentsToRearm(all, 60)).toEqual(["heartbeat"]);
+  });
+
+  it("leaves alone the ones still behind the playhead", () => {
+    expect(momentsToRearm(all, 128)).toEqual([]);
+    // Standing just past one does not re-arm it, or it would fire twice on the
+    // ordinary jitter of a playback clock.
+    expect(momentsToRearm(all, 52.2)).toEqual(["heartbeat"]);
+    expect(momentsToRearm(all, 81.2)).toEqual([]);
+  });
+
+  it("re-arms and then re-opens, which is the whole point", () => {
+    const done = new Set(["crowd", "heartbeat"]);
+    for (const id of momentsToRearm(all, 10)) done.delete(id);
+    expect(momentDueAt(all, 52.2, done)?.id).toBe("crowd");
   });
 });
