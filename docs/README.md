@@ -14,6 +14,12 @@ For every AI coding assistant:
 6. `specs/boks-product-spec.md`
 7. The focused guide for the change: hosting, testing, standards, architecture, or growth
 
+To add or change an interactive boks - the cinema format with pictures, a recorded
+voice and gestures inside the story - read `docs/interactive-boks.md`. It is the whole
+process: which voice reads which author, what to ask the user to generate and the
+prompts for it, the twelve effects and the frames each needs, where a moment may be
+placed, and how audio levels are measured rather than guessed.
+
 For authentication, authorization, dependency, API, or database-boundary work,
 read `docs/security.md` before editing.
 
