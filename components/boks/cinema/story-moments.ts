@@ -45,7 +45,7 @@ export type StoryMoment = {
 
 const lionMoments: StoryMoment[] = [
   /*
-   * 52.2s - straight after "собачка легла подле него и положила свою голову
+   * 50.6s - straight after "собачка легла подле него и положила свою голову
    * ему на лапу".
    *
    * The picture is the pair asleep, seen past the top hats of people who have
@@ -55,7 +55,7 @@ const lionMoments: StoryMoment[] = [
    */
   {
     id: "crowd",
-    atSeconds: 52.2,
+    atSeconds: 50.6,
     kind: "swipe",
     before: "/cinema/lion/moments/crowd/before.webp",
     after: "/cinema/lion/moments/crowd/after.webp",
@@ -70,7 +70,7 @@ const lionMoments: StoryMoment[] = [
     snapThreshold: 0.45,
   },
   /*
-   * 81.2s - after "Так прожили лев и собачка целый год в одной клетке", and
+   * 78.8s - after "Так прожили лев и собачка целый год в одной клетке", and
    * immediately before "Через год собачка заболела и издохла".
    *
    * The reader holds a finger on a living chest, feels it beating, lets go -
@@ -79,7 +79,7 @@ const lionMoments: StoryMoment[] = [
    */
   {
     id: "heartbeat",
-    atSeconds: 81.2,
+    atSeconds: 78.8,
     kind: "hold",
     before: "/cinema/lion/moments/heartbeat/before.webp",
     after: "/cinema/lion/moments/heartbeat/after.webp",

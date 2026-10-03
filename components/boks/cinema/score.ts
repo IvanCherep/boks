@@ -33,14 +33,15 @@ export function scoreFor(storyId: string): string | null {
 }
 
 /**
- * Levels, as gains against the file as it was generated (-27.0 dBFS), with the
- * narration's own active level (-21.5 dBFS) as the reference.
+ * Levels, as gains against the file as it was generated (-18.5 dBFS), with the
+ * narration's own active level (-21.4 dBFS) as the reference. Both numbers are
+ * measured, and both have to be re-measured whenever either recording changes.
  */
 export const scoreLevels = {
-  /** Under the reading. */
-  under: 0.188,
+  /** Under the reading: 20 dB down, the middle of where broadcast puts a bed. */
+  under: 0.072,
   /** While a moment holds the story, with nothing else to compete with. */
-  open: 0.473,
+  open: 0.18,
 };
 
 const preferenceKey = "boks-cinema-score";

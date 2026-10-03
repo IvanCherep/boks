@@ -8,7 +8,8 @@ import {
 } from "@/components/boks/cinema/story-moments";
 
 const lion = "ee470590-a93c-467e-aaeb-87ae00c0745e";
-const narrationSeconds = 128.6;
+/** The recording's length. Re-recording the piece changes this. */
+const narrationSeconds = 126.7;
 
 describe("where a story stops to ask something", () => {
   const all = storyMomentsFor(lion);
@@ -69,30 +70,33 @@ describe("where a story stops to ask something", () => {
 describe("deciding when a moment opens", () => {
   const all = storyMomentsFor(lion);
   const none = new Set<string>();
+  // Read off the manifest rather than written in by hand, so re-recording the
+  // piece with a different voice moves the test with it instead of breaking it.
+  const [first, second] = all;
 
   it("stays shut before its mark", () => {
     expect(momentDueAt(all, 0, none)).toBeNull();
-    expect(momentDueAt(all, 52.1, none)).toBeNull();
+    expect(momentDueAt(all, first.atSeconds - 0.1, none)).toBeNull();
   });
 
   it("opens on the mark", () => {
-    expect(momentDueAt(all, 52.2, none)?.id).toBe("crowd");
-    expect(momentDueAt(all, 53.5, none)?.id).toBe("crowd");
+    expect(momentDueAt(all, first.atSeconds, none)?.id).toBe(first.id);
+    expect(momentDueAt(all, first.atSeconds + 1.3, none)?.id).toBe(first.id);
   });
 
   it("never opens the same one twice", () => {
-    expect(momentDueAt(all, 53, new Set(["crowd"]))).toBeNull();
+    expect(momentDueAt(all, first.atSeconds + 0.8, new Set([first.id]))).toBeNull();
   });
 
   it("does not ambush a reader who sought past it", () => {
-    // Dragged from the start to the last minute: the crowd is behind them now.
-    expect(momentDueAt(all, 52.2 + momentGraceSeconds + 0.1, none)).toBeNull();
+    // Dragged from the start to the last minute: the first one is behind them.
+    expect(momentDueAt(all, first.atSeconds + momentGraceSeconds + 0.1, none)).toBeNull();
     // ...but a later moment they have not reached still waits for them.
-    expect(momentDueAt(all, 81.2, new Set(["crowd"]))?.id).toBe("heartbeat");
+    expect(momentDueAt(all, second.atSeconds, new Set([first.id]))?.id).toBe(second.id);
   });
 
   it("gives the earlier one first when both are behind", () => {
-    expect(momentDueAt(all, 52.2, none)?.id).toBe("crowd");
+    expect(momentDueAt(all, first.atSeconds, none)?.id).toBe(first.id);
   });
 });
 
@@ -125,24 +129,27 @@ describe("the files a moment needs", () => {
 describe("going back over a moment", () => {
   const all = storyMomentsFor(lion);
 
+  const [first, second] = all;
+
   it("arms the ones the reader has rewound past", () => {
     // Dragged back to the beginning: both are ahead again.
-    expect(momentsToRearm(all, 0)).toEqual(["crowd", "heartbeat"]);
-    // Back to the middle: only the later one is still to come.
-    expect(momentsToRearm(all, 60)).toEqual(["heartbeat"]);
+    expect(momentsToRearm(all, 0)).toEqual([first.id, second.id]);
+    // Back to between them: only the later one is still to come.
+    const between = (first.atSeconds + second.atSeconds) / 2;
+    expect(momentsToRearm(all, between)).toEqual([second.id]);
   });
 
   it("leaves alone the ones still behind the playhead", () => {
-    expect(momentsToRearm(all, 128)).toEqual([]);
+    expect(momentsToRearm(all, narrationSeconds)).toEqual([]);
     // Standing just past one does not re-arm it, or it would fire twice on the
     // ordinary jitter of a playback clock.
-    expect(momentsToRearm(all, 52.2)).toEqual(["heartbeat"]);
-    expect(momentsToRearm(all, 81.2)).toEqual([]);
+    expect(momentsToRearm(all, first.atSeconds)).toEqual([second.id]);
+    expect(momentsToRearm(all, second.atSeconds)).toEqual([]);
   });
 
   it("re-arms and then re-opens, which is the whole point", () => {
-    const done = new Set(["crowd", "heartbeat"]);
+    const done = new Set([first.id, second.id]);
     for (const id of momentsToRearm(all, 10)) done.delete(id);
-    expect(momentDueAt(all, 52.2, done)?.id).toBe("crowd");
+    expect(momentDueAt(all, first.atSeconds, done)?.id).toBe(first.id);
   });
 });

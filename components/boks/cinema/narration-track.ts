@@ -36,8 +36,9 @@ export type NarrationTrack = {
 
 const tracks: Record<string, NarrationTrack> = {
   // Лев Толстой — Лев и собачка
-  // Read by ElevenLabs (voice "George", eleven_multilingual_v2), with the
-  // alignment that reading returned.
+  // Read by Alex Bell (eleven_v4), the Russian voice this catalogue casts for
+  // a male author - see `components/boks/cinema/voices.ts`. The alignment is
+  // the one that reading returned, so it has to be replaced with the audio.
   "ee470590-a93c-467e-aaeb-87ae00c0745e": {
     audio: "/cinema/lion/narration.mp3",
     alignment: "/cinema/lion/alignment.json",
