@@ -134,17 +134,20 @@
      "text": "Прощай,",
      "atMs": 0,
      "endMs": 720,
+     "phrase": 0,
      "emphasis": "lead"
     },
     {
      "text": "немытая",
      "atMs": 880,
-     "endMs": 1360
+     "endMs": 1360,
+     "phrase": 1
     },
     {
      "text": "Россия,",
      "atMs": 1440,
      "endMs": 2240,
+     "phrase": 1,
      "emphasis": "lead"
     }
    ]
@@ -158,12 +161,14 @@
      "text": "Страна",
      "atMs": 2320,
      "endMs": 2720,
+     "phrase": 2,
      "zone": "lower"
     },
     {
      "text": "рабов,",
      "atMs": 2840,
      "endMs": 3440,
+     "phrase": 2,
      "zone": "lower",
      "emphasis": "lead"
     },
@@ -171,12 +176,14 @@
      "text": "страна",
      "atMs": 3520,
      "endMs": 3920,
+     "phrase": 3,
      "zone": "upper"
     },
     {
      "text": "господ,",
      "atMs": 3960,
      "endMs": 4800,
+     "phrase": 3,
      "zone": "upper",
      "emphasis": "lead"
     }
@@ -190,23 +197,27 @@
     {
      "text": "И",
      "atMs": 4840,
-     "endMs": 4880
+     "endMs": 4880,
+     "phrase": 4
     },
     {
      "text": "вы,",
      "atMs": 5040,
      "endMs": 5440,
+     "phrase": 4,
      "emphasis": "lead"
     },
     {
      "text": "мундиры",
      "atMs": 5480,
-     "endMs": 5920
+     "endMs": 5920,
+     "phrase": 5
     },
     {
      "text": "голубые,",
      "atMs": 6000,
      "endMs": 6880,
+     "phrase": 5,
      "emphasis": "lead"
     }
    ]
@@ -219,28 +230,33 @@
     {
      "text": "И",
      "atMs": 6920,
-     "endMs": 6960
+     "endMs": 6960,
+     "phrase": 6
     },
     {
      "text": "ты,",
      "atMs": 7120,
      "endMs": 7600,
+     "phrase": 6,
      "emphasis": "lead"
     },
     {
      "text": "им",
      "atMs": 7720,
-     "endMs": 7840
+     "endMs": 7840,
+     "phrase": 7
     },
     {
      "text": "преданный",
      "atMs": 7880,
-     "endMs": 8360
+     "endMs": 8360,
+     "phrase": 7
     },
     {
      "text": "народ.",
      "atMs": 8400,
      "endMs": 9000,
+     "phrase": 7,
      "emphasis": "lead"
     }
    ]
@@ -253,28 +269,33 @@
     {
      "text": "Быть",
      "atMs": 9200,
-     "endMs": 9360
+     "endMs": 9360,
+     "phrase": 8
     },
     {
      "text": "может,",
      "atMs": 9440,
      "endMs": 9720,
+     "phrase": 8,
      "emphasis": "lead"
     },
     {
      "text": "за",
      "atMs": 9760,
-     "endMs": 9840
+     "endMs": 9840,
+     "phrase": 9
     },
     {
      "text": "стеной",
      "atMs": 9920,
-     "endMs": 10160
+     "endMs": 10160,
+     "phrase": 9
     },
     {
      "text": "Кавказа",
      "atMs": 10240,
      "endMs": 10880,
+     "phrase": 9,
      "emphasis": "lead"
     }
    ]
@@ -287,22 +308,26 @@
     {
      "text": "Укроюсь",
      "atMs": 11120,
-     "endMs": 11680
+     "endMs": 11680,
+     "phrase": 10
     },
     {
      "text": "от",
      "atMs": 11760,
-     "endMs": 11840
+     "endMs": 11840,
+     "phrase": 10
     },
     {
      "text": "твоих",
      "atMs": 11880,
-     "endMs": 12160
+     "endMs": 12160,
+     "phrase": 10
     },
     {
      "text": "пашей,",
      "atMs": 12240,
      "endMs": 12880,
+     "phrase": 10,
      "emphasis": "lead"
     }
    ]
@@ -315,22 +340,26 @@
     {
      "text": "От",
      "atMs": 12960,
-     "endMs": 13120
+     "endMs": 13120,
+     "phrase": 11
     },
     {
      "text": "их",
      "atMs": 13160,
-     "endMs": 13200
+     "endMs": 13200,
+     "phrase": 11
     },
     {
      "text": "всевидящего",
      "atMs": 13280,
-     "endMs": 14000
+     "endMs": 14000,
+     "phrase": 11
     },
     {
      "text": "глаза,",
      "atMs": 14080,
      "endMs": 14800,
+     "phrase": 11,
      "emphasis": "lead"
     }
    ]
@@ -343,22 +372,26 @@
     {
      "text": "От",
      "atMs": 14880,
-     "endMs": 14960
+     "endMs": 14960,
+     "phrase": 12
     },
     {
      "text": "их",
      "atMs": 15040,
-     "endMs": 15120
+     "endMs": 15120,
+     "phrase": 12
     },
     {
      "text": "всеслышащих",
      "atMs": 15160,
-     "endMs": 16000
+     "endMs": 16000,
+     "phrase": 12
     },
     {
      "text": "ушей.",
      "atMs": 16080,
      "endMs": 16800,
+     "phrase": 12,
      "emphasis": "lead"
     }
    ]

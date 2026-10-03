@@ -92,6 +92,7 @@ sceneSpans.forEach((span, sceneIndex) => {
 });
 
 let cursor = 0;
+let phraseCursor = 0;
 const built = lines.map((_, index) => {
   const { sceneIndex, within } = sceneOfLine[index];
   const scene = sceneMap.scenes[sceneIndex];
@@ -112,7 +113,23 @@ const built = lines.map((_, index) => {
        * size of a word never changes and nothing is ever re-laid out.
        */
       const lead = /[,.;:!?—]$/.test(word.text) || n === counts[index] - 1;
-      return { ...word, ...(zone ? { zone } : {}), ...(lead ? { emphasis: "lead" } : {}) };
+      /*
+       * Which phrase the word belongs to.
+       *
+       * The poet's own punctuation does the grouping: a phrase runs up to and
+       * including the word that closes it. Lighting one word at a time meant
+       * thirty-three handovers in seventeen seconds, each one a word going out
+       * as the next came on, which reads as flicker however well it is timed.
+       * Within a phrase the light only ever grows, and it goes out once.
+       */
+      const phrase = phraseCursor;
+      if (lead) phraseCursor += 1;
+      return {
+        ...word,
+        phrase,
+        ...(zone ? { zone } : {}),
+        ...(lead ? { emphasis: "lead" } : {}),
+      };
     }),
   };
 });

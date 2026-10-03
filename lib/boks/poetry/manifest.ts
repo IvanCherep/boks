@@ -41,6 +41,14 @@ export type PoemToken = {
   endMs: number;
   zone?: string;
   /**
+   * Which phrase this word belongs to, counting across the whole poem.
+   *
+   * Words are lit by phrase rather than one at a time: a single word going out
+   * as the next comes on happens thirty-three times in this poem and reads as
+   * flicker however accurately it is timed.
+   */
+  phrase?: number;
+  /**
    * The word that carries the line - the one closing a phrase.
    *
    * Fixed in the data rather than decided while rendering, because a word that
@@ -165,9 +173,22 @@ export type TokenState = "hidden" | "active" | "settled";
 export function tokenStateAt(line: PoemLine, index: number, ms: number): TokenState {
   const token = line.tokens[index];
   if (!token || ms < token.atMs) return "hidden";
-  const next = line.tokens[index + 1];
-  const until = next ? next.atMs : line.endMs;
-  return ms < until ? "active" : "settled";
+
+  /*
+   * Lit until its phrase is done, not until the next word is spoken.
+   *
+   * Words still arrive one at a time, with the voice - that is the format. But
+   * a word that dims the moment the next one speaks makes the line blink its
+   * way across the screen. Inside a phrase the light only grows; it goes out
+   * once, when the phrase does.
+   */
+  const phrase = token.phrase;
+  if (phrase === undefined) {
+    const next = line.tokens[index + 1];
+    return ms < (next ? next.atMs : line.endMs) ? "active" : "settled";
+  }
+  const after = line.tokens.find((other) => (other.phrase ?? -1) > phrase);
+  return ms < (after ? after.atMs : line.endMs) ? "active" : "settled";
 }
 
 /**

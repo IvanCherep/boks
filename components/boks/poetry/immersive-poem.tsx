@@ -74,6 +74,7 @@ export function ImmersivePoem({
 
   const lineIndex = at.line;
   const activeToken = at.token;
+  const line = manifest.lines[lineIndex];
   const scene = sceneFor(manifest, lineIndex);
   /**
    * The backdrop runs on its own clock, not on the line.
@@ -300,6 +301,25 @@ export function ImmersivePoem({
 
   const preset = scene ? presetFor(scene) : "quiet-breath";
 
+  /*
+   * A word's state on the line being spoken.
+   *
+   * Words still arrive one at a time with the voice, but they are lit by
+   * phrase: everything up to the word just spoken is on, and it all goes out
+   * together when the phrase ends. Lighting and unlighting one word at a time
+   * is thirty-three handovers in this poem, which reads as a blinking line
+   * however exactly it is timed.
+   */
+  function wordState(token: PoemToken, order: number): "hidden" | "active" | "settled" {
+    const current = line?.tokens[activeToken];
+    if (!current) return "hidden";
+    const here = token.phrase ?? order;
+    const now = current.phrase ?? activeToken;
+    if (here < now) return "settled";
+    if (here > now) return "hidden";
+    return order <= activeToken ? "active" : "hidden";
+  }
+
   return (
     <div
       ref={stage}
@@ -399,15 +419,7 @@ export function ImmersivePoem({
                       className={`poem__word ${
                         token.emphasis === "lead" ? "poem__word--lead" : ""
                       } is-${
-                        state !== "now"
-                          ? state === "past"
-                            ? "settled"
-                            : "hidden"
-                          : order < activeToken
-                            ? "settled"
-                            : order === activeToken
-                              ? "active"
-                              : "hidden"
+                        state !== "now" ? (state === "past" ? "settled" : "hidden") : wordState(token, order)
                       }`}
                     >
                       {token.text}

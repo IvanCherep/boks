@@ -93,11 +93,21 @@ describe("where a word is in its life", () => {
     expect(tokenStateAt(line, 1, line.tokens[1].atMs)).toBe("active");
   });
 
-  it("hands over to the next word rather than fading on a timer", () => {
-    const handover = line.tokens[2].atMs;
-    expect(tokenStateAt(line, 1, handover - 1)).toBe("active");
-    expect(tokenStateAt(line, 1, handover)).toBe("settled");
-    expect(tokenStateAt(line, 2, handover)).toBe("active");
+  it("stays lit while its phrase runs, instead of going out on the next word", () => {
+    // "немытая" and "Россия," are one phrase. The first does not dim when the
+    // second is spoken - a word going out as the next comes on is what made
+    // the line blink its way across the screen.
+    const second = line.tokens[2];
+    expect(line.tokens[1].phrase).toBe(second.phrase);
+    expect(tokenStateAt(line, 1, second.atMs)).toBe("active");
+    expect(tokenStateAt(line, 2, second.atMs)).toBe("active");
+  });
+
+  it("puts a phrase out all at once, when it is over", () => {
+    // "Прощай," is its own phrase and ends where the next begins.
+    const next = line.tokens.find((t) => t.phrase !== line.tokens[0].phrase)!;
+    expect(tokenStateAt(line, 0, next.atMs - 1)).toBe("active");
+    expect(tokenStateAt(line, 0, next.atMs)).toBe("settled");
   });
 
   it("keeps the last word of a line lit until the line ends", () => {
@@ -106,14 +116,35 @@ describe("where a word is in its life", () => {
     expect(tokenStateAt(line, last, line.endMs)).toBe("settled");
   });
 
-  it("never leaves two words active at once", () => {
+  it("never lights words from two phrases at once", () => {
+    // Several words may be lit - that is the point - but they must all belong
+    // to the same phrase, or the screen is showing two thoughts at a time.
     for (const current of manifest.lines) {
       for (let ms = current.startMs; ms < current.endMs; ms += 40) {
-        const active = current.tokens.filter(
+        const lit = current.tokens.filter(
           (_, index) => tokenStateAt(current, index, ms) === "active"
         );
-        expect(active.length, `${current.sceneId} at ${ms}`).toBeLessThanOrEqual(1);
+        const phrases = new Set(lit.map((token) => token.phrase));
+        expect(phrases.size, `${current.sceneId} at ${ms}`).toBeLessThanOrEqual(1);
       }
+    }
+  });
+
+  it("groups the poem into phrases its punctuation already marks", () => {
+    // Thirteen, not thirty-three: a handover every 1.3 seconds rather than
+    // every half second.
+    const phrases = new Set(
+      manifest.lines.flatMap((l) => l.tokens.map((token) => token.phrase))
+    );
+    expect(phrases.size).toBe(13);
+    // And a phrase always ends on the word marked as carrying it.
+    for (const l of manifest.lines) {
+      l.tokens.forEach((token, index) => {
+        const next = l.tokens[index + 1];
+        if (next && next.phrase !== token.phrase) {
+          expect(token.emphasis, token.text).toBe("lead");
+        }
+      });
     }
   });
 });
