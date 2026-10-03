@@ -10,8 +10,9 @@ rather than by the reader.
 | **Cinema** | prose read aloud over scenes | the rail button | `components/boks/cinema/` |
 | **Immersive poetry** | verse, words placed in the picture | the same button | `components/boks/poetry/` |
 
-The reader never chooses between the last two. `reader-feed.tsx` looks the boks
-up and opens whichever renderer it belongs to:
+The reader never chooses between the last two.
+`components/boks/reader-feed.tsx` looks the boks up and opens whichever renderer
+it belongs to:
 
 ```ts
 poemManifestFor(story.id)   // → immersive poetry
@@ -21,6 +22,83 @@ isBoksSeriesPiece(story.id) // → cinema
 Neither touches the ordinary feed, which keeps working for every boks that is
 in neither registry. Read this before changing anything under
 `components/boks/cinema/` or `components/boks/poetry/`.
+
+---
+
+## 0. Every file, in full
+
+Paths are from the repository root. On the machine this was written on that is
+`/Users/iegorov/Documents/Codex/2026-09-09/fd`, but nothing depends on it -
+work from the repo root wherever it is checked out.
+
+### Shared
+
+| Path | What it is |
+|---|---|
+| `components/boks/reader-feed.tsx` | the ordinary feed, and the button that opens either format |
+| `components/boks/cinema/voices.ts` | who reads what: the cast rule, the model, the stability per reading |
+| `components/boks/cinema/voices.test.ts` | holds the cast and the one-credit-per-character rule |
+| `components/boks/reading-music.ts` | lo-fi under ordinary silent reading; nothing to do with either format |
+| `public/reading-music.mp3` | that track |
+| `app/globals.css` | all the CSS for both formats, at the end of the file |
+
+### Cinema
+
+| Path | What it is |
+|---|---|
+| `components/boks/cinema/cinema-mode.tsx` | the player: cover, playing, aftertaste, ending |
+| `components/boks/cinema/series.ts` | the access rule - which boks are open to everyone |
+| `components/boks/cinema/narration-track.ts` | recording and alignment, per boks |
+| `components/boks/cinema/scene-image.ts` | the scene frames, per boks |
+| `components/boks/cinema/scene-plan.ts` | cutting the text into lines and scenes; pure |
+| `components/boks/cinema/narrator.ts` | the browser-voice narrator, and the `Narrator` contract |
+| `components/boks/cinema/audio-narrator.ts` | the recording-driven narrator: seeking, fades |
+| `components/boks/cinema/scene-art.tsx` | the drawn fallback scene, for a boks with no art |
+| `components/boks/cinema/story-moments.ts` | where a story stops and asks something |
+| `components/boks/cinema/story-moment.tsx` | the moment itself: gesture, sound, dwell |
+| `public/cinema/<slug>/narration.mp3` | the reading |
+| `public/cinema/<slug>/alignment.json` | per-character timings |
+| `public/cinema/<slug>/scenes/` | scene frames |
+| `public/cinema/<slug>/moments/<id>/{before,after}.webp` | a moment's two frames |
+| `public/cinema/<slug>/moments/<id>.mp3` | the sound that moment makes |
+
+Tests:
+
+- `components/boks/cinema/scene-plan.test.ts`
+- `components/boks/cinema/narration-track.test.ts`
+- `components/boks/cinema/scene-image.test.ts`
+- `components/boks/cinema/series.test.ts`
+- `components/boks/cinema/story-moments.test.ts`
+- `components/boks/cinema/shipped-alignment.test.ts` - checks the recording that
+  ships against the text that ships, because when they disagree the highlight
+  dies silently
+
+### Immersive poetry
+
+| Path | What it is |
+|---|---|
+| `lib/boks/poetry/manifest.ts` | types and all the pure logic: which line, which scene, which phrase |
+| `lib/boks/poetry/manifest.test.ts` | every rule above, asserted against the shipped manifest |
+| `components/boks/poetry/immersive-poem.tsx` | the renderer; knows no particular poem |
+| `components/boks/poetry/poems.ts` | which boks open in it |
+| `components/boks/admin/poetry-sandbox.tsx` | `/admin` → Poetry, for a poem with no boks yet |
+| `scripts/build-poem-manifest.mjs` | builds a manifest from a recording's own alignment |
+| `docs/farewell-russia-scene-map.json` | a working scene map to copy |
+| `public/poetry/<slug>/manifest.json` | lines, word times, scenes, levels |
+| `public/poetry/<slug>/narration.mp3` | the reading |
+| `public/poetry/<slug>/theme.mp3` | the piece's own theme |
+| `public/poetry/<slug>/scenes/` | scene frames |
+
+### The effects library, shared by both
+
+| Path | What it is |
+|---|---|
+| `lib/boks/interactions/scenes.ts` | the twelve mechanics as data, and the gesture maths; pure |
+| `lib/boks/interactions/scenes.test.ts` | drag along one axis, snap, brush coverage |
+| `lib/boks/interactions/sound.ts` | the sound palette, and the loops a moment uses |
+| `components/boks/interactions/interactive-scene.tsx` | one engine for all twelve |
+| `components/boks/admin/interaction-sandbox.tsx` | `/admin` → Interactions, with a frame counter |
+| `public/interactions/<effect>/{before,after}.webp` | each effect's two frames |
 
 ---
 
@@ -130,20 +208,23 @@ length: it is whether the words belong **over** a picture or **inside** one.
 
 | | |
 |---|---|
-| `narration.mp3` | the reading |
-| `alignment.json` | per-character timings from `/with-timestamps` |
-| `scenes/1..6` | one frame per scene |
-| optionally, moments | a pair of frames and a sound each |
+| `public/cinema/<slug>/narration.mp3` | the reading |
+| `public/cinema/<slug>/alignment.json` | per-character timings from `/with-timestamps` |
+| `public/cinema/<slug>/scenes/` | one frame per scene |
+| `public/cinema/<slug>/moments/` | optional: a pair of frames and a sound each |
 
-Registered in `narration-track.ts` (recording + alignment) and `scene-image.ts`
-(frames). `series.ts` is the access rule: a boks with **both** its pictures and
+Registered in `components/boks/cinema/narration-track.ts` (recording and
+alignment) and `components/boks/cinema/scene-image.ts` (frames).
+`components/boks/cinema/series.ts` is the access rule: a boks with **both** its pictures and
 its recording is open to every reader, everything else stays behind the admin
 flag. Nothing lists which are open — finish a piece and it opens itself.
 
 ### Moments
 
 A moment is a hole cut in the narration: the voice stops, something is heard,
-and it only goes on once the reader has done the thing. `story-moments.ts`.
+and it only goes on once the reader has done the thing. Declared in
+`components/boks/cinema/story-moments.ts`, drawn by
+`components/boks/cinema/story-moment.tsx`.
 
 Two placement rules, both held by tests:
 
@@ -266,7 +347,8 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 
    It refuses if the word counts disagree rather than cutting the poem in the
    wrong places.
-5. **Register it** in `poems.ts` against the boks id. One line, nothing else.
+5. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
+   One line, nothing else.
 
 No new component, ever. If a poem needs something the renderer cannot do, the
 thing to add is a preset, not a component.
