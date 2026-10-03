@@ -4872,12 +4872,20 @@ textarea:focus-visible {
  *
  * Transitions still handle the gentler half: active settling into spoken.
  */
+/*
+ * Leaving takes longer than arriving.
+ *
+ * A word is lit a little before it is spoken and dims for almost a second
+ * after the next one takes over, so at every moment one word is coming up
+ * while the one before it is still going down. Cutting between them on the
+ * syllable is what made the line flick rather than flow.
+ */
 .poem__word {
   opacity: 0;
   transition:
-    opacity 620ms var(--ease-out),
-    color 620ms var(--ease-out),
-    filter 620ms var(--ease-out);
+    opacity 920ms var(--ease-out),
+    color 920ms var(--ease-out),
+    filter 920ms var(--ease-out);
 }
 
 /*

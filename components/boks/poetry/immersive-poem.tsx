@@ -50,6 +50,7 @@ export function ImmersivePoem({
   onNext?: () => void;
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
+  const theme = useRef<HTMLAudioElement | null>(null);
   const stage = useRef<HTMLDivElement>(null);
   const idleTimer = useRef(0);
   const bar = useRef<HTMLDivElement>(null);
@@ -95,15 +96,14 @@ export function ImmersivePoem({
   useEffect(() => {
     const element = new window.Audio(manifest.audio);
     element.preload = "auto";
-    element.playbackRate = manifest.playback.rate ?? 1;
-    // Slowed, not pitched down: the voice has to stay the same voice.
-    element.preservesPitch = true;
+    element.playbackRate = 1;
     audio.current = element;
     const ready = () => setStatus("ready");
     const failed = () => setStatus("error");
     const done = () => {
       setStatus("ended");
       setPlaying(false);
+      theme.current?.pause();
     };
     element.addEventListener("canplaythrough", ready);
     element.addEventListener("error", failed);
@@ -116,7 +116,30 @@ export function ImmersivePoem({
       element.removeEventListener("ended", done);
       audio.current = null;
     };
-  }, [manifest.audio, manifest.playback.rate]);
+  }, [manifest.audio]);
+
+  /*
+   * The theme, which is part of the reading rather than music behind it.
+   *
+   * No switch and no separate transport: it is created with the voice, and
+   * every play, pause and seek below drives both. Its level was measured
+   * against this recording - ten decibels under, present but clear of the
+   * words - and the element is muted-by-volume rather than gated, so a missing
+   * file costs the poem nothing.
+   */
+  useEffect(() => {
+    const score = manifest.theme;
+    if (!score) return;
+    const element = new window.Audio(score.src);
+    element.preload = "auto";
+    element.volume = Math.min(1, score.gain);
+    theme.current = element;
+    return () => {
+      element.pause();
+      element.src = "";
+      theme.current = null;
+    };
+  }, [manifest.theme]);
 
   /*
    * The next two pictures, decoded before they are needed.
@@ -160,8 +183,11 @@ export function ImmersivePoem({
         const current = manifest.lines[index];
         let token = 0;
         if (current) {
+          // Read a little ahead of the voice, so a word has finished arriving
+          // by the time it is spoken rather than still forming after it.
+          const lit = ms + (manifest.playback.tokenLeadMs ?? 0);
           for (let i = 0; i < current.tokens.length; i += 1) {
-            if (tokenStateAt(current, i, ms) === "active") token = i;
+            if (tokenStateAt(current, i, lit) === "active") token = i;
           }
         }
         setAt((shown) => (shown.line === index && shown.token === token ? shown : { line: index, token }));
@@ -225,12 +251,18 @@ export function ImmersivePoem({
         () => {
           setPlaying(true);
           setStatus("ready");
+          const score = theme.current;
+          if (score) {
+            score.currentTime = element.currentTime;
+            void score.play().catch(() => {});
+          }
         },
         () => setStatus("error")
       );
       return;
     }
     element.pause();
+    theme.current?.pause();
     setPlaying(false);
   }, [revealChrome, status]);
 
@@ -240,7 +272,9 @@ export function ImmersivePoem({
     (fraction: number) => {
       const element = audio.current;
       if (!element) return;
-      element.currentTime = (Math.min(1, Math.max(0, fraction)) * manifest.durationMs) / 1000;
+      const at = (Math.min(1, Math.max(0, fraction)) * manifest.durationMs) / 1000;
+      element.currentTime = at;
+      if (theme.current) theme.current.currentTime = at;
       if (status === "ended") setStatus("ready");
       revealChrome();
     },

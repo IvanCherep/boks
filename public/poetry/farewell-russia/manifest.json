@@ -5,7 +5,11 @@
  "language": "ru",
  "timingMode": "forced-alignment",
  "audio": "/poetry/farewell-russia/narration.mp3",
- "durationMs": 16560,
+ "theme": {
+  "src": "/poetry/farewell-russia/theme.mp3",
+  "gain": 0.19
+ },
+ "durationMs": 16800,
  "canvas": {
   "width": 941,
   "height": 1672,
@@ -19,9 +23,9 @@
   "shadow": "rgba(8, 12, 20, 0.48)"
  },
  "playback": {
-  "rate": 0.8,
+  "tokenLeadMs": 220,
   "crossfadeLeadMs": 260,
-  "defaultCrossfadeMs": 470,
+  "defaultCrossfadeMs": 480,
   "backgroundScaleFrom": 1,
   "backgroundScaleTo": 1.035
  },
@@ -43,7 +47,7 @@
     }
    ],
    "textPreset": "farewell-drift",
-   "transitionMs": 470
+   "transitionMs": 480
   },
   {
    "id": "land-of-slaves-and-masters",
@@ -70,7 +74,7 @@
     }
    ],
    "textPreset": "social-hierarchy-split",
-   "transitionMs": 440
+   "transitionMs": 450
   },
   {
    "id": "blue-uniforms",
@@ -89,7 +93,7 @@
     }
    ],
    "textPreset": "uniform-formation",
-   "transitionMs": 420
+   "transitionMs": 430
   },
   {
    "id": "obedient-people",
@@ -108,7 +112,7 @@
     }
    ],
    "textPreset": "quiet-breath",
-   "transitionMs": 500
+   "transitionMs": 510
   },
   {
    "id": "caucasus-ridge",
@@ -127,7 +131,7 @@
     }
    ],
    "textPreset": "ridge-reveal",
-   "transitionMs": 610
+   "transitionMs": 620
   },
   {
    "id": "hide-beyond-kings",
@@ -146,7 +150,7 @@
     }
    ],
    "textPreset": "shelter-reveal",
-   "transitionMs": 470
+   "transitionMs": 480
   },
   {
    "id": "all-seeing-eye",
@@ -165,7 +169,7 @@
     }
    ],
    "textPreset": "searchlight-scan",
-   "transitionMs": 430
+   "transitionMs": 440
   },
   {
    "id": "all-hearing-ears",
@@ -191,55 +195,55 @@
   {
    "sceneId": "farewell-city",
    "startMs": 0,
-   "endMs": 2160,
+   "endMs": 2320,
    "tokens": [
     {
      "text": "Прощай,",
      "atMs": 0,
-     "endMs": 680,
+     "endMs": 720,
      "emphasis": "lead"
     },
     {
      "text": "немытая",
-     "atMs": 720,
-     "endMs": 1200
+     "atMs": 880,
+     "endMs": 1360
     },
     {
      "text": "Россия,",
-     "atMs": 1240,
-     "endMs": 2080,
+     "atMs": 1440,
+     "endMs": 2240,
      "emphasis": "lead"
     }
    ]
   },
   {
    "sceneId": "land-of-slaves-and-masters",
-   "startMs": 2160,
-   "endMs": 4600,
+   "startMs": 2320,
+   "endMs": 4840,
    "tokens": [
     {
      "text": "Страна",
-     "atMs": 2160,
-     "endMs": 2560,
+     "atMs": 2320,
+     "endMs": 2720,
      "zone": "lower"
     },
     {
      "text": "рабов,",
-     "atMs": 2680,
-     "endMs": 3280,
+     "atMs": 2840,
+     "endMs": 3440,
      "zone": "lower",
      "emphasis": "lead"
     },
     {
      "text": "страна",
-     "atMs": 3440,
-     "endMs": 3680,
+     "atMs": 3520,
+     "endMs": 3920,
      "zone": "upper"
     },
     {
      "text": "господ,",
-     "atMs": 3760,
-     "endMs": 4560,
+     "atMs": 3960,
+     "endMs": 4800,
      "zone": "upper",
      "emphasis": "lead"
     }
@@ -247,181 +251,181 @@
   },
   {
    "sceneId": "blue-uniforms",
-   "startMs": 4600,
-   "endMs": 6680,
+   "startMs": 4840,
+   "endMs": 6920,
    "tokens": [
     {
      "text": "И",
-     "atMs": 4600,
-     "endMs": 4640
+     "atMs": 4840,
+     "endMs": 4880
     },
     {
      "text": "вы,",
-     "atMs": 4800,
-     "endMs": 5120,
+     "atMs": 5040,
+     "endMs": 5440,
      "emphasis": "lead"
     },
     {
      "text": "мундиры",
-     "atMs": 5200,
-     "endMs": 5680
+     "atMs": 5480,
+     "endMs": 5920
     },
     {
      "text": "голубые,",
-     "atMs": 5760,
-     "endMs": 6640,
+     "atMs": 6000,
+     "endMs": 6880,
      "emphasis": "lead"
     }
    ]
   },
   {
    "sceneId": "obedient-people",
-   "startMs": 6680,
-   "endMs": 8880,
+   "startMs": 6920,
+   "endMs": 9200,
    "tokens": [
     {
      "text": "И",
-     "atMs": 6680,
-     "endMs": 6720
+     "atMs": 6920,
+     "endMs": 6960
     },
     {
      "text": "ты,",
-     "atMs": 6880,
-     "endMs": 7280,
+     "atMs": 7120,
+     "endMs": 7600,
      "emphasis": "lead"
     },
     {
      "text": "им",
-     "atMs": 7400,
-     "endMs": 7520
+     "atMs": 7720,
+     "endMs": 7840
     },
     {
      "text": "преданный",
-     "atMs": 7560,
-     "endMs": 8040
+     "atMs": 7880,
+     "endMs": 8360
     },
     {
      "text": "народ.",
-     "atMs": 8080,
-     "endMs": 8680,
+     "atMs": 8400,
+     "endMs": 9000,
      "emphasis": "lead"
     }
    ]
   },
   {
    "sceneId": "caucasus-ridge",
-   "startMs": 8880,
-   "endMs": 10880,
+   "startMs": 9200,
+   "endMs": 11120,
    "tokens": [
     {
      "text": "Быть",
-     "atMs": 8880,
-     "endMs": 9040
+     "atMs": 9200,
+     "endMs": 9360
     },
     {
      "text": "может,",
-     "atMs": 9120,
-     "endMs": 9493,
+     "atMs": 9440,
+     "endMs": 9720,
      "emphasis": "lead"
     },
     {
      "text": "за",
-     "atMs": 9547,
-     "endMs": 9600
+     "atMs": 9760,
+     "endMs": 9840
     },
     {
      "text": "стеной",
-     "atMs": 9680,
-     "endMs": 9920
+     "atMs": 9920,
+     "endMs": 10160
     },
     {
      "text": "Кавказа",
-     "atMs": 10000,
-     "endMs": 10640,
+     "atMs": 10240,
+     "endMs": 10880,
      "emphasis": "lead"
     }
    ]
   },
   {
    "sceneId": "hide-beyond-kings",
-   "startMs": 10880,
-   "endMs": 12800,
+   "startMs": 11120,
+   "endMs": 12960,
    "tokens": [
     {
      "text": "Укроюсь",
-     "atMs": 10880,
-     "endMs": 11440
+     "atMs": 11120,
+     "endMs": 11680
     },
     {
      "text": "от",
-     "atMs": 11520,
-     "endMs": 11600
+     "atMs": 11760,
+     "endMs": 11840
     },
     {
      "text": "твоих",
-     "atMs": 11640,
-     "endMs": 11920
+     "atMs": 11880,
+     "endMs": 12160
     },
     {
      "text": "пашей,",
-     "atMs": 12000,
-     "endMs": 12720,
+     "atMs": 12240,
+     "endMs": 12880,
      "emphasis": "lead"
     }
    ]
   },
   {
    "sceneId": "all-seeing-eye",
-   "startMs": 12800,
-   "endMs": 14640,
+   "startMs": 12960,
+   "endMs": 14880,
    "tokens": [
     {
      "text": "От",
-     "atMs": 12800,
-     "endMs": 12880
+     "atMs": 12960,
+     "endMs": 13120
     },
     {
      "text": "их",
-     "atMs": 12960,
-     "endMs": 13040
+     "atMs": 13160,
+     "endMs": 13200
     },
     {
      "text": "всевидящего",
-     "atMs": 13080,
-     "endMs": 13760
+     "atMs": 13280,
+     "endMs": 14000
     },
     {
      "text": "глаза,",
-     "atMs": 13840,
-     "endMs": 14560,
+     "atMs": 14080,
+     "endMs": 14800,
      "emphasis": "lead"
     }
    ]
   },
   {
    "sceneId": "all-hearing-ears",
-   "startMs": 14640,
-   "endMs": 16560,
+   "startMs": 14880,
+   "endMs": 16800,
    "tokens": [
     {
      "text": "От",
-     "atMs": 14640,
-     "endMs": 14800
-    },
-    {
-     "text": "их",
      "atMs": 14880,
      "endMs": 14960
     },
     {
+     "text": "их",
+     "atMs": 15040,
+     "endMs": 15120
+    },
+    {
      "text": "всеслышащих",
-     "atMs": 15000,
-     "endMs": 15840
+     "atMs": 15160,
+     "endMs": 16000
     },
     {
      "text": "ушей.",
-     "atMs": 15960,
-     "endMs": 16560,
+     "atMs": 16080,
+     "endMs": 16800,
      "emphasis": "lead"
     }
    ]

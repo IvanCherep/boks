@@ -233,3 +233,36 @@ describe("which two pictures are on screen", () => {
     }
   });
 });
+
+describe("the piece's own theme", () => {
+  it("ships with the poem and is not optional", () => {
+    // Part of the reading rather than music behind it: no switch, and the
+    // player drives it from the same transport as the voice.
+    expect(manifest.theme).toBeDefined();
+    expect(manifest.theme!.src).toBe("/poetry/farewell-russia/theme.mp3");
+  });
+
+  it("sits under the voice, but not out of earshot", () => {
+    // Measured: the theme was generated at -16.8 dBFS and the reading sits at
+    // -21.4. Ten decibels under is present without competing; below about
+    // fifteen it stops being part of the piece and becomes background.
+    const themeDbfs = -16.8;
+    const voiceDbfs = -21.4;
+    const separation = voiceDbfs - (themeDbfs + 20 * Math.log10(manifest.theme!.gain));
+    expect(separation).toBeGreaterThan(6);
+    expect(separation).toBeLessThan(15);
+  });
+
+  it("reads ahead of the voice, so a word is whole when it is said", () => {
+    // An arrival takes about half a second; begun on the syllable the word
+    // would still be forming after the voice had moved on.
+    const lead = manifest.playback.tokenLeadMs ?? 0;
+    expect(lead).toBeGreaterThan(120);
+    expect(lead).toBeLessThan(400);
+  });
+
+  it("is not slowed or sped up", () => {
+    // The reading sets its own pace; the format follows it.
+    expect((manifest.playback as { rate?: number }).rate).toBeUndefined();
+  });
+});

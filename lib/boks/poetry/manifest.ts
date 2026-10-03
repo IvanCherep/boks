@@ -65,11 +65,18 @@ export type PoemManifest = {
    */
   timingMode: "forced-alignment" | "placeholder";
   audio: string;
+  /**
+   * The piece's own theme, played with the voice and locked to it.
+   *
+   * Not background music and not optional: it is part of the reading, so it
+   * follows every pause, seek and rate change the narration makes.
+   */
+  theme?: { src: string; gain: number };
   durationMs: number;
   palette: { text: string; active: string; shadow: string };
   playback: {
-    /** Playback speed. The recording is faster than the format wants. */
-    rate?: number;
+    /** How early a word begins arriving, so it is whole when it is spoken. */
+    tokenLeadMs?: number;
     crossfadeLeadMs: number;
     defaultCrossfadeMs: number;
     backgroundScaleFrom: number;

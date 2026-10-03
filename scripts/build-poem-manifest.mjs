@@ -116,20 +116,30 @@ const manifest = {
   language: sceneMap.language ?? "ru",
   timingMode: "forced-alignment",
   audio: `/poetry/${slug}/narration.mp3`,
+  /*
+   * The theme is part of the reading, not music behind it.
+   *
+   * It starts, stops and seeks with the voice, and it cannot be switched off,
+   * because without it the poem is a different piece. Ten decibels under the
+   * voice: present rather than background, and still clear of the words. The
+   * gain is measured against this recording and has to be re-measured if
+   * either the theme or the reading is replaced.
+   */
+  theme: { src: `/poetry/${slug}/theme.mp3`, gain: 0.19 },
   durationMs,
   canvas: sceneMap.canvas,
   palette: sceneMap.palette,
   playback: {
     /*
-     * Read a little slower than recorded.
+     * A word appears a little before it is said.
      *
-     * The model ignores both a speed setting and break tags, so the take comes
-     * back at its own pace - about two seconds a line, which for eight
-     * full-screen scenes is a slideshow. Slowed here instead: the manifest
-     * times are in audio time and `currentTime` reports audio time, so
-     * everything stays in sync for free.
+     * Its arrival takes about half a second, so beginning it on the syllable
+     * means the word is still forming while the voice has moved on. Starting
+     * it early makes it fully there exactly as it is spoken, and the one
+     * before it dims slowly rather than being cut - which is the difference
+     * between words that flow and words that flick.
      */
-    rate: 0.8,
+    tokenLeadMs: 220,
     crossfadeLeadMs: 260,
     defaultCrossfadeMs: round10(850 * ratio),
     backgroundScaleFrom: 1,
