@@ -4755,6 +4755,9 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   animation: poem-drift 26s ease-in-out infinite alternate;
+  /* Its own surface. Without it the scale re-rasterises both full-screen
+     images continuously instead of transforming a finished layer. */
+  will-change: transform;
   pointer-events: none;
 }
 
@@ -4839,12 +4842,31 @@ textarea:focus-visible {
   opacity: 1;
 }
 
+/*
+ * Faded, then taken out of painting.
+ *
+ * The visibility flip is delayed by the length of the fade, so the line still
+ * dissolves normally and only stops costing anything once it is actually gone.
+ */
 .poem__line.is-past {
   opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 900ms var(--ease-out),
+    visibility 0s linear 900ms;
 }
 
+/*
+ * Not yet reached: taken out of painting entirely.
+ *
+ * All eight lines stay mounted so nothing has to remount mid-poem, but an
+ * invisible line is still a line of glyphs with four shadows each for the
+ * painter to consider. Hidden, it costs nothing, and it has no transition to
+ * interrupt.
+ */
 .poem__line.is-ahead {
   opacity: 0;
+  visibility: hidden;
   transition: none;
 }
 
@@ -4882,10 +4904,16 @@ textarea:focus-visible {
  */
 .poem__word {
   opacity: 0;
+  /*
+   * Opacity and colour only. `filter` was in this list, which meant a blur was
+   * being interpolated on every word as it settled - the one property that
+   * cannot be done on the compositor and has to re-rasterise the glyphs on
+   * every frame. It switches instead, under a nine-hundred-millisecond fade
+   * that hides the step completely.
+   */
   transition:
     opacity 920ms var(--ease-out),
-    color 920ms var(--ease-out),
-    filter 920ms var(--ease-out);
+    color 920ms var(--ease-out);
 }
 
 /*
@@ -4944,10 +4972,12 @@ textarea:focus-visible {
   /* Warm rather than white: the word is lamplight in a cold frame. */
   color: #ffe7bd;
   opacity: 1;
+  /* Four, not five, and none wider than 40px: a text-shadow is a blur the
+     painter redoes whenever the glyph changes, and the widest one was the most
+     expensive and the least visible. */
   text-shadow:
     0 0 10px rgb(255 219 160 / 85%),
-    0 0 30px rgb(255 198 110 / 60%),
-    0 0 72px rgb(255 170 70 / 38%),
+    0 0 34px rgb(255 192 104 / 62%),
     0 2px 10px rgb(6 9 16 / 85%),
     0 4px 30px rgb(6 9 16 / 70%);
   animation: poem-arrive 560ms cubic-bezier(0.16, 0.8, 0.26, 1) both;
