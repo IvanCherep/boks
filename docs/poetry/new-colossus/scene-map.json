@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "title": "The New Colossus",
+ "author": "Emma Lazarus",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F3ECDF",
+  "active": "#FFD58A",
+  "shadow": "rgba(8, 12, 22, 0.5)"
+ },
+ "textScale": 0.82,
+ "themeGain": 0.15,
+ "scenes": [
+  {
+   "id": "sea-washed-gates",
+   "image": "01-sea-washed-gates.png",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.45
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.44,
+     "y": 0.09,
+     "width": 0.5,
+     "height": 0.3
+    }
+   ],
+   "line": "Not like the brazen giant of Greek fame, / With conquering limbs astride from land to land; / Here at our sea-washed, sunset gates shall stand"
+  },
+  {
+   "id": "mother-of-exiles",
+   "image": "02-mother-of-exiles.png",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.38,
+    "y": 0.4
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.46,
+     "y": 0.09,
+     "width": 0.48,
+     "height": 0.3
+    }
+   ],
+   "line": "A mighty woman with a torch, whose flame / Is the imprisoned lightning, and her name / Mother of Exiles. From her beacon-hand / Glows world-wide welcome; her mild eyes command / The air-bridged harbor that twin cities frame."
+  },
+  {
+   "id": "huddled-masses",
+   "image": "03-huddled-masses.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "\"Keep, ancient lands, your storied pomp!\" cries she / With silent lips. \"Give me your tired, your poor, / Your huddled masses yearning to breathe free, / The wretched refuse of your teeming shore."
+  },
+  {
+   "id": "golden-door",
+   "image": "04-golden-door.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "Send these, the homeless, tempest-tost to me, / I lift my lamp beside the golden door!\""
+  }
+ ]
+}

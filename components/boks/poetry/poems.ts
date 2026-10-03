@@ -5,22 +5,29 @@ import type { PoemManifest } from "@/lib/boks/poetry/manifest";
  *
  * The adapter the brief asks for: a renderer is chosen per piece without a
  * field on the model and without a migration. A boks listed here opens in the
- * poetry player; everything else opens in the reader it always had.
- *
- * "Прощай, немытая Россия" is not in the catalogue yet, so the registry is
- * empty and the format is reachable through the admin sandbox. Import the poem
- * and one line here turns it on, with no other change anywhere.
+ * poetry player; everything else opens in the reader it always had. Adding a
+ * poem is one line here once its folder under `public/poetry/` is built - see
+ * `docs/reading-formats.md`.
  */
 const poems: Record<string, string> = {
-  // "<boks id>": "/poetry/farewell-russia/manifest.json",
+  // Emma Lazarus — The New Colossus
+  "202c3d9c-5a8e-4c91-8278-ab0fc4e602cf": "/poetry/new-colossus/manifest.json",
+  // Walt Whitman — I Hear America Singing
+  "3056ee24-d8c0-4963-923f-967213a3ec34": "/poetry/i-hear-america-singing/manifest.json",
 };
 
 export function poemManifestFor(storyId: string): string | null {
   return poems[storyId] ?? null;
 }
 
-/** The sandbox piece, which has no boks of its own yet. */
-export const sandboxPoem = "/poetry/farewell-russia/manifest.json";
+/**
+ * Every poem the admin sandbox can open: the catalogued ones, and
+ * "Прощай, немытая Россия", which is not in the catalogue yet and has no boks.
+ */
+export const sandboxPoems: readonly string[] = [
+  "/poetry/farewell-russia/manifest.json",
+  ...Object.values(poems),
+];
 
 export async function loadPoemManifest(url: string): Promise<PoemManifest> {
   const response = await fetch(url);

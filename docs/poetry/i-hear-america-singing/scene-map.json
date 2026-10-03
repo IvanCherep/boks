@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "I Hear America Singing",
+ "author": "Walt Whitman",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F6EBD9",
+  "active": "#FFD99A",
+  "shadow": "rgba(10, 8, 6, 0.5)"
+ },
+ "textScale": 0.68,
+ "themeGain": 0.21,
+ "scenes": [
+  {
+   "id": "mechanics",
+   "image": "01-mechanics.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "uniform-formation",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "I hear America singing, the varied carols I hear, / Those of mechanics, each one singing his as it should be blithe and strong,"
+  },
+  {
+   "id": "carpenter-mason-boatmen",
+   "image": "02-carpenter-mason-boatmen.png",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "shelter-reveal",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.52,
+     "height": 0.3
+    }
+   ],
+   "line": "The carpenter singing his as he measures his plank or beam, / The mason singing his as he makes ready for work, or leaves off work, / The boatman singing what belongs to him in his boat, the deckhand singing on the steamboat deck,"
+  },
+  {
+   "id": "many-daily-songs",
+   "image": "03-many-daily-songs.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "The shoemaker singing as he sits on his bench, the hatter singing as he stands, / The wood-cutter's song, the ploughboy's on his way in the morning, or at noon intermission or at sundown, / The delicious singing of the mother, or of the young wife at work, or of the girl sewing or washing, / Each singing what belongs to him or her and to none else"
+  },
+  {
+   "id": "night-chorus",
+   "image": "04-night-chorus.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.38,
+     "y": 0.08,
+     "width": 0.56,
+     "height": 0.3
+    }
+   ],
+   "line": "The day what belongs to the day—at night the party of young fellows, robust, friendly, / Singing with open mouths their strong melodious songs."
+  }
+ ],
+ "veil": 1.55
+}

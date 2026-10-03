@@ -357,6 +357,17 @@ export function ImmersivePoem({
   const currentStanza = stanzas.findIndex((stanza) =>
     stanza.verses.some((verse) => verse === lineIndex)
   );
+  /*
+   * The line before this one starts leaving early when the next line will
+   * take its row: once the voice is on this line's last word. Left until the
+   * new line began, the two were legible over each other in the same place.
+   */
+  const rowHandsOver =
+    Boolean(line) &&
+    activeToken === line.tokens.length - 1 &&
+    stanzas[currentStanza]?.verses.includes(lineIndex + 1);
+  const isGone = (verseLine: number) =>
+    verseLine < lineIndex - 1 || (rowHandsOver && verseLine === lineIndex - 1);
 
   /*
    * A word's state on the line being spoken.
@@ -386,6 +397,8 @@ export function ImmersivePoem({
           "--poem-text": manifest.palette.text,
           "--poem-active": manifest.palette.active,
           "--poem-shadow": manifest.palette.shadow,
+          "--poem-text-scale": manifest.textScale ?? 1,
+          "--poem-veil": manifest.veil ?? 1,
         } as React.CSSProperties
       }
       role="dialog"
@@ -457,7 +470,21 @@ export function ImmersivePoem({
                   }}
                 >
                   {group.verses.map((verse) => (
-                    <div key={verse.lineIndex} className="poem__verse">
+                    <div
+                      key={verse.lineIndex}
+                      // Two lines of a picture at most: the third takes the
+                      // first one's place, and the first leaves as it arrives.
+                      className={`poem__verse ${
+                        state === "now" && isGone(verse.lineIndex) ? "is-gone" : ""
+                      }`}
+                      style={{
+                        gridRow: verse.slot + 1,
+                        // Each row is as tall as the longest line it holds, so
+                        // the two lines hug the line between the rows instead
+                        // of a short first line floating far above the second.
+                        alignSelf: verse.slot === 0 ? "end" : "start",
+                      }}
+                    >
                       {verse.tokens.map(({ token, order }) => (
                         <span
                           key={order}
@@ -621,7 +648,14 @@ function WaveBars() {
   );
 }
 
-type Verse = { lineIndex: number; tokens: { token: PoemToken; order: number }[] };
+/**
+ * One line's words in one zone. `slot` is the row it takes: a picture shows at
+ * most two lines, so its lines alternate between two rows - the third line
+ * takes the first one's place, which is how a sonnet over four pictures, or a
+ * hundred-character Whitman line, stays a couplet on screen rather than a
+ * page.
+ */
+type Verse = { lineIndex: number; slot: number; tokens: { token: PoemToken; order: number }[] };
 
 /**
  * The poem as stanzas: each run of lines spoken over one picture, with every
@@ -655,7 +689,7 @@ function stanzasOf(manifest: PoemManifest) {
       }
       let verse = group.verses.find((candidate) => candidate.lineIndex === lineIndex);
       if (!verse) {
-        verse = { lineIndex, tokens: [] };
+        verse = { lineIndex, slot: (stanza.verses.length - 1) % 2, tokens: [] };
         group.verses.push(verse);
       }
       verse.tokens.push({ token, order });

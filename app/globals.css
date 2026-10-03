@@ -4829,10 +4829,13 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   z-index: 2;
+  /* `--poem-veil` scales the sky end only: a poem painted in daylight needs a
+     darker sky behind its words, and the foot of the frame is already dark
+     enough for the controls. */
   background: linear-gradient(
     to bottom,
-    rgb(6 9 16 / 52%) 0%,
-    rgb(6 9 16 / 18%) 26%,
+    rgb(6 9 16 / calc(52% * var(--poem-veil, 1))) 0%,
+    rgb(6 9 16 / calc(18% * var(--poem-veil, 1))) 26%,
     rgb(6 9 16 / 10%) 52%,
     rgb(6 9 16 / 34%) 78%,
     rgb(6 9 16 / 68%) 100%
@@ -4908,16 +4911,20 @@ textarea:focus-visible {
   transition: none;
 }
 
-/* A column of the stanza's lines, each a row of its own, so the second line
-   of a picture sits under the first and nothing moves when it arrives. */
+/* Two rows, one per line of a couplet, so the second line of a picture sits
+   under the first and nothing moves when it arrives. A third line shares the
+   first one's row - the same cell, so it lands exactly where that one was -
+   and each row is as tall as the tallest line it will ever hold, so nothing
+   is re-laid out as the lines change. */
 .poem__zone {
   position: absolute;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 100%;
+  align-content: start;
   gap: 0.18em;
   font-family: var(--font-display);
   /* The quiet size. A word that carries the line gets the larger one below. */
-  font-size: clamp(1.55rem, 6.6vw, 2.5rem);
+  font-size: calc(clamp(1.55rem, 6.6vw, 2.5rem) * var(--poem-text-scale, 1));
   font-weight: 500;
   line-height: 1.12;
   letter-spacing: -0.005em;
@@ -4925,9 +4932,17 @@ textarea:focus-visible {
 
 .poem__verse {
   display: flex;
+  grid-column: 1;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.08em 0.36em;
+  transition: opacity 700ms var(--ease-out);
+}
+
+/* The line two back, leaving as the one that takes its row arrives - at the
+   same pace as a stanza leaving with its picture, for the same reason. */
+.poem__verse.is-gone {
+  opacity: 0;
 }
 
 /*

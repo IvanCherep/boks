@@ -4,29 +4,31 @@ import { useCallback, useEffect, useState } from "react";
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
-import { loadPoemManifest, sandboxPoem } from "@/components/boks/poetry/poems";
+import { loadPoemManifest, sandboxPoems } from "@/components/boks/poetry/poems";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 
 /**
  * The immersive poetry format, before it has a boks of its own.
  *
- * "Прощай, немытая Россия" is not in the catalogue, so this is where the format
- * can be watched and judged. Nothing here is particular to that poem: the
+ * Every poem the format has, including "Прощай, немытая Россия", which is not
+ * in the catalogue and can only be watched here. Nothing here is particular to that poem: the
  * player takes a manifest, and a second poem is a second manifest.
  */
 export function PoetrySandbox() {
-  const [manifest, setManifest] = useState<PoemManifest | null>(null);
-  const [open, setOpen] = useState(false);
+  const [manifests, setManifests] = useState<PoemManifest[]>([]);
+  const [open, setOpen] = useState<PoemManifest | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      loadPoemManifest(sandboxPoem).then(setManifest, (reason: Error) => setError(reason.message));
+      Promise.all(sandboxPoems.map(loadPoemManifest)).then(setManifests, (reason: Error) =>
+        setError(reason.message)
+      );
     }, 0);
     return () => window.clearTimeout(handle);
   }, []);
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => setOpen(null), []);
 
   return (
     <section className="space-y-4">
@@ -41,8 +43,8 @@ export function PoetrySandbox() {
 
       {error && <p className="text-sm text-destructive">Манифест не загрузился: {error}</p>}
 
-      {manifest && (
-        <div className="space-y-3 rounded-lg border p-4">
+      {manifests.map((manifest) => (
+        <div key={manifest.id} className="space-y-3 rounded-lg border p-4">
           <div>
             <p className="font-semibold">{manifest.title}</p>
             <p className="text-sm text-muted-foreground">{manifest.author}</p>
@@ -65,7 +67,7 @@ export function PoetrySandbox() {
               <dd>{manifest.timingMode === "forced-alignment" ? "по записи" : "черновые"}</dd>
             </div>
           </dl>
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => setOpen(manifest)}>
             <Play className="size-4" /> Открыть
           </Button>
           {/*
@@ -73,14 +75,16 @@ export function PoetrySandbox() {
             the text exists in variants, and the attribution has been argued
             over - though the academic tradition keeps it in Lermontov.
           */}
-          <p className="text-xs text-muted-foreground">
-            Автограф не сохранился, известны разночтения, атрибуция обсуждается; академическая
-            традиция включает стихотворение в корпус Лермонтова.
-          </p>
+          {manifest.id.startsWith("farewell-russia") && (
+            <p className="text-xs text-muted-foreground">
+              Автограф не сохранился, известны разночтения, атрибуция обсуждается; академическая
+              традиция включает стихотворение в корпус Лермонтова.
+            </p>
+          )}
         </div>
-      )}
+      ))}
 
-      {open && manifest && <ImmersivePoem manifest={manifest} onClose={close} />}
+      {open && <ImmersivePoem manifest={open} onClose={close} />}
     </section>
   );
 }

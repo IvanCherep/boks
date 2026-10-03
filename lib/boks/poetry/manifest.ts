@@ -86,6 +86,17 @@ export type PoemManifest = {
   theme?: { src: string; gain: number };
   durationMs: number;
   palette: { text: string; active: string; shadow: string };
+  /**
+   * The words' size against the format's own, for verse whose lines are long.
+   * One when left out.
+   */
+  textScale?: number;
+  /**
+   * How much darker the sky is made behind the words, against the format's
+   * own veil. One when left out; a poem painted in daylight needs more, or
+   * its settled lines vanish into the clouds.
+   */
+  veil?: number;
   playback: {
     /** How early a word begins arriving, so it is whole when it is spoken. */
     tokenLeadMs?: number;

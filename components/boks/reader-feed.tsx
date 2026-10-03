@@ -2349,7 +2349,13 @@ export function ReaderFeed() {
               a prototype dressed in a shared stand-in. */}
           {cinemaOffered && (
             <ActionButton
-              label={cinemaIsFinished ? "Listen and read" : "Listen and read (prototype, admins only)"}
+              label={
+                // A registered poem is finished by definition - it has its own
+                // recording, theme and pictures - so it is not a prototype.
+                cinemaIsFinished || poemManifestUrl
+                  ? "Listen and read"
+                  : "Listen and read (prototype, admins only)"
+              }
               onClick={() => {
                 // Either renderer brings its own voice. Silence the reading
                 // music without forgetting the choice, so it returns after.

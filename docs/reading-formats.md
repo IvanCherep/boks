@@ -84,7 +84,9 @@ Tests:
 | `components/boks/poetry/poems.ts` | which boks open in it |
 | `components/boks/admin/poetry-sandbox.tsx` | `/admin` → Poetry, for a poem with no boks yet |
 | `scripts/build-poem-manifest.mjs` | builds a manifest from a recording's own alignment |
-| `docs/farewell-russia-scene-map.json` | a working scene map to copy |
+| `docs/farewell-russia-scene-map.json` | the first poem's scene map |
+| `docs/poetry/<slug>/{scene-map,lines,alignment}.json` | a poem's three inputs, kept so the manifest can be rebuilt exactly |
+| `lib/boks/poetry/shipped-poems.test.ts` | the standard every folder under `public/poetry/` is held to - files, timings, zones, scenes, theme |
 | `public/poetry/<slug>/manifest.json` | lines, word times, scenes, levels |
 | `public/poetry/<slug>/narration.mp3` | the reading |
 | `public/poetry/<slug>/theme.mp3` | the piece's own theme |
@@ -363,27 +365,60 @@ components/boks/poetry/
 scripts/build-poem-manifest.mjs    builds a manifest from a recording
 ```
 
+### The poems that ship
+
+| Poem | Boks id | Voice | Pictures | Lines per picture |
+|---|---|---|---|---|
+| «Прощай, немытая Россия» | none - sandbox only | Alex Bell | 4 | 2 |
+| *The New Colossus*, Emma Lazarus | `202c3d9c-5a8e-4c91-8278-ab0fc4e602cf` | Sha | 4 | 3, 5, 4, 2 |
+| *I Hear America Singing*, Walt Whitman | `3056ee24-d8c0-4963-923f-967213a3ec34` | Jerry B. | 4 | 2, 3, 4, 2 |
+
 ### Adding a poem
 
-1. **Record it** with `/with-timestamps` at verse stability.
-2. **Convert the pictures** to WebP into `public/poetry/<slug>/scenes/`.
-3. **Write a scene map** — see `docs/farewell-russia-scene-map.json` for a
-   working one. Each scene names its image, its `lines` count, a `textPreset`,
-   a `focalPoint`, and `safeZones` in fractions of the frame.
-4. **Build the manifest:**
+The whole job is assets and JSON; the renderer, the finale and the tests come
+with it. The two English poems were added this way in one pass, which is the
+check that it works.
+
+1. **Find the boks.** The poem must be in the catalogue to be offered to
+   readers: `published_boks` by title gives the id. Take the text from the
+   catalogue import (`work/catalogue-*/*.jsonl`) so the words match the boks
+   exactly.
+2. **Record it** with `/with-timestamps`, the author's-gender voice from
+   `components/boks/cinema/voices.ts`, at verse stability (0.8). Two takes cost
+   little; choose by dynamic range and share of silence - more room between
+   lines matters more here than anywhere, because the words arrive in the
+   picture. Assert the alignment's length equals the text's.
+3. **Generate the theme** to the recording's length, two takes, and keep the
+   one with less energy in 1–3 kHz and a steadier envelope
+   (`docs/media-generation.md` §4).
+4. **Measure the theme gain.** Active RMS of each (frames within 40 dB of the
+   peak), then `20·log10(gain) = voice − theme − 10`. It goes in the scene map
+   as `themeGain`.
+5. **Convert the pictures** to WebP into `public/poetry/<slug>/scenes/`.
+6. **Write the scene map** in `docs/poetry/<slug>/scene-map.json` - copy one of
+   the existing ones. Per scene: image, `lines`, `textPreset`, `focalPoint`, and
+   `safeZones` in fractions of the **screen**, not the image: a 9:16 picture on
+   a phone loses about a tenth on each side. A zone that reaches the right edge
+   starts at `y ≥ 0.08`, under the close button. Per poem: `palette`,
+   `themeGain`, and when needed `textScale` (long lines: 0.82 for Lazarus, 0.68
+   for Whitman's hundred-character ones) and `veil` (a daylight poem: 1.55 for
+   Whitman).
+7. **Build the manifest:**
 
    ```bash
-   node scripts/build-poem-manifest.mjs <slug> <alignment.json> <lines.json> <scene-map.json>
+   node scripts/build-poem-manifest.mjs <slug> docs/poetry/<slug>/alignment.json docs/poetry/<slug>/lines.json docs/poetry/<slug>/scene-map.json
    ```
 
    It refuses if the word counts disagree rather than cutting the poem in the
    wrong places.
-5. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
-   One line, nothing else. The ending comes with it: the finale is shared, so
-   a new poem has nothing to add there.
+8. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
+   One line. The sandbox lists it, the feed offers it, and the finale is
+   shared, so a new poem has nothing to add there.
+9. **Look at it** at phone size in WebKit (§5) - the tests cannot tell whether
+   words sit on a face.
 
 No new component, ever. If a poem needs something the renderer cannot do, the
-thing to add is a preset, not a component.
+thing to add is a preset or a scene-map field, not a component.
 
 ### How many pictures
 
@@ -430,11 +465,18 @@ The grouping is the poem's own punctuation: a phrase runs up to and including
 the word that closes it. The builder marks that word `emphasis: "lead"` — it is
 also the word set half again as large — and numbers the phrases from it.
 
-### A picture's lines stay together
+### A picture's lines stay together, two at a time
 
 The lines one picture carries build up into a stanza: the first stays, dimmed
 to half, while the second is spoken under it, and the stanza leaves with its
-picture (a 700 ms fade - longer and it lies legibly over the next stanza,
+picture. **At most two lines are on screen.** A zone has two rows and a
+picture's lines alternate between them, so a third line lands exactly where the
+first was - the first starts leaving as the voice reaches the last word of the
+line between them, so the two are never legible over each other. A sonnet over
+four pictures, or a Whitman line of a hundred characters, stays a couplet
+rather than becoming a page. Each row is as tall as the longest line it will
+hold, so nothing is ever re-laid out; the two lines hug the boundary between
+the rows. The stanza leaves with its picture (a 700 ms fade - longer and it lies legibly over the next stanza,
 which usually lands in the same part of the sky). A line shown on its own
 lasted two seconds and went out exactly where the next was arriving, which is
 what read as the text flickering. Inside a zone each line is a row of its own
@@ -506,6 +548,25 @@ crops captures and cannot measure frame rate. Two things that do work:
 
 Frame timing cannot be measured in this environment. Say so rather than implying
 a profile was taken.
+
+What has worked for the poems, run from a scratch folder rather than the repo:
+
+- **WebKit at phone size** - `npm i playwright && npx playwright install webkit`,
+  then `devices["iPhone 15"]`. It is Safari's engine, which is what most readers
+  of this format hold. Against the dev server WebKit upgrades every `localhost`
+  request to https (the CSP's `upgrade-insecure-requests`) and loads nothing;
+  route the requests back to http and drop that header in the test browser.
+  `page.tap(".poem__surface")` starts playback.
+- **Screenshot by playback position, not by wall clock.** The audio starts some
+  hundreds of milliseconds after the tap, so wait on the bar's `aria-valuenow`
+  instead.
+- **Detect blinks rather than look for them.** Sample every word's computed
+  opacity each frame, and flag one that was visible and drops near zero while
+  its stanza is still up and its row is not handing over. It found the
+  end-of-line blink on every line of the first poem, and finds none now.
+- A purple mark reported on an iPhone could not be reproduced in WebKit; no
+  frame of text alone held a purple pixel. If it comes back, ask for a
+  screenshot.
 
 ---
 

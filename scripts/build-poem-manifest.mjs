@@ -168,10 +168,25 @@ const manifest = {
    * gain is measured against this recording and has to be re-measured if
    * either the theme or the reading is replaced.
    */
-  theme: { src: `/poetry/${slug}/theme.mp3`, gain: 0.19 },
+  /*
+   * The gain is measured per poem, not shared: set `themeGain` in the scene
+   * map from the active levels of this theme and this reading, ten decibels
+   * apart. 0.19 is the first poem's, kept as the default so it rebuilds as
+   * it was.
+   */
+  theme: { src: `/poetry/${slug}/theme.mp3`, gain: sceneMap.themeGain ?? 0.19 },
   durationMs,
   canvas: sceneMap.canvas,
   palette: sceneMap.palette,
+  /*
+   * How large the words are against the format's own size. One for short
+   * lines; long ones - Whitman runs to a hundred characters - need less, or a
+   * single line fills the sky. The scene map says, because the poem knows.
+   */
+  ...(sceneMap.textScale ? { textScale: sceneMap.textScale } : {}),
+  // How much darker the sky is made behind the words. Daylight pictures need
+  // more than the night the format was first drawn for.
+  ...(sceneMap.veil ? { veil: sceneMap.veil } : {}),
   playback: {
     /*
      * A word appears a little before it is said.

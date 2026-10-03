@@ -1,0 +1,1139 @@
+{
+ "id": "i-hear-america-singing-immersive-v1",
+ "title": "I Hear America Singing",
+ "author": "Walt Whitman",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/i-hear-america-singing/narration.mp3",
+ "theme": {
+  "src": "/poetry/i-hear-america-singing/theme.mp3",
+  "gain": 0.21
+ },
+ "durationMs": 61360,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F6EBD9",
+  "active": "#FFD99A",
+  "shadow": "rgba(10, 8, 6, 0.5)"
+ },
+ "textScale": 0.68,
+ "veil": 1.55,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1060,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "mechanics",
+   "image": "/poetry/i-hear-america-singing/scenes/01-mechanics.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "uniform-formation",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "I hear America singing, the varied carols I hear, / Those of mechanics, each one singing his as it should be blithe and strong,",
+   "startMs": 0
+  },
+  {
+   "id": "carpenter-mason-boatmen",
+   "image": "/poetry/i-hear-america-singing/scenes/02-carpenter-mason-boatmen.webp",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "shelter-reveal",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.52,
+     "height": 0.3
+    }
+   ],
+   "line": "The carpenter singing his as he measures his plank or beam, / The mason singing his as he makes ready for work, or leaves off work, / The boatman singing what belongs to him in his boat, the deckhand singing on the steamboat deck,",
+   "startMs": 10040
+  },
+  {
+   "id": "many-daily-songs",
+   "image": "/poetry/i-hear-america-singing/scenes/03-many-daily-songs.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "The shoemaker singing as he sits on his bench, the hatter singing as he stands, / The wood-cutter's song, the ploughboy's on his way in the morning, or at noon intermission or at sundown, / The delicious singing of the mother, or of the young wife at work, or of the girl sewing or washing, / Each singing what belongs to him or her and to none else",
+   "startMs": 25800
+  },
+  {
+   "id": "night-chorus",
+   "image": "/poetry/i-hear-america-singing/scenes/04-night-chorus.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.38,
+     "y": 0.08,
+     "width": 0.56,
+     "height": 0.3
+    }
+   ],
+   "line": "The day what belongs to the day—at night the party of young fellows, robust, friendly, / Singing with open mouths their strong melodious songs.",
+   "startMs": 50320
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "mechanics",
+   "startMs": 0,
+   "endMs": 4480,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 0,
+     "endMs": 160,
+     "phrase": 0
+    },
+    {
+     "text": "hear",
+     "atMs": 240,
+     "endMs": 400,
+     "phrase": 0
+    },
+    {
+     "text": "America",
+     "atMs": 480,
+     "endMs": 1120,
+     "phrase": 0
+    },
+    {
+     "text": "singing,",
+     "atMs": 1280,
+     "endMs": 2160,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 2240,
+     "endMs": 2320,
+     "phrase": 1
+    },
+    {
+     "text": "varied",
+     "atMs": 2400,
+     "endMs": 2800,
+     "phrase": 1
+    },
+    {
+     "text": "carols",
+     "atMs": 2880,
+     "endMs": 3360,
+     "phrase": 1
+    },
+    {
+     "text": "I",
+     "atMs": 3440,
+     "endMs": 3520,
+     "phrase": 1
+    },
+    {
+     "text": "hear,",
+     "atMs": 3600,
+     "endMs": 4400,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mechanics",
+   "startMs": 4480,
+   "endMs": 10040,
+   "tokens": [
+    {
+     "text": "Those",
+     "atMs": 4480,
+     "endMs": 4720,
+     "phrase": 2
+    },
+    {
+     "text": "of",
+     "atMs": 4800,
+     "endMs": 4880,
+     "phrase": 2
+    },
+    {
+     "text": "mechanics,",
+     "atMs": 4960,
+     "endMs": 6000,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "each",
+     "atMs": 6120,
+     "endMs": 6240,
+     "phrase": 3
+    },
+    {
+     "text": "one",
+     "atMs": 6320,
+     "endMs": 6480,
+     "phrase": 3
+    },
+    {
+     "text": "singing",
+     "atMs": 6640,
+     "endMs": 6960,
+     "phrase": 3
+    },
+    {
+     "text": "his",
+     "atMs": 7040,
+     "endMs": 7440,
+     "phrase": 3
+    },
+    {
+     "text": "as",
+     "atMs": 7520,
+     "endMs": 7600,
+     "phrase": 3
+    },
+    {
+     "text": "it",
+     "atMs": 7680,
+     "endMs": 7760,
+     "phrase": 3
+    },
+    {
+     "text": "should",
+     "atMs": 7840,
+     "endMs": 8000,
+     "phrase": 3
+    },
+    {
+     "text": "be",
+     "atMs": 8080,
+     "endMs": 8160,
+     "phrase": 3
+    },
+    {
+     "text": "blithe",
+     "atMs": 8240,
+     "endMs": 8720,
+     "phrase": 3
+    },
+    {
+     "text": "and",
+     "atMs": 8800,
+     "endMs": 8880,
+     "phrase": 3
+    },
+    {
+     "text": "strong,",
+     "atMs": 8960,
+     "endMs": 10000,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "carpenter-mason-boatmen",
+   "startMs": 10040,
+   "endMs": 14320,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 10040,
+     "endMs": 10080,
+     "phrase": 4
+    },
+    {
+     "text": "carpenter",
+     "atMs": 10240,
+     "endMs": 10800,
+     "phrase": 4
+    },
+    {
+     "text": "singing",
+     "atMs": 10880,
+     "endMs": 11200,
+     "phrase": 4
+    },
+    {
+     "text": "his",
+     "atMs": 11280,
+     "endMs": 11680,
+     "phrase": 4
+    },
+    {
+     "text": "as",
+     "atMs": 11760,
+     "endMs": 11840,
+     "phrase": 4
+    },
+    {
+     "text": "he",
+     "atMs": 11920,
+     "endMs": 12080,
+     "phrase": 4
+    },
+    {
+     "text": "measures",
+     "atMs": 12120,
+     "endMs": 12480,
+     "phrase": 4
+    },
+    {
+     "text": "his",
+     "atMs": 12560,
+     "endMs": 12640,
+     "phrase": 4
+    },
+    {
+     "text": "plank",
+     "atMs": 12800,
+     "endMs": 13120,
+     "phrase": 4
+    },
+    {
+     "text": "or",
+     "atMs": 13200,
+     "endMs": 13280,
+     "phrase": 4
+    },
+    {
+     "text": "beam,",
+     "atMs": 13360,
+     "endMs": 14240,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "carpenter-mason-boatmen",
+   "startMs": 14320,
+   "endMs": 19440,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 14320,
+     "endMs": 14400,
+     "phrase": 5
+    },
+    {
+     "text": "mason",
+     "atMs": 14480,
+     "endMs": 14960,
+     "phrase": 5
+    },
+    {
+     "text": "singing",
+     "atMs": 15040,
+     "endMs": 15360,
+     "phrase": 5
+    },
+    {
+     "text": "his",
+     "atMs": 15440,
+     "endMs": 15920,
+     "phrase": 5
+    },
+    {
+     "text": "as",
+     "atMs": 16000,
+     "endMs": 16080,
+     "phrase": 5
+    },
+    {
+     "text": "he",
+     "atMs": 16160,
+     "endMs": 16240,
+     "phrase": 5
+    },
+    {
+     "text": "makes",
+     "atMs": 16320,
+     "endMs": 16560,
+     "phrase": 5
+    },
+    {
+     "text": "ready",
+     "atMs": 16640,
+     "endMs": 16880,
+     "phrase": 5
+    },
+    {
+     "text": "for",
+     "atMs": 16960,
+     "endMs": 17120,
+     "phrase": 5
+    },
+    {
+     "text": "work,",
+     "atMs": 17200,
+     "endMs": 17760,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 17840,
+     "endMs": 17920,
+     "phrase": 6
+    },
+    {
+     "text": "leaves",
+     "atMs": 18000,
+     "endMs": 18240,
+     "phrase": 6
+    },
+    {
+     "text": "off",
+     "atMs": 18320,
+     "endMs": 18480,
+     "phrase": 6
+    },
+    {
+     "text": "work,",
+     "atMs": 18560,
+     "endMs": 19360,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "carpenter-mason-boatmen",
+   "startMs": 19440,
+   "endMs": 25800,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 19440,
+     "endMs": 19520,
+     "phrase": 7
+    },
+    {
+     "text": "boatman",
+     "atMs": 19600,
+     "endMs": 20080,
+     "phrase": 7
+    },
+    {
+     "text": "singing",
+     "atMs": 20240,
+     "endMs": 20560,
+     "phrase": 7
+    },
+    {
+     "text": "what",
+     "atMs": 20640,
+     "endMs": 20720,
+     "phrase": 7
+    },
+    {
+     "text": "belongs",
+     "atMs": 20800,
+     "endMs": 21280,
+     "phrase": 7
+    },
+    {
+     "text": "to",
+     "atMs": 21320,
+     "endMs": 21360,
+     "phrase": 7
+    },
+    {
+     "text": "him",
+     "atMs": 21440,
+     "endMs": 21600,
+     "phrase": 7
+    },
+    {
+     "text": "in",
+     "atMs": 21680,
+     "endMs": 21760,
+     "phrase": 7
+    },
+    {
+     "text": "his",
+     "atMs": 21840,
+     "endMs": 21920,
+     "phrase": 7
+    },
+    {
+     "text": "boat,",
+     "atMs": 22000,
+     "endMs": 22800,
+     "phrase": 7,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 22840,
+     "endMs": 22880,
+     "phrase": 8
+    },
+    {
+     "text": "deckhand",
+     "atMs": 22960,
+     "endMs": 23600,
+     "phrase": 8
+    },
+    {
+     "text": "singing",
+     "atMs": 23680,
+     "endMs": 24000,
+     "phrase": 8
+    },
+    {
+     "text": "on",
+     "atMs": 24080,
+     "endMs": 24160,
+     "phrase": 8
+    },
+    {
+     "text": "the",
+     "atMs": 24200,
+     "endMs": 24240,
+     "phrase": 8
+    },
+    {
+     "text": "steamboat",
+     "atMs": 24320,
+     "endMs": 24880,
+     "phrase": 8
+    },
+    {
+     "text": "deck,",
+     "atMs": 24960,
+     "endMs": 25760,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "many-daily-songs",
+   "startMs": 25800,
+   "endMs": 31600,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 25800,
+     "endMs": 25840,
+     "phrase": 9
+    },
+    {
+     "text": "shoemaker",
+     "atMs": 26000,
+     "endMs": 26640,
+     "phrase": 9
+    },
+    {
+     "text": "singing",
+     "atMs": 26800,
+     "endMs": 27120,
+     "phrase": 9
+    },
+    {
+     "text": "as",
+     "atMs": 27200,
+     "endMs": 27280,
+     "phrase": 9
+    },
+    {
+     "text": "he",
+     "atMs": 27400,
+     "endMs": 27520,
+     "phrase": 9
+    },
+    {
+     "text": "sits",
+     "atMs": 27560,
+     "endMs": 27760,
+     "phrase": 9
+    },
+    {
+     "text": "on",
+     "atMs": 27840,
+     "endMs": 27920,
+     "phrase": 9
+    },
+    {
+     "text": "his",
+     "atMs": 28000,
+     "endMs": 28080,
+     "phrase": 9
+    },
+    {
+     "text": "bench,",
+     "atMs": 28160,
+     "endMs": 29040,
+     "phrase": 9,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 29120,
+     "endMs": 29200,
+     "phrase": 10
+    },
+    {
+     "text": "hatter",
+     "atMs": 29280,
+     "endMs": 29680,
+     "phrase": 10
+    },
+    {
+     "text": "singing",
+     "atMs": 29840,
+     "endMs": 30160,
+     "phrase": 10
+    },
+    {
+     "text": "as",
+     "atMs": 30240,
+     "endMs": 30320,
+     "phrase": 10
+    },
+    {
+     "text": "he",
+     "atMs": 30400,
+     "endMs": 30480,
+     "phrase": 10
+    },
+    {
+     "text": "stands,",
+     "atMs": 30760,
+     "endMs": 31520,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "many-daily-songs",
+   "startMs": 31600,
+   "endMs": 38720,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 31600,
+     "endMs": 31680,
+     "phrase": 11
+    },
+    {
+     "text": "wood-cutter's",
+     "atMs": 31760,
+     "endMs": 32400,
+     "phrase": 11
+    },
+    {
+     "text": "song,",
+     "atMs": 32600,
+     "endMs": 33200,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 33240,
+     "endMs": 33280,
+     "phrase": 12
+    },
+    {
+     "text": "ploughboy's",
+     "atMs": 33440,
+     "endMs": 34080,
+     "phrase": 12
+    },
+    {
+     "text": "on",
+     "atMs": 34160,
+     "endMs": 34200,
+     "phrase": 12
+    },
+    {
+     "text": "his",
+     "atMs": 34240,
+     "endMs": 34400,
+     "phrase": 12
+    },
+    {
+     "text": "way",
+     "atMs": 34480,
+     "endMs": 34640,
+     "phrase": 12
+    },
+    {
+     "text": "in",
+     "atMs": 34680,
+     "endMs": 34720,
+     "phrase": 12
+    },
+    {
+     "text": "the",
+     "atMs": 34800,
+     "endMs": 34880,
+     "phrase": 12
+    },
+    {
+     "text": "morning,",
+     "atMs": 34960,
+     "endMs": 35600,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 35720,
+     "endMs": 35840,
+     "phrase": 13
+    },
+    {
+     "text": "at",
+     "atMs": 35920,
+     "endMs": 36080,
+     "phrase": 13
+    },
+    {
+     "text": "noon",
+     "atMs": 36160,
+     "endMs": 36400,
+     "phrase": 13
+    },
+    {
+     "text": "intermission",
+     "atMs": 36560,
+     "endMs": 37120,
+     "phrase": 13
+    },
+    {
+     "text": "or",
+     "atMs": 37280,
+     "endMs": 37360,
+     "phrase": 13
+    },
+    {
+     "text": "at",
+     "atMs": 37440,
+     "endMs": 37520,
+     "phrase": 13
+    },
+    {
+     "text": "sundown,",
+     "atMs": 37600,
+     "endMs": 38640,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "many-daily-songs",
+   "startMs": 38720,
+   "endMs": 46000,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 38720,
+     "endMs": 38800,
+     "phrase": 14
+    },
+    {
+     "text": "delicious",
+     "atMs": 38960,
+     "endMs": 39520,
+     "phrase": 14
+    },
+    {
+     "text": "singing",
+     "atMs": 39600,
+     "endMs": 40000,
+     "phrase": 14
+    },
+    {
+     "text": "of",
+     "atMs": 40040,
+     "endMs": 40080,
+     "phrase": 14
+    },
+    {
+     "text": "the",
+     "atMs": 40160,
+     "endMs": 40240,
+     "phrase": 14
+    },
+    {
+     "text": "mother,",
+     "atMs": 40320,
+     "endMs": 41040,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 41160,
+     "endMs": 41280,
+     "phrase": 15
+    },
+    {
+     "text": "of",
+     "atMs": 41360,
+     "endMs": 41440,
+     "phrase": 15
+    },
+    {
+     "text": "the",
+     "atMs": 41480,
+     "endMs": 41520,
+     "phrase": 15
+    },
+    {
+     "text": "young",
+     "atMs": 41600,
+     "endMs": 41840,
+     "phrase": 15
+    },
+    {
+     "text": "wife",
+     "atMs": 41920,
+     "endMs": 42160,
+     "phrase": 15
+    },
+    {
+     "text": "at",
+     "atMs": 42240,
+     "endMs": 42320,
+     "phrase": 15
+    },
+    {
+     "text": "work,",
+     "atMs": 42400,
+     "endMs": 43040,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 43160,
+     "endMs": 43280,
+     "phrase": 16
+    },
+    {
+     "text": "of",
+     "atMs": 43320,
+     "endMs": 43360,
+     "phrase": 16
+    },
+    {
+     "text": "the",
+     "atMs": 43440,
+     "endMs": 43520,
+     "phrase": 16
+    },
+    {
+     "text": "girl",
+     "atMs": 43600,
+     "endMs": 43920,
+     "phrase": 16
+    },
+    {
+     "text": "sewing",
+     "atMs": 44080,
+     "endMs": 44560,
+     "phrase": 16
+    },
+    {
+     "text": "or",
+     "atMs": 44640,
+     "endMs": 44720,
+     "phrase": 16
+    },
+    {
+     "text": "washing,",
+     "atMs": 44800,
+     "endMs": 45840,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "many-daily-songs",
+   "startMs": 46000,
+   "endMs": 50320,
+   "tokens": [
+    {
+     "text": "Each",
+     "atMs": 46000,
+     "endMs": 46160,
+     "phrase": 17
+    },
+    {
+     "text": "singing",
+     "atMs": 46240,
+     "endMs": 46640,
+     "phrase": 17
+    },
+    {
+     "text": "what",
+     "atMs": 46720,
+     "endMs": 46800,
+     "phrase": 17
+    },
+    {
+     "text": "belongs",
+     "atMs": 46880,
+     "endMs": 47360,
+     "phrase": 17
+    },
+    {
+     "text": "to",
+     "atMs": 47440,
+     "endMs": 47520,
+     "phrase": 17
+    },
+    {
+     "text": "him",
+     "atMs": 47600,
+     "endMs": 47840,
+     "phrase": 17
+    },
+    {
+     "text": "or",
+     "atMs": 47920,
+     "endMs": 48000,
+     "phrase": 17
+    },
+    {
+     "text": "her",
+     "atMs": 48080,
+     "endMs": 48400,
+     "phrase": 17
+    },
+    {
+     "text": "and",
+     "atMs": 48640,
+     "endMs": 48800,
+     "phrase": 17
+    },
+    {
+     "text": "to",
+     "atMs": 48880,
+     "endMs": 48960,
+     "phrase": 17
+    },
+    {
+     "text": "none",
+     "atMs": 49120,
+     "endMs": 49280,
+     "phrase": 17
+    },
+    {
+     "text": "else",
+     "atMs": 49360,
+     "endMs": 49760,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "night-chorus",
+   "startMs": 50320,
+   "endMs": 57280,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 50320,
+     "endMs": 50400,
+     "phrase": 18
+    },
+    {
+     "text": "day",
+     "atMs": 50480,
+     "endMs": 50880,
+     "phrase": 18
+    },
+    {
+     "text": "what",
+     "atMs": 50960,
+     "endMs": 51120,
+     "phrase": 18
+    },
+    {
+     "text": "belongs",
+     "atMs": 51200,
+     "endMs": 51760,
+     "phrase": 18
+    },
+    {
+     "text": "to",
+     "atMs": 51840,
+     "endMs": 51920,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 51960,
+     "endMs": 52000,
+     "phrase": 18
+    },
+    {
+     "text": "day—at",
+     "atMs": 52160,
+     "endMs": 53040,
+     "phrase": 18
+    },
+    {
+     "text": "night",
+     "atMs": 53120,
+     "endMs": 53520,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 53600,
+     "endMs": 53760,
+     "phrase": 18
+    },
+    {
+     "text": "party",
+     "atMs": 53920,
+     "endMs": 54080,
+     "phrase": 18
+    },
+    {
+     "text": "of",
+     "atMs": 54160,
+     "endMs": 54240,
+     "phrase": 18
+    },
+    {
+     "text": "young",
+     "atMs": 54320,
+     "endMs": 54560,
+     "phrase": 18
+    },
+    {
+     "text": "fellows,",
+     "atMs": 54640,
+     "endMs": 55280,
+     "phrase": 18,
+     "emphasis": "lead"
+    },
+    {
+     "text": "robust,",
+     "atMs": 55440,
+     "endMs": 56160,
+     "phrase": 19,
+     "emphasis": "lead"
+    },
+    {
+     "text": "friendly,",
+     "atMs": 56240,
+     "endMs": 57120,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "night-chorus",
+   "startMs": 57280,
+   "endMs": 61360,
+   "tokens": [
+    {
+     "text": "Singing",
+     "atMs": 57280,
+     "endMs": 57600,
+     "phrase": 21
+    },
+    {
+     "text": "with",
+     "atMs": 57680,
+     "endMs": 57840,
+     "phrase": 21
+    },
+    {
+     "text": "open",
+     "atMs": 58000,
+     "endMs": 58240,
+     "phrase": 21
+    },
+    {
+     "text": "mouths",
+     "atMs": 58320,
+     "endMs": 58880,
+     "phrase": 21
+    },
+    {
+     "text": "their",
+     "atMs": 59000,
+     "endMs": 59120,
+     "phrase": 21
+    },
+    {
+     "text": "strong",
+     "atMs": 59200,
+     "endMs": 59680,
+     "phrase": 21
+    },
+    {
+     "text": "melodious",
+     "atMs": 59760,
+     "endMs": 60400,
+     "phrase": 21
+    },
+    {
+     "text": "songs.",
+     "atMs": 60480,
+     "endMs": 61360,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

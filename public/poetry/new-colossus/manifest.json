@@ -1,0 +1,874 @@
+{
+ "id": "new-colossus-immersive-v1",
+ "title": "The New Colossus",
+ "author": "Emma Lazarus",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/new-colossus/narration.mp3",
+ "theme": {
+  "src": "/poetry/new-colossus/theme.mp3",
+  "gain": 0.15
+ },
+ "durationMs": 49280,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F3ECDF",
+  "active": "#FFD58A",
+  "shadow": "rgba(8, 12, 22, 0.5)"
+ },
+ "textScale": 0.82,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1060,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "sea-washed-gates",
+   "image": "/poetry/new-colossus/scenes/01-sea-washed-gates.webp",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.45
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1380,
+   "safeZones": [
+    {
+     "x": 0.44,
+     "y": 0.09,
+     "width": 0.5,
+     "height": 0.3
+    }
+   ],
+   "line": "Not like the brazen giant of Greek fame, / With conquering limbs astride from land to land; / Here at our sea-washed, sunset gates shall stand",
+   "startMs": 0
+  },
+  {
+   "id": "mother-of-exiles",
+   "image": "/poetry/new-colossus/scenes/02-mother-of-exiles.webp",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.38,
+    "y": 0.4
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.46,
+     "y": 0.09,
+     "width": 0.48,
+     "height": 0.3
+    }
+   ],
+   "line": "A mighty woman with a torch, whose flame / Is the imprisoned lightning, and her name / Mother of Exiles. From her beacon-hand / Glows world-wide welcome; her mild eyes command / The air-bridged harbor that twin cities frame.",
+   "startMs": 10720
+  },
+  {
+   "id": "huddled-masses",
+   "image": "/poetry/new-colossus/scenes/03-huddled-masses.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "\"Keep, ancient lands, your storied pomp!\" cries she / With silent lips. \"Give me your tired, your poor, / Your huddled masses yearning to breathe free, / The wretched refuse of your teeming shore.",
+   "startMs": 27920
+  },
+  {
+   "id": "golden-door",
+   "image": "/poetry/new-colossus/scenes/04-golden-door.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.84,
+     "height": 0.3
+    }
+   ],
+   "line": "Send these, the homeless, tempest-tost to me, / I lift my lamp beside the golden door!\"",
+   "startMs": 42240
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "sea-washed-gates",
+   "startMs": 0,
+   "endMs": 3080,
+   "tokens": [
+    {
+     "text": "Not",
+     "atMs": 0,
+     "endMs": 320,
+     "phrase": 0
+    },
+    {
+     "text": "like",
+     "atMs": 400,
+     "endMs": 560,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 600,
+     "endMs": 640,
+     "phrase": 0
+    },
+    {
+     "text": "brazen",
+     "atMs": 720,
+     "endMs": 1200,
+     "phrase": 0
+    },
+    {
+     "text": "giant",
+     "atMs": 1280,
+     "endMs": 1680,
+     "phrase": 0
+    },
+    {
+     "text": "of",
+     "atMs": 1760,
+     "endMs": 1840,
+     "phrase": 0
+    },
+    {
+     "text": "Greek",
+     "atMs": 1920,
+     "endMs": 2160,
+     "phrase": 0
+    },
+    {
+     "text": "fame,",
+     "atMs": 2240,
+     "endMs": 2960,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sea-washed-gates",
+   "startMs": 3080,
+   "endMs": 6960,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 3080,
+     "endMs": 3200,
+     "phrase": 1
+    },
+    {
+     "text": "conquering",
+     "atMs": 3280,
+     "endMs": 3760,
+     "phrase": 1
+    },
+    {
+     "text": "limbs",
+     "atMs": 3840,
+     "endMs": 4160,
+     "phrase": 1
+    },
+    {
+     "text": "astride",
+     "atMs": 4240,
+     "endMs": 4960,
+     "phrase": 1
+    },
+    {
+     "text": "from",
+     "atMs": 5080,
+     "endMs": 5200,
+     "phrase": 1
+    },
+    {
+     "text": "land",
+     "atMs": 5280,
+     "endMs": 5600,
+     "phrase": 1
+    },
+    {
+     "text": "to",
+     "atMs": 5680,
+     "endMs": 5760,
+     "phrase": 1
+    },
+    {
+     "text": "land;",
+     "atMs": 5840,
+     "endMs": 6880,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sea-washed-gates",
+   "startMs": 6960,
+   "endMs": 10720,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 6960,
+     "endMs": 7280,
+     "phrase": 2
+    },
+    {
+     "text": "at",
+     "atMs": 7440,
+     "endMs": 7520,
+     "phrase": 2
+    },
+    {
+     "text": "our",
+     "atMs": 7640,
+     "endMs": 7760,
+     "phrase": 2
+    },
+    {
+     "text": "sea-washed,",
+     "atMs": 7840,
+     "endMs": 8640,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "sunset",
+     "atMs": 8720,
+     "endMs": 9200,
+     "phrase": 3
+    },
+    {
+     "text": "gates",
+     "atMs": 9360,
+     "endMs": 9600,
+     "phrase": 3
+    },
+    {
+     "text": "shall",
+     "atMs": 9680,
+     "endMs": 9840,
+     "phrase": 3
+    },
+    {
+     "text": "stand",
+     "atMs": 9920,
+     "endMs": 10320,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mother-of-exiles",
+   "startMs": 10720,
+   "endMs": 13760,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 10720,
+     "endMs": 10880,
+     "phrase": 4
+    },
+    {
+     "text": "mighty",
+     "atMs": 11040,
+     "endMs": 11360,
+     "phrase": 4
+    },
+    {
+     "text": "woman",
+     "atMs": 11440,
+     "endMs": 11760,
+     "phrase": 4
+    },
+    {
+     "text": "with",
+     "atMs": 11840,
+     "endMs": 11920,
+     "phrase": 4
+    },
+    {
+     "text": "a",
+     "atMs": 12000,
+     "endMs": 12080,
+     "phrase": 4
+    },
+    {
+     "text": "torch,",
+     "atMs": 12160,
+     "endMs": 12640,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "whose",
+     "atMs": 12880,
+     "endMs": 13120,
+     "phrase": 5
+    },
+    {
+     "text": "flame",
+     "atMs": 13280,
+     "endMs": 13680,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mother-of-exiles",
+   "startMs": 13760,
+   "endMs": 16800,
+   "tokens": [
+    {
+     "text": "Is",
+     "atMs": 13760,
+     "endMs": 13840,
+     "phrase": 6
+    },
+    {
+     "text": "the",
+     "atMs": 13920,
+     "endMs": 14000,
+     "phrase": 6
+    },
+    {
+     "text": "imprisoned",
+     "atMs": 14120,
+     "endMs": 14640,
+     "phrase": 6
+    },
+    {
+     "text": "lightning,",
+     "atMs": 14720,
+     "endMs": 15440,
+     "phrase": 6,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 15520,
+     "endMs": 15600,
+     "phrase": 7
+    },
+    {
+     "text": "her",
+     "atMs": 15680,
+     "endMs": 15760,
+     "phrase": 7
+    },
+    {
+     "text": "name",
+     "atMs": 15840,
+     "endMs": 16160,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mother-of-exiles",
+   "startMs": 16800,
+   "endMs": 20160,
+   "tokens": [
+    {
+     "text": "Mother",
+     "atMs": 16800,
+     "endMs": 17120,
+     "phrase": 8
+    },
+    {
+     "text": "of",
+     "atMs": 17280,
+     "endMs": 17360,
+     "phrase": 8
+    },
+    {
+     "text": "Exiles.",
+     "atMs": 17520,
+     "endMs": 18560,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "From",
+     "atMs": 18880,
+     "endMs": 19040,
+     "phrase": 9
+    },
+    {
+     "text": "her",
+     "atMs": 19120,
+     "endMs": 19200,
+     "phrase": 9
+    },
+    {
+     "text": "beacon-hand",
+     "atMs": 19280,
+     "endMs": 20080,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mother-of-exiles",
+   "startMs": 20160,
+   "endMs": 24400,
+   "tokens": [
+    {
+     "text": "Glows",
+     "atMs": 20160,
+     "endMs": 20480,
+     "phrase": 10
+    },
+    {
+     "text": "world-wide",
+     "atMs": 20640,
+     "endMs": 21360,
+     "phrase": 10
+    },
+    {
+     "text": "welcome;",
+     "atMs": 21440,
+     "endMs": 22320,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "her",
+     "atMs": 22400,
+     "endMs": 22560,
+     "phrase": 11
+    },
+    {
+     "text": "mild",
+     "atMs": 22640,
+     "endMs": 22960,
+     "phrase": 11
+    },
+    {
+     "text": "eyes",
+     "atMs": 23120,
+     "endMs": 23440,
+     "phrase": 11
+    },
+    {
+     "text": "command",
+     "atMs": 23520,
+     "endMs": 24080,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mother-of-exiles",
+   "startMs": 24400,
+   "endMs": 27920,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 24400,
+     "endMs": 24480,
+     "phrase": 12
+    },
+    {
+     "text": "air-bridged",
+     "atMs": 24640,
+     "endMs": 25200,
+     "phrase": 12
+    },
+    {
+     "text": "harbor",
+     "atMs": 25280,
+     "endMs": 25680,
+     "phrase": 12
+    },
+    {
+     "text": "that",
+     "atMs": 25760,
+     "endMs": 25920,
+     "phrase": 12
+    },
+    {
+     "text": "twin",
+     "atMs": 26000,
+     "endMs": 26320,
+     "phrase": 12
+    },
+    {
+     "text": "cities",
+     "atMs": 26400,
+     "endMs": 26720,
+     "phrase": 12
+    },
+    {
+     "text": "frame.",
+     "atMs": 26800,
+     "endMs": 27600,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "huddled-masses",
+   "startMs": 27920,
+   "endMs": 31680,
+   "tokens": [
+    {
+     "text": "\"Keep,",
+     "atMs": 27920,
+     "endMs": 28400,
+     "phrase": 13,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ancient",
+     "atMs": 28520,
+     "endMs": 28800,
+     "phrase": 14
+    },
+    {
+     "text": "lands,",
+     "atMs": 28880,
+     "endMs": 29320,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "your",
+     "atMs": 29360,
+     "endMs": 29520,
+     "phrase": 15
+    },
+    {
+     "text": "storied",
+     "atMs": 29600,
+     "endMs": 30080,
+     "phrase": 15
+    },
+    {
+     "text": "pomp!\"",
+     "atMs": 30160,
+     "endMs": 30880,
+     "phrase": 15
+    },
+    {
+     "text": "cries",
+     "atMs": 30960,
+     "endMs": 31280,
+     "phrase": 15
+    },
+    {
+     "text": "she",
+     "atMs": 31360,
+     "endMs": 31600,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "huddled-masses",
+   "startMs": 31680,
+   "endMs": 35920,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 31680,
+     "endMs": 31840,
+     "phrase": 16
+    },
+    {
+     "text": "silent",
+     "atMs": 31920,
+     "endMs": 32320,
+     "phrase": 16
+    },
+    {
+     "text": "lips.",
+     "atMs": 32400,
+     "endMs": 32800,
+     "phrase": 16,
+     "emphasis": "lead"
+    },
+    {
+     "text": "\"Give",
+     "atMs": 33280,
+     "endMs": 33440,
+     "phrase": 17
+    },
+    {
+     "text": "me",
+     "atMs": 33520,
+     "endMs": 33680,
+     "phrase": 17
+    },
+    {
+     "text": "your",
+     "atMs": 33760,
+     "endMs": 33920,
+     "phrase": 17
+    },
+    {
+     "text": "tired,",
+     "atMs": 34000,
+     "endMs": 34720,
+     "phrase": 17,
+     "emphasis": "lead"
+    },
+    {
+     "text": "your",
+     "atMs": 34800,
+     "endMs": 34880,
+     "phrase": 18
+    },
+    {
+     "text": "poor,",
+     "atMs": 35040,
+     "endMs": 35840,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "huddled-masses",
+   "startMs": 35920,
+   "endMs": 39160,
+   "tokens": [
+    {
+     "text": "Your",
+     "atMs": 35920,
+     "endMs": 36080,
+     "phrase": 19
+    },
+    {
+     "text": "huddled",
+     "atMs": 36160,
+     "endMs": 36480,
+     "phrase": 19
+    },
+    {
+     "text": "masses",
+     "atMs": 36560,
+     "endMs": 37120,
+     "phrase": 19
+    },
+    {
+     "text": "yearning",
+     "atMs": 37200,
+     "endMs": 37680,
+     "phrase": 19
+    },
+    {
+     "text": "to",
+     "atMs": 37760,
+     "endMs": 37840,
+     "phrase": 19
+    },
+    {
+     "text": "breathe",
+     "atMs": 37920,
+     "endMs": 38240,
+     "phrase": 19
+    },
+    {
+     "text": "free,",
+     "atMs": 38320,
+     "endMs": 39120,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "huddled-masses",
+   "startMs": 39160,
+   "endMs": 42240,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 39160,
+     "endMs": 39200,
+     "phrase": 20
+    },
+    {
+     "text": "wretched",
+     "atMs": 39360,
+     "endMs": 39680,
+     "phrase": 20
+    },
+    {
+     "text": "refuse",
+     "atMs": 39760,
+     "endMs": 40320,
+     "phrase": 20
+    },
+    {
+     "text": "of",
+     "atMs": 40360,
+     "endMs": 40400,
+     "phrase": 20
+    },
+    {
+     "text": "your",
+     "atMs": 40480,
+     "endMs": 40640,
+     "phrase": 20
+    },
+    {
+     "text": "teeming",
+     "atMs": 40720,
+     "endMs": 41040,
+     "phrase": 20
+    },
+    {
+     "text": "shore.",
+     "atMs": 41200,
+     "endMs": 42160,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-door",
+   "startMs": 42240,
+   "endMs": 46200,
+   "tokens": [
+    {
+     "text": "Send",
+     "atMs": 42240,
+     "endMs": 42560,
+     "phrase": 21
+    },
+    {
+     "text": "these,",
+     "atMs": 42800,
+     "endMs": 43200,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 43280,
+     "endMs": 43360,
+     "phrase": 22
+    },
+    {
+     "text": "homeless,",
+     "atMs": 43440,
+     "endMs": 44240,
+     "phrase": 22,
+     "emphasis": "lead"
+    },
+    {
+     "text": "tempest-tost",
+     "atMs": 44320,
+     "endMs": 45200,
+     "phrase": 23
+    },
+    {
+     "text": "to",
+     "atMs": 45280,
+     "endMs": 45360,
+     "phrase": 23
+    },
+    {
+     "text": "me,",
+     "atMs": 45480,
+     "endMs": 46080,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-door",
+   "startMs": 46200,
+   "endMs": 49280,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 46200,
+     "endMs": 46320,
+     "phrase": 24
+    },
+    {
+     "text": "lift",
+     "atMs": 46400,
+     "endMs": 46640,
+     "phrase": 24
+    },
+    {
+     "text": "my",
+     "atMs": 46720,
+     "endMs": 46880,
+     "phrase": 24
+    },
+    {
+     "text": "lamp",
+     "atMs": 46960,
+     "endMs": 47280,
+     "phrase": 24
+    },
+    {
+     "text": "beside",
+     "atMs": 47440,
+     "endMs": 47840,
+     "phrase": 24
+    },
+    {
+     "text": "the",
+     "atMs": 47920,
+     "endMs": 48080,
+     "phrase": 24
+    },
+    {
+     "text": "golden",
+     "atMs": 48280,
+     "endMs": 48480,
+     "phrase": 24
+    },
+    {
+     "text": "door!\"",
+     "atMs": 48560,
+     "endMs": 49280,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}
