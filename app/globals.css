@@ -4775,10 +4775,8 @@ textarea:focus-visible {
 /*
  * Hidden unless told otherwise.
  *
- * Between dissolves one layer holds the scene that comes next, decoded and
- * waiting. With opacity defaulting to 1 that waiting layer sat on top of the
- * one being looked at, so the picture was a scene ahead of the words and
- * appeared to jump every time the pair swapped over.
+ * The scene that comes next sits here decoded and waiting. With opacity
+ * defaulting to 1 it would sit on top of the one being looked at.
  */
 .poem__scene {
   position: absolute;
@@ -4791,33 +4789,21 @@ textarea:focus-visible {
   /*
    * Promoted before it is needed, not when it starts.
    *
-   * The waiting layer holds the next picture decoded, but a layer sitting at
-   * zero opacity may never be rasterised or uploaded to the GPU - so the first
-   * dissolve paid for that upload at the moment it began, which is why the
-   * first change was the one that stuttered. Asking for the layer up front
-   * moves that cost to where nothing is happening. Only ever two of these.
+   * The waiting picture is decoded, but a layer sitting at zero opacity may
+   * never be rasterised or uploaded to the GPU - so the first dissolve paid
+   * for that upload at the moment it began, which is why the first change was
+   * the one that stuttered. Asking for the layer up front moves that cost to
+   * where nothing is happening. Only three are ever visible - showing,
+   * arriving, next - and the rest are `visibility: hidden`.
    */
   will-change: opacity;
 }
 
-/* The scene currently being looked at. */
-.poem__scene--showing {
-  opacity: 1;
-}
-
-/*
- * The layer being dissolved in, and it has to be on top.
- *
- * A scene gets a layer by the parity of its index, so in half of all changes
- * the arriving picture is the earlier of the two in the document - painted
- * underneath an outgoing layer that is fully opaque. Those dissolves were
- * invisible: nothing happened, and then the pair swapped and the picture
- * changed in one frame. Which looked exactly like a stutter.
- */
-.poem__scene--arriving {
-  z-index: 1;
-  opacity: var(--fade, 0);
-}
+/* Which picture is showing, which is arriving and how far, and which are out
+   of painting altogether, is written inline by the frame loop in the same
+   frame - see `paintBackdrop` in immersive-poem.tsx. Nothing here may decide
+   any of it: a class that changed a frame later than the opacity is what put
+   the previous scene back on screen at the end of every dissolve. */
 
 /*
  * Readability without a shape.

@@ -375,10 +375,18 @@ Two things in the renderer exist because of this and are easy to break:
 - The backdrop walks **scenes**, not lines, and shows the last picture whose
   dissolve has actually finished. Reading the scene off the current line puts
   the new picture up on the same beat as the word.
-- The arriving layer sits **on top** (`z-index: 1`). A scene gets a layer by the
-  parity of its index, so without it half of all dissolves are painted under an
-  opaque outgoing layer — invisible, and then the pair swaps and the picture
-  changes in one frame, which looks exactly like a stutter.
+- The arriving picture sits **on top** (`z-index: 1`). Without it, whenever the
+  arriving scene comes earlier in the document the dissolve is painted under an
+  opaque outgoing picture — invisible, and then the picture changes in one
+  frame, which looks exactly like a stutter.
+- **The whole backdrop is written by the frame loop, in one frame**
+  (`paintBackdrop`). Each scene has its own `<img>`, mounted once and never
+  given another `src`; the loop sets which is showing, which arriving, how far,
+  and which are `visibility: hidden`. It used to be split — the dissolve's
+  opacity written directly, which picture was showing through React state that
+  commits after the frame is painted — and on the last frame of every dissolve
+  the previous scene came back whole for one frame. Nothing about the backdrop
+  may go through React state or a class.
 
 ### Words are lit by phrase, not one at a time
 
@@ -418,10 +426,10 @@ Learned the expensive way, each one having caused a visible stutter:
   `font-size`. These words sit in a flow, so a width that moves with the reading
   re-lays the whole line on every word and shakes the screen. Use `scale`.
 - **A custom property on the root element.** It invalidates style for everything
-  beneath it. `--fade` goes on the frame that holds the pictures, `--played` on
-  the control bar.
+  beneath it. The dissolve is an inline `opacity` on the arriving picture,
+  `--played` goes on the control bar.
 
-Also: both scene layers ask for promotion up front (`will-change: opacity`),
+Also: the scene pictures ask for promotion up front (`will-change: opacity`),
 because a layer sitting at zero opacity may never be rasterised and the first
 dissolve would otherwise pay for the texture upload at the moment it began.
 

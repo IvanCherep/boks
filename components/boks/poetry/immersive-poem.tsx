@@ -9,7 +9,6 @@ import {
   playedFraction,
   previousLineStart,
   presetFor,
-  sceneAt,
   sceneFor,
   tokenStateAt,
   zoneFor,
@@ -58,17 +57,17 @@ export function ImmersivePoem({
   const idleTimer = useRef(0);
   const bar = useRef<HTMLDivElement>(null);
   /*
-   * The two elements the frame loop writes to.
+   * The elements the frame loop writes to: one picture per scene, and the
+   * control bar.
    *
    * A custom property set on the root invalidates style for everything beneath
-   * it - all eight lines and thirty-three words - and `--fade` changes on every
-   * frame of a dissolve. Written on the elements that actually read them, the
-   * recalculation is two images and a control bar.
+   * it - all eight lines and thirty-three words. Written on the elements that
+   * actually read them, the recalculation is a picture or a control bar.
    */
-  const frame = useRef<HTMLDivElement>(null);
+  const pictures = useRef<(HTMLImageElement | null)[]>([]);
   const controls = useRef<HTMLDivElement>(null);
   /** The last values written to the DOM, so an unchanged frame writes nothing. */
-  const painted = useRef({ fade: -1, played: -1, ms: -1 });
+  const painted = useRef({ from: -1, to: -1, fade: -1, played: -1, ms: -1 });
 
   const [status, setStatus] = useState<Status>("loading");
   const [playing, setPlaying] = useState(false);
@@ -88,14 +87,6 @@ export function ImmersivePoem({
   const activeToken = at.token;
   const line = manifest.lines[lineIndex];
   const scene = sceneFor(manifest, lineIndex);
-  /**
-   * The backdrop runs on its own clock, not on the line.
-   *
-   * A dissolve begins before the next line and lasts longer than that lead, so
-   * it is still going once the words have moved on. Keyed to the line it would
-   * be cut in half on the boundary and read as a jump.
-   */
-  const [backdrop, setBackdrop] = useState(() => backdropAt(manifest, 0));
 
   useEffect(() => {
     const handle = window.setTimeout(
@@ -155,28 +146,55 @@ export function ImmersivePoem({
     };
   }, [manifest.theme]);
 
-  /*
-   * The next two pictures, decoded before they are needed.
-   *
-   * A crossfade onto an undecoded image is a flash of nothing in the middle of
-   * a poem, and a failure here must not stop the voice: the current frame
-   * simply stays.
-   */
-  useEffect(() => {
-    // By scene, not by line: a picture can carry several lines, so counting
-    // lines ahead was a roundabout way of asking for the same one twice.
-    for (const ahead of [1, 2]) {
-      const upcoming = sceneAt(manifest, backdrop.from + ahead);
-      if (!upcoming) continue;
-      const image = new Image();
-      image.src = upcoming.image;
-      void image.decode?.().catch(() => {});
-    }
-  }, [manifest, backdrop.from]);
-
   // The frame loop. It owns the clock and writes straight to the DOM.
   useEffect(() => {
     let raf = 0;
+    /*
+     * The backdrop, written whole in the frame that computed it.
+     *
+     * It used to be split: the dissolve's opacity was written here, straight
+     * away, and which picture was showing and which arriving went through
+     * React state, which commits after the frame has been painted. On the
+     * last frame of every dissolve the opacity was already back to zero while
+     * the old picture was still the one marked as showing - one frame of the
+     * previous scene, whole, between the new one at 98% and the new one at
+     * 100%. Measured, it happened on all three changes. Nothing about the
+     * backdrop goes through React now, so the two halves cannot disagree.
+     *
+     * Each scene keeps its own picture for the whole poem; a layer's `src`
+     * never changes, so there is nothing to load or decode at the moment a
+     * dissolve begins. Only the showing, arriving and next pictures are
+     * visible to the compositor - the next one at zero opacity, so its
+     * texture is uploaded while nothing is happening.
+     */
+    const paintBackdrop = (pair: { from: number; to: number; progress: number }) => {
+      const fade = Math.round(pair.progress * 200) / 200;
+      const shown = painted.current;
+      if (pair.from === shown.from && pair.to === shown.to) {
+        if (fade !== shown.fade && pair.to >= 0) {
+          const arriving = pictures.current[pair.to];
+          if (arriving) arriving.style.opacity = String(fade);
+        }
+        shown.fade = fade;
+        return;
+      }
+      shown.from = pair.from;
+      shown.to = pair.to;
+      shown.fade = fade;
+      const next = pair.to >= 0 ? pair.to : pair.from + 1;
+      pictures.current.forEach((picture, index) => {
+        if (!picture) return;
+        const arriving = index === pair.to;
+        picture.style.opacity = index === pair.from ? "1" : arriving ? String(fade) : "0";
+        // The arriving picture on top, whichever comes first in the document;
+        // under an opaque outgoing picture a dissolve is invisible.
+        picture.style.zIndex = arriving ? "1" : "0";
+        picture.style.visibility =
+          index === pair.from || arriving || index === next ? "visible" : "hidden";
+      });
+    };
+    paintBackdrop(backdropAt(manifest, (audio.current?.currentTime ?? 0) * 1000));
+
     const tick = () => {
       const element = audio.current;
       if (element) {
@@ -207,25 +225,10 @@ export function ImmersivePoem({
         }
         setAt((shown) => (shown.line === index && shown.token === token ? shown : { line: index, token }));
 
-        const pair = backdropAt(manifest, ms);
-        setBackdrop((shown) =>
-          shown.from === pair.from && shown.to === pair.to ? shown : pair
-        );
+        paintBackdrop(backdropAt(manifest, ms));
 
-        /*
-         * Written only when they have actually moved.
-         *
-         * Setting a custom property on the root invalidates style for
-         * everything beneath it, and beneath it are two full-screen images.
-         * Doing that sixty times a second for a number that rounds to the same
-         * value is most of the cost of this screen.
-         */
-        const fade = Math.round(pair.progress * 200) / 200;
-        if (fade !== painted.current.fade) {
-          painted.current.fade = fade;
-          frame.current?.style.setProperty("--fade", String(fade));
-        }
-
+        // Written only when it has actually moved: a number that rounds to the
+        // same value sixty times a second is a style recalculation for nothing.
         const played = Math.round(playedFraction(ms, manifest.durationMs) * 400) / 400;
         if (played !== painted.current.played) {
           painted.current.played = played;
@@ -381,42 +384,22 @@ export function ImmersivePoem({
       <button type="button" className="poem__surface" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"} />
 
       {/*
-        Two layers that never move and never change picture while they can be
-        seen.
-
-        A scene gets a layer by the parity of its index, and the two sides of a
-        dissolve are always consecutive, so they always land on different
-        layers. The picture on a layer therefore only ever changes once that
-        layer has faded out - swapping the `src` of a visible image was half of
-        the jump.
-
-        The slow drift lives on the frame around them rather than on each
-        layer. Given to the layers it ran from whenever each one happened to
-        mount, so a dissolve laid two copies of the scene over each other at
-        different zooms, which was the other half.
+        One picture per scene, mounted once, never moved and never given
+        another `src`. Which is showing, which arriving and how far is written
+        by the frame loop alone - React renders these and then leaves them be.
+        A poem has a handful of scenes, and loading them all up front means no
+        dissolve ever waits on the network.
       */}
-      <div ref={frame} className="poem__frame" style={{ "--fade": 0 } as React.CSSProperties}>
-        {[0, 1].map((parity) => {
-          // Between dissolves the idle layer is not emptied - it holds the
-          // scene that comes next, decoded and waiting, so the dissolve has
-          // nothing left to load when it starts.
-          const waiting = backdrop.to >= 0 ? backdrop.to : backdrop.from + 1;
-          const index = backdrop.from % 2 === parity ? backdrop.from : waiting;
-          // These are scene indexes, not line indexes: a picture may carry
-          // more than one line.
-          const layerScene = index >= 0 ? sceneAt(manifest, index) : null;
-          const arriving = backdrop.to >= 0 && index === backdrop.to;
-          const showing = index === backdrop.from;
-          return (
-            <Backdrop
-              key={parity}
-              scene={layerScene}
-              className={`poem__scene ${showing ? "poem__scene--showing" : ""} ${
-                arriving ? "poem__scene--arriving" : ""
-              }`}
-            />
-          );
-        })}
+      <div className="poem__frame">
+        {manifest.scenes.map((poemScene, index) => (
+          <Backdrop
+            key={poemScene.id}
+            scene={poemScene}
+            ref={(element) => {
+              pictures.current[index] = element;
+            }}
+          />
+        ))}
       </div>
 
       <div className="poem__veil" aria-hidden="true" />
@@ -622,15 +605,16 @@ function zonesOf(line: PoemLine, scene: PoemScene) {
   return [...groups.values()];
 }
 
-function Backdrop({ scene, className }: { scene: PoemScene | null; className: string }) {
-  if (!scene) return null;
+function Backdrop({ scene, ref }: { scene: PoemScene; ref: React.Ref<HTMLImageElement> }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      className={className}
+      ref={ref}
+      className="poem__scene"
       src={scene.image}
       alt=""
       draggable={false}
+      decoding="async"
       style={{ objectPosition: `${scene.focalPoint.x * 100}% ${scene.focalPoint.y * 100}%` }}
     />
   );
