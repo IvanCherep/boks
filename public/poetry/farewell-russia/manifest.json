@@ -24,8 +24,8 @@
  },
  "playback": {
   "tokenLeadMs": 220,
-  "crossfadeLeadMs": 260,
-  "defaultCrossfadeMs": 480,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1160,
   "backgroundScaleFrom": 1,
   "backgroundScaleTo": 1.035
  },
@@ -47,7 +47,7 @@
     }
    ],
    "textPreset": "farewell-drift",
-   "transitionMs": 480
+   "transitionMs": 1160
   },
   {
    "id": "land-of-slaves-and-masters",
@@ -74,7 +74,7 @@
     }
    ],
    "textPreset": "social-hierarchy-split",
-   "transitionMs": 450
+   "transitionMs": 1090
   },
   {
    "id": "blue-uniforms",
@@ -93,7 +93,7 @@
     }
    ],
    "textPreset": "uniform-formation",
-   "transitionMs": 430
+   "transitionMs": 1040
   },
   {
    "id": "obedient-people",
@@ -112,7 +112,7 @@
     }
    ],
    "textPreset": "quiet-breath",
-   "transitionMs": 510
+   "transitionMs": 1230
   },
   {
    "id": "caucasus-ridge",
@@ -131,7 +131,7 @@
     }
    ],
    "textPreset": "ridge-reveal",
-   "transitionMs": 620
+   "transitionMs": 1500
   },
   {
    "id": "hide-beyond-kings",
@@ -150,7 +150,7 @@
     }
    ],
    "textPreset": "shelter-reveal",
-   "transitionMs": 480
+   "transitionMs": 1160
   },
   {
    "id": "all-seeing-eye",
@@ -169,7 +169,7 @@
     }
    ],
    "textPreset": "searchlight-scan",
-   "transitionMs": 440
+   "transitionMs": 1060
   },
   {
    "id": "all-hearing-ears",
@@ -188,7 +188,7 @@
     }
    ],
    "textPreset": "echo-fade",
-   "transitionMs": 530
+   "transitionMs": 1300
   }
  ],
  "lines": [

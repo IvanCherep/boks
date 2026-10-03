@@ -102,12 +102,17 @@ built.forEach((line, index) => {
 });
 
 /*
- * The scene map's transitions were authored against an assumed reading. Scaled
- * to the real one they stay the same share of a line instead of swallowing it.
+ * Long dissolves, deliberately.
+ *
+ * Eight pictures across seventeen seconds is a change every two seconds, and
+ * nothing can make that sparse. What it can be is continuous: a dissolve that
+ * takes most of the time until the next one means the frame is always slowly
+ * becoming something else rather than being replaced. The scene map's own
+ * durations set the relative weight; this sets the scale.
  */
-const assumed = 29_900;
-const ratio = durationMs / assumed;
 const round10 = (n) => Math.round(n / 10) * 10;
+const slowest = Math.max(...sceneMap.scenes.map((scene) => scene.transitionMs));
+const ratio = 1500 / slowest;
 
 const manifest = {
   id: `${slug}-immersive-v1`,
@@ -140,7 +145,17 @@ const manifest = {
      * between words that flow and words that flick.
      */
     tokenLeadMs: 220,
-    crossfadeLeadMs: 260,
+    /*
+     * The picture changes after the line has landed, not with it.
+     *
+     * It used to begin 260ms before the next line, so the word and the whole
+     * world behind it moved on the same beat - which is what made a short poem
+     * feel cut rather than read. Now the first word of a line arrives in the
+     * picture that belongs to the line before it, that image is held while the
+     * word is still in the air, and only then does the scene begin to turn.
+     * The two rhythms stop coinciding, which is the whole point.
+     */
+    crossfadeOffsetMs: 380,
     defaultCrossfadeMs: round10(850 * ratio),
     backgroundScaleFrom: 1,
     backgroundScaleTo: 1.035,

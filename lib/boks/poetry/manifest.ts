@@ -77,7 +77,13 @@ export type PoemManifest = {
   playback: {
     /** How early a word begins arriving, so it is whole when it is spoken. */
     tokenLeadMs?: number;
-    crossfadeLeadMs: number;
+    /**
+     * How long after a line begins the picture starts to change.
+     *
+     * Positive: the word lands first and the scene turns under it. Changing
+     * both on the same beat is what makes a short poem feel cut.
+     */
+    crossfadeOffsetMs: number;
     defaultCrossfadeMs: number;
     backgroundScaleFrom: number;
     backgroundScaleTo: number;
@@ -180,12 +186,12 @@ export function crossfadeProgress(
   lines: readonly PoemLine[],
   lineIndex: number,
   ms: number,
-  leadMs: number,
+  offsetMs: number,
   transitionMs: number
 ): number {
   const next = lines[lineIndex + 1];
   if (!next || transitionMs <= 0) return 0;
-  const begins = next.startMs - leadMs;
+  const begins = next.startMs + offsetMs;
   if (ms <= begins) return 0;
   return Math.min(1, (ms - begins) / transitionMs);
 }
@@ -206,20 +212,34 @@ export function backdropAt(
   manifest: PoemManifest,
   ms: number
 ): { from: number; to: number; progress: number } {
-  const lead = manifest.playback.crossfadeLeadMs;
-  for (let index = manifest.lines.length - 1; index >= 0; index -= 1) {
-    const next = manifest.lines[index + 1];
-    if (!next) continue;
-    const to = sceneFor(manifest, index + 1);
-    const span = to?.transitionMs ?? manifest.playback.defaultCrossfadeMs;
-    const begins = next.startMs - lead;
-    if (ms >= begins && ms < begins + span) {
-      return { from: index, to: index + 1, progress: (ms - begins) / span };
+  const offset = manifest.playback.crossfadeOffsetMs;
+  /*
+   * Walked forward rather than asked of the current line.
+   *
+   * The picture on screen is the last one whose dissolve has finished - which
+   * is not the same as the scene belonging to the line being spoken. A line
+   * begins, its first word arrives, and for `offset` milliseconds the frame is
+   * still the one before; only then does it start to turn. Reading the scene
+   * off the line index instead put the new picture up on the same beat as the
+   * word, which is the whole thing this is here to avoid.
+   */
+  let settled = 0;
+  for (let index = 1; index < manifest.lines.length; index += 1) {
+    const scene = sceneFor(manifest, index);
+    const span = scene?.transitionMs ?? manifest.playback.defaultCrossfadeMs;
+    const begins = manifest.lines[index].startMs + offset;
+    if (ms >= begins + span) {
+      settled = index;
+      continue;
     }
+    if (ms >= begins) {
+      return { from: index - 1, to: index, progress: (ms - begins) / span };
+    }
+    break;
   }
   // Indexes rather than scenes, so the renderer can give each one a layer of
   // its own and never change the picture on a layer that is being looked at.
-  return { from: lineIndexAt(manifest.lines, ms), to: -1, progress: 0 };
+  return { from: settled, to: -1, progress: 0 };
 }
 
 /** How far through the whole piece, for the progress bar. */

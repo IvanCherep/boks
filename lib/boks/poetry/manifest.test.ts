@@ -153,22 +153,36 @@ describe("a preset the renderer cannot draw", () => {
 });
 
 describe("the crossfade to the next scene", () => {
-  const lead = manifest.playback.crossfadeLeadMs;
+  const offset = manifest.playback.crossfadeOffsetMs;
 
   it("has not begun in the middle of a line", () => {
-    expect(crossfadeProgress(manifest.lines, 0, 100, lead, 470)).toBe(0);
+    expect(crossfadeProgress(manifest.lines, 0, 100, offset, 1100)).toBe(0);
   });
 
-  it("begins before the next line, not on it", () => {
-    const begins = manifest.lines[1].startMs - lead;
-    expect(crossfadeProgress(manifest.lines, 0, begins, lead, 470)).toBe(0);
-    expect(crossfadeProgress(manifest.lines, 0, begins + 235, lead, 470)).toBeCloseTo(0.5, 1);
-    expect(crossfadeProgress(manifest.lines, 0, begins + 470, lead, 470)).toBe(1);
+  it("begins after the line has landed, not with it", () => {
+    // The word and the whole world behind it moving on the same beat is what
+    // made a short poem feel cut rather than read.
+    expect(offset).toBeGreaterThan(0);
+    const begins = manifest.lines[1].startMs + offset;
+    expect(crossfadeProgress(manifest.lines, 0, manifest.lines[1].startMs, offset, 1100)).toBe(0);
+    expect(crossfadeProgress(manifest.lines, 0, begins, offset, 1100)).toBe(0);
+    expect(crossfadeProgress(manifest.lines, 0, begins + 550, offset, 1100)).toBeCloseTo(0.5, 1);
+    expect(crossfadeProgress(manifest.lines, 0, begins + 1100, offset, 1100)).toBe(1);
+  });
+
+  it("leaves the picture still for part of every line", () => {
+    // A dissolve that ran until the next one began would never settle. Each
+    // scene has to be itself for a while, or there is nothing to look at.
+    for (let index = 0; index < manifest.lines.length - 1; index += 1) {
+      const scene = sceneFor(manifest, index + 1)!;
+      const span = manifest.lines[index + 1].endMs - manifest.lines[index + 1].startMs;
+      expect(offset + scene.transitionMs, scene.id).toBeLessThan(span + offset);
+    }
   });
 
   it("does not run off the end of the poem", () => {
     const last = manifest.lines.length - 1;
-    expect(crossfadeProgress(manifest.lines, last, manifest.durationMs, lead, 470)).toBe(0);
+    expect(crossfadeProgress(manifest.lines, last, manifest.durationMs, offset, 1100)).toBe(0);
   });
 });
 
@@ -191,15 +205,19 @@ describe("which two pictures are on screen", () => {
     expect(progress).toBe(0);
   });
 
-  it("holds the pair until the dissolve has finished, not until the line changes", () => {
-    // The crossfade starts before the next line and outlasts that lead, so it
-    // is still running after the words have moved on. Swapping the layers on
-    // the line boundary would cut it in half and read as a jump.
+  it("still shows the old picture when the new line's first word arrives", () => {
+    // The word lands in the scene belonging to the line before it, and only
+    // then does the world turn. That gap is the aftertaste.
     const boundary = manifest.lines[1].startMs;
-    const lead = manifest.playback.crossfadeLeadMs;
-    expect(manifest.scenes[1].transitionMs).toBeGreaterThan(lead);
-
     const during = backdropAt(manifest, boundary + 10);
+    expect(idOf(during.from)).toBe(manifest.scenes[0].id);
+    expect(during.to).toBe(-1);
+    expect(during.progress).toBe(0);
+  });
+
+  it("turns the scene once the word has been in the air a while", () => {
+    const begins = manifest.lines[1].startMs + manifest.playback.crossfadeOffsetMs;
+    const during = backdropAt(manifest, begins + 200);
     expect(idOf(during.from)).toBe(manifest.scenes[0].id);
     expect(idOf(during.to)).toBe(manifest.scenes[1].id);
     expect(during.progress).toBeGreaterThan(0);
