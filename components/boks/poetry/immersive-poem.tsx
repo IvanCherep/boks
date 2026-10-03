@@ -1,0 +1,396 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Pause, Play, RotateCcw, ArrowRight, X } from "lucide-react";
+import {
+  backdropAt,
+  lineIndexAt,
+  playedFraction,
+  presetFor,
+  sceneFor,
+  tokenStateAt,
+  zoneFor,
+  type PoemLine,
+  type PoemManifest,
+  type PoemScene,
+  type PoemToken,
+  type SafeZone,
+} from "@/lib/boks/poetry/manifest";
+
+/**
+ * A poem as a place rather than a page.
+ *
+ * The voice sets the pace, the picture changes with the sense, and each word
+ * arrives in the frame at the moment it is spoken. Everything particular to a
+ * poem - its lines, its images, where a word may sit, which effect it gets -
+ * comes from the manifest, so a second poem is assets and JSON and no new code.
+ *
+ * `audio.currentTime` is the only clock. Every visible thing is a function of
+ * it, computed in one frame, which is what makes pausing, seeking and coming
+ * back to a backgrounded tab land exactly where they should. A chain of timers
+ * would do none of that and would look fine until someone scrubbed.
+ *
+ * React is kept out of the loop deliberately. The frame loop writes crossfade
+ * and scale straight onto the elements as CSS variables; state changes only
+ * when the line or the spoken word changes, which is a few times a second
+ * rather than sixty.
+ */
+
+type Status = "loading" | "ready" | "ended" | "error";
+
+const controlsIdleMs = 2600;
+
+export function ImmersivePoem({
+  manifest,
+  onClose,
+  onNext,
+}: {
+  manifest: PoemManifest;
+  onClose: () => void;
+  onNext?: () => void;
+}) {
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const idleTimer = useRef(0);
+  const bar = useRef<HTMLDivElement>(null);
+
+  const [status, setStatus] = useState<Status>("loading");
+  const [playing, setPlaying] = useState(false);
+  const [lineIndex, setLineIndex] = useState(0);
+  /** Redraws the words only when the spoken one changes, not every frame. */
+  const [spoken, setSpoken] = useState(-1);
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const [reduced, setReduced] = useState(false);
+
+  const line = manifest.lines[lineIndex];
+  const scene = sceneFor(manifest, lineIndex);
+  /**
+   * The backdrop runs on its own clock, not on the line.
+   *
+   * A dissolve begins before the next line and lasts longer than that lead, so
+   * it is still going once the words have moved on. Keyed to the line it would
+   * be cut in half on the boundary and read as a jump.
+   */
+  const [backdrop, setBackdrop] = useState(() => backdropAt(manifest, 0));
+
+  useEffect(() => {
+    const handle = window.setTimeout(
+      () => setReduced(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false),
+      0
+    );
+    return () => window.clearTimeout(handle);
+  }, []);
+
+  // One element, built once. Created here rather than as <audio> in the tree so
+  // the frame loop can read it without waiting for a ref to attach.
+  useEffect(() => {
+    const element = new window.Audio(manifest.audio);
+    element.preload = "auto";
+    audio.current = element;
+    const ready = () => setStatus("ready");
+    const failed = () => setStatus("error");
+    const done = () => {
+      setStatus("ended");
+      setPlaying(false);
+    };
+    element.addEventListener("canplaythrough", ready);
+    element.addEventListener("error", failed);
+    element.addEventListener("ended", done);
+    return () => {
+      element.pause();
+      element.src = "";
+      element.removeEventListener("canplaythrough", ready);
+      element.removeEventListener("error", failed);
+      element.removeEventListener("ended", done);
+      audio.current = null;
+    };
+  }, [manifest.audio]);
+
+  /*
+   * The next two pictures, decoded before they are needed.
+   *
+   * A crossfade onto an undecoded image is a flash of nothing in the middle of
+   * a poem, and a failure here must not stop the voice: the current frame
+   * simply stays.
+   */
+  useEffect(() => {
+    for (const ahead of [1, 2]) {
+      const upcoming = sceneFor(manifest, lineIndex + ahead);
+      if (!upcoming) continue;
+      const image = new Image();
+      image.src = upcoming.image;
+      void image.decode?.().catch(() => {});
+    }
+  }, [manifest, lineIndex]);
+
+  // The frame loop. It owns the clock and writes straight to the DOM.
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const element = audio.current;
+      const root = stage.current;
+      if (element && root) {
+        const ms = element.currentTime * 1000;
+        const index = lineIndexAt(manifest.lines, ms);
+        setLineIndex((current) => (current === index ? current : index));
+
+        const current = manifest.lines[index];
+        if (current) {
+          let active = -1;
+          for (let i = 0; i < current.tokens.length; i += 1) {
+            if (tokenStateAt(current, i, ms) === "active") active = i;
+          }
+          const key = index * 100 + active;
+          setSpoken((previous) => (previous === key ? previous : key));
+        }
+
+        const pair = backdropAt(manifest, ms);
+        setBackdrop((current) =>
+          current.from?.id === pair.from?.id && current.to?.id === pair.to?.id ? current : pair
+        );
+        root.style.setProperty("--fade", pair.progress.toFixed(3));
+
+        // A very slow push in across a scene, never a parallax: the reader is
+        // here to listen, not to watch a camera move.
+        if (!reduced && current) {
+          const span = Math.max(1, current.endMs - current.startMs);
+          const through = Math.min(1, Math.max(0, (ms - current.startMs) / span));
+          const { backgroundScaleFrom: from, backgroundScaleTo: to } = manifest.playback;
+          root.style.setProperty("--scale", (from + (to - from) * through).toFixed(4));
+        }
+
+        const played = playedFraction(ms, manifest.durationMs);
+        root.style.setProperty("--played", played.toFixed(4));
+        // Written straight onto the element rather than through state: a
+        // screen reader needs the real position, and the position changes
+        // sixty times a second.
+        bar.current?.setAttribute("aria-valuenow", String(Math.round(played * 100)));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [manifest, reduced]);
+
+  const revealChrome = useCallback(() => {
+    setChromeVisible(true);
+    window.clearTimeout(idleTimer.current);
+    idleTimer.current = window.setTimeout(() => setChromeVisible(false), controlsIdleMs);
+  }, []);
+
+  useEffect(() => {
+    const handle = window.setTimeout(revealChrome, 0);
+    return () => {
+      window.clearTimeout(handle);
+      window.clearTimeout(idleTimer.current);
+    };
+  }, [revealChrome]);
+
+  const toggle = useCallback(() => {
+    const element = audio.current;
+    if (!element) return;
+    revealChrome();
+    if (element.paused) {
+      if (status === "ended") element.currentTime = 0;
+      void element.play().then(
+        () => {
+          setPlaying(true);
+          setStatus("ready");
+        },
+        () => setStatus("error")
+      );
+      return;
+    }
+    element.pause();
+    setPlaying(false);
+  }, [revealChrome, status]);
+
+  // Seeking restores everything from the timecode, because everything is
+  // derived from it. Nothing here has to be rewound by hand.
+  const seekTo = useCallback(
+    (fraction: number) => {
+      const element = audio.current;
+      if (!element) return;
+      element.currentTime = (Math.min(1, Math.max(0, fraction)) * manifest.durationMs) / 1000;
+      if (status === "ended") setStatus("ready");
+      revealChrome();
+    },
+    [manifest.durationMs, revealChrome, status]
+  );
+
+  function scrub(event: React.PointerEvent<HTMLDivElement>) {
+    const box = event.currentTarget.getBoundingClientRect();
+    if (box.width > 0) seekTo((event.clientX - box.left) / box.width);
+  }
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+
+  const preset = scene ? presetFor(scene) : "quiet-breath";
+  const activeToken = spoken % 100;
+
+  return (
+    <div
+      ref={stage}
+      className={`poem poem--${preset} ${reduced ? "is-still" : ""} ${chromeVisible ? "" : "is-quiet"}`}
+      style={
+        {
+          "--fade": 0,
+          "--scale": manifest.playback.backgroundScaleFrom,
+          "--played": 0,
+          "--poem-text": manifest.palette.text,
+          "--poem-active": manifest.palette.active,
+          "--poem-shadow": manifest.palette.shadow,
+        } as React.CSSProperties
+      }
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${manifest.title} — ${manifest.author}`}
+    >
+      {/* A tap anywhere that is not a control plays or pauses. */}
+      <button type="button" className="poem__surface" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"} />
+
+      <Backdrop scene={backdrop.from} className="poem__scene poem__scene--current" />
+      <Backdrop scene={backdrop.to} className="poem__scene poem__scene--next" />
+
+      {/* The words. Positioned inside the zone the scene allows, never over a
+          face and never against an edge. */}
+      {line && scene && (
+        <div className="poem__words" aria-hidden="true">
+          {/*
+            Grouped by zone, and flowing inside it rather than pinned word by
+            word. A line reads as a line that way - "страна рабов," low and
+            left, "страна господ." high and right - and the words accumulate as
+            they are spoken instead of each one landing in its own box.
+          */}
+          {zonesOf(line, scene).map((group) => (
+            <div
+              key={group.role ?? "default"}
+              className="poem__zone"
+              style={{
+                left: `${group.zone.x * 100}%`,
+                top: `${group.zone.y * 100}%`,
+                width: `${group.zone.width * 100}%`,
+                minHeight: `${group.zone.height * 100}%`,
+              }}
+            >
+              {group.tokens.map(({ token, index }) => (
+                <span
+                  key={`${lineIndex}-${index}`}
+                  className={`poem__word is-${
+                    index < activeToken ? "settled" : index === activeToken ? "active" : "hidden"
+                  }`}
+                  style={{ "--order": index - group.tokens[0].index } as React.CSSProperties}
+                >
+                  {token.text}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* The whole poem, for a screen reader and for anyone who would rather
+          read it than be read to. */}
+      <p className="sr-only">
+        {manifest.title}. {manifest.author}. {manifest.lines.map((l) => l.tokens.map((t) => t.text).join(" ")).join(" ")}
+      </p>
+
+      <button type="button" className="poem__close" onClick={onClose} aria-label="Закрыть">
+        <X className="size-5" />
+      </button>
+
+      <div className="poem__controls">
+        <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
+          {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
+        </button>
+        {/* Its own pointer handling, and it must not reach the surface
+            underneath - dragging the bar would otherwise also pause. */}
+        <div
+          ref={bar}
+          className="poem__bar"
+          role="slider"
+          tabIndex={0}
+          aria-label="Положение"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={0}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            scrub(event);
+          }}
+          onPointerMove={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) scrub(event);
+          }}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => {
+            const element = audio.current;
+            if (!element) return;
+            if (event.key === "ArrowLeft") element.currentTime = Math.max(0, element.currentTime - 2);
+            else if (event.key === "ArrowRight") element.currentTime += 2;
+            else return;
+            event.preventDefault();
+          }}
+        >
+          <span className="poem__bar-track" />
+          <span className="poem__bar-fill" />
+        </div>
+      </div>
+
+      {status === "loading" && <p className="poem__state">Загружаем…</p>}
+      {status === "error" && <p className="poem__state">Запись не загрузилась</p>}
+
+      {status === "ended" && (
+        <div className="poem__ended">
+          <p className="poem__ended-title">{manifest.title}</p>
+          <div className="poem__ended-actions">
+            <button type="button" className="poem__again" onClick={() => { seekTo(0); toggle(); }}>
+              <RotateCcw className="size-4" /> Ещё раз
+            </button>
+            {onNext && (
+              <button type="button" className="poem__onward" onClick={onNext}>
+                Следующий бок <ArrowRight className="size-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The line's words, split into the zones the scene allows, in spoken order. */
+function zonesOf(line: PoemLine, scene: PoemScene) {
+  const groups = new Map<string, { role?: string; zone: SafeZone; tokens: { token: PoemToken; index: number }[] }>();
+  line.tokens.forEach((token, index) => {
+    const key = token.zone ?? "default";
+    if (!groups.has(key)) {
+      groups.set(key, { role: token.zone, zone: zoneFor(scene, token.zone), tokens: [] });
+    }
+    groups.get(key)!.tokens.push({ token, index });
+  });
+  return [...groups.values()];
+}
+
+function Backdrop({ scene, className }: { scene: PoemScene | null; className: string }) {
+  if (!scene) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className={className}
+      src={scene.image}
+      alt=""
+      draggable={false}
+      style={{ objectPosition: `${scene.focalPoint.x * 100}% ${scene.focalPoint.y * 100}%` }}
+    />
+  );
+}

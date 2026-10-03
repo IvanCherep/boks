@@ -1,0 +1,417 @@
+{
+ "id": "farewell-unwashed-russia-immersive-v1",
+ "title": "Прощай, немытая Россия",
+ "author": "М. Ю. Лермонтов (традиционная атрибуция)",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/farewell-russia/narration.mp3",
+ "durationMs": 16640,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F4E8D0",
+  "active": "#FFD99A",
+  "shadow": "rgba(8, 12, 20, 0.48)"
+ },
+ "playback": {
+  "crossfadeLeadMs": 260,
+  "defaultCrossfadeMs": 470,
+  "backgroundScaleFrom": 1.0,
+  "backgroundScaleTo": 1.035,
+  "reducedMotion": "opacity-only"
+ },
+ "scenes": [
+  {
+   "id": "farewell-city",
+   "line": "Прощай, немытая Россия,",
+   "image": "/poetry/farewell-russia/scenes/01-farewell-city.webp",
+   "focalPoint": {
+    "x": 0.48,
+    "y": 0.62
+   },
+   "safeZones": [
+    {
+     "x": 0.34,
+     "y": 0.08,
+     "width": 0.58,
+     "height": 0.31
+    }
+   ],
+   "textPreset": "farewell-drift",
+   "transitionMs": 470
+  },
+  {
+   "id": "land-of-slaves-and-masters",
+   "line": "Страна рабов, страна господ,",
+   "image": "/poetry/farewell-russia/scenes/02-land-of-slaves-and-masters.webp",
+   "focalPoint": {
+    "x": 0.57,
+    "y": 0.56
+   },
+   "safeZones": [
+    {
+     "role": "lower",
+     "x": 0.05,
+     "y": 0.57,
+     "width": 0.5,
+     "height": 0.22
+    },
+    {
+     "role": "upper",
+     "x": 0.48,
+     "y": 0.1,
+     "width": 0.46,
+     "height": 0.25
+    }
+   ],
+   "textPreset": "social-hierarchy-split",
+   "transitionMs": 450
+  },
+  {
+   "id": "blue-uniforms",
+   "line": "И вы, мундиры голубые,",
+   "image": "/poetry/farewell-russia/scenes/03-blue-uniforms.webp",
+   "focalPoint": {
+    "x": 0.59,
+    "y": 0.58
+   },
+   "safeZones": [
+    {
+     "x": 0.05,
+     "y": 0.09,
+     "width": 0.56,
+     "height": 0.36
+    }
+   ],
+   "textPreset": "uniform-formation",
+   "transitionMs": 420
+  },
+  {
+   "id": "obedient-people",
+   "line": "И ты, послушный им народ.",
+   "image": "/poetry/farewell-russia/scenes/04-obedient-people.webp",
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.63
+   },
+   "safeZones": [
+    {
+     "x": 0.05,
+     "y": 0.08,
+     "width": 0.58,
+     "height": 0.39
+    }
+   ],
+   "textPreset": "quiet-breath",
+   "transitionMs": 500
+  },
+  {
+   "id": "caucasus-ridge",
+   "line": "Быть может, за хребтом Кавказа",
+   "image": "/poetry/farewell-russia/scenes/05-caucasus-ridge.webp",
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.55
+   },
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.06,
+     "width": 0.62,
+     "height": 0.33
+    }
+   ],
+   "textPreset": "ridge-reveal",
+   "transitionMs": 610
+  },
+  {
+   "id": "hide-beyond-kings",
+   "line": "Укроюсь от твоих царей,",
+   "image": "/poetry/farewell-russia/scenes/06-hide-beyond-kings.webp",
+   "focalPoint": {
+    "x": 0.58,
+    "y": 0.64
+   },
+   "safeZones": [
+    {
+     "x": 0.05,
+     "y": 0.08,
+     "width": 0.58,
+     "height": 0.37
+    }
+   ],
+   "textPreset": "shelter-reveal",
+   "transitionMs": 470
+  },
+  {
+   "id": "all-seeing-eye",
+   "line": "От их всевидящего глаза,",
+   "image": "/poetry/farewell-russia/scenes/07-all-seeing-eye.webp",
+   "focalPoint": {
+    "x": 0.48,
+    "y": 0.55
+   },
+   "safeZones": [
+    {
+     "x": 0.55,
+     "y": 0.1,
+     "width": 0.39,
+     "height": 0.31
+    }
+   ],
+   "textPreset": "searchlight-scan",
+   "transitionMs": 430
+  },
+  {
+   "id": "all-hearing-ears",
+   "line": "От их всеслышащих ушей.",
+   "image": "/poetry/farewell-russia/scenes/08-all-hearing-ears.webp",
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.61
+   },
+   "safeZones": [
+    {
+     "x": 0.31,
+     "y": 0.07,
+     "width": 0.63,
+     "height": 0.34
+    }
+   ],
+   "textPreset": "echo-fade",
+   "transitionMs": 530
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "farewell-city",
+   "startMs": 0,
+   "endMs": 2160,
+   "tokens": [
+    {
+     "text": "Прощай,",
+     "atMs": 0,
+     "endMs": 680
+    },
+    {
+     "text": "немытая",
+     "atMs": 720,
+     "endMs": 1200
+    },
+    {
+     "text": "Россия,",
+     "atMs": 1280,
+     "endMs": 2080
+    }
+   ]
+  },
+  {
+   "sceneId": "land-of-slaves-and-masters",
+   "startMs": 2160,
+   "endMs": 4640,
+   "tokens": [
+    {
+     "text": "Страна",
+     "atMs": 2160,
+     "endMs": 2560,
+     "zone": "lower"
+    },
+    {
+     "text": "рабов,",
+     "atMs": 2680,
+     "endMs": 3280,
+     "zone": "lower"
+    },
+    {
+     "text": "страна",
+     "atMs": 3440,
+     "endMs": 3680,
+     "zone": "upper"
+    },
+    {
+     "text": "господ,",
+     "atMs": 3720,
+     "endMs": 4560,
+     "zone": "upper"
+    }
+   ]
+  },
+  {
+   "sceneId": "blue-uniforms",
+   "startMs": 4640,
+   "endMs": 6640,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 4640,
+     "endMs": 4720
+    },
+    {
+     "text": "вы,",
+     "atMs": 4800,
+     "endMs": 5120
+    },
+    {
+     "text": "мундиры",
+     "atMs": 5200,
+     "endMs": 5680
+    },
+    {
+     "text": "голубые,",
+     "atMs": 5760,
+     "endMs": 6560
+    }
+   ]
+  },
+  {
+   "sceneId": "obedient-people",
+   "startMs": 6640,
+   "endMs": 9040,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 6640,
+     "endMs": 6720
+    },
+    {
+     "text": "ты,",
+     "atMs": 6880,
+     "endMs": 7240
+    },
+    {
+     "text": "послушный",
+     "atMs": 7360,
+     "endMs": 8000
+    },
+    {
+     "text": "им",
+     "atMs": 8080,
+     "endMs": 8240
+    },
+    {
+     "text": "народ.",
+     "atMs": 8320,
+     "endMs": 8840
+    }
+   ]
+  },
+  {
+   "sceneId": "caucasus-ridge",
+   "startMs": 9040,
+   "endMs": 11040,
+   "tokens": [
+    {
+     "text": "Быть",
+     "atMs": 9040,
+     "endMs": 9200
+    },
+    {
+     "text": "может,",
+     "atMs": 9280,
+     "endMs": 9600
+    },
+    {
+     "text": "за",
+     "atMs": 9640,
+     "endMs": 9680
+    },
+    {
+     "text": "хребтом",
+     "atMs": 9760,
+     "endMs": 10160
+    },
+    {
+     "text": "Кавказа",
+     "atMs": 10240,
+     "endMs": 10880
+    }
+   ]
+  },
+  {
+   "sceneId": "hide-beyond-kings",
+   "startMs": 11040,
+   "endMs": 12880,
+   "tokens": [
+    {
+     "text": "Укроюсь",
+     "atMs": 11040,
+     "endMs": 11600
+    },
+    {
+     "text": "от",
+     "atMs": 11680,
+     "endMs": 11760
+    },
+    {
+     "text": "твоих",
+     "atMs": 11813,
+     "endMs": 12080
+    },
+    {
+     "text": "царей,",
+     "atMs": 12160,
+     "endMs": 12800
+    }
+   ]
+  },
+  {
+   "sceneId": "all-seeing-eye",
+   "startMs": 12880,
+   "endMs": 14720,
+   "tokens": [
+    {
+     "text": "От",
+     "atMs": 12880,
+     "endMs": 12960
+    },
+    {
+     "text": "их",
+     "atMs": 13040,
+     "endMs": 13120
+    },
+    {
+     "text": "всевидящего",
+     "atMs": 13160,
+     "endMs": 13840
+    },
+    {
+     "text": "глаза,",
+     "atMs": 13920,
+     "endMs": 14640
+    }
+   ]
+  },
+  {
+   "sceneId": "all-hearing-ears",
+   "startMs": 14720,
+   "endMs": 16640,
+   "tokens": [
+    {
+     "text": "От",
+     "atMs": 14720,
+     "endMs": 14880
+    },
+    {
+     "text": "их",
+     "atMs": 14960,
+     "endMs": 15040
+    },
+    {
+     "text": "всеслышащих",
+     "atMs": 15080,
+     "endMs": 15920
+    },
+    {
+     "text": "ушей.",
+     "atMs": 16000,
+     "endMs": 16640
+    }
+   ]
+  }
+ ]
+}

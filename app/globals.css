@@ -4706,3 +4706,339 @@ textarea:focus-visible {
   }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Immersive poetry
+
+   A poem as a place. Two picture layers crossfading on their own clock, words
+   arriving inside the safe zone the scene allows, and controls that get out of
+   the way. Everything positional comes from the manifest; this file only knows
+   how the eight named effects look.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.poem {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  overflow: hidden;
+  background: #05070d;
+  color: var(--poem-text);
+  user-select: none;
+  -webkit-user-select: none;
+  animation: cinema-in 420ms var(--ease-out) both;
+}
+
+/* The tap target for play/pause: everything that is not a control. */
+.poem__surface {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.poem__scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translateZ(0) scale(var(--scale, 1));
+  pointer-events: none;
+}
+
+.poem__scene--next {
+  opacity: var(--fade, 0);
+}
+
+.poem__words {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.poem__zone {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0 0.42em;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.9rem, 8.2vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.16;
+  text-shadow: 0 2px 14px var(--poem-shadow);
+}
+
+.poem__word {
+  transition:
+    opacity 420ms var(--ease-out),
+    color 320ms var(--ease-out),
+    translate 520ms var(--ease-out),
+    filter 420ms var(--ease-out);
+}
+
+.poem__word.is-hidden {
+  opacity: 0;
+}
+
+/* Spoken now: warm and in front. */
+.poem__word.is-active {
+  color: var(--poem-active);
+  opacity: 1;
+  text-shadow: 0 2px 18px var(--poem-shadow), 0 0 28px rgb(255 217 154 / 30%);
+}
+
+/* Said, and still there. A poem assembling itself, not karaoke. */
+.poem__word.is-settled {
+  color: var(--poem-text);
+  opacity: 0.42;
+}
+
+/* ── The eight presets ──────────────────────────────────────────────────── */
+
+/* Each word lifts a little as it arrives. */
+.poem--farewell-drift .poem__word.is-hidden {
+  translate: 0 12px;
+}
+
+/* Slaves below, masters above: the zones carry the argument, so the words
+   themselves stay plain and let the placement speak. */
+.poem--social-hierarchy-split .poem__word.is-hidden {
+  opacity: 0;
+}
+
+/* Disciplined, left to right, no spring. */
+.poem--uniform-formation .poem__word {
+  transition-timing-function: linear;
+  transition-duration: 260ms;
+}
+
+.poem--uniform-formation .poem__word.is-hidden {
+  translate: -10px 0;
+}
+
+/* Almost nothing: opacity and four pixels. */
+.poem--quiet-breath .poem__word.is-hidden {
+  translate: 0 4px;
+}
+
+/* Letters spread, then gather. */
+.poem--ridge-reveal .poem__word.is-hidden {
+  letter-spacing: 0.22em;
+  opacity: 0;
+}
+
+.poem--ridge-reveal .poem__word {
+  transition-property: opacity, color, letter-spacing, translate;
+  letter-spacing: 0;
+}
+
+/* Out of the darker left of the frame, towards the figure. */
+.poem--shelter-reveal .poem__word.is-hidden {
+  translate: -22px 0;
+  filter: blur(3px);
+}
+
+/* One pass of light across the active word, not a loop. */
+.poem--searchlight-scan .poem__word.is-active {
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(255 240 200 / 55%) 45%,
+    transparent 70%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: poem-scan 900ms var(--ease-out) 1;
+}
+
+@keyframes poem-scan {
+  from { background-position: -140% 0; }
+  to { background-position: 240% 0; }
+}
+
+/* A single trace left behind, widening once. */
+.poem--echo-fade .poem__word.is-settled {
+  animation: poem-echo 700ms var(--ease-out) 1;
+}
+
+@keyframes poem-echo {
+  from { opacity: 0.9; scale: 1; }
+  to { opacity: 0.42; scale: 1.04; }
+}
+
+/* ── Controls ───────────────────────────────────────────────────────────── */
+
+.poem__close {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: 1rem;
+  z-index: 5;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 999px;
+  background: rgb(8 10 16 / 45%);
+  color: var(--poem-text);
+  backdrop-filter: blur(10px);
+  transition: opacity 320ms var(--ease-out);
+}
+
+.poem__controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1.25rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  transition: opacity 320ms var(--ease-out);
+}
+
+/* Out of the way while listening; back on a tap. */
+.poem.is-quiet .poem__controls,
+.poem.is-quiet .poem__close {
+  opacity: 0;
+}
+
+.poem__play {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid rgb(240 205 142 / 40%);
+  border-radius: 999px;
+  background: rgb(8 10 16 / 55%);
+  color: var(--poem-active);
+  backdrop-filter: blur(10px);
+}
+
+.poem__play:focus-visible,
+.poem__close:focus-visible,
+.poem__bar:focus-visible {
+  outline: 2px solid var(--poem-active);
+  outline-offset: 3px;
+}
+
+.poem__bar {
+  position: relative;
+  display: flex;
+  height: 28px;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.poem__bar-track,
+.poem__bar-fill {
+  position: absolute;
+  left: 0;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.poem__bar-track {
+  right: 0;
+  background: rgb(244 232 208 / 24%);
+}
+
+.poem__bar-fill {
+  width: calc(var(--played, 0) * 100%);
+  background: linear-gradient(90deg, #d9a860, var(--poem-active));
+}
+
+.poem__state {
+  position: absolute;
+  inset: auto 1.5rem calc(5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  color: rgb(244 232 208 / 76%);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.poem__ended {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgb(5 7 13 / 92%), transparent);
+  text-align: center;
+}
+
+.poem__ended-title {
+  margin: 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.6rem;
+}
+
+.poem__ended-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.poem__again,
+.poem__onward {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0 1.2rem;
+  font-weight: 600;
+}
+
+.poem__again {
+  border: 0;
+  background: linear-gradient(180deg, #f0cd8e, #d9a860);
+  color: #221708;
+}
+
+.poem__onward {
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: rgb(10 12 20 / 62%);
+  color: var(--poem-text);
+  backdrop-filter: blur(10px);
+}
+
+/* Reduced motion: the words still arrive in order and the pictures still
+   change; nothing travels, scales or scans. */
+.poem.is-still .poem__scene,
+.poem.is-still .poem__word {
+  transform: none;
+  scale: none;
+  translate: none;
+  filter: none;
+  animation: none;
+  letter-spacing: normal;
+}
+
+.poem.is-still .poem__word {
+  transition: opacity 220ms linear, color 220ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poem {
+    animation: none;
+  }
+
+  .poem__scene,
+  .poem__word {
+    transform: none;
+    animation: none;
+  }
+}

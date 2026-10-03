@@ -75,6 +75,9 @@ import {
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
+import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
+import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
+import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 import {
   fetchVisitorCountry,
@@ -281,6 +284,8 @@ export function ReaderFeed() {
   const [readerFlash, setReaderFlash] = useState("");
   /** Something to read to. Off until asked for; see `reading-music.ts`. */
   const [musicOn, setMusicOn] = useState(false);
+  /** A poem opens in its own renderer behind the same button. */
+  const [poem, setPoem] = useState<PoemManifest | null>(null);
   const likesInFlight = useRef<Set<string>>(new Set());
   // The one-time "how this works" line - see the effect near the render.
   const [firstVisitHint, setFirstVisitHint] = useState<"touch" | "pointer" | null>(null);
@@ -873,7 +878,15 @@ export function ReaderFeed() {
   const isAdminReader = Boolean(user && !user.isAnonymous && user.role === "admin" && !user.bannedAt);
   /** Finished pieces are for everyone; the prototype stays with the admins. */
   const cinemaIsFinished = Boolean(currentStory && isBoksSeriesPiece(currentStory.id));
-  const cinemaOffered = cinemaIsFinished || isAdminReader;
+  /**
+   * A poem gets a different renderer behind the same button.
+   *
+   * Verse read over a picture with the words laid across it is a different
+   * thing from prose read over scenes, and the reader should not have to know
+   * which they are about to get - the piece decides.
+   */
+  const poemManifestUrl = currentStory ? poemManifestFor(currentStory.id) : null;
+  const cinemaOffered = cinemaIsFinished || Boolean(poemManifestUrl) || isAdminReader;
   const readerInteractionBlocked = Boolean(
     authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen
   );
@@ -2307,10 +2320,16 @@ export function ReaderFeed() {
             <ActionButton
               label={cinemaIsFinished ? "Listen and read" : "Listen and read (prototype, admins only)"}
               onClick={() => {
-                // The cinema brings its own voice. Silence here, without
-                // forgetting the choice, so it returns when they come back.
+                // Either renderer brings its own voice. Silence the reading
+                // music without forgetting the choice, so it returns after.
                 stopReadingMusic(false);
                 setMusicOn(false);
+                if (poemManifestUrl) {
+                  loadPoemManifest(poemManifestUrl).then(setPoem, () =>
+                    notify("This poem could not be opened.")
+                  );
+                  return;
+                }
                 setCinemaOpen(true);
               }}
             >
@@ -2592,6 +2611,17 @@ export function ReaderFeed() {
               if (currentStory) recordReaderEvent("aftertaste", currentStory, tags.length, { tags });
             }}
             onClose={() => setCinemaOpen(false)}
+          />
+        )}
+
+        {poem && (
+          <ImmersivePoem
+            manifest={poem}
+            onClose={() => setPoem(null)}
+            onNext={() => {
+              setPoem(null);
+              void nextStory("button");
+            }}
           />
         )}
       </section>

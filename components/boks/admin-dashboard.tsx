@@ -21,6 +21,7 @@ import { FeedbackInbox } from "@/components/boks/admin/feedback-inbox";
 import { GuestFunnelPanel } from "@/components/boks/admin/guest-funnel";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
+import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
 import { MetricTile } from "@/components/boks/shared-ui";
 import {
   loadBoksUserContext,
@@ -48,6 +49,7 @@ const adminTabs = [
   { id: "feedback", label: "Feedback" },
   { id: "experiments", label: "Experiments" },
   { id: "interactions", label: "Interactions" },
+  { id: "poetry", label: "Poetry" },
 ] as const;
 
 type AdminTab = (typeof adminTabs)[number]["id"];
@@ -314,6 +316,7 @@ export function AdminDashboard() {
 
         {tab === "experiments" && <RecommendationLab />}
         {tab === "interactions" && <InteractionSandbox />}
+        {tab === "poetry" && <PoetrySandbox />}
 
         {tab === "guests" && <GuestFunnelPanel />}
         {tab === "growth" && <AdminGrowth />}
