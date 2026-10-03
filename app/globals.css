@@ -4753,13 +4753,27 @@ textarea:focus-visible {
   pointer-events: none;
 }
 
+/*
+ * Hidden unless told otherwise.
+ *
+ * Between dissolves one layer holds the scene that comes next, decoded and
+ * waiting. With opacity defaulting to 1 that waiting layer sat on top of the
+ * one being looked at, so the picture was a scene ahead of the words and
+ * appeared to jump every time the pair swapped over.
+ */
 .poem__scene {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
   transform: translateZ(0);
+}
+
+/* The scene currently being looked at. */
+.poem__scene--showing {
+  opacity: 1;
 }
 
 @keyframes poem-drift {
@@ -4767,10 +4781,33 @@ textarea:focus-visible {
   to { scale: 1.035; }
 }
 
-/* The layer being dissolved in. The other sits under it at full opacity. */
+/* The layer being dissolved in, over the one being looked at. */
 .poem__scene--arriving {
   opacity: var(--fade, 0);
   will-change: opacity;
+}
+
+/*
+ * Readability without a shape.
+ *
+ * A scrim behind each zone read as a square panel, which is exactly what this
+ * format must not have: the words stop being part of the picture. One gradient
+ * across the whole frame instead - heavier at top and bottom, clear through
+ * the middle - which has no edge to notice and reads as sky and weather.
+ */
+.poem__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    to bottom,
+    rgb(6 9 16 / 52%) 0%,
+    rgb(6 9 16 / 18%) 26%,
+    rgb(6 9 16 / 10%) 52%,
+    rgb(6 9 16 / 34%) 78%,
+    rgb(6 9 16 / 68%) 100%
+  );
+  pointer-events: none;
 }
 
 .poem__words {
@@ -4806,29 +4843,6 @@ textarea:focus-visible {
   transition: none;
 }
 
-/*
- * A local scrim, only where the words are.
- *
- * Some of these frames are a bright winter sky, and no amount of shadow makes
- * cream type readable on one. A card would be worse - the words would stop
- * being part of the picture, which is the whole format. So each zone carries
- * its own soft darkening, strongest behind the text and gone by the edges,
- * which reads as weather rather than as a panel.
- */
-.poem__zone::before {
-  position: absolute;
-  z-index: -1;
-  inset: -12% -10%;
-  background: radial-gradient(
-    78% 62% at 50% 50%,
-    rgb(6 9 16 / 52%) 0%,
-    rgb(6 9 16 / 34%) 46%,
-    rgb(6 9 16 / 0%) 100%
-  );
-  content: "";
-  pointer-events: none;
-}
-
 .poem__zone {
   position: absolute;
   display: flex;
@@ -4836,8 +4850,10 @@ textarea:focus-visible {
   align-content: flex-start;
   gap: 0.08em 0.36em;
   font-family: var(--font-serif), Georgia, serif;
-  /* Big. The word is part of the picture, not a caption under it. */
-  font-size: clamp(2.3rem, 10.5vw, 4rem);
+  /* Big: the word is part of the picture, not a caption under it. Measured
+     against the narrowest safe zone - a line wraps to a third row rather than
+     overflowing, which the zone has the height for. */
+  font-size: clamp(2rem, 9vw, 3.4rem);
   font-weight: 500;
   line-height: 1.08;
   letter-spacing: -0.012em;
@@ -4868,11 +4884,18 @@ textarea:focus-visible {
  * settles back into the scene, which is what the reference does and what makes
  * the lit word look lit.
  */
+/*
+ * Said, and still there - but as smoke rather than as dimmer text.
+ *
+ * Only colour, opacity and shadow change here. Nothing that alters the word's
+ * width may: these words sit in a flow, so a letter-spacing or weight that
+ * differs by state re-lays the whole line every time a word is spoken, and
+ * that is what was shaking the screen.
+ */
 .poem__word.is-settled {
-  color: rgb(226 224 220 / 100%);
-  opacity: 0.34;
-  letter-spacing: 0.012em;
-  text-shadow: 0 2px 10px rgb(6 9 16 / 80%), 0 3px 22px rgb(6 9 16 / 60%);
+  color: #dfe3ea;
+  opacity: 0.3;
+  text-shadow: 0 2px 10px rgb(6 9 16 / 82%), 0 3px 24px rgb(6 9 16 / 62%);
 }
 
 /*
@@ -4955,7 +4978,9 @@ textarea:focus-visible {
   }
 }
 
-/* Letters spread, then gather. */
+/* Settles out of a slight spread. Done with a transform, not with
+   letter-spacing: spacing is layout, and animating it would shift every word
+   beside it on every frame. */
 .poem--ridge-reveal .poem__word.is-active {
   animation-name: poem-arrive-ridge;
   animation-duration: 760ms;
@@ -4964,11 +4989,11 @@ textarea:focus-visible {
 @keyframes poem-arrive-ridge {
   from {
     opacity: 0;
-    letter-spacing: 0.18em;
+    scale: 1.06 1;
   }
   to {
     opacity: 1;
-    letter-spacing: 0;
+    scale: 1 1;
   }
 }
 

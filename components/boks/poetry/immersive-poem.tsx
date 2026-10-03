@@ -309,15 +309,20 @@ export function ImmersivePoem({
           const index = backdrop.from % 2 === parity ? backdrop.from : waiting;
           const layerScene = index >= 0 ? sceneFor(manifest, index) : null;
           const arriving = backdrop.to >= 0 && index === backdrop.to;
+          const showing = index === backdrop.from;
           return (
             <Backdrop
               key={parity}
               scene={layerScene}
-              className={`poem__scene ${arriving ? "poem__scene--arriving" : ""}`}
+              className={`poem__scene ${showing ? "poem__scene--showing" : ""} ${
+                arriving ? "poem__scene--arriving" : ""
+              }`}
             />
           );
         })}
       </div>
+
+      <div className="poem__veil" aria-hidden="true" />
 
       {/*
         Every line is rendered, all the time; only their state changes.
