@@ -21,13 +21,11 @@ const manifest = JSON.parse(
 ) as PoemManifest;
 
 describe("the poem that ships", () => {
-  it("is eight lines over three scenes, with real timings", () => {
-    // A picture carries two lines, and the second stanza - one movement, the
-    // escape beyond the Caucasus - carries four on one frame. Eight pictures
-    // across seventeen seconds changed every two, faster than anyone can
-    // settle into a frame.
+  it("is eight lines over four scenes, with real timings", () => {
+    // Two lines to a picture. Eight pictures across seventeen seconds changed
+    // every two, which is faster than anyone can settle into a frame.
     expect(manifest.lines).toHaveLength(8);
-    expect(manifest.scenes).toHaveLength(3);
+    expect(manifest.scenes).toHaveLength(4);
     // Placeholder timings drift against the voice; these came from the
     // recording itself.
     expect(manifest.timingMode).toBe("forced-alignment");

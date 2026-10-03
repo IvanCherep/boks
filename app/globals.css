@@ -4805,8 +4805,17 @@ textarea:focus-visible {
   opacity: 1;
 }
 
-/* The layer being dissolved in, over the one being looked at. */
+/*
+ * The layer being dissolved in, and it has to be on top.
+ *
+ * A scene gets a layer by the parity of its index, so in half of all changes
+ * the arriving picture is the earlier of the two in the document - painted
+ * underneath an outgoing layer that is fully opaque. Those dissolves were
+ * invisible: nothing happened, and then the pair swapped and the picture
+ * changed in one frame. Which looked exactly like a stutter.
+ */
 .poem__scene--arriving {
+  z-index: 1;
   opacity: var(--fade, 0);
 }
 
