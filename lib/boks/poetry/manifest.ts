@@ -192,6 +192,25 @@ export function tokenStateAt(line: PoemLine, index: number, ms: number): TokenSt
 }
 
 /**
+ * The word the reading has reached, as an index into the line.
+ *
+ * The last word that has begun by `ms` - not the last one that is "active".
+ * The renderer reads ahead of the voice by `tokenLeadMs`, so in the final
+ * fraction of a second of every line `ms` runs past the line's end, every
+ * word in it is settled, and asking for the active one found none and fell
+ * back to the first. Everything after the line's first phrase went out for
+ * a frame or two and came back - a blink at the end of every line, measured
+ * at full opacity to zero and back. The word reached cannot go backwards.
+ */
+export function wordReachedAt(line: PoemLine, ms: number): number {
+  let reached = 0;
+  for (let index = 0; index < line.tokens.length; index += 1) {
+    if (line.tokens[index].atMs <= ms) reached = index;
+  }
+  return reached;
+}
+
+/**
  * The zone a token belongs in.
  *
  * A token names a role only where a line is deliberately split across the

@@ -12,6 +12,7 @@ import {
   sceneFor,
   textPresets,
   tokenStateAt,
+  wordReachedAt,
   zoneFor,
   type PoemManifest,
 } from "@/lib/boks/poetry/manifest";
@@ -394,6 +395,32 @@ describe("stepping through the poem", () => {
       expect(sceneFor(manifest, index)).not.toBeNull();
       expect(backdropAt(manifest, line.startMs).from).toBeGreaterThanOrEqual(0);
       expect(tokenStateAt(line, 0, line.startMs)).toBe("active");
+    }
+  });
+});
+
+describe("the word the reading has reached", () => {
+  it("never falls back to the start of the line as the line runs out", () => {
+    // The renderer reads ahead of the voice, so near the end of a line the
+    // clock it asks with is past the line's end. That used to answer "the
+    // first word", which put out every phrase after the first for a frame.
+    const lead = manifest.playback.tokenLeadMs ?? 0;
+    for (const line of manifest.lines) {
+      const last = line.tokens.length - 1;
+      for (let ms = line.tokens[last].atMs; ms <= line.endMs; ms += 20) {
+        expect(wordReachedAt(line, ms + lead), line.tokens[last].text).toBe(last);
+      }
+    }
+  });
+
+  it("only moves forward through a line", () => {
+    for (const line of manifest.lines) {
+      let previous = 0;
+      for (let ms = line.startMs; ms <= line.endMs + 400; ms += 20) {
+        const reached = wordReachedAt(line, ms);
+        expect(reached).toBeGreaterThanOrEqual(previous);
+        previous = reached;
+      }
     }
   });
 });

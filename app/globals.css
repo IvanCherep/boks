@@ -4861,10 +4861,19 @@ textarea:focus-visible {
  * which is what stops eight line changes in seventeen seconds reading as a
  * flicker. Long on the way out, because that is the half nobody should notice.
  */
+/*
+ * A stanza: the lines one picture carries. It stays for the whole picture and
+ * leaves with it.
+ *
+ * The leaving is quicker than the staying would suggest, on purpose: the next
+ * picture's stanza usually lands in the same part of the sky, and at 1.4s the
+ * two were legible over each other for most of a second. At 700ms, eased out,
+ * the old one is mostly gone before the first new word has finished arriving.
+ */
 .poem__line {
   position: absolute;
   inset: 0;
-  transition: opacity 900ms var(--ease-out);
+  transition: opacity 700ms var(--ease-out);
 }
 
 .poem__line.is-now {
@@ -4881,8 +4890,8 @@ textarea:focus-visible {
   opacity: 0;
   visibility: hidden;
   transition:
-    opacity 900ms var(--ease-out),
-    visibility 0s linear 900ms;
+    opacity 700ms var(--ease-out),
+    visibility 0s linear 700ms;
 }
 
 /*
@@ -4899,18 +4908,26 @@ textarea:focus-visible {
   transition: none;
 }
 
+/* A column of the stanza's lines, each a row of its own, so the second line
+   of a picture sits under the first and nothing moves when it arrives. */
 .poem__zone {
   position: absolute;
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 0.08em 0.36em;
+  flex-direction: column;
+  gap: 0.18em;
   font-family: var(--font-display);
   /* The quiet size. A word that carries the line gets the larger one below. */
   font-size: clamp(1.55rem, 6.6vw, 2.5rem);
   font-weight: 500;
   line-height: 1.12;
   letter-spacing: -0.005em;
+}
+
+.poem__verse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.08em 0.36em;
 }
 
 /*
@@ -4937,12 +4954,12 @@ textarea:focus-visible {
    * Opacity and colour only. `filter` was in this list, which meant a blur was
    * being interpolated on every word as it settled - the one property that
    * cannot be done on the compositor and has to re-rasterise the glyphs on
-   * every frame. It switches instead, under a nine-hundred-millisecond fade
+   * every frame. It switches instead, under a one-and-a-half-second fade
    * that hides the step completely.
    */
   transition:
-    opacity 920ms var(--ease-out),
-    color 920ms var(--ease-out);
+    opacity 1500ms var(--ease-out),
+    color 1500ms var(--ease-out);
 }
 
 /*
@@ -4982,10 +4999,16 @@ textarea:focus-visible {
  * colour, opacity, shadow and filter change by state: nothing here may alter
  * the word's width.
  */
+/*
+ * Settled is still readable. At a quarter opacity the first line of a stanza
+ * was gone the moment the second began, which on top of a line every two
+ * seconds was the text that would not stay. It steps back now rather than
+ * out: half as bright, a breath of blur, and it stays until its picture goes.
+ */
 .poem__word.is-settled {
   color: #e8edf5;
-  opacity: 0.26;
-  filter: blur(0.6px);
+  opacity: 0.5;
+  filter: blur(0.3px);
   text-shadow: 0 2px 12px rgb(6 9 16 / 70%);
 }
 
@@ -5009,14 +5032,14 @@ textarea:focus-visible {
     0 0 34px rgb(255 192 104 / 62%),
     0 2px 10px rgb(6 9 16 / 85%),
     0 4px 30px rgb(6 9 16 / 70%);
-  animation: poem-arrive 560ms cubic-bezier(0.16, 0.8, 0.26, 1) both;
+  animation: poem-arrive 800ms cubic-bezier(0.16, 0.8, 0.26, 1) both;
 }
 
 /* The default arrival: up a little, and in. Slow enough to be felt. */
 @keyframes poem-arrive {
   from {
     opacity: 0;
-    translate: 0 14px;
+    translate: 0 8px;
   }
   to {
     opacity: 1;
@@ -5028,27 +5051,27 @@ textarea:focus-visible {
 
 /* Farewell: the word lifts as it is spoken, and lingers a touch longer. */
 .poem--farewell-drift .poem__word.is-active {
-  animation-duration: 680ms;
+  animation-duration: 950ms;
 }
 
 /* Slaves below, masters above. The placement carries the line, so the words
    themselves stay plain and let it speak. */
 .poem--social-hierarchy-split .poem__word.is-active {
   animation-name: poem-arrive-quiet;
-  animation-duration: 540ms;
+  animation-duration: 760ms;
 }
 
 /* Disciplined, left to right, no spring and no overshoot. */
 .poem--uniform-formation .poem__word.is-active {
   animation-name: poem-arrive-rank;
-  animation-duration: 460ms;
+  animation-duration: 660ms;
   animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1);
 }
 
 @keyframes poem-arrive-rank {
   from {
     opacity: 0;
-    translate: -14px 0;
+    translate: -8px 0;
   }
   to {
     opacity: 1;
@@ -5059,7 +5082,7 @@ textarea:focus-visible {
 /* Almost nothing: opacity and four pixels. */
 .poem--quiet-breath .poem__word.is-active {
   animation-name: poem-arrive-quiet;
-  animation-duration: 620ms;
+  animation-duration: 860ms;
 }
 
 @keyframes poem-arrive-quiet {
@@ -5078,7 +5101,7 @@ textarea:focus-visible {
    beside it on every frame. */
 .poem--ridge-reveal .poem__word.is-active {
   animation-name: poem-arrive-ridge;
-  animation-duration: 760ms;
+  animation-duration: 1040ms;
 }
 
 @keyframes poem-arrive-ridge {
@@ -5097,13 +5120,13 @@ textarea:focus-visible {
    same. */
 .poem--shelter-reveal .poem__word.is-active {
   animation-name: poem-arrive-shelter;
-  animation-duration: 700ms;
+  animation-duration: 980ms;
 }
 
 @keyframes poem-arrive-shelter {
   from {
     opacity: 0;
-    translate: -26px 0;
+    translate: -14px 0;
   }
   to {
     opacity: 1;
@@ -5115,7 +5138,7 @@ textarea:focus-visible {
    clipped gradient: the same impression, a fraction of the cost. */
 .poem--searchlight-scan .poem__word.is-active {
   animation-name: poem-arrive, poem-scan;
-  animation-duration: 560ms, 760ms;
+  animation-duration: 800ms, 1040ms;
   animation-timing-function: cubic-bezier(0.16, 0.8, 0.26, 1), ease-out;
 }
 
@@ -5133,7 +5156,7 @@ textarea:focus-visible {
 
 /* A single trace left behind, widening once as the word settles. */
 .poem--echo-fade .poem__word.is-settled {
-  animation: poem-echo 700ms var(--ease-out) 1;
+  animation: poem-echo 980ms var(--ease-out) 1;
 }
 
 @keyframes poem-echo {

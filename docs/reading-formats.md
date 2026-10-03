@@ -430,6 +430,16 @@ The grouping is the poem's own punctuation: a phrase runs up to and including
 the word that closes it. The builder marks that word `emphasis: "lead"` — it is
 also the word set half again as large — and numbers the phrases from it.
 
+### A picture's lines stay together
+
+The lines one picture carries build up into a stanza: the first stays, dimmed
+to half, while the second is spoken under it, and the stanza leaves with its
+picture (a 700 ms fade - longer and it lies legibly over the next stanza,
+which usually lands in the same part of the sky). A line shown on its own
+lasted two seconds and went out exactly where the next was arriving, which is
+what read as the text flickering. Inside a zone each line is a row of its own
+(`.poem__verse`), so the second line never shifts the first.
+
 A word is lit `tokenLeadMs` (220 ms) **before** it is spoken, so its half-second
 arrival has finished by the time the voice gets there, and the word before it
 dims over nearly a second rather than being cut.
@@ -456,6 +466,11 @@ Learned the expensive way, each one having caused a visible stutter:
 - **Anything that changes a word's width** — `letter-spacing`, `font-weight`,
   `font-size`. These words sit in a flow, so a width that moves with the reading
   re-lays the whole line on every word and shakes the screen. Use `scale`.
+- **Picking the lit word as "the active one".** The renderer reads ahead of
+  the voice, so in the last 220 ms of every line no word is active and the
+  fallback was the first word - every later phrase went to zero for a frame
+  and came back. `wordReachedAt` takes the last word that has begun, and a
+  test holds it.
 - **A custom property on the root element.** It invalidates style for everything
   beneath it. The dissolve is an inline `opacity` on the arriving picture,
   `--played` goes on the control bar.

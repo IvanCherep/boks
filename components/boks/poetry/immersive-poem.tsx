@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 import { ReadingFinale, finaleLanguageOf, type FinaleActions } from "@/components/boks/reading-finale";
 import {
@@ -11,7 +11,7 @@ import {
   previousLineStart,
   presetFor,
   sceneFor,
-  tokenStateAt,
+  wordReachedAt,
   zoneFor,
   type PoemLine,
   type PoemManifest,
@@ -226,10 +226,7 @@ export function ImmersivePoem({
         if (current) {
           // Read a little ahead of the voice, so a word has finished arriving
           // by the time it is spoken rather than still forming after it.
-          const lit = ms + (manifest.playback.tokenLeadMs ?? 0);
-          for (let i = 0; i < current.tokens.length; i += 1) {
-            if (tokenStateAt(current, i, lit) === "active") token = i;
-          }
+          token = wordReachedAt(current, ms + (manifest.playback.tokenLeadMs ?? 0));
         }
         setAt((shown) => (shown.line === index && shown.token === token ? shown : { line: index, token }));
 
@@ -356,6 +353,10 @@ export function ImmersivePoem({
   }, [onClose]);
 
   const preset = scene ? presetFor(scene) : "quiet-breath";
+  const stanzas = useMemo(() => stanzasOf(manifest), [manifest]);
+  const currentStanza = stanzas.findIndex((stanza) =>
+    stanza.verses.some((verse) => verse === lineIndex)
+  );
 
   /*
    * A word's state on the line being spoken.
@@ -419,28 +420,33 @@ export function ImmersivePoem({
         Every line is rendered, all the time; only their state changes.
 
         Mounting a line's words when it begins and unmounting them when it ends
-        made the screen blink: at two seconds a line, the whole text vanished
-        and reappeared eight times in seventeen seconds. Kept in place they
-        simply dissolve, the leaving line over the arriving one, and nothing
+        made the screen blink. Kept in place they simply dissolve, and nothing
         has to be remounted for an animation to play.
+
+        And they are grouped by picture, not shown one at a time. A line on its
+        own lasted two seconds and then went out exactly where the next one was
+        arriving, eight times in seventeen seconds - which is what read as the
+        text flickering. Now the lines a picture carries build up into a
+        stanza: the first stays while the second is spoken under it, and the
+        stanza leaves with its picture. Nothing goes out until the picture
+        does.
       */}
       {/* Cleared when the poem ends. Nobody clears the last line otherwise,
-          so it sat over the closing panel - in the mountain scene its zone is
-          at the top left, which is where the stray "От" was coming from. */}
+          so it sat over the closing panel. */}
       <div className={`poem__words ${status === "ended" ? "is-over" : ""}`} aria-hidden="true">
-        {manifest.lines.map((poemLine, index) => {
-          const lineScene = sceneFor(manifest, index);
-          if (!lineScene) return null;
-          const state = index < lineIndex ? "past" : index === lineIndex ? "now" : "ahead";
+        {stanzas.map((stanza, stanzaIndex) => {
+          const state =
+            stanzaIndex < currentStanza ? "past" : stanzaIndex === currentStanza ? "now" : "ahead";
           return (
-            <div key={poemLine.sceneId} className={`poem__line is-${state}`}>
+            <div key={stanza.scene.id} className={`poem__line is-${state}`}>
               {/*
                 Grouped by zone and flowing inside it rather than pinned word by
                 word. A line reads as a line that way - "страна рабов," low and
-                left, "страна господ." high and right - and the words accumulate
-                as they are spoken instead of each landing in its own box.
+                left, "страна господ." high and right - and inside a zone each
+                line of the stanza is a row of its own, so the second sits under
+                the first instead of on top of it.
               */}
-              {zonesOf(poemLine, lineScene).map((group) => (
+              {stanza.zones.map((group) => (
                 <div
                   key={group.role ?? "default"}
                   className="poem__zone"
@@ -450,17 +456,29 @@ export function ImmersivePoem({
                     width: `${group.zone.width * 100}%`,
                   }}
                 >
-                  {group.tokens.map(({ token, order }) => (
-                    <span
-                      key={order}
-                      className={`poem__word ${
-                        token.emphasis === "lead" ? "poem__word--lead" : ""
-                      } is-${
-                        state !== "now" ? (state === "past" ? "settled" : "hidden") : wordState(token, order)
-                      }`}
-                    >
-                      {token.text}
-                    </span>
+                  {group.verses.map((verse) => (
+                    <div key={verse.lineIndex} className="poem__verse">
+                      {verse.tokens.map(({ token, order }) => (
+                        <span
+                          key={order}
+                          className={`poem__word ${
+                            token.emphasis === "lead" ? "poem__word--lead" : ""
+                          } is-${
+                            state !== "now"
+                              ? state === "past"
+                                ? "settled"
+                                : "hidden"
+                              : verse.lineIndex < lineIndex
+                                ? "settled"
+                                : verse.lineIndex > lineIndex
+                                  ? "hidden"
+                                  : wordState(token, order)
+                          }`}
+                        >
+                          {token.text}
+                        </span>
+                      ))}
+                    </div>
                   ))}
                 </div>
               ))}
@@ -603,17 +621,47 @@ function WaveBars() {
   );
 }
 
-/** The line's words, split into the zones the scene allows, in spoken order. */
-function zonesOf(line: PoemLine, scene: PoemScene) {
-  const groups = new Map<string, { role?: string; zone: SafeZone; tokens: { token: PoemToken; order: number }[] }>();
-  line.tokens.forEach((token, order) => {
-    const key = token.zone ?? "default";
-    if (!groups.has(key)) {
-      groups.set(key, { role: token.zone, zone: zoneFor(scene, token.zone), tokens: [] });
+type Verse = { lineIndex: number; tokens: { token: PoemToken; order: number }[] };
+
+/**
+ * The poem as stanzas: each run of lines spoken over one picture, with every
+ * line's words split into the zones that picture allows, in spoken order.
+ */
+function stanzasOf(manifest: PoemManifest) {
+  const stanzas: {
+    scene: PoemScene;
+    verses: number[];
+    zones: { role?: string; zone: SafeZone; verses: Verse[] }[];
+  }[] = [];
+  manifest.lines.forEach((line: PoemLine, lineIndex) => {
+    const lineScene = sceneFor(manifest, lineIndex);
+    if (!lineScene) return;
+    let stanza = stanzas.at(-1);
+    if (!stanza || stanza.scene.id !== lineScene.id) {
+      stanza = { scene: lineScene, verses: [], zones: [] };
+      stanzas.push(stanza);
     }
-    groups.get(key)!.tokens.push({ token, order });
+    stanza.verses.push(lineIndex);
+    line.tokens.forEach((token, order) => {
+      const role = token.zone;
+      const zone = zoneFor(lineScene, role);
+      // Keyed by the zone it resolves to, not the name it asked for: a word
+      // with no zone and one naming the first zone land in the same place and
+      // must share a column, or the two would be drawn over each other.
+      let group = stanza.zones.find((candidate) => candidate.zone === zone);
+      if (!group) {
+        group = { role: zone.role, zone, verses: [] };
+        stanza.zones.push(group);
+      }
+      let verse = group.verses.find((candidate) => candidate.lineIndex === lineIndex);
+      if (!verse) {
+        verse = { lineIndex, tokens: [] };
+        group.verses.push(verse);
+      }
+      verse.tokens.push({ token, order });
+    });
   });
-  return [...groups.values()];
+  return stanzas;
 }
 
 function Backdrop({ scene, ref }: { scene: PoemScene; ref: React.Ref<HTMLImageElement> }) {
