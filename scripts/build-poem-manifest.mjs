@@ -82,7 +82,16 @@ const built = lines.map((_, index) => {
     endMs: chunk.at(-1).endMs,
     tokens: chunk.map((word, n) => {
       const zone = zoneOf(scene, n, counts[index]);
-      return zone ? { ...word, zone } : { ...word };
+      /*
+       * Which word carries the line.
+       *
+       * The one that closes a phrase: it ends on punctuation, or it ends the
+       * line. "немытая Россия," puts the weight on Россия; "страна рабов," on
+       * рабов. Set in the data rather than decided while rendering, so the
+       * size of a word never changes and nothing is ever re-laid out.
+       */
+      const lead = /[,.;:!?—]$/.test(word.text) || n === counts[index] - 1;
+      return { ...word, ...(zone ? { zone } : {}), ...(lead ? { emphasis: "lead" } : {}) };
     }),
   };
 });

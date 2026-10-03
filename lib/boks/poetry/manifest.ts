@@ -36,6 +36,14 @@ export type PoemToken = {
   atMs: number;
   endMs: number;
   zone?: string;
+  /**
+   * The word that carries the line - the one closing a phrase.
+   *
+   * Fixed in the data rather than decided while rendering, because a word that
+   * changes size changes the layout of its neighbours, and doing that as each
+   * word is spoken shakes the whole screen.
+   */
+  emphasis?: "lead";
 };
 
 export type PoemLine = {

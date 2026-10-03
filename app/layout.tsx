@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/source-serif-4/standard.css";
+// A high-contrast display serif, used only where a word is part of a
+// picture rather than part of a paragraph. See `--font-display`.
+import "@fontsource-variable/playfair-display/wght.css";
 import "./globals.css";
 import { themeBootScript, themeColor } from "@/components/boks/theme";
 

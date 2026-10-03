@@ -359,7 +359,9 @@ export function ImmersivePoem({
                   {group.tokens.map(({ token, order }) => (
                     <span
                       key={order}
-                      className={`poem__word is-${
+                      className={`poem__word ${
+                        token.emphasis === "lead" ? "poem__word--lead" : ""
+                      } is-${
                         state !== "now"
                           ? state === "past"
                             ? "settled"
@@ -392,9 +394,6 @@ export function ImmersivePoem({
       </button>
 
       <div className="poem__controls">
-        <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
-          {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-        </button>
         {/* Its own pointer handling, and it must not reach the surface
             underneath - dragging the bar would otherwise also pause. */}
         <div
@@ -426,7 +425,23 @@ export function ImmersivePoem({
         >
           <span className="poem__bar-track" />
           <span className="poem__bar-fill" />
+          {/*
+            A waveform, drawn twice: once dim across the whole width, once warm
+            and clipped to how much has been heard. Two copies rather than a bar
+            per state, so the whole thing moves on one CSS variable and nothing
+            is recomputed as it plays.
+          */}
+          <span className="poem__wave" aria-hidden="true">
+            <WaveBars />
+          </span>
+          <span className="poem__wave poem__wave--played" aria-hidden="true">
+            <WaveBars />
+          </span>
         </div>
+
+        <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
+          {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
+        </button>
       </div>
 
       {status === "loading" && <p className="poem__state">Загружаем…</p>}
@@ -448,6 +463,25 @@ export function ImmersivePoem({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The little waveform beside the controls.
+ *
+ * Decoration, and deliberately fixed: a real analysis of the audio would move
+ * with the reading and pull the eye down to the bottom of the screen, which is
+ * the one place this format does not want it.
+ */
+const waveHeights = [0.38, 0.94, 0.53, 0.4, 0.84, 0.43, 0.85, 0.5, 0.4, 0.94, 0.44, 0.74, 0.52, 0.44, 0.99, 0.4, 0.64, 0.6, 0.49, 0.98, 0.34, 0.59, 0.72, 0.5, 0.92, 0.31, 0.6, 0.84, 0.45, 0.82, 0.34, 0.64, 0.91, 0.36];
+
+function WaveBars() {
+  return (
+    <>
+      {waveHeights.map((height, index) => (
+        <i key={index} style={{ "--h": height } as React.CSSProperties} />
+      ))}
+    </>
   );
 }
 

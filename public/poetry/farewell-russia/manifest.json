@@ -196,7 +196,8 @@
     {
      "text": "Прощай,",
      "atMs": 0,
-     "endMs": 680
+     "endMs": 680,
+     "emphasis": "lead"
     },
     {
      "text": "немытая",
@@ -206,7 +207,8 @@
     {
      "text": "Россия,",
      "atMs": 1240,
-     "endMs": 2080
+     "endMs": 2080,
+     "emphasis": "lead"
     }
    ]
   },
@@ -225,7 +227,8 @@
      "text": "рабов,",
      "atMs": 2680,
      "endMs": 3280,
-     "zone": "lower"
+     "zone": "lower",
+     "emphasis": "lead"
     },
     {
      "text": "страна",
@@ -237,7 +240,8 @@
      "text": "господ,",
      "atMs": 3760,
      "endMs": 4560,
-     "zone": "upper"
+     "zone": "upper",
+     "emphasis": "lead"
     }
    ]
   },
@@ -254,7 +258,8 @@
     {
      "text": "вы,",
      "atMs": 4800,
-     "endMs": 5120
+     "endMs": 5120,
+     "emphasis": "lead"
     },
     {
      "text": "мундиры",
@@ -264,7 +269,8 @@
     {
      "text": "голубые,",
      "atMs": 5760,
-     "endMs": 6640
+     "endMs": 6640,
+     "emphasis": "lead"
     }
    ]
   },
@@ -281,7 +287,8 @@
     {
      "text": "ты,",
      "atMs": 6880,
-     "endMs": 7280
+     "endMs": 7280,
+     "emphasis": "lead"
     },
     {
      "text": "им",
@@ -296,7 +303,8 @@
     {
      "text": "народ.",
      "atMs": 8080,
-     "endMs": 8680
+     "endMs": 8680,
+     "emphasis": "lead"
     }
    ]
   },
@@ -313,7 +321,8 @@
     {
      "text": "может,",
      "atMs": 9120,
-     "endMs": 9493
+     "endMs": 9493,
+     "emphasis": "lead"
     },
     {
      "text": "за",
@@ -328,7 +337,8 @@
     {
      "text": "Кавказа",
      "atMs": 10000,
-     "endMs": 10640
+     "endMs": 10640,
+     "emphasis": "lead"
     }
    ]
   },
@@ -355,7 +365,8 @@
     {
      "text": "пашей,",
      "atMs": 12000,
-     "endMs": 12720
+     "endMs": 12720,
+     "emphasis": "lead"
     }
    ]
   },
@@ -382,7 +393,8 @@
     {
      "text": "глаза,",
      "atMs": 13840,
-     "endMs": 14560
+     "endMs": 14560,
+     "emphasis": "lead"
     }
    ]
   },
@@ -409,7 +421,8 @@
     {
      "text": "ушей.",
      "atMs": 15960,
-     "endMs": 16560
+     "endMs": 16560,
+     "emphasis": "lead"
     }
    ]
   }

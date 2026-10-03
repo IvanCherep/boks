@@ -198,6 +198,11 @@
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: Arial, Helvetica, sans-serif;
   --font-serif: "Source Serif 4 Variable", "Source Serif 4", Georgia, serif;
+  /* For words that sit inside a picture. Source Serif is a text face -
+     even by design, which is right for a paragraph and wrong for a single
+     word the size of a building. This one has the thick-to-thin contrast
+     that makes a word look struck rather than typed. */
+  --font-display: "Playfair Display Variable", "Playfair Display", "Source Serif 4 Variable", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 }
@@ -4849,14 +4854,12 @@ textarea:focus-visible {
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 0.08em 0.36em;
-  font-family: var(--font-serif), Georgia, serif;
-  /* Big: the word is part of the picture, not a caption under it. Measured
-     against the narrowest safe zone - a line wraps to a third row rather than
-     overflowing, which the zone has the height for. */
-  font-size: clamp(2rem, 9vw, 3.4rem);
+  font-family: var(--font-display);
+  /* The quiet size. A word that carries the line gets the larger one below. */
+  font-size: clamp(1.55rem, 6.6vw, 2.5rem);
   font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -0.012em;
+  line-height: 1.12;
+  letter-spacing: -0.005em;
 }
 
 /*
@@ -4873,7 +4876,20 @@ textarea:focus-visible {
   opacity: 0;
   transition:
     opacity 620ms var(--ease-out),
-    color 620ms var(--ease-out);
+    color 620ms var(--ease-out),
+    filter 620ms var(--ease-out);
+}
+
+/*
+ * The word the line turns on, half again as large.
+ *
+ * Set from the manifest and never changed, so the size of a word is fixed for
+ * the whole poem - a size that moved with the reading would re-lay the line on
+ * every word and shake the screen.
+ */
+.poem__word--lead {
+  font-size: 1.45em;
+  font-weight: 600;
 }
 
 /*
@@ -4892,10 +4908,20 @@ textarea:focus-visible {
  * differs by state re-lays the whole line every time a word is spoken, and
  * that is what was shaking the screen.
  */
+/*
+ * Said, and left behind as vapour.
+ *
+ * A spoken word that is merely faded still reads as type lying on a
+ * photograph. A little blur is what turns it into weather - it is static, so
+ * it is rasterised once and costs nothing, unlike a blur that animates. Only
+ * colour, opacity, shadow and filter change by state: nothing here may alter
+ * the word's width.
+ */
 .poem__word.is-settled {
-  color: #dfe3ea;
-  opacity: 0.3;
-  text-shadow: 0 2px 10px rgb(6 9 16 / 82%), 0 3px 24px rgb(6 9 16 / 62%);
+  color: #e8edf5;
+  opacity: 0.26;
+  filter: blur(0.6px);
+  text-shadow: 0 2px 12px rgb(6 9 16 / 70%);
 }
 
 /*
@@ -4907,13 +4933,15 @@ textarea:focus-visible {
  * laid on top of it.
  */
 .poem__word.is-active {
-  color: #fff3dc;
+  /* Warm rather than white: the word is lamplight in a cold frame. */
+  color: #ffe7bd;
   opacity: 1;
   text-shadow:
-    0 0 12px rgb(255 214 148 / 70%),
-    0 0 46px rgb(255 186 92 / 42%),
+    0 0 10px rgb(255 219 160 / 85%),
+    0 0 30px rgb(255 198 110 / 60%),
+    0 0 72px rgb(255 170 70 / 38%),
     0 2px 10px rgb(6 9 16 / 85%),
-    0 4px 28px rgb(6 9 16 / 70%);
+    0 4px 30px rgb(6 9 16 / 70%);
   animation: poem-arrive 560ms cubic-bezier(0.16, 0.8, 0.26, 1) both;
 }
 
@@ -5090,10 +5118,11 @@ textarea:focus-visible {
   opacity: 0;
 }
 
+/* On the right, as a quiet circle - the reading is the thing, not the player. */
 .poem__play {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
   place-items: center;
   border: 1px solid rgb(240 205 142 / 40%);
@@ -5113,7 +5142,7 @@ textarea:focus-visible {
 .poem__bar {
   position: relative;
   display: flex;
-  height: 28px;
+  height: 34px;
   flex: 1;
   min-width: 0;
   align-items: center;
@@ -5121,22 +5150,58 @@ textarea:focus-visible {
   touch-action: none;
 }
 
+/*
+ * The waveform, drawn twice: dim across the whole width, then warm and clipped
+ * to how much has been heard. Everything moves on one custom property, so
+ * playing costs no work beyond the compositor.
+ */
+.poem__wave {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1px;
+  pointer-events: none;
+}
+
+.poem__wave i {
+  width: 2px;
+  height: calc(var(--h) * 16px);
+  /* Fixed width, not stretched: allowed to grow they become dashes rather
+     than a waveform. The row spaces them instead. */
+  flex: 0 0 2px;
+  border-radius: 1px;
+  background: rgb(244 232 208 / 32%);
+}
+
+/* The same bars again, cut off at the moment the reading has reached. */
+.poem__wave--played {
+  clip-path: inset(0 calc(100% - var(--played, 0) * 100%) 0 0);
+}
+
+.poem__wave--played i {
+  background: var(--poem-active);
+}
+
+/* A hairline under the waveform, so the bar still reads as a track when the
+   bars are short. */
 .poem__bar-track,
 .poem__bar-fill {
   position: absolute;
   left: 0;
-  height: 3px;
+  height: 1px;
   border-radius: 999px;
 }
 
 .poem__bar-track {
   right: 0;
-  background: rgb(244 232 208 / 24%);
+  background: rgb(244 232 208 / 18%);
 }
 
 .poem__bar-fill {
   width: calc(var(--played, 0) * 100%);
-  background: linear-gradient(90deg, #d9a860, var(--poem-active));
+  background: rgb(255 217 154 / 55%);
 }
 
 .poem__state {
