@@ -1,11 +1,11 @@
 {
- "id": "farewell-unwashed-russia-immersive-v1",
+ "id": "farewell-russia-immersive-v1",
  "title": "Прощай, немытая Россия",
  "author": "М. Ю. Лермонтов (традиционная атрибуция)",
  "language": "ru",
  "timingMode": "forced-alignment",
  "audio": "/poetry/farewell-russia/narration.mp3",
- "durationMs": 16640,
+ "durationMs": 16560,
  "canvas": {
   "width": 941,
   "height": 1672,
@@ -21,9 +21,8 @@
  "playback": {
   "crossfadeLeadMs": 260,
   "defaultCrossfadeMs": 470,
-  "backgroundScaleFrom": 1.0,
-  "backgroundScaleTo": 1.035,
-  "reducedMotion": "opacity-only"
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
  },
  "scenes": [
   {
@@ -70,7 +69,7 @@
     }
    ],
    "textPreset": "social-hierarchy-split",
-   "transitionMs": 450
+   "transitionMs": 440
   },
   {
    "id": "blue-uniforms",
@@ -93,7 +92,7 @@
   },
   {
    "id": "obedient-people",
-   "line": "И ты, послушный им народ.",
+   "line": "И ты, им преданный народ.",
    "image": "/poetry/farewell-russia/scenes/04-obedient-people.webp",
    "focalPoint": {
     "x": 0.5,
@@ -112,7 +111,7 @@
   },
   {
    "id": "caucasus-ridge",
-   "line": "Быть может, за хребтом Кавказа",
+   "line": "Быть может, за стеной Кавказа",
    "image": "/poetry/farewell-russia/scenes/05-caucasus-ridge.webp",
    "focalPoint": {
     "x": 0.55,
@@ -131,7 +130,7 @@
   },
   {
    "id": "hide-beyond-kings",
-   "line": "Укроюсь от твоих царей,",
+   "line": "Укроюсь от твоих пашей,",
    "image": "/poetry/farewell-russia/scenes/06-hide-beyond-kings.webp",
    "focalPoint": {
     "x": 0.58,
@@ -205,7 +204,7 @@
     },
     {
      "text": "Россия,",
-     "atMs": 1280,
+     "atMs": 1240,
      "endMs": 2080
     }
    ]
@@ -213,7 +212,7 @@
   {
    "sceneId": "land-of-slaves-and-masters",
    "startMs": 2160,
-   "endMs": 4640,
+   "endMs": 4600,
    "tokens": [
     {
      "text": "Страна",
@@ -235,7 +234,7 @@
     },
     {
      "text": "господ,",
-     "atMs": 3720,
+     "atMs": 3760,
      "endMs": 4560,
      "zone": "upper"
     }
@@ -243,13 +242,13 @@
   },
   {
    "sceneId": "blue-uniforms",
-   "startMs": 4640,
-   "endMs": 6640,
+   "startMs": 4600,
+   "endMs": 6680,
    "tokens": [
     {
      "text": "И",
-     "atMs": 4640,
-     "endMs": 4720
+     "atMs": 4600,
+     "endMs": 4640
     },
     {
      "text": "вы,",
@@ -264,152 +263,152 @@
     {
      "text": "голубые,",
      "atMs": 5760,
-     "endMs": 6560
+     "endMs": 6640
     }
    ]
   },
   {
    "sceneId": "obedient-people",
-   "startMs": 6640,
-   "endMs": 9040,
+   "startMs": 6680,
+   "endMs": 8880,
    "tokens": [
     {
      "text": "И",
-     "atMs": 6640,
+     "atMs": 6680,
      "endMs": 6720
     },
     {
      "text": "ты,",
      "atMs": 6880,
-     "endMs": 7240
-    },
-    {
-     "text": "послушный",
-     "atMs": 7360,
-     "endMs": 8000
+     "endMs": 7280
     },
     {
      "text": "им",
-     "atMs": 8080,
-     "endMs": 8240
+     "atMs": 7400,
+     "endMs": 7520
+    },
+    {
+     "text": "преданный",
+     "atMs": 7560,
+     "endMs": 8040
     },
     {
      "text": "народ.",
-     "atMs": 8320,
-     "endMs": 8840
+     "atMs": 8080,
+     "endMs": 8680
     }
    ]
   },
   {
    "sceneId": "caucasus-ridge",
-   "startMs": 9040,
-   "endMs": 11040,
+   "startMs": 8880,
+   "endMs": 10880,
    "tokens": [
     {
      "text": "Быть",
-     "atMs": 9040,
-     "endMs": 9200
+     "atMs": 8880,
+     "endMs": 9040
     },
     {
      "text": "может,",
-     "atMs": 9280,
-     "endMs": 9600
+     "atMs": 9120,
+     "endMs": 9493
     },
     {
      "text": "за",
-     "atMs": 9640,
-     "endMs": 9680
+     "atMs": 9547,
+     "endMs": 9600
     },
     {
-     "text": "хребтом",
-     "atMs": 9760,
-     "endMs": 10160
+     "text": "стеной",
+     "atMs": 9680,
+     "endMs": 9920
     },
     {
      "text": "Кавказа",
-     "atMs": 10240,
-     "endMs": 10880
+     "atMs": 10000,
+     "endMs": 10640
     }
    ]
   },
   {
    "sceneId": "hide-beyond-kings",
-   "startMs": 11040,
-   "endMs": 12880,
+   "startMs": 10880,
+   "endMs": 12800,
    "tokens": [
     {
      "text": "Укроюсь",
-     "atMs": 11040,
-     "endMs": 11600
+     "atMs": 10880,
+     "endMs": 11440
     },
     {
      "text": "от",
-     "atMs": 11680,
-     "endMs": 11760
+     "atMs": 11520,
+     "endMs": 11600
     },
     {
      "text": "твоих",
-     "atMs": 11813,
-     "endMs": 12080
+     "atMs": 11640,
+     "endMs": 11920
     },
     {
-     "text": "царей,",
-     "atMs": 12160,
-     "endMs": 12800
+     "text": "пашей,",
+     "atMs": 12000,
+     "endMs": 12720
     }
    ]
   },
   {
    "sceneId": "all-seeing-eye",
-   "startMs": 12880,
-   "endMs": 14720,
+   "startMs": 12800,
+   "endMs": 14640,
    "tokens": [
     {
      "text": "От",
-     "atMs": 12880,
-     "endMs": 12960
+     "atMs": 12800,
+     "endMs": 12880
     },
     {
      "text": "их",
-     "atMs": 13040,
-     "endMs": 13120
+     "atMs": 12960,
+     "endMs": 13040
     },
     {
      "text": "всевидящего",
-     "atMs": 13160,
-     "endMs": 13840
+     "atMs": 13080,
+     "endMs": 13760
     },
     {
      "text": "глаза,",
-     "atMs": 13920,
-     "endMs": 14640
+     "atMs": 13840,
+     "endMs": 14560
     }
    ]
   },
   {
    "sceneId": "all-hearing-ears",
-   "startMs": 14720,
-   "endMs": 16640,
+   "startMs": 14640,
+   "endMs": 16560,
    "tokens": [
     {
      "text": "От",
-     "atMs": 14720,
-     "endMs": 14880
+     "atMs": 14640,
+     "endMs": 14800
     },
     {
      "text": "их",
-     "atMs": 14960,
-     "endMs": 15040
+     "atMs": 14880,
+     "endMs": 14960
     },
     {
      "text": "всеслышащих",
-     "atMs": 15080,
-     "endMs": 15920
+     "atMs": 15000,
+     "endMs": 15840
     },
     {
      "text": "ушей.",
-     "atMs": 16000,
-     "endMs": 16640
+     "atMs": 15960,
+     "endMs": 16560
     }
    ]
   }

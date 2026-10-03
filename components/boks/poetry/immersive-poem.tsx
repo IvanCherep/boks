@@ -53,6 +53,8 @@ export function ImmersivePoem({
   const stage = useRef<HTMLDivElement>(null);
   const idleTimer = useRef(0);
   const bar = useRef<HTMLDivElement>(null);
+  /** The last values written to the DOM, so an unchanged frame writes nothing. */
+  const painted = useRef({ fade: -1, played: -1, ms: -1 });
 
   const [status, setStatus] = useState<Status>("loading");
   const [playing, setPlaying] = useState(false);
@@ -131,6 +133,19 @@ export function ImmersivePoem({
       const root = stage.current;
       if (element && root) {
         const ms = element.currentTime * 1000;
+        /*
+         * Nothing to recompute while the clock is still.
+         *
+         * Paused, `currentTime` does not move, so every frame would redo the
+         * same work and reach the same answer. Seeking while paused does move
+         * it, so this costs nothing and still lands the new position.
+         */
+        if (ms === painted.current.ms) {
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        painted.current.ms = ms;
+
         const index = lineIndexAt(manifest.lines, ms);
         setLineIndex((current) => (current === index ? current : index));
 
@@ -145,32 +160,39 @@ export function ImmersivePoem({
         }
 
         const pair = backdropAt(manifest, ms);
-        setBackdrop((current) =>
-          current.from?.id === pair.from?.id && current.to?.id === pair.to?.id ? current : pair
+        setBackdrop((shown) =>
+          shown.from?.id === pair.from?.id && shown.to?.id === pair.to?.id ? shown : pair
         );
-        root.style.setProperty("--fade", pair.progress.toFixed(3));
 
-        // A very slow push in across a scene, never a parallax: the reader is
-        // here to listen, not to watch a camera move.
-        if (!reduced && current) {
-          const span = Math.max(1, current.endMs - current.startMs);
-          const through = Math.min(1, Math.max(0, (ms - current.startMs) / span));
-          const { backgroundScaleFrom: from, backgroundScaleTo: to } = manifest.playback;
-          root.style.setProperty("--scale", (from + (to - from) * through).toFixed(4));
+        /*
+         * Written only when they have actually moved.
+         *
+         * Setting a custom property on the root invalidates style for
+         * everything beneath it, and beneath it are two full-screen images.
+         * Doing that sixty times a second for a number that rounds to the same
+         * value is most of the cost of this screen.
+         */
+        const fade = Math.round(pair.progress * 200) / 200;
+        if (fade !== painted.current.fade) {
+          painted.current.fade = fade;
+          root.style.setProperty("--fade", String(fade));
         }
 
-        const played = playedFraction(ms, manifest.durationMs);
-        root.style.setProperty("--played", played.toFixed(4));
-        // Written straight onto the element rather than through state: a
-        // screen reader needs the real position, and the position changes
-        // sixty times a second.
+        const played = Math.round(playedFraction(ms, manifest.durationMs) * 400) / 400;
+        if (played !== painted.current.played) {
+          painted.current.played = played;
+          root.style.setProperty("--played", String(played));
+        }
+
+        // Written onto the element rather than through state: a screen reader
+        // needs the real position, and the position changes constantly.
         bar.current?.setAttribute("aria-valuenow", String(Math.round(played * 100)));
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [manifest, reduced]);
+  }, [manifest]);
 
   const revealChrome = useCallback(() => {
     setChromeVisible(true);
@@ -244,7 +266,6 @@ export function ImmersivePoem({
       style={
         {
           "--fade": 0,
-          "--scale": manifest.playback.backgroundScaleFrom,
           "--played": 0,
           "--poem-text": manifest.palette.text,
           "--poem-active": manifest.palette.active,

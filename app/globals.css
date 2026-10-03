@@ -4744,12 +4744,24 @@ textarea:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: translateZ(0) scale(var(--scale, 1));
+  transform: translateZ(0);
+  /* A very slow breath across the frame, never a parallax: the reader is here
+     to listen, not to watch a camera move. Left entirely to the compositor -
+     driving this from the frame loop meant a style recalculation on a
+     full-screen image sixty times a second, which is what the stutter was. */
+  animation: poem-drift 26s ease-in-out infinite alternate;
   pointer-events: none;
+}
+
+@keyframes poem-drift {
+  from { scale: 1; }
+  to { scale: 1.035; }
 }
 
 .poem__scene--next {
   opacity: var(--fade, 0);
+  /* Only the layer that is actually dissolving asks for its own surface. */
+  will-change: opacity;
 }
 
 .poem__words {
@@ -4772,102 +4784,167 @@ textarea:focus-visible {
   text-shadow: 0 2px 14px var(--poem-shadow);
 }
 
+/*
+ * A word arrives by animation, not by transition.
+ *
+ * Every word of a line is remounted when the line changes, and the first one
+ * is already active at that moment - so a transition has no previous state to
+ * run from and the word simply appears. An animation plays on mount, which is
+ * exactly the case that was popping.
+ *
+ * Transitions still handle the gentler half: active settling into spoken.
+ */
 .poem__word {
-  transition:
-    opacity 420ms var(--ease-out),
-    color 320ms var(--ease-out),
-    translate 520ms var(--ease-out),
-    filter 420ms var(--ease-out);
-}
-
-.poem__word.is-hidden {
   opacity: 0;
+  transition:
+    opacity 620ms var(--ease-out),
+    color 620ms var(--ease-out);
 }
 
-/* Spoken now: warm and in front. */
-.poem__word.is-active {
-  color: var(--poem-active);
-  opacity: 1;
-  text-shadow: 0 2px 18px var(--poem-shadow), 0 0 28px rgb(255 217 154 / 30%);
-}
-
-/* Said, and still there. A poem assembling itself, not karaoke. */
 .poem__word.is-settled {
   color: var(--poem-text);
   opacity: 0.42;
 }
 
+/* Spoken now: warm, and in front. */
+.poem__word.is-active {
+  color: var(--poem-active);
+  opacity: 1;
+  text-shadow: 0 2px 18px var(--poem-shadow), 0 0 28px rgb(255 217 154 / 28%);
+  animation: poem-arrive 820ms cubic-bezier(0.16, 0.8, 0.26, 1) both;
+}
+
+/* The default arrival: up a little, and in. Slow enough to be felt. */
+@keyframes poem-arrive {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
 /* ── The eight presets ──────────────────────────────────────────────────── */
 
-/* Each word lifts a little as it arrives. */
-.poem--farewell-drift .poem__word.is-hidden {
-  translate: 0 12px;
+/* Farewell: the word lifts as it is spoken, and lingers a touch longer. */
+.poem--farewell-drift .poem__word.is-active {
+  animation-duration: 980ms;
 }
 
-/* Slaves below, masters above: the zones carry the argument, so the words
-   themselves stay plain and let the placement speak. */
-.poem--social-hierarchy-split .poem__word.is-hidden {
-  opacity: 0;
+/* Slaves below, masters above. The placement carries the line, so the words
+   themselves stay plain and let it speak. */
+.poem--social-hierarchy-split .poem__word.is-active {
+  animation-name: poem-arrive-quiet;
+  animation-duration: 760ms;
 }
 
-/* Disciplined, left to right, no spring. */
-.poem--uniform-formation .poem__word {
-  transition-timing-function: linear;
-  transition-duration: 260ms;
+/* Disciplined, left to right, no spring and no overshoot. */
+.poem--uniform-formation .poem__word.is-active {
+  animation-name: poem-arrive-rank;
+  animation-duration: 640ms;
+  animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1);
 }
 
-.poem--uniform-formation .poem__word.is-hidden {
-  translate: -10px 0;
+@keyframes poem-arrive-rank {
+  from {
+    opacity: 0;
+    translate: -14px 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 /* Almost nothing: opacity and four pixels. */
-.poem--quiet-breath .poem__word.is-hidden {
-  translate: 0 4px;
+.poem--quiet-breath .poem__word.is-active {
+  animation-name: poem-arrive-quiet;
+  animation-duration: 900ms;
+}
+
+@keyframes poem-arrive-quiet {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 /* Letters spread, then gather. */
-.poem--ridge-reveal .poem__word.is-hidden {
-  letter-spacing: 0.22em;
-  opacity: 0;
+.poem--ridge-reveal .poem__word.is-active {
+  animation-name: poem-arrive-ridge;
+  animation-duration: 1100ms;
 }
 
-.poem--ridge-reveal .poem__word {
-  transition-property: opacity, color, letter-spacing, translate;
-  letter-spacing: 0;
+@keyframes poem-arrive-ridge {
+  from {
+    opacity: 0;
+    letter-spacing: 0.18em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0;
+  }
 }
 
-/* Out of the darker left of the frame, towards the figure. */
-.poem--shelter-reveal .poem__word.is-hidden {
-  translate: -22px 0;
-  filter: blur(3px);
+/* Out of the darker left of the frame, towards the figure. No blur: it is the
+   one filter that costs real frames on a phone, and a longer travel reads the
+   same. */
+.poem--shelter-reveal .poem__word.is-active {
+  animation-name: poem-arrive-shelter;
+  animation-duration: 1000ms;
 }
 
-/* One pass of light across the active word, not a loop. */
+@keyframes poem-arrive-shelter {
+  from {
+    opacity: 0;
+    translate: -26px 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* One pass of light as the word lands, not a loop. Brightness rather than a
+   clipped gradient: the same impression, a fraction of the cost. */
 .poem--searchlight-scan .poem__word.is-active {
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgb(255 240 200 / 55%) 45%,
-    transparent 70%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: poem-scan 900ms var(--ease-out) 1;
+  animation-name: poem-arrive, poem-scan;
+  animation-duration: 820ms, 1000ms;
+  animation-timing-function: cubic-bezier(0.16, 0.8, 0.26, 1), ease-out;
 }
 
 @keyframes poem-scan {
-  from { background-position: -140% 0; }
-  to { background-position: 240% 0; }
+  0% {
+    text-shadow: 0 2px 18px var(--poem-shadow);
+  }
+  45% {
+    text-shadow: 0 2px 18px var(--poem-shadow), 0 0 42px rgb(255 240 200 / 72%);
+  }
+  100% {
+    text-shadow: 0 2px 18px var(--poem-shadow), 0 0 28px rgb(255 217 154 / 28%);
+  }
 }
 
-/* A single trace left behind, widening once. */
+/* A single trace left behind, widening once as the word settles. */
 .poem--echo-fade .poem__word.is-settled {
   animation: poem-echo 700ms var(--ease-out) 1;
 }
 
 @keyframes poem-echo {
-  from { opacity: 0.9; scale: 1; }
-  to { opacity: 0.42; scale: 1.04; }
+  from {
+    opacity: 0.9;
+    scale: 1;
+  }
+  to {
+    opacity: 0.42;
+    scale: 1.04;
+  }
 }
 
 /* ── Controls ───────────────────────────────────────────────────────────── */
