@@ -25,6 +25,10 @@ export type PoemScene = {
   id: string;
   line: string;
   image: string;
+  /** When this scene takes over, in the recording. */
+  startMs: number;
+  /** How many of the poem's lines it carries. One unless it says otherwise. */
+  lines?: number;
   focalPoint: { x: number; y: number };
   safeZones: SafeZone[];
   textPreset: string;
@@ -134,10 +138,16 @@ export function lineIndexAt(lines: readonly PoemLine[], ms: number): number {
   return 0;
 }
 
+/** The picture a line is spoken over. A scene may serve several lines. */
 export function sceneFor(manifest: PoemManifest, lineIndex: number): PoemScene | null {
   const line = manifest.lines[lineIndex];
   if (!line) return null;
   return manifest.scenes.find((scene) => scene.id === line.sceneId) ?? null;
+}
+
+/** A picture by its own index, which is what the backdrop deals in. */
+export function sceneAt(manifest: PoemManifest, sceneIndex: number): PoemScene | null {
+  return manifest.scenes[sceneIndex] ?? null;
 }
 
 export type TokenState = "hidden" | "active" | "settled";
@@ -214,20 +224,23 @@ export function backdropAt(
 ): { from: number; to: number; progress: number } {
   const offset = manifest.playback.crossfadeOffsetMs;
   /*
-   * Walked forward rather than asked of the current line.
+   * Walked over scenes, not over lines.
    *
-   * The picture on screen is the last one whose dissolve has finished - which
-   * is not the same as the scene belonging to the line being spoken. A line
-   * begins, its first word arrives, and for `offset` milliseconds the frame is
-   * still the one before; only then does it start to turn. Reading the scene
-   * off the line index instead put the new picture up on the same beat as the
-   * word, which is the whole thing this is here to avoid.
+   * A picture can carry more than one line - eight of them across seventeen
+   * seconds changed too fast to settle into any - so scene boundaries are not
+   * line boundaries, and asking a line which picture it wants would try to
+   * dissolve an image into itself between the two halves of a pair.
+   *
+   * What is on screen is the last picture whose dissolve has finished, which
+   * is also not the picture belonging to the line being spoken: a line begins,
+   * its first word arrives, and for `offset` milliseconds the frame is still
+   * the one before.
    */
   let settled = 0;
-  for (let index = 1; index < manifest.lines.length; index += 1) {
-    const scene = sceneFor(manifest, index);
-    const span = scene?.transitionMs ?? manifest.playback.defaultCrossfadeMs;
-    const begins = manifest.lines[index].startMs + offset;
+  for (let index = 1; index < manifest.scenes.length; index += 1) {
+    const scene = manifest.scenes[index];
+    const span = scene.transitionMs || manifest.playback.defaultCrossfadeMs;
+    const begins = scene.startMs + offset;
     if (ms >= begins + span) {
       settled = index;
       continue;

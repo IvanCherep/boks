@@ -7,6 +7,7 @@ import {
   lineIndexAt,
   playedFraction,
   presetFor,
+  sceneAt,
   sceneFor,
   tokenStateAt,
   zoneFor,
@@ -341,7 +342,9 @@ export function ImmersivePoem({
           // nothing left to load when it starts.
           const waiting = backdrop.to >= 0 ? backdrop.to : backdrop.from + 1;
           const index = backdrop.from % 2 === parity ? backdrop.from : waiting;
-          const layerScene = index >= 0 ? sceneFor(manifest, index) : null;
+          // These are scene indexes, not line indexes: a picture may carry
+          // more than one line.
+          const layerScene = index >= 0 ? sceneAt(manifest, index) : null;
           const arriving = backdrop.to >= 0 && index === backdrop.to;
           const showing = index === backdrop.from;
           return (

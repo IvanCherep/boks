@@ -6,6 +6,7 @@ import {
   lineIndexAt,
   playedFraction,
   presetFor,
+  sceneAt,
   sceneFor,
   textPresets,
   tokenStateAt,
@@ -18,9 +19,11 @@ const manifest = JSON.parse(
 ) as PoemManifest;
 
 describe("the poem that ships", () => {
-  it("is eight lines over eight scenes, with real timings", () => {
+  it("is eight lines over four scenes, with real timings", () => {
+    // A picture carries two lines. Eight across seventeen seconds changed
+    // every two, which is faster than anyone can settle into a frame.
     expect(manifest.lines).toHaveLength(8);
-    expect(manifest.scenes).toHaveLength(8);
+    expect(manifest.scenes).toHaveLength(4);
     // Placeholder timings drift against the voice; these came from the
     // recording itself.
     expect(manifest.timingMode).toBe("forced-alignment");
@@ -119,10 +122,15 @@ describe("where a word is placed", () => {
   it("splits one line between two parts of the frame, and only that one", () => {
     const split = manifest.scenes.find((scene) => scene.textPreset === "social-hierarchy-split")!;
     expect(zoneFor(split, "lower").y).toBeGreaterThan(zoneFor(split, "upper").y);
-    // The masters sit above the slaves. That is the line's whole argument.
-    const line = manifest.lines.find((l) => l.sceneId === split.id)!;
-    expect(line.tokens.filter((t) => t.zone === "lower")).toHaveLength(2);
-    expect(line.tokens.filter((t) => t.zone === "upper")).toHaveLength(2);
+
+    // The masters sit above the slaves. That is the line's whole argument -
+    // and only that line. Its picture now also carries the line before it,
+    // which must stay whole: "Прощай," low and "Россия," high argues nothing.
+    const shared = manifest.lines.filter((l) => l.sceneId === split.id);
+    expect(shared).toHaveLength(2);
+    expect(shared[0].tokens.every((t) => t.zone === undefined)).toBe(true);
+    expect(shared[1].tokens.filter((t) => t.zone === "lower")).toHaveLength(2);
+    expect(shared[1].tokens.filter((t) => t.zone === "upper")).toHaveLength(2);
   });
 
   it("falls back to the first zone for a role the scene does not have", () => {
@@ -196,7 +204,8 @@ describe("the progress bar", () => {
 });
 
 describe("which two pictures are on screen", () => {
-  const idOf = (index: number) => sceneFor(manifest, index)?.id ?? null;
+  // Scene indexes, not line indexes: `backdropAt` deals in pictures.
+  const idOf = (index: number) => sceneAt(manifest, index)?.id ?? null;
 
   it("shows one scene, alone, in the middle of a line", () => {
     const { from, to, progress } = backdropAt(manifest, 500);
@@ -208,7 +217,7 @@ describe("which two pictures are on screen", () => {
   it("still shows the old picture when the new line's first word arrives", () => {
     // The word lands in the scene belonging to the line before it, and only
     // then does the world turn. That gap is the aftertaste.
-    const boundary = manifest.lines[1].startMs;
+    const boundary = manifest.scenes[1].startMs;
     const during = backdropAt(manifest, boundary + 10);
     expect(idOf(during.from)).toBe(manifest.scenes[0].id);
     expect(during.to).toBe(-1);
@@ -216,12 +225,21 @@ describe("which two pictures are on screen", () => {
   });
 
   it("turns the scene once the word has been in the air a while", () => {
-    const begins = manifest.lines[1].startMs + manifest.playback.crossfadeOffsetMs;
+    const begins = manifest.scenes[1].startMs + manifest.playback.crossfadeOffsetMs;
     const during = backdropAt(manifest, begins + 200);
     expect(idOf(during.from)).toBe(manifest.scenes[0].id);
     expect(idOf(during.to)).toBe(manifest.scenes[1].id);
     expect(during.progress).toBeGreaterThan(0);
     expect(during.progress).toBeLessThan(1);
+  });
+
+  it("holds the same picture across both of its lines", () => {
+    // The pair shares a scene, so nothing may change between them.
+    const second = manifest.lines[1];
+    const atFirst = backdropAt(manifest, 200);
+    const atSecond = backdropAt(manifest, second.startMs + 200);
+    expect(atSecond.from).toBe(atFirst.from);
+    expect(atSecond.to).toBe(-1);
   });
 
   it("puts the two pictures of a dissolve on different layers", () => {
@@ -282,5 +300,28 @@ describe("the piece's own theme", () => {
   it("is not slowed or sped up", () => {
     // The reading sets its own pace; the format follows it.
     expect((manifest.playback as { rate?: number }).rate).toBeUndefined();
+  });
+});
+
+describe("how long a picture stays", () => {
+  it("gives every scene time to be looked at", () => {
+    // The complaint this answers: the frames jumped too fast to settle into.
+    // Three and a half seconds is about where a full-screen image stops being
+    // a flash and starts being a place.
+    const starts = manifest.scenes.map((scene) => scene.startMs);
+    for (let index = 0; index < starts.length; index += 1) {
+      const until = starts[index + 1] ?? manifest.durationMs;
+      expect(until - starts[index], manifest.scenes[index].id).toBeGreaterThan(3500);
+    }
+  });
+
+  it("spends more of each scene still than dissolving", () => {
+    // A dissolve that ran most of the way to the next one would never settle.
+    for (let index = 1; index < manifest.scenes.length; index += 1) {
+      const scene = manifest.scenes[index];
+      const until = manifest.scenes[index + 1]?.startMs ?? manifest.durationMs;
+      const span = until - scene.startMs;
+      expect(scene.transitionMs, scene.id).toBeLessThan(span / 2);
+    }
   });
 });

@@ -52,8 +52,17 @@ if (total !== words.length) {
   console.error(`The lines hold ${total} words and the recording returned ${words.length}.`);
   process.exit(1);
 }
-if (lines.length !== sceneMap.scenes.length) {
-  console.error(`${lines.length} lines against ${sceneMap.scenes.length} scenes.`);
+/*
+ * A scene may hold more than one line.
+ *
+ * Eight pictures across seventeen seconds is a change every two seconds, which
+ * is too fast to settle into any of them. `lines` on a scene says how many it
+ * carries; left out, it carries one.
+ */
+const sceneSpans = sceneMap.scenes.map((scene) => scene.lines ?? 1);
+const covered = sceneSpans.reduce((sum, n) => sum + n, 0);
+if (covered !== lines.length) {
+  console.error(`Scenes cover ${covered} lines; the poem has ${lines.length}.`);
   process.exit(1);
 }
 
@@ -64,16 +73,28 @@ if (lines.length !== sceneMap.scenes.length) {
  * the split is down the middle: the first half low, the second high. That is
  * the one scene where the placement is the argument.
  */
-function zoneOf(scene, indexInLine, wordsInLine) {
+function zoneOf(scene, lineInScene, indexInLine, wordsInLine) {
   if (scene.safeZones.length < 2) return undefined;
+  // Only the line the scene was composed around is split. Splitting every line
+  // of a shared picture would send "Прощай," low and "Россия," high, which is
+  // not an argument about anything.
+  if ((scene.splitLine ?? 0) !== lineInScene) return undefined;
   const half = Math.ceil(wordsInLine / 2);
   return indexInLine < half ? scene.safeZones[0].role : scene.safeZones[1].role;
 }
 
 const durationMs = words.at(-1).endMs;
+
+/** Which scene each line belongs to, and where it sits inside that scene. */
+const sceneOfLine = [];
+sceneSpans.forEach((span, sceneIndex) => {
+  for (let within = 0; within < span; within += 1) sceneOfLine.push({ sceneIndex, within });
+});
+
 let cursor = 0;
 const built = lines.map((_, index) => {
-  const scene = sceneMap.scenes[index];
+  const { sceneIndex, within } = sceneOfLine[index];
+  const scene = sceneMap.scenes[sceneIndex];
   const chunk = words.slice(cursor, cursor + counts[index]);
   cursor += counts[index];
   return {
@@ -81,7 +102,7 @@ const built = lines.map((_, index) => {
     startMs: chunk[0].atMs,
     endMs: chunk.at(-1).endMs,
     tokens: chunk.map((word, n) => {
-      const zone = zoneOf(scene, n, counts[index]);
+      const zone = zoneOf(scene, within, n, counts[index]);
       /*
        * Which word carries the line.
        *
@@ -160,11 +181,17 @@ const manifest = {
     backgroundScaleFrom: 1,
     backgroundScaleTo: 1.035,
   },
-  scenes: sceneMap.scenes.map((scene) => ({
-    ...scene,
-    image: `/poetry/${slug}/scenes/${scene.image.replace(/\.png$/, ".webp")}`,
-    transitionMs: round10(scene.transitionMs * ratio),
-  })),
+  scenes: sceneMap.scenes.map((scene, index) => {
+    // When the scene takes over, so the renderer can work in scenes rather
+    // than inferring their boundaries from where the line ids happen to change.
+    const firstLine = sceneOfLine.findIndex((entry) => entry.sceneIndex === index);
+    return {
+      ...scene,
+      image: `/poetry/${slug}/scenes/${scene.image.replace(/\.png$/, ".webp")}`,
+      startMs: built[firstLine].startMs,
+      transitionMs: round10(scene.transitionMs * ratio),
+    };
+  }),
   lines: built,
 };
 
