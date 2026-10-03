@@ -5,6 +5,7 @@ boks is a browser prototype for testing a short literature feed: readers discove
 ## What is included
 
 - Swipe-first reader feed ranked by a pluggable recommendation strategy, with attributed behavior events for every reader including guests.
+- Two reading formats alongside that feed, opened from the same button and chosen by the piece rather than the reader: a cinema format for prose, and an immersive format for verse. Neither changes how an ordinary boks is read.
 - Anonymous Supabase reader entry with reels, views, signed-in likes, profile-owned comments, and unique `@nickname` handles stored behind RLS/RPCs.
 - D1 compatibility path for the original prototype API and richer event contract reference.
 - Supabase author cabinet with a 15 minute reading-time guardrail, a database-enforced limit of 3 boks per author per day, and an admin moderation workflow.
@@ -18,6 +19,9 @@ boks is a browser prototype for testing a short literature feed: readers discove
 - `docs/ai-agent-guide.md`: fast project onboarding, ownership map, spec-driven workflow, and validation rules for any AI agent.
 - `app/boks-client.tsx`: route compatibility exports for reader, author, and admin.
 - `components/boks/reader-feed.tsx`: reader experience.
+- `components/boks/cinema/`: the cinema format - prose read aloud over scenes that change with the story, with places where it stops and asks the reader to do something.
+- `components/boks/poetry/`: the immersive poetry format - verse, where each word arrives inside the picture at the moment it is spoken.
+- `docs/reading-formats.md`: both of the above - how a piece is routed to one, and how to add another.
 - `components/boks/author-console.tsx`: author cabinet.
 - `components/boks/admin-dashboard.tsx`: admin/business console.
 - `components/boks/`: browser-facing product helpers, Supabase data access, types, behavior inference, and shared UI primitives.

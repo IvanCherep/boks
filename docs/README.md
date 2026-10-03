@@ -14,11 +14,15 @@ For every AI coding assistant:
 6. `specs/boks-product-spec.md`
 7. The focused guide for the change: hosting, testing, standards, architecture, or growth
 
-To add or change an interactive boks - the cinema format with pictures, a recorded
-voice and gestures inside the story - read `docs/interactive-boks.md`. It is the whole
-process: which voice reads which author, what to ask the user to generate and the
-prompts for it, the twelve effects and the frames each needs, where a moment may be
-placed, and how audio levels are measured rather than guessed.
+A boks can be read three ways: the ordinary feed, the cinema format (prose read
+aloud over scenes, with places where the story stops and asks something), and
+immersive poetry (verse, where words arrive inside the picture). To add or change
+either of the last two, read `docs/reading-formats.md`. It is the whole process:
+which format a piece gets and how it is routed there, which voice reads which
+author, what to ask the user to generate and the prompts for it, the twelve
+effects and the frames each needs, where a moment may be placed, how a poem's
+manifest is built from its own recording, the handful of CSS properties that
+must never be animated, and how audio levels are measured rather than guessed.
 
 For authentication, authorization, dependency, API, or database-boundary work,
 read `docs/security.md` before editing.
