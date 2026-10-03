@@ -4730,7 +4730,19 @@ textarea:focus-visible {
   color: var(--poem-text);
   user-select: none;
   -webkit-user-select: none;
-  animation: cinema-in 420ms var(--ease-out) both;
+  /* A fade, not a zoom. `cinema-in` scales what it opens, and scaling the whole
+     player scales the words with it - which is why the text appeared to slide
+     into place as the poem started. */
+  animation: poem-open 420ms var(--ease-out) both;
+}
+
+@keyframes poem-open {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* The tap target for play/pause: everything that is not a control. */
@@ -4744,20 +4756,19 @@ textarea:focus-visible {
 }
 
 /*
- * The drift belongs to the frame, not to the pictures inside it.
+ * No slow zoom any more.
  *
- * On the layers it ran from whenever each one mounted, so the two halves of a
- * dissolve were at different zooms and the image appeared to jump as one
- * replaced the other. One animation around both keeps them locked together,
- * and it is a compositor transform rather than anything computed per frame.
+ * There was a 26-second drift from 1 to 1.035 across the whole frame. Over a
+ * poem this length it travels about two percent, which almost nobody would
+ * notice - and it costs a full-screen layer animating for the entire piece,
+ * which the compositor has to resample while two pictures dissolve inside it.
+ * A dissolve is now a straight blend of two finished textures, the cheapest
+ * thing a compositor does. If the stillness ever reads as dead rather than
+ * composed, this is one keyframe to put back.
  */
 .poem__frame {
   position: absolute;
   inset: 0;
-  animation: poem-drift 26s ease-in-out infinite alternate;
-  /* Its own surface. Without it the scale re-rasterises both full-screen
-     images continuously instead of transforming a finished layer. */
-  will-change: transform;
   pointer-events: none;
 }
 
@@ -4782,11 +4793,6 @@ textarea:focus-visible {
 /* The scene currently being looked at. */
 .poem__scene--showing {
   opacity: 1;
-}
-
-@keyframes poem-drift {
-  from { scale: 1; }
-  to { scale: 1.035; }
 }
 
 /* The layer being dissolved in, over the one being looked at. */
@@ -5343,8 +5349,8 @@ textarea:focus-visible {
 
 /* Reduced motion: the words still arrive in order and the pictures still
    change; nothing travels, scales or scans. */
-.poem.is-still .poem__frame,
-.poem.is-still .poem__word {
+.poem.is-still .poem__word,
+.poem.is-still .poem__scene {
   transform: none;
   scale: none;
   translate: none;

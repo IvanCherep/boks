@@ -83,7 +83,7 @@
   },
   {
    "id": "caucasus-ridge",
-   "line": "Быть может, за стеной Кавказа / Укроюсь от твоих пашей,",
+   "line": "Быть может, за стеной Кавказа / Укроюсь от твоих пашей, / От их всевидящего глаза, / От их всеслышащих ушей.",
    "image": "/poetry/farewell-russia/scenes/05-caucasus-ridge.webp",
    "focalPoint": {
     "x": 0.55,
@@ -99,29 +99,8 @@
    ],
    "textPreset": "ridge-reveal",
    "transitionMs": 1500,
-   "lines": 2,
+   "lines": 4,
    "startMs": 9200
-  },
-  {
-   "id": "all-seeing-eye",
-   "line": "От их всевидящего глаза, / От их всеслышащих ушей.",
-   "image": "/poetry/farewell-russia/scenes/07-all-seeing-eye.webp",
-   "focalPoint": {
-    "x": 0.48,
-    "y": 0.55
-   },
-   "safeZones": [
-    {
-     "x": 0.55,
-     "y": 0.1,
-     "width": 0.39,
-     "height": 0.31
-    }
-   ],
-   "textPreset": "searchlight-scan",
-   "transitionMs": 1060,
-   "lines": 2,
-   "startMs": 12960
   }
  ],
  "lines": [
@@ -333,7 +312,7 @@
    ]
   },
   {
-   "sceneId": "all-seeing-eye",
+   "sceneId": "caucasus-ridge",
    "startMs": 12960,
    "endMs": 14880,
    "tokens": [
@@ -365,7 +344,7 @@
    ]
   },
   {
-   "sceneId": "all-seeing-eye",
+   "sceneId": "caucasus-ridge",
    "startMs": 14880,
    "endMs": 16800,
    "tokens": [
