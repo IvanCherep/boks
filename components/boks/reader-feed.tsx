@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ChevronUp,
   Clapperboard,
+  Music,
   Flag,
   Heart,
   Link as LinkIcon,
@@ -66,6 +67,11 @@ import {
   type ReaderNavigationDirection,
 } from "@/components/boks/reader-navigation";
 import { ActionButton } from "@/components/boks/shared-ui";
+import {
+  readingMusicWanted,
+  startReadingMusic,
+  stopReadingMusic,
+} from "@/components/boks/reading-music";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
@@ -273,6 +279,8 @@ export function ReaderFeed() {
   const [hiddenStoryIds, setHiddenStoryIds] = useState<ReadonlySet<string>>(() => new Set());
   const [hideTarget, setHideTarget] = useState<BokLifecycleTarget | null>(null);
   const [readerFlash, setReaderFlash] = useState("");
+  /** Something to read to. Off until asked for; see `reading-music.ts`. */
+  const [musicOn, setMusicOn] = useState(false);
   const likesInFlight = useRef<Set<string>>(new Set());
   // The one-time "how this works" line - see the effect near the render.
   const [firstVisitHint, setFirstVisitHint] = useState<"touch" | "pointer" | null>(null);
@@ -283,6 +291,23 @@ export function ReaderFeed() {
    * a bok on screen every one of them vanished, and a failed action looked
    * like a tap that did nothing. `status` still gets it, for that screen.
    */
+  /*
+   * A reader who had it on last time gets it back - but only after they touch
+   * something, because no browser will start audio before that and silently
+   * failing would leave the button lit with nothing playing.
+   */
+  useEffect(() => {
+    if (!readingMusicWanted()) return;
+    const resume = () => {
+      startReadingMusic();
+      setMusicOn(true);
+    };
+    window.addEventListener("pointerdown", resume, { once: true });
+    return () => window.removeEventListener("pointerdown", resume);
+  }, []);
+
+  useEffect(() => () => stopReadingMusic(false), []);
+
   const notify = useCallback(
     (message: string) => {
       if (!message) return;
@@ -2281,11 +2306,30 @@ export function ReaderFeed() {
           {cinemaOffered && (
             <ActionButton
               label={cinemaIsFinished ? "Listen and read" : "Listen and read (prototype, admins only)"}
-              onClick={() => setCinemaOpen(true)}
+              onClick={() => {
+                // The cinema brings its own voice. Silence here, without
+                // forgetting the choice, so it returns when they come back.
+                stopReadingMusic(false);
+                setMusicOn(false);
+                setCinemaOpen(true);
+              }}
             >
               <Clapperboard className="size-5" />
             </ActionButton>
           )}
+          {/* Something to read to: one track for the whole catalogue, off
+              until asked for. */}
+          <ActionButton
+            label={musicOn ? "Turn the music off" : "Play music while you read"}
+            onClick={() => {
+              if (musicOn) stopReadingMusic();
+              else startReadingMusic();
+              setMusicOn(!musicOn);
+            }}
+            active={musicOn}
+          >
+            <Music className="size-5" />
+          </ActionButton>
           {/* Admins only, and only as a convenience: see `isAdminReader`. */}
           {isAdminReader && (
             <ActionButton label="Hide this bok from readers (admin)" onClick={openHideBok} tone="danger">

@@ -4706,26 +4706,3 @@ textarea:focus-visible {
   }
 }
 
-/* The music switch, beside the close button and quieter than it. */
-.cinema__music {
-  position: absolute;
-  /* Matched to the close button exactly, safe area and all: two round buttons
-     a pixel out of line on a notched phone looks like a mistake. */
-  top: max(1rem, env(safe-area-inset-top));
-  right: calc(1rem + 42px + 0.5rem);
-  z-index: 7;
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 999px;
-  background: rgb(8 10 18 / 50%);
-  color: rgb(246 239 227 / 72%);
-  backdrop-filter: blur(10px);
-}
-
-.cinema__music[aria-pressed="true"] {
-  color: #f0cd8e;
-  border-color: rgb(240 205 142 / 38%);
-}

@@ -225,16 +225,34 @@ Reference levels, all against the narration's active level of −21.5 dBFS:
 | | |
 |---|---|
 | Effect loops | match the voice |
-| Music bed under speech | **−20 dB**, the middle of broadcast's 15–25 dB |
-| Music bed while a moment holds | −12 dB |
 
-And quiet is not enough on its own: a pad spread across 1–3 kHz blurs consonants
-at any level, so the bed carries a −7 dB dip at 2 kHz. See
-`components/boks/cinema/score.ts`.
+### Music: what was tried, and why there is none
 
-Music is **not** part of generating the voice — text to speech returns speech
-only. It is a second recording we lay under it, and it can be switched off by
-the reader.
+A piece **does not get a score**. One was built and removed.
+
+Generating a theme per boks produces music that is about nothing. A theme has
+to come out of the story it belongs to, and a prompt describing the story is
+not that — it returns something in the right key and the right tempo that
+nevertheless fits no particular sentence. Cost is not the objection; it was
+around 2,000 credits for two minutes. It simply did not belong to the piece.
+
+If this is attempted again, the thing to solve first is where a theme comes
+from, not how to mix it. The mixing is already known and is recorded here
+because it was measured and will still be true:
+
+- A bed sits **20 dB under the voice**, the middle of broadcast's 15–25 dB.
+- Quiet is not enough on its own: a pad spread across 1–3 kHz blurs consonants
+  at any level, so it needs a **−7 dB dip at 2 kHz** as well.
+- Where the narration stops for a moment, the bed can come up to −12 dB, and
+  must go back down before the voice returns.
+
+What does exist is unrelated and lives outside the cinema: one lo-fi track for
+the whole catalogue, played under ordinary silent reading, off until the reader
+asks for it — `components/boks/reading-music.ts`. That one works precisely
+because it is the same for every boks and claims to be about nothing.
+
+Music is **not** part of generating the voice in any case — text to speech
+returns speech only.
 
 ---
 
@@ -244,7 +262,6 @@ the reader.
 public/cinema/<slug>/
   narration.mp3            the reading
   alignment.json           per-character timings from /with-timestamps
-  score.mp3                optional music bed
   scenes/1..6.jpg          scene frames (the lion's predate the WebP rule above;
                            convert new ones)
   moments/<id>/before.webp
@@ -256,7 +273,6 @@ components/boks/cinema/
   narration-track.ts       recording + alignment registry
   scene-image.ts           scene frames registry
   story-moments.ts         where the story stops, and with what
-  score.ts                 the music bed
   series.ts                a piece with both pictures and a voice opens to everyone
 ```
 
