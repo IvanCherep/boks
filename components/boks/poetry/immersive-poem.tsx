@@ -57,6 +57,16 @@ export function ImmersivePoem({
   const stage = useRef<HTMLDivElement>(null);
   const idleTimer = useRef(0);
   const bar = useRef<HTMLDivElement>(null);
+  /*
+   * The two elements the frame loop writes to.
+   *
+   * A custom property set on the root invalidates style for everything beneath
+   * it - all eight lines and thirty-three words - and `--fade` changes on every
+   * frame of a dissolve. Written on the elements that actually read them, the
+   * recalculation is two images and a control bar.
+   */
+  const frame = useRef<HTMLDivElement>(null);
+  const controls = useRef<HTMLDivElement>(null);
   /** The last values written to the DOM, so an unchanged frame writes nothing. */
   const painted = useRef({ fade: -1, played: -1, ms: -1 });
 
@@ -153,22 +163,23 @@ export function ImmersivePoem({
    * simply stays.
    */
   useEffect(() => {
+    // By scene, not by line: a picture can carry several lines, so counting
+    // lines ahead was a roundabout way of asking for the same one twice.
     for (const ahead of [1, 2]) {
-      const upcoming = sceneFor(manifest, lineIndex + ahead);
+      const upcoming = sceneAt(manifest, backdrop.from + ahead);
       if (!upcoming) continue;
       const image = new Image();
       image.src = upcoming.image;
       void image.decode?.().catch(() => {});
     }
-  }, [manifest, lineIndex]);
+  }, [manifest, backdrop.from]);
 
   // The frame loop. It owns the clock and writes straight to the DOM.
   useEffect(() => {
     let raf = 0;
     const tick = () => {
       const element = audio.current;
-      const root = stage.current;
-      if (element && root) {
+      if (element) {
         const ms = element.currentTime * 1000;
         /*
          * Nothing to recompute while the clock is still.
@@ -212,13 +223,13 @@ export function ImmersivePoem({
         const fade = Math.round(pair.progress * 200) / 200;
         if (fade !== painted.current.fade) {
           painted.current.fade = fade;
-          root.style.setProperty("--fade", String(fade));
+          frame.current?.style.setProperty("--fade", String(fade));
         }
 
         const played = Math.round(playedFraction(ms, manifest.durationMs) * 400) / 400;
         if (played !== painted.current.played) {
           painted.current.played = played;
-          root.style.setProperty("--played", String(played));
+          controls.current?.style.setProperty("--played", String(played));
         }
 
         // Written onto the element rather than through state: a screen reader
@@ -357,8 +368,6 @@ export function ImmersivePoem({
       className={`poem poem--${preset} ${reduced ? "is-still" : ""} ${chromeVisible ? "" : "is-quiet"}`}
       style={
         {
-          "--fade": 0,
-          "--played": 0,
           "--poem-text": manifest.palette.text,
           "--poem-active": manifest.palette.active,
           "--poem-shadow": manifest.palette.shadow,
@@ -386,7 +395,7 @@ export function ImmersivePoem({
         mount, so a dissolve laid two copies of the scene over each other at
         different zooms, which was the other half.
       */}
-      <div className="poem__frame">
+      <div ref={frame} className="poem__frame" style={{ "--fade": 0 } as React.CSSProperties}>
         {[0, 1].map((parity) => {
           // Between dissolves the idle layer is not emptied - it holds the
           // scene that comes next, decoded and waiting, so the dissolve has
@@ -421,7 +430,10 @@ export function ImmersivePoem({
         simply dissolve, the leaving line over the arriving one, and nothing
         has to be remounted for an animation to play.
       */}
-      <div className="poem__words" aria-hidden="true">
+      {/* Cleared when the poem ends. Nobody clears the last line otherwise,
+          so it sat over the closing panel - in the mountain scene its zone is
+          at the top left, which is where the stray "От" was coming from. */}
+      <div className={`poem__words ${status === "ended" ? "is-over" : ""}`} aria-hidden="true">
         {manifest.lines.map((poemLine, index) => {
           const lineScene = sceneFor(manifest, index);
           if (!lineScene) return null;
@@ -473,7 +485,7 @@ export function ImmersivePoem({
         <X className="size-5" />
       </button>
 
-      <div className="poem__controls">
+      <div ref={controls} className="poem__controls" style={{ "--played": 0 } as React.CSSProperties}>
         {/* Its own pointer handling, and it must not reach the surface
             underneath - dragging the bar would otherwise also pause. */}
         <div

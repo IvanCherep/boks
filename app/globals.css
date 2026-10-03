@@ -4788,6 +4788,16 @@ textarea:focus-visible {
   object-fit: cover;
   opacity: 0;
   transform: translateZ(0);
+  /*
+   * Promoted before it is needed, not when it starts.
+   *
+   * The waiting layer holds the next picture decoded, but a layer sitting at
+   * zero opacity may never be rasterised or uploaded to the GPU - so the first
+   * dissolve paid for that upload at the moment it began, which is why the
+   * first change was the one that stuttered. Asking for the layer up front
+   * moves that cost to where nothing is happening. Only ever two of these.
+   */
+  will-change: opacity;
 }
 
 /* The scene currently being looked at. */
@@ -4798,7 +4808,6 @@ textarea:focus-visible {
 /* The layer being dissolved in, over the one being looked at. */
 .poem__scene--arriving {
   opacity: var(--fade, 0);
-  will-change: opacity;
 }
 
 /*
@@ -4829,6 +4838,13 @@ textarea:focus-visible {
   inset: 0;
   z-index: 3;
   pointer-events: none;
+  transition: opacity 700ms var(--ease-out);
+}
+
+/* The poem is over: the last line goes with it, instead of hanging over the
+   closing panel. */
+.poem__words.is-over {
+  opacity: 0;
 }
 
 /*
