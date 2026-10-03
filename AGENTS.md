@@ -9,6 +9,7 @@ boks is not a book catalog and not a generic social network. It is a focused rea
 Reader rules:
 
 - The `/` surface stays swipe-first and algorithmic. Do not add a visible story picker, shelves, categories, or manual algorithm selection for readers.
+- The one shelf is boks series (`/series`, the second tab): only pieces produced in a reading format, never the catalogue. Do not grow it into a browser for ordinary boks.
 - Reading focus matters more than interface visibility. Controls may appear on story change, tap, hover, or pause, but the story should own the screen while a person reads.
 - There is no explicit finished button. Completion, drop-off, and skip behavior are inferred from elapsed time, scroll progress, and swipe timing.
 - Reader-facing language should stay minimal. Do not explain the interface inside the product unless the user must make a decision.
@@ -36,6 +37,7 @@ Business rules:
 - `app/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only.
 - `app/boks-client.tsx`: route compatibility exports for the three client surfaces.
 - `components/boks/reader-feed.tsx`: swipe-first reader experience and reaction controls.
+- `components/boks/series/`: the boks series tab - `series-catalogue.ts` (the shelf list, tested against both format registries in both directions), `series-view.tsx` (the shelf and the feed/series tabs), `series-progress.ts` (heard/seen marks in browser storage). `app/series/page.tsx` is the same reader opened on the shelf.
 - `components/boks/comments-sheet.tsx`: lazy-loaded comment conversation, one-level replies, comment likes, guest gates, and partial/full-screen sheet state.
 - `components/boks/comment-threads.ts`: pure root/reply shaping and ordering rules.
 - `components/boks/reader-navigation.ts`: pure direction, edge-tap, and text-boundary navigation rules shared by touch, pointer, wheel, and keyboard behavior.

@@ -42,6 +42,9 @@ const sceneArt: Record<string, readonly string[]> = {
   ],
 };
 
+/** Every boks with art of its own - for the series shelf's test. */
+export const storiesWithSceneArt: readonly string[] = Object.keys(sceneArt);
+
 export type SceneImage = {
   src: string;
   /** True while this is the one picture everything shares. */

@@ -1060,6 +1060,35 @@ export async function loadReaderLibrary(limit = 120): Promise<ReaderLibraryItem[
  * definition), so PostgREST answered 42703 and the link opened the ordinary
  * feed instead of the boks.
  */
+/**
+ * Title and author for the series shelf - a handful of known ids, never
+ * the catalogue. A piece missing from the answer is not published any more (an
+ * admin hid it), and the shelf drops it. Null when there is no Supabase at all,
+ * so the shelf keeps the titles it was built with.
+ */
+export async function loadSeriesBoks(
+  storyIds: readonly string[]
+): Promise<Map<string, { title: string; authorName: string }> | null> {
+  if (!supabase || storyIds.length === 0) return null;
+
+  const result = await supabase
+    .from("published_boks")
+    .select("id,title,author_name")
+    .in("id", [...storyIds]);
+  if (result.error) throw result.error;
+
+  const rows = (result.data ?? []) as { id: string; title: string | null; author_name: string | null }[];
+  return new Map(
+    rows.map((row) => [
+      String(row.id),
+      {
+        title: row.title ?? "",
+        authorName: row.author_name ?? "",
+      },
+    ])
+  );
+}
+
 export async function loadSupabaseStory(storyId: string): Promise<{ story: Story; likedByMe: boolean } | null> {
   if (!supabase) return null;
 

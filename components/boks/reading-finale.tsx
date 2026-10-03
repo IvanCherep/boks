@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Heart, Lightbulb, MessageCircle, RotateCcw, Share2, Smile } from "lucide-react";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 
@@ -26,6 +26,11 @@ export type FinaleActions = {
   onNext: () => void;
   /** Called with whatever was picked. Never called with nothing. */
   onAftertaste: (tags: AftertasteTag[]) => void;
+  /**
+   * The reading got to its end - the series shelf marks the piece heard. Called
+   * each time the finale appears, so it has to be safe to repeat.
+   */
+  onReached?: () => void;
 };
 
 export type FinaleLanguage = "ru" | "en";
@@ -107,6 +112,12 @@ export function ReadingFinale({
 }) {
   const words = copy[language];
   const [step, setStep] = useState<"aftertaste" | "menu">("aftertaste");
+  // Once per mount: the finale is mounted when a reading ends and unmounted
+  // when it starts again, so a mount is an ending.
+  const reached = useRef(actions?.onReached);
+  useEffect(() => {
+    reached.current?.();
+  }, []);
   const [picked, setPicked] = useState<AftertasteTag[]>([]);
 
   if (step === "aftertaste") {

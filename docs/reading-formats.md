@@ -417,7 +417,7 @@ check that it works.
 8. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
    One line. The sandbox lists it, the feed offers it, and the finale is
    shared, so a new poem has nothing to add there.
-9. **Look at it** at phone size in WebKit (§5) - the tests cannot tell whether
+9. **Look at it** at phone size in WebKit (§6) - the tests cannot tell whether
    words sit on a face.
 
 No new component, ever. If a poem needs something the renderer cannot do, the
@@ -526,7 +526,27 @@ dissolve would otherwise pay for the texture upload at the moment it began.
 
 ---
 
-## 5. Before shipping
+## 5. The series shelf
+
+Every finished piece in either format is also listed on the **boks series**
+shelf - the second tab beside the feed, at `/series`. The shelf does not
+decide how a piece opens (the two registries above still do); it draws a card
+and asks the feed to open the boks, so the finale is the ordinary one.
+
+Finishing a piece therefore has one more step:
+
+1. A cover: a frame of the piece's own art, downsized -
+   `cwebp -q 80 -m 6 -sharp_yuv -resize 720 0 <frame>.png -o public/series/<name>.webp`.
+2. One entry in `components/boks/series/series-catalogue.ts`: format,
+   language, cover and focus, duration, scene and moment counts, premiere date.
+
+`series-catalogue.test.ts` fails if a finished piece is missing from the
+shelf, if a shelf entry would open as plain text, if a cover is missing or too
+heavy, or if the duration or counts disagree with the shipped recording. The
+newest piece in the reader's languages that they have not heard leads the
+shelf; it is called a premiere for 14 days.
+
+## 6. Before shipping
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
@@ -573,7 +593,7 @@ What has worked for the poems, run from a scratch folder rather than the repo:
 
 ---
 
-## 6. What it costs
+## 7. What it costs
 
 Credits are characters on v4; a Creator month is 100,000.
 

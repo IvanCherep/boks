@@ -17,6 +17,7 @@ import {
   Link as LinkIcon,
   MessageCircle,
   MoreHorizontal,
+  Sparkles,
   Share2,
   Trash2,
   UserRound,
@@ -80,6 +81,21 @@ import type { FinaleActions } from "@/components/boks/reading-finale";
 import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
+import { ReaderTabs, SeriesView } from "@/components/boks/series/series-view";
+import {
+  seriesCopyLanguageFor,
+  seriesPieceFor,
+  seriesPieces,
+  type SeriesCopyLanguage,
+  type SeriesPiece,
+} from "@/components/boks/series/series-catalogue";
+import {
+  hasUnseenSeries,
+  readHeardSeries,
+  readSeenSeries,
+  rememberHeardSeries,
+  rememberSeenSeries,
+} from "@/components/boks/series/series-progress";
 import {
   fetchVisitorCountry,
   journeyAttribution,
@@ -207,7 +223,11 @@ type GestureStart = {
   msSinceScroll: number;
 };
 
-export function ReaderFeed() {
+export type ReaderView = "feed" | "series";
+
+const seriesStoryIds = seriesPieces.map((piece) => piece.storyId);
+
+export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView } = {}) {
   const {
     stories,
     comments,
@@ -336,6 +356,32 @@ export function ReaderFeed() {
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
   /** The admin-only "listen and read" prototype. See `components/boks/cinema`. */
   const [cinemaOpen, setCinemaOpen] = useState(false);
+  /**
+   * The series shelf, over the feed rather than instead of it. The feed keeps
+   * its place, its clock is paused, and a piece opened from the shelf is loaded
+   * into the feed exactly as a boks from the library is - so its like, share and
+   * aftertaste are the ordinary ones.
+   */
+  const [seriesOpen, setSeriesOpen] = useState(initialView === "series");
+  /** Copy language and the reader's languages, read on the client only. */
+  const [seriesContext, setSeriesContext] = useState<{
+    language: SeriesCopyLanguage;
+    readerLanguages: readonly string[];
+  } | null>(null);
+  const [seriesHeard, setSeriesHeard] = useState<ReadonlySet<string>>(() => new Set());
+  const [seriesIsNew, setSeriesIsNew] = useState(false);
+  /** The piece being loaded from the shelf; its card shows a spinner. */
+  const [seriesOpening, setSeriesOpening] = useState<string | null>(null);
+  /** Whether the format on screen was opened from the shelf, so its end leads back there. */
+  const formatFromSeries = useRef(false);
+  /** Waiting for the feed to land on this boks before opening its format. */
+  const pendingSeriesFormat = useRef<string | null>(null);
+  /**
+   * A boks the reader reached through the shelf, not the ranker. Its events
+   * carry `entry: "series"`, so a comparison of algorithms can leave out
+   * reads no algorithm chose.
+   */
+  const seriesEntryStoryId = useRef<string | null>(null);
   const [reportKind, setReportKind] = useState<"copyright" | "other">("copyright");
   const [reportReason, setReportReason] = useState("");
   const [reportSending, setReportSending] = useState(false);
@@ -376,7 +422,7 @@ export function ReaderFeed() {
   });
   const recordHeartbeatRef = useRef<(story: Story) => void>(() => undefined);
   const recordOutcomeRef = useRef<(reason: ReadOutcomeReason) => void>(() => undefined);
-  const openReadBoksRef = useRef<(storyId: string) => Promise<void>>(async () => undefined);
+  const openReadBoksRef = useRef<(storyId: string) => Promise<boolean>>(async () => false);
   const chromeTimer = useRef<number | null>(null);
   const storyScroll = useRef<HTMLDivElement | null>(null);
   const storyTransitionLocked = useRef(false);
@@ -507,6 +553,12 @@ export function ReaderFeed() {
     // The filter has to be in place before the first feed request, or the
     // reader's first page is unfiltered and then changes under them.
     readingLanguagesRef.current = effectiveReadingLanguages(null);
+    const seriesTimer = window.setTimeout(() => {
+      setSeriesHeard(readHeardSeries());
+      refreshSeriesContext();
+      if (initialView === "series") rememberSeenSeries(seriesStoryIds);
+      else setSeriesIsNew(hasUnseenSeries(seriesStoryIds, readSeenSeries()));
+    }, 0);
 
     loadFeed()
       .then(async () => {
@@ -527,6 +579,7 @@ export function ReaderFeed() {
         const accountLanguages = effectiveReadingLanguages(context?.readingLanguages);
         if (accountLanguages.join() !== readingLanguagesRef.current.join()) {
           readingLanguagesRef.current = accountLanguages;
+          refreshSeriesContext();
           setHold((current) => ({ ...current, release: true }));
           await loadFeed();
         }
@@ -557,7 +610,12 @@ export function ReaderFeed() {
       // A failed feed load must still settle the identity, or a real guest
       // never meets the sign-up gate at all.
       .finally(() => setIdentitySettled(true));
-    return () => window.clearTimeout(profileTimer);
+    return () => {
+      window.clearTimeout(profileTimer);
+      window.clearTimeout(seriesTimer);
+    };
+    // `initialView` is the route's, fixed for the life of the page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadFeed, notify, setStatus]);
 
   useEffect(() => {
@@ -748,7 +806,7 @@ export function ReaderFeed() {
         feedId: provenanceRef.current.feedId,
         servingBackend: provenanceRef.current.servingBackend,
         labelingVersion: provenanceRef.current.labelingVersion,
-        metadata,
+        metadata: seriesEntryStoryId.current === story.id ? { ...metadata, entry: "series" } : metadata,
       };
 
       eventQueue.current?.record(event);
@@ -888,6 +946,7 @@ export function ReaderFeed() {
    */
   const poemManifestUrl = currentStory ? poemManifestFor(currentStory.id) : null;
   const cinemaOffered = cinemaIsFinished || Boolean(poemManifestUrl) || isAdminReader;
+  const currentSeriesPiece = seriesPieceFor(currentStory?.id);
   /**
    * Answered once per opening, however many times it is replayed.
    *
@@ -908,7 +967,13 @@ export function ReaderFeed() {
     onNext: () => {
       setCinemaOpen(false);
       setPoem(null);
+      // From the shelf, "choose the next one" means the shelf: it is where
+      // the next one is chosen, and the feed under it was never left.
+      if (formatFromSeries.current) return;
       void nextStory("button");
+    },
+    onReached: () => {
+      if (currentStory && seriesPieceFor(currentStory.id)) setSeriesHeard(rememberHeardSeries(currentStory.id));
     },
     onAftertaste: (tags) => {
       // The one thing a format records. Reading outcomes stay out of it
@@ -919,7 +984,7 @@ export function ReaderFeed() {
     },
   };
   const readerInteractionBlocked = Boolean(
-    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen
+    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen || seriesOpen
   );
 
   /**
@@ -1008,6 +1073,49 @@ export function ReaderFeed() {
 
     return () => window.clearTimeout(handle);
   }, [pendingLibraryStoryId, rankedStories, hideReaderChrome]);
+
+  /**
+   * A piece opened from the shelf: once the feed has landed on it, open it in
+   * its format. Waits for the feed rather than opening on a boks that is not
+   * the one on screen, so the finale's like and share act on the right piece.
+   */
+  useEffect(() => {
+    const waiting = pendingSeriesFormat.current;
+    if (!waiting || currentStoryId !== waiting) return;
+    pendingSeriesFormat.current = null;
+    const handle = window.setTimeout(() => openReadingFormat(waiting), 0);
+    return () => window.clearTimeout(handle);
+    // Only the arrival matters; `openReadingFormat` reads nothing stale.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStoryId]);
+
+  /** Moving off the piece the shelf opened ends its `entry: "series"` tag. */
+  useEffect(() => {
+    if (seriesEntryStoryId.current && currentStoryId !== seriesEntryStoryId.current && !pendingSeriesFormat.current) {
+      seriesEntryStoryId.current = null;
+    }
+  }, [currentStoryId]);
+
+  /** The browser's back and forward move between the feed and the shelf. */
+  useEffect(() => {
+    const onPopState = () => {
+      const onShelf = window.location.pathname === "/series";
+      setSeriesOpen(onShelf);
+      if (onShelf) refreshSeriesContext();
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  /**
+   * Nothing is being read while the shelf is up, so the feed's clock stops -
+   * time on the shelf is not time on the boks under it. A format opened from
+   * the shelf is reading, and runs the clock as it does from the feed.
+   */
+  useEffect(() => {
+    if (seriesOpen && !cinemaOpen && !poem) readingClock.current.pause();
+    else if (document.visibilityState === "visible") readingClock.current.resume();
+  }, [seriesOpen, cinemaOpen, poem]);
 
   // The latest values the arrival effect needs, without making them reasons
   // to run it. See below.
@@ -1270,13 +1378,13 @@ export function ReaderFeed() {
     revealReaderChrome(0);
   }
 
-  async function openReadBoks(storyId: string) {
+  async function openReadBoks(storyId: string): Promise<boolean> {
     if (currentStoryId === storyId) {
       if (storyScroll.current) storyScroll.current.scrollTop = 0;
       setAuthPanelOpen(false);
       hideReaderChrome();
       recordReaderEvent("impression", currentStory, 1, { from: "library", reread: true });
-      return;
+      return true;
     }
 
     // Always fetched and resolved by id in the pending effect, against the
@@ -1291,15 +1399,89 @@ export function ReaderFeed() {
       const loaded = await loadSupabaseStory(storyId);
       if (!loaded) {
         notify("This bok is no longer available.");
-        return;
+        return false;
       }
 
       const { story, likedByMe } = loaded;
       setLiked((state) => ({ ...state, [story.id]: likedByMe }));
       setLibraryEntry({ story, index: selectedIndex });
       setPendingLibraryStoryId(story.id);
+      return true;
     } catch (error) {
       notify(error instanceof Error ? error.message : "Could not open this bok.");
+      return false;
+    }
+  }
+
+  /** Read on the client: the browser's languages are not known on the server. */
+  function refreshSeriesContext() {
+    const readerLanguages = readingLanguagesRef.current;
+    setSeriesContext({
+      language: seriesCopyLanguageFor(readerLanguages, navigator.languages?.length ? navigator.languages : [navigator.language]),
+      readerLanguages,
+    });
+  }
+
+  /**
+   * Opens a piece in the format it was made for: a registered poem in the
+   * poetry player, anything else in the cinema. The piece decides, never the
+   * reader - the same rule the rail button has always followed.
+   */
+  function openReadingFormat(storyId: string) {
+    // Either renderer brings its own voice. Silence the reading music without
+    // forgetting the choice, so it returns after.
+    stopReadingMusic(false);
+    setMusicOn(false);
+    finaleAnswered.current = false;
+    const manifestUrl = poemManifestFor(storyId);
+    if (manifestUrl) {
+      loadPoemManifest(manifestUrl)
+        .then(setPoem, () => notify("This poem could not be opened."))
+        .finally(() => setSeriesOpening(null));
+      return;
+    }
+    setCinemaOpen(true);
+    setSeriesOpening(null);
+  }
+
+  function openSeries() {
+    refreshSeriesContext();
+    rememberSeenSeries(seriesStoryIds);
+    setSeriesIsNew(false);
+    setCommentOpen(false);
+    setBokMenuOpen(false);
+    setAuthorSheet(null);
+    setSeriesOpen(true);
+    if (window.location.pathname !== "/series") {
+      window.history.pushState({ boksView: "series" }, "", "/series");
+    }
+  }
+
+  function openFeed() {
+    setSeriesOpen(false);
+    if (window.location.pathname === "/series") {
+      // Back to where the shelf was opened from, when it was opened here;
+      // a page that landed on /series has nothing behind it to go back to.
+      if (window.history.state?.boksView === "series") window.history.back();
+      else window.history.replaceState(null, "", "/");
+    }
+  }
+
+  async function openSeriesPiece(piece: SeriesPiece) {
+    if (seriesOpening) return;
+    formatFromSeries.current = true;
+    seriesEntryStoryId.current = piece.storyId;
+    if (currentStoryId === piece.storyId) {
+      openReadingFormat(piece.storyId);
+      return;
+    }
+    setSeriesOpening(piece.storyId);
+    pendingSeriesFormat.current = piece.storyId;
+    const found = await openReadBoks(piece.storyId);
+    if (!found) {
+      pendingSeriesFormat.current = null;
+      seriesEntryStoryId.current = null;
+      setSeriesOpening(null);
     }
   }
 
@@ -2055,6 +2237,32 @@ export function ReaderFeed() {
     setStoryHasMore(remaining > 12);
   }
 
+  if (!currentStory && seriesOpen && seriesContext) {
+    // The shelf does not wait for the feed: a reader who landed on /series
+    // sees it while the feed is still on its way, or if it never arrives.
+    return (
+      <main className="reader-shell reader-shell--focus h-[100svh] overflow-hidden text-[var(--foreground)]">
+        <SeriesView
+          language={seriesContext.language}
+          readerLanguages={seriesContext.readerLanguages}
+          heard={seriesHeard}
+          openingStoryId={seriesOpening}
+          signedIn={hasSignedInAccount}
+          onOpenPiece={(piece) => void openSeriesPiece(piece)}
+          onOpenAccount={() => openAccount("manual")}
+        />
+        <ReaderTabs
+          className="reader-tabs--pinned"
+          active="series"
+          language={seriesContext.language}
+          seriesIsNew={false}
+          onFeed={openFeed}
+          onSeries={openSeries}
+        />
+      </main>
+    );
+  }
+
   if (!currentStory) {
     /**
      * A feed emptied by the language filter has to say so. The alternative -
@@ -2244,6 +2452,26 @@ export function ReaderFeed() {
                 )}
               </div>
 
+              {/* A piece made for the series says so where the reader is
+                  already looking, and opens from here - the rail is hidden
+                  while the reader reads, and this is the one thing about
+                  the boks they would want to know before starting it. */}
+              {currentSeriesPiece && (
+                <button
+                  type="button"
+                  className="reader-series-chip"
+                  onClick={(event) => {
+                    releaseFocus(event);
+                    formatFromSeries.current = false;
+                    openReadingFormat(currentSeriesPiece.storyId);
+                  }}
+                >
+                  <Sparkles className="size-3.5" aria-hidden="true" />
+                  <span className="reader-series-chip__mark">boks series</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{currentSeriesPiece.language === "ru" ? "слушать постановку" : "listen to the production"}</span>
+                </button>
+              )}
               <h1 className="reader-title max-w-[680px] break-words text-[var(--foreground)]">
                 {currentStory.title}
               </h1>
@@ -2357,18 +2585,8 @@ export function ReaderFeed() {
                   : "Listen and read (prototype, admins only)"
               }
               onClick={() => {
-                // Either renderer brings its own voice. Silence the reading
-                // music without forgetting the choice, so it returns after.
-                stopReadingMusic(false);
-                setMusicOn(false);
-                finaleAnswered.current = false;
-                if (poemManifestUrl) {
-                  loadPoemManifest(poemManifestUrl).then(setPoem, () =>
-                    notify("This poem could not be opened.")
-                  );
-                  return;
-                }
-                setCinemaOpen(true);
+                formatFromSeries.current = false;
+                openReadingFormat(currentStory.id);
               }}
             >
               <Clapperboard className="size-5" />
@@ -2411,7 +2629,31 @@ export function ReaderFeed() {
           </nav>
         </div>
 
-        {guestNoticeStep && isGuestReader && !authPanelOpen && (
+        {seriesOpen && seriesContext && (
+          <SeriesView
+            language={seriesContext.language}
+            readerLanguages={seriesContext.readerLanguages}
+            heard={seriesHeard}
+            openingStoryId={seriesOpening}
+            signedIn={hasSignedInAccount}
+            onOpenPiece={(piece) => void openSeriesPiece(piece)}
+            onOpenAccount={() => openAccount("manual")}
+          />
+        )}
+        {seriesContext && (
+          <ReaderTabs
+            // In the feed the tabs are part of the reader's controls and leave
+            // with them; on the shelf they stay.
+            className={seriesOpen ? "reader-tabs--pinned" : "reader-ui"}
+            active={seriesOpen ? "series" : "feed"}
+            language={seriesContext.language}
+            seriesIsNew={seriesIsNew}
+            onFeed={openFeed}
+            onSeries={openSeries}
+          />
+        )}
+
+        {guestNoticeStep && isGuestReader && !authPanelOpen && !seriesOpen && (
           <div className="guest-notice" role="status" aria-live="polite">
             <div className="guest-notice__copy">
               <p className="text-sm font-semibold">
@@ -2605,7 +2847,11 @@ export function ReaderFeed() {
           guestReadCount={guestReadCount}
           currentUser={user}
           onClose={() => setAuthPanelOpen(false)}
-          onOpenReadBoks={openReadBoks}
+          onOpenReadBoks={(storyId) => {
+            // A boks from the library is read in the feed, so the shelf steps aside.
+            if (seriesOpen) openFeed();
+            void openReadBoks(storyId);
+          }}
           onFollowsChanged={setFollowedAuthorIds}
           onUserChanged={handleUserChanged}
           onReadingLanguagesChanged={adoptReadingLanguages}
@@ -2614,7 +2860,7 @@ export function ReaderFeed() {
         {isAdminReader && (
           <BokLifecycleDialog target={hideTarget} onClose={() => setHideTarget(null)} onDone={afterHideBok} />
         )}
-        {firstVisitHint && (
+        {firstVisitHint && !seriesOpen && (
           <p className="reader-hint" role="status">
             {firstVisitHint === "touch"
               ? "Swipe left for the next bok. Tap the page for likes, comments and more."

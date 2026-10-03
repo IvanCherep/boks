@@ -16,6 +16,9 @@ const poems: Record<string, string> = {
   "3056ee24-d8c0-4963-923f-967213a3ec34": "/poetry/i-hear-america-singing/manifest.json",
 };
 
+/** Every catalogued boks read as a poem - for the series shelf's test. */
+export const poemStoryIds: readonly string[] = Object.keys(poems);
+
 export function poemManifestFor(storyId: string): string | null {
   return poems[storyId] ?? null;
 }
