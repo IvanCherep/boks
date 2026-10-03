@@ -4738,6 +4738,21 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
+/*
+ * The drift belongs to the frame, not to the pictures inside it.
+ *
+ * On the layers it ran from whenever each one mounted, so the two halves of a
+ * dissolve were at different zooms and the image appeared to jump as one
+ * replaced the other. One animation around both keeps them locked together,
+ * and it is a compositor transform rather than anything computed per frame.
+ */
+.poem__frame {
+  position: absolute;
+  inset: 0;
+  animation: poem-drift 26s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
 .poem__scene {
   position: absolute;
   inset: 0;
@@ -4745,12 +4760,6 @@ textarea:focus-visible {
   height: 100%;
   object-fit: cover;
   transform: translateZ(0);
-  /* A very slow breath across the frame, never a parallax: the reader is here
-     to listen, not to watch a camera move. Left entirely to the compositor -
-     driving this from the frame loop meant a style recalculation on a
-     full-screen image sixty times a second, which is what the stutter was. */
-  animation: poem-drift 26s ease-in-out infinite alternate;
-  pointer-events: none;
 }
 
 @keyframes poem-drift {
@@ -4758,9 +4767,9 @@ textarea:focus-visible {
   to { scale: 1.035; }
 }
 
-.poem__scene--next {
+/* The layer being dissolved in. The other sits under it at full opacity. */
+.poem__scene--arriving {
   opacity: var(--fade, 0);
-  /* Only the layer that is actually dissolving asks for its own surface. */
   will-change: opacity;
 }
 
@@ -4795,6 +4804,29 @@ textarea:focus-visible {
 .poem__line.is-ahead {
   opacity: 0;
   transition: none;
+}
+
+/*
+ * A local scrim, only where the words are.
+ *
+ * Some of these frames are a bright winter sky, and no amount of shadow makes
+ * cream type readable on one. A card would be worse - the words would stop
+ * being part of the picture, which is the whole format. So each zone carries
+ * its own soft darkening, strongest behind the text and gone by the edges,
+ * which reads as weather rather than as a panel.
+ */
+.poem__zone::before {
+  position: absolute;
+  z-index: -1;
+  inset: -12% -10%;
+  background: radial-gradient(
+    78% 62% at 50% 50%,
+    rgb(6 9 16 / 52%) 0%,
+    rgb(6 9 16 / 34%) 46%,
+    rgb(6 9 16 / 0%) 100%
+  );
+  content: "";
+  pointer-events: none;
 }
 
 .poem__zone {
@@ -4840,7 +4872,7 @@ textarea:focus-visible {
   color: rgb(226 224 220 / 100%);
   opacity: 0.34;
   letter-spacing: 0.012em;
-  text-shadow: 0 2px 16px rgb(8 12 20 / 55%);
+  text-shadow: 0 2px 10px rgb(6 9 16 / 80%), 0 3px 22px rgb(6 9 16 / 60%);
 }
 
 /*
@@ -4857,7 +4889,8 @@ textarea:focus-visible {
   text-shadow:
     0 0 12px rgb(255 214 148 / 70%),
     0 0 46px rgb(255 186 92 / 42%),
-    0 3px 22px rgb(8 12 20 / 72%);
+    0 2px 10px rgb(6 9 16 / 85%),
+    0 4px 28px rgb(6 9 16 / 70%);
   animation: poem-arrive 560ms cubic-bezier(0.16, 0.8, 0.26, 1) both;
 }
 
@@ -5141,7 +5174,7 @@ textarea:focus-visible {
 
 /* Reduced motion: the words still arrive in order and the pictures still
    change; nothing travels, scales or scans. */
-.poem.is-still .poem__scene,
+.poem.is-still .poem__frame,
 .poem.is-still .poem__word {
   transform: none;
   scale: none;

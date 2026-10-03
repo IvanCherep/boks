@@ -168,7 +168,7 @@ export function ImmersivePoem({
 
         const pair = backdropAt(manifest, ms);
         setBackdrop((shown) =>
-          shown.from?.id === pair.from?.id && shown.to?.id === pair.to?.id ? shown : pair
+          shown.from === pair.from && shown.to === pair.to ? shown : pair
         );
 
         /*
@@ -285,8 +285,39 @@ export function ImmersivePoem({
       {/* A tap anywhere that is not a control plays or pauses. */}
       <button type="button" className="poem__surface" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"} />
 
-      <Backdrop scene={backdrop.from} className="poem__scene poem__scene--current" />
-      <Backdrop scene={backdrop.to} className="poem__scene poem__scene--next" />
+      {/*
+        Two layers that never move and never change picture while they can be
+        seen.
+
+        A scene gets a layer by the parity of its index, and the two sides of a
+        dissolve are always consecutive, so they always land on different
+        layers. The picture on a layer therefore only ever changes once that
+        layer has faded out - swapping the `src` of a visible image was half of
+        the jump.
+
+        The slow drift lives on the frame around them rather than on each
+        layer. Given to the layers it ran from whenever each one happened to
+        mount, so a dissolve laid two copies of the scene over each other at
+        different zooms, which was the other half.
+      */}
+      <div className="poem__frame">
+        {[0, 1].map((parity) => {
+          // Between dissolves the idle layer is not emptied - it holds the
+          // scene that comes next, decoded and waiting, so the dissolve has
+          // nothing left to load when it starts.
+          const waiting = backdrop.to >= 0 ? backdrop.to : backdrop.from + 1;
+          const index = backdrop.from % 2 === parity ? backdrop.from : waiting;
+          const layerScene = index >= 0 ? sceneFor(manifest, index) : null;
+          const arriving = backdrop.to >= 0 && index === backdrop.to;
+          return (
+            <Backdrop
+              key={parity}
+              scene={layerScene}
+              className={`poem__scene ${arriving ? "poem__scene--arriving" : ""}`}
+            />
+          );
+        })}
+      </div>
 
       {/*
         Every line is rendered, all the time; only their state changes.

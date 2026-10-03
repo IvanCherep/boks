@@ -182,10 +182,12 @@ describe("the progress bar", () => {
 });
 
 describe("which two pictures are on screen", () => {
+  const idOf = (index: number) => sceneFor(manifest, index)?.id ?? null;
+
   it("shows one scene, alone, in the middle of a line", () => {
     const { from, to, progress } = backdropAt(manifest, 500);
-    expect(from?.id).toBe(manifest.scenes[0].id);
-    expect(to).toBeNull();
+    expect(idOf(from)).toBe(manifest.scenes[0].id);
+    expect(to).toBe(-1);
     expect(progress).toBe(0);
   });
 
@@ -195,31 +197,37 @@ describe("which two pictures are on screen", () => {
     // the line boundary would cut it in half and read as a jump.
     const boundary = manifest.lines[1].startMs;
     const lead = manifest.playback.crossfadeLeadMs;
-    const span = manifest.scenes[1].transitionMs;
-    expect(span).toBeGreaterThan(lead);
+    expect(manifest.scenes[1].transitionMs).toBeGreaterThan(lead);
 
     const during = backdropAt(manifest, boundary + 10);
-    expect(during.from?.id).toBe(manifest.scenes[0].id);
-    expect(during.to?.id).toBe(manifest.scenes[1].id);
+    expect(idOf(during.from)).toBe(manifest.scenes[0].id);
+    expect(idOf(during.to)).toBe(manifest.scenes[1].id);
     expect(during.progress).toBeGreaterThan(0);
     expect(during.progress).toBeLessThan(1);
   });
 
+  it("puts the two pictures of a dissolve on different layers", () => {
+    // The renderer gives a scene a layer by the parity of its index, so the
+    // picture on a layer only ever changes while that layer is invisible.
+    // Consecutive indexes guarantee the pair never collides.
+    for (let ms = 0; ms <= manifest.durationMs; ms += 16) {
+      const { from, to } = backdropAt(manifest, ms);
+      if (to >= 0) expect(from % 2, `at ${ms}`).not.toBe(to % 2);
+    }
+  });
+
   it("never jumps: the picture is continuous across the whole poem", () => {
-    // Walk the piece and assert the visible composition never changes by more
-    // than a frame's worth. A pop here is the one artefact that would make
-    // this look like a slideshow.
     let previous = backdropAt(manifest, 0);
     for (let ms = 16; ms <= manifest.durationMs; ms += 16) {
       const now = backdropAt(manifest, ms);
-      if (previous.to && !now.to) {
+      if (previous.to >= 0 && now.to < 0) {
         // The dissolve finished: what was arriving must now be what is here.
-        expect(now.from?.id, `at ${ms}`).toBe(previous.to.id);
+        expect(now.from, `at ${ms}`).toBe(previous.to);
         expect(previous.progress).toBeGreaterThan(0.9);
       }
-      if (previous.from && now.from && previous.from.id !== now.from.id) {
+      if (previous.from !== now.from) {
         // `from` may only change when a dissolve completed, never mid-fade.
-        expect(previous.to?.id, `at ${ms}`).toBe(now.from.id);
+        expect(previous.to, `at ${ms}`).toBe(now.from);
       }
       previous = now;
     }

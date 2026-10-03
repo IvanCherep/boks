@@ -190,7 +190,7 @@ export function crossfadeProgress(
 export function backdropAt(
   manifest: PoemManifest,
   ms: number
-): { from: PoemScene | null; to: PoemScene | null; progress: number } {
+): { from: number; to: number; progress: number } {
   const lead = manifest.playback.crossfadeLeadMs;
   for (let index = manifest.lines.length - 1; index >= 0; index -= 1) {
     const next = manifest.lines[index + 1];
@@ -199,11 +199,12 @@ export function backdropAt(
     const span = to?.transitionMs ?? manifest.playback.defaultCrossfadeMs;
     const begins = next.startMs - lead;
     if (ms >= begins && ms < begins + span) {
-      return { from: sceneFor(manifest, index), to, progress: (ms - begins) / span };
+      return { from: index, to: index + 1, progress: (ms - begins) / span };
     }
   }
-  const settled = lineIndexAt(manifest.lines, ms);
-  return { from: sceneFor(manifest, settled), to: null, progress: 0 };
+  // Indexes rather than scenes, so the renderer can give each one a layer of
+  // its own and never change the picture on a layer that is being looked at.
+  return { from: lineIndexAt(manifest.lines, ms), to: -1, progress: 0 };
 }
 
 /** How far through the whole piece, for the progress bar. */
