@@ -111,6 +111,16 @@ const manifest = {
   canvas: sceneMap.canvas,
   palette: sceneMap.palette,
   playback: {
+    /*
+     * Read a little slower than recorded.
+     *
+     * The model ignores both a speed setting and break tags, so the take comes
+     * back at its own pace - about two seconds a line, which for eight
+     * full-screen scenes is a slideshow. Slowed here instead: the manifest
+     * times are in audio time and `currentTime` reports audio time, so
+     * everything stays in sync for free.
+     */
+    rate: 0.8,
     crossfadeLeadMs: 260,
     defaultCrossfadeMs: round10(850 * ratio),
     backgroundScaleFrom: 1,

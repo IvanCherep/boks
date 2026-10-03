@@ -58,13 +58,20 @@ export function ImmersivePoem({
 
   const [status, setStatus] = useState<Status>("loading");
   const [playing, setPlaying] = useState(false);
-  const [lineIndex, setLineIndex] = useState(0);
-  /** Redraws the words only when the spoken one changes, not every frame. */
-  const [spoken, setSpoken] = useState(-1);
+  /**
+   * Where the reading is: which line, and which of its words is being said.
+   *
+   * One piece of state rather than two. Held separately they could disagree
+   * for a frame - a token index belonging to the previous line - and at the
+   * wrong moment that rendered the whole line as not yet spoken, which is to
+   * say invisible.
+   */
+  const [at, setAt] = useState({ line: 0, token: 0 });
   const [chromeVisible, setChromeVisible] = useState(true);
   const [reduced, setReduced] = useState(false);
 
-  const line = manifest.lines[lineIndex];
+  const lineIndex = at.line;
+  const activeToken = at.token;
   const scene = sceneFor(manifest, lineIndex);
   /**
    * The backdrop runs on its own clock, not on the line.
@@ -88,6 +95,9 @@ export function ImmersivePoem({
   useEffect(() => {
     const element = new window.Audio(manifest.audio);
     element.preload = "auto";
+    element.playbackRate = manifest.playback.rate ?? 1;
+    // Slowed, not pitched down: the voice has to stay the same voice.
+    element.preservesPitch = true;
     audio.current = element;
     const ready = () => setStatus("ready");
     const failed = () => setStatus("error");
@@ -106,7 +116,7 @@ export function ImmersivePoem({
       element.removeEventListener("ended", done);
       audio.current = null;
     };
-  }, [manifest.audio]);
+  }, [manifest.audio, manifest.playback.rate]);
 
   /*
    * The next two pictures, decoded before they are needed.
@@ -147,17 +157,14 @@ export function ImmersivePoem({
         painted.current.ms = ms;
 
         const index = lineIndexAt(manifest.lines, ms);
-        setLineIndex((current) => (current === index ? current : index));
-
         const current = manifest.lines[index];
+        let token = 0;
         if (current) {
-          let active = -1;
           for (let i = 0; i < current.tokens.length; i += 1) {
-            if (tokenStateAt(current, i, ms) === "active") active = i;
+            if (tokenStateAt(current, i, ms) === "active") token = i;
           }
-          const key = index * 100 + active;
-          setSpoken((previous) => (previous === key ? previous : key));
         }
+        setAt((shown) => (shown.line === index && shown.token === token ? shown : { line: index, token }));
 
         const pair = backdropAt(manifest, ms);
         setBackdrop((shown) =>
@@ -257,7 +264,6 @@ export function ImmersivePoem({
   }, [onClose]);
 
   const preset = scene ? presetFor(scene) : "quiet-breath";
-  const activeToken = spoken % 100;
 
   return (
     <div
@@ -282,42 +288,62 @@ export function ImmersivePoem({
       <Backdrop scene={backdrop.from} className="poem__scene poem__scene--current" />
       <Backdrop scene={backdrop.to} className="poem__scene poem__scene--next" />
 
-      {/* The words. Positioned inside the zone the scene allows, never over a
-          face and never against an edge. */}
-      {line && scene && (
-        <div className="poem__words" aria-hidden="true">
-          {/*
-            Grouped by zone, and flowing inside it rather than pinned word by
-            word. A line reads as a line that way - "страна рабов," low and
-            left, "страна господ." high and right - and the words accumulate as
-            they are spoken instead of each one landing in its own box.
-          */}
-          {zonesOf(line, scene).map((group) => (
-            <div
-              key={group.role ?? "default"}
-              className="poem__zone"
-              style={{
-                left: `${group.zone.x * 100}%`,
-                top: `${group.zone.y * 100}%`,
-                width: `${group.zone.width * 100}%`,
-                minHeight: `${group.zone.height * 100}%`,
-              }}
-            >
-              {group.tokens.map(({ token, index }) => (
-                <span
-                  key={`${lineIndex}-${index}`}
-                  className={`poem__word is-${
-                    index < activeToken ? "settled" : index === activeToken ? "active" : "hidden"
-                  }`}
-                  style={{ "--order": index - group.tokens[0].index } as React.CSSProperties}
+      {/*
+        Every line is rendered, all the time; only their state changes.
+
+        Mounting a line's words when it begins and unmounting them when it ends
+        made the screen blink: at two seconds a line, the whole text vanished
+        and reappeared eight times in seventeen seconds. Kept in place they
+        simply dissolve, the leaving line over the arriving one, and nothing
+        has to be remounted for an animation to play.
+      */}
+      <div className="poem__words" aria-hidden="true">
+        {manifest.lines.map((poemLine, index) => {
+          const lineScene = sceneFor(manifest, index);
+          if (!lineScene) return null;
+          const state = index < lineIndex ? "past" : index === lineIndex ? "now" : "ahead";
+          return (
+            <div key={poemLine.sceneId} className={`poem__line is-${state}`}>
+              {/*
+                Grouped by zone and flowing inside it rather than pinned word by
+                word. A line reads as a line that way - "страна рабов," low and
+                left, "страна господ." high and right - and the words accumulate
+                as they are spoken instead of each landing in its own box.
+              */}
+              {zonesOf(poemLine, lineScene).map((group) => (
+                <div
+                  key={group.role ?? "default"}
+                  className="poem__zone"
+                  style={{
+                    left: `${group.zone.x * 100}%`,
+                    top: `${group.zone.y * 100}%`,
+                    width: `${group.zone.width * 100}%`,
+                  }}
                 >
-                  {token.text}
-                </span>
+                  {group.tokens.map(({ token, order }) => (
+                    <span
+                      key={order}
+                      className={`poem__word is-${
+                        state !== "now"
+                          ? state === "past"
+                            ? "settled"
+                            : "hidden"
+                          : order < activeToken
+                            ? "settled"
+                            : order === activeToken
+                              ? "active"
+                              : "hidden"
+                      }`}
+                    >
+                      {token.text}
+                    </span>
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* The whole poem, for a screen reader and for anyone who would rather
           read it than be read to. */}
@@ -391,13 +417,13 @@ export function ImmersivePoem({
 
 /** The line's words, split into the zones the scene allows, in spoken order. */
 function zonesOf(line: PoemLine, scene: PoemScene) {
-  const groups = new Map<string, { role?: string; zone: SafeZone; tokens: { token: PoemToken; index: number }[] }>();
-  line.tokens.forEach((token, index) => {
+  const groups = new Map<string, { role?: string; zone: SafeZone; tokens: { token: PoemToken; order: number }[] }>();
+  line.tokens.forEach((token, order) => {
     const key = token.zone ?? "default";
     if (!groups.has(key)) {
       groups.set(key, { role: token.zone, zone: zoneFor(scene, token.zone), tokens: [] });
     }
-    groups.get(key)!.tokens.push({ token, index });
+    groups.get(key)!.tokens.push({ token, order });
   });
   return [...groups.values()];
 }

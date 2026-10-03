@@ -19,6 +19,7 @@
   "shadow": "rgba(8, 12, 20, 0.48)"
  },
  "playback": {
+  "rate": 0.8,
   "crossfadeLeadMs": 260,
   "defaultCrossfadeMs": 470,
   "backgroundScaleFrom": 1,

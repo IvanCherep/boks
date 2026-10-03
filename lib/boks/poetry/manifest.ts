@@ -60,6 +60,8 @@ export type PoemManifest = {
   durationMs: number;
   palette: { text: string; active: string; shadow: string };
   playback: {
+    /** Playback speed. The recording is faster than the format wants. */
+    rate?: number;
     crossfadeLeadMs: number;
     defaultCrossfadeMs: number;
     backgroundScaleFrom: number;
