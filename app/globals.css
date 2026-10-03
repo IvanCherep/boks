@@ -5156,6 +5156,47 @@ textarea:focus-visible {
   opacity: 0;
 }
 
+/* Where each line begins. Faint, because this is the shape of the poem rather
+   than a scale: enough to aim a drag at, not enough to count. */
+.poem__bar-line {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 11px;
+  translate: 0 -50%;
+  background: rgb(244 232 208 / 30%);
+  pointer-events: none;
+}
+
+.poem__transport {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* A line back, a line on. Smaller than the play button, because they are used
+   less and should not compete with it. */
+.poem__step {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(244 232 208 / 62%);
+}
+
+.poem__step:hover {
+  color: var(--poem-active);
+}
+
+.poem__step:focus-visible {
+  outline: 2px solid var(--poem-active);
+  outline-offset: 2px;
+}
+
 /* On the right, as a quiet circle - the reading is the thing, not the player. */
 .poem__play {
   display: grid;

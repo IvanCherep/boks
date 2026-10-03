@@ -276,6 +276,36 @@ export function backdropAt(
   return { from: settled, to: -1, progress: 0 };
 }
 
+/**
+ * Where "back" lands.
+ *
+ * The same rule a music player uses, because it is the one people already
+ * have: part-way into a line, go to the start of that line; right at its
+ * beginning, go to the one before. Without the grace period a reader tapping
+ * back twice would get the same line twice and conclude the control is broken.
+ */
+export function previousLineStart(
+  lines: readonly PoemLine[],
+  ms: number,
+  graceMs = 400
+): number {
+  const index = lineIndexAt(lines, ms);
+  if (index <= 0) return 0;
+  const line = lines[index];
+  if (ms - line.startMs > graceMs) return line.startMs;
+  return lines[index - 1].startMs;
+}
+
+/** Where "forward" lands: the next line, or the end of the poem. */
+export function nextLineStart(
+  lines: readonly PoemLine[],
+  ms: number,
+  durationMs: number
+): number {
+  const next = lines[lineIndexAt(lines, ms) + 1];
+  return next ? next.startMs : durationMs;
+}
+
 /** How far through the whole piece, for the progress bar. */
 export function playedFraction(ms: number, durationMs: number): number {
   if (durationMs <= 0) return 0;

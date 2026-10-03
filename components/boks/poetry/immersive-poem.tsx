@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, ArrowRight, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, X } from "lucide-react";
 import {
   backdropAt,
   lineIndexAt,
+  nextLineStart,
   playedFraction,
+  previousLineStart,
   presetFor,
   sceneAt,
   sceneFor,
@@ -270,17 +272,46 @@ export function ImmersivePoem({
 
   // Seeking restores everything from the timecode, because everything is
   // derived from it. Nothing here has to be rewound by hand.
-  const seekTo = useCallback(
-    (fraction: number) => {
+  const seekMs = useCallback(
+    (ms: number) => {
       const element = audio.current;
       if (!element) return;
-      const at = (Math.min(1, Math.max(0, fraction)) * manifest.durationMs) / 1000;
+      const at = Math.min(manifest.durationMs, Math.max(0, ms)) / 1000;
       element.currentTime = at;
+      // The theme is part of the reading, so it goes wherever the voice goes.
       if (theme.current) theme.current.currentTime = at;
       if (status === "ended") setStatus("ready");
       revealChrome();
     },
     [manifest.durationMs, revealChrome, status]
+  );
+
+  const seekTo = useCallback(
+    (fraction: number) => seekMs(Math.min(1, Math.max(0, fraction)) * manifest.durationMs),
+    [manifest.durationMs, seekMs]
+  );
+
+  /*
+   * Stepping is by line, not by seconds.
+   *
+   * Fifteen seconds is the whole poem and two is most of a line, so neither is
+   * a unit anybody could aim with. A line is what a reader would ask for -
+   * "again, from «Страна рабов»" - and everything is a function of the
+   * timecode, so landing on one restores the scene, the phrase and the lit
+   * word in a single frame.
+   */
+  const step = useCallback(
+    (direction: -1 | 1) => {
+      const element = audio.current;
+      if (!element) return;
+      const ms = element.currentTime * 1000;
+      seekMs(
+        direction < 0
+          ? previousLineStart(manifest.lines, ms)
+          : nextLineStart(manifest.lines, ms, manifest.durationMs)
+      );
+    },
+    [manifest.durationMs, manifest.lines, seekMs]
   );
 
   function scrub(event: React.PointerEvent<HTMLDivElement>) {
@@ -464,16 +495,24 @@ export function ImmersivePoem({
           }}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => {
-            const element = audio.current;
-            if (!element) return;
-            if (event.key === "ArrowLeft") element.currentTime = Math.max(0, element.currentTime - 2);
-            else if (event.key === "ArrowRight") element.currentTime += 2;
+            if (event.key === "ArrowLeft") step(-1);
+            else if (event.key === "ArrowRight") step(1);
             else return;
             event.preventDefault();
           }}
         >
           <span className="poem__bar-track" />
           <span className="poem__bar-fill" />
+          {/* Where each line begins, so the bar shows the poem's shape and a
+              drag has something to aim at rather than being a blind scrub. */}
+          {manifest.lines.map((poemLine) => (
+            <span
+              key={poemLine.startMs}
+              className="poem__bar-line"
+              style={{ left: `${(poemLine.startMs / manifest.durationMs) * 100}%` }}
+              aria-hidden="true"
+            />
+          ))}
           {/*
             A waveform, drawn twice: once dim across the whole width, once warm
             and clipped to how much has been heard. Two copies rather than a bar
@@ -488,9 +527,33 @@ export function ImmersivePoem({
           </span>
         </div>
 
-        <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
-          {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-        </button>
+        <div className="poem__transport">
+          <button
+            type="button"
+            className="poem__step"
+            onClick={(event) => {
+              event.stopPropagation();
+              step(-1);
+            }}
+            aria-label="Предыдущая строка"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
+            {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
+          </button>
+          <button
+            type="button"
+            className="poem__step"
+            onClick={(event) => {
+              event.stopPropagation();
+              step(1);
+            }}
+            aria-label="Следующая строка"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
       </div>
 
       {status === "loading" && <p className="poem__state">Загружаем…</p>}

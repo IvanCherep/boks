@@ -4,7 +4,9 @@ import {
   backdropAt,
   crossfadeProgress,
   lineIndexAt,
+  nextLineStart,
   playedFraction,
+  previousLineStart,
   presetFor,
   sceneAt,
   sceneFor,
@@ -353,6 +355,45 @@ describe("how long a picture stays", () => {
       const until = manifest.scenes[index + 1]?.startMs ?? manifest.durationMs;
       const span = until - scene.startMs;
       expect(scene.transitionMs, scene.id).toBeLessThan(span / 2);
+    }
+  });
+});
+
+describe("stepping through the poem", () => {
+  const lines = manifest.lines;
+
+  it("goes to the start of the line you are in", () => {
+    const second = lines[1];
+    expect(previousLineStart(lines, second.startMs + 900)).toBe(second.startMs);
+  });
+
+  it("goes to the line before when you are at the top of one", () => {
+    // Without this, tapping back twice gives the same line twice and the
+    // control looks broken.
+    const second = lines[1];
+    expect(previousLineStart(lines, second.startMs + 100)).toBe(lines[0].startMs);
+    expect(previousLineStart(lines, second.startMs)).toBe(lines[0].startMs);
+  });
+
+  it("stops at the beginning rather than going negative", () => {
+    expect(previousLineStart(lines, 0)).toBe(0);
+    expect(previousLineStart(lines, 50)).toBe(0);
+  });
+
+  it("goes forward a line, and no further than the end", () => {
+    expect(nextLineStart(lines, 0, manifest.durationMs)).toBe(lines[1].startMs);
+    const last = lines.at(-1)!;
+    expect(nextLineStart(lines, last.startMs + 10, manifest.durationMs)).toBe(manifest.durationMs);
+  });
+
+  it("lands on a moment the renderer can draw from scratch", () => {
+    // Everything is a function of the timecode, so a step has to leave the
+    // scene, the phrase and the lit word all correct in one frame.
+    for (const line of lines) {
+      const index = lineIndexAt(lines, line.startMs);
+      expect(sceneFor(manifest, index)).not.toBeNull();
+      expect(backdropAt(manifest, line.startMs).from).toBeGreaterThanOrEqual(0);
+      expect(tokenStateAt(line, 0, line.startMs)).toBe("active");
     }
   });
 });
