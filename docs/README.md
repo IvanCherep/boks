@@ -14,6 +14,11 @@ For every AI coding assistant:
 6. `specs/boks-product-spec.md`
 7. The focused guide for the change: hosting, testing, standards, architecture, or growth
 
+To generate any audio - a narration, a moment's sound, a poem's theme - read
+`docs/media-generation.md`: the key and its scopes, the endpoints and their
+costs, the credit multiplier and licensing traps, and how a take is judged by
+measurement rather than by ear.
+
 A boks can be read three ways: the ordinary feed, the cinema format (prose read
 aloud over scenes, with places where the story stops and asks something), and
 immersive poetry (verse, where words arrive inside the picture). To add or change

@@ -132,7 +132,8 @@ All four voices are `rate: 1.0` — one credit per character. Some Russian voice
 in the library bill at ×2 or ×3, which is invisible on one piece and worth
 hundreds of dollars across the catalogue, so check `rate` before swapping one.
 
-Always record through **`/with-timestamps`**:
+Always record through **`/with-timestamps`** - the key, the scopes, the costs
+and the failure codes are in `docs/media-generation.md`:
 
 ```bash
 curl -X POST "https://api.elevenlabs.io/v1/text-to-speech/<voice_id>/with-timestamps?output_format=mp3_44100_128" \
