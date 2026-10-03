@@ -7,7 +7,7 @@
  "audio": "/poetry/new-colossus/narration.mp3",
  "theme": {
   "src": "/poetry/new-colossus/theme.mp3",
-  "gain": 0.15
+  "gain": 0.17
  },
  "durationMs": 49280,
  "canvas": {

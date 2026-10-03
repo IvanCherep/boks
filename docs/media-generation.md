@@ -34,6 +34,7 @@ Set per key in the ElevenLabs dashboard, not per plan. A missing scope returns
 | `text_to_speech` | every narration |
 | `sound_generation` | the sounds a moment makes |
 | `music` | a poem's theme, the reading track |
+| `speech_to_text` | checking a theme has no words in it |
 | `voices_read` | browsing the voice library to cast a piece |
 | `user_read` | checking the credit balance |
 
@@ -135,7 +136,20 @@ that plays while a reader holds a gesture.
 ```bash
 curl -X POST "https://api.elevenlabs.io/v1/music" \
   -H "xi-api-key: $ELEVENLABS_API_KEY" -H "Content-Type: application/json" \
-  -d '{"prompt":"…","music_length_ms":127000}'
+  -d '{"prompt":"…","music_length_ms":127000,"force_instrumental":true}'
+```
+
+**Always `force_instrumental: true`, and never name the piece in the prompt.**
+Without the flag the model may write a song, and given a poem's title it sings
+the poem's own words - the first two English themes did exactly that, so a
+reader heard a second voice singing the text under the narrator. Describe the
+mood, the instruments and the place, not the work. Then **check the take for
+words** before using it: run it through speech-to-text and require zero.
+
+```bash
+curl -s -X POST https://api.elevenlabs.io/v1/speech-to-text \
+  -H "xi-api-key: $ELEVENLABS_API_KEY" -F model_id=scribe_v1 -F file=@theme.mp3
+# an instrumental take comes back as a tag like "[outro jingle]" and no words
 ```
 
 Paid plans only — it answers **402** on a free one. Generate to the exact length

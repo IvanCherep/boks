@@ -388,9 +388,12 @@ check that it works.
    little; choose by dynamic range and share of silence - more room between
    lines matters more here than anywhere, because the words arrive in the
    picture. Assert the alignment's length equals the text's.
-3. **Generate the theme** to the recording's length, two takes, and keep the
-   one with less energy in 1–3 kHz and a steadier envelope
-   (`docs/media-generation.md` §4).
+3. **Generate the theme** to the recording's length, two takes, with
+   `force_instrumental: true` and without the poem's title in the prompt -
+   named, the model sings the poem, and the reader hears two voices at once.
+   Run each take through speech-to-text and require zero words. Keep the one
+   with less energy in 1–3 kHz and a steadier envelope
+   (`docs/media-generation.md` §3–4).
 4. **Measure the theme gain.** Active RMS of each (frames within 40 dB of the
    peak), then `20·log10(gain) = voice − theme − 10`. It goes in the scene map
    as `themeGain`.

@@ -7,7 +7,7 @@
  "audio": "/poetry/i-hear-america-singing/narration.mp3",
  "theme": {
   "src": "/poetry/i-hear-america-singing/theme.mp3",
-  "gain": 0.21
+  "gain": 0.19
  },
  "durationMs": 61360,
  "canvas": {
