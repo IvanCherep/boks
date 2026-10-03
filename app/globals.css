@@ -3427,7 +3427,8 @@ textarea:focus-visible {
 }
 
 .cinema__primary,
-.cinema__secondary {
+.finale__primary,
+.finale__secondary {
   display: inline-flex;
   min-height: 3.25rem;
   width: min(420px, 100%);
@@ -3440,14 +3441,15 @@ textarea:focus-visible {
   transition: transform 160ms var(--ease-out), filter 160ms var(--ease-out);
 }
 
-.cinema__primary {
+.cinema__primary,
+.finale__primary {
   border: 0;
   background: linear-gradient(180deg, #f0cd8e 0%, #d9a860 100%);
   color: #221708;
   box-shadow: 0 18px 44px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 45%);
 }
 
-.cinema__secondary {
+.finale__secondary {
   border: 1px solid rgb(255 255 255 / 14%);
   background: rgb(10 12 20 / 62%);
   color: #f6efe3;
@@ -3455,13 +3457,15 @@ textarea:focus-visible {
 }
 
 .cinema__primary:hover,
-.cinema__secondary:hover {
+.finale__primary:hover,
+.finale__secondary:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
 }
 
 .cinema__primary:active,
-.cinema__secondary:active {
+.finale__primary:active,
+.finale__secondary:active {
   transform: translateY(0);
 }
 
@@ -3728,33 +3732,35 @@ textarea:focus-visible {
 
 /* ------------------------------------------------------------------ the end */
 
-.cinema__ended {
+/*
+ * The ending every boks series piece shares - `components/boks/reading-finale.tsx`.
+ *
+ * Positioned against whichever player holds it (both are `position: fixed`
+ * over the whole screen), and above everything that player draws: a poem's
+ * words and tap surface sit at z-index 2 and 3.
+ */
+.finale {
   position: absolute;
   inset: auto 0 0;
-  z-index: 2;
+  z-index: 6;
   display: grid;
   justify-items: center;
   gap: 0.4rem;
   padding: 0 1.75rem max(2.25rem, env(safe-area-inset-bottom));
+  color: #f6efe3;
   text-align: center;
   animation: cinema-rise 760ms var(--ease-out) both;
 }
 
-.cinema__ended-title {
+.finale__title {
+  margin: 0;
   font-family: var(--font-serif);
   font-size: clamp(1.9rem, 7.5vw, 2.6rem);
   font-weight: 700;
   text-shadow: 0 4px 28px rgb(0 0 0 / 75%);
 }
 
-.cinema__ended-sub {
-  margin-bottom: 1.35rem;
-  font-size: 0.98rem;
-  color: rgb(246 239 227 / 74%);
-  text-shadow: 0 2px 16px rgb(0 0 0 / 70%);
-}
-
-.cinema__ended-actions {
+.finale__actions {
   display: grid;
   gap: 0.6rem;
   width: min(420px, 100%);
@@ -3764,14 +3770,19 @@ textarea:focus-visible {
 /* Listening again and saving sit side by side, so that adding the share
    button did not make this a column of four and push the picture off a small
    phone. */
-.cinema__ended-row {
+.finale__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.6rem;
   width: 100%;
 }
 
-.cinema__ended-row .cinema__secondary {
+/* Alone in the row - the sandbox has no like - it takes the whole width. */
+.finale__row > :only-child {
+  grid-column: 1 / -1;
+}
+
+.finale__row .finale__secondary {
   width: 100%;
   gap: 0.45rem;
   padding: 0 0.5rem;
@@ -3782,7 +3793,7 @@ textarea:focus-visible {
 /* Half-width pills, so "Послушать снова" is wider than its button on a small
    phone. Let the label wrap instead - the icon would otherwise be shrunk
    first, which is the same trap as the counted action buttons above. */
-.cinema__ended-row .cinema__secondary svg {
+.finale__row .finale__secondary svg {
   flex-shrink: 0;
 }
 
@@ -3790,7 +3801,7 @@ textarea:focus-visible {
    billboard with a sentence lost in the middle of it. */
 @media (min-width: 900px) {
   .cinema__cover,
-  .cinema__ended,
+  .finale,
   .cinema__stage {
     left: 50%;
     width: min(700px, 100%);
@@ -3805,7 +3816,7 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .cinema,
   .cinema__cover,
-  .cinema__ended,
+  .finale,
   .cinema__backdrop,
   .cinema-scene__art {
     animation: none;
@@ -4318,11 +4329,12 @@ textarea:focus-visible {
 }
 
 /* ── Aftertaste ───────────────────────────────────────────────────────────
-   The screen between the last line and the menu. It borrows the ending's
-   layout so the two read as one moment rather than as two screens.
+   The first of the finale's two screens, between the last line and the
+   menu. It borrows the ending's layout so the two read as one moment rather
+   than as two screens.
    ─────────────────────────────────────────────────────────────────────── */
 
-.cinema__after-eyebrow {
+.finale__eyebrow {
   color: rgb(240 205 142 / 82%);
   font-size: 0.72rem;
   font-weight: 600;
@@ -4331,11 +4343,11 @@ textarea:focus-visible {
   text-shadow: 0 2px 14px rgb(0 0 0 / 80%);
 }
 
-.cinema__after .cinema__ended-title {
+.finale--aftertaste .finale__title {
   margin-bottom: 1.2rem;
 }
 
-.cinema__after-grid {
+.finale__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.6rem;
@@ -4343,7 +4355,7 @@ textarea:focus-visible {
   margin-bottom: 1rem;
 }
 
-.cinema__chip {
+.finale__chip {
   display: inline-flex;
   min-height: 3.1rem;
   align-items: center;
@@ -4364,17 +4376,17 @@ textarea:focus-visible {
     transform 160ms var(--ease-out);
 }
 
-.cinema__chip svg {
+.finale__chip svg {
   flex-shrink: 0;
 }
 
-.cinema__chip:active {
+.finale__chip:active {
   transform: scale(0.97);
 }
 
 /* Burgundy for the chosen one, from the reference: warm enough to read as
    agreement rather than as a selected row in a form. */
-.cinema__chip.is-on {
+.finale__chip.is-on {
   border-color: rgb(214 138 128 / 72%);
   background: linear-gradient(180deg, #6e1f2a 0%, #551520 100%);
   color: #ffe9df;
@@ -4382,7 +4394,7 @@ textarea:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cinema__chip {
+  .finale__chip {
     transition: none;
   }
 }
@@ -5309,53 +5321,10 @@ textarea:focus-visible {
   text-align: center;
 }
 
-.poem__ended {
-  position: absolute;
-  inset: auto 0 0;
-  z-index: 6;
-  display: grid;
-  justify-items: center;
-  gap: 1rem;
-  padding: 2rem 1.5rem calc(5.5rem + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(to top, rgb(5 7 13 / 92%), transparent);
-  text-align: center;
-}
-
-.poem__ended-title {
-  margin: 0;
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: 1.6rem;
-}
-
-.poem__ended-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem;
-}
-
-.poem__again,
-.poem__onward {
-  display: inline-flex;
-  min-height: 2.9rem;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 999px;
-  padding: 0 1.2rem;
-  font-weight: 600;
-}
-
-.poem__again {
-  border: 0;
-  background: linear-gradient(180deg, #f0cd8e, #d9a860);
-  color: #221708;
-}
-
-.poem__onward {
-  border: 1px solid rgb(255 255 255 / 16%);
-  background: rgb(10 12 20 / 62%);
-  color: var(--poem-text);
-  backdrop-filter: blur(10px);
+/* The poem is over and the finale has the bottom of the screen; the player's
+   own controls would only sit underneath it. */
+.poem__controls.is-over {
+  visibility: hidden;
 }
 
 /* Reduced motion: the words still arrive in order and the pictures still

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
+import { ReadingFinale, finaleLanguageOf, type FinaleActions } from "@/components/boks/reading-finale";
 import {
   backdropAt,
   lineIndexAt,
@@ -44,12 +45,16 @@ const controlsIdleMs = 2600;
 
 export function ImmersivePoem({
   manifest,
+  finale,
   onClose,
-  onNext,
 }: {
   manifest: PoemManifest;
+  /**
+   * What the ending's buttons do - the same object every format is given.
+   * Absent only in the admin sandbox, where the poem has no boks yet.
+   */
+  finale?: FinaleActions;
   onClose: () => void;
-  onNext?: () => void;
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const theme = useRef<HTMLAudioElement | null>(null);
@@ -103,7 +108,10 @@ export function ImmersivePoem({
     element.preload = "auto";
     element.playbackRate = 1;
     audio.current = element;
-    const ready = () => setStatus("ready");
+    // Only ever out of loading. The browser fires this again after every
+    // seek, and a seek onto the end lands after `ended` - which turned the
+    // finale back off and left the player paused on the last frame.
+    const ready = () => setStatus((current) => (current === "loading" ? "ready" : current));
     const failed = () => setStatus("error");
     const done = () => {
       setStatus("ended");
@@ -294,7 +302,10 @@ export function ImmersivePoem({
       element.currentTime = at;
       // The theme is part of the reading, so it goes wherever the voice goes.
       if (theme.current) theme.current.currentTime = at;
-      if (status === "ended") setStatus("ready");
+      // Back into the poem leaves the ending; onto its very end does not. A
+      // "next line" pressed as the last word ends would otherwise take the
+      // finale away and leave the player paused on nothing.
+      if (status === "ended" && ms < manifest.durationMs) setStatus("ready");
       revealChrome();
     },
     [manifest.durationMs, revealChrome, status]
@@ -468,7 +479,10 @@ export function ImmersivePoem({
         <X className="size-5" />
       </button>
 
-      <div ref={controls} className="poem__controls" style={{ "--played": 0 } as React.CSSProperties}>
+      <div
+        ref={controls}
+        className={`poem__controls ${status === "ended" ? "is-over" : ""}`}
+        style={{ "--played": 0 } as React.CSSProperties}>
         {/* Its own pointer handling, and it must not reach the surface
             underneath - dragging the bar would otherwise also pause. */}
         <div
@@ -554,20 +568,17 @@ export function ImmersivePoem({
       {status === "loading" && <p className="poem__state">Загружаем…</p>}
       {status === "error" && <p className="poem__state">Запись не загрузилась</p>}
 
+      {/* The same ending as every other boks series piece - see
+          reading-finale.tsx. The poem draws the reading, never its own end. */}
       {status === "ended" && (
-        <div className="poem__ended">
-          <p className="poem__ended-title">{manifest.title}</p>
-          <div className="poem__ended-actions">
-            <button type="button" className="poem__again" onClick={() => { seekTo(0); toggle(); }}>
-              <RotateCcw className="size-4" /> Ещё раз
-            </button>
-            {onNext && (
-              <button type="button" className="poem__onward" onClick={onNext}>
-                Следующий бок <ArrowRight className="size-4" />
-              </button>
-            )}
-          </div>
-        </div>
+        <ReadingFinale
+          language={finaleLanguageOf(manifest.language)}
+          actions={finale}
+          onAgain={() => {
+            seekTo(0);
+            toggle();
+          }}
+        />
       )}
     </div>
   );

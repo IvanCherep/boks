@@ -76,6 +76,7 @@ import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
+import type { FinaleActions } from "@/components/boks/reading-finale";
 import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
@@ -887,6 +888,36 @@ export function ReaderFeed() {
    */
   const poemManifestUrl = currentStory ? poemManifestFor(currentStory.id) : null;
   const cinemaOffered = cinemaIsFinished || Boolean(poemManifestUrl) || isAdminReader;
+  /**
+   * Answered once per opening, however many times it is replayed.
+   *
+   * Listening again and landing on the question a second time is not a second
+   * opinion - it is the same reader on the same evening - and the recommender
+   * would count it twice. Reset when a format is opened.
+   */
+  const finaleAnswered = useRef(false);
+  /**
+   * What the end of a boks series piece does, built once and handed to every
+   * format, so the end of a poem and the end of a story are the same buttons
+   * doing the same things. A new format takes this object and nothing else.
+   */
+  const finale: FinaleActions = {
+    liked: isCurrentStoryLiked,
+    onLike: () => void likeStory(),
+    onShare: () => void shareStory(),
+    onNext: () => {
+      setCinemaOpen(false);
+      setPoem(null);
+      void nextStory("button");
+    },
+    onAftertaste: (tags) => {
+      // The one thing a format records. Reading outcomes stay out of it
+      // deliberately, but this is a reader telling us something no clock can.
+      if (!currentStory || finaleAnswered.current) return;
+      finaleAnswered.current = true;
+      recordReaderEvent("aftertaste", currentStory, tags.length, { tags });
+    },
+  };
   const readerInteractionBlocked = Boolean(
     authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen
   );
@@ -2324,6 +2355,7 @@ export function ReaderFeed() {
                 // music without forgetting the choice, so it returns after.
                 stopReadingMusic(false);
                 setMusicOn(false);
+                finaleAnswered.current = false;
                 if (poemManifestUrl) {
                   loadPoemManifest(poemManifestUrl).then(setPoem, () =>
                     notify("This poem could not be opened.")
@@ -2595,34 +2627,11 @@ export function ReaderFeed() {
         {/* Above everything, and only for an admin. Nothing in here writes a
             reading event, so a demo does not become recommendation data. */}
         {cinemaOpen && currentStory && cinemaOffered && (
-          <CinemaMode
-            story={currentStory}
-            liked={isCurrentStoryLiked}
-            onLike={() => void likeStory()}
-            onNext={() => {
-              setCinemaOpen(false);
-              void nextStory("button");
-            }}
-            onShare={() => void shareStory()}
-            onAftertaste={(tags) => {
-              // The one thing the cinema records. Reading outcomes stay out of
-              // it deliberately - see the note on the component - but this is
-              // a reader telling us something no clock can.
-              if (currentStory) recordReaderEvent("aftertaste", currentStory, tags.length, { tags });
-            }}
-            onClose={() => setCinemaOpen(false)}
-          />
+          <CinemaMode story={currentStory} finale={finale} onClose={() => setCinemaOpen(false)} />
         )}
 
         {poem && (
-          <ImmersivePoem
-            manifest={poem}
-            onClose={() => setPoem(null)}
-            onNext={() => {
-              setPoem(null);
-              void nextStory("button");
-            }}
-          />
+          <ImmersivePoem manifest={poem} finale={finale} onClose={() => setPoem(null)} />
         )}
       </section>
     </main>

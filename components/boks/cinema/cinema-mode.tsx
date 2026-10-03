@@ -1,20 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowRight,
-  Heart,
-  Lightbulb,
-  MessageCircle,
-  Pause,
-  Play,
-  RotateCcw,
-  RotateCw,
-  Share2,
-  Smile,
-  X,
-} from "lucide-react";
-import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
+import { Pause, Play, RotateCcw, RotateCw, X } from "lucide-react";
+import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { StoryMomentScene } from "@/components/boks/cinema/story-moment";
 import {
   momentDueAt,
@@ -64,21 +52,7 @@ import type { Story } from "@/components/boks/client-types";
  *   recommendation data as thirty finished boks.
  */
 
-type Phase = "cover" | "playing" | "aftertaste" | "ended";
-
-/**
- * The four words, and the icon each wears.
- *
- * None of them is "good" or "bad" on purpose. A reader who wants to think
- * about a piece has not enjoyed it less than one who smiled, and a rating
- * would flatten exactly the difference worth keeping.
- */
-const aftertasteIcons: Record<AftertasteTag, typeof Smile> = {
-  smiled: Smile,
-  moved: Heart,
-  surprised: Lightbulb,
-  pondering: MessageCircle,
-};
+type Phase = "cover" | "playing" | "ended";
 
 /**
  * Two scene layers, so one picture dissolves into the next.
@@ -151,22 +125,6 @@ const copy = {
   ru: {
     listen: "Слушать и читать",
     minutes: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "минута" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "минуты" : "минут"}`,
-    ended: "Куда дальше?",
-    aftertasteEyebrow: "Послевкусие",
-    aftertasteTitle: "Что осталось?",
-    aftertaste: {
-      smiled: "Улыбнуло",
-      moved: "Задело",
-      surprised: "Удивило",
-      pondering: "Хочу обдумать",
-    },
-    onward: "Дальше",
-    skip: "Пропустить",
-    again: "Послушать снова",
-    like: "Нравится",
-    liked: "Понравилось",
-    next: "Выбрать следующую",
-    share: "Поделиться",
     close: "Закрыть",
     back: "Назад на 15 секунд",
     forward: "Вперёд на 15 секунд",
@@ -183,22 +141,6 @@ const copy = {
   en: {
     listen: "Listen and read",
     minutes: (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`,
-    ended: "Where next?",
-    aftertasteEyebrow: "Aftertaste",
-    aftertasteTitle: "What stayed with you?",
-    aftertaste: {
-      smiled: "Made me smile",
-      moved: "Moved me",
-      surprised: "Surprised me",
-      pondering: "Want to think",
-    },
-    onward: "Onward",
-    skip: "Skip",
-    again: "Listen again",
-    like: "Like",
-    liked: "Liked",
-    next: "Choose the next one",
-    share: "Share",
     close: "Close",
     back: "Back 15 seconds",
     forward: "Forward 15 seconds",
@@ -268,20 +210,12 @@ function languageOf(text: string) {
 
 export function CinemaMode({
   story,
-  liked,
-  onLike,
-  onNext,
-  onShare,
-  onAftertaste,
+  finale,
   onClose,
 }: {
   story: Story;
-  liked: boolean;
-  onLike: () => void;
-  onNext: () => void;
-  onShare: () => void;
-  /** Called once, with whatever was picked. Never called with nothing. */
-  onAftertaste: (tags: AftertasteTag[]) => void;
+  /** What the ending's buttons do - the same object every format is given. */
+  finale: FinaleActions;
   onClose: () => void;
 }) {
   const language = useMemo(() => languageOf(story.body), [story.body]);
@@ -295,7 +229,6 @@ export function CinemaMode({
   const picture = sceneImageFor(story.id, 0);
 
   const [phase, setPhase] = useState<Phase>("cover");
-  const [picked, setPicked] = useState<AftertasteTag[]>([]);
   /** The moment on screen, if the story has stopped to ask for something. */
   const [moment, setMoment] = useState<StoryMoment | null>(null);
   const momentsDone = useRef<Set<string>>(new Set());
@@ -311,14 +244,6 @@ export function CinemaMode({
    */
   const resumeFrom = useRef(0);
   const momentsHere = useMemo(() => storyMomentsFor(story.id), [story.id]);
-  /**
-   * Answered once per opening, however many times it is replayed.
-   *
-   * Listening again and landing on the question a second time is not a second
-   * opinion - it is the same reader on the same evening - and the recommender
-   * would count it twice.
-   */
-  const aftertasteSent = useRef(false);
   const [progress, setProgress] = useState<NarratorState>({
     line: 0,
     elapsedSeconds: 0,
@@ -472,7 +397,7 @@ export function CinemaMode({
         }
         // The ending lands here, not on the menu: the question only means
         // anything while the last line is still in the air.
-        if (next.done) setPhase("aftertaste");
+        if (next.done) setPhase("ended");
       });
     }
     return narrator.current;
@@ -698,125 +623,26 @@ export function CinemaMode({
         />
       )}
 
-      {phase === "aftertaste" && (
-        <div className="cinema__ended cinema__after">
-          <span className="cinema__after-eyebrow">{words.aftertasteEyebrow}</span>
-          <h2 className="cinema__ended-title">{words.aftertasteTitle}</h2>
-
-          {/*
-            Several may be picked and none is a complete answer, so these are
-            not radio buttons and there is no "submit". Moving on is the only
-            required act, which is why the button says "onward" rather than
-            "done": nothing here is owed.
-          */}
-          <div className="cinema__after-grid">
-            {aftertasteTags.map((tag) => {
-              const Icon = aftertasteIcons[tag];
-              const on = picked.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  className={`cinema__chip ${on ? "is-on" : ""}`}
-                  aria-pressed={on}
-                  onClick={() =>
-                    setPicked((current) =>
-                      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
-                    )
-                  }
-                >
-                  <Icon className="size-4" fill={on && tag === "moved" ? "currentColor" : "none"} />
-                  {words.aftertaste[tag]}
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            className={picked.length > 0 ? "cinema__primary" : "cinema__secondary"}
-            onClick={() => {
-              // An empty answer is allowed but not worth a row: how many
-              // declined is already the difference between this and the
-              // finishes the feed counts anyway.
-              if (picked.length > 0 && !aftertasteSent.current) {
-                aftertasteSent.current = true;
-                onAftertaste(picked);
-              }
-              setPhase("ended");
-            }}
-          >
-            {picked.length > 0 ? words.onward : words.skip}
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
-      )}
-
       {phase === "ended" && (
-        <div className="cinema__ended">
-          <h2 className="cinema__ended-title">{words.ended}</h2>
-          <div className="cinema__ended-actions">
-            {/*
-              Sending it on is the first thing offered here, and the only one
-              wearing the accent.
-
-              This is the one moment the reader has just been moved by
-              something and has not yet moved on - the story is over, the
-              picture is still up, and there is nothing else asking for
-              attention. Anywhere else in the app a share button competes with
-              reading; here it competes with nothing.
-
-              Listening again keeps its place but gives up the accent - it is
-              the rarer wish of the two, and it was only ever primary because
-              it happened to be written first.
-            */}
-            <button type="button" className="cinema__primary" onClick={onShare}>
-              <Share2 className="size-4" />
-              {words.share}
-            </button>
-            <div className="cinema__ended-row">
-              <button
-                type="button"
-                className="cinema__secondary"
-                onClick={() => {
-                  setPicked([]);
-                  // A second listen is a second telling: the crowd gathers
-                  // again and the heart beats again.
-                  momentsDone.current.clear();
-                  momentOpen.current = false;
-                  setPhase("playing");
-                  ensureNarrator().restart();
-                }}
-              >
-                <RotateCcw className="size-4" />
-                {words.again}
-              </button>
-              {/*
-                A like, because that is what this button has always called -
-                the same `likeStory` the feed's heart calls. It said "save",
-                which is a word this product does not have: the feed labels it
-                Like, and the reader's own shelf calls the collection Liked.
-                One heart, filled when it is on, exactly as the feed draws it.
-              */}
-              <button type="button" className="cinema__secondary" onClick={onLike}>
-                <Heart className="size-4" fill={liked ? "currentColor" : "none"} />
-                {liked ? words.liked : words.like}
-              </button>
-            </div>
-            <button
-              type="button"
-              className="cinema__secondary"
-              onClick={() => {
-                narrator.current?.stop();
-                narrator.current = null;
-                onNext();
-              }}
-            >
-              <ArrowRight className="size-4" />
-              {words.next}
-            </button>
-          </div>
-        </div>
+        <ReadingFinale
+          language={language}
+          actions={{
+            ...finale,
+            onNext: () => {
+              narrator.current?.stop();
+              narrator.current = null;
+              finale.onNext();
+            },
+          }}
+          onAgain={() => {
+            // A second listen is a second telling: the crowd gathers again
+            // and the heart beats again.
+            momentsDone.current.clear();
+            momentOpen.current = false;
+            setPhase("playing");
+            ensureNarrator().restart();
+          }}
+        />
       )}
     </div>
   );

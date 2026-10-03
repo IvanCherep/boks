@@ -35,7 +35,8 @@ work from the repo root wherever it is checked out.
 
 | Path | What it is |
 |---|---|
-| `components/boks/reader-feed.tsx` | the ordinary feed, and the button that opens either format |
+| `components/boks/reader-feed.tsx` | the ordinary feed, the button that opens either format, and the one `FinaleActions` both are given |
+| `components/boks/reading-finale.tsx` | the ending every format shares: aftertaste, then share / again / like / next |
 | `components/boks/cinema/voices.ts` | who reads what: the cast rule, the model, the stability per reading |
 | `components/boks/cinema/voices.test.ts` | holds the cast and the one-credit-per-character rule |
 | `components/boks/reading-music.ts` | lo-fi under ordinary silent reading; nothing to do with either format |
@@ -46,7 +47,7 @@ work from the repo root wherever it is checked out.
 
 | Path | What it is |
 |---|---|
-| `components/boks/cinema/cinema-mode.tsx` | the player: cover, playing, aftertaste, ending |
+| `components/boks/cinema/cinema-mode.tsx` | the player: cover, playing, then the shared finale |
 | `components/boks/cinema/series.ts` | the access rule - which boks are open to everyone |
 | `components/boks/cinema/narration-track.ts` | recording and alignment, per boks |
 | `components/boks/cinema/scene-image.ts` | the scene frames, per boks |
@@ -201,6 +202,35 @@ length: it is whether the words belong **over** a picture or **inside** one.
   are spoken. It suits verse, where the line is the unit and there are few
   enough words to place.
 
+Words arriving one by one inside a picture is right for sixteen seconds of
+verse and exhausting for ten minutes of prose. That is why there are two
+formats and not one with a setting: what differs is how the words are given,
+and that is the whole of what a format owns.
+
+### What every format shares: the finale
+
+A format draws the reading. It never draws its own ending. Every boks series
+piece, whatever it was read in, ends on the same two screens from
+`components/boks/reading-finale.tsx`:
+
+1. **Aftertaste** — «Что осталось?», four tags (Улыбнуло, Задело, Удивило,
+   Хочу обдумать), several allowed, none required; «Дальше» once something is
+   picked, «Пропустить» otherwise.
+2. **Where next** — «Куда дальше?»: Поделиться (the accent), Послушать снова
+   and Нравится side by side, Выбрать следующую.
+
+The format's side of it is two lines: mount `<ReadingFinale>` when the reading
+is over, with the piece's language and a way to start again, and hide its own
+controls underneath. What the buttons do is not the format's business -
+`reader-feed.tsx` builds one `FinaleActions` (like, share, next, record the
+aftertaste once per opening) and hands the same object to every format, so a
+like at the end of a poem is exactly the like at the end of a story. The admin
+sandbox passes none, and the finale leaves out what would need a boks.
+
+Do not give a format an ending of its own, a different set of buttons, or
+different words for the same buttons. If the finale needs to change, it
+changes for every piece at once.
+
 ---
 
 ## 3. The cinema format
@@ -349,7 +379,8 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
    It refuses if the word counts disagree rather than cutting the poem in the
    wrong places.
 5. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
-   One line, nothing else.
+   One line, nothing else. The ending comes with it: the finale is shared, so
+   a new poem has nothing to add there.
 
 No new component, ever. If a poem needs something the renderer cannot do, the
 thing to add is a preset, not a component.
