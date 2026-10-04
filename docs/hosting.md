@@ -308,6 +308,13 @@ still set. The token never goes into a file, a commit, or a chat.
 <p>The code lasts an hour.</p>
 ```
 
+**And the same code in Confirm signup.** An address with no confirmed account
+yet - a reader signing in for the first time, or one who never opened an
+earlier email - is sent **Confirm signup**, not Magic Link. Without
+`{{ .Token }}` there, that reader gets only the link, which is the case the
+code exists for. The script sets both; by hand it is **Authentication ->
+Emails -> Confirm signup**, the same block with its own wording.
+
 Set the OTP length to 6 on the same screen if it is anything else; six digits is
 Supabase's default and what `boksEmailCodeLength` expects. (`otp_length = 8` in
 `supabase/config.toml` applies to a local stack only.)

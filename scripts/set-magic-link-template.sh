@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Put the sign-in code into the Magic Link email.
+# Put the sign-in code into both emails a sign-in can send.
 #
 # Supabase only prints a code if the template asks for `{{ .Token }}`, and the
 # templates are not reachable from the CLI: `supabase config diff` and
@@ -15,7 +15,7 @@
 #
 #   bash scripts/set-magic-link-template.sh
 #
-# Afterwards the sign-in email carries both: the link, and a six-digit code for
+# Afterwards every sign-in email carries both: the link, and a six-digit code for
 # the contexts the link cannot reach. See docs/hosting.md.
 
 set -euo pipefail
@@ -39,18 +39,34 @@ read -r -d '' CONTENT <<'HTML' || true
 <p style="color:#666">Код действует один час. Если вы не запрашивали вход — письмо можно не читать.</p>
 HTML
 
-BODY=$(SUBJECT="$SUBJECT" CONTENT="$CONTENT" python3 - <<'PY'
+# The other email `signInWithOtp` can send. An address with no confirmed
+# account yet - a first sign-in, or one whose earlier email was never opened -
+# gets "Confirm signup" rather than "Magic Link", and without the code in it
+# that reader has only the link, which is exactly what fails from the home
+# screen. `verifyOtp({ type: "email" })` accepts this code the same way.
+CONFIRM_SUBJECT="Ваш код для входа в boks"
+read -r -d '' CONFIRM_CONTENT <<'HTML' || true
+<h2>Добро пожаловать в boks</h2>
+<p>Ваш код:</p>
+<p style="font-size:30px;letter-spacing:8px;font-weight:700">{{ .Token }}</p>
+<p>Или просто откройте ссылку: <a href="{{ .ConfirmationURL }}">Подтвердить и войти</a></p>
+<p style="color:#666">Код действует один час. Если вы не запрашивали вход — письмо можно не читать.</p>
+HTML
+
+BODY=$(SUBJECT="$SUBJECT" CONTENT="$CONTENT" CONFIRM_SUBJECT="$CONFIRM_SUBJECT" CONFIRM_CONTENT="$CONFIRM_CONTENT" python3 - <<'PY'
 import json, os
 print(json.dumps({
     "mailer_subjects_magic_link": os.environ["SUBJECT"],
     "mailer_templates_magic_link_content": os.environ["CONTENT"],
+    "mailer_subjects_confirmation": os.environ["CONFIRM_SUBJECT"],
+    "mailer_templates_confirmation_content": os.environ["CONFIRM_CONTENT"],
     # Six digits is Supabase's default and what the app's input expects.
     "mailer_otp_length": 6,
 }))
 PY
 )
 
-echo "Updating the Magic Link template and setting the code to 6 digits…"
+echo "Putting the code into the Magic Link and Confirm signup emails, 6 digits…"
 HTTP=$(curl -sS -o /tmp/boks-auth-config.json -w "%{http_code}" -X PATCH "$API" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -70,11 +86,13 @@ c = json.load(open("/tmp/boks-auth-config.json"))
 tpl = c.get("mailer_templates_magic_link_content") or ""
 print("  OTP length      :", c.get("mailer_otp_length"))
 print("  Subject         :", c.get("mailer_subjects_magic_link"))
-print("  Template has code:", "yes" if "{{ .Token }}" in tpl else "NO - check the dashboard")
+print("  Magic Link has code    :", "yes" if "{{ .Token }}" in tpl else "NO - check the dashboard")
+confirm = c.get("mailer_templates_confirmation_content") or ""
+print("  Confirm signup has code:", "yes" if "{{ .Token }}" in confirm else "NO - check the dashboard")
 print("  SMTP still set  :", "yes" if c.get("smtp_host") else "NO - tell Claude before anyone tries to sign in")
 PY
 rm -f /tmp/boks-auth-config.json
 
 echo
 echo "Revoke the token now if you like: https://supabase.com/dashboard/account/tokens"
-echo "Then tell Claude it is done - the code entry screen is written and waiting to be deployed."
+echo "Then sign in with a new address to check: the first email should carry the code too."
