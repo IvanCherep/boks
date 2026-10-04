@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "Remember",
+ "author": "Christina Rossetti",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF3E6",
+  "active": "#FFD9A8",
+  "shadow": "rgba(18, 12, 20, 0.55)"
+ },
+ "themeGain": 0.16,
+ "textScale": 0.8,
+ "veil": 1.35,
+ "scenes": [
+  {
+   "id": "half-turning-stay",
+   "image": "01-half-turning-stay.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.4
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.15
+    }
+   ],
+   "line": "Remember me when I am gone away, / Gone far away into the silent land; / When you can no more hold me by the hand, / Nor I half turn to go yet turning stay."
+  },
+  {
+   "id": "future-you-planned",
+   "image": "02-future-you-planned.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.65,
+    "y": 0.35
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.14
+    }
+   ],
+   "line": "Remember me when no more day by day / You tell me of our future that you planned: / Only remember me; you understand / It will be late to counsel then or pray."
+  },
+  {
+   "id": "afterwards-remember",
+   "image": "03-afterwards-remember.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.58
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.15
+    }
+   ],
+   "line": "Yet if you should forget me for a while / And afterwards remember, do not grieve: / For if the darkness and corruption leave / A vestige of the thoughts that once I had,"
+  },
+  {
+   "id": "forget-and-smile",
+   "image": "04-forget-and-smile.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.65,
+    "y": 0.3
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.13
+    }
+   ],
+   "line": "Better by far you should forget and smile / Than that you should remember and be sad."
+  }
+ ]
+}

@@ -382,6 +382,7 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *Invictus*, Henley | `c8e05b68-5a45-4eb0-935e-d8b0ad8e6b45` | Jerry B. | 4 | 4, 4, 6, 2 |
 | *The Lake Isle of Innisfree*, Yeats | `9d42d01d-5a3e-4ddb-a334-3f4dfdf5dffe` | Jerry B. | 4 - a ring: grey pavement, the island, evening, the pavement again | 1, 3, 4, 4 |
 | *O Captain! My Captain!*, Whitman | `7322a7ff-0abf-4aba-b340-49477030ebed` | Jerry B. | 4 | 8, 6, 2, 8 |
+| *Remember*, Christina Rossetti | `da98c07c-3386-48b4-8d1f-be02a1ff6d74` | Sha | 4 | 4, 4, 4, 2 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,

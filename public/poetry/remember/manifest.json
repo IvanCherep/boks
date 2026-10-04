@@ -1,0 +1,902 @@
+{
+ "id": "remember-immersive-v1",
+ "title": "Remember",
+ "author": "Christina Rossetti",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/remember/narration.mp3",
+ "theme": {
+  "src": "/poetry/remember/theme.mp3",
+  "gain": 0.16
+ },
+ "durationMs": 41440,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF3E6",
+  "active": "#FFD9A8",
+  "shadow": "rgba(18, 12, 20, 0.55)"
+ },
+ "textScale": 0.8,
+ "veil": 1.35,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "half-turning-stay",
+   "image": "/poetry/remember/scenes/01-half-turning-stay.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.4
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.15
+    }
+   ],
+   "line": "Remember me when I am gone away, / Gone far away into the silent land; / When you can no more hold me by the hand, / Nor I half turn to go yet turning stay.",
+   "startMs": 0
+  },
+  {
+   "id": "future-you-planned",
+   "image": "/poetry/remember/scenes/02-future-you-planned.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.65,
+    "y": 0.35
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.14
+    }
+   ],
+   "line": "Remember me when no more day by day / You tell me of our future that you planned: / Only remember me; you understand / It will be late to counsel then or pray.",
+   "startMs": 12800
+  },
+  {
+   "id": "afterwards-remember",
+   "image": "/poetry/remember/scenes/03-afterwards-remember.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.58
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.15
+    }
+   ],
+   "line": "Yet if you should forget me for a while / And afterwards remember, do not grieve: / For if the darkness and corruption leave / A vestige of the thoughts that once I had,",
+   "startMs": 24960
+  },
+  {
+   "id": "forget-and-smile",
+   "image": "/poetry/remember/scenes/04-forget-and-smile.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.65,
+    "y": 0.3
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.05,
+     "width": 0.76,
+     "height": 0.13
+    }
+   ],
+   "line": "Better by far you should forget and smile / Than that you should remember and be sad.",
+   "startMs": 36160
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "half-turning-stay",
+   "startMs": 0,
+   "endMs": 2800,
+   "tokens": [
+    {
+     "text": "Remember",
+     "atMs": 0,
+     "endMs": 450,
+     "phrase": 0
+    },
+    {
+     "text": "me",
+     "atMs": 480,
+     "endMs": 720,
+     "phrase": 0
+    },
+    {
+     "text": "when",
+     "atMs": 800,
+     "endMs": 1080,
+     "phrase": 0
+    },
+    {
+     "text": "I",
+     "atMs": 1120,
+     "endMs": 1200,
+     "phrase": 0
+    },
+    {
+     "text": "am",
+     "atMs": 1280,
+     "endMs": 1400,
+     "phrase": 0
+    },
+    {
+     "text": "gone",
+     "atMs": 1440,
+     "endMs": 1700,
+     "phrase": 0
+    },
+    {
+     "text": "away,",
+     "atMs": 1760,
+     "endMs": 2240,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "half-turning-stay",
+   "startMs": 2800,
+   "endMs": 6160,
+   "tokens": [
+    {
+     "text": "Gone",
+     "atMs": 2800,
+     "endMs": 3013,
+     "phrase": 1
+    },
+    {
+     "text": "far",
+     "atMs": 3040,
+     "endMs": 3520,
+     "phrase": 1
+    },
+    {
+     "text": "away",
+     "atMs": 3600,
+     "endMs": 4000,
+     "phrase": 1
+    },
+    {
+     "text": "into",
+     "atMs": 4080,
+     "endMs": 4320,
+     "phrase": 1
+    },
+    {
+     "text": "the",
+     "atMs": 4400,
+     "endMs": 4480,
+     "phrase": 1
+    },
+    {
+     "text": "silent",
+     "atMs": 4560,
+     "endMs": 5040,
+     "phrase": 1
+    },
+    {
+     "text": "land;",
+     "atMs": 5040,
+     "endMs": 6080,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "half-turning-stay",
+   "startMs": 6160,
+   "endMs": 9040,
+   "tokens": [
+    {
+     "text": "When",
+     "atMs": 6160,
+     "endMs": 6240,
+     "phrase": 2
+    },
+    {
+     "text": "you",
+     "atMs": 6320,
+     "endMs": 6400,
+     "phrase": 2
+    },
+    {
+     "text": "can",
+     "atMs": 6480,
+     "endMs": 6640,
+     "phrase": 2
+    },
+    {
+     "text": "no",
+     "atMs": 6720,
+     "endMs": 6800,
+     "phrase": 2
+    },
+    {
+     "text": "more",
+     "atMs": 6960,
+     "endMs": 7120,
+     "phrase": 2
+    },
+    {
+     "text": "hold",
+     "atMs": 7200,
+     "endMs": 7440,
+     "phrase": 2
+    },
+    {
+     "text": "me",
+     "atMs": 7520,
+     "endMs": 7680,
+     "phrase": 2
+    },
+    {
+     "text": "by",
+     "atMs": 7760,
+     "endMs": 7840,
+     "phrase": 2
+    },
+    {
+     "text": "the",
+     "atMs": 7920,
+     "endMs": 8000,
+     "phrase": 2
+    },
+    {
+     "text": "hand,",
+     "atMs": 8080,
+     "endMs": 8960,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "half-turning-stay",
+   "startMs": 9040,
+   "endMs": 12800,
+   "tokens": [
+    {
+     "text": "Nor",
+     "atMs": 9040,
+     "endMs": 9200,
+     "phrase": 3
+    },
+    {
+     "text": "I",
+     "atMs": 9360,
+     "endMs": 9520,
+     "phrase": 3
+    },
+    {
+     "text": "half",
+     "atMs": 9600,
+     "endMs": 9840,
+     "phrase": 3
+    },
+    {
+     "text": "turn",
+     "atMs": 10000,
+     "endMs": 10240,
+     "phrase": 3
+    },
+    {
+     "text": "to",
+     "atMs": 10320,
+     "endMs": 10400,
+     "phrase": 3
+    },
+    {
+     "text": "go",
+     "atMs": 10480,
+     "endMs": 10800,
+     "phrase": 3
+    },
+    {
+     "text": "yet",
+     "atMs": 10960,
+     "endMs": 11200,
+     "phrase": 3
+    },
+    {
+     "text": "turning",
+     "atMs": 11320,
+     "endMs": 11600,
+     "phrase": 3
+    },
+    {
+     "text": "stay.",
+     "atMs": 11680,
+     "endMs": 12160,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "future-you-planned",
+   "startMs": 12800,
+   "endMs": 15760,
+   "tokens": [
+    {
+     "text": "Remember",
+     "atMs": 12800,
+     "endMs": 13200,
+     "phrase": 4
+    },
+    {
+     "text": "me",
+     "atMs": 13360,
+     "endMs": 13520,
+     "phrase": 4
+    },
+    {
+     "text": "when",
+     "atMs": 13680,
+     "endMs": 13920,
+     "phrase": 4
+    },
+    {
+     "text": "no",
+     "atMs": 14000,
+     "endMs": 14160,
+     "phrase": 4
+    },
+    {
+     "text": "more",
+     "atMs": 14240,
+     "endMs": 14480,
+     "phrase": 4
+    },
+    {
+     "text": "day",
+     "atMs": 14640,
+     "endMs": 14800,
+     "phrase": 4
+    },
+    {
+     "text": "by",
+     "atMs": 14880,
+     "endMs": 15040,
+     "phrase": 4
+    },
+    {
+     "text": "day",
+     "atMs": 15200,
+     "endMs": 15440,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "future-you-planned",
+   "startMs": 15760,
+   "endMs": 18880,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 15760,
+     "endMs": 15920,
+     "phrase": 5
+    },
+    {
+     "text": "tell",
+     "atMs": 16000,
+     "endMs": 16240,
+     "phrase": 5
+    },
+    {
+     "text": "me",
+     "atMs": 16320,
+     "endMs": 16400,
+     "phrase": 5
+    },
+    {
+     "text": "of",
+     "atMs": 16480,
+     "endMs": 16560,
+     "phrase": 5
+    },
+    {
+     "text": "our",
+     "atMs": 16640,
+     "endMs": 16720,
+     "phrase": 5
+    },
+    {
+     "text": "future",
+     "atMs": 16880,
+     "endMs": 17280,
+     "phrase": 5
+    },
+    {
+     "text": "that",
+     "atMs": 17360,
+     "endMs": 17440,
+     "phrase": 5
+    },
+    {
+     "text": "you",
+     "atMs": 17520,
+     "endMs": 17600,
+     "phrase": 5
+    },
+    {
+     "text": "planned:",
+     "atMs": 17680,
+     "endMs": 18800,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "future-you-planned",
+   "startMs": 18880,
+   "endMs": 22000,
+   "tokens": [
+    {
+     "text": "Only",
+     "atMs": 18880,
+     "endMs": 19200,
+     "phrase": 6
+    },
+    {
+     "text": "remember",
+     "atMs": 19280,
+     "endMs": 19760,
+     "phrase": 6
+    },
+    {
+     "text": "me;",
+     "atMs": 19920,
+     "endMs": 20480,
+     "phrase": 6,
+     "emphasis": "lead"
+    },
+    {
+     "text": "you",
+     "atMs": 20560,
+     "endMs": 20640,
+     "phrase": 7
+    },
+    {
+     "text": "understand",
+     "atMs": 20800,
+     "endMs": 21440,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "future-you-planned",
+   "startMs": 22000,
+   "endMs": 24960,
+   "tokens": [
+    {
+     "text": "It",
+     "atMs": 22000,
+     "endMs": 22080,
+     "phrase": 8
+    },
+    {
+     "text": "will",
+     "atMs": 22160,
+     "endMs": 22240,
+     "phrase": 8
+    },
+    {
+     "text": "be",
+     "atMs": 22320,
+     "endMs": 22400,
+     "phrase": 8
+    },
+    {
+     "text": "late",
+     "atMs": 22480,
+     "endMs": 22720,
+     "phrase": 8
+    },
+    {
+     "text": "to",
+     "atMs": 22800,
+     "endMs": 22880,
+     "phrase": 8
+    },
+    {
+     "text": "counsel",
+     "atMs": 22960,
+     "endMs": 23360,
+     "phrase": 8
+    },
+    {
+     "text": "then",
+     "atMs": 23440,
+     "endMs": 23680,
+     "phrase": 8
+    },
+    {
+     "text": "or",
+     "atMs": 23760,
+     "endMs": 23840,
+     "phrase": 8
+    },
+    {
+     "text": "pray.",
+     "atMs": 24000,
+     "endMs": 24400,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "afterwards-remember",
+   "startMs": 24960,
+   "endMs": 27600,
+   "tokens": [
+    {
+     "text": "Yet",
+     "atMs": 24960,
+     "endMs": 25280,
+     "phrase": 9
+    },
+    {
+     "text": "if",
+     "atMs": 25440,
+     "endMs": 25600,
+     "phrase": 9
+    },
+    {
+     "text": "you",
+     "atMs": 25680,
+     "endMs": 25760,
+     "phrase": 9
+    },
+    {
+     "text": "should",
+     "atMs": 25840,
+     "endMs": 25920,
+     "phrase": 9
+    },
+    {
+     "text": "forget",
+     "atMs": 26000,
+     "endMs": 26400,
+     "phrase": 9
+    },
+    {
+     "text": "me",
+     "atMs": 26480,
+     "endMs": 26560,
+     "phrase": 9
+    },
+    {
+     "text": "for",
+     "atMs": 26640,
+     "endMs": 26720,
+     "phrase": 9
+    },
+    {
+     "text": "a",
+     "atMs": 26800,
+     "endMs": 26880,
+     "phrase": 9
+    },
+    {
+     "text": "while",
+     "atMs": 26960,
+     "endMs": 27360,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "afterwards-remember",
+   "startMs": 27600,
+   "endMs": 30720,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 27600,
+     "endMs": 27760,
+     "phrase": 10
+    },
+    {
+     "text": "afterwards",
+     "atMs": 27960,
+     "endMs": 28320,
+     "phrase": 10
+    },
+    {
+     "text": "remember,",
+     "atMs": 28400,
+     "endMs": 29200,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "do",
+     "atMs": 29280,
+     "endMs": 29360,
+     "phrase": 11
+    },
+    {
+     "text": "not",
+     "atMs": 29440,
+     "endMs": 29600,
+     "phrase": 11
+    },
+    {
+     "text": "grieve:",
+     "atMs": 29680,
+     "endMs": 30640,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "afterwards-remember",
+   "startMs": 30720,
+   "endMs": 33040,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 30720,
+     "endMs": 30800,
+     "phrase": 12
+    },
+    {
+     "text": "if",
+     "atMs": 30880,
+     "endMs": 30960,
+     "phrase": 12
+    },
+    {
+     "text": "the",
+     "atMs": 31040,
+     "endMs": 31120,
+     "phrase": 12
+    },
+    {
+     "text": "darkness",
+     "atMs": 31280,
+     "endMs": 31760,
+     "phrase": 12
+    },
+    {
+     "text": "and",
+     "atMs": 31840,
+     "endMs": 31920,
+     "phrase": 12
+    },
+    {
+     "text": "corruption",
+     "atMs": 32000,
+     "endMs": 32560,
+     "phrase": 12
+    },
+    {
+     "text": "leave",
+     "atMs": 32640,
+     "endMs": 32960,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "afterwards-remember",
+   "startMs": 33040,
+   "endMs": 36160,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 33040,
+     "endMs": 33120,
+     "phrase": 13
+    },
+    {
+     "text": "vestige",
+     "atMs": 33200,
+     "endMs": 33760,
+     "phrase": 13
+    },
+    {
+     "text": "of",
+     "atMs": 33800,
+     "endMs": 33840,
+     "phrase": 13
+    },
+    {
+     "text": "the",
+     "atMs": 33920,
+     "endMs": 34000,
+     "phrase": 13
+    },
+    {
+     "text": "thoughts",
+     "atMs": 34160,
+     "endMs": 34480,
+     "phrase": 13
+    },
+    {
+     "text": "that",
+     "atMs": 34560,
+     "endMs": 34640,
+     "phrase": 13
+    },
+    {
+     "text": "once",
+     "atMs": 34720,
+     "endMs": 34960,
+     "phrase": 13
+    },
+    {
+     "text": "I",
+     "atMs": 35040,
+     "endMs": 35120,
+     "phrase": 13
+    },
+    {
+     "text": "had,",
+     "atMs": 35200,
+     "endMs": 36000,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "forget-and-smile",
+   "startMs": 36160,
+   "endMs": 38960,
+   "tokens": [
+    {
+     "text": "Better",
+     "atMs": 36160,
+     "endMs": 36400,
+     "phrase": 14
+    },
+    {
+     "text": "by",
+     "atMs": 36480,
+     "endMs": 36640,
+     "phrase": 14
+    },
+    {
+     "text": "far",
+     "atMs": 36800,
+     "endMs": 37040,
+     "phrase": 14
+    },
+    {
+     "text": "you",
+     "atMs": 37120,
+     "endMs": 37200,
+     "phrase": 14
+    },
+    {
+     "text": "should",
+     "atMs": 37280,
+     "endMs": 37360,
+     "phrase": 14
+    },
+    {
+     "text": "forget",
+     "atMs": 37440,
+     "endMs": 37840,
+     "phrase": 14
+    },
+    {
+     "text": "and",
+     "atMs": 37920,
+     "endMs": 38000,
+     "phrase": 14
+    },
+    {
+     "text": "smile",
+     "atMs": 38160,
+     "endMs": 38640,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "forget-and-smile",
+   "startMs": 38960,
+   "endMs": 41440,
+   "tokens": [
+    {
+     "text": "Than",
+     "atMs": 38960,
+     "endMs": 39040,
+     "phrase": 15
+    },
+    {
+     "text": "that",
+     "atMs": 39120,
+     "endMs": 39200,
+     "phrase": 15
+    },
+    {
+     "text": "you",
+     "atMs": 39280,
+     "endMs": 39360,
+     "phrase": 15
+    },
+    {
+     "text": "should",
+     "atMs": 39440,
+     "endMs": 39520,
+     "phrase": 15
+    },
+    {
+     "text": "remember",
+     "atMs": 39600,
+     "endMs": 40160,
+     "phrase": 15
+    },
+    {
+     "text": "and",
+     "atMs": 40320,
+     "endMs": 40400,
+     "phrase": 15
+    },
+    {
+     "text": "be",
+     "atMs": 40480,
+     "endMs": 40560,
+     "phrase": 15
+    },
+    {
+     "text": "sad.",
+     "atMs": 40720,
+     "endMs": 41440,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

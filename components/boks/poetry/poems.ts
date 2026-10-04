@@ -34,6 +34,8 @@ const poems: Record<string, string> = {
   "9d42d01d-5a3e-4ddb-a334-3f4dfdf5dffe": "/poetry/innisfree/manifest.json",
   // Walt Whitman — O Captain! My Captain!
   "7322a7ff-0abf-4aba-b340-49477030ebed": "/poetry/o-captain/manifest.json",
+  // Christina Rossetti — Remember
+  "da98c07c-3386-48b4-8d1f-be02a1ff6d74": "/poetry/remember/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

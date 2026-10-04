@@ -57,6 +57,19 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "da98c07c-3386-48b4-8d1f-be02a1ff6d74",
+    format: "poem",
+    language: "en",
+    title: "Remember",
+    author: "Christina Rossetti",
+    cover: "/series/remember.webp",
+    coverFocus: "60% 40%",
+    durationSeconds: 41,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-04",
+  },
+  {
     storyId: "d86fa888-50ab-493d-ae34-8ad574fc0845",
     format: "poem",
     language: "en",
