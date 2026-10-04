@@ -44,6 +44,10 @@ const poems: Record<string, string> = {
   "1d2e5f7a-2501-466c-a583-0b2dade47571": "/poetry/shepot/manifest.json",
   // Николай Некрасов — Мужичок с ноготок
   "9db4cce3-9594-4a6c-a860-324a330e89f8": "/poetry/muzhichok/manifest.json",
+  // Сергей Есенин — Не жалею, не зову, не плачу…
+  "7082de8a-56c4-441e-82d2-2c1ecb3c2d2c": "/poetry/ne-zhaleyu/manifest.json",
+  // Валерий Брюсов — Первый снег
+  "7a67ce67-bceb-4e41-8f66-191718345880": "/poetry/perviy-sneg/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

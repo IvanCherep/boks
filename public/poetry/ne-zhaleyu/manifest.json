@@ -1,0 +1,902 @@
+{
+ "id": "ne-zhaleyu-immersive-v1",
+ "title": "Не жалею, не зову, не плачу…",
+ "author": "Сергей Есенин",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/ne-zhaleyu/narration.mp3",
+ "theme": {
+  "src": "/poetry/ne-zhaleyu/theme.mp3",
+  "gain": 0.15
+ },
+ "durationMs": 48800,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF2E2",
+  "active": "#FFD48A",
+  "shadow": "rgba(20, 12, 6, 0.55)"
+ },
+ "textScale": 0.78,
+ "veil": 1.45,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "apple-blossom-smoke",
+   "image": "/poetry/ne-zhaleyu/scenes/01-apple-blossom-smoke.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.25,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.17
+    }
+   ],
+   "line": "Не жалею, не зову, не плачу, / Всё пройдёт, как с белых яблонь дым. / Увяданья золотом охваченный, / Я не буду больше молодым.",
+   "startMs": 0
+  },
+  {
+   "id": "birch-calico-memory",
+   "image": "/poetry/ne-zhaleyu/scenes/02-birch-calico-memory.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.4
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.17
+    }
+   ],
+   "line": "Ты теперь не так уж будешь биться, / Сердце, тронутое холодком, / И страна берёзового ситца / Не заманит шляться босиком. / Дух бродяжий, ты всё реже, реже / Расшевеливаешь пламень уст. / О моя утраченная свежесть, / Буйство глаз и половодье чувств.",
+   "startMs": 10560
+  },
+  {
+   "id": "rose-dawn-horse",
+   "image": "/poetry/ne-zhaleyu/scenes/03-rose-dawn-horse.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.15
+    }
+   ],
+   "line": "Я теперь скупее стал в желаньях, / Жизнь моя, иль ты приснилась мне? / Словно я весенней гулкой ранью / Проскакал на розовом коне.",
+   "startMs": 28640
+  },
+  {
+   "id": "copper-leaves",
+   "image": "/poetry/ne-zhaleyu/scenes/04-copper-leaves.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.45
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.17
+    }
+   ],
+   "line": "Все мы, все мы в этом мире тленны, / Тихо льётся с клёнов листьев медь… / Будь же ты вовек благословенно, / Что пришло процвесть и умереть.",
+   "startMs": 38160
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "apple-blossom-smoke",
+   "startMs": 0,
+   "endMs": 3080,
+   "tokens": [
+    {
+     "text": "Не",
+     "atMs": 0,
+     "endMs": 160,
+     "phrase": 0
+    },
+    {
+     "text": "жалею,",
+     "atMs": 240,
+     "endMs": 1040,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "не",
+     "atMs": 1120,
+     "endMs": 1200,
+     "phrase": 1
+    },
+    {
+     "text": "зову,",
+     "atMs": 1280,
+     "endMs": 2000,
+     "phrase": 1,
+     "emphasis": "lead"
+    },
+    {
+     "text": "не",
+     "atMs": 2080,
+     "endMs": 2160,
+     "phrase": 2
+    },
+    {
+     "text": "плачу,",
+     "atMs": 2240,
+     "endMs": 3040,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "apple-blossom-smoke",
+   "startMs": 3080,
+   "endMs": 6080,
+   "tokens": [
+    {
+     "text": "Всё",
+     "atMs": 3080,
+     "endMs": 3280,
+     "phrase": 3
+    },
+    {
+     "text": "пройдёт,",
+     "atMs": 3360,
+     "endMs": 4000,
+     "phrase": 3,
+     "emphasis": "lead"
+    },
+    {
+     "text": "как",
+     "atMs": 4160,
+     "endMs": 4240,
+     "phrase": 4
+    },
+    {
+     "text": "с",
+     "atMs": 4320,
+     "endMs": 4400,
+     "phrase": 4
+    },
+    {
+     "text": "белых",
+     "atMs": 4480,
+     "endMs": 4800,
+     "phrase": 4
+    },
+    {
+     "text": "яблонь",
+     "atMs": 4960,
+     "endMs": 5400,
+     "phrase": 4
+    },
+    {
+     "text": "дым.",
+     "atMs": 5440,
+     "endMs": 5920,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "apple-blossom-smoke",
+   "startMs": 6080,
+   "endMs": 8480,
+   "tokens": [
+    {
+     "text": "Увяданья",
+     "atMs": 6080,
+     "endMs": 6640,
+     "phrase": 5
+    },
+    {
+     "text": "золотом",
+     "atMs": 6800,
+     "endMs": 7200,
+     "phrase": 5
+    },
+    {
+     "text": "охваченный,",
+     "atMs": 7280,
+     "endMs": 8320,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "apple-blossom-smoke",
+   "startMs": 8480,
+   "endMs": 10560,
+   "tokens": [
+    {
+     "text": "Я",
+     "atMs": 8480,
+     "endMs": 8560,
+     "phrase": 6
+    },
+    {
+     "text": "не",
+     "atMs": 8640,
+     "endMs": 8800,
+     "phrase": 6
+    },
+    {
+     "text": "буду",
+     "atMs": 8920,
+     "endMs": 9080,
+     "phrase": 6
+    },
+    {
+     "text": "больше",
+     "atMs": 9120,
+     "endMs": 9520,
+     "phrase": 6
+    },
+    {
+     "text": "молодым.",
+     "atMs": 9560,
+     "endMs": 10320,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 10560,
+   "endMs": 12800,
+   "tokens": [
+    {
+     "text": "Ты",
+     "atMs": 10560,
+     "endMs": 10640,
+     "phrase": 7
+    },
+    {
+     "text": "теперь",
+     "atMs": 10680,
+     "endMs": 10960,
+     "phrase": 7
+    },
+    {
+     "text": "не",
+     "atMs": 11040,
+     "endMs": 11120,
+     "phrase": 7
+    },
+    {
+     "text": "так",
+     "atMs": 11200,
+     "endMs": 11360,
+     "phrase": 7
+    },
+    {
+     "text": "уж",
+     "atMs": 11440,
+     "endMs": 11520,
+     "phrase": 7
+    },
+    {
+     "text": "будешь",
+     "atMs": 11600,
+     "endMs": 11920,
+     "phrase": 7
+    },
+    {
+     "text": "биться,",
+     "atMs": 12000,
+     "endMs": 12720,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 12800,
+   "endMs": 14760,
+   "tokens": [
+    {
+     "text": "Сердце,",
+     "atMs": 12800,
+     "endMs": 13280,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "тронутое",
+     "atMs": 13360,
+     "endMs": 13800,
+     "phrase": 9
+    },
+    {
+     "text": "холодком,",
+     "atMs": 13840,
+     "endMs": 14720,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 14760,
+   "endMs": 16720,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 14760,
+     "endMs": 14800,
+     "phrase": 10
+    },
+    {
+     "text": "страна",
+     "atMs": 14880,
+     "endMs": 15200,
+     "phrase": 10
+    },
+    {
+     "text": "берёзового",
+     "atMs": 15280,
+     "endMs": 15840,
+     "phrase": 10
+    },
+    {
+     "text": "ситца",
+     "atMs": 16000,
+     "endMs": 16480,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 16720,
+   "endMs": 19040,
+   "tokens": [
+    {
+     "text": "Не",
+     "atMs": 16720,
+     "endMs": 16800,
+     "phrase": 11
+    },
+    {
+     "text": "заманит",
+     "atMs": 16880,
+     "endMs": 17360,
+     "phrase": 11
+    },
+    {
+     "text": "шляться",
+     "atMs": 17440,
+     "endMs": 17840,
+     "phrase": 11
+    },
+    {
+     "text": "босиком.",
+     "atMs": 17920,
+     "endMs": 18760,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 19040,
+   "endMs": 21680,
+   "tokens": [
+    {
+     "text": "Дух",
+     "atMs": 19040,
+     "endMs": 19280,
+     "phrase": 12
+    },
+    {
+     "text": "бродяжий,",
+     "atMs": 19360,
+     "endMs": 20160,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ты",
+     "atMs": 20200,
+     "endMs": 20240,
+     "phrase": 13
+    },
+    {
+     "text": "всё",
+     "atMs": 20320,
+     "endMs": 20480,
+     "phrase": 13
+    },
+    {
+     "text": "реже,",
+     "atMs": 20560,
+     "endMs": 21040,
+     "phrase": 13,
+     "emphasis": "lead"
+    },
+    {
+     "text": "реже",
+     "atMs": 21080,
+     "endMs": 21440,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 21680,
+   "endMs": 23680,
+   "tokens": [
+    {
+     "text": "Расшевеливаешь",
+     "atMs": 21680,
+     "endMs": 22480,
+     "phrase": 15
+    },
+    {
+     "text": "пламень",
+     "atMs": 22560,
+     "endMs": 22960,
+     "phrase": 15
+    },
+    {
+     "text": "уст.",
+     "atMs": 23040,
+     "endMs": 23520,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 23680,
+   "endMs": 25920,
+   "tokens": [
+    {
+     "text": "О",
+     "atMs": 23680,
+     "endMs": 23760,
+     "phrase": 16
+    },
+    {
+     "text": "моя",
+     "atMs": 23840,
+     "endMs": 24080,
+     "phrase": 16
+    },
+    {
+     "text": "утраченная",
+     "atMs": 24200,
+     "endMs": 24880,
+     "phrase": 16
+    },
+    {
+     "text": "свежесть,",
+     "atMs": 24960,
+     "endMs": 25840,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "birch-calico-memory",
+   "startMs": 25920,
+   "endMs": 28640,
+   "tokens": [
+    {
+     "text": "Буйство",
+     "atMs": 25920,
+     "endMs": 26400,
+     "phrase": 17
+    },
+    {
+     "text": "глаз",
+     "atMs": 26440,
+     "endMs": 26880,
+     "phrase": 17
+    },
+    {
+     "text": "и",
+     "atMs": 26960,
+     "endMs": 27040,
+     "phrase": 17
+    },
+    {
+     "text": "половодье",
+     "atMs": 27120,
+     "endMs": 27680,
+     "phrase": 17
+    },
+    {
+     "text": "чувств.",
+     "atMs": 27760,
+     "endMs": 28440,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "rose-dawn-horse",
+   "startMs": 28640,
+   "endMs": 31040,
+   "tokens": [
+    {
+     "text": "Я",
+     "atMs": 28640,
+     "endMs": 28720,
+     "phrase": 18
+    },
+    {
+     "text": "теперь",
+     "atMs": 28800,
+     "endMs": 29040,
+     "phrase": 18
+    },
+    {
+     "text": "скупее",
+     "atMs": 29120,
+     "endMs": 29600,
+     "phrase": 18
+    },
+    {
+     "text": "стал",
+     "atMs": 29680,
+     "endMs": 29920,
+     "phrase": 18
+    },
+    {
+     "text": "в",
+     "atMs": 29960,
+     "endMs": 30000,
+     "phrase": 18
+    },
+    {
+     "text": "желаньях,",
+     "atMs": 30040,
+     "endMs": 30960,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "rose-dawn-horse",
+   "startMs": 31040,
+   "endMs": 33600,
+   "tokens": [
+    {
+     "text": "Жизнь",
+     "atMs": 31040,
+     "endMs": 31360,
+     "phrase": 19
+    },
+    {
+     "text": "моя,",
+     "atMs": 31400,
+     "endMs": 31920,
+     "phrase": 19,
+     "emphasis": "lead"
+    },
+    {
+     "text": "иль",
+     "atMs": 32000,
+     "endMs": 32080,
+     "phrase": 20
+    },
+    {
+     "text": "ты",
+     "atMs": 32160,
+     "endMs": 32240,
+     "phrase": 20
+    },
+    {
+     "text": "приснилась",
+     "atMs": 32320,
+     "endMs": 32960,
+     "phrase": 20
+    },
+    {
+     "text": "мне?",
+     "atMs": 33000,
+     "endMs": 33400,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "rose-dawn-horse",
+   "startMs": 33600,
+   "endMs": 36000,
+   "tokens": [
+    {
+     "text": "Словно",
+     "atMs": 33600,
+     "endMs": 34000,
+     "phrase": 21
+    },
+    {
+     "text": "я",
+     "atMs": 34080,
+     "endMs": 34160,
+     "phrase": 21
+    },
+    {
+     "text": "весенней",
+     "atMs": 34320,
+     "endMs": 34800,
+     "phrase": 21
+    },
+    {
+     "text": "гулкой",
+     "atMs": 34880,
+     "endMs": 35280,
+     "phrase": 21
+    },
+    {
+     "text": "ранью",
+     "atMs": 35360,
+     "endMs": 35840,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "rose-dawn-horse",
+   "startMs": 36000,
+   "endMs": 38160,
+   "tokens": [
+    {
+     "text": "Проскакал",
+     "atMs": 36000,
+     "endMs": 36640,
+     "phrase": 22
+    },
+    {
+     "text": "на",
+     "atMs": 36720,
+     "endMs": 36800,
+     "phrase": 22
+    },
+    {
+     "text": "розовом",
+     "atMs": 36920,
+     "endMs": 37200,
+     "phrase": 22
+    },
+    {
+     "text": "коне.",
+     "atMs": 37280,
+     "endMs": 37680,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "copper-leaves",
+   "startMs": 38160,
+   "endMs": 41240,
+   "tokens": [
+    {
+     "text": "Все",
+     "atMs": 38160,
+     "endMs": 38480,
+     "phrase": 23
+    },
+    {
+     "text": "мы,",
+     "atMs": 38600,
+     "endMs": 38960,
+     "phrase": 23,
+     "emphasis": "lead"
+    },
+    {
+     "text": "все",
+     "atMs": 39040,
+     "endMs": 39360,
+     "phrase": 24
+    },
+    {
+     "text": "мы",
+     "atMs": 39440,
+     "endMs": 39520,
+     "phrase": 24
+    },
+    {
+     "text": "в",
+     "atMs": 39560,
+     "endMs": 39600,
+     "phrase": 24
+    },
+    {
+     "text": "этом",
+     "atMs": 39640,
+     "endMs": 39840,
+     "phrase": 24
+    },
+    {
+     "text": "мире",
+     "atMs": 40000,
+     "endMs": 40240,
+     "phrase": 24
+    },
+    {
+     "text": "тленны,",
+     "atMs": 40320,
+     "endMs": 41200,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "copper-leaves",
+   "startMs": 41240,
+   "endMs": 44000,
+   "tokens": [
+    {
+     "text": "Тихо",
+     "atMs": 41240,
+     "endMs": 41520,
+     "phrase": 25
+    },
+    {
+     "text": "льётся",
+     "atMs": 41600,
+     "endMs": 42000,
+     "phrase": 25
+    },
+    {
+     "text": "с",
+     "atMs": 42080,
+     "endMs": 42120,
+     "phrase": 25
+    },
+    {
+     "text": "клёнов",
+     "atMs": 42160,
+     "endMs": 42640,
+     "phrase": 25
+    },
+    {
+     "text": "листьев",
+     "atMs": 42720,
+     "endMs": 43120,
+     "phrase": 25
+    },
+    {
+     "text": "медь…",
+     "atMs": 43200,
+     "endMs": 43800,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "copper-leaves",
+   "startMs": 44000,
+   "endMs": 46240,
+   "tokens": [
+    {
+     "text": "Будь",
+     "atMs": 44000,
+     "endMs": 44200,
+     "phrase": 26
+    },
+    {
+     "text": "же",
+     "atMs": 44240,
+     "endMs": 44320,
+     "phrase": 26
+    },
+    {
+     "text": "ты",
+     "atMs": 44400,
+     "endMs": 44480,
+     "phrase": 26
+    },
+    {
+     "text": "вовек",
+     "atMs": 44560,
+     "endMs": 44880,
+     "phrase": 26
+    },
+    {
+     "text": "благословенно,",
+     "atMs": 45000,
+     "endMs": 46160,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "copper-leaves",
+   "startMs": 46240,
+   "endMs": 48800,
+   "tokens": [
+    {
+     "text": "Что",
+     "atMs": 46240,
+     "endMs": 46400,
+     "phrase": 27
+    },
+    {
+     "text": "пришло",
+     "atMs": 46480,
+     "endMs": 46800,
+     "phrase": 27
+    },
+    {
+     "text": "процвесть",
+     "atMs": 46880,
+     "endMs": 47600,
+     "phrase": 27
+    },
+    {
+     "text": "и",
+     "atMs": 47840,
+     "endMs": 47920,
+     "phrase": 27
+    },
+    {
+     "text": "умереть.",
+     "atMs": 48000,
+     "endMs": 48800,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,590 @@
+{
+ "id": "perviy-sneg-immersive-v1",
+ "title": "Первый снег",
+ "author": "Валерий Брюсов",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/perviy-sneg/narration.mp3",
+ "theme": {
+  "src": "/poetry/perviy-sneg/theme.mp3",
+  "gain": 0.25
+ },
+ "durationMs": 32320,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7F5F2",
+  "active": "#FFE3A6",
+  "shadow": "rgba(10, 14, 26, 0.55)"
+ },
+ "textScale": 0.86,
+ "veil": 1.5,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "first-flake",
+   "image": "/poetry/perviy-sneg/scenes/01-first-flake.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Серебро, огни и блёстки, — / Целый мир из серебра! / В жемчугах горят берёзки, / Чёрно-голые вчера.",
+   "startMs": 0
+  },
+  {
+   "id": "world-turns-silver",
+   "image": "/poetry/perviy-sneg/scenes/02-world-turns-silver.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Это — область чьей-то грёзы, / Это — призраки и сны! / Все предметы старой прозы / Волшебством освещены.",
+   "startMs": 8560
+  },
+  {
+   "id": "people-and-nature",
+   "image": "/poetry/perviy-sneg/scenes/03-people-and-nature.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.6
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Экипажи, пешеходы, / На лазури белый дым. / Жизнь людей и жизнь природы / Полны новым и святым.",
+   "startMs": 16800
+  },
+  {
+   "id": "world-of-silver",
+   "image": "/poetry/perviy-sneg/scenes/04-world-of-silver.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Воплощение мечтаний, / Жизни с грёзою игра, / Этот мир очарований, / Этот мир из серебра!",
+   "startMs": 24800
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "first-flake",
+   "startMs": 0,
+   "endMs": 2720,
+   "tokens": [
+    {
+     "text": "Серебро,",
+     "atMs": 0,
+     "endMs": 720,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "огни",
+     "atMs": 880,
+     "endMs": 1280,
+     "phrase": 1
+    },
+    {
+     "text": "и",
+     "atMs": 1440,
+     "endMs": 1480,
+     "phrase": 1
+    },
+    {
+     "text": "блёстки, —",
+     "atMs": 1520,
+     "endMs": 2680,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "first-flake",
+   "startMs": 2720,
+   "endMs": 4720,
+   "tokens": [
+    {
+     "text": "Целый",
+     "atMs": 2720,
+     "endMs": 3120,
+     "phrase": 2
+    },
+    {
+     "text": "мир",
+     "atMs": 3280,
+     "endMs": 3520,
+     "phrase": 2
+    },
+    {
+     "text": "из",
+     "atMs": 3600,
+     "endMs": 3760,
+     "phrase": 2
+    },
+    {
+     "text": "серебра!",
+     "atMs": 3840,
+     "endMs": 4520,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "first-flake",
+   "startMs": 4720,
+   "endMs": 6800,
+   "tokens": [
+    {
+     "text": "В",
+     "atMs": 4720,
+     "endMs": 4760,
+     "phrase": 3
+    },
+    {
+     "text": "жемчугах",
+     "atMs": 4800,
+     "endMs": 5440,
+     "phrase": 3
+    },
+    {
+     "text": "горят",
+     "atMs": 5520,
+     "endMs": 5840,
+     "phrase": 3
+    },
+    {
+     "text": "берёзки,",
+     "atMs": 5920,
+     "endMs": 6720,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "first-flake",
+   "startMs": 6800,
+   "endMs": 8560,
+   "tokens": [
+    {
+     "text": "Чёрно-голые",
+     "atMs": 6800,
+     "endMs": 7680,
+     "phrase": 4
+    },
+    {
+     "text": "вчера.",
+     "atMs": 7760,
+     "endMs": 8360,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-turns-silver",
+   "startMs": 8560,
+   "endMs": 10960,
+   "tokens": [
+    {
+     "text": "Это —",
+     "atMs": 8560,
+     "endMs": 9200,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "область",
+     "atMs": 9280,
+     "endMs": 9600,
+     "phrase": 6
+    },
+    {
+     "text": "чьей-то",
+     "atMs": 9680,
+     "endMs": 10080,
+     "phrase": 6
+    },
+    {
+     "text": "грёзы,",
+     "atMs": 10160,
+     "endMs": 10880,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-turns-silver",
+   "startMs": 10960,
+   "endMs": 13120,
+   "tokens": [
+    {
+     "text": "Это —",
+     "atMs": 10960,
+     "endMs": 11600,
+     "phrase": 7,
+     "emphasis": "lead"
+    },
+    {
+     "text": "призраки",
+     "atMs": 11680,
+     "endMs": 12160,
+     "phrase": 8
+    },
+    {
+     "text": "и",
+     "atMs": 12200,
+     "endMs": 12240,
+     "phrase": 8
+    },
+    {
+     "text": "сны!",
+     "atMs": 12400,
+     "endMs": 12920,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-turns-silver",
+   "startMs": 13120,
+   "endMs": 15040,
+   "tokens": [
+    {
+     "text": "Все",
+     "atMs": 13120,
+     "endMs": 13280,
+     "phrase": 9
+    },
+    {
+     "text": "предметы",
+     "atMs": 13360,
+     "endMs": 13920,
+     "phrase": 9
+    },
+    {
+     "text": "старой",
+     "atMs": 14000,
+     "endMs": 14320,
+     "phrase": 9
+    },
+    {
+     "text": "прозы",
+     "atMs": 14400,
+     "endMs": 14800,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-turns-silver",
+   "startMs": 15040,
+   "endMs": 16800,
+   "tokens": [
+    {
+     "text": "Волшебством",
+     "atMs": 15040,
+     "endMs": 15760,
+     "phrase": 10
+    },
+    {
+     "text": "освещены.",
+     "atMs": 15840,
+     "endMs": 16640,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "people-and-nature",
+   "startMs": 16800,
+   "endMs": 18640,
+   "tokens": [
+    {
+     "text": "Экипажи,",
+     "atMs": 16800,
+     "endMs": 17600,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "пешеходы,",
+     "atMs": 17680,
+     "endMs": 18520,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "people-and-nature",
+   "startMs": 18640,
+   "endMs": 20480,
+   "tokens": [
+    {
+     "text": "На",
+     "atMs": 18640,
+     "endMs": 18720,
+     "phrase": 13
+    },
+    {
+     "text": "лазури",
+     "atMs": 18760,
+     "endMs": 19280,
+     "phrase": 13
+    },
+    {
+     "text": "белый",
+     "atMs": 19360,
+     "endMs": 19680,
+     "phrase": 13
+    },
+    {
+     "text": "дым.",
+     "atMs": 19760,
+     "endMs": 20280,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "people-and-nature",
+   "startMs": 20480,
+   "endMs": 22640,
+   "tokens": [
+    {
+     "text": "Жизнь",
+     "atMs": 20480,
+     "endMs": 20800,
+     "phrase": 14
+    },
+    {
+     "text": "людей",
+     "atMs": 20880,
+     "endMs": 21280,
+     "phrase": 14
+    },
+    {
+     "text": "и",
+     "atMs": 21360,
+     "endMs": 21440,
+     "phrase": 14
+    },
+    {
+     "text": "жизнь",
+     "atMs": 21520,
+     "endMs": 21760,
+     "phrase": 14
+    },
+    {
+     "text": "природы",
+     "atMs": 21840,
+     "endMs": 22400,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "people-and-nature",
+   "startMs": 22640,
+   "endMs": 24800,
+   "tokens": [
+    {
+     "text": "Полны",
+     "atMs": 22640,
+     "endMs": 23040,
+     "phrase": 15
+    },
+    {
+     "text": "новым",
+     "atMs": 23200,
+     "endMs": 23600,
+     "phrase": 15
+    },
+    {
+     "text": "и",
+     "atMs": 23680,
+     "endMs": 23760,
+     "phrase": 15
+    },
+    {
+     "text": "святым.",
+     "atMs": 23840,
+     "endMs": 24600,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-of-silver",
+   "startMs": 24800,
+   "endMs": 26640,
+   "tokens": [
+    {
+     "text": "Воплощение",
+     "atMs": 24800,
+     "endMs": 25520,
+     "phrase": 16
+    },
+    {
+     "text": "мечтаний,",
+     "atMs": 25560,
+     "endMs": 26480,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-of-silver",
+   "startMs": 26640,
+   "endMs": 28480,
+   "tokens": [
+    {
+     "text": "Жизни",
+     "atMs": 26640,
+     "endMs": 27040,
+     "phrase": 17
+    },
+    {
+     "text": "с",
+     "atMs": 27120,
+     "endMs": 27160,
+     "phrase": 17
+    },
+    {
+     "text": "грёзою",
+     "atMs": 27200,
+     "endMs": 27680,
+     "phrase": 17
+    },
+    {
+     "text": "игра,",
+     "atMs": 27760,
+     "endMs": 28320,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-of-silver",
+   "startMs": 28480,
+   "endMs": 30320,
+   "tokens": [
+    {
+     "text": "Этот",
+     "atMs": 28480,
+     "endMs": 28800,
+     "phrase": 18
+    },
+    {
+     "text": "мир",
+     "atMs": 28880,
+     "endMs": 29040,
+     "phrase": 18
+    },
+    {
+     "text": "очарований,",
+     "atMs": 29200,
+     "endMs": 30080,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "world-of-silver",
+   "startMs": 30320,
+   "endMs": 32320,
+   "tokens": [
+    {
+     "text": "Этот",
+     "atMs": 30320,
+     "endMs": 30640,
+     "phrase": 19
+    },
+    {
+     "text": "мир",
+     "atMs": 30800,
+     "endMs": 31040,
+     "phrase": 19
+    },
+    {
+     "text": "из",
+     "atMs": 31280,
+     "endMs": 31440,
+     "phrase": 19
+    },
+    {
+     "text": "серебра!",
+     "atMs": 31520,
+     "endMs": 32320,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

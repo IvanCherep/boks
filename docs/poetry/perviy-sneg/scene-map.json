@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "Первый снег",
+ "author": "Валерий Брюсов",
+ "language": "ru",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7F5F2",
+  "active": "#FFE3A6",
+  "shadow": "rgba(10, 14, 26, 0.55)"
+ },
+ "themeGain": 0.25,
+ "textScale": 0.86,
+ "veil": 1.5,
+ "scenes": [
+  {
+   "id": "first-flake",
+   "image": "01-first-flake.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Серебро, огни и блёстки, — / Целый мир из серебра! / В жемчугах горят берёзки, / Чёрно-голые вчера."
+  },
+  {
+   "id": "world-turns-silver",
+   "image": "02-world-turns-silver.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Это — область чьей-то грёзы, / Это — призраки и сны! / Все предметы старой прозы / Волшебством освещены."
+  },
+  {
+   "id": "people-and-nature",
+   "image": "03-people-and-nature.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.6
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Экипажи, пешеходы, / На лазури белый дым. / Жизнь людей и жизнь природы / Полны новым и святым."
+  },
+  {
+   "id": "world-of-silver",
+   "image": "04-world-of-silver.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Воплощение мечтаний, / Жизни с грёзою игра, / Этот мир очарований, / Этот мир из серебра!"
+  }
+ ]
+}

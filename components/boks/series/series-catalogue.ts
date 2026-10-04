@@ -57,6 +57,32 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "7082de8a-56c4-441e-82d2-2c1ecb3c2d2c",
+    format: "poem",
+    language: "ru",
+    title: "Не жалею, не зову, не плачу…",
+    author: "Сергей Есенин",
+    cover: "/series/ne-zhaleyu.webp",
+    coverFocus: "55% 40%",
+    durationSeconds: 49,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-04",
+  },
+  {
+    storyId: "7a67ce67-bceb-4e41-8f66-191718345880",
+    format: "poem",
+    language: "ru",
+    title: "Первый снег",
+    author: "Валерий Брюсов",
+    cover: "/series/perviy-sneg.webp",
+    coverFocus: "55% 55%",
+    durationSeconds: 32,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-04",
+  },
+  {
     storyId: "8ca3bef0-9aa2-4d43-a21b-b9c3ed756aca",
     format: "poem",
     language: "ru",

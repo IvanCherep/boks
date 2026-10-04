@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "Не жалею, не зову, не плачу…",
+ "author": "Сергей Есенин",
+ "language": "ru",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF2E2",
+  "active": "#FFD48A",
+  "shadow": "rgba(20, 12, 6, 0.55)"
+ },
+ "themeGain": 0.15,
+ "textScale": 0.78,
+ "veil": 1.45,
+ "scenes": [
+  {
+   "id": "apple-blossom-smoke",
+   "image": "01-apple-blossom-smoke.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.25,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.17
+    }
+   ],
+   "line": "Не жалею, не зову, не плачу, / Всё пройдёт, как с белых яблонь дым. / Увяданья золотом охваченный, / Я не буду больше молодым."
+  },
+  {
+   "id": "birch-calico-memory",
+   "image": "02-birch-calico-memory.png",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.4
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.17
+    }
+   ],
+   "line": "Ты теперь не так уж будешь биться, / Сердце, тронутое холодком, / И страна берёзового ситца / Не заманит шляться босиком. / Дух бродяжий, ты всё реже, реже / Расшевеливаешь пламень уст. / О моя утраченная свежесть, / Буйство глаз и половодье чувств."
+  },
+  {
+   "id": "rose-dawn-horse",
+   "image": "03-rose-dawn-horse.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.15
+    }
+   ],
+   "line": "Я теперь скупее стал в желаньях, / Жизнь моя, иль ты приснилась мне? / Словно я весенней гулкой ранью / Проскакал на розовом коне."
+  },
+  {
+   "id": "copper-leaves",
+   "image": "04-copper-leaves.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.45
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.09,
+     "width": 0.52,
+     "height": 0.17
+    }
+   ],
+   "line": "Все мы, все мы в этом мире тленны, / Тихо льётся с клёнов листьев медь… / Будь же ты вовек благословенно, / Что пришло процвесть и умереть."
+  }
+ ]
+}

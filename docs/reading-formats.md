@@ -387,6 +387,8 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | «Утёс», Лермонтов | `af757f35-36d7-48b6-8db3-51c8bffaffb6` | Alex Bell | 4 | 2, 2, 2, 2 |
 | «Шёпот, робкое дыханье…», Фет | `1d2e5f7a-2501-466c-a583-0b2dade47571` | Alex Bell | 4 | 2, 6, 2, 2 |
 | «Мужичок с ноготок», Некрасов (из «Крестьянских детей») | `9db4cce3-9594-4a6c-a860-324a330e89f8` | Alex Bell | 4 | 4, 4, 8, 4 |
+| «Не жалею, не зову, не плачу…», Есенин | `7082de8a-56c4-441e-82d2-2c1ecb3c2d2c` | Alex Bell | 4 | 4, 8, 4, 4 |
+| «Первый снег», Брюсов | `7a67ce67-bceb-4e41-8f66-191718345880` | Alex Bell | 4 | 4, 4, 4, 4 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
