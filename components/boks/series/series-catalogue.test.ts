@@ -3,7 +3,6 @@ import { existsSync, readFileSync } from "node:fs";
 import {
   isPremiere,
   orderSeries,
-  seriesCopyLanguageFor,
   seriesDurationLabel,
   seriesFeatures,
   seriesFormatOf,
@@ -125,16 +124,16 @@ describe("the order of the shelf", () => {
 
 describe("the words on a card", () => {
   it("does not round a poem up to a minute", () => {
-    expect(seriesDurationLabel(49, "ru")).toBe("49 сек");
-    expect(seriesDurationLabel(127, "ru")).toBe("2 мин");
-    expect(seriesDurationLabel(61, "en")).toBe("1 min");
+    expect(seriesDurationLabel(49)).toBe("49 sec");
+    expect(seriesDurationLabel(127)).toBe("2 min");
+    expect(seriesDurationLabel(61)).toBe("1 min");
   });
 
-  it("names what the piece is made of, in Russian plurals", () => {
-    expect(seriesFeatures(piece({ scenes: 6, moments: 2 }), "ru")).toEqual(["Голос", "6 сцен", "2 интерактивных момента"]);
-    expect(seriesFeatures(piece({ scenes: 4, moments: 0 }), "ru")).toEqual(["Голос", "4 сцены", "живой текст"]);
-    expect(seriesFeatures(piece({ scenes: 1, moments: 1 }), "en")).toEqual(["Voice", "1 scene", "1 interactive moment"]);
-    expect(seriesFeatures(piece({ scenes: 21, moments: 5 }), "ru")[1]).toBe("21 сцена");
+  it("names what the piece is made of, in English, and only what differs", () => {
+    expect(seriesFeatures(piece({ scenes: 6, moments: 2 }))).toEqual(["Voice", "6 scenes", "2 interactive moments"]);
+    // Every piece on the shelf is a production; a poem is not labelled as one.
+    expect(seriesFeatures(piece({ scenes: 4, moments: 0 }))).toEqual(["Voice", "4 scenes"]);
+    expect(seriesFeatures(piece({ scenes: 1, moments: 1 }))).toEqual(["Voice", "1 scene", "1 interactive moment"]);
   });
 
   it("shortens a name to initials", () => {
@@ -147,18 +146,5 @@ describe("the words on a card", () => {
     const opened = piece({ premieredOn: "2026-10-01" });
     expect(isPremiere(opened, new Date("2026-10-03T12:00:00Z"))).toBe(true);
     expect(isPremiere(opened, new Date("2026-10-20T12:00:00Z"))).toBe(false);
-  });
-});
-
-describe("the language the shelf speaks", () => {
-  it("follows a reader of one language", () => {
-    expect(seriesCopyLanguageFor(["ru"], ["en-US"])).toBe("ru");
-    expect(seriesCopyLanguageFor(["en"], ["ru-RU"])).toBe("en");
-  });
-
-  it("follows the browser for a bilingual reader", () => {
-    expect(seriesCopyLanguageFor(["en", "ru"], ["ru-RU", "en-US"])).toBe("ru");
-    expect(seriesCopyLanguageFor(["en", "ru"], ["en-GB", "ru"])).toBe("en");
-    expect(seriesCopyLanguageFor(["en", "ru"], ["sr-RS"])).toBe("ru");
   });
 });

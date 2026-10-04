@@ -33,15 +33,15 @@ export function PoetrySandbox() {
   return (
     <section className="space-y-4">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold">Иммерсивные стихи</h2>
+        <h2 className="text-lg font-semibold">Immersive poems</h2>
         <p className="text-sm text-muted-foreground">
-          Отдельный рендерер для стихотворений: голос задаёт темп, фон меняется со смыслом, слова
-          появляются в кадре в момент произнесения. Всё — из манифеста, под каждое стихотворение
-          свой компонент не нужен.
+          A renderer of its own for verse: the voice sets the pace, the picture changes with the
+          sense, and each word arrives in the frame as it is spoken. Everything comes from the
+          manifest; no poem needs a component of its own.
         </p>
       </header>
 
-      {error && <p className="text-sm text-destructive">Манифест не загрузился: {error}</p>}
+      {error && <p className="text-sm text-destructive">The manifest did not load: {error}</p>}
 
       {manifests.map((manifest) => (
         <div key={manifest.id} className="space-y-3 rounded-lg border p-4">
@@ -51,24 +51,24 @@ export function PoetrySandbox() {
           </div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
             <div>
-              <dt className="text-muted-foreground">Строк</dt>
+              <dt className="text-muted-foreground">Lines</dt>
               <dd>{manifest.lines.length}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Сцен</dt>
+              <dt className="text-muted-foreground">Scenes</dt>
               <dd>{manifest.scenes.length}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Длительность</dt>
-              <dd>{(manifest.durationMs / 1000).toFixed(1)} с</dd>
+              <dt className="text-muted-foreground">Duration</dt>
+              <dd>{(manifest.durationMs / 1000).toFixed(1)} s</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Тайминги</dt>
-              <dd>{manifest.timingMode === "forced-alignment" ? "по записи" : "черновые"}</dd>
+              <dt className="text-muted-foreground">Timings</dt>
+              <dd>{manifest.timingMode === "forced-alignment" ? "from the recording" : "draft"}</dd>
             </div>
           </dl>
           <Button onClick={() => setOpen(manifest)}>
-            <Play className="size-4" /> Открыть
+            <Play className="size-4" /> Open
           </Button>
           {/*
             A textological note the editors asked for: no autograph survives,
@@ -77,8 +77,8 @@ export function PoetrySandbox() {
           */}
           {manifest.id.startsWith("farewell-russia") && (
             <p className="text-xs text-muted-foreground">
-              Автограф не сохранился, известны разночтения, атрибуция обсуждается; академическая
-              традиция включает стихотворение в корпус Лермонтова.
+              No autograph survives, the readings differ and the attribution is disputed; the academic
+              tradition keeps the poem in Lermontov's canon.
             </p>
           )}
         </div>

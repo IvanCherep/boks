@@ -364,43 +364,24 @@ export function orderSeries(
   return sorted.filter(reads);
 }
 
-export type SeriesCopyLanguage = "ru" | "en";
-
-/** "2 мин", "49 сек": a piece under a minute says so rather than rounding up. */
-export function seriesDurationLabel(seconds: number, language: SeriesCopyLanguage) {
-  if (seconds < 60) return language === "ru" ? `${Math.max(1, Math.round(seconds))} сек` : `${Math.max(1, Math.round(seconds))} sec`;
-  const minutes = Math.round(seconds / 60);
-  return language === "ru" ? `${minutes} мин` : `${minutes} min`;
-}
-
-function russianPlural(count: number, one: string, few: string, many: string) {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
+/** "2 min", "49 sec": a piece under a minute says so rather than rounding up. */
+export function seriesDurationLabel(seconds: number) {
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))} sec`;
+  return `${Math.round(seconds / 60)} min`;
 }
 
 /**
- * What a piece is made of, in the words on its card: "Голос · 6 сцен ·
- * 2 интерактивных момента". The third part names what the format does that
- * the page cannot - words that arrive in the picture, or a story that stops.
+ * What a piece is made of, in the words on its card: "Voice · 6 scenes ·
+ * 2 interactive moments". Only what differs between pieces - every piece on
+ * the shelf has a voice and pictures, so moments are named only where there
+ * are some.
  */
-export function seriesFeatures(piece: SeriesPiece, language: SeriesCopyLanguage): string[] {
-  if (language === "ru") {
-    return [
-      "Голос",
-      `${piece.scenes} ${russianPlural(piece.scenes, "сцена", "сцены", "сцен")}`,
-      piece.moments > 0
-        ? `${piece.moments} ${russianPlural(piece.moments, "интерактивный момент", "интерактивных момента", "интерактивных моментов")}`
-        : "живой текст",
-    ];
+export function seriesFeatures(piece: SeriesPiece): string[] {
+  const features = ["Voice", `${piece.scenes} ${piece.scenes === 1 ? "scene" : "scenes"}`];
+  if (piece.moments > 0) {
+    features.push(`${piece.moments} interactive ${piece.moments === 1 ? "moment" : "moments"}`);
   }
-  return [
-    "Voice",
-    `${piece.scenes} ${piece.scenes === 1 ? "scene" : "scenes"}`,
-    piece.moments > 0 ? `${piece.moments} interactive ${piece.moments === 1 ? "moment" : "moments"}` : "living text",
-  ];
+  return features;
 }
 
 /** A short "А. П. Чехов" style byline does not fit every name; initials do. */
@@ -415,21 +396,3 @@ export function shortAuthor(author: string) {
   return `${initials} ${last}`;
 }
 
-/**
- * Which language the shelf speaks. A reader of one language gets that one; a
- * bilingual reader gets the browser's first choice, which is what their phone
- * is set to. The rest of the reader is English; the shelf is new enough to
- * speak to a Russian reader in Russian, as the pieces themselves do.
- */
-export function seriesCopyLanguageFor(
-  readerLanguages: readonly string[],
-  browserLanguages: readonly string[]
-): SeriesCopyLanguage {
-  const reads = new Set(readerLanguages);
-  if (reads.size === 1) return reads.has("ru") ? "ru" : "en";
-  const first = browserLanguages
-    .map((tag) => tag.toLowerCase().split("-")[0])
-    .find((tag) => tag === "ru" || tag === "en");
-  if (first) return first;
-  return reads.has("ru") ? "ru" : "en";
-}

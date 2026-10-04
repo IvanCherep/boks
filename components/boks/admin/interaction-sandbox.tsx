@@ -121,12 +121,12 @@ function SceneOverlay({
               setMuted(next);
               setInteractionSoundMuted(next);
             }}
-            aria-label={muted ? "Включить звук" : "Выключить звук"}
+            aria-label={muted ? "Sound on" : "Sound off"}
             aria-pressed={muted}
           >
             {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
           </button>
-          <button type="button" onClick={onClose} aria-label="Закрыть">
+          <button type="button" onClick={onClose} aria-label="Close">
             <X className="size-5" />
           </button>
         </div>
@@ -140,7 +140,7 @@ function SceneOverlay({
         <div className={`isandbox__meter ${worstMs > 50 ? "is-bad" : ""}`}>
           <Gauge className="size-4" />
           <span>{fps} FPS</span>
-          <span className="isandbox__worst">худший кадр {worstMs} мс</span>
+          <span className="isandbox__worst">worst frame {worstMs} ms</span>
         </div>
         <div className="isandbox__verdict">
           <Button
@@ -148,14 +148,14 @@ function SceneOverlay({
             size="sm"
             onClick={() => onVerdict("keep")}
           >
-            <Check className="size-4" /> Оставить
+            <Check className="size-4" /> Keep
           </Button>
           <Button
             variant={verdict === "shelve" ? "default" : "outline"}
             size="sm"
             onClick={() => onVerdict("shelve")}
           >
-            В долгий ящик
+            Shelve
           </Button>
         </div>
       </div>
@@ -192,15 +192,15 @@ export function InteractionSandbox() {
   return (
     <section className="space-y-4">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold">Интерактивы</h2>
+        <h2 className="text-lg font-semibold">Interactions</h2>
         <p className="text-sm text-muted-foreground">
-          Двенадцать сценариев на пяти механиках. Откройте каждый на телефоне, подержите палец и
-          посмотрите на счётчик: средний FPS врёт, худший кадр — нет. Решения сохраняются в этом
-          браузере.
+          Twelve scenes on five mechanics. Open each on a phone, keep a finger on it and watch the
+          counter: the average FPS lies, the worst frame does not. Verdicts are kept in this
+          browser.
         </p>
         <p className="text-sm text-muted-foreground">
-          Оставить: <strong>{kept}</strong> · В долгий ящик: <strong>{shelved}</strong> · Не
-          смотрели: <strong>{interactionScenes.length - kept - shelved}</strong>
+          Keep: <strong>{kept}</strong> · Shelved: <strong>{shelved}</strong> · Not
+          looked at: <strong>{interactionScenes.length - kept - shelved}</strong>
         </p>
       </header>
 
@@ -218,7 +218,7 @@ export function InteractionSandbox() {
               </span>
               {verdicts[scene.id] && (
                 <span className={`isandbox__tag isandbox__tag--${verdicts[scene.id]}`}>
-                  {verdicts[scene.id] === "keep" ? "оставить" : "в долгий ящик"}
+                  {verdicts[scene.id] === "keep" ? "keep" : "shelved"}
                 </span>
               )}
             </button>

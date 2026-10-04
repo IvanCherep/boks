@@ -121,39 +121,22 @@ function Backdrop({
   );
 }
 
-const copy = {
-  ru: {
-    listen: "Слушать и читать",
-    minutes: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "минута" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "минуты" : "минут"}`,
-    close: "Закрыть",
-    back: "Назад на 15 секунд",
-    forward: "Вперёд на 15 секунд",
-    scrub: "Перемотка",
-    resume: (at: string) => `Продолжить с ${at}`,
-    fromStart: "Сначала",
-    hideWords: "Убрать текст",
-    showWords: "Показать текст",
-    pause: "Пауза",
-    play: "Продолжить",
-    silent: "Браузер без голоса — история идёт без звука",
-    placeholder: "иллюстрация временная, одна для всех боков",
-  },
-  en: {
-    listen: "Listen and read",
-    minutes: (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`,
-    close: "Close",
-    back: "Back 15 seconds",
-    forward: "Forward 15 seconds",
-    scrub: "Position",
-    resume: (at: string) => `Continue from ${at}`,
-    fromStart: "From the beginning",
-    hideWords: "Hide the words",
-    showWords: "Show the words",
-    pause: "Pause",
-    play: "Resume",
-    silent: "This browser has no voice - the story runs without sound",
-    placeholder: "placeholder art, the same for every boks",
-  },
+/** The interface speaks English; the story keeps its own language. */
+const words = {
+  listen: "Listen and read",
+  minutes: (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`,
+  close: "Close",
+  back: "Back 15 seconds",
+  forward: "Forward 15 seconds",
+  scrub: "Position",
+  resume: (at: string) => `Continue from ${at}`,
+  fromStart: "From the beginning",
+  hideWords: "Hide the words",
+  showWords: "Show the words",
+  pause: "Pause",
+  play: "Resume",
+  silent: "This browser has no voice - the story runs without sound",
+  placeholder: "placeholder art, the same for every boks",
 };
 
 const skipSeconds = 15;
@@ -219,7 +202,6 @@ export function CinemaMode({
   onClose: () => void;
 }) {
   const language = useMemo(() => languageOf(story.body), [story.body]);
-  const words = copy[language];
   const plan = useMemo(() => planScenes({ id: story.id, text: story.body }), [story.id, story.body]);
   const totalSeconds = useMemo(
     () => estimateNarrationSeconds(plan.spoken, language),
@@ -608,7 +590,6 @@ export function CinemaMode({
       {moment && (
         <StoryMomentScene
           moment={moment}
-          language={language}
           onDone={() => {
             momentsDone.current.add(moment.id);
             momentOpen.current = false;
@@ -625,7 +606,6 @@ export function CinemaMode({
 
       {phase === "ended" && (
         <ReadingFinale
-          language={language}
           actions={{
             ...finale,
             onNext: () => {

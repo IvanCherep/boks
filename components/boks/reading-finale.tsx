@@ -12,7 +12,10 @@ import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
  * moment after the last word is the same moment, and a reader who has seen it
  * once should know where everything is the next time. A format draws the
  * reading; it never draws its own ending. A new format renders this and owes
- * it nothing but a language and a way to start again.
+ * it nothing but a way to start again.
+ *
+ * The words are English whatever the piece is in: the interface speaks one
+ * language, the pieces keep their own.
  *
  * What the buttons do is the feed's business, not the format's: the feed
  * builds one `FinaleActions` and hands the same object to every format, so a
@@ -33,13 +36,6 @@ export type FinaleActions = {
   onReached?: () => void;
 };
 
-export type FinaleLanguage = "ru" | "en";
-
-/** A manifest's language, or a text's, as the finale speaks it. */
-export function finaleLanguageOf(language: string): FinaleLanguage {
-  return language.toLowerCase().startsWith("en") ? "en" : "ru";
-}
-
 /**
  * The four words, and the icon each wears.
  *
@@ -54,43 +50,23 @@ const aftertasteIcons: Record<AftertasteTag, typeof Smile> = {
   pondering: MessageCircle,
 };
 
-const copy = {
-  ru: {
-    ended: "Куда дальше?",
-    aftertasteEyebrow: "Послевкусие",
-    aftertasteTitle: "Что осталось?",
-    aftertaste: {
-      smiled: "Улыбнуло",
-      moved: "Задело",
-      surprised: "Удивило",
-      pondering: "Хочу обдумать",
-    },
-    onward: "Дальше",
-    skip: "Пропустить",
-    again: "Послушать снова",
-    like: "Нравится",
-    liked: "Понравилось",
-    next: "Выбрать следующую",
-    share: "Поделиться",
+const words = {
+  ended: "Where next?",
+  aftertasteEyebrow: "Aftertaste",
+  aftertasteTitle: "What stayed with you?",
+  aftertaste: {
+    smiled: "Made me smile",
+    moved: "Moved me",
+    surprised: "Surprised me",
+    pondering: "Want to think",
   },
-  en: {
-    ended: "Where next?",
-    aftertasteEyebrow: "Aftertaste",
-    aftertasteTitle: "What stayed with you?",
-    aftertaste: {
-      smiled: "Made me smile",
-      moved: "Moved me",
-      surprised: "Surprised me",
-      pondering: "Want to think",
-    },
-    onward: "Onward",
-    skip: "Skip",
-    again: "Listen again",
-    like: "Like",
-    liked: "Liked",
-    next: "Choose the next one",
-    share: "Share",
-  },
+  onward: "Onward",
+  skip: "Skip",
+  again: "Listen again",
+  like: "Like",
+  liked: "Liked",
+  next: "Choose the next one",
+  share: "Share",
 };
 
 /**
@@ -102,15 +78,12 @@ const copy = {
  * boks to act on.
  */
 export function ReadingFinale({
-  language,
   actions,
   onAgain,
 }: {
-  language: FinaleLanguage;
   actions?: FinaleActions;
   onAgain: () => void;
 }) {
-  const words = copy[language];
   const [step, setStep] = useState<"aftertaste" | "menu">("aftertaste");
   // Once per mount: the finale is mounted when a reading ends and unmounted
   // when it starts again, so a mount is an ending.

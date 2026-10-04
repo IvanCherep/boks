@@ -44,11 +44,9 @@ const dwellAfterHoldMs = 900;
 
 export function StoryMomentScene({
   moment,
-  language,
   onDone,
 }: {
   moment: StoryMoment;
-  language: "ru" | "en";
   onDone: () => void;
 }) {
   const frame = useRef<HTMLDivElement>(null);
@@ -203,8 +201,6 @@ export function StoryMomentScene({
     endHold();
   }
 
-  const hint = moment.hint[language];
-
   return (
     <div
       ref={frame}
@@ -250,16 +246,16 @@ export function StoryMomentScene({
       <div className="moment__cue">
         <span className="iscene__badge">
           <span className="iscene__badge-dot" aria-hidden="true" />
-          {language === "ru" ? "Доступно действие" : "Something to do"}
+          Something to do
         </span>
-        <span className="moment__hint">{hint}</span>
-        <span className="moment__how">{moment.how[language]}</span>
+        <span className="moment__hint">{moment.hint}</span>
+        <span className="moment__how">{moment.how}</span>
         <i className="moment__rule" aria-hidden="true" />
       </div>
 
       {canSkip && !leaving && (
         <button type="button" className="moment__skip" onClick={() => finish(0)}>
-          {language === "ru" ? "Продолжить" : "Continue"}
+          Continue
         </button>
       )}
     </div>

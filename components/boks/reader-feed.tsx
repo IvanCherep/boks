@@ -83,10 +83,8 @@ import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 import { ReaderTabs, SeriesView } from "@/components/boks/series/series-view";
 import {
-  seriesCopyLanguageFor,
   seriesPieceFor,
   seriesPieces,
-  type SeriesCopyLanguage,
   type SeriesPiece,
 } from "@/components/boks/series/series-catalogue";
 import {
@@ -227,15 +225,9 @@ export type ReaderView = "feed" | "series";
 
 const seriesStoryIds = seriesPieces.map((piece) => piece.storyId);
 
-/** The shelf's language and filter, from the reader's languages. Client only. */
+/** The shelf's filter: the same reading languages the feed uses. */
 function seriesContextFor(readerLanguages: readonly string[]) {
-  return {
-    language: seriesCopyLanguageFor(
-      readerLanguages,
-      navigator.languages?.length ? navigator.languages : [navigator.language]
-    ),
-    readerLanguages,
-  };
+  return { readerLanguages };
 }
 
 export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView } = {}) {
@@ -374,9 +366,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * aftertaste are the ordinary ones.
    */
   const [seriesOpen, setSeriesOpen] = useState(initialView === "series");
-  /** Copy language and the reader's languages, read on the client only. */
+  /** The reader's languages, read on the client only. */
   const [seriesContext, setSeriesContext] = useState<{
-    language: SeriesCopyLanguage;
     readerLanguages: readonly string[];
   } | null>(null);
   const [seriesHeard, setSeriesHeard] = useState<ReadonlySet<string>>(() => new Set());
@@ -2253,7 +2244,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     return (
       <main className="reader-shell reader-shell--focus h-[100svh] overflow-hidden text-[var(--foreground)]">
         <SeriesView
-          language={seriesContext.language}
           readerLanguages={seriesContext.readerLanguages}
           heard={seriesHeard}
           openingStoryId={seriesOpening}
@@ -2264,7 +2254,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         <ReaderTabs
           className="reader-tabs--pinned"
           active="series"
-          language={seriesContext.language}
           seriesIsNew={false}
           onFeed={openFeed}
           onSeries={openSeries}
@@ -2479,7 +2468,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                   <Sparkles className="size-3.5" aria-hidden="true" />
                   <span className="reader-series-chip__mark">boks series</span>
                   <span aria-hidden="true">·</span>
-                  <span>{currentSeriesPiece.language === "ru" ? "слушать постановку" : "listen to the production"}</span>
+                  <span>listen to the production</span>
                 </button>
               )}
               <h1 className="reader-title max-w-[680px] break-words text-[var(--foreground)]">
@@ -2641,8 +2630,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
         {seriesOpen && seriesContext && (
           <SeriesView
-            language={seriesContext.language}
-            readerLanguages={seriesContext.readerLanguages}
+              readerLanguages={seriesContext.readerLanguages}
             heard={seriesHeard}
             openingStoryId={seriesOpening}
             signedIn={hasSignedInAccount}
@@ -2656,8 +2644,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             // with them; on the shelf they stay.
             className={seriesOpen ? "reader-tabs--pinned" : "reader-ui"}
             active={seriesOpen ? "series" : "feed"}
-            language={seriesContext.language}
-            seriesIsNew={seriesIsNew}
+              seriesIsNew={seriesIsNew}
             onFeed={openFeed}
             onSeries={openSeries}
           />

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
-import { ReadingFinale, finaleLanguageOf, type FinaleActions } from "@/components/boks/reading-finale";
+import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import {
   backdropAt,
   lineIndexAt,
@@ -406,7 +406,7 @@ export function ImmersivePoem({
       aria-label={`${manifest.title} — ${manifest.author}`}
     >
       {/* A tap anywhere that is not a control plays or pauses. */}
-      <button type="button" className="poem__surface" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"} />
+      <button type="button" className="poem__surface" onClick={toggle} aria-label={playing ? "Pause" : "Listen"} />
 
       {/*
         One picture per scene, mounted once, never moved and never given
@@ -520,7 +520,7 @@ export function ImmersivePoem({
         {manifest.title}. {manifest.author}. {manifest.lines.map((l) => l.tokens.map((t) => t.text).join(" ")).join(" ")}
       </p>
 
-      <button type="button" className="poem__close" onClick={onClose} aria-label="Закрыть">
+      <button type="button" className="poem__close" onClick={onClose} aria-label="Close">
         <X className="size-5" />
       </button>
 
@@ -535,7 +535,7 @@ export function ImmersivePoem({
           className="poem__bar"
           role="slider"
           tabIndex={0}
-          aria-label="Положение"
+          aria-label="Position"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={0}
@@ -589,11 +589,11 @@ export function ImmersivePoem({
               event.stopPropagation();
               step(-1);
             }}
-            aria-label="Предыдущая строка"
+            aria-label="Previous line"
           >
             <ChevronLeft className="size-4" />
           </button>
-          <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
+          <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Pause" : "Listen"}>
             {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
           </button>
           <button
@@ -603,21 +603,20 @@ export function ImmersivePoem({
               event.stopPropagation();
               step(1);
             }}
-            aria-label="Следующая строка"
+            aria-label="Next line"
           >
             <ChevronRight className="size-4" />
           </button>
         </div>
       </div>
 
-      {status === "loading" && <p className="poem__state">Загружаем…</p>}
-      {status === "error" && <p className="poem__state">Запись не загрузилась</p>}
+      {status === "loading" && <p className="poem__state">Loading…</p>}
+      {status === "error" && <p className="poem__state">The recording did not load</p>}
 
       {/* The same ending as every other boks series piece - see
           reading-finale.tsx. The poem draws the reading, never its own end. */}
       {status === "ended" && (
         <ReadingFinale
-          language={finaleLanguageOf(manifest.language)}
           actions={finale}
           onAgain={() => {
             seekTo(0);

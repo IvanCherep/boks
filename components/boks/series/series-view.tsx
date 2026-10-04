@@ -12,7 +12,6 @@ import {
   seriesFeatures,
   seriesPieces,
   shortAuthor,
-  type SeriesCopyLanguage,
   type SeriesPiece,
 } from "@/components/boks/series/series-catalogue";
 
@@ -29,69 +28,35 @@ import {
  * and opens it in its format. This component only draws and asks.
  */
 
-const copy = {
-  ru: {
-    premiere: "Премьера",
-    heard: "Прослушано",
-    series: "boks series",
-    start: "Начать",
-    again: "Ещё раз",
-    opening: "Открываем…",
-    more: "Ещё в Series",
-    empty: "На выбранных языках постановок пока нет.",
-    emptyAction: "Изменить языки",
-    about: "О boks series",
-    aboutTitle: "Что такое boks series",
-    aboutBody:
-      "Произведения, которые не только читаются. Текст читает голос, картины сменяются вместе с историей, в стихах слова появляются прямо в кадре, а в некоторых рассказах история останавливается и просит вас что-то сделать.",
-    aboutFeatures: [
-      ["Голос", "живое прочтение, текст подсвечивается вместе с ним"],
-      ["Иллюстрации", "написаны для каждой сцены этого произведения"],
-      ["Живой текст", "в стихах слова приходят в картину в момент, когда звучат"],
-      ["Интерактивные моменты", "история ждёт, пока вы коснётесь, проведёте или задержите палец"],
-    ],
-    aboutHeadphones: "Лучше всего в наушниках, в тишине. Постановки также встречаются в ленте — там их можно открыть кнопкой с хлопушкой.",
-    aboutNext: "Новые постановки появляются здесь.",
-    account: "Аккаунт",
-    feed: "feed",
-    seriesTab: "series",
-    newBadge: "new",
-    tabs: "Разделы",
-  },
-  en: {
-    premiere: "Premiere",
-    heard: "Heard",
-    series: "boks series",
-    start: "Start",
-    again: "Again",
-    opening: "Opening…",
-    more: "More in Series",
-    empty: "No productions in your languages yet.",
-    emptyAction: "Change languages",
-    about: "About boks series",
-    aboutTitle: "What boks series is",
-    aboutBody:
-      "Pieces that are not only read. A voice reads the text, the pictures change with the story, in verse the words arrive inside the frame, and in some stories the story stops and asks you to do something.",
-    aboutFeatures: [
-      ["Voice", "a real reading, the text lit as it goes"],
-      ["Illustrations", "painted for each scene of this piece"],
-      ["Living text", "in verse, words arrive in the picture as they are spoken"],
-      ["Interactive moments", "the story waits for a tap, a swipe or a held finger"],
-    ],
-    aboutHeadphones:
-      "Best with headphones, somewhere quiet. Productions turn up in the feed too - open them there with the clapperboard button.",
-    aboutNext: "New productions appear here.",
-    account: "Account",
-    feed: "feed",
-    seriesTab: "series",
-    newBadge: "new",
-    tabs: "Sections",
-  },
+/** The interface is English; titles and texts keep their own language. */
+const words = {
+  premiere: "Premiere",
+  heard: "Heard",
+  series: "boks series",
+  start: "Start",
+  again: "Again",
+  opening: "Opening…",
+  empty: "No productions in your languages yet.",
+  emptyAction: "Change languages",
+  about: "About boks series",
+  aboutTitle: "What boks series is",
+  aboutBody:
+    "Pieces that are not only read. A voice reads the text, the pictures change with the story, in verse the words arrive inside the frame, and in some stories the story stops and asks you to do something.",
+  aboutFeatures: [
+    ["Voice", "a real reading, the text lit as it goes"],
+    ["Illustrations", "painted for each scene of this piece"],
+    ["Living text", "in verse, words arrive in the picture as they are spoken"],
+    ["Interactive moments", "the story waits for a tap, a swipe or a held finger"],
+  ],
+  aboutHeadphones:
+    "Best with headphones, somewhere quiet. Productions turn up in the feed too - open them there with the clapperboard button.",
+  aboutNext: "New productions appear here.",
+  account: "Account",
+  feed: "feed",
+  seriesTab: "series",
+  newBadge: "new",
+  tabs: "Sections",
 } as const;
-
-export function seriesCopy(language: SeriesCopyLanguage) {
-  return copy[language];
-}
 
 type CatalogueAnswer = Map<string, { title: string; authorName: string }> | null;
 
@@ -107,7 +72,6 @@ function loadCatalogueOnce() {
 }
 
 export function SeriesView({
-  language,
   readerLanguages,
   heard,
   openingStoryId,
@@ -115,7 +79,6 @@ export function SeriesView({
   onOpenPiece,
   onOpenAccount,
 }: {
-  language: SeriesCopyLanguage;
   readerLanguages: readonly string[];
   heard: ReadonlySet<string>;
   /** The piece being loaded, so its card can say so. */
@@ -124,7 +87,6 @@ export function SeriesView({
   onOpenPiece: (piece: SeriesPiece) => void;
   onOpenAccount: () => void;
 }) {
-  const words = copy[language];
   const [catalogue, setCatalogue] = useState<CatalogueAnswer>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
 
@@ -194,8 +156,6 @@ export function SeriesView({
         {lead && (
           <SeriesHero
             piece={lead}
-            words={words}
-            language={language}
             premiere={isPremiere(lead, today)}
             heard={heard.has(lead.storyId)}
             opening={openingStoryId === lead.storyId}
@@ -206,10 +166,7 @@ export function SeriesView({
 
         {rest.length > 0 && (
           <SeriesShelf
-            title={words.more}
             pieces={rest}
-            words={words}
-            language={language}
             heard={heard}
             openingStoryId={openingStoryId}
             onOpenPiece={onOpenPiece}
@@ -259,12 +216,8 @@ function stop(event: React.SyntheticEvent) {
   event.stopPropagation();
 }
 
-type Words = (typeof copy)[SeriesCopyLanguage];
-
 function SeriesHero({
   piece,
-  words,
-  language,
   premiere,
   heard,
   opening,
@@ -272,8 +225,6 @@ function SeriesHero({
   onOpen,
 }: {
   piece: SeriesPiece;
-  words: Words;
-  language: SeriesCopyLanguage;
   premiere: boolean;
   heard: boolean;
   opening: boolean;
@@ -316,10 +267,10 @@ function SeriesHero({
       </span>
       <span className="series-hero__body">
         <span className="series-hero__meta">
-          {piece.author} · {seriesDurationLabel(piece.durationSeconds, language)}
+          {piece.author} · {seriesDurationLabel(piece.durationSeconds)}
         </span>
         <span className="series-hero__title">{piece.title}</span>
-        <span className="series-hero__features">{seriesFeatures(piece, language).join(" · ")}</span>
+        <span className="series-hero__features">{seriesFeatures(piece).join(" · ")}</span>
         <span className="series-hero__cta">
           {opening ? (
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -336,27 +287,18 @@ function SeriesHero({
 }
 
 function SeriesShelf({
-  title,
   pieces,
-  words,
-  language,
   heard,
   openingStoryId,
   onOpenPiece,
 }: {
-  title: string;
   pieces: readonly SeriesPiece[];
-  words: Words;
-  language: SeriesCopyLanguage;
   heard: ReadonlySet<string>;
   openingStoryId: string | null;
   onOpenPiece: (piece: SeriesPiece) => void;
 }) {
   return (
     <section className="series-shelf">
-      <div className="series-shelf__heading">
-        <h2>{title}</h2>
-      </div>
       <ul className="series-shelf__grid">
         {pieces.map((piece) => {
           const opening = openingStoryId === piece.storyId;
@@ -381,7 +323,7 @@ function SeriesShelf({
                 />
                 <span className="series-card__veil" aria-hidden="true" />
                 <span className="series-card__top">
-                  <span>{seriesDurationLabel(piece.durationSeconds, language)}</span>
+                  <span>{seriesDurationLabel(piece.durationSeconds)}</span>
                   {done && (
                     <span className="series-card__done" title={words.heard}>
                       <Check className="size-3" aria-hidden="true" />
@@ -411,20 +353,17 @@ function SeriesShelf({
  */
 export function ReaderTabs({
   active,
-  language,
   seriesIsNew,
   onFeed,
   onSeries,
   className = "",
 }: {
   active: "feed" | "series";
-  language: SeriesCopyLanguage;
   seriesIsNew: boolean;
   onFeed: () => void;
   onSeries: () => void;
   className?: string;
 }) {
-  const words = copy[language];
   return (
     <nav className={`reader-tabs ${className}`} aria-label={words.tabs}>
       <button

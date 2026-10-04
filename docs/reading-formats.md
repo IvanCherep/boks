@@ -215,14 +215,19 @@ A format draws the reading. It never draws its own ending. Every boks series
 piece, whatever it was read in, ends on the same two screens from
 `components/boks/reading-finale.tsx`:
 
-1. **Aftertaste** — «Что осталось?», four tags (Улыбнуло, Задело, Удивило,
-   Хочу обдумать), several allowed, none required; «Дальше» once something is
-   picked, «Пропустить» otherwise.
-2. **Where next** — «Куда дальше?»: Поделиться (the accent), Послушать снова
-   and Нравится side by side, Выбрать следующую.
+1. **Aftertaste** - "What stayed with you?", four tags (Made me smile, Moved
+   me, Surprised me, Want to think), several allowed, none required; "Onward"
+   once something is picked, "Skip" otherwise.
+2. **Where next** - "Where next?": Share (the accent), Listen again and Like
+   side by side, Choose the next one.
+
+**The interface is English everywhere**, whatever language the piece is in:
+the finale, the players' controls, a moment's hint, the series shelf. Titles,
+authors and the texts themselves keep their own language. A second interface
+language, when it comes, is a setting - not a guess from the piece.
 
 The format's side of it is two lines: mount `<ReadingFinale>` when the reading
-is over, with the piece's language and a way to start again, and hide its own
+is over, with a way to start again, and hide its own
 controls underneath. What the buttons do is not the format's business -
 `reader-feed.tsx` builds one `FinaleActions` (like, share, next, record the
 aftertaste once per opening) and hands the same object to every format, so a

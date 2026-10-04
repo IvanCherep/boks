@@ -457,9 +457,9 @@ export function InteractiveScene({
         </div>
       )}
 
-      {status === "loading" && <div className="iscene__state">Загружаем сцену…</div>}
+      {status === "loading" && <div className="iscene__state">Loading the scene…</div>}
       {status === "failed" && (
-        <div className="iscene__state">Картинки не загрузились — интерактив выключен</div>
+        <div className="iscene__state">The pictures did not load - the interaction is off</div>
       )}
 
       {status === "ready" && (
@@ -469,7 +469,7 @@ export function InteractiveScene({
               reader has done it: a label that stays is nagging. */}
           <span className="iscene__badge">
             <span className="iscene__badge-dot" aria-hidden="true" />
-            Доступно действие
+            Something to do
           </span>
           <span className="iscene__hint-text">{scene.hint}</span>
           <i aria-hidden="true" />
@@ -478,7 +478,7 @@ export function InteractiveScene({
 
       {completed && (
         <button type="button" className="iscene__reset" onClick={reset}>
-          Ещё раз
+          Again
         </button>
       )}
     </div>

@@ -35,18 +35,16 @@ describe("where a story stops to ask something", () => {
     }
   });
 
-  it("says what will happen and which fingers to move, in both languages", () => {
+  it("says what will happen and which fingers to move, in English", () => {
     // One clever imperative reads well and leaves the reader guessing, and a
-    // reader who is guessing has stopped being inside the story.
+    // reader who is guessing has stopped being inside the story. The interface
+    // is English whatever the story is in.
     for (const moment of all) {
-      for (const language of ["ru", "en"] as const) {
-        expect(moment.hint[language].length, moment.id).toBeGreaterThan(0);
-        expect(moment.how[language].length, moment.id).toBeGreaterThan(0);
-        // The instruction is the longer of the two: it names the gesture.
-        expect(moment.how[language].length, moment.id).toBeGreaterThanOrEqual(
-          moment.hint[language].length
-        );
-      }
+      expect(moment.hint.length, moment.id).toBeGreaterThan(0);
+      expect(moment.how.length, moment.id).toBeGreaterThan(0);
+      expect(`${moment.hint} ${moment.how}`, moment.id).not.toMatch(/[А-Яа-яЁё]/);
+      // The instruction is the longer of the two: it names the gesture.
+      expect(moment.how.length, moment.id).toBeGreaterThanOrEqual(moment.hint.length);
     }
   });
 
