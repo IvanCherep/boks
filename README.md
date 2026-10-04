@@ -2,10 +2,43 @@
 
 boks is a browser prototype for testing a short literature feed: readers discover stories that fit inside 15 minutes, authors publish from a simple cabinet, and the founder reviews engagement metrics.
 
+## Two sections: feed and series
+
+The reader has two tabs at the bottom of the screen.
+
+- **feed** (`/`) - the product. One algorithmic, swipe-first stream of short
+  literature, ranked per reader. Every boks lives here, including every series
+  piece.
+- **series** (`/series`) - **boks series**, the shelf of pieces produced in the
+  new formats: read aloud by a real voice, over illustrations made for that
+  piece, with the words arriving inside the picture in verse and, in some
+  stories, moments where the story stops and asks the reader to do something.
+  Only part of the catalogue will ever be produced this way, so these get a
+  place where they can be found rather than waited for.
+
+**Every series piece is also in the feed.** Nothing is moved out of it. In the
+feed a series piece reads like any other boks, and carries a small
+"boks series · listen to the production" mark above its title (and the
+clapperboard button in the reader's controls) that opens the same production
+the shelf opens. Both are available to **every reader**, signed in or not.
+
+The shelf shows only pieces in the reader's chosen reading languages, newest
+first, with what they have already heard moved behind what they have not; the
+newest piece is marked *Premiere* for two weeks. Today it holds 20 pieces -
+10 in English and 10 in Russian, 19 poems and one illustrated story with
+interactive moments (Tolstoy's «Лев и собачка»).
+
+The interface is English everywhere; titles, authors and the texts themselves
+keep their own language.
+
+How a piece is produced and added - recording, theme, pictures, the manifest,
+the shelf entry - is `docs/reading-formats.md`.
+
 ## What is included
 
 - Swipe-first reader feed ranked by a pluggable recommendation strategy, with attributed behavior events for every reader including guests.
 - Two reading formats alongside that feed, opened from the same button and chosen by the piece rather than the reader: a cinema format for prose, and an immersive format for verse. Neither changes how an ordinary boks is read.
+- The **series** tab (`/series`): every piece finished in one of those formats, on one shelf, filtered by the reader's languages. The same pieces stay in the feed with a button to open the production, for every reader.
 - Anonymous Supabase reader entry with reels, views, signed-in likes, profile-owned comments, and unique `@nickname` handles stored behind RLS/RPCs.
 - D1 compatibility path for the original prototype API and richer event contract reference.
 - Supabase author cabinet with a 15 minute reading-time guardrail, a database-enforced limit of 3 boks per author per day, and an admin moderation workflow.
@@ -21,7 +54,9 @@ boks is a browser prototype for testing a short literature feed: readers discove
 - `components/boks/reader-feed.tsx`: reader experience.
 - `components/boks/cinema/`: the cinema format - prose read aloud over scenes that change with the story, with places where it stops and asks the reader to do something.
 - `components/boks/poetry/`: the immersive poetry format - verse, where each word arrives inside the picture at the moment it is spoken.
-- `docs/reading-formats.md`: both of the above - how a piece is routed to one, and how to add another.
+- `components/boks/series/`: the series tab - the shelf list (tested against both format registries), the shelf and the feed/series tabs, and the per-device heard marks.
+- `app/series/page.tsx`: `/series`, the same reader opened on the shelf.
+- `docs/reading-formats.md`: both formats and the series shelf - how a piece is routed to a format, and how to add one.
 - `components/boks/author-console.tsx`: author cabinet.
 - `components/boks/admin-dashboard.tsx`: admin/business console.
 - `components/boks/`: browser-facing product helpers, Supabase data access, types, behavior inference, and shared UI primitives.

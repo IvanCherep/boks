@@ -1,8 +1,9 @@
 # Where boks Stands
 
 One page so a new session can orient without reading four handovers and two
-research reports. Updated 2026-09-26 (security audit, dependency refresh,
-request/database limits, confirmed email auth, and admin bootstrap hardening).
+research reports. Updated 2026-10-04 (the feed and series sections); before
+that 2026-09-26 (security audit, dependency refresh, request/database limits,
+confirmed email auth, and admin bootstrap hardening).
 
 For *why* a thing is the way it is, the handovers and ADRs are the record. This
 says only what is true now.
@@ -10,6 +11,18 @@ says only what is true now.
 ---
 
 ## Live
+
+**Two sections, feed and series (2026-10-04).** The reader has two tabs. The
+feed (`/`) is unchanged and holds every boks. The series tab (`/series`) is
+the shelf of pieces produced in the new formats - 20 today, 10 English and 10
+Russian, 19 immersive poems and Tolstoy's «Лев и собачка» in the cinema
+format. Every one of them is also in the feed, where a "boks series · listen
+to the production" mark above the title and the clapperboard button open it,
+for every reader, guest or signed in. The shelf filters by the reader's
+reading languages, and reads opened from it carry `entry: "series"` in event
+metadata so an algorithm comparison can leave them out. The interface is
+English everywhere; pieces keep their own language. Production and the steps
+to add a piece: `docs/reading-formats.md`.
 
 **https://tryboks.com** — Cloudflare Worker `read`, attached as a custom domain
 on 2026-09-17. The zone is registered through Cloudflare Registrar in the same

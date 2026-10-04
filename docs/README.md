@@ -19,6 +19,12 @@ To generate any audio - a narration, a moment's sound, a poem's theme - read
 costs, the credit multiplier and licensing traps, and how a take is judged by
 measurement rather than by ear.
 
+The reader has two sections, **feed** and **series**. The feed is the
+algorithmic stream and holds every boks. The series tab (`/series`) is the
+shelf of pieces produced in the new formats; each of them is also in the feed,
+where a "boks series" mark and the clapperboard button open the production for
+every reader. See the README's "Two sections" and `docs/reading-formats.md` §5.
+
 A boks can be read three ways: the ordinary feed, the cinema format (prose read
 aloud over scenes, with places where the story stops and asks something), and
 immersive poetry (verse, where words arrive inside the picture). To add or change
