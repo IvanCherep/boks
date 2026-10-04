@@ -5493,12 +5493,9 @@ textarea:focus-visible {
   display: none;
 }
 
-.series__lede {
-  margin: 0.4rem 0.25rem 1rem;
-  font-size: 0.95rem;
-  line-height: 1.45;
-  color: var(--muted-foreground);
-  text-wrap: pretty;
+/* Room between the mark and the first card; the shelf needs no caption. */
+.series__scroll > :first-child {
+  margin-top: 0.75rem;
 }
 
 /* The lead piece. The whole card is the button; "Start" only says so. */
@@ -5693,11 +5690,6 @@ textarea:focus-visible {
   font-family: var(--font-serif);
   font-size: 1.3rem;
   font-weight: 500;
-}
-
-.series-shelf__heading span {
-  font-size: 0.76rem;
-  color: var(--muted-foreground);
 }
 
 .series-shelf__grid {

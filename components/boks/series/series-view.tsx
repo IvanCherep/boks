@@ -31,7 +31,6 @@ import {
 
 const copy = {
   ru: {
-    lede: "Литературные постановки с голосом, иллюстрациями и интерактивными сценами.",
     premiere: "Премьера",
     heard: "Прослушано",
     series: "boks series",
@@ -39,7 +38,6 @@ const copy = {
     again: "Ещё раз",
     opening: "Открываем…",
     more: "Ещё в Series",
-    moreNote: "короткие постановки",
     empty: "На выбранных языках постановок пока нет.",
     emptyAction: "Изменить языки",
     about: "О boks series",
@@ -61,7 +59,6 @@ const copy = {
     tabs: "Разделы",
   },
   en: {
-    lede: "Literary productions with a voice, illustrations and interactive scenes.",
     premiere: "Premiere",
     heard: "Heard",
     series: "boks series",
@@ -69,7 +66,6 @@ const copy = {
     again: "Again",
     opening: "Opening…",
     more: "More in Series",
-    moreNote: "short productions",
     empty: "No productions in your languages yet.",
     emptyAction: "Change languages",
     about: "About boks series",
@@ -194,7 +190,6 @@ export function SeriesView({
       </header>
 
       <div className="series__scroll">
-        <p className="series__lede">{words.lede}</p>
 
         {lead && (
           <SeriesHero
@@ -212,7 +207,6 @@ export function SeriesView({
         {rest.length > 0 && (
           <SeriesShelf
             title={words.more}
-            note={words.moreNote}
             pieces={rest}
             words={words}
             language={language}
@@ -343,7 +337,6 @@ function SeriesHero({
 
 function SeriesShelf({
   title,
-  note,
   pieces,
   words,
   language,
@@ -352,7 +345,6 @@ function SeriesShelf({
   onOpenPiece,
 }: {
   title: string;
-  note: string;
   pieces: readonly SeriesPiece[];
   words: Words;
   language: SeriesCopyLanguage;
@@ -364,7 +356,6 @@ function SeriesShelf({
     <section className="series-shelf">
       <div className="series-shelf__heading">
         <h2>{title}</h2>
-        <span>{note}</span>
       </div>
       <ul className="series-shelf__grid">
         {pieces.map((piece) => {
