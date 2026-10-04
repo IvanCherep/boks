@@ -78,6 +78,8 @@ import { FeedbackForm } from "@/components/boks/feedback-form";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
 import type { FinaleActions } from "@/components/boks/reading-finale";
+import { giveScreenBack, takeScreen } from "@/components/boks/reading-fullscreen";
+import { paintBrowserChrome, playerChromeColor } from "@/components/boks/theme";
 import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
@@ -359,6 +361,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
   /** The admin-only "listen and read" prototype. See `components/boks/cinema`. */
   const [cinemaOpen, setCinemaOpen] = useState(false);
+  /** A format took the whole screen, so closing it owes the screen back. */
+  const formatTookScreen = useRef(false);
   /**
    * The series shelf, over the feed rather than instead of it. The feed keeps
    * its place, its clock is paused, and a piece opened from the shelf is loaded
@@ -949,6 +953,21 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const poemManifestUrl = currentStory ? poemManifestFor(currentStory.id) : null;
   const cinemaOffered = cinemaIsFinished || Boolean(poemManifestUrl) || isAdminReader;
   const currentSeriesPiece = seriesPieceFor(currentStory?.id);
+  /** Exactly the condition the two players below are rendered under. */
+  const formatOnScreen = Boolean(poem) || (cinemaOpen && Boolean(currentStory) && cinemaOffered);
+
+  /** The screen and the browser's colour go back together, however a format closed. */
+  function closedFormat() {
+    paintBrowserChrome(null);
+    if (!formatTookScreen.current) return;
+    formatTookScreen.current = false;
+    giveScreenBack();
+  }
+
+  useEffect(() => {
+    if (formatOnScreen) paintBrowserChrome(playerChromeColor);
+    else closedFormat();
+  }, [formatOnScreen]);
   /**
    * Answered once per opening, however many times it is replayed.
    *
@@ -1431,10 +1450,16 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     stopReadingMusic(false);
     setMusicOn(false);
     finaleAnswered.current = false;
+    // Now, before the manifest loads: the tap that opened the format is what
+    // lets a browser hand over the whole screen.
+    if (takeScreen()) formatTookScreen.current = true;
     const manifestUrl = poemManifestFor(storyId);
     if (manifestUrl) {
       loadPoemManifest(manifestUrl)
-        .then(setPoem, () => notify("This poem could not be opened."))
+        .then(setPoem, () => {
+          notify("This poem could not be opened.");
+          closedFormat();
+        })
         .finally(() => setSeriesOpening(null));
       return;
     }
@@ -1473,6 +1498,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       openReadingFormat(piece.storyId);
       return;
     }
+    // The screen is asked for on the tap, not when the feed has landed: by
+    // then the gesture that allows it may have gone stale.
+    if (takeScreen()) formatTookScreen.current = true;
     setSeriesOpening(piece.storyId);
     pendingSeriesFormat.current = piece.storyId;
     const found = await openReadBoks(piece.storyId);
@@ -1480,6 +1508,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       pendingSeriesFormat.current = null;
       seriesEntryStoryId.current = null;
       setSeriesOpening(null);
+      closedFormat();
     }
   }
 

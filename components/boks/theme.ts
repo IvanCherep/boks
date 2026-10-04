@@ -26,6 +26,20 @@ export const themeColor: Record<ResolvedTheme, string> = {
   dark: "#141210",
 };
 
+/**
+ * The poem and cinema players' own black. While one is open the status bar
+ * above it - and, from the home screen, the whole top of the phone - should
+ * be the picture's colour rather than the page's.
+ */
+export const playerChromeColor = "#05070d";
+
+/** Paints the browser chrome a player's colour, or back to the theme's with `null`. */
+export function paintBrowserChrome(color: string | null) {
+  if (typeof document === "undefined") return;
+  const theme: ResolvedTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color ?? themeColor[theme]);
+}
+
 type ThemeStorage = Pick<Storage, "getItem" | "setItem">;
 
 function defaultStorage(): ThemeStorage | null {
