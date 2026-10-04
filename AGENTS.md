@@ -56,6 +56,8 @@ Business rules:
 - `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
 - `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and word-count-based read/skip inference.
 - `components/boks/reader-clock.ts`: foreground-only reading clock. Time on platform must mean time a boks was on screen.
+- `components/boks/reading-fullscreen.ts`: a poem or the cinema takes the whole screen on Android and iPad when opened by a tap, and gives it back on close. iPhone Safari has no page fullscreen; there it does nothing.
+- `components/boks/home-screen-hint.ts`: the one-time line at the end of a reading format telling an iPhone reader how to open boks from the home screen - the only way to read there without browser chrome.
 - `components/boks/reader-library.ts`: pure Read/Liked/Commented account-library selection and ordering.
 - `components/boks/reader-events.ts`: attributed reader event queue, batching, retry, per-read dedupe, and keepalive flush on tab exit.
 - `components/boks/user-auth-panel.tsx`: reader email sign-up/sign-in, settings, the authenticated Read/Liked/Commented library, and admin shortcut.

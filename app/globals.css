@@ -260,6 +260,16 @@ textarea:focus-visible {
   background: var(--reader);
 }
 
+/* `viewport-fit=cover` (see the layout) lets the page reach the screen's edges
+   so a home-screen boks has no letterbox. A phone on its side then puts the
+   camera island over the text; the reader keeps clear of it. Portrait insets
+   are top and bottom, and the bars that need them already add them. */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) {
+  .reader-shell {
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  }
+}
+
 .brand-word {
   color: var(--foreground);
   font-size: 1.25rem;
@@ -3467,6 +3477,17 @@ textarea:focus-visible {
 .finale__primary:active,
 .finale__secondary:active {
   transform: translateY(0);
+}
+
+/* Said once, under the choices, in the voice of a caption - not a button. */
+.finale__hint {
+  max-width: min(420px, 100%);
+  margin: 1.1rem auto 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: center;
+  color: rgb(246 239 227 / 78%);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 80%);
 }
 
 /* -------------------------------------------------------------- the reading */

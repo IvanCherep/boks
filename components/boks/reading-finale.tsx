@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Heart, Lightbulb, MessageCircle, RotateCcw, Share2, Smile } from "lucide-react";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
+import { markHomeScreenHintShown, shouldOfferHomeScreen } from "@/components/boks/home-screen-hint";
 
 /**
  * How every boks series piece ends, whatever format it was read in.
@@ -67,6 +68,8 @@ const words = {
   liked: "Liked",
   next: "Choose the next one",
   share: "Share",
+  // Safari's own Share, not the button above it: that one sends the poem.
+  homeScreen: "To listen without the browser: Safari\u2019s Share menu, then \u201cAdd to Home Screen\u201d.",
 };
 
 /**
@@ -92,6 +95,12 @@ export function ReadingFinale({
     reached.current?.();
   }, []);
   const [picked, setPicked] = useState<AftertasteTag[]>([]);
+  // Decided once per ending, remembered as said only when it is on screen.
+  const [homeScreenHint] = useState(() => shouldOfferHomeScreen());
+  const hintVisible = homeScreenHint && step === "menu";
+  useEffect(() => {
+    if (hintVisible) markHomeScreenHintShown();
+  }, [hintVisible]);
 
   if (step === "aftertaste") {
     return (
@@ -189,6 +198,7 @@ export function ReadingFinale({
           </button>
         )}
       </div>
+      {hintVisible && <p className="finale__hint">{words.homeScreen}</p>}
     </div>
   );
 }

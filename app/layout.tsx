@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/source-serif-4/standard.css";
 // A high-contrast display serif, used only where a word is part of a
 // picture rather than part of a paragraph. See `--font-display`.
@@ -28,6 +28,18 @@ export const metadata: Metadata = {
     "product": "boks",
   },
   manifest: "/manifest.webmanifest",
+  /**
+   * Opened from the home screen, boks is an app with no browser around it -
+   * the only way an iPhone reader gets a poem without an address bar under
+   * it, since iPhone Safari gives a page no fullscreen. `default` keeps the
+   * status bar opaque, so nothing has to be pushed down from under it; its
+   * colour follows `theme-color`, which a player repaints while it is open.
+   */
+  appleWebApp: {
+    capable: true,
+    title: "boks",
+    statusBarStyle: "default",
+  },
   /**
    * PNGs, not the SVG that used to be here: a wordmark stacked in three rows is
    * unreadable at 16 px in any format, and these are rendered from the master
@@ -60,6 +72,17 @@ export const metadata: Metadata = {
     description: boksDescription,
     images: ["/og-cover.png"],
   },
+};
+
+/**
+ * `cover`: a home-screen boks reaches the bottom edge rather than stopping
+ * short of the home indicator. Every bar pinned to the bottom already adds
+ * `env(safe-area-inset-bottom)`, which is zero until this is set.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
