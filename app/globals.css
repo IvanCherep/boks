@@ -4748,6 +4748,21 @@ textarea:focus-visible {
   animation: poem-open 420ms var(--ease-out) both;
 }
 
+/* iOS 26 Safari paints the strip under its floating toolbar with the colour of
+   a fixed element pinned to the bottom edge - not with whatever is on top.
+   With a poem or the cinema open that was the light feed/series bar sitting
+   underneath, so a dark picture ended in a white band. While a player is up,
+   the bars under it go away and the page itself is the player's colour. */
+html:has(.poem, .cinema),
+html:has(.poem, .cinema) body {
+  background: #05070d;
+}
+
+body:has(.poem, .cinema) .reader-tabs,
+body:has(.poem, .cinema) .reader-dock {
+  display: none;
+}
+
 @keyframes poem-open {
   from {
     opacity: 0;
