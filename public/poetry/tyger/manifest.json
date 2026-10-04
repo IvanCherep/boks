@@ -1,0 +1,1198 @@
+{
+ "id": "tyger-immersive-v1",
+ "title": "The Tyger",
+ "author": "William Blake",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/tyger/narration.mp3",
+ "theme": {
+  "src": "/poetry/tyger/theme.mp3",
+  "gain": 0.18
+ },
+ "durationMs": 64880,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7ECDA",
+  "active": "#FFB85C",
+  "shadow": "rgba(8, 6, 4, 0.55)"
+ },
+ "textScale": 0.9,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1020,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "burning-bright",
+   "image": "/poetry/tyger/scenes/01-burning-bright.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.14,
+     "y": 0.07,
+     "width": 0.72,
+     "height": 0.22
+    }
+   ],
+   "line": "Tyger Tyger, burning bright, / In the forests of the night; / What immortal hand or eye, / Could frame thy fearful symmetry?",
+   "startMs": 0
+  },
+  {
+   "id": "distant-deeps-and-skies",
+   "image": "/poetry/tyger/scenes/02-distant-deeps-and-skies.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.45
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.66,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "In what distant deeps or skies. / Burnt the fire of thine eyes? / On what wings dare he aspire? / What the hand, dare seize the fire?",
+   "startMs": 10640
+  },
+  {
+   "id": "hammer-chain-furnace",
+   "image": "/poetry/tyger/scenes/03-hammer-chain-furnace.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "uniform-formation",
+   "transitionMs": 1080,
+   "safeZones": [
+    {
+     "x": 0.3,
+     "y": 0.07,
+     "width": 0.5,
+     "height": 0.2
+    }
+   ],
+   "line": "And what shoulder, & what art, / Could twist the sinews of thy heart? / And when thy heart began to beat, / What dread hand? & what dread feet? / What the hammer? what the chain, / In what furnace was thy brain? / What the anvil? what dread grasp, / Dare its deadly terrors clasp!",
+   "startMs": 21760
+  },
+  {
+   "id": "tiger-and-lamb",
+   "image": "/poetry/tyger/scenes/04-tiger-and-lamb.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1440,
+   "safeZones": [
+    {
+     "x": 0.36,
+     "y": 0.08,
+     "width": 0.56,
+     "height": 0.24
+    }
+   ],
+   "line": "When the stars threw down their spears / And water’d heaven with their tears: / Did he smile his work to see? / Did he who made the Lamb make thee?",
+   "startMs": 44240
+  },
+  {
+   "id": "burning-bright-again",
+   "image": "/poetry/tyger/scenes/01-burning-bright.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.14,
+     "y": 0.07,
+     "width": 0.72,
+     "height": 0.22
+    }
+   ],
+   "line": "Tyger Tyger burning bright, / In the forests of the night: / What immortal hand or eye, / Dare frame thy fearful symmetry?",
+   "startMs": 55360
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "burning-bright",
+   "startMs": 0,
+   "endMs": 2347,
+   "tokens": [
+    {
+     "text": "Tyger",
+     "atMs": 0,
+     "endMs": 0,
+     "phrase": 0
+    },
+    {
+     "text": "Tyger,",
+     "atMs": 160,
+     "endMs": 960,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "burning",
+     "atMs": 1067,
+     "endMs": 1780,
+     "phrase": 1
+    },
+    {
+     "text": "bright,",
+     "atMs": 1840,
+     "endMs": 2280,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright",
+   "startMs": 2347,
+   "endMs": 4560,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 2347,
+     "endMs": 2480,
+     "phrase": 2
+    },
+    {
+     "text": "the",
+     "atMs": 2760,
+     "endMs": 3120,
+     "phrase": 2
+    },
+    {
+     "text": "forests",
+     "atMs": 3160,
+     "endMs": 3600,
+     "phrase": 2
+    },
+    {
+     "text": "of",
+     "atMs": 3680,
+     "endMs": 3893,
+     "phrase": 2
+    },
+    {
+     "text": "the",
+     "atMs": 4000,
+     "endMs": 4160,
+     "phrase": 2
+    },
+    {
+     "text": "night;",
+     "atMs": 4200,
+     "endMs": 4480,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright",
+   "startMs": 4560,
+   "endMs": 7227,
+   "tokens": [
+    {
+     "text": "What",
+     "atMs": 4560,
+     "endMs": 5600,
+     "phrase": 3
+    },
+    {
+     "text": "immortal",
+     "atMs": 5640,
+     "endMs": 6064,
+     "phrase": 3
+    },
+    {
+     "text": "hand",
+     "atMs": 6128,
+     "endMs": 6400,
+     "phrase": 3
+    },
+    {
+     "text": "or",
+     "atMs": 6500,
+     "endMs": 6700,
+     "phrase": 3
+    },
+    {
+     "text": "eye,",
+     "atMs": 6800,
+     "endMs": 7120,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright",
+   "startMs": 7227,
+   "endMs": 10640,
+   "tokens": [
+    {
+     "text": "Could",
+     "atMs": 7227,
+     "endMs": 7920,
+     "phrase": 4
+    },
+    {
+     "text": "frame",
+     "atMs": 8080,
+     "endMs": 8400,
+     "phrase": 4
+    },
+    {
+     "text": "thy",
+     "atMs": 8480,
+     "endMs": 8640,
+     "phrase": 4
+    },
+    {
+     "text": "fearful",
+     "atMs": 8800,
+     "endMs": 9200,
+     "phrase": 4
+    },
+    {
+     "text": "symmetry?",
+     "atMs": 9280,
+     "endMs": 9920,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "distant-deeps-and-skies",
+   "startMs": 10640,
+   "endMs": 13280,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 10640,
+     "endMs": 10720,
+     "phrase": 5
+    },
+    {
+     "text": "what",
+     "atMs": 10800,
+     "endMs": 11040,
+     "phrase": 5
+    },
+    {
+     "text": "distant",
+     "atMs": 11120,
+     "endMs": 11520,
+     "phrase": 5
+    },
+    {
+     "text": "deeps",
+     "atMs": 11680,
+     "endMs": 12080,
+     "phrase": 5
+    },
+    {
+     "text": "or",
+     "atMs": 12160,
+     "endMs": 12240,
+     "phrase": 5
+    },
+    {
+     "text": "skies.",
+     "atMs": 12320,
+     "endMs": 13120,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "distant-deeps-and-skies",
+   "startMs": 13280,
+   "endMs": 15920,
+   "tokens": [
+    {
+     "text": "Burnt",
+     "atMs": 13280,
+     "endMs": 13600,
+     "phrase": 6
+    },
+    {
+     "text": "the",
+     "atMs": 13640,
+     "endMs": 13680,
+     "phrase": 6
+    },
+    {
+     "text": "fire",
+     "atMs": 13840,
+     "endMs": 14240,
+     "phrase": 6
+    },
+    {
+     "text": "of",
+     "atMs": 14320,
+     "endMs": 14400,
+     "phrase": 6
+    },
+    {
+     "text": "thine",
+     "atMs": 14480,
+     "endMs": 14640,
+     "phrase": 6
+    },
+    {
+     "text": "eyes?",
+     "atMs": 14720,
+     "endMs": 15560,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "distant-deeps-and-skies",
+   "startMs": 15920,
+   "endMs": 18720,
+   "tokens": [
+    {
+     "text": "On",
+     "atMs": 15920,
+     "endMs": 16080,
+     "phrase": 7
+    },
+    {
+     "text": "what",
+     "atMs": 16160,
+     "endMs": 16320,
+     "phrase": 7
+    },
+    {
+     "text": "wings",
+     "atMs": 16480,
+     "endMs": 16880,
+     "phrase": 7
+    },
+    {
+     "text": "dare",
+     "atMs": 16960,
+     "endMs": 17200,
+     "phrase": 7
+    },
+    {
+     "text": "he",
+     "atMs": 17280,
+     "endMs": 17360,
+     "phrase": 7
+    },
+    {
+     "text": "aspire?",
+     "atMs": 17440,
+     "endMs": 18160,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "distant-deeps-and-skies",
+   "startMs": 18720,
+   "endMs": 21760,
+   "tokens": [
+    {
+     "text": "What",
+     "atMs": 18720,
+     "endMs": 18880,
+     "phrase": 8
+    },
+    {
+     "text": "the",
+     "atMs": 18920,
+     "endMs": 18960,
+     "phrase": 8
+    },
+    {
+     "text": "hand,",
+     "atMs": 19120,
+     "endMs": 19680,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "dare",
+     "atMs": 19720,
+     "endMs": 19920,
+     "phrase": 9
+    },
+    {
+     "text": "seize",
+     "atMs": 20080,
+     "endMs": 20400,
+     "phrase": 9
+    },
+    {
+     "text": "the",
+     "atMs": 20440,
+     "endMs": 20480,
+     "phrase": 9
+    },
+    {
+     "text": "fire?",
+     "atMs": 20640,
+     "endMs": 21400,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 21760,
+   "endMs": 24240,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 21760,
+     "endMs": 21920,
+     "phrase": 10
+    },
+    {
+     "text": "what",
+     "atMs": 22000,
+     "endMs": 22160,
+     "phrase": 10
+    },
+    {
+     "text": "shoulder,",
+     "atMs": 22320,
+     "endMs": 23040,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "&",
+     "atMs": 23120,
+     "endMs": 23200,
+     "phrase": 11
+    },
+    {
+     "text": "what",
+     "atMs": 23280,
+     "endMs": 23440,
+     "phrase": 11
+    },
+    {
+     "text": "art,",
+     "atMs": 23520,
+     "endMs": 24160,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 24240,
+   "endMs": 27120,
+   "tokens": [
+    {
+     "text": "Could",
+     "atMs": 24240,
+     "endMs": 24400,
+     "phrase": 12
+    },
+    {
+     "text": "twist",
+     "atMs": 24480,
+     "endMs": 24880,
+     "phrase": 12
+    },
+    {
+     "text": "the",
+     "atMs": 24960,
+     "endMs": 25040,
+     "phrase": 12
+    },
+    {
+     "text": "sinews",
+     "atMs": 25200,
+     "endMs": 25680,
+     "phrase": 12
+    },
+    {
+     "text": "of",
+     "atMs": 25720,
+     "endMs": 25760,
+     "phrase": 12
+    },
+    {
+     "text": "thy",
+     "atMs": 25840,
+     "endMs": 26000,
+     "phrase": 12
+    },
+    {
+     "text": "heart?",
+     "atMs": 26080,
+     "endMs": 26480,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 27120,
+   "endMs": 29680,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 27120,
+     "endMs": 27280,
+     "phrase": 13
+    },
+    {
+     "text": "when",
+     "atMs": 27360,
+     "endMs": 27520,
+     "phrase": 13
+    },
+    {
+     "text": "thy",
+     "atMs": 27600,
+     "endMs": 27760,
+     "phrase": 13
+    },
+    {
+     "text": "heart",
+     "atMs": 27920,
+     "endMs": 28160,
+     "phrase": 13
+    },
+    {
+     "text": "began",
+     "atMs": 28240,
+     "endMs": 28640,
+     "phrase": 13
+    },
+    {
+     "text": "to",
+     "atMs": 28680,
+     "endMs": 28720,
+     "phrase": 13
+    },
+    {
+     "text": "beat,",
+     "atMs": 28880,
+     "endMs": 29600,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 29680,
+   "endMs": 33120,
+   "tokens": [
+    {
+     "text": "What",
+     "atMs": 29680,
+     "endMs": 29840,
+     "phrase": 14
+    },
+    {
+     "text": "dread",
+     "atMs": 30000,
+     "endMs": 30320,
+     "phrase": 14
+    },
+    {
+     "text": "hand?",
+     "atMs": 30400,
+     "endMs": 31120,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "&",
+     "atMs": 31200,
+     "endMs": 31280,
+     "phrase": 15
+    },
+    {
+     "text": "what",
+     "atMs": 31360,
+     "endMs": 31520,
+     "phrase": 15
+    },
+    {
+     "text": "dread",
+     "atMs": 31680,
+     "endMs": 31920,
+     "phrase": 15
+    },
+    {
+     "text": "feet?",
+     "atMs": 32080,
+     "endMs": 32480,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 33120,
+   "endMs": 35520,
+   "tokens": [
+    {
+     "text": "What",
+     "atMs": 33120,
+     "endMs": 33280,
+     "phrase": 16
+    },
+    {
+     "text": "the",
+     "atMs": 33360,
+     "endMs": 33440,
+     "phrase": 16
+    },
+    {
+     "text": "hammer?",
+     "atMs": 33520,
+     "endMs": 34240,
+     "phrase": 16,
+     "emphasis": "lead"
+    },
+    {
+     "text": "what",
+     "atMs": 34320,
+     "endMs": 34400,
+     "phrase": 17
+    },
+    {
+     "text": "the",
+     "atMs": 34480,
+     "endMs": 34560,
+     "phrase": 17
+    },
+    {
+     "text": "chain,",
+     "atMs": 34640,
+     "endMs": 35440,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 35520,
+   "endMs": 38320,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 35520,
+     "endMs": 35600,
+     "phrase": 18
+    },
+    {
+     "text": "what",
+     "atMs": 35680,
+     "endMs": 35840,
+     "phrase": 18
+    },
+    {
+     "text": "furnace",
+     "atMs": 36000,
+     "endMs": 36480,
+     "phrase": 18
+    },
+    {
+     "text": "was",
+     "atMs": 36560,
+     "endMs": 36720,
+     "phrase": 18
+    },
+    {
+     "text": "thy",
+     "atMs": 36800,
+     "endMs": 36960,
+     "phrase": 18
+    },
+    {
+     "text": "brain?",
+     "atMs": 37040,
+     "endMs": 37520,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 38320,
+   "endMs": 41200,
+   "tokens": [
+    {
+     "text": "What",
+     "atMs": 38320,
+     "endMs": 38400,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 38560,
+     "endMs": 38640,
+     "phrase": 19
+    },
+    {
+     "text": "anvil?",
+     "atMs": 38880,
+     "endMs": 39520,
+     "phrase": 19,
+     "emphasis": "lead"
+    },
+    {
+     "text": "what",
+     "atMs": 39600,
+     "endMs": 39760,
+     "phrase": 20
+    },
+    {
+     "text": "dread",
+     "atMs": 39840,
+     "endMs": 40160,
+     "phrase": 20
+    },
+    {
+     "text": "grasp,",
+     "atMs": 40320,
+     "endMs": 41120,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hammer-chain-furnace",
+   "startMs": 41200,
+   "endMs": 44240,
+   "tokens": [
+    {
+     "text": "Dare",
+     "atMs": 41200,
+     "endMs": 41560,
+     "phrase": 21
+    },
+    {
+     "text": "its",
+     "atMs": 41680,
+     "endMs": 41760,
+     "phrase": 21
+    },
+    {
+     "text": "deadly",
+     "atMs": 42000,
+     "endMs": 42240,
+     "phrase": 21
+    },
+    {
+     "text": "terrors",
+     "atMs": 42480,
+     "endMs": 42880,
+     "phrase": 21
+    },
+    {
+     "text": "clasp!",
+     "atMs": 42960,
+     "endMs": 44080,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "tiger-and-lamb",
+   "startMs": 44240,
+   "endMs": 46880,
+   "tokens": [
+    {
+     "text": "When",
+     "atMs": 44240,
+     "endMs": 44320,
+     "phrase": 22
+    },
+    {
+     "text": "the",
+     "atMs": 44400,
+     "endMs": 44480,
+     "phrase": 22
+    },
+    {
+     "text": "stars",
+     "atMs": 44960,
+     "endMs": 45040,
+     "phrase": 22
+    },
+    {
+     "text": "threw",
+     "atMs": 45120,
+     "endMs": 45440,
+     "phrase": 22
+    },
+    {
+     "text": "down",
+     "atMs": 45600,
+     "endMs": 45680,
+     "phrase": 22
+    },
+    {
+     "text": "their",
+     "atMs": 45760,
+     "endMs": 45840,
+     "phrase": 22
+    },
+    {
+     "text": "spears",
+     "atMs": 46080,
+     "endMs": 46720,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "tiger-and-lamb",
+   "startMs": 46880,
+   "endMs": 49440,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 46880,
+     "endMs": 46960,
+     "phrase": 23
+    },
+    {
+     "text": "water’d",
+     "atMs": 47200,
+     "endMs": 47440,
+     "phrase": 23
+    },
+    {
+     "text": "heaven",
+     "atMs": 47520,
+     "endMs": 47840,
+     "phrase": 23
+    },
+    {
+     "text": "with",
+     "atMs": 48000,
+     "endMs": 48120,
+     "phrase": 23
+    },
+    {
+     "text": "their",
+     "atMs": 48240,
+     "endMs": 48320,
+     "phrase": 23
+    },
+    {
+     "text": "tears:",
+     "atMs": 48400,
+     "endMs": 49360,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "tiger-and-lamb",
+   "startMs": 49440,
+   "endMs": 52080,
+   "tokens": [
+    {
+     "text": "Did",
+     "atMs": 49440,
+     "endMs": 49560,
+     "phrase": 24
+    },
+    {
+     "text": "he",
+     "atMs": 49680,
+     "endMs": 49760,
+     "phrase": 24
+    },
+    {
+     "text": "smile",
+     "atMs": 49920,
+     "endMs": 50240,
+     "phrase": 24
+    },
+    {
+     "text": "his",
+     "atMs": 50400,
+     "endMs": 50560,
+     "phrase": 24
+    },
+    {
+     "text": "work",
+     "atMs": 50800,
+     "endMs": 50880,
+     "phrase": 24
+    },
+    {
+     "text": "to",
+     "atMs": 50960,
+     "endMs": 51040,
+     "phrase": 24
+    },
+    {
+     "text": "see?",
+     "atMs": 51280,
+     "endMs": 51920,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "tiger-and-lamb",
+   "startMs": 52080,
+   "endMs": 55360,
+   "tokens": [
+    {
+     "text": "Did",
+     "atMs": 52080,
+     "endMs": 52160,
+     "phrase": 25
+    },
+    {
+     "text": "he",
+     "atMs": 52400,
+     "endMs": 52480,
+     "phrase": 25
+    },
+    {
+     "text": "who",
+     "atMs": 52640,
+     "endMs": 52760,
+     "phrase": 25
+    },
+    {
+     "text": "made",
+     "atMs": 52880,
+     "endMs": 52920,
+     "phrase": 25
+    },
+    {
+     "text": "the",
+     "atMs": 52960,
+     "endMs": 53040,
+     "phrase": 25
+    },
+    {
+     "text": "Lamb",
+     "atMs": 53120,
+     "endMs": 53600,
+     "phrase": 25
+    },
+    {
+     "text": "make",
+     "atMs": 53840,
+     "endMs": 53920,
+     "phrase": 25
+    },
+    {
+     "text": "thee?",
+     "atMs": 54000,
+     "endMs": 55120,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright-again",
+   "startMs": 55360,
+   "endMs": 57920,
+   "tokens": [
+    {
+     "text": "Tyger",
+     "atMs": 55360,
+     "endMs": 55760,
+     "phrase": 26
+    },
+    {
+     "text": "Tyger",
+     "atMs": 56000,
+     "endMs": 56480,
+     "phrase": 26
+    },
+    {
+     "text": "burning",
+     "atMs": 56720,
+     "endMs": 57040,
+     "phrase": 26
+    },
+    {
+     "text": "bright,",
+     "atMs": 57360,
+     "endMs": 57840,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright-again",
+   "startMs": 57920,
+   "endMs": 60320,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 57920,
+     "endMs": 58000,
+     "phrase": 27
+    },
+    {
+     "text": "the",
+     "atMs": 58080,
+     "endMs": 58160,
+     "phrase": 27
+    },
+    {
+     "text": "forests",
+     "atMs": 58480,
+     "endMs": 58840,
+     "phrase": 27
+    },
+    {
+     "text": "of",
+     "atMs": 58880,
+     "endMs": 58960,
+     "phrase": 27
+    },
+    {
+     "text": "the",
+     "atMs": 59040,
+     "endMs": 59120,
+     "phrase": 27
+    },
+    {
+     "text": "night:",
+     "atMs": 59440,
+     "endMs": 60240,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright-again",
+   "startMs": 60320,
+   "endMs": 62400,
+   "tokens": [
+    {
+     "text": "What",
+     "atMs": 60320,
+     "endMs": 60400,
+     "phrase": 28
+    },
+    {
+     "text": "immortal",
+     "atMs": 60640,
+     "endMs": 61040,
+     "phrase": 28
+    },
+    {
+     "text": "hand",
+     "atMs": 61360,
+     "endMs": 61440,
+     "phrase": 28
+    },
+    {
+     "text": "or",
+     "atMs": 61520,
+     "endMs": 61680,
+     "phrase": 28
+    },
+    {
+     "text": "eye,",
+     "atMs": 62000,
+     "endMs": 62320,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "burning-bright-again",
+   "startMs": 62400,
+   "endMs": 64880,
+   "tokens": [
+    {
+     "text": "Dare",
+     "atMs": 62400,
+     "endMs": 62720,
+     "phrase": 29
+    },
+    {
+     "text": "frame",
+     "atMs": 63120,
+     "endMs": 63200,
+     "phrase": 29
+    },
+    {
+     "text": "thy",
+     "atMs": 63360,
+     "endMs": 63520,
+     "phrase": 29
+    },
+    {
+     "text": "fearful",
+     "atMs": 63640,
+     "endMs": 64000,
+     "phrase": 29
+    },
+    {
+     "text": "symmetry?",
+     "atMs": 64160,
+     "endMs": 64880,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

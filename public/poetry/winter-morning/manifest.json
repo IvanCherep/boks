@@ -209,14 +209,8 @@
      "phrase": 3
     },
     {
-     "text": "прелестный",
+     "text": "прелестный —",
      "atMs": 4600,
-     "endMs": 5200,
-     "phrase": 3
-    },
-    {
-     "text": "—",
-     "atMs": 5520,
      "endMs": 5547,
      "phrase": 3,
      "emphasis": "lead"
@@ -502,14 +496,8 @@
      "phrase": 17
     },
     {
-     "text": "сидела",
+     "text": "сидела —",
      "atMs": 24160,
-     "endMs": 24640,
-     "phrase": 17
-    },
-    {
-     "text": "—",
-     "atMs": 24960,
      "endMs": 25013,
      "phrase": 17,
      "emphasis": "lead"

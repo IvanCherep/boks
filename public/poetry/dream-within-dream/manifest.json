@@ -1,0 +1,1167 @@
+{
+ "id": "dream-within-dream-immersive-v1",
+ "title": "A Dream Within a Dream",
+ "author": "Edgar Allan Poe",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/dream-within-dream/narration.mp3",
+ "theme": {
+  "src": "/poetry/dream-within-dream/theme.mp3",
+  "gain": 0.19
+ },
+ "durationMs": 55280,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F2EADC",
+  "active": "#FFCF85",
+  "shadow": "rgba(6, 8, 16, 0.55)"
+ },
+ "textScale": 0.82,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1020,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "parting-kiss",
+   "image": "/poetry/dream-within-dream/scenes/01-parting-kiss.webp",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.42,
+    "y": 0.4
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.07,
+     "width": 0.84,
+     "height": 0.22
+    }
+   ],
+   "line": "Take this kiss upon the brow! / And, in parting from you now, / Thus much let me avow — / You are not wrong, who deem / That my days have been a dream;",
+   "startMs": 0
+  },
+  {
+   "id": "hope-flown-away",
+   "image": "/poetry/dream-within-dream/scenes/02-hope-flown-away.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.35,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.07,
+     "width": 0.82,
+     "height": 0.24
+    }
+   ],
+   "line": "Yet if hope has flown away / In a night, or in a day, / In a vision, or in none, / Is it therefore the less gone? / All that we see or seem / Is but a dream within a dream.",
+   "startMs": 11920
+  },
+  {
+   "id": "golden-sand",
+   "image": "/poetry/dream-within-dream/scenes/03-golden-sand.webp",
+   "lines": 7,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.5,
+     "y": 0.08,
+     "width": 0.42,
+     "height": 0.24
+    }
+   ],
+   "line": "I stand amid the roar / Of a surf-tormented shore, / And I hold within my hand / Grains of the golden sand — / How few! yet how they creep / Through my fingers to the deep, / While I weep — while I weep!",
+   "startMs": 26160
+  },
+  {
+   "id": "dream-within-a-dream",
+   "image": "/poetry/dream-within-dream/scenes/04-dream-within-a-dream.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.65,
+    "y": 0.4
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.42,
+     "height": 0.3
+    }
+   ],
+   "line": "O God! Can I not grasp / Them with a tighter clasp? / O God! can I not save / One from the pitiless wave? / Is all that we see or seem / But a dream within a dream?",
+   "startMs": 42800
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "parting-kiss",
+   "startMs": 0,
+   "endMs": 2640,
+   "tokens": [
+    {
+     "text": "Take",
+     "atMs": 0,
+     "endMs": 320,
+     "phrase": 0
+    },
+    {
+     "text": "this",
+     "atMs": 440,
+     "endMs": 560,
+     "phrase": 0
+    },
+    {
+     "text": "kiss",
+     "atMs": 720,
+     "endMs": 1040,
+     "phrase": 0
+    },
+    {
+     "text": "upon",
+     "atMs": 1120,
+     "endMs": 1440,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 1520,
+     "endMs": 1560,
+     "phrase": 0
+    },
+    {
+     "text": "brow!",
+     "atMs": 1600,
+     "endMs": 2160,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "parting-kiss",
+   "startMs": 2640,
+   "endMs": 5040,
+   "tokens": [
+    {
+     "text": "And,",
+     "atMs": 2640,
+     "endMs": 3200,
+     "phrase": 1,
+     "emphasis": "lead"
+    },
+    {
+     "text": "in",
+     "atMs": 3280,
+     "endMs": 3360,
+     "phrase": 2
+    },
+    {
+     "text": "parting",
+     "atMs": 3440,
+     "endMs": 3840,
+     "phrase": 2
+    },
+    {
+     "text": "from",
+     "atMs": 3920,
+     "endMs": 4080,
+     "phrase": 2
+    },
+    {
+     "text": "you",
+     "atMs": 4120,
+     "endMs": 4160,
+     "phrase": 2
+    },
+    {
+     "text": "now,",
+     "atMs": 4240,
+     "endMs": 4960,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "parting-kiss",
+   "startMs": 5040,
+   "endMs": 7440,
+   "tokens": [
+    {
+     "text": "Thus",
+     "atMs": 5040,
+     "endMs": 5280,
+     "phrase": 3
+    },
+    {
+     "text": "much",
+     "atMs": 5440,
+     "endMs": 5760,
+     "phrase": 3
+    },
+    {
+     "text": "let",
+     "atMs": 5840,
+     "endMs": 6000,
+     "phrase": 3
+    },
+    {
+     "text": "me",
+     "atMs": 6080,
+     "endMs": 6160,
+     "phrase": 3
+    },
+    {
+     "text": "avow —",
+     "atMs": 6240,
+     "endMs": 7400,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "parting-kiss",
+   "startMs": 7440,
+   "endMs": 9440,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 7440,
+     "endMs": 7520,
+     "phrase": 4
+    },
+    {
+     "text": "are",
+     "atMs": 7600,
+     "endMs": 7680,
+     "phrase": 4
+    },
+    {
+     "text": "not",
+     "atMs": 7760,
+     "endMs": 7920,
+     "phrase": 4
+    },
+    {
+     "text": "wrong,",
+     "atMs": 8080,
+     "endMs": 8560,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "who",
+     "atMs": 8640,
+     "endMs": 8720,
+     "phrase": 5
+    },
+    {
+     "text": "deem",
+     "atMs": 8800,
+     "endMs": 9200,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "parting-kiss",
+   "startMs": 9440,
+   "endMs": 11920,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 9440,
+     "endMs": 9600,
+     "phrase": 6
+    },
+    {
+     "text": "my",
+     "atMs": 9680,
+     "endMs": 9760,
+     "phrase": 6
+    },
+    {
+     "text": "days",
+     "atMs": 9920,
+     "endMs": 10320,
+     "phrase": 6
+    },
+    {
+     "text": "have",
+     "atMs": 10400,
+     "endMs": 10480,
+     "phrase": 6
+    },
+    {
+     "text": "been",
+     "atMs": 10560,
+     "endMs": 10640,
+     "phrase": 6
+    },
+    {
+     "text": "a",
+     "atMs": 10720,
+     "endMs": 10800,
+     "phrase": 6
+    },
+    {
+     "text": "dream;",
+     "atMs": 10880,
+     "endMs": 11840,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hope-flown-away",
+   "startMs": 11920,
+   "endMs": 13920,
+   "tokens": [
+    {
+     "text": "Yet",
+     "atMs": 11920,
+     "endMs": 12000,
+     "phrase": 7
+    },
+    {
+     "text": "if",
+     "atMs": 12080,
+     "endMs": 12160,
+     "phrase": 7
+    },
+    {
+     "text": "hope",
+     "atMs": 12240,
+     "endMs": 12480,
+     "phrase": 7
+    },
+    {
+     "text": "has",
+     "atMs": 12560,
+     "endMs": 12720,
+     "phrase": 7
+    },
+    {
+     "text": "flown",
+     "atMs": 12800,
+     "endMs": 13040,
+     "phrase": 7
+    },
+    {
+     "text": "away",
+     "atMs": 13120,
+     "endMs": 13600,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hope-flown-away",
+   "startMs": 13920,
+   "endMs": 16040,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 13920,
+     "endMs": 14000,
+     "phrase": 8
+    },
+    {
+     "text": "a",
+     "atMs": 14080,
+     "endMs": 14160,
+     "phrase": 8
+    },
+    {
+     "text": "night,",
+     "atMs": 14240,
+     "endMs": 14800,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 14880,
+     "endMs": 14960,
+     "phrase": 9
+    },
+    {
+     "text": "in",
+     "atMs": 15040,
+     "endMs": 15120,
+     "phrase": 9
+    },
+    {
+     "text": "a",
+     "atMs": 15160,
+     "endMs": 15200,
+     "phrase": 9
+    },
+    {
+     "text": "day,",
+     "atMs": 15280,
+     "endMs": 16000,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hope-flown-away",
+   "startMs": 16040,
+   "endMs": 18320,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 16040,
+     "endMs": 16080,
+     "phrase": 10
+    },
+    {
+     "text": "a",
+     "atMs": 16160,
+     "endMs": 16240,
+     "phrase": 10
+    },
+    {
+     "text": "vision,",
+     "atMs": 16320,
+     "endMs": 17040,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 17120,
+     "endMs": 17200,
+     "phrase": 11
+    },
+    {
+     "text": "in",
+     "atMs": 17280,
+     "endMs": 17360,
+     "phrase": 11
+    },
+    {
+     "text": "none,",
+     "atMs": 17440,
+     "endMs": 18240,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hope-flown-away",
+   "startMs": 18320,
+   "endMs": 20800,
+   "tokens": [
+    {
+     "text": "Is",
+     "atMs": 18320,
+     "endMs": 18400,
+     "phrase": 12
+    },
+    {
+     "text": "it",
+     "atMs": 18480,
+     "endMs": 18560,
+     "phrase": 12
+    },
+    {
+     "text": "therefore",
+     "atMs": 18640,
+     "endMs": 19200,
+     "phrase": 12
+    },
+    {
+     "text": "the",
+     "atMs": 19280,
+     "endMs": 19360,
+     "phrase": 12
+    },
+    {
+     "text": "less",
+     "atMs": 19440,
+     "endMs": 19680,
+     "phrase": 12
+    },
+    {
+     "text": "gone?",
+     "atMs": 19760,
+     "endMs": 20480,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hope-flown-away",
+   "startMs": 20800,
+   "endMs": 23120,
+   "tokens": [
+    {
+     "text": "All",
+     "atMs": 20800,
+     "endMs": 21040,
+     "phrase": 13
+    },
+    {
+     "text": "that",
+     "atMs": 21120,
+     "endMs": 21200,
+     "phrase": 13
+    },
+    {
+     "text": "we",
+     "atMs": 21280,
+     "endMs": 21440,
+     "phrase": 13
+    },
+    {
+     "text": "see",
+     "atMs": 21600,
+     "endMs": 21920,
+     "phrase": 13
+    },
+    {
+     "text": "or",
+     "atMs": 22000,
+     "endMs": 22160,
+     "phrase": 13
+    },
+    {
+     "text": "seem",
+     "atMs": 22320,
+     "endMs": 22720,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "hope-flown-away",
+   "startMs": 23120,
+   "endMs": 26160,
+   "tokens": [
+    {
+     "text": "Is",
+     "atMs": 23120,
+     "endMs": 23280,
+     "phrase": 14
+    },
+    {
+     "text": "but",
+     "atMs": 23360,
+     "endMs": 23440,
+     "phrase": 14
+    },
+    {
+     "text": "a",
+     "atMs": 23520,
+     "endMs": 23600,
+     "phrase": 14
+    },
+    {
+     "text": "dream",
+     "atMs": 23680,
+     "endMs": 24160,
+     "phrase": 14
+    },
+    {
+     "text": "within",
+     "atMs": 24400,
+     "endMs": 24720,
+     "phrase": 14
+    },
+    {
+     "text": "a",
+     "atMs": 24760,
+     "endMs": 24800,
+     "phrase": 14
+    },
+    {
+     "text": "dream.",
+     "atMs": 24880,
+     "endMs": 25720,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 26160,
+   "endMs": 28000,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 26160,
+     "endMs": 26320,
+     "phrase": 15
+    },
+    {
+     "text": "stand",
+     "atMs": 26400,
+     "endMs": 26800,
+     "phrase": 15
+    },
+    {
+     "text": "amid",
+     "atMs": 26920,
+     "endMs": 27200,
+     "phrase": 15
+    },
+    {
+     "text": "the",
+     "atMs": 27240,
+     "endMs": 27280,
+     "phrase": 15
+    },
+    {
+     "text": "roar",
+     "atMs": 27440,
+     "endMs": 27840,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 28000,
+   "endMs": 30400,
+   "tokens": [
+    {
+     "text": "Of",
+     "atMs": 28000,
+     "endMs": 28080,
+     "phrase": 16
+    },
+    {
+     "text": "a",
+     "atMs": 28160,
+     "endMs": 28240,
+     "phrase": 16
+    },
+    {
+     "text": "surf-tormented",
+     "atMs": 28400,
+     "endMs": 29440,
+     "phrase": 16
+    },
+    {
+     "text": "shore,",
+     "atMs": 29520,
+     "endMs": 30320,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 30400,
+   "endMs": 32320,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 30400,
+     "endMs": 30480,
+     "phrase": 17
+    },
+    {
+     "text": "I",
+     "atMs": 30560,
+     "endMs": 30640,
+     "phrase": 17
+    },
+    {
+     "text": "hold",
+     "atMs": 30720,
+     "endMs": 30960,
+     "phrase": 17
+    },
+    {
+     "text": "within",
+     "atMs": 31040,
+     "endMs": 31360,
+     "phrase": 17
+    },
+    {
+     "text": "my",
+     "atMs": 31440,
+     "endMs": 31600,
+     "phrase": 17
+    },
+    {
+     "text": "hand",
+     "atMs": 31680,
+     "endMs": 32080,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 32320,
+   "endMs": 34800,
+   "tokens": [
+    {
+     "text": "Grains",
+     "atMs": 32320,
+     "endMs": 32880,
+     "phrase": 18
+    },
+    {
+     "text": "of",
+     "atMs": 32920,
+     "endMs": 32960,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 33040,
+     "endMs": 33120,
+     "phrase": 18
+    },
+    {
+     "text": "golden",
+     "atMs": 33200,
+     "endMs": 33600,
+     "phrase": 18
+    },
+    {
+     "text": "sand —",
+     "atMs": 33760,
+     "endMs": 34760,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 34800,
+   "endMs": 37520,
+   "tokens": [
+    {
+     "text": "How",
+     "atMs": 34800,
+     "endMs": 34960,
+     "phrase": 19
+    },
+    {
+     "text": "few!",
+     "atMs": 35200,
+     "endMs": 35840,
+     "phrase": 19,
+     "emphasis": "lead"
+    },
+    {
+     "text": "yet",
+     "atMs": 36080,
+     "endMs": 36240,
+     "phrase": 20
+    },
+    {
+     "text": "how",
+     "atMs": 36400,
+     "endMs": 36560,
+     "phrase": 20
+    },
+    {
+     "text": "they",
+     "atMs": 36640,
+     "endMs": 36800,
+     "phrase": 20
+    },
+    {
+     "text": "creep",
+     "atMs": 36960,
+     "endMs": 37360,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 37520,
+   "endMs": 39720,
+   "tokens": [
+    {
+     "text": "Through",
+     "atMs": 37520,
+     "endMs": 37680,
+     "phrase": 21
+    },
+    {
+     "text": "my",
+     "atMs": 37800,
+     "endMs": 37920,
+     "phrase": 21
+    },
+    {
+     "text": "fingers",
+     "atMs": 38000,
+     "endMs": 38480,
+     "phrase": 21
+    },
+    {
+     "text": "to",
+     "atMs": 38560,
+     "endMs": 38640,
+     "phrase": 21
+    },
+    {
+     "text": "the",
+     "atMs": 38680,
+     "endMs": 38720,
+     "phrase": 21
+    },
+    {
+     "text": "deep,",
+     "atMs": 38880,
+     "endMs": 39600,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-sand",
+   "startMs": 39720,
+   "endMs": 42800,
+   "tokens": [
+    {
+     "text": "While",
+     "atMs": 39720,
+     "endMs": 39840,
+     "phrase": 22
+    },
+    {
+     "text": "I",
+     "atMs": 39920,
+     "endMs": 40000,
+     "phrase": 22
+    },
+    {
+     "text": "weep —",
+     "atMs": 40160,
+     "endMs": 41120,
+     "phrase": 22,
+     "emphasis": "lead"
+    },
+    {
+     "text": "while",
+     "atMs": 41200,
+     "endMs": 41280,
+     "phrase": 23
+    },
+    {
+     "text": "I",
+     "atMs": 41360,
+     "endMs": 41440,
+     "phrase": 23
+    },
+    {
+     "text": "weep!",
+     "atMs": 41680,
+     "endMs": 42440,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "dream-within-a-dream",
+   "startMs": 42800,
+   "endMs": 44960,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 42800,
+     "endMs": 42960,
+     "phrase": 24
+    },
+    {
+     "text": "God!",
+     "atMs": 43200,
+     "endMs": 43720,
+     "phrase": 24,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Can",
+     "atMs": 43840,
+     "endMs": 44000,
+     "phrase": 25
+    },
+    {
+     "text": "I",
+     "atMs": 44080,
+     "endMs": 44120,
+     "phrase": 25
+    },
+    {
+     "text": "not",
+     "atMs": 44160,
+     "endMs": 44320,
+     "phrase": 25
+    },
+    {
+     "text": "grasp",
+     "atMs": 44480,
+     "endMs": 44880,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "dream-within-a-dream",
+   "startMs": 44960,
+   "endMs": 46800,
+   "tokens": [
+    {
+     "text": "Them",
+     "atMs": 44960,
+     "endMs": 45040,
+     "phrase": 26
+    },
+    {
+     "text": "with",
+     "atMs": 45120,
+     "endMs": 45200,
+     "phrase": 26
+    },
+    {
+     "text": "a",
+     "atMs": 45280,
+     "endMs": 45360,
+     "phrase": 26
+    },
+    {
+     "text": "tighter",
+     "atMs": 45480,
+     "endMs": 45680,
+     "phrase": 26
+    },
+    {
+     "text": "clasp?",
+     "atMs": 45840,
+     "endMs": 46720,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "dream-within-a-dream",
+   "startMs": 46800,
+   "endMs": 48720,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 46800,
+     "endMs": 46880,
+     "phrase": 27
+    },
+    {
+     "text": "God!",
+     "atMs": 47120,
+     "endMs": 47680,
+     "phrase": 27,
+     "emphasis": "lead"
+    },
+    {
+     "text": "can",
+     "atMs": 47760,
+     "endMs": 47840,
+     "phrase": 28
+    },
+    {
+     "text": "I",
+     "atMs": 47880,
+     "endMs": 47920,
+     "phrase": 28
+    },
+    {
+     "text": "not",
+     "atMs": 48000,
+     "endMs": 48160,
+     "phrase": 28
+    },
+    {
+     "text": "save",
+     "atMs": 48320,
+     "endMs": 48560,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "dream-within-a-dream",
+   "startMs": 48720,
+   "endMs": 51000,
+   "tokens": [
+    {
+     "text": "One",
+     "atMs": 48720,
+     "endMs": 48960,
+     "phrase": 29
+    },
+    {
+     "text": "from",
+     "atMs": 49040,
+     "endMs": 49200,
+     "phrase": 29
+    },
+    {
+     "text": "the",
+     "atMs": 49240,
+     "endMs": 49280,
+     "phrase": 29
+    },
+    {
+     "text": "pitiless",
+     "atMs": 49440,
+     "endMs": 49840,
+     "phrase": 29
+    },
+    {
+     "text": "wave?",
+     "atMs": 50000,
+     "endMs": 50880,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "dream-within-a-dream",
+   "startMs": 51000,
+   "endMs": 53280,
+   "tokens": [
+    {
+     "text": "Is",
+     "atMs": 51000,
+     "endMs": 51120,
+     "phrase": 30
+    },
+    {
+     "text": "all",
+     "atMs": 51200,
+     "endMs": 51360,
+     "phrase": 30
+    },
+    {
+     "text": "that",
+     "atMs": 51440,
+     "endMs": 51600,
+     "phrase": 30
+    },
+    {
+     "text": "we",
+     "atMs": 51680,
+     "endMs": 51760,
+     "phrase": 30
+    },
+    {
+     "text": "see",
+     "atMs": 52000,
+     "endMs": 52240,
+     "phrase": 30
+    },
+    {
+     "text": "or",
+     "atMs": 52320,
+     "endMs": 52480,
+     "phrase": 30
+    },
+    {
+     "text": "seem",
+     "atMs": 52640,
+     "endMs": 53040,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "dream-within-a-dream",
+   "startMs": 53280,
+   "endMs": 55280,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 53280,
+     "endMs": 53360,
+     "phrase": 31
+    },
+    {
+     "text": "a",
+     "atMs": 53440,
+     "endMs": 53520,
+     "phrase": 31
+    },
+    {
+     "text": "dream",
+     "atMs": 53600,
+     "endMs": 54080,
+     "phrase": 31
+    },
+    {
+     "text": "within",
+     "atMs": 54160,
+     "endMs": 54400,
+     "phrase": 31
+    },
+    {
+     "text": "a",
+     "atMs": 54480,
+     "endMs": 54560,
+     "phrase": 31
+    },
+    {
+     "text": "dream?",
+     "atMs": 54640,
+     "endMs": 55280,
+     "phrase": 31,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

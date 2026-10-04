@@ -501,14 +501,8 @@
      "phrase": 13
     },
     {
-     "text": "нагорный",
+     "text": "нагорный —",
      "atMs": 22880,
-     "endMs": 23440,
-     "phrase": 13
-    },
-    {
-     "text": "—",
-     "atMs": 23680,
      "endMs": 23733,
      "phrase": 13,
      "emphasis": "lead"

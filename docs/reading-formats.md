@@ -375,11 +375,19 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | «Зимнее утро», Пушкин | `61ba3680-210d-41ed-acae-39710a5af5c8` | Alex Bell | 4 in 5 scenes - the window returns on «погляди в окно» | 6, 5, 7, 6, 6 |
 | «Весенняя гроза», Тютчев | `a49896d0-be71-4b1a-9380-590738af79a2` | Alex Bell | 4 | 4, 4, 4, 4 |
 | «Ночь, улица, фонарь, аптека…», Блок | `c85132ea-8f0b-495f-a468-c3339c624fa2` | Alex Bell | 4 | 2, 2, 2, 2 |
+| *Hope is the thing with feathers*, Emily Dickinson | `226ea7f3-9aa8-4c2f-b654-01ee67b53fb2` | Sha | 4 | 4, 4, 2, 2 |
+| *A Dream Within a Dream*, Edgar Allan Poe | `9aa49ad9-579e-4721-881d-d84595a49975` | Jerry B. | 4 | 5, 6, 7, 6 |
+| *The Tyger*, William Blake | `11cbb669-6c1b-4e03-a80a-27951c9abca9` | Jerry B. | 4 in 5 scenes - the opening returns with the closing stanza | 4, 4, 8, 4, 4 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
 `CATALOGUE_MIN_CHARACTERS=150` - Блок is 227 characters, under the floor that
-exists to catch scrape debris).
+exists to catch scrape debris). Dickinson and Poe were added the same way;
+The Tyger was already there and only gained its production.
+
+A dash standing alone between spaces - Dickinson's, Blok's «века —» - is
+joined to the word before it by the manifest builder (no-break space), so it
+can never wrap onto a row of its own; the word it joins closes the phrase.
 
 ### Adding a poem
 

@@ -214,14 +214,8 @@
      "phrase": 5
     },
     {
-     "text": "века",
+     "text": "века —",
      "atMs": 7320,
-     "endMs": 7680,
-     "phrase": 5
-    },
-    {
-     "text": "—",
-     "atMs": 8000,
      "endMs": 8053,
      "phrase": 5,
      "emphasis": "lead"
@@ -273,14 +267,8 @@
    "endMs": 12960,
    "tokens": [
     {
-     "text": "Умрёшь",
+     "text": "Умрёшь —",
      "atMs": 10480,
-     "endMs": 11120,
-     "phrase": 8
-    },
-    {
-     "text": "—",
-     "atMs": 11280,
      "endMs": 11360,
      "phrase": 8,
      "emphasis": "lead"

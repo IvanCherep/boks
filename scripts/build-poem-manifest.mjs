@@ -45,8 +45,35 @@ function wordsFrom({ characters, character_start_times_seconds: starts, characte
   return words;
 }
 
-const words = wordsFrom(alignment);
-const counts = lines.map((line) => line.split(/\s+/).filter(Boolean).length);
+/*
+ * A dash on its own is not a word.
+ *
+ * Dickinson's dashes, Blok's "века —": spoken as a pause, written with a space
+ * either side, and cut on whitespace they became tokens of their own - which
+ * the renderer is free to wrap, so a line ended on a row holding nothing but
+ * "–". Each one is joined to the word before it with a no-break space, keeping
+ * that word's start and the dash's end, and closes the phrase as a comma would.
+ */
+const isDash = (text) => /^[-–—]+$/.test(text);
+function joinDashes(tokens) {
+  const joined = [];
+  for (const token of tokens) {
+    const previous = joined.at(-1);
+    if (previous && isDash(token.text)) {
+      previous.text = `${previous.text}\u00a0${token.text}`;
+      previous.endMs = token.endMs;
+    } else joined.push({ ...token });
+  }
+  return joined;
+}
+const wordCount = (line) =>
+  line
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((word, index) => index === 0 || !isDash(word)).length;
+
+const words = joinDashes(wordsFrom(alignment));
+const counts = lines.map(wordCount);
 const total = counts.reduce((sum, n) => sum + n, 0);
 if (total !== words.length) {
   console.error(`The lines hold ${total} words and the recording returned ${words.length}.`);
@@ -112,7 +139,7 @@ const built = lines.map((_, index) => {
        * рабов. Set in the data rather than decided while rendering, so the
        * size of a word never changes and nothing is ever re-laid out.
        */
-      const lead = /[,.;:!?—]$/.test(word.text) || n === counts[index] - 1;
+      const lead = /[,.;:!?—–]$/.test(word.text) || n === counts[index] - 1;
       /*
        * Which phrase the word belongs to.
        *

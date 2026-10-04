@@ -20,6 +20,12 @@ const poems: Record<string, string> = {
   "a49896d0-be71-4b1a-9380-590738af79a2": "/poetry/spring-storm/manifest.json",
   // Александр Блок — Ночь, улица, фонарь, аптека…
   "c85132ea-8f0b-495f-a468-c3339c624fa2": "/poetry/night-street/manifest.json",
+  // Emily Dickinson — Hope is the thing with feathers
+  "226ea7f3-9aa8-4c2f-b654-01ee67b53fb2": "/poetry/hope-feathers/manifest.json",
+  // Edgar Allan Poe — A Dream Within a Dream
+  "9aa49ad9-579e-4721-881d-d84595a49975": "/poetry/dream-within-dream/manifest.json",
+  // William Blake — The Tyger
+  "11cbb669-6c1b-4e03-a80a-27951c9abca9": "/poetry/tyger/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

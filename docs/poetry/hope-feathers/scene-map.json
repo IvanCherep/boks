@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "Hope is the thing with feathers",
+ "author": "Emily Dickinson",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF4E6",
+  "active": "#FFE3A3",
+  "shadow": "rgba(16, 14, 24, 0.5)"
+ },
+ "themeGain": 0.22,
+ "textScale": 0.8,
+ "veil": 1.4,
+ "scenes": [
+  {
+   "id": "bird-in-the-soul",
+   "image": "01-bird-in-the-soul.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.44,
+     "y": 0.08,
+     "width": 0.48,
+     "height": 0.24
+    }
+   ],
+   "line": "“Hope” is the thing with feathers – / That perches in the soul – / And sings the tune without the words – / And never stops – at all –"
+  },
+  {
+   "id": "sweetest-in-the-gale",
+   "image": "02-sweetest-in-the-gale.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.3
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.48,
+     "y": 0.42,
+     "width": 0.44,
+     "height": 0.2
+    }
+   ],
+   "line": "And sweetest – in the Gale – is heard – / And sore must be the storm – / That could abash the little Bird / That kept so many warm –"
+  },
+  {
+   "id": "chillest-land",
+   "image": "03-chillest-land.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.35,
+    "y": 0.25
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.46,
+     "y": 0.08,
+     "width": 0.46,
+     "height": 0.22
+    }
+   ],
+   "line": "I’ve heard it in the chillest land – / And on the strangest Sea –"
+  },
+  {
+   "id": "strangest-sea",
+   "image": "04-strangest-sea.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.46,
+     "y": 0.07,
+     "width": 0.46,
+     "height": 0.22
+    }
+   ],
+   "line": "Yet – never – in Extremity, / It asked a crumb – of me."
+  }
+ ]
+}

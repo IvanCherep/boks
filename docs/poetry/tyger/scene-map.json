@@ -1,0 +1,122 @@
+{
+ "version": 1,
+ "title": "The Tyger",
+ "author": "William Blake",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7ECDA",
+  "active": "#FFB85C",
+  "shadow": "rgba(8, 6, 4, 0.55)"
+ },
+ "themeGain": 0.18,
+ "textScale": 0.9,
+ "scenes": [
+  {
+   "id": "burning-bright",
+   "image": "01-burning-bright.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.14,
+     "y": 0.07,
+     "width": 0.72,
+     "height": 0.22
+    }
+   ],
+   "line": "Tyger Tyger, burning bright, / In the forests of the night; / What immortal hand or eye, / Could frame thy fearful symmetry?"
+  },
+  {
+   "id": "distant-deeps-and-skies",
+   "image": "02-distant-deeps-and-skies.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.45
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.66,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "In what distant deeps or skies. / Burnt the fire of thine eyes? / On what wings dare he aspire? / What the hand, dare seize the fire?"
+  },
+  {
+   "id": "hammer-chain-furnace",
+   "image": "03-hammer-chain-furnace.png",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "uniform-formation",
+   "transitionMs": 900,
+   "safeZones": [
+    {
+     "x": 0.3,
+     "y": 0.07,
+     "width": 0.5,
+     "height": 0.2
+    }
+   ],
+   "line": "And what shoulder, & what art, / Could twist the sinews of thy heart? / And when thy heart began to beat, / What dread hand? & what dread feet? / What the hammer? what the chain, / In what furnace was thy brain? / What the anvil? what dread grasp, / Dare its deadly terrors clasp!"
+  },
+  {
+   "id": "tiger-and-lamb",
+   "image": "04-tiger-and-lamb.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.36,
+     "y": 0.08,
+     "width": 0.56,
+     "height": 0.24
+    }
+   ],
+   "line": "When the stars threw down their spears / And water’d heaven with their tears: / Did he smile his work to see? / Did he who made the Lamb make thee?"
+  },
+  {
+   "id": "burning-bright-again",
+   "image": "01-burning-bright.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.14,
+     "y": 0.07,
+     "width": 0.72,
+     "height": 0.22
+    }
+   ],
+   "line": "Tyger Tyger burning bright, / In the forests of the night: / What immortal hand or eye, / Dare frame thy fearful symmetry?"
+  }
+ ]
+}

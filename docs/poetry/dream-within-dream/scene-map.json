@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "title": "A Dream Within a Dream",
+ "author": "Edgar Allan Poe",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F2EADC",
+  "active": "#FFCF85",
+  "shadow": "rgba(6, 8, 16, 0.55)"
+ },
+ "themeGain": 0.19,
+ "textScale": 0.82,
+ "scenes": [
+  {
+   "id": "parting-kiss",
+   "image": "01-parting-kiss.png",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.42,
+    "y": 0.4
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.07,
+     "width": 0.84,
+     "height": 0.22
+    }
+   ],
+   "line": "Take this kiss upon the brow! / And, in parting from you now, / Thus much let me avow — / You are not wrong, who deem / That my days have been a dream;"
+  },
+  {
+   "id": "hope-flown-away",
+   "image": "02-hope-flown-away.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.35,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.07,
+     "width": 0.82,
+     "height": 0.24
+    }
+   ],
+   "line": "Yet if hope has flown away / In a night, or in a day, / In a vision, or in none, / Is it therefore the less gone? / All that we see or seem / Is but a dream within a dream."
+  },
+  {
+   "id": "golden-sand",
+   "image": "03-golden-sand.png",
+   "lines": 7,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.5,
+     "y": 0.08,
+     "width": 0.42,
+     "height": 0.24
+    }
+   ],
+   "line": "I stand amid the roar / Of a surf-tormented shore, / And I hold within my hand / Grains of the golden sand — / How few! yet how they creep / Through my fingers to the deep, / While I weep — while I weep!"
+  },
+  {
+   "id": "dream-within-a-dream",
+   "image": "04-dream-within-a-dream.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.65,
+    "y": 0.4
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.42,
+     "height": 0.3
+    }
+   ],
+   "line": "O God! Can I not grasp / Them with a tighter clasp? / O God! can I not save / One from the pitiless wave? / Is all that we see or seem / But a dream within a dream?"
+  }
+ ]
+}
