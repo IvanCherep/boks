@@ -48,13 +48,53 @@ export type SeriesPiece = {
 };
 
 /**
- * Every piece, in no particular order - the shelf sorts it.
+ * Every piece. The shelf sorts by premiere; pieces that opened on the same
+ * day keep the order they have here, so the first of a batch leads it.
  *
  * Adding one: finish it in its format first (`docs/reading-formats.md`), make
  * a cover with `cwebp -q 80 -m 6 -sharp_yuv -resize 720 0`, add a line here.
  * The test names what is missing if any of it is not done.
  */
 export const seriesPieces: readonly SeriesPiece[] = [
+  {
+    storyId: "61ba3680-210d-41ed-acae-39710a5af5c8",
+    format: "poem",
+    language: "ru",
+    title: "Зимнее утро",
+    author: "Александр Пушкин",
+    cover: "/series/winter-morning.webp",
+    coverFocus: "62% 40%",
+    durationSeconds: 62,
+    scenes: 5,
+    moments: 0,
+    premieredOn: "2026-10-04",
+  },
+  {
+    storyId: "a49896d0-be71-4b1a-9380-590738af79a2",
+    format: "poem",
+    language: "ru",
+    title: "Весенняя гроза",
+    author: "Фёдор Тютчев",
+    cover: "/series/spring-storm.webp",
+    coverFocus: "60% 30%",
+    durationSeconds: 34,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-04",
+  },
+  {
+    storyId: "c85132ea-8f0b-495f-a468-c3339c624fa2",
+    format: "poem",
+    language: "ru",
+    title: "Ночь, улица, фонарь, аптека…",
+    author: "Александр Блок",
+    cover: "/series/night-street.webp",
+    coverFocus: "55% 35%",
+    durationSeconds: 20,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-04",
+  },
   {
     storyId: "ee470590-a93c-467e-aaeb-87ae00c0745e",
     format: "cinema",
@@ -137,7 +177,7 @@ export function orderSeries(
     const heardOrder = Number(heard.has(a.storyId)) - Number(heard.has(b.storyId));
     if (heardOrder) return heardOrder;
     if (a.premieredOn !== b.premieredOn) return a.premieredOn < b.premieredOn ? 1 : -1;
-    return a.title.localeCompare(b.title);
+    return 0;
   });
   return sorted.filter(reads);
 }

@@ -28,9 +28,15 @@ import { readFileSync, writeFileSync } from "node:fs";
 const publisherUserId = "c990a7fc-1114-4a01-984b-e6ced9eeaa74";
 /** The admin recorded as the reviewer and as the one confirming rights. */
 const adminUserId = "c990a7fc-1114-4a01-984b-e6ced9eeaa74";
-const importPrefix = "catalogue-2026-09-20";
+/** Overridable per batch, so a later hand-picked batch keeps its own keys. */
+const importPrefix = process.env.CATALOGUE_PREFIX || "catalogue-2026-09-20";
 
-const minCharacters = 400;
+/**
+ * The floor is there to catch scrape debris - a stub page, a heading with no
+ * piece under it. A short poem chosen by hand is not debris ("Ночь, улица,
+ * фонарь, аптека…" is 230 characters), so a curated batch may lower it.
+ */
+const minCharacters = Number(process.env.CATALOGUE_MIN_CHARACTERS || 400);
 /** `boks_max_text_characters()`. Kept in step with the database on purpose. */
 const maxCharacters = 20_000;
 const genres = new Set(["literary", "mystery", "slice of life", "speculative", "fantasy"]);

@@ -14,6 +14,12 @@ const poems: Record<string, string> = {
   "202c3d9c-5a8e-4c91-8278-ab0fc4e602cf": "/poetry/new-colossus/manifest.json",
   // Walt Whitman — I Hear America Singing
   "3056ee24-d8c0-4963-923f-967213a3ec34": "/poetry/i-hear-america-singing/manifest.json",
+  // Александр Пушкин — Зимнее утро
+  "61ba3680-210d-41ed-acae-39710a5af5c8": "/poetry/winter-morning/manifest.json",
+  // Фёдор Тютчев — Весенняя гроза
+  "a49896d0-be71-4b1a-9380-590738af79a2": "/poetry/spring-storm/manifest.json",
+  // Александр Блок — Ночь, улица, фонарь, аптека…
+  "c85132ea-8f0b-495f-a468-c3339c624fa2": "/poetry/night-street/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

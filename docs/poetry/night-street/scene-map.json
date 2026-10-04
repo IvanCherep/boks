@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "title": "Ночь, улица, фонарь, аптека…",
+ "author": "Александр Блок",
+ "language": "ru",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#EFE8DA",
+  "active": "#FFD47E",
+  "shadow": "rgba(6, 10, 16, 0.55)"
+ },
+ "themeGain": 0.12,
+ "scenes": [
+  {
+   "id": "lamp-and-pharmacy",
+   "image": "01-night-street-lamp-pharmacy.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.44,
+     "height": 0.27
+    }
+   ],
+   "line": "Ночь, улица, фонарь, аптека, / Бессмысленный и тусклый свет."
+  },
+  {
+   "id": "no-exit",
+   "image": "02-no-exit.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.06,
+     "width": 0.5,
+     "height": 0.2
+    }
+   ],
+   "line": "Живи ещё хоть четверть века — / Всё будет так. Исхода нет."
+  },
+  {
+   "id": "again-from-the-beginning",
+   "image": "03-again-from-the-beginning.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.44,
+     "height": 0.27
+    }
+   ],
+   "line": "Умрёшь — начнёшь опять сначала / И повторится всё, как встарь:"
+  },
+  {
+   "id": "icy-canal-loop",
+   "image": "04-icy-canal-loop.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.07,
+     "width": 0.44,
+     "height": 0.26
+    }
+   ],
+   "line": "Ночь, ледяная рябь канала, / Аптека, улица, фонарь."
+  }
+ ],
+ "textScale": 0.78
+}

@@ -1,0 +1,1134 @@
+{
+ "id": "winter-morning-immersive-v1",
+ "title": "Зимнее утро",
+ "author": "Александр Пушкин",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/winter-morning/narration.mp3",
+ "theme": {
+  "src": "/poetry/winter-morning/theme.mp3",
+  "gain": 0.2
+ },
+ "durationMs": 62160,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7EFE2",
+  "active": "#FFE2A6",
+  "shadow": "rgba(14, 18, 30, 0.5)"
+ },
+ "textScale": 0.86,
+ "veil": 1.5,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1020,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "frost-and-sun",
+   "image": "/poetry/winter-morning/scenes/02-frost-and-sun.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.62,
+    "y": 0.42
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1380,
+   "safeZones": [
+    {
+     "x": 0.39,
+     "y": 0.1,
+     "width": 0.53,
+     "height": 0.27
+    }
+   ],
+   "line": "Мороз и солнце; день чудесный! / Еще ты дремлешь, друг прелестный — / Пора, красавица, проснись: / Открой сомкнуты негой взоры / Навстречу северной Авроры, / Звездою севера явись!",
+   "startMs": 0
+  },
+  {
+   "id": "stormy-evening",
+   "image": "/poetry/winter-morning/scenes/01-stormy-evening.webp",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.62,
+    "y": 0.62
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.5,
+     "height": 0.3
+    }
+   ],
+   "line": "Вечор, ты помнишь, вьюга злилась, / На мутном небе мгла носилась; / Луна, как бледное пятно, / Сквозь тучи мрачные желтела, / И ты печальная сидела —",
+   "startMs": 14320
+  },
+  {
+   "id": "look-through-the-window",
+   "image": "/poetry/winter-morning/scenes/02-frost-and-sun.webp",
+   "lines": 7,
+   "focalPoint": {
+    "x": 0.62,
+    "y": 0.42
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.39,
+     "y": 0.1,
+     "width": 0.53,
+     "height": 0.27
+    }
+   ],
+   "line": "А нынче… погляди в окно: / Под голубыми небесами / Великолепными коврами, / Блестя на солнце, снег лежит; / Прозрачный лес один чернеет, / И ель сквозь иней зеленеет, / И речка подо льдом блестит.",
+   "startMs": 25067
+  },
+  {
+   "id": "amber-room",
+   "image": "/poetry/winter-morning/scenes/03-amber-room.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.45
+   },
+   "textPreset": "shelter-reveal",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.06,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Вся комната янтарным блеском / Озарена. Веселым треском / Трещит затопленная печь. / Приятно думать у лежанки. / Но знаешь: не велеть ли в санки / Кобылку бурую запречь?",
+   "startMs": 38960
+  },
+  {
+   "id": "sleigh-ride",
+   "image": "/poetry/winter-morning/scenes/04-sleigh-ride.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1440,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.22
+    }
+   ],
+   "line": "Скользя по утреннему снегу, / Друг милый, предадимся бегу / Нетерпеливого коня / И навестим поля пустые, / Леса, недавно столь густые, / И берег, милый для меня.",
+   "startMs": 50560
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "frost-and-sun",
+   "startMs": 0,
+   "endMs": 3120,
+   "tokens": [
+    {
+     "text": "Мороз",
+     "atMs": 0,
+     "endMs": 480,
+     "phrase": 0
+    },
+    {
+     "text": "и",
+     "atMs": 560,
+     "endMs": 640,
+     "phrase": 0
+    },
+    {
+     "text": "солнце;",
+     "atMs": 720,
+     "endMs": 1520,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "день",
+     "atMs": 1760,
+     "endMs": 2000,
+     "phrase": 1
+    },
+    {
+     "text": "чудесный!",
+     "atMs": 2080,
+     "endMs": 2920,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "frost-and-sun",
+   "startMs": 3120,
+   "endMs": 5573,
+   "tokens": [
+    {
+     "text": "Еще",
+     "atMs": 3120,
+     "endMs": 3440,
+     "phrase": 2
+    },
+    {
+     "text": "ты",
+     "atMs": 3520,
+     "endMs": 3600,
+     "phrase": 2
+    },
+    {
+     "text": "дремлешь,",
+     "atMs": 3640,
+     "endMs": 4240,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "друг",
+     "atMs": 4320,
+     "endMs": 4560,
+     "phrase": 3
+    },
+    {
+     "text": "прелестный",
+     "atMs": 4600,
+     "endMs": 5200,
+     "phrase": 3
+    },
+    {
+     "text": "—",
+     "atMs": 5520,
+     "endMs": 5547,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "frost-and-sun",
+   "startMs": 5573,
+   "endMs": 7720,
+   "tokens": [
+    {
+     "text": "Пора,",
+     "atMs": 5573,
+     "endMs": 5920,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "красавица,",
+     "atMs": 6080,
+     "endMs": 6640,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "проснись:",
+     "atMs": 6800,
+     "endMs": 7600,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "frost-and-sun",
+   "startMs": 7720,
+   "endMs": 9840,
+   "tokens": [
+    {
+     "text": "Открой",
+     "atMs": 7720,
+     "endMs": 8080,
+     "phrase": 7
+    },
+    {
+     "text": "сомкнуты",
+     "atMs": 8160,
+     "endMs": 8720,
+     "phrase": 7
+    },
+    {
+     "text": "негой",
+     "atMs": 8800,
+     "endMs": 9120,
+     "phrase": 7
+    },
+    {
+     "text": "взоры",
+     "atMs": 9200,
+     "endMs": 9600,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "frost-and-sun",
+   "startMs": 9840,
+   "endMs": 12080,
+   "tokens": [
+    {
+     "text": "Навстречу",
+     "atMs": 9840,
+     "endMs": 10480,
+     "phrase": 8
+    },
+    {
+     "text": "северной",
+     "atMs": 10560,
+     "endMs": 11120,
+     "phrase": 8
+    },
+    {
+     "text": "Авроры,",
+     "atMs": 11200,
+     "endMs": 12000,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "frost-and-sun",
+   "startMs": 12080,
+   "endMs": 14320,
+   "tokens": [
+    {
+     "text": "Звездою",
+     "atMs": 12080,
+     "endMs": 12720,
+     "phrase": 9
+    },
+    {
+     "text": "севера",
+     "atMs": 12880,
+     "endMs": 13280,
+     "phrase": 9
+    },
+    {
+     "text": "явись!",
+     "atMs": 13360,
+     "endMs": 14040,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "stormy-evening",
+   "startMs": 14320,
+   "endMs": 16800,
+   "tokens": [
+    {
+     "text": "Вечор,",
+     "atMs": 14320,
+     "endMs": 14880,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ты",
+     "atMs": 14920,
+     "endMs": 14960,
+     "phrase": 11
+    },
+    {
+     "text": "помнишь,",
+     "atMs": 15040,
+     "endMs": 15520,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "вьюга",
+     "atMs": 15600,
+     "endMs": 15920,
+     "phrase": 12
+    },
+    {
+     "text": "злилась,",
+     "atMs": 16000,
+     "endMs": 16720,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "stormy-evening",
+   "startMs": 16800,
+   "endMs": 18960,
+   "tokens": [
+    {
+     "text": "На",
+     "atMs": 16800,
+     "endMs": 16880,
+     "phrase": 13
+    },
+    {
+     "text": "мутном",
+     "atMs": 16920,
+     "endMs": 17280,
+     "phrase": 13
+    },
+    {
+     "text": "небе",
+     "atMs": 17360,
+     "endMs": 17600,
+     "phrase": 13
+    },
+    {
+     "text": "мгла",
+     "atMs": 17680,
+     "endMs": 18000,
+     "phrase": 13
+    },
+    {
+     "text": "носилась;",
+     "atMs": 18120,
+     "endMs": 18880,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "stormy-evening",
+   "startMs": 18960,
+   "endMs": 20920,
+   "tokens": [
+    {
+     "text": "Луна,",
+     "atMs": 18960,
+     "endMs": 19440,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "как",
+     "atMs": 19480,
+     "endMs": 19600,
+     "phrase": 15
+    },
+    {
+     "text": "бледное",
+     "atMs": 19680,
+     "endMs": 20160,
+     "phrase": 15
+    },
+    {
+     "text": "пятно,",
+     "atMs": 20240,
+     "endMs": 20880,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "stormy-evening",
+   "startMs": 20920,
+   "endMs": 23080,
+   "tokens": [
+    {
+     "text": "Сквозь",
+     "atMs": 20920,
+     "endMs": 21280,
+     "phrase": 16
+    },
+    {
+     "text": "тучи",
+     "atMs": 21360,
+     "endMs": 21640,
+     "phrase": 16
+    },
+    {
+     "text": "мрачные",
+     "atMs": 21680,
+     "endMs": 22160,
+     "phrase": 16
+    },
+    {
+     "text": "желтела,",
+     "atMs": 22200,
+     "endMs": 23040,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "stormy-evening",
+   "startMs": 23080,
+   "endMs": 25067,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 23080,
+     "endMs": 23120,
+     "phrase": 17
+    },
+    {
+     "text": "ты",
+     "atMs": 23280,
+     "endMs": 23440,
+     "phrase": 17
+    },
+    {
+     "text": "печальная",
+     "atMs": 23520,
+     "endMs": 24080,
+     "phrase": 17
+    },
+    {
+     "text": "сидела",
+     "atMs": 24160,
+     "endMs": 24640,
+     "phrase": 17
+    },
+    {
+     "text": "—",
+     "atMs": 24960,
+     "endMs": 25013,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 25067,
+   "endMs": 27040,
+   "tokens": [
+    {
+     "text": "А",
+     "atMs": 25067,
+     "endMs": 25120,
+     "phrase": 18
+    },
+    {
+     "text": "нынче…",
+     "atMs": 25200,
+     "endMs": 25840,
+     "phrase": 18
+    },
+    {
+     "text": "погляди",
+     "atMs": 25893,
+     "endMs": 26240,
+     "phrase": 18
+    },
+    {
+     "text": "в",
+     "atMs": 26280,
+     "endMs": 26320,
+     "phrase": 18
+    },
+    {
+     "text": "окно:",
+     "atMs": 26400,
+     "endMs": 26960,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 27040,
+   "endMs": 28640,
+   "tokens": [
+    {
+     "text": "Под",
+     "atMs": 27040,
+     "endMs": 27120,
+     "phrase": 19
+    },
+    {
+     "text": "голубыми",
+     "atMs": 27200,
+     "endMs": 27680,
+     "phrase": 19
+    },
+    {
+     "text": "небесами",
+     "atMs": 27720,
+     "endMs": 28400,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 28640,
+   "endMs": 30400,
+   "tokens": [
+    {
+     "text": "Великолепными",
+     "atMs": 28640,
+     "endMs": 29440,
+     "phrase": 20
+    },
+    {
+     "text": "коврами,",
+     "atMs": 29520,
+     "endMs": 30320,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 30400,
+   "endMs": 32680,
+   "tokens": [
+    {
+     "text": "Блестя",
+     "atMs": 30400,
+     "endMs": 30800,
+     "phrase": 21
+    },
+    {
+     "text": "на",
+     "atMs": 30880,
+     "endMs": 30960,
+     "phrase": 21
+    },
+    {
+     "text": "солнце,",
+     "atMs": 31040,
+     "endMs": 31520,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "снег",
+     "atMs": 31600,
+     "endMs": 31920,
+     "phrase": 22
+    },
+    {
+     "text": "лежит;",
+     "atMs": 32000,
+     "endMs": 32640,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 32680,
+   "endMs": 34800,
+   "tokens": [
+    {
+     "text": "Прозрачный",
+     "atMs": 32680,
+     "endMs": 33280,
+     "phrase": 23
+    },
+    {
+     "text": "лес",
+     "atMs": 33360,
+     "endMs": 33600,
+     "phrase": 23
+    },
+    {
+     "text": "один",
+     "atMs": 33680,
+     "endMs": 33840,
+     "phrase": 23
+    },
+    {
+     "text": "чернеет,",
+     "atMs": 33920,
+     "endMs": 34720,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 34800,
+   "endMs": 36920,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 34800,
+     "endMs": 34880,
+     "phrase": 24
+    },
+    {
+     "text": "ель",
+     "atMs": 35040,
+     "endMs": 35200,
+     "phrase": 24
+    },
+    {
+     "text": "сквозь",
+     "atMs": 35280,
+     "endMs": 35600,
+     "phrase": 24
+    },
+    {
+     "text": "иней",
+     "atMs": 35680,
+     "endMs": 35920,
+     "phrase": 24
+    },
+    {
+     "text": "зеленеет,",
+     "atMs": 36000,
+     "endMs": 36880,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "look-through-the-window",
+   "startMs": 36920,
+   "endMs": 38960,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 36920,
+     "endMs": 36960,
+     "phrase": 25
+    },
+    {
+     "text": "речка",
+     "atMs": 37040,
+     "endMs": 37440,
+     "phrase": 25
+    },
+    {
+     "text": "подо",
+     "atMs": 37520,
+     "endMs": 37640,
+     "phrase": 25
+    },
+    {
+     "text": "льдом",
+     "atMs": 37680,
+     "endMs": 37920,
+     "phrase": 25
+    },
+    {
+     "text": "блестит.",
+     "atMs": 38000,
+     "endMs": 38560,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "amber-room",
+   "startMs": 38960,
+   "endMs": 41040,
+   "tokens": [
+    {
+     "text": "Вся",
+     "atMs": 38960,
+     "endMs": 39200,
+     "phrase": 26
+    },
+    {
+     "text": "комната",
+     "atMs": 39360,
+     "endMs": 39760,
+     "phrase": 26
+    },
+    {
+     "text": "янтарным",
+     "atMs": 39840,
+     "endMs": 40400,
+     "phrase": 26
+    },
+    {
+     "text": "блеском",
+     "atMs": 40480,
+     "endMs": 40960,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "amber-room",
+   "startMs": 41040,
+   "endMs": 42960,
+   "tokens": [
+    {
+     "text": "Озарена.",
+     "atMs": 41040,
+     "endMs": 41680,
+     "phrase": 27,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Веселым",
+     "atMs": 41840,
+     "endMs": 42320,
+     "phrase": 28
+    },
+    {
+     "text": "треском",
+     "atMs": 42400,
+     "endMs": 42880,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "amber-room",
+   "startMs": 42960,
+   "endMs": 44720,
+   "tokens": [
+    {
+     "text": "Трещит",
+     "atMs": 42960,
+     "endMs": 43360,
+     "phrase": 29
+    },
+    {
+     "text": "затопленная",
+     "atMs": 43400,
+     "endMs": 44080,
+     "phrase": 29
+    },
+    {
+     "text": "печь.",
+     "atMs": 44160,
+     "endMs": 44600,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "amber-room",
+   "startMs": 44720,
+   "endMs": 46560,
+   "tokens": [
+    {
+     "text": "Приятно",
+     "atMs": 44720,
+     "endMs": 45200,
+     "phrase": 30
+    },
+    {
+     "text": "думать",
+     "atMs": 45280,
+     "endMs": 45520,
+     "phrase": 30
+    },
+    {
+     "text": "у",
+     "atMs": 45600,
+     "endMs": 45680,
+     "phrase": 30
+    },
+    {
+     "text": "лежанки.",
+     "atMs": 45760,
+     "endMs": 46240,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "amber-room",
+   "startMs": 46560,
+   "endMs": 48720,
+   "tokens": [
+    {
+     "text": "Но",
+     "atMs": 46560,
+     "endMs": 46640,
+     "phrase": 31
+    },
+    {
+     "text": "знаешь:",
+     "atMs": 46720,
+     "endMs": 47360,
+     "phrase": 31,
+     "emphasis": "lead"
+    },
+    {
+     "text": "не",
+     "atMs": 47440,
+     "endMs": 47520,
+     "phrase": 32
+    },
+    {
+     "text": "велеть",
+     "atMs": 47600,
+     "endMs": 47840,
+     "phrase": 32
+    },
+    {
+     "text": "ли",
+     "atMs": 47880,
+     "endMs": 47920,
+     "phrase": 32
+    },
+    {
+     "text": "в",
+     "atMs": 48000,
+     "endMs": 48080,
+     "phrase": 32
+    },
+    {
+     "text": "санки",
+     "atMs": 48200,
+     "endMs": 48560,
+     "phrase": 32,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "amber-room",
+   "startMs": 48720,
+   "endMs": 50560,
+   "tokens": [
+    {
+     "text": "Кобылку",
+     "atMs": 48720,
+     "endMs": 49280,
+     "phrase": 33
+    },
+    {
+     "text": "бурую",
+     "atMs": 49360,
+     "endMs": 49640,
+     "phrase": 33
+    },
+    {
+     "text": "запречь?",
+     "atMs": 49680,
+     "endMs": 50360,
+     "phrase": 33,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sleigh-ride",
+   "startMs": 50560,
+   "endMs": 52480,
+   "tokens": [
+    {
+     "text": "Скользя",
+     "atMs": 50560,
+     "endMs": 51040,
+     "phrase": 34
+    },
+    {
+     "text": "по",
+     "atMs": 51120,
+     "endMs": 51200,
+     "phrase": 34
+    },
+    {
+     "text": "утреннему",
+     "atMs": 51280,
+     "endMs": 51760,
+     "phrase": 34
+    },
+    {
+     "text": "снегу,",
+     "atMs": 51840,
+     "endMs": 52400,
+     "phrase": 34,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sleigh-ride",
+   "startMs": 52480,
+   "endMs": 54560,
+   "tokens": [
+    {
+     "text": "Друг",
+     "atMs": 52480,
+     "endMs": 52720,
+     "phrase": 35
+    },
+    {
+     "text": "милый,",
+     "atMs": 52800,
+     "endMs": 53200,
+     "phrase": 35,
+     "emphasis": "lead"
+    },
+    {
+     "text": "предадимся",
+     "atMs": 53240,
+     "endMs": 53840,
+     "phrase": 36
+    },
+    {
+     "text": "бегу",
+     "atMs": 53920,
+     "endMs": 54320,
+     "phrase": 36,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sleigh-ride",
+   "startMs": 54560,
+   "endMs": 56000,
+   "tokens": [
+    {
+     "text": "Нетерпеливого",
+     "atMs": 54560,
+     "endMs": 55280,
+     "phrase": 37
+    },
+    {
+     "text": "коня",
+     "atMs": 55360,
+     "endMs": 55760,
+     "phrase": 37,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sleigh-ride",
+   "startMs": 56000,
+   "endMs": 58000,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 56000,
+     "endMs": 56040,
+     "phrase": 38
+    },
+    {
+     "text": "навестим",
+     "atMs": 56080,
+     "endMs": 56640,
+     "phrase": 38
+    },
+    {
+     "text": "поля",
+     "atMs": 56720,
+     "endMs": 57040,
+     "phrase": 38
+    },
+    {
+     "text": "пустые,",
+     "atMs": 57120,
+     "endMs": 57920,
+     "phrase": 38,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sleigh-ride",
+   "startMs": 58000,
+   "endMs": 60200,
+   "tokens": [
+    {
+     "text": "Леса,",
+     "atMs": 58000,
+     "endMs": 58560,
+     "phrase": 39,
+     "emphasis": "lead"
+    },
+    {
+     "text": "недавно",
+     "atMs": 58600,
+     "endMs": 59040,
+     "phrase": 40
+    },
+    {
+     "text": "столь",
+     "atMs": 59160,
+     "endMs": 59280,
+     "phrase": 40
+    },
+    {
+     "text": "густые,",
+     "atMs": 59360,
+     "endMs": 60160,
+     "phrase": 40,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "sleigh-ride",
+   "startMs": 60200,
+   "endMs": 62160,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 60200,
+     "endMs": 60240,
+     "phrase": 41
+    },
+    {
+     "text": "берег,",
+     "atMs": 60400,
+     "endMs": 61040,
+     "phrase": 41,
+     "emphasis": "lead"
+    },
+    {
+     "text": "милый",
+     "atMs": 61120,
+     "endMs": 61360,
+     "phrase": 42
+    },
+    {
+     "text": "для",
+     "atMs": 61440,
+     "endMs": 61520,
+     "phrase": 42
+    },
+    {
+     "text": "меня.",
+     "atMs": 61600,
+     "endMs": 62160,
+     "phrase": 42,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

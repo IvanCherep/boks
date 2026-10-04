@@ -372,6 +372,14 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | «Прощай, немытая Россия» | none - sandbox only | Alex Bell | 4 | 2 |
 | *The New Colossus*, Emma Lazarus | `202c3d9c-5a8e-4c91-8278-ab0fc4e602cf` | Sha | 4 | 3, 5, 4, 2 |
 | *I Hear America Singing*, Walt Whitman | `3056ee24-d8c0-4963-923f-967213a3ec34` | Jerry B. | 4 | 2, 3, 4, 2 |
+| «Зимнее утро», Пушкин | `61ba3680-210d-41ed-acae-39710a5af5c8` | Alex Bell | 4 in 5 scenes - the window returns on «погляди в окно» | 6, 5, 7, 6, 6 |
+| «Весенняя гроза», Тютчев | `a49896d0-be71-4b1a-9380-590738af79a2` | Alex Bell | 4 | 4, 4, 4, 4 |
+| «Ночь, улица, фонарь, аптека…», Блок | `c85132ea-8f0b-495f-a468-c3339c624fa2` | Alex Bell | 4 | 2, 2, 2, 2 |
+
+The last two were not in the catalogue and were added for this, through the
+curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
+`CATALOGUE_MIN_CHARACTERS=150` - Блок is 227 characters, under the floor that
+exists to catch scrape debris).
 
 ### Adding a poem
 

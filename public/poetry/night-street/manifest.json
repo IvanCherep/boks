@@ -1,0 +1,410 @@
+{
+ "id": "night-street-immersive-v1",
+ "title": "Ночь, улица, фонарь, аптека…",
+ "author": "Александр Блок",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/night-street/narration.mp3",
+ "theme": {
+  "src": "/poetry/night-street/theme.mp3",
+  "gain": 0.12
+ },
+ "durationMs": 19920,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#EFE8DA",
+  "active": "#FFD47E",
+  "shadow": "rgba(6, 10, 16, 0.55)"
+ },
+ "textScale": 0.78,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1020,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "lamp-and-pharmacy",
+   "image": "/poetry/night-street/scenes/01-night-street-lamp-pharmacy.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.44,
+     "height": 0.27
+    }
+   ],
+   "line": "Ночь, улица, фонарь, аптека, / Бессмысленный и тусклый свет.",
+   "startMs": 0
+  },
+  {
+   "id": "no-exit",
+   "image": "/poetry/night-street/scenes/02-no-exit.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.06,
+     "width": 0.5,
+     "height": 0.2
+    }
+   ],
+   "line": "Живи ещё хоть четверть века — / Всё будет так. Исхода нет.",
+   "startMs": 5920
+  },
+  {
+   "id": "again-from-the-beginning",
+   "image": "/poetry/night-street/scenes/03-again-from-the-beginning.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.44,
+     "height": 0.27
+    }
+   ],
+   "line": "Умрёшь — начнёшь опять сначала / И повторится всё, как встарь:",
+   "startMs": 10480
+  },
+  {
+   "id": "icy-canal-loop",
+   "image": "/poetry/night-street/scenes/04-icy-canal-loop.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.07,
+     "width": 0.44,
+     "height": 0.26
+    }
+   ],
+   "line": "Ночь, ледяная рябь канала, / Аптека, улица, фонарь.",
+   "startMs": 15200
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "lamp-and-pharmacy",
+   "startMs": 0,
+   "endMs": 3520,
+   "tokens": [
+    {
+     "text": "Ночь,",
+     "atMs": 0,
+     "endMs": 560,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "улица,",
+     "atMs": 880,
+     "endMs": 1600,
+     "phrase": 1,
+     "emphasis": "lead"
+    },
+    {
+     "text": "фонарь,",
+     "atMs": 1680,
+     "endMs": 2480,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "аптека,",
+     "atMs": 2600,
+     "endMs": 3440,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "lamp-and-pharmacy",
+   "startMs": 3520,
+   "endMs": 5920,
+   "tokens": [
+    {
+     "text": "Бессмысленный",
+     "atMs": 3520,
+     "endMs": 4400,
+     "phrase": 4
+    },
+    {
+     "text": "и",
+     "atMs": 4440,
+     "endMs": 4480,
+     "phrase": 4
+    },
+    {
+     "text": "тусклый",
+     "atMs": 4640,
+     "endMs": 5040,
+     "phrase": 4
+    },
+    {
+     "text": "свет.",
+     "atMs": 5120,
+     "endMs": 5520,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "no-exit",
+   "startMs": 5920,
+   "endMs": 8107,
+   "tokens": [
+    {
+     "text": "Живи",
+     "atMs": 5920,
+     "endMs": 6160,
+     "phrase": 5
+    },
+    {
+     "text": "ещё",
+     "atMs": 6240,
+     "endMs": 6480,
+     "phrase": 5
+    },
+    {
+     "text": "хоть",
+     "atMs": 6560,
+     "endMs": 6720,
+     "phrase": 5
+    },
+    {
+     "text": "четверть",
+     "atMs": 6800,
+     "endMs": 7280,
+     "phrase": 5
+    },
+    {
+     "text": "века",
+     "atMs": 7320,
+     "endMs": 7680,
+     "phrase": 5
+    },
+    {
+     "text": "—",
+     "atMs": 8000,
+     "endMs": 8053,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "no-exit",
+   "startMs": 8107,
+   "endMs": 10480,
+   "tokens": [
+    {
+     "text": "Всё",
+     "atMs": 8107,
+     "endMs": 8240,
+     "phrase": 6
+    },
+    {
+     "text": "будет",
+     "atMs": 8320,
+     "endMs": 8640,
+     "phrase": 6
+    },
+    {
+     "text": "так.",
+     "atMs": 8720,
+     "endMs": 9040,
+     "phrase": 6,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Исхода",
+     "atMs": 9280,
+     "endMs": 9840,
+     "phrase": 7
+    },
+    {
+     "text": "нет.",
+     "atMs": 10000,
+     "endMs": 10320,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "again-from-the-beginning",
+   "startMs": 10480,
+   "endMs": 12960,
+   "tokens": [
+    {
+     "text": "Умрёшь",
+     "atMs": 10480,
+     "endMs": 11120,
+     "phrase": 8
+    },
+    {
+     "text": "—",
+     "atMs": 11280,
+     "endMs": 11360,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "начнёшь",
+     "atMs": 11440,
+     "endMs": 11760,
+     "phrase": 9
+    },
+    {
+     "text": "опять",
+     "atMs": 11840,
+     "endMs": 12080,
+     "phrase": 9
+    },
+    {
+     "text": "сначала",
+     "atMs": 12120,
+     "endMs": 12720,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "again-from-the-beginning",
+   "startMs": 12960,
+   "endMs": 15200,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 12960,
+     "endMs": 13040,
+     "phrase": 10
+    },
+    {
+     "text": "повторится",
+     "atMs": 13120,
+     "endMs": 13680,
+     "phrase": 10
+    },
+    {
+     "text": "всё,",
+     "atMs": 13760,
+     "endMs": 14040,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "как",
+     "atMs": 14080,
+     "endMs": 14160,
+     "phrase": 11
+    },
+    {
+     "text": "встарь:",
+     "atMs": 14240,
+     "endMs": 15040,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "icy-canal-loop",
+   "startMs": 15200,
+   "endMs": 17520,
+   "tokens": [
+    {
+     "text": "Ночь,",
+     "atMs": 15200,
+     "endMs": 15720,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ледяная",
+     "atMs": 15840,
+     "endMs": 16320,
+     "phrase": 13
+    },
+    {
+     "text": "рябь",
+     "atMs": 16400,
+     "endMs": 16560,
+     "phrase": 13
+    },
+    {
+     "text": "канала,",
+     "atMs": 16640,
+     "endMs": 17440,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "icy-canal-loop",
+   "startMs": 17520,
+   "endMs": 19920,
+   "tokens": [
+    {
+     "text": "Аптека,",
+     "atMs": 17520,
+     "endMs": 18400,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "улица,",
+     "atMs": 18480,
+     "endMs": 19200,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "фонарь.",
+     "atMs": 19280,
+     "endMs": 19920,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

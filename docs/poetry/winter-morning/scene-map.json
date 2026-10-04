@@ -1,0 +1,123 @@
+{
+ "version": 1,
+ "title": "Зимнее утро",
+ "author": "Александр Пушкин",
+ "language": "ru",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7EFE2",
+  "active": "#FFE2A6",
+  "shadow": "rgba(14, 18, 30, 0.5)"
+ },
+ "themeGain": 0.2,
+ "textScale": 0.86,
+ "veil": 1.5,
+ "scenes": [
+  {
+   "id": "frost-and-sun",
+   "image": "02-frost-and-sun.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.62,
+    "y": 0.42
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.39,
+     "y": 0.1,
+     "width": 0.53,
+     "height": 0.27
+    }
+   ],
+   "line": "Мороз и солнце; день чудесный! / Еще ты дремлешь, друг прелестный — / Пора, красавица, проснись: / Открой сомкнуты негой взоры / Навстречу северной Авроры, / Звездою севера явись!"
+  },
+  {
+   "id": "stormy-evening",
+   "image": "01-stormy-evening.png",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.62,
+    "y": 0.62
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.5,
+     "height": 0.3
+    }
+   ],
+   "line": "Вечор, ты помнишь, вьюга злилась, / На мутном небе мгла носилась; / Луна, как бледное пятно, / Сквозь тучи мрачные желтела, / И ты печальная сидела —"
+  },
+  {
+   "id": "look-through-the-window",
+   "image": "02-frost-and-sun.png",
+   "lines": 7,
+   "focalPoint": {
+    "x": 0.62,
+    "y": 0.42
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.39,
+     "y": 0.1,
+     "width": 0.53,
+     "height": 0.27
+    }
+   ],
+   "line": "А нынче… погляди в окно: / Под голубыми небесами / Великолепными коврами, / Блестя на солнце, снег лежит; / Прозрачный лес один чернеет, / И ель сквозь иней зеленеет, / И речка подо льдом блестит."
+  },
+  {
+   "id": "amber-room",
+   "image": "03-amber-room.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.45
+   },
+   "textPreset": "shelter-reveal",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.06,
+     "width": 0.5,
+     "height": 0.17
+    }
+   ],
+   "line": "Вся комната янтарным блеском / Озарена. Веселым треском / Трещит затопленная печь. / Приятно думать у лежанки. / Но знаешь: не велеть ли в санки / Кобылку бурую запречь?"
+  },
+  {
+   "id": "sleigh-ride",
+   "image": "04-sleigh-ride.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.55
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.22
+    }
+   ],
+   "line": "Скользя по утреннему снегу, / Друг милый, предадимся бегу / Нетерпеливого коня / И навестим поля пустые, / Леса, недавно столь густые, / И берег, милый для меня."
+  }
+ ]
+}
