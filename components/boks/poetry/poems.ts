@@ -26,6 +26,14 @@ const poems: Record<string, string> = {
   "9aa49ad9-579e-4721-881d-d84595a49975": "/poetry/dream-within-dream/manifest.json",
   // William Blake — The Tyger
   "11cbb669-6c1b-4e03-a80a-27951c9abca9": "/poetry/tyger/manifest.json",
+  // Percy Bysshe Shelley — Ozymandias
+  "d86fa888-50ab-493d-ae34-8ad574fc0845": "/poetry/ozymandias/manifest.json",
+  // William Ernest Henley — Invictus
+  "c8e05b68-5a45-4eb0-935e-d8b0ad8e6b45": "/poetry/invictus/manifest.json",
+  // W. B. Yeats — The Lake Isle of Innisfree
+  "9d42d01d-5a3e-4ddb-a334-3f4dfdf5dffe": "/poetry/innisfree/manifest.json",
+  // Walt Whitman — O Captain! My Captain!
+  "7322a7ff-0abf-4aba-b340-49477030ebed": "/poetry/o-captain/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

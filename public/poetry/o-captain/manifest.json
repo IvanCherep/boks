@@ -1,0 +1,1525 @@
+{
+ "id": "o-captain-immersive-v1",
+ "title": "O Captain! My Captain!",
+ "author": "Walt Whitman",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/o-captain/narration.mp3",
+ "theme": {
+  "src": "/poetry/o-captain/theme.mp3",
+  "gain": 0.19
+ },
+ "durationMs": 88320,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF1DE",
+  "active": "#FFD48E",
+  "shadow": "rgba(20, 10, 4, 0.55)"
+ },
+ "textScale": 0.7,
+ "veil": 1.45,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "fearful-trip-done",
+   "image": "/poetry/o-captain/scenes/01-fearful-trip-done.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.55
+   },
+   "textPreset": "uniform-formation",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.44,
+     "y": 0.07,
+     "width": 0.5,
+     "height": 0.15
+    }
+   ],
+   "line": "O Captain! my Captain! our fearful trip is done, / The ship has weather'd every rack, the prize we sought is won, / The port is near, the bells I hear, the people all exulting, / While follow eyes the steady keel, the vessel grim and daring; / But O heart! heart! heart! / O the bleeding drops of red, / Where on the deck my Captain lies, / Fallen cold and dead.",
+   "startMs": 0
+  },
+  {
+   "id": "arm-beneath-your-head",
+   "image": "/poetry/o-captain/scenes/02-arm-beneath-your-head.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.35,
+    "y": 0.6
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.44,
+     "y": 0.07,
+     "width": 0.5,
+     "height": 0.15
+    }
+   ],
+   "line": "O Captain! my Captain! rise up and hear the bells; / Rise up—for you the flag is flung—for you the bugle trills, / For you bouquets and ribbon'd wreaths—for you the shores a-crowding, / For you they call, the swaying mass, their eager faces turning; / Here Captain! dear father! / This arm beneath your head!",
+   "startMs": 29840
+  },
+  {
+   "id": "some-dream",
+   "image": "/poetry/o-captain/scenes/03-some-dream.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.7,
+    "y": 0.45
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.4,
+     "y": 0.07,
+     "width": 0.54,
+     "height": 0.15
+    }
+   ],
+   "line": "It is some dream that on the deck, / You've fallen cold and dead.",
+   "startMs": 53840
+  },
+  {
+   "id": "mournful-tread",
+   "image": "/poetry/o-captain/scenes/04-mournful-tread.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.4,
+    "y": 0.55
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.06,
+     "width": 0.52,
+     "height": 0.15
+    }
+   ],
+   "line": "My Captain does not answer, his lips are pale and still, / My father does not feel my arm, he has no pulse nor will, / The ship is anchor'd safe and sound, its voyage closed and done, / From fearful trip the victor ship comes in with object won; / Exult O shores, and ring O bells! / But I with mournful tread, / Walk the deck my Captain lies, / Fallen cold and dead.",
+   "startMs": 59040
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 0,
+   "endMs": 4880,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 0,
+     "endMs": 80,
+     "phrase": 0
+    },
+    {
+     "text": "Captain!",
+     "atMs": 160,
+     "endMs": 880,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "my",
+     "atMs": 1040,
+     "endMs": 1280,
+     "phrase": 1
+    },
+    {
+     "text": "Captain!",
+     "atMs": 1440,
+     "endMs": 2000,
+     "phrase": 1,
+     "emphasis": "lead"
+    },
+    {
+     "text": "our",
+     "atMs": 2480,
+     "endMs": 2720,
+     "phrase": 2
+    },
+    {
+     "text": "fearful",
+     "atMs": 2880,
+     "endMs": 3280,
+     "phrase": 2
+    },
+    {
+     "text": "trip",
+     "atMs": 3360,
+     "endMs": 3680,
+     "phrase": 2
+    },
+    {
+     "text": "is",
+     "atMs": 3760,
+     "endMs": 3920,
+     "phrase": 2
+    },
+    {
+     "text": "done,",
+     "atMs": 4000,
+     "endMs": 4800,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 4880,
+   "endMs": 9840,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 4880,
+     "endMs": 4960,
+     "phrase": 3
+    },
+    {
+     "text": "ship",
+     "atMs": 5040,
+     "endMs": 5280,
+     "phrase": 3
+    },
+    {
+     "text": "has",
+     "atMs": 5360,
+     "endMs": 5520,
+     "phrase": 3
+    },
+    {
+     "text": "weather'd",
+     "atMs": 5680,
+     "endMs": 6160,
+     "phrase": 3
+    },
+    {
+     "text": "every",
+     "atMs": 6240,
+     "endMs": 6480,
+     "phrase": 3
+    },
+    {
+     "text": "rack,",
+     "atMs": 6640,
+     "endMs": 7280,
+     "phrase": 3,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 7360,
+     "endMs": 7440,
+     "phrase": 4
+    },
+    {
+     "text": "prize",
+     "atMs": 7520,
+     "endMs": 8000,
+     "phrase": 4
+    },
+    {
+     "text": "we",
+     "atMs": 8120,
+     "endMs": 8240,
+     "phrase": 4
+    },
+    {
+     "text": "sought",
+     "atMs": 8320,
+     "endMs": 8640,
+     "phrase": 4
+    },
+    {
+     "text": "is",
+     "atMs": 8720,
+     "endMs": 8880,
+     "phrase": 4
+    },
+    {
+     "text": "won,",
+     "atMs": 8960,
+     "endMs": 9760,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 9840,
+   "endMs": 14720,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 9840,
+     "endMs": 10000,
+     "phrase": 5
+    },
+    {
+     "text": "port",
+     "atMs": 10120,
+     "endMs": 10240,
+     "phrase": 5
+    },
+    {
+     "text": "is",
+     "atMs": 10320,
+     "endMs": 10480,
+     "phrase": 5
+    },
+    {
+     "text": "near,",
+     "atMs": 10560,
+     "endMs": 11120,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 11160,
+     "endMs": 11200,
+     "phrase": 6
+    },
+    {
+     "text": "bells",
+     "atMs": 11360,
+     "endMs": 11680,
+     "phrase": 6
+    },
+    {
+     "text": "I",
+     "atMs": 11760,
+     "endMs": 11920,
+     "phrase": 6
+    },
+    {
+     "text": "hear,",
+     "atMs": 12080,
+     "endMs": 12480,
+     "phrase": 6,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 12520,
+     "endMs": 12560,
+     "phrase": 7
+    },
+    {
+     "text": "people",
+     "atMs": 12720,
+     "endMs": 13120,
+     "phrase": 7
+    },
+    {
+     "text": "all",
+     "atMs": 13280,
+     "endMs": 13520,
+     "phrase": 7
+    },
+    {
+     "text": "exulting,",
+     "atMs": 13640,
+     "endMs": 14560,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 14720,
+   "endMs": 19760,
+   "tokens": [
+    {
+     "text": "While",
+     "atMs": 14720,
+     "endMs": 14880,
+     "phrase": 8
+    },
+    {
+     "text": "follow",
+     "atMs": 14960,
+     "endMs": 15280,
+     "phrase": 8
+    },
+    {
+     "text": "eyes",
+     "atMs": 15360,
+     "endMs": 15760,
+     "phrase": 8
+    },
+    {
+     "text": "the",
+     "atMs": 15840,
+     "endMs": 15920,
+     "phrase": 8
+    },
+    {
+     "text": "steady",
+     "atMs": 16000,
+     "endMs": 16400,
+     "phrase": 8
+    },
+    {
+     "text": "keel,",
+     "atMs": 16480,
+     "endMs": 17120,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 17160,
+     "endMs": 17200,
+     "phrase": 9
+    },
+    {
+     "text": "vessel",
+     "atMs": 17360,
+     "endMs": 17760,
+     "phrase": 9
+    },
+    {
+     "text": "grim",
+     "atMs": 17920,
+     "endMs": 18320,
+     "phrase": 9
+    },
+    {
+     "text": "and",
+     "atMs": 18400,
+     "endMs": 18560,
+     "phrase": 9
+    },
+    {
+     "text": "daring;",
+     "atMs": 18640,
+     "endMs": 19680,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 19760,
+   "endMs": 22640,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 19760,
+     "endMs": 19840,
+     "phrase": 10
+    },
+    {
+     "text": "O",
+     "atMs": 20000,
+     "endMs": 20240,
+     "phrase": 10
+    },
+    {
+     "text": "heart!",
+     "atMs": 20480,
+     "endMs": 21120,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "heart!",
+     "atMs": 21320,
+     "endMs": 21680,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "heart!",
+     "atMs": 21880,
+     "endMs": 22160,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 22640,
+   "endMs": 24960,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 22640,
+     "endMs": 22800,
+     "phrase": 13
+    },
+    {
+     "text": "the",
+     "atMs": 22960,
+     "endMs": 23040,
+     "phrase": 13
+    },
+    {
+     "text": "bleeding",
+     "atMs": 23120,
+     "endMs": 23600,
+     "phrase": 13
+    },
+    {
+     "text": "drops",
+     "atMs": 23680,
+     "endMs": 24000,
+     "phrase": 13
+    },
+    {
+     "text": "of",
+     "atMs": 24080,
+     "endMs": 24160,
+     "phrase": 13
+    },
+    {
+     "text": "red,",
+     "atMs": 24240,
+     "endMs": 24880,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 24960,
+   "endMs": 27360,
+   "tokens": [
+    {
+     "text": "Where",
+     "atMs": 24960,
+     "endMs": 25040,
+     "phrase": 14
+    },
+    {
+     "text": "on",
+     "atMs": 25120,
+     "endMs": 25200,
+     "phrase": 14
+    },
+    {
+     "text": "the",
+     "atMs": 25280,
+     "endMs": 25360,
+     "phrase": 14
+    },
+    {
+     "text": "deck",
+     "atMs": 25440,
+     "endMs": 25760,
+     "phrase": 14
+    },
+    {
+     "text": "my",
+     "atMs": 25840,
+     "endMs": 26000,
+     "phrase": 14
+    },
+    {
+     "text": "Captain",
+     "atMs": 26080,
+     "endMs": 26480,
+     "phrase": 14
+    },
+    {
+     "text": "lies,",
+     "atMs": 26560,
+     "endMs": 27280,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "fearful-trip-done",
+   "startMs": 27360,
+   "endMs": 29840,
+   "tokens": [
+    {
+     "text": "Fallen",
+     "atMs": 27360,
+     "endMs": 27760,
+     "phrase": 15
+    },
+    {
+     "text": "cold",
+     "atMs": 27920,
+     "endMs": 28320,
+     "phrase": 15
+    },
+    {
+     "text": "and",
+     "atMs": 28560,
+     "endMs": 28720,
+     "phrase": 15
+    },
+    {
+     "text": "dead.",
+     "atMs": 28800,
+     "endMs": 29200,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arm-beneath-your-head",
+   "startMs": 29840,
+   "endMs": 34240,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 29840,
+     "endMs": 29920,
+     "phrase": 16
+    },
+    {
+     "text": "Captain!",
+     "atMs": 30160,
+     "endMs": 30800,
+     "phrase": 16,
+     "emphasis": "lead"
+    },
+    {
+     "text": "my",
+     "atMs": 30880,
+     "endMs": 30960,
+     "phrase": 17
+    },
+    {
+     "text": "Captain!",
+     "atMs": 31120,
+     "endMs": 32000,
+     "phrase": 17,
+     "emphasis": "lead"
+    },
+    {
+     "text": "rise",
+     "atMs": 32080,
+     "endMs": 32400,
+     "phrase": 18
+    },
+    {
+     "text": "up",
+     "atMs": 32480,
+     "endMs": 32640,
+     "phrase": 18
+    },
+    {
+     "text": "and",
+     "atMs": 32720,
+     "endMs": 32800,
+     "phrase": 18
+    },
+    {
+     "text": "hear",
+     "atMs": 32880,
+     "endMs": 33040,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 33120,
+     "endMs": 33200,
+     "phrase": 18
+    },
+    {
+     "text": "bells;",
+     "atMs": 33280,
+     "endMs": 34160,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arm-beneath-your-head",
+   "startMs": 34240,
+   "endMs": 39440,
+   "tokens": [
+    {
+     "text": "Rise",
+     "atMs": 34240,
+     "endMs": 34560,
+     "phrase": 19
+    },
+    {
+     "text": "up—for",
+     "atMs": 34640,
+     "endMs": 35200,
+     "phrase": 19
+    },
+    {
+     "text": "you",
+     "atMs": 35360,
+     "endMs": 35600,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 35680,
+     "endMs": 35760,
+     "phrase": 19
+    },
+    {
+     "text": "flag",
+     "atMs": 35920,
+     "endMs": 36240,
+     "phrase": 19
+    },
+    {
+     "text": "is",
+     "atMs": 36320,
+     "endMs": 36400,
+     "phrase": 19
+    },
+    {
+     "text": "flung—for",
+     "atMs": 36480,
+     "endMs": 37360,
+     "phrase": 19
+    },
+    {
+     "text": "you",
+     "atMs": 37440,
+     "endMs": 37680,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 37760,
+     "endMs": 37840,
+     "phrase": 19
+    },
+    {
+     "text": "bugle",
+     "atMs": 37920,
+     "endMs": 38320,
+     "phrase": 19
+    },
+    {
+     "text": "trills,",
+     "atMs": 38480,
+     "endMs": 39360,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arm-beneath-your-head",
+   "startMs": 39440,
+   "endMs": 44480,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 39440,
+     "endMs": 39600,
+     "phrase": 20
+    },
+    {
+     "text": "you",
+     "atMs": 39760,
+     "endMs": 40000,
+     "phrase": 20
+    },
+    {
+     "text": "bouquets",
+     "atMs": 40080,
+     "endMs": 40800,
+     "phrase": 20
+    },
+    {
+     "text": "and",
+     "atMs": 40880,
+     "endMs": 40960,
+     "phrase": 20
+    },
+    {
+     "text": "ribbon'd",
+     "atMs": 41040,
+     "endMs": 41360,
+     "phrase": 20
+    },
+    {
+     "text": "wreaths—for",
+     "atMs": 41440,
+     "endMs": 42320,
+     "phrase": 20
+    },
+    {
+     "text": "you",
+     "atMs": 42400,
+     "endMs": 42640,
+     "phrase": 20
+    },
+    {
+     "text": "the",
+     "atMs": 42720,
+     "endMs": 42800,
+     "phrase": 20
+    },
+    {
+     "text": "shores",
+     "atMs": 42960,
+     "endMs": 43280,
+     "phrase": 20
+    },
+    {
+     "text": "a-crowding,",
+     "atMs": 43360,
+     "endMs": 44400,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arm-beneath-your-head",
+   "startMs": 44480,
+   "endMs": 49600,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 44480,
+     "endMs": 44640,
+     "phrase": 21
+    },
+    {
+     "text": "you",
+     "atMs": 44800,
+     "endMs": 44960,
+     "phrase": 21
+    },
+    {
+     "text": "they",
+     "atMs": 45040,
+     "endMs": 45200,
+     "phrase": 21
+    },
+    {
+     "text": "call,",
+     "atMs": 45280,
+     "endMs": 45840,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 45880,
+     "endMs": 45920,
+     "phrase": 22
+    },
+    {
+     "text": "swaying",
+     "atMs": 46080,
+     "endMs": 46560,
+     "phrase": 22
+    },
+    {
+     "text": "mass,",
+     "atMs": 46640,
+     "endMs": 47200,
+     "phrase": 22,
+     "emphasis": "lead"
+    },
+    {
+     "text": "their",
+     "atMs": 47320,
+     "endMs": 47440,
+     "phrase": 23
+    },
+    {
+     "text": "eager",
+     "atMs": 47520,
+     "endMs": 47840,
+     "phrase": 23
+    },
+    {
+     "text": "faces",
+     "atMs": 48000,
+     "endMs": 48400,
+     "phrase": 23
+    },
+    {
+     "text": "turning;",
+     "atMs": 48480,
+     "endMs": 49520,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arm-beneath-your-head",
+   "startMs": 49600,
+   "endMs": 51840,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 49600,
+     "endMs": 49920,
+     "phrase": 24
+    },
+    {
+     "text": "Captain!",
+     "atMs": 50000,
+     "endMs": 50600,
+     "phrase": 24,
+     "emphasis": "lead"
+    },
+    {
+     "text": "dear",
+     "atMs": 50720,
+     "endMs": 50880,
+     "phrase": 25
+    },
+    {
+     "text": "father!",
+     "atMs": 51040,
+     "endMs": 51520,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arm-beneath-your-head",
+   "startMs": 51840,
+   "endMs": 53840,
+   "tokens": [
+    {
+     "text": "This",
+     "atMs": 51840,
+     "endMs": 52000,
+     "phrase": 26
+    },
+    {
+     "text": "arm",
+     "atMs": 52160,
+     "endMs": 52400,
+     "phrase": 26
+    },
+    {
+     "text": "beneath",
+     "atMs": 52480,
+     "endMs": 52800,
+     "phrase": 26
+    },
+    {
+     "text": "your",
+     "atMs": 52880,
+     "endMs": 53040,
+     "phrase": 26
+    },
+    {
+     "text": "head!",
+     "atMs": 53120,
+     "endMs": 53440,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "some-dream",
+   "startMs": 53840,
+   "endMs": 56240,
+   "tokens": [
+    {
+     "text": "It",
+     "atMs": 53840,
+     "endMs": 54000,
+     "phrase": 27
+    },
+    {
+     "text": "is",
+     "atMs": 54080,
+     "endMs": 54160,
+     "phrase": 27
+    },
+    {
+     "text": "some",
+     "atMs": 54280,
+     "endMs": 54400,
+     "phrase": 27
+    },
+    {
+     "text": "dream",
+     "atMs": 54560,
+     "endMs": 54960,
+     "phrase": 27
+    },
+    {
+     "text": "that",
+     "atMs": 55040,
+     "endMs": 55120,
+     "phrase": 27
+    },
+    {
+     "text": "on",
+     "atMs": 55200,
+     "endMs": 55280,
+     "phrase": 27
+    },
+    {
+     "text": "the",
+     "atMs": 55360,
+     "endMs": 55440,
+     "phrase": 27
+    },
+    {
+     "text": "deck,",
+     "atMs": 55520,
+     "endMs": 56160,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "some-dream",
+   "startMs": 56240,
+   "endMs": 59040,
+   "tokens": [
+    {
+     "text": "You've",
+     "atMs": 56240,
+     "endMs": 56480,
+     "phrase": 28
+    },
+    {
+     "text": "fallen",
+     "atMs": 56600,
+     "endMs": 56880,
+     "phrase": 28
+    },
+    {
+     "text": "cold",
+     "atMs": 56960,
+     "endMs": 57440,
+     "phrase": 28
+    },
+    {
+     "text": "and",
+     "atMs": 57680,
+     "endMs": 57840,
+     "phrase": 28
+    },
+    {
+     "text": "dead.",
+     "atMs": 57920,
+     "endMs": 58320,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 59040,
+   "endMs": 63440,
+   "tokens": [
+    {
+     "text": "My",
+     "atMs": 59040,
+     "endMs": 59200,
+     "phrase": 29
+    },
+    {
+     "text": "Captain",
+     "atMs": 59440,
+     "endMs": 59680,
+     "phrase": 29
+    },
+    {
+     "text": "does",
+     "atMs": 59760,
+     "endMs": 59920,
+     "phrase": 29
+    },
+    {
+     "text": "not",
+     "atMs": 60000,
+     "endMs": 60080,
+     "phrase": 29
+    },
+    {
+     "text": "answer,",
+     "atMs": 60160,
+     "endMs": 60960,
+     "phrase": 29,
+     "emphasis": "lead"
+    },
+    {
+     "text": "his",
+     "atMs": 61080,
+     "endMs": 61200,
+     "phrase": 30
+    },
+    {
+     "text": "lips",
+     "atMs": 61280,
+     "endMs": 61600,
+     "phrase": 30
+    },
+    {
+     "text": "are",
+     "atMs": 61680,
+     "endMs": 61840,
+     "phrase": 30
+    },
+    {
+     "text": "pale",
+     "atMs": 61880,
+     "endMs": 62240,
+     "phrase": 30
+    },
+    {
+     "text": "and",
+     "atMs": 62320,
+     "endMs": 62400,
+     "phrase": 30
+    },
+    {
+     "text": "still,",
+     "atMs": 62560,
+     "endMs": 63360,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 63440,
+   "endMs": 68320,
+   "tokens": [
+    {
+     "text": "My",
+     "atMs": 63440,
+     "endMs": 63600,
+     "phrase": 31
+    },
+    {
+     "text": "father",
+     "atMs": 63680,
+     "endMs": 64000,
+     "phrase": 31
+    },
+    {
+     "text": "does",
+     "atMs": 64080,
+     "endMs": 64240,
+     "phrase": 31
+    },
+    {
+     "text": "not",
+     "atMs": 64320,
+     "endMs": 64480,
+     "phrase": 31
+    },
+    {
+     "text": "feel",
+     "atMs": 64560,
+     "endMs": 64800,
+     "phrase": 31
+    },
+    {
+     "text": "my",
+     "atMs": 64880,
+     "endMs": 65040,
+     "phrase": 31
+    },
+    {
+     "text": "arm,",
+     "atMs": 65240,
+     "endMs": 65760,
+     "phrase": 31,
+     "emphasis": "lead"
+    },
+    {
+     "text": "he",
+     "atMs": 65840,
+     "endMs": 66000,
+     "phrase": 32
+    },
+    {
+     "text": "has",
+     "atMs": 66080,
+     "endMs": 66160,
+     "phrase": 32
+    },
+    {
+     "text": "no",
+     "atMs": 66240,
+     "endMs": 66400,
+     "phrase": 32
+    },
+    {
+     "text": "pulse",
+     "atMs": 66480,
+     "endMs": 66960,
+     "phrase": 32
+    },
+    {
+     "text": "nor",
+     "atMs": 67200,
+     "endMs": 67360,
+     "phrase": 32
+    },
+    {
+     "text": "will,",
+     "atMs": 67440,
+     "endMs": 68240,
+     "phrase": 32,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 68320,
+   "endMs": 73280,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 68320,
+     "endMs": 68400,
+     "phrase": 33
+    },
+    {
+     "text": "ship",
+     "atMs": 68480,
+     "endMs": 68720,
+     "phrase": 33
+    },
+    {
+     "text": "is",
+     "atMs": 68800,
+     "endMs": 68960,
+     "phrase": 33
+    },
+    {
+     "text": "anchor'd",
+     "atMs": 69040,
+     "endMs": 69520,
+     "phrase": 33
+    },
+    {
+     "text": "safe",
+     "atMs": 69600,
+     "endMs": 69920,
+     "phrase": 33
+    },
+    {
+     "text": "and",
+     "atMs": 70000,
+     "endMs": 70080,
+     "phrase": 33
+    },
+    {
+     "text": "sound,",
+     "atMs": 70160,
+     "endMs": 70880,
+     "phrase": 33,
+     "emphasis": "lead"
+    },
+    {
+     "text": "its",
+     "atMs": 71000,
+     "endMs": 71120,
+     "phrase": 34
+    },
+    {
+     "text": "voyage",
+     "atMs": 71200,
+     "endMs": 71600,
+     "phrase": 34
+    },
+    {
+     "text": "closed",
+     "atMs": 71760,
+     "endMs": 72240,
+     "phrase": 34
+    },
+    {
+     "text": "and",
+     "atMs": 72320,
+     "endMs": 72400,
+     "phrase": 34
+    },
+    {
+     "text": "done,",
+     "atMs": 72480,
+     "endMs": 73200,
+     "phrase": 34,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 73280,
+   "endMs": 77760,
+   "tokens": [
+    {
+     "text": "From",
+     "atMs": 73280,
+     "endMs": 73440,
+     "phrase": 35
+    },
+    {
+     "text": "fearful",
+     "atMs": 73600,
+     "endMs": 74000,
+     "phrase": 35
+    },
+    {
+     "text": "trip",
+     "atMs": 74080,
+     "endMs": 74400,
+     "phrase": 35
+    },
+    {
+     "text": "the",
+     "atMs": 74480,
+     "endMs": 74560,
+     "phrase": 35
+    },
+    {
+     "text": "victor",
+     "atMs": 74720,
+     "endMs": 75040,
+     "phrase": 35
+    },
+    {
+     "text": "ship",
+     "atMs": 75120,
+     "endMs": 75360,
+     "phrase": 35
+    },
+    {
+     "text": "comes",
+     "atMs": 75520,
+     "endMs": 75840,
+     "phrase": 35
+    },
+    {
+     "text": "in",
+     "atMs": 75920,
+     "endMs": 76080,
+     "phrase": 35
+    },
+    {
+     "text": "with",
+     "atMs": 76160,
+     "endMs": 76320,
+     "phrase": 35
+    },
+    {
+     "text": "object",
+     "atMs": 76400,
+     "endMs": 76800,
+     "phrase": 35
+    },
+    {
+     "text": "won;",
+     "atMs": 76960,
+     "endMs": 77680,
+     "phrase": 35,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 77760,
+   "endMs": 81280,
+   "tokens": [
+    {
+     "text": "Exult",
+     "atMs": 77760,
+     "endMs": 78400,
+     "phrase": 36
+    },
+    {
+     "text": "O",
+     "atMs": 78480,
+     "endMs": 78560,
+     "phrase": 36
+    },
+    {
+     "text": "shores,",
+     "atMs": 78640,
+     "endMs": 79280,
+     "phrase": 36,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 79360,
+     "endMs": 79440,
+     "phrase": 37
+    },
+    {
+     "text": "ring",
+     "atMs": 79600,
+     "endMs": 79920,
+     "phrase": 37
+    },
+    {
+     "text": "O",
+     "atMs": 80000,
+     "endMs": 80160,
+     "phrase": 37
+    },
+    {
+     "text": "bells!",
+     "atMs": 80320,
+     "endMs": 80880,
+     "phrase": 37,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 81280,
+   "endMs": 83600,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 81280,
+     "endMs": 81440,
+     "phrase": 38
+    },
+    {
+     "text": "I",
+     "atMs": 81520,
+     "endMs": 81840,
+     "phrase": 38
+    },
+    {
+     "text": "with",
+     "atMs": 82000,
+     "endMs": 82160,
+     "phrase": 38
+    },
+    {
+     "text": "mournful",
+     "atMs": 82240,
+     "endMs": 82640,
+     "phrase": 38
+    },
+    {
+     "text": "tread,",
+     "atMs": 82800,
+     "endMs": 83520,
+     "phrase": 38,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 83600,
+   "endMs": 86240,
+   "tokens": [
+    {
+     "text": "Walk",
+     "atMs": 83600,
+     "endMs": 83840,
+     "phrase": 39
+    },
+    {
+     "text": "the",
+     "atMs": 83920,
+     "endMs": 84000,
+     "phrase": 39
+    },
+    {
+     "text": "deck",
+     "atMs": 84080,
+     "endMs": 84400,
+     "phrase": 39
+    },
+    {
+     "text": "my",
+     "atMs": 84560,
+     "endMs": 84720,
+     "phrase": 39
+    },
+    {
+     "text": "Captain",
+     "atMs": 84800,
+     "endMs": 85200,
+     "phrase": 39
+    },
+    {
+     "text": "lies,",
+     "atMs": 85280,
+     "endMs": 86080,
+     "phrase": 39,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mournful-tread",
+   "startMs": 86240,
+   "endMs": 88320,
+   "tokens": [
+    {
+     "text": "Fallen",
+     "atMs": 86240,
+     "endMs": 86560,
+     "phrase": 40
+    },
+    {
+     "text": "cold",
+     "atMs": 86720,
+     "endMs": 87120,
+     "phrase": 40
+    },
+    {
+     "text": "and",
+     "atMs": 87440,
+     "endMs": 87600,
+     "phrase": 40
+    },
+    {
+     "text": "dead.",
+     "atMs": 87680,
+     "endMs": 88320,
+     "phrase": 40,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

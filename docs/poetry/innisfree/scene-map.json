@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "The Lake Isle of Innisfree",
+ "author": "W. B. Yeats",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF4E6",
+  "active": "#FFE0A0",
+  "shadow": "rgba(12, 12, 20, 0.5)"
+ },
+ "themeGain": 0.22,
+ "textScale": 0.72,
+ "veil": 1.45,
+ "scenes": [
+  {
+   "id": "pavements-grey",
+   "image": "01-pavements-grey.png",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.12,
+     "y": 0.05,
+     "width": 0.56,
+     "height": 0.17
+    }
+   ],
+   "line": "I will arise and go now, and go to Innisfree,"
+  },
+  {
+   "id": "build-the-cabin",
+   "image": "02-build-the-cabin.png",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.45
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.4,
+     "y": 0.05,
+     "width": 0.54,
+     "height": 0.13
+    }
+   ],
+   "line": "And a small cabin build there, of clay and wattles made: / Nine bean-rows will I have there, a hive for the honey-bee, / And live alone in the bee-loud glade."
+  },
+  {
+   "id": "peace-dropping-slow",
+   "image": "03-peace-dropping-slow.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.4
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.48,
+     "y": 0.07,
+     "width": 0.46,
+     "height": 0.16
+    }
+   ],
+   "line": "And I shall have some peace there, for peace comes dropping slow, / Dropping from the veils of the morning to where the cricket sings; / There midnight's all a glimmer, and noon a purple glow, / And evening full of the linnet's wings."
+  },
+  {
+   "id": "deep-hearts-core",
+   "image": "04-deep-hearts-core.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.8
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.05,
+     "width": 0.56,
+     "height": 0.17
+    }
+   ],
+   "line": "I will arise and go now, for always night and day / I hear lake water lapping with low sounds by the shore; / While I stand on the roadway, or on the pavements grey, / I hear it in the deep heart's core."
+  }
+ ]
+}

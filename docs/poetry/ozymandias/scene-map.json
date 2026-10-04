@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "title": "Ozymandias",
+ "author": "Percy Bysshe Shelley",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF1DE",
+  "active": "#FFD08A",
+  "shadow": "rgba(20, 10, 4, 0.55)"
+ },
+ "themeGain": 0.18,
+ "textScale": 0.7,
+ "veil": 1.4,
+ "scenes": [
+  {
+   "id": "traveller",
+   "image": "01-traveller-from-an-antique-land.png",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.35
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.05,
+     "y": 0.05,
+     "width": 0.9,
+     "height": 0.1
+    }
+   ],
+   "line": "I met a Traveller from an antique land, / Who said, “Two vast and trunkless legs of stone / Stand in the desart. Near them, on the sand,"
+  },
+  {
+   "id": "shattered-visage",
+   "image": "02-shattered-visage.png",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.7,
+    "y": 0.55
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.46,
+     "y": 0.06,
+     "width": 0.48,
+     "height": 0.17
+    }
+   ],
+   "line": "Half sunk, a shattered visage lies, whose frown, / And wrinkled lip, and sneer of cold command, / Tell that its sculptor well those passions read, / Which yet survive, stamped on these lifeless things, / The hand that mocked them, and the heart that fed:"
+  },
+  {
+   "id": "king-of-kings",
+   "image": "03-king-of-kings.png",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.25
+   },
+   "textPreset": "uniform-formation",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.5,
+     "y": 0.07,
+     "width": 0.44,
+     "height": 0.2
+    }
+   ],
+   "line": "And on the pedestal these words appear: / “My name is Ozymandias, King of Kings.” / Look on my works ye Mighty, and despair!"
+  },
+  {
+   "id": "lone-and-level-sands",
+   "image": "04-lone-and-level-sands.png",
+   "lines": 3,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.08,
+     "width": 0.84,
+     "height": 0.24
+    }
+   ],
+   "line": "No thing beside remains. Round the decay / Of that Colossal Wreck, boundless and bare, / The lone and level sands stretch far away."
+  }
+ ]
+}

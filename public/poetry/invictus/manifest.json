@@ -1,0 +1,869 @@
+{
+ "id": "invictus-immersive-v1",
+ "title": "Invictus",
+ "author": "William Ernest Henley",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/invictus/narration.mp3",
+ "theme": {
+  "src": "/poetry/invictus/theme.mp3",
+  "gain": 0.22
+ },
+ "durationMs": 44720,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F3ECE0",
+  "active": "#FFD08A",
+  "shadow": "rgba(6, 8, 14, 0.55)"
+ },
+ "textScale": 0.86,
+ "veil": 1.3,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "night-covers-me",
+   "image": "/poetry/invictus/scenes/01-night-covers-me.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.4,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.4,
+     "y": 0.08,
+     "width": 0.52,
+     "height": 0.26
+    }
+   ],
+   "line": "Out of the night that covers me, / Black as the pit from pole to pole, / I thank whatever gods may be / For my unconquerable soul.",
+   "startMs": 0
+  },
+  {
+   "id": "head-unbowed",
+   "image": "/poetry/invictus/scenes/02-head-unbowed.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.25
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.24,
+     "y": 0.05,
+     "width": 0.68,
+     "height": 0.12
+    }
+   ],
+   "line": "In the fell clutch of circumstance / I have not winced nor cried aloud. / Under the bludgeonings of chance / My head is bloody, but unbow'd.",
+   "startMs": 11040
+  },
+  {
+   "id": "strait-gate",
+   "image": "/poetry/invictus/scenes/03-strait-gate.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.38,
+    "y": 0.35
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.06,
+     "width": 0.5,
+     "height": 0.22
+    }
+   ],
+   "line": "Beyond this place of wrath and tears / Looms but the Horror of the shade, / And yet the menace of the years / Finds and shall find me unafraid. / It matters not how strait the gate, / How charged with punishments the scroll,",
+   "startMs": 22080
+  },
+  {
+   "id": "captain-of-my-soul",
+   "image": "/poetry/invictus/scenes/04-captain-of-my-soul.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.3
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.18
+    }
+   ],
+   "line": "I am the master of my fate: / I am the captain of my soul.",
+   "startMs": 39200
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "night-covers-me",
+   "startMs": 0,
+   "endMs": 2560,
+   "tokens": [
+    {
+     "text": "Out",
+     "atMs": 0,
+     "endMs": 240,
+     "phrase": 0
+    },
+    {
+     "text": "of",
+     "atMs": 280,
+     "endMs": 320,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 400,
+     "endMs": 480,
+     "phrase": 0
+    },
+    {
+     "text": "night",
+     "atMs": 640,
+     "endMs": 960,
+     "phrase": 0
+    },
+    {
+     "text": "that",
+     "atMs": 1040,
+     "endMs": 1120,
+     "phrase": 0
+    },
+    {
+     "text": "covers",
+     "atMs": 1280,
+     "endMs": 1600,
+     "phrase": 0
+    },
+    {
+     "text": "me,",
+     "atMs": 1680,
+     "endMs": 2400,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "night-covers-me",
+   "startMs": 2560,
+   "endMs": 5760,
+   "tokens": [
+    {
+     "text": "Black",
+     "atMs": 2560,
+     "endMs": 2960,
+     "phrase": 1
+    },
+    {
+     "text": "as",
+     "atMs": 3040,
+     "endMs": 3120,
+     "phrase": 1
+    },
+    {
+     "text": "the",
+     "atMs": 3160,
+     "endMs": 3200,
+     "phrase": 1
+    },
+    {
+     "text": "pit",
+     "atMs": 3440,
+     "endMs": 3680,
+     "phrase": 1
+    },
+    {
+     "text": "from",
+     "atMs": 3760,
+     "endMs": 3920,
+     "phrase": 1
+    },
+    {
+     "text": "pole",
+     "atMs": 4080,
+     "endMs": 4400,
+     "phrase": 1
+    },
+    {
+     "text": "to",
+     "atMs": 4480,
+     "endMs": 4640,
+     "phrase": 1
+    },
+    {
+     "text": "pole,",
+     "atMs": 4720,
+     "endMs": 5680,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "night-covers-me",
+   "startMs": 5760,
+   "endMs": 8160,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 5760,
+     "endMs": 5840,
+     "phrase": 2
+    },
+    {
+     "text": "thank",
+     "atMs": 6000,
+     "endMs": 6320,
+     "phrase": 2
+    },
+    {
+     "text": "whatever",
+     "atMs": 6400,
+     "endMs": 6800,
+     "phrase": 2
+    },
+    {
+     "text": "gods",
+     "atMs": 6960,
+     "endMs": 7280,
+     "phrase": 2
+    },
+    {
+     "text": "may",
+     "atMs": 7360,
+     "endMs": 7520,
+     "phrase": 2
+    },
+    {
+     "text": "be",
+     "atMs": 7680,
+     "endMs": 7920,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "night-covers-me",
+   "startMs": 8160,
+   "endMs": 11040,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 8160,
+     "endMs": 8320,
+     "phrase": 3
+    },
+    {
+     "text": "my",
+     "atMs": 8400,
+     "endMs": 8560,
+     "phrase": 3
+    },
+    {
+     "text": "unconquerable",
+     "atMs": 8640,
+     "endMs": 9600,
+     "phrase": 3
+    },
+    {
+     "text": "soul.",
+     "atMs": 9760,
+     "endMs": 10600,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "head-unbowed",
+   "startMs": 11040,
+   "endMs": 13520,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 11040,
+     "endMs": 11120,
+     "phrase": 4
+    },
+    {
+     "text": "the",
+     "atMs": 11200,
+     "endMs": 11280,
+     "phrase": 4
+    },
+    {
+     "text": "fell",
+     "atMs": 11440,
+     "endMs": 11680,
+     "phrase": 4
+    },
+    {
+     "text": "clutch",
+     "atMs": 11840,
+     "endMs": 12160,
+     "phrase": 4
+    },
+    {
+     "text": "of",
+     "atMs": 12200,
+     "endMs": 12240,
+     "phrase": 4
+    },
+    {
+     "text": "circumstance",
+     "atMs": 12400,
+     "endMs": 13280,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "head-unbowed",
+   "startMs": 13520,
+   "endMs": 16480,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 13520,
+     "endMs": 13600,
+     "phrase": 5
+    },
+    {
+     "text": "have",
+     "atMs": 13680,
+     "endMs": 13760,
+     "phrase": 5
+    },
+    {
+     "text": "not",
+     "atMs": 13840,
+     "endMs": 14000,
+     "phrase": 5
+    },
+    {
+     "text": "winced",
+     "atMs": 14160,
+     "endMs": 14640,
+     "phrase": 5
+    },
+    {
+     "text": "nor",
+     "atMs": 14720,
+     "endMs": 14880,
+     "phrase": 5
+    },
+    {
+     "text": "cried",
+     "atMs": 15040,
+     "endMs": 15280,
+     "phrase": 5
+    },
+    {
+     "text": "aloud.",
+     "atMs": 15360,
+     "endMs": 16160,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "head-unbowed",
+   "startMs": 16480,
+   "endMs": 18640,
+   "tokens": [
+    {
+     "text": "Under",
+     "atMs": 16480,
+     "endMs": 16720,
+     "phrase": 6
+    },
+    {
+     "text": "the",
+     "atMs": 16760,
+     "endMs": 16800,
+     "phrase": 6
+    },
+    {
+     "text": "bludgeonings",
+     "atMs": 16960,
+     "endMs": 17600,
+     "phrase": 6
+    },
+    {
+     "text": "of",
+     "atMs": 17640,
+     "endMs": 17680,
+     "phrase": 6
+    },
+    {
+     "text": "chance",
+     "atMs": 17920,
+     "endMs": 18400,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "head-unbowed",
+   "startMs": 18640,
+   "endMs": 22080,
+   "tokens": [
+    {
+     "text": "My",
+     "atMs": 18640,
+     "endMs": 18880,
+     "phrase": 7
+    },
+    {
+     "text": "head",
+     "atMs": 18960,
+     "endMs": 19120,
+     "phrase": 7
+    },
+    {
+     "text": "is",
+     "atMs": 19200,
+     "endMs": 19280,
+     "phrase": 7
+    },
+    {
+     "text": "bloody,",
+     "atMs": 19440,
+     "endMs": 20160,
+     "phrase": 7,
+     "emphasis": "lead"
+    },
+    {
+     "text": "but",
+     "atMs": 20240,
+     "endMs": 20320,
+     "phrase": 8
+    },
+    {
+     "text": "unbow'd.",
+     "atMs": 20480,
+     "endMs": 21640,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "strait-gate",
+   "startMs": 22080,
+   "endMs": 25040,
+   "tokens": [
+    {
+     "text": "Beyond",
+     "atMs": 22080,
+     "endMs": 22480,
+     "phrase": 9
+    },
+    {
+     "text": "this",
+     "atMs": 22600,
+     "endMs": 22720,
+     "phrase": 9
+    },
+    {
+     "text": "place",
+     "atMs": 22800,
+     "endMs": 23200,
+     "phrase": 9
+    },
+    {
+     "text": "of",
+     "atMs": 23280,
+     "endMs": 23360,
+     "phrase": 9
+    },
+    {
+     "text": "wrath",
+     "atMs": 23520,
+     "endMs": 23840,
+     "phrase": 9
+    },
+    {
+     "text": "and",
+     "atMs": 23920,
+     "endMs": 24000,
+     "phrase": 9
+    },
+    {
+     "text": "tears",
+     "atMs": 24160,
+     "endMs": 24640,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "strait-gate",
+   "startMs": 25040,
+   "endMs": 27840,
+   "tokens": [
+    {
+     "text": "Looms",
+     "atMs": 25040,
+     "endMs": 25520,
+     "phrase": 10
+    },
+    {
+     "text": "but",
+     "atMs": 25600,
+     "endMs": 25680,
+     "phrase": 10
+    },
+    {
+     "text": "the",
+     "atMs": 25760,
+     "endMs": 25840,
+     "phrase": 10
+    },
+    {
+     "text": "Horror",
+     "atMs": 26000,
+     "endMs": 26400,
+     "phrase": 10
+    },
+    {
+     "text": "of",
+     "atMs": 26480,
+     "endMs": 26560,
+     "phrase": 10
+    },
+    {
+     "text": "the",
+     "atMs": 26640,
+     "endMs": 26720,
+     "phrase": 10
+    },
+    {
+     "text": "shade,",
+     "atMs": 26800,
+     "endMs": 27760,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "strait-gate",
+   "startMs": 27840,
+   "endMs": 30000,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 27840,
+     "endMs": 27920,
+     "phrase": 11
+    },
+    {
+     "text": "yet",
+     "atMs": 28000,
+     "endMs": 28160,
+     "phrase": 11
+    },
+    {
+     "text": "the",
+     "atMs": 28240,
+     "endMs": 28320,
+     "phrase": 11
+    },
+    {
+     "text": "menace",
+     "atMs": 28480,
+     "endMs": 28800,
+     "phrase": 11
+    },
+    {
+     "text": "of",
+     "atMs": 28880,
+     "endMs": 28960,
+     "phrase": 11
+    },
+    {
+     "text": "the",
+     "atMs": 29040,
+     "endMs": 29120,
+     "phrase": 11
+    },
+    {
+     "text": "years",
+     "atMs": 29200,
+     "endMs": 29680,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "strait-gate",
+   "startMs": 30000,
+   "endMs": 33680,
+   "tokens": [
+    {
+     "text": "Finds",
+     "atMs": 30000,
+     "endMs": 30560,
+     "phrase": 12
+    },
+    {
+     "text": "and",
+     "atMs": 30720,
+     "endMs": 30800,
+     "phrase": 12
+    },
+    {
+     "text": "shall",
+     "atMs": 30960,
+     "endMs": 31280,
+     "phrase": 12
+    },
+    {
+     "text": "find",
+     "atMs": 31360,
+     "endMs": 31680,
+     "phrase": 12
+    },
+    {
+     "text": "me",
+     "atMs": 31760,
+     "endMs": 31920,
+     "phrase": 12
+    },
+    {
+     "text": "unafraid.",
+     "atMs": 32160,
+     "endMs": 32960,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "strait-gate",
+   "startMs": 33680,
+   "endMs": 36240,
+   "tokens": [
+    {
+     "text": "It",
+     "atMs": 33680,
+     "endMs": 33840,
+     "phrase": 13
+    },
+    {
+     "text": "matters",
+     "atMs": 33920,
+     "endMs": 34240,
+     "phrase": 13
+    },
+    {
+     "text": "not",
+     "atMs": 34320,
+     "endMs": 34640,
+     "phrase": 13
+    },
+    {
+     "text": "how",
+     "atMs": 34760,
+     "endMs": 34880,
+     "phrase": 13
+    },
+    {
+     "text": "strait",
+     "atMs": 34960,
+     "endMs": 35280,
+     "phrase": 13
+    },
+    {
+     "text": "the",
+     "atMs": 35360,
+     "endMs": 35440,
+     "phrase": 13
+    },
+    {
+     "text": "gate,",
+     "atMs": 35520,
+     "endMs": 36160,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "strait-gate",
+   "startMs": 36240,
+   "endMs": 39200,
+   "tokens": [
+    {
+     "text": "How",
+     "atMs": 36240,
+     "endMs": 36320,
+     "phrase": 14
+    },
+    {
+     "text": "charged",
+     "atMs": 36480,
+     "endMs": 36960,
+     "phrase": 14
+    },
+    {
+     "text": "with",
+     "atMs": 37040,
+     "endMs": 37120,
+     "phrase": 14
+    },
+    {
+     "text": "punishments",
+     "atMs": 37280,
+     "endMs": 37840,
+     "phrase": 14
+    },
+    {
+     "text": "the",
+     "atMs": 37920,
+     "endMs": 38000,
+     "phrase": 14
+    },
+    {
+     "text": "scroll,",
+     "atMs": 38080,
+     "endMs": 39120,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "captain-of-my-soul",
+   "startMs": 39200,
+   "endMs": 42000,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 39200,
+     "endMs": 39520,
+     "phrase": 15
+    },
+    {
+     "text": "am",
+     "atMs": 39680,
+     "endMs": 39760,
+     "phrase": 15
+    },
+    {
+     "text": "the",
+     "atMs": 39840,
+     "endMs": 39920,
+     "phrase": 15
+    },
+    {
+     "text": "master",
+     "atMs": 40080,
+     "endMs": 40480,
+     "phrase": 15
+    },
+    {
+     "text": "of",
+     "atMs": 40560,
+     "endMs": 40640,
+     "phrase": 15
+    },
+    {
+     "text": "my",
+     "atMs": 40720,
+     "endMs": 40880,
+     "phrase": 15
+    },
+    {
+     "text": "fate:",
+     "atMs": 41040,
+     "endMs": 41920,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "captain-of-my-soul",
+   "startMs": 42000,
+   "endMs": 44720,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 42000,
+     "endMs": 42240,
+     "phrase": 16
+    },
+    {
+     "text": "am",
+     "atMs": 42480,
+     "endMs": 42560,
+     "phrase": 16
+    },
+    {
+     "text": "the",
+     "atMs": 42640,
+     "endMs": 42720,
+     "phrase": 16
+    },
+    {
+     "text": "captain",
+     "atMs": 42880,
+     "endMs": 43360,
+     "phrase": 16
+    },
+    {
+     "text": "of",
+     "atMs": 43520,
+     "endMs": 43600,
+     "phrase": 16
+    },
+    {
+     "text": "my",
+     "atMs": 43680,
+     "endMs": 43840,
+     "phrase": 16
+    },
+    {
+     "text": "soul.",
+     "atMs": 44000,
+     "endMs": 44720,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

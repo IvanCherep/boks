@@ -378,6 +378,10 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *Hope is the thing with feathers*, Emily Dickinson | `226ea7f3-9aa8-4c2f-b654-01ee67b53fb2` | Sha | 4 | 4, 4, 2, 2 |
 | *A Dream Within a Dream*, Edgar Allan Poe | `9aa49ad9-579e-4721-881d-d84595a49975` | Jerry B. | 4 | 5, 6, 7, 6 |
 | *The Tyger*, William Blake | `11cbb669-6c1b-4e03-a80a-27951c9abca9` | Jerry B. | 4 in 5 scenes - the opening returns with the closing stanza | 4, 4, 8, 4, 4 |
+| *Ozymandias*, Shelley | `d86fa888-50ab-493d-ae34-8ad574fc0845` | Jerry B. | 4 | 3, 5, 3, 3 |
+| *Invictus*, Henley | `c8e05b68-5a45-4eb0-935e-d8b0ad8e6b45` | Jerry B. | 4 | 4, 4, 6, 2 |
+| *The Lake Isle of Innisfree*, Yeats | `9d42d01d-5a3e-4ddb-a334-3f4dfdf5dffe` | Jerry B. | 4 - a ring: grey pavement, the island, evening, the pavement again | 1, 3, 4, 4 |
+| *O Captain! My Captain!*, Whitman | `7322a7ff-0abf-4aba-b340-49477030ebed` | Jerry B. | 4 | 8, 6, 2, 8 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
