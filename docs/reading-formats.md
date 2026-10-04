@@ -542,6 +542,12 @@ Learned the expensive way, each one having caused a visible stutter:
 - **`filter: blur()` in a transition.** It cannot run on the compositor and
   re-rasterises glyphs every frame. A static blur is fine; an animated one is
   not.
+- **`text-shadow` in a keyframe.** The same problem as a blur: the glyphs are
+  redrawn every frame, and while an arrival is also moving the word by
+  fractions of a pixel an iPhone draws it in a slightly different place each
+  time - the word trembles. `searchlight-scan` did this. A glow that comes and
+  goes is a copy of the word (`::after` with `content: attr(data-text)`,
+  transparent glyphs, only the shadow) whose opacity is animated.
 - **Anything that changes a word's width** — `letter-spacing`, `font-weight`,
   `font-size`. These words sit in a flow, so a width that moves with the reading
   re-lays the whole line on every word and shakes the screen. Use `scale`.

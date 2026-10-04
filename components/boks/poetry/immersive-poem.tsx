@@ -474,8 +474,14 @@ export function ImmersivePoem({
                       key={verse.lineIndex}
                       // Two lines of a picture at most: the third takes the
                       // first one's place, and the first leaves as it arrives.
+                      // A stanza that has passed keeps its gone lines gone.
+                      // Limited to the current stanza, they lost the class the
+                      // moment it passed and faded back in under the next
+                      // stanza's first line while the old one was leaving -
+                      // three texts in one place, which read as the line
+                      // shaking.
                       className={`poem__verse ${
-                        state === "now" && isGone(verse.lineIndex) ? "is-gone" : ""
+                        state !== "ahead" && isGone(verse.lineIndex) ? "is-gone" : ""
                       }`}
                       style={{
                         gridRow: verse.slot + 1,
@@ -488,6 +494,9 @@ export function ImmersivePoem({
                       {verse.tokens.map(({ token, order }) => (
                         <span
                           key={order}
+                          // The searchlight's glow is a copy of the word drawn
+                          // by `::after`; see `.poem--searchlight-scan`.
+                          data-text={token.text}
                           className={`poem__word ${
                             token.emphasis === "lead" ? "poem__word--lead" : ""
                           } is-${

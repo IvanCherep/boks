@@ -5185,23 +5185,40 @@ body:has(.poem, .cinema) .reader-dock {
   }
 }
 
-/* One pass of light as the word lands, not a loop. Brightness rather than a
-   clipped gradient: the same impression, a fraction of the cost. */
+/*
+ * One pass of light as the word lands, not a loop.
+ *
+ * The light is a copy of the word - transparent glyphs, only their glow - laid
+ * over it, and only its opacity moves. It used to animate the word's own
+ * `text-shadow`, which cannot be composited: an iPhone redrew the glyphs on
+ * every frame while the arrival was still moving them by fractions of a pixel,
+ * so each word trembled as it landed. And the animation replaced the word's
+ * lamplight shadows while it ran, so they snapped back the moment it ended.
+ */
 .poem--searchlight-scan .poem__word.is-active {
-  animation-name: poem-arrive, poem-scan;
-  animation-duration: 800ms, 1040ms;
-  animation-timing-function: cubic-bezier(0.16, 0.8, 0.26, 1), ease-out;
+  position: relative;
+}
+
+.poem--searchlight-scan .poem__word.is-active::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  text-shadow: 0 0 42px rgb(255 240 200 / 72%);
+  pointer-events: none;
+  opacity: 0;
+  animation: poem-scan 1040ms ease-out both;
 }
 
 @keyframes poem-scan {
   0% {
-    text-shadow: 0 2px 18px var(--poem-shadow);
+    opacity: 0;
   }
   45% {
-    text-shadow: 0 2px 18px var(--poem-shadow), 0 0 42px rgb(255 240 200 / 72%);
+    opacity: 1;
   }
   100% {
-    text-shadow: 0 2px 18px var(--poem-shadow), 0 0 28px rgb(255 217 154 / 28%);
+    opacity: 0.4;
   }
 }
 
