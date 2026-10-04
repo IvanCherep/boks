@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "title": "Шёпот, робкое дыханье…",
+ "author": "Афанасий Фет",
+ "language": "ru",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FAF1F4",
+  "active": "#FFD9B0",
+  "shadow": "rgba(14, 10, 22, 0.55)"
+ },
+ "themeGain": 0.3,
+ "veil": 1.3,
+ "scenes": [
+  {
+   "id": "whisper-and-breath",
+   "image": "01-whisper-and-breath.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.75
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "Шёпот, робкое дыханье, / Трели соловья,"
+  },
+  {
+   "id": "silver-stream",
+   "image": "02-silver-stream.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.7
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "Серебро и колыханье / Сонного ручья, / Свет ночной, ночные тени, / Тени без конца, / Ряд волшебных изменений / Милого лица,"
+  },
+  {
+   "id": "purple-and-amber",
+   "image": "03-purple-and-amber.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.75,
+    "y": 0.35
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "В дымных тучках пурпур розы, / Отблеск янтаря,"
+  },
+  {
+   "id": "kisses-tears-dawn",
+   "image": "04-kisses-tears-dawn.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.4,
+    "y": 0.65
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "И лобзания, и слёзы, / И заря, заря!.."
+  }
+ ]
+}

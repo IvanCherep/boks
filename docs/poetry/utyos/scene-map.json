@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "title": "Утёс",
+ "author": "Михаил Лермонтов",
+ "language": "ru",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F6EFE4",
+  "active": "#FFD99A",
+  "shadow": "rgba(8, 10, 18, 0.55)"
+ },
+ "themeGain": 0.33,
+ "veil": 1.3,
+ "scenes": [
+  {
+   "id": "golden-cloud-at-night",
+   "image": "01-golden-cloud-at-night.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.35
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1100,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Ночевала тучка золотая / На груди утёса-великана;"
+  },
+  {
+   "id": "cloud-departs-at-dawn",
+   "image": "02-cloud-departs-at-dawn.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.2
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Утром в путь она умчалась рано, / По лазури весело играя;"
+  },
+  {
+   "id": "playing-in-the-azure",
+   "image": "03-playing-in-the-azure.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.7,
+    "y": 0.15
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Но остался влажный след в морщине / Старого утёса. Одиноко"
+  },
+  {
+   "id": "cliff-alone",
+   "image": "04-cliff-alone.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.4
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Он стоит, задумался глубоко, / И тихонько плачет он в пустыне."
+  }
+ ]
+}

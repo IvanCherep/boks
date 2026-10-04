@@ -1,0 +1,1001 @@
+{
+ "id": "muzhichok-immersive-v1",
+ "title": "Мужичок с ноготок",
+ "author": "Николай Некрасов",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/muzhichok/narration.mp3",
+ "theme": {
+  "src": "/poetry/muzhichok/theme.mp3",
+  "gain": 0.15
+ },
+ "durationMs": 54640,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FFFAF0",
+  "active": "#FFD48A",
+  "shadow": "rgba(16, 20, 32, 0.55)"
+ },
+ "textScale": 0.64,
+ "veil": 1.7,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "winter-road",
+   "image": "/poetry/muzhichok/scenes/01-winter-road.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.38,
+     "y": 0.09,
+     "width": 0.56,
+     "height": 0.15
+    }
+   ],
+   "line": "Однажды, в студёную зимнюю пору, / Я из лесу вышел; был сильный мороз. / Гляжу, поднимается медленно в гору / Лошадка, везущая хворосту воз.",
+   "startMs": 0
+  },
+  {
+   "id": "little-man",
+   "image": "/poetry/muzhichok/scenes/02-little-man.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.7,
+    "y": 0.65
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.38,
+     "y": 0.09,
+     "width": 0.56,
+     "height": 0.15
+    }
+   ],
+   "line": "И, шествуя важно, в спокойствии чинном, / Лошадку ведёт под уздцы мужичок / В больших сапогах, в полушубке овчинном, / В больших рукавицах… а сам с ноготок!",
+   "startMs": 11040
+  },
+  {
+   "id": "father-and-son",
+   "image": "/poetry/muzhichok/scenes/03-father-and-son.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.6
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.38,
+     "y": 0.09,
+     "width": 0.56,
+     "height": 0.15
+    }
+   ],
+   "line": "«Здорово, парнище!» — «Ступай себе мимо!» / — «Уж больно ты грозен, как я погляжу! / Откуда дровишки?» — «Из лесу, вестимо; / Отец, слышишь, рубит, а я отвожу». / (В лесу раздавался топор дровосека.) / «А что, у отца-то большая семья?» / — «Семья-то большая, да два человека / Всего мужиков-то: отец мой да я…»",
+   "startMs": 22080
+  },
+  {
+   "id": "vlas-marches-on",
+   "image": "/poetry/muzhichok/scenes/04-vlas-marches-on.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.75,
+    "y": 0.65
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.38,
+     "y": 0.09,
+     "width": 0.56,
+     "height": 0.15
+    }
+   ],
+   "line": "— «Так вот оно что! А как звать тебя?» — «Власом». / — «А кой тебе годик?» — «Шестой миновал… / Ну, мёртвая!» — крикнул малюточка басом, / Рванул под уздцы и быстрей зашагал.",
+   "startMs": 42400
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "winter-road",
+   "startMs": 0,
+   "endMs": 2800,
+   "tokens": [
+    {
+     "text": "Однажды,",
+     "atMs": 0,
+     "endMs": 880,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "в",
+     "atMs": 920,
+     "endMs": 960,
+     "phrase": 1
+    },
+    {
+     "text": "студёную",
+     "atMs": 1000,
+     "endMs": 1520,
+     "phrase": 1
+    },
+    {
+     "text": "зимнюю",
+     "atMs": 1600,
+     "endMs": 2000,
+     "phrase": 1
+    },
+    {
+     "text": "пору,",
+     "atMs": 2160,
+     "endMs": 2720,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "winter-road",
+   "startMs": 2800,
+   "endMs": 6000,
+   "tokens": [
+    {
+     "text": "Я",
+     "atMs": 2800,
+     "endMs": 2880,
+     "phrase": 2
+    },
+    {
+     "text": "из",
+     "atMs": 3040,
+     "endMs": 3200,
+     "phrase": 2
+    },
+    {
+     "text": "лесу",
+     "atMs": 3280,
+     "endMs": 3520,
+     "phrase": 2
+    },
+    {
+     "text": "вышел;",
+     "atMs": 3600,
+     "endMs": 4320,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "был",
+     "atMs": 4400,
+     "endMs": 4560,
+     "phrase": 3
+    },
+    {
+     "text": "сильный",
+     "atMs": 4720,
+     "endMs": 5120,
+     "phrase": 3
+    },
+    {
+     "text": "мороз.",
+     "atMs": 5200,
+     "endMs": 5800,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "winter-road",
+   "startMs": 6000,
+   "endMs": 8360,
+   "tokens": [
+    {
+     "text": "Гляжу,",
+     "atMs": 6000,
+     "endMs": 6720,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "поднимается",
+     "atMs": 6800,
+     "endMs": 7360,
+     "phrase": 5
+    },
+    {
+     "text": "медленно",
+     "atMs": 7440,
+     "endMs": 7920,
+     "phrase": 5
+    },
+    {
+     "text": "в",
+     "atMs": 7960,
+     "endMs": 8000,
+     "phrase": 5
+    },
+    {
+     "text": "гору",
+     "atMs": 8080,
+     "endMs": 8320,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "winter-road",
+   "startMs": 8360,
+   "endMs": 11040,
+   "tokens": [
+    {
+     "text": "Лошадка,",
+     "atMs": 8360,
+     "endMs": 9200,
+     "phrase": 6,
+     "emphasis": "lead"
+    },
+    {
+     "text": "везущая",
+     "atMs": 9320,
+     "endMs": 9760,
+     "phrase": 7
+    },
+    {
+     "text": "хворосту",
+     "atMs": 9840,
+     "endMs": 10320,
+     "phrase": 7
+    },
+    {
+     "text": "воз.",
+     "atMs": 10400,
+     "endMs": 10880,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "little-man",
+   "startMs": 11040,
+   "endMs": 13920,
+   "tokens": [
+    {
+     "text": "И,",
+     "atMs": 11040,
+     "endMs": 11240,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "шествуя",
+     "atMs": 11280,
+     "endMs": 11840,
+     "phrase": 9
+    },
+    {
+     "text": "важно,",
+     "atMs": 11880,
+     "endMs": 12280,
+     "phrase": 9,
+     "emphasis": "lead"
+    },
+    {
+     "text": "в",
+     "atMs": 12320,
+     "endMs": 12360,
+     "phrase": 10
+    },
+    {
+     "text": "спокойствии",
+     "atMs": 12400,
+     "endMs": 13040,
+     "phrase": 10
+    },
+    {
+     "text": "чинном,",
+     "atMs": 13120,
+     "endMs": 13840,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "little-man",
+   "startMs": 13920,
+   "endMs": 16160,
+   "tokens": [
+    {
+     "text": "Лошадку",
+     "atMs": 13920,
+     "endMs": 14320,
+     "phrase": 11
+    },
+    {
+     "text": "ведёт",
+     "atMs": 14400,
+     "endMs": 14640,
+     "phrase": 11
+    },
+    {
+     "text": "под",
+     "atMs": 14720,
+     "endMs": 14880,
+     "phrase": 11
+    },
+    {
+     "text": "уздцы",
+     "atMs": 14920,
+     "endMs": 15280,
+     "phrase": 11
+    },
+    {
+     "text": "мужичок",
+     "atMs": 15320,
+     "endMs": 15920,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "little-man",
+   "startMs": 16160,
+   "endMs": 18880,
+   "tokens": [
+    {
+     "text": "В",
+     "atMs": 16160,
+     "endMs": 16240,
+     "phrase": 12
+    },
+    {
+     "text": "больших",
+     "atMs": 16320,
+     "endMs": 16560,
+     "phrase": 12
+    },
+    {
+     "text": "сапогах,",
+     "atMs": 16640,
+     "endMs": 17320,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "в",
+     "atMs": 17360,
+     "endMs": 17400,
+     "phrase": 13
+    },
+    {
+     "text": "полушубке",
+     "atMs": 17440,
+     "endMs": 18000,
+     "phrase": 13
+    },
+    {
+     "text": "овчинном,",
+     "atMs": 18080,
+     "endMs": 18800,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "little-man",
+   "startMs": 18880,
+   "endMs": 22080,
+   "tokens": [
+    {
+     "text": "В",
+     "atMs": 18880,
+     "endMs": 18960,
+     "phrase": 14
+    },
+    {
+     "text": "больших",
+     "atMs": 19080,
+     "endMs": 19360,
+     "phrase": 14
+    },
+    {
+     "text": "рукавицах…",
+     "atMs": 19440,
+     "endMs": 20480,
+     "phrase": 14
+    },
+    {
+     "text": "а",
+     "atMs": 20560,
+     "endMs": 20640,
+     "phrase": 14
+    },
+    {
+     "text": "сам",
+     "atMs": 20720,
+     "endMs": 20960,
+     "phrase": 14
+    },
+    {
+     "text": "с",
+     "atMs": 21040,
+     "endMs": 21080,
+     "phrase": 14
+    },
+    {
+     "text": "ноготок!",
+     "atMs": 21120,
+     "endMs": 21880,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 22080,
+   "endMs": 25040,
+   "tokens": [
+    {
+     "text": "«Здорово,",
+     "atMs": 22080,
+     "endMs": 22640,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "парнище!» —",
+     "atMs": 22720,
+     "endMs": 23547,
+     "phrase": 16,
+     "emphasis": "lead"
+    },
+    {
+     "text": "«Ступай",
+     "atMs": 23573,
+     "endMs": 24000,
+     "phrase": 17
+    },
+    {
+     "text": "себе",
+     "atMs": 24080,
+     "endMs": 24320,
+     "phrase": 17
+    },
+    {
+     "text": "мимо!»",
+     "atMs": 24400,
+     "endMs": 24880,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 25040,
+   "endMs": 27520,
+   "tokens": [
+    {
+     "text": "— «Уж",
+     "atMs": 25040,
+     "endMs": 25280,
+     "phrase": 18
+    },
+    {
+     "text": "больно",
+     "atMs": 25360,
+     "endMs": 25680,
+     "phrase": 18
+    },
+    {
+     "text": "ты",
+     "atMs": 25760,
+     "endMs": 25840,
+     "phrase": 18
+    },
+    {
+     "text": "грозен,",
+     "atMs": 25920,
+     "endMs": 26400,
+     "phrase": 18,
+     "emphasis": "lead"
+    },
+    {
+     "text": "как",
+     "atMs": 26453,
+     "endMs": 26560,
+     "phrase": 19
+    },
+    {
+     "text": "я",
+     "atMs": 26600,
+     "endMs": 26640,
+     "phrase": 19
+    },
+    {
+     "text": "погляжу!",
+     "atMs": 26720,
+     "endMs": 27360,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 27520,
+   "endMs": 30080,
+   "tokens": [
+    {
+     "text": "Откуда",
+     "atMs": 27520,
+     "endMs": 27840,
+     "phrase": 20
+    },
+    {
+     "text": "дровишки?» —",
+     "atMs": 27880,
+     "endMs": 28747,
+     "phrase": 20,
+     "emphasis": "lead"
+    },
+    {
+     "text": "«Из",
+     "atMs": 28773,
+     "endMs": 29000,
+     "phrase": 21
+    },
+    {
+     "text": "лесу,",
+     "atMs": 29040,
+     "endMs": 29360,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "вестимо;",
+     "atMs": 29440,
+     "endMs": 30000,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 30080,
+   "endMs": 32640,
+   "tokens": [
+    {
+     "text": "Отец,",
+     "atMs": 30080,
+     "endMs": 30480,
+     "phrase": 23,
+     "emphasis": "lead"
+    },
+    {
+     "text": "слышишь,",
+     "atMs": 30520,
+     "endMs": 30960,
+     "phrase": 24,
+     "emphasis": "lead"
+    },
+    {
+     "text": "рубит,",
+     "atMs": 31040,
+     "endMs": 31520,
+     "phrase": 25,
+     "emphasis": "lead"
+    },
+    {
+     "text": "а",
+     "atMs": 31560,
+     "endMs": 31600,
+     "phrase": 26
+    },
+    {
+     "text": "я",
+     "atMs": 31680,
+     "endMs": 31760,
+     "phrase": 26
+    },
+    {
+     "text": "отвожу».",
+     "atMs": 31840,
+     "endMs": 32440,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 32640,
+   "endMs": 35040,
+   "tokens": [
+    {
+     "text": "(В",
+     "atMs": 32640,
+     "endMs": 32720,
+     "phrase": 27
+    },
+    {
+     "text": "лесу",
+     "atMs": 32760,
+     "endMs": 33040,
+     "phrase": 27
+    },
+    {
+     "text": "раздавался",
+     "atMs": 33120,
+     "endMs": 33680,
+     "phrase": 27
+    },
+    {
+     "text": "топор",
+     "atMs": 33800,
+     "endMs": 34000,
+     "phrase": 27
+    },
+    {
+     "text": "дровосека.)",
+     "atMs": 34080,
+     "endMs": 34720,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 35040,
+   "endMs": 37520,
+   "tokens": [
+    {
+     "text": "«А",
+     "atMs": 35040,
+     "endMs": 35120,
+     "phrase": 28
+    },
+    {
+     "text": "что,",
+     "atMs": 35200,
+     "endMs": 35680,
+     "phrase": 28,
+     "emphasis": "lead"
+    },
+    {
+     "text": "у",
+     "atMs": 35720,
+     "endMs": 35760,
+     "phrase": 29
+    },
+    {
+     "text": "отца-то",
+     "atMs": 35840,
+     "endMs": 36320,
+     "phrase": 29
+    },
+    {
+     "text": "большая",
+     "atMs": 36400,
+     "endMs": 36720,
+     "phrase": 29
+    },
+    {
+     "text": "семья?»",
+     "atMs": 36800,
+     "endMs": 37360,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 37520,
+   "endMs": 39720,
+   "tokens": [
+    {
+     "text": "— «Семья-то",
+     "atMs": 37520,
+     "endMs": 38000,
+     "phrase": 30
+    },
+    {
+     "text": "большая,",
+     "atMs": 38080,
+     "endMs": 38800,
+     "phrase": 30,
+     "emphasis": "lead"
+    },
+    {
+     "text": "да",
+     "atMs": 38880,
+     "endMs": 38960,
+     "phrase": 31
+    },
+    {
+     "text": "два",
+     "atMs": 39000,
+     "endMs": 39120,
+     "phrase": 31
+    },
+    {
+     "text": "человека",
+     "atMs": 39200,
+     "endMs": 39680,
+     "phrase": 31,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "father-and-son",
+   "startMs": 39720,
+   "endMs": 42400,
+   "tokens": [
+    {
+     "text": "Всего",
+     "atMs": 39720,
+     "endMs": 39920,
+     "phrase": 32
+    },
+    {
+     "text": "мужиков-то:",
+     "atMs": 40000,
+     "endMs": 40800,
+     "phrase": 32,
+     "emphasis": "lead"
+    },
+    {
+     "text": "отец",
+     "atMs": 40880,
+     "endMs": 41200,
+     "phrase": 33
+    },
+    {
+     "text": "мой",
+     "atMs": 41280,
+     "endMs": 41440,
+     "phrase": 33
+    },
+    {
+     "text": "да",
+     "atMs": 41600,
+     "endMs": 41760,
+     "phrase": 33
+    },
+    {
+     "text": "я…»",
+     "atMs": 41840,
+     "endMs": 42267,
+     "phrase": 33,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "vlas-marches-on",
+   "startMs": 42400,
+   "endMs": 46160,
+   "tokens": [
+    {
+     "text": "— «Так",
+     "atMs": 42400,
+     "endMs": 42640,
+     "phrase": 34
+    },
+    {
+     "text": "вот",
+     "atMs": 42720,
+     "endMs": 42960,
+     "phrase": 34
+    },
+    {
+     "text": "оно",
+     "atMs": 43040,
+     "endMs": 43200,
+     "phrase": 34
+    },
+    {
+     "text": "что!",
+     "atMs": 43280,
+     "endMs": 43760,
+     "phrase": 34,
+     "emphasis": "lead"
+    },
+    {
+     "text": "А",
+     "atMs": 43920,
+     "endMs": 44000,
+     "phrase": 35
+    },
+    {
+     "text": "как",
+     "atMs": 44080,
+     "endMs": 44240,
+     "phrase": 35
+    },
+    {
+     "text": "звать",
+     "atMs": 44320,
+     "endMs": 44560,
+     "phrase": 35
+    },
+    {
+     "text": "тебя?» —",
+     "atMs": 44613,
+     "endMs": 45227,
+     "phrase": 35,
+     "emphasis": "lead"
+    },
+    {
+     "text": "«Власом».",
+     "atMs": 45253,
+     "endMs": 45960,
+     "phrase": 36,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "vlas-marches-on",
+   "startMs": 46160,
+   "endMs": 48880,
+   "tokens": [
+    {
+     "text": "— «А",
+     "atMs": 46160,
+     "endMs": 46240,
+     "phrase": 37
+    },
+    {
+     "text": "кой",
+     "atMs": 46320,
+     "endMs": 46400,
+     "phrase": 37
+    },
+    {
+     "text": "тебе",
+     "atMs": 46480,
+     "endMs": 46680,
+     "phrase": 37
+    },
+    {
+     "text": "годик?» —",
+     "atMs": 46720,
+     "endMs": 47467,
+     "phrase": 37,
+     "emphasis": "lead"
+    },
+    {
+     "text": "«Шестой",
+     "atMs": 47493,
+     "endMs": 47840,
+     "phrase": 38
+    },
+    {
+     "text": "миновал…",
+     "atMs": 47920,
+     "endMs": 48720,
+     "phrase": 38,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "vlas-marches-on",
+   "startMs": 48880,
+   "endMs": 52000,
+   "tokens": [
+    {
+     "text": "Ну,",
+     "atMs": 48880,
+     "endMs": 49120,
+     "phrase": 39,
+     "emphasis": "lead"
+    },
+    {
+     "text": "мёртвая!» —",
+     "atMs": 49280,
+     "endMs": 50320,
+     "phrase": 40,
+     "emphasis": "lead"
+    },
+    {
+     "text": "крикнул",
+     "atMs": 50400,
+     "endMs": 50720,
+     "phrase": 41
+    },
+    {
+     "text": "малюточка",
+     "atMs": 50760,
+     "endMs": 51280,
+     "phrase": 41
+    },
+    {
+     "text": "басом,",
+     "atMs": 51360,
+     "endMs": 51920,
+     "phrase": 41,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "vlas-marches-on",
+   "startMs": 52000,
+   "endMs": 54640,
+   "tokens": [
+    {
+     "text": "Рванул",
+     "atMs": 52000,
+     "endMs": 52400,
+     "phrase": 42
+    },
+    {
+     "text": "под",
+     "atMs": 52480,
+     "endMs": 52560,
+     "phrase": 42
+    },
+    {
+     "text": "уздцы",
+     "atMs": 52640,
+     "endMs": 53200,
+     "phrase": 42
+    },
+    {
+     "text": "и",
+     "atMs": 53240,
+     "endMs": 53280,
+     "phrase": 42
+    },
+    {
+     "text": "быстрей",
+     "atMs": 53360,
+     "endMs": 53840,
+     "phrase": 42
+    },
+    {
+     "text": "зашагал.",
+     "atMs": 53880,
+     "endMs": 54640,
+     "phrase": 42,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

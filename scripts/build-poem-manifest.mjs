@@ -31,17 +31,25 @@ function wordsFrom({ characters, character_start_times_seconds: starts, characte
   let text = "";
   let at = 0;
   let end = 0;
+  // Whether the next word opens a line - a dash there opens dialogue.
+  let lineStart = true;
+  let startsLine = true;
   characters.forEach((character, index) => {
     if (/\s/.test(character)) {
-      if (text) words.push({ text, atMs: Math.round(at * 1000), endMs: Math.round(end * 1000) });
+      if (text) words.push({ text, atMs: Math.round(at * 1000), endMs: Math.round(end * 1000), startsLine });
       text = "";
+      if (character === "\n") lineStart = true;
       return;
+    }
+    if (!text) {
+      startsLine = lineStart;
+      lineStart = false;
     }
     if (!text) at = starts[index];
     text += character;
     end = ends[index];
   });
-  if (text) words.push({ text, atMs: Math.round(at * 1000), endMs: Math.round(end * 1000) });
+  if (text) words.push({ text, atMs: Math.round(at * 1000), endMs: Math.round(end * 1000), startsLine });
   return words;
 }
 
@@ -53,24 +61,39 @@ function wordsFrom({ characters, character_start_times_seconds: starts, characte
  * the renderer is free to wrap, so a line ended on a row holding nothing but
  * "–". Each one is joined to the word before it with a no-break space, keeping
  * that word's start and the dash's end, and closes the phrase as a comma would.
+ *
+ * A dash that opens a line is dialogue - Nekrasov's «— «Уж больно ты грозен» -
+ * and belongs to the word after it, never to the end of the line before.
  */
 const isDash = (text) => /^[-–—]+$/.test(text);
 function joinDashes(tokens) {
   const joined = [];
+  let opening = null;
   for (const token of tokens) {
     const previous = joined.at(-1);
+    if (isDash(token.text) && (token.startsLine || !previous)) {
+      opening = token;
+      continue;
+    }
+    if (opening) {
+      joined.push({ ...token, text: `${opening.text}\u00a0${token.text}`, atMs: opening.atMs });
+      opening = null;
+      continue;
+    }
     if (previous && isDash(token.text)) {
       previous.text = `${previous.text}\u00a0${token.text}`;
       previous.endMs = token.endMs;
     } else joined.push({ ...token });
   }
+  // `startsLine` was only for this; it is not part of the manifest.
+  for (const word of joined) delete word.startsLine;
   return joined;
 }
 const wordCount = (line) =>
   line
     .split(/\s+/)
     .filter(Boolean)
-    .filter((word, index) => index === 0 || !isDash(word)).length;
+    .filter((word) => !isDash(word)).length;
 
 const words = joinDashes(wordsFrom(alignment));
 const counts = lines.map(wordCount);

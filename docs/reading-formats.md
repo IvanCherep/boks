@@ -383,6 +383,10 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *The Lake Isle of Innisfree*, Yeats | `9d42d01d-5a3e-4ddb-a334-3f4dfdf5dffe` | Jerry B. | 4 - a ring: grey pavement, the island, evening, the pavement again | 1, 3, 4, 4 |
 | *O Captain! My Captain!*, Whitman | `7322a7ff-0abf-4aba-b340-49477030ebed` | Jerry B. | 4 | 8, 6, 2, 8 |
 | *Remember*, Christina Rossetti | `da98c07c-3386-48b4-8d1f-be02a1ff6d74` | Sha | 4 | 4, 4, 4, 2 |
+| «Узник», Пушкин | `8ca3bef0-9aa2-4d43-a21b-b9c3ed756aca` | Alex Bell | 4 | 4, 4, 2, 2 |
+| «Утёс», Лермонтов | `af757f35-36d7-48b6-8db3-51c8bffaffb6` | Alex Bell | 4 | 2, 2, 2, 2 |
+| «Шёпот, робкое дыханье…», Фет | `1d2e5f7a-2501-466c-a583-0b2dade47571` | Alex Bell | 4 | 2, 6, 2, 2 |
+| «Мужичок с ноготок», Некрасов (из «Крестьянских детей») | `9db4cce3-9594-4a6c-a860-324a330e89f8` | Alex Bell | 4 | 4, 4, 8, 4 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
@@ -393,6 +397,8 @@ The Tyger was already there and only gained its production.
 A dash standing alone between spaces - Dickinson's, Blok's «века —» - is
 joined to the word before it by the manifest builder (no-break space), so it
 can never wrap onto a row of its own; the word it joins closes the phrase.
+A dash that opens a line is dialogue (Некрасов's «— «Уж больно…») and is
+joined to the word after it instead.
 
 ### Adding a poem
 

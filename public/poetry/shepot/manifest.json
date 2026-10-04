@@ -1,0 +1,437 @@
+{
+ "id": "shepot-immersive-v1",
+ "title": "Шёпот, робкое дыханье…",
+ "author": "Афанасий Фет",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/shepot/narration.mp3",
+ "theme": {
+  "src": "/poetry/shepot/theme.mp3",
+  "gain": 0.3
+ },
+ "durationMs": 20880,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FAF1F4",
+  "active": "#FFD9B0",
+  "shadow": "rgba(14, 10, 22, 0.55)"
+ },
+ "veil": 1.3,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "whisper-and-breath",
+   "image": "/poetry/shepot/scenes/01-whisper-and-breath.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.75
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "Шёпот, робкое дыханье, / Трели соловья,",
+   "startMs": 0
+  },
+  {
+   "id": "silver-stream",
+   "image": "/poetry/shepot/scenes/02-silver-stream.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.3,
+    "y": 0.7
+   },
+   "textPreset": "searchlight-scan",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "Серебро и колыханье / Сонного ручья, / Свет ночной, ночные тени, / Тени без конца, / Ряд волшебных изменений / Милого лица,",
+   "startMs": 3600
+  },
+  {
+   "id": "purple-and-amber",
+   "image": "/poetry/shepot/scenes/03-purple-and-amber.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.75,
+    "y": 0.35
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "В дымных тучках пурпур розы, / Отблеск янтаря,",
+   "startMs": 13440
+  },
+  {
+   "id": "kisses-tears-dawn",
+   "image": "/poetry/shepot/scenes/04-kisses-tears-dawn.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.4,
+    "y": 0.65
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.42,
+     "y": 0.08,
+     "width": 0.5,
+     "height": 0.13
+    }
+   ],
+   "line": "И лобзания, и слёзы, / И заря, заря!..",
+   "startMs": 17120
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "whisper-and-breath",
+   "startMs": 0,
+   "endMs": 2320,
+   "tokens": [
+    {
+     "text": "Шёпот,",
+     "atMs": 0,
+     "endMs": 800,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "робкое",
+     "atMs": 960,
+     "endMs": 1280,
+     "phrase": 1
+    },
+    {
+     "text": "дыханье,",
+     "atMs": 1360,
+     "endMs": 2160,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "whisper-and-breath",
+   "startMs": 2320,
+   "endMs": 3600,
+   "tokens": [
+    {
+     "text": "Трели",
+     "atMs": 2320,
+     "endMs": 2640,
+     "phrase": 2
+    },
+    {
+     "text": "соловья,",
+     "atMs": 2680,
+     "endMs": 3440,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "silver-stream",
+   "startMs": 3600,
+   "endMs": 5200,
+   "tokens": [
+    {
+     "text": "Серебро",
+     "atMs": 3600,
+     "endMs": 4160,
+     "phrase": 3
+    },
+    {
+     "text": "и",
+     "atMs": 4320,
+     "endMs": 4360,
+     "phrase": 3
+    },
+    {
+     "text": "колыханье",
+     "atMs": 4400,
+     "endMs": 5040,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "silver-stream",
+   "startMs": 5200,
+   "endMs": 6560,
+   "tokens": [
+    {
+     "text": "Сонного",
+     "atMs": 5200,
+     "endMs": 5600,
+     "phrase": 4
+    },
+    {
+     "text": "ручья,",
+     "atMs": 5680,
+     "endMs": 6360,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "silver-stream",
+   "startMs": 6560,
+   "endMs": 9040,
+   "tokens": [
+    {
+     "text": "Свет",
+     "atMs": 6560,
+     "endMs": 6880,
+     "phrase": 5
+    },
+    {
+     "text": "ночной,",
+     "atMs": 6960,
+     "endMs": 7640,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ночные",
+     "atMs": 7760,
+     "endMs": 8240,
+     "phrase": 6
+    },
+    {
+     "text": "тени,",
+     "atMs": 8400,
+     "endMs": 8920,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "silver-stream",
+   "startMs": 9040,
+   "endMs": 10480,
+   "tokens": [
+    {
+     "text": "Тени",
+     "atMs": 9040,
+     "endMs": 9360,
+     "phrase": 7
+    },
+    {
+     "text": "без",
+     "atMs": 9400,
+     "endMs": 9600,
+     "phrase": 7
+    },
+    {
+     "text": "конца,",
+     "atMs": 9720,
+     "endMs": 10320,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "silver-stream",
+   "startMs": 10480,
+   "endMs": 12240,
+   "tokens": [
+    {
+     "text": "Ряд",
+     "atMs": 10480,
+     "endMs": 10720,
+     "phrase": 8
+    },
+    {
+     "text": "волшебных",
+     "atMs": 10840,
+     "endMs": 11360,
+     "phrase": 8
+    },
+    {
+     "text": "изменений",
+     "atMs": 11480,
+     "endMs": 12080,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "silver-stream",
+   "startMs": 12240,
+   "endMs": 13440,
+   "tokens": [
+    {
+     "text": "Милого",
+     "atMs": 12240,
+     "endMs": 12560,
+     "phrase": 9
+    },
+    {
+     "text": "лица,",
+     "atMs": 12640,
+     "endMs": 13240,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "purple-and-amber",
+   "startMs": 13440,
+   "endMs": 15760,
+   "tokens": [
+    {
+     "text": "В",
+     "atMs": 13440,
+     "endMs": 13520,
+     "phrase": 10
+    },
+    {
+     "text": "дымных",
+     "atMs": 13560,
+     "endMs": 13920,
+     "phrase": 10
+    },
+    {
+     "text": "тучках",
+     "atMs": 14000,
+     "endMs": 14480,
+     "phrase": 10
+    },
+    {
+     "text": "пурпур",
+     "atMs": 14560,
+     "endMs": 14960,
+     "phrase": 10
+    },
+    {
+     "text": "розы,",
+     "atMs": 15040,
+     "endMs": 15640,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "purple-and-amber",
+   "startMs": 15760,
+   "endMs": 17120,
+   "tokens": [
+    {
+     "text": "Отблеск",
+     "atMs": 15760,
+     "endMs": 16240,
+     "phrase": 11
+    },
+    {
+     "text": "янтаря,",
+     "atMs": 16320,
+     "endMs": 17000,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "kisses-tears-dawn",
+   "startMs": 17120,
+   "endMs": 19120,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 17120,
+     "endMs": 17200,
+     "phrase": 12
+    },
+    {
+     "text": "лобзания,",
+     "atMs": 17240,
+     "endMs": 18080,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "и",
+     "atMs": 18160,
+     "endMs": 18240,
+     "phrase": 13
+    },
+    {
+     "text": "слёзы,",
+     "atMs": 18320,
+     "endMs": 19000,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "kisses-tears-dawn",
+   "startMs": 19120,
+   "endMs": 20880,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 19120,
+     "endMs": 19200,
+     "phrase": 14
+    },
+    {
+     "text": "заря,",
+     "atMs": 19280,
+     "endMs": 19880,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "заря!..",
+     "atMs": 20080,
+     "endMs": 20880,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

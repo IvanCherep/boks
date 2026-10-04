@@ -36,6 +36,14 @@ const poems: Record<string, string> = {
   "7322a7ff-0abf-4aba-b340-49477030ebed": "/poetry/o-captain/manifest.json",
   // Christina Rossetti — Remember
   "da98c07c-3386-48b4-8d1f-be02a1ff6d74": "/poetry/remember/manifest.json",
+  // Александр Пушкин — Узник
+  "8ca3bef0-9aa2-4d43-a21b-b9c3ed756aca": "/poetry/uznik/manifest.json",
+  // Михаил Лермонтов — Утёс
+  "af757f35-36d7-48b6-8db3-51c8bffaffb6": "/poetry/utyos/manifest.json",
+  // Афанасий Фет — Шёпот, робкое дыханье…
+  "1d2e5f7a-2501-466c-a583-0b2dade47571": "/poetry/shepot/manifest.json",
+  // Николай Некрасов — Мужичок с ноготок
+  "9db4cce3-9594-4a6c-a860-324a330e89f8": "/poetry/muzhichok/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

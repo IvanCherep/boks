@@ -1,0 +1,397 @@
+{
+ "id": "utyos-immersive-v1",
+ "title": "Утёс",
+ "author": "Михаил Лермонтов",
+ "language": "ru",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/utyos/narration.mp3",
+ "theme": {
+  "src": "/poetry/utyos/theme.mp3",
+  "gain": 0.33
+ },
+ "durationMs": 17520,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F6EFE4",
+  "active": "#FFD99A",
+  "shadow": "rgba(8, 10, 18, 0.55)"
+ },
+ "veil": 1.3,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 980,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "golden-cloud-at-night",
+   "image": "/poetry/utyos/scenes/01-golden-cloud-at-night.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.35
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1270,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Ночевала тучка золотая / На груди утёса-великана;",
+   "startMs": 0
+  },
+  {
+   "id": "cloud-departs-at-dawn",
+   "image": "/poetry/utyos/scenes/02-cloud-departs-at-dawn.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.2
+   },
+   "textPreset": "ridge-reveal",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Утром в путь она умчалась рано, / По лазури весело играя;",
+   "startMs": 4280
+  },
+  {
+   "id": "playing-in-the-azure",
+   "image": "/poetry/utyos/scenes/03-playing-in-the-azure.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.7,
+    "y": 0.15
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Но остался влажный след в морщине / Старого утёса. Одиноко",
+   "startMs": 8480
+  },
+  {
+   "id": "cliff-alone",
+   "image": "/poetry/utyos/scenes/04-cliff-alone.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.4
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Он стоит, задумался глубоко, / И тихонько плачет он в пустыне.",
+   "startMs": 12587
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "golden-cloud-at-night",
+   "startMs": 0,
+   "endMs": 2080,
+   "tokens": [
+    {
+     "text": "Ночевала",
+     "atMs": 0,
+     "endMs": 640,
+     "phrase": 0
+    },
+    {
+     "text": "тучка",
+     "atMs": 720,
+     "endMs": 1120,
+     "phrase": 0
+    },
+    {
+     "text": "золотая",
+     "atMs": 1320,
+     "endMs": 1760,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "golden-cloud-at-night",
+   "startMs": 2080,
+   "endMs": 4280,
+   "tokens": [
+    {
+     "text": "На",
+     "atMs": 2080,
+     "endMs": 2160,
+     "phrase": 1
+    },
+    {
+     "text": "груди",
+     "atMs": 2240,
+     "endMs": 2560,
+     "phrase": 1
+    },
+    {
+     "text": "утёса-великана;",
+     "atMs": 2720,
+     "endMs": 4240,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "cloud-departs-at-dawn",
+   "startMs": 4280,
+   "endMs": 6480,
+   "tokens": [
+    {
+     "text": "Утром",
+     "atMs": 4280,
+     "endMs": 4640,
+     "phrase": 2
+    },
+    {
+     "text": "в",
+     "atMs": 4720,
+     "endMs": 4800,
+     "phrase": 2
+    },
+    {
+     "text": "путь",
+     "atMs": 4840,
+     "endMs": 5040,
+     "phrase": 2
+    },
+    {
+     "text": "она",
+     "atMs": 5120,
+     "endMs": 5200,
+     "phrase": 2
+    },
+    {
+     "text": "умчалась",
+     "atMs": 5280,
+     "endMs": 5840,
+     "phrase": 2
+    },
+    {
+     "text": "рано,",
+     "atMs": 5960,
+     "endMs": 6360,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "cloud-departs-at-dawn",
+   "startMs": 6480,
+   "endMs": 8480,
+   "tokens": [
+    {
+     "text": "По",
+     "atMs": 6480,
+     "endMs": 6560,
+     "phrase": 3
+    },
+    {
+     "text": "лазури",
+     "atMs": 6600,
+     "endMs": 7120,
+     "phrase": 3
+    },
+    {
+     "text": "весело",
+     "atMs": 7200,
+     "endMs": 7600,
+     "phrase": 3
+    },
+    {
+     "text": "играя;",
+     "atMs": 7680,
+     "endMs": 8400,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "playing-in-the-azure",
+   "startMs": 8480,
+   "endMs": 10720,
+   "tokens": [
+    {
+     "text": "Но",
+     "atMs": 8480,
+     "endMs": 8560,
+     "phrase": 4
+    },
+    {
+     "text": "остался",
+     "atMs": 8680,
+     "endMs": 9120,
+     "phrase": 4
+    },
+    {
+     "text": "влажный",
+     "atMs": 9280,
+     "endMs": 9600,
+     "phrase": 4
+    },
+    {
+     "text": "след",
+     "atMs": 9680,
+     "endMs": 10000,
+     "phrase": 4
+    },
+    {
+     "text": "в",
+     "atMs": 10040,
+     "endMs": 10080,
+     "phrase": 4
+    },
+    {
+     "text": "морщине",
+     "atMs": 10200,
+     "endMs": 10640,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "playing-in-the-azure",
+   "startMs": 10720,
+   "endMs": 12587,
+   "tokens": [
+    {
+     "text": "Старого",
+     "atMs": 10720,
+     "endMs": 11120,
+     "phrase": 5
+    },
+    {
+     "text": "утёса.",
+     "atMs": 11240,
+     "endMs": 11760,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Одиноко",
+     "atMs": 12080,
+     "endMs": 12560,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "cliff-alone",
+   "startMs": 12587,
+   "endMs": 15280,
+   "tokens": [
+    {
+     "text": "Он",
+     "atMs": 12587,
+     "endMs": 12640,
+     "phrase": 7
+    },
+    {
+     "text": "стоит,",
+     "atMs": 12720,
+     "endMs": 13600,
+     "phrase": 7,
+     "emphasis": "lead"
+    },
+    {
+     "text": "задумался",
+     "atMs": 13680,
+     "endMs": 14320,
+     "phrase": 8
+    },
+    {
+     "text": "глубоко,",
+     "atMs": 14360,
+     "endMs": 15200,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "cliff-alone",
+   "startMs": 15280,
+   "endMs": 17520,
+   "tokens": [
+    {
+     "text": "И",
+     "atMs": 15280,
+     "endMs": 15320,
+     "phrase": 9
+    },
+    {
+     "text": "тихонько",
+     "atMs": 15360,
+     "endMs": 15840,
+     "phrase": 9
+    },
+    {
+     "text": "плачет",
+     "atMs": 16000,
+     "endMs": 16400,
+     "phrase": 9
+    },
+    {
+     "text": "он",
+     "atMs": 16480,
+     "endMs": 16560,
+     "phrase": 9
+    },
+    {
+     "text": "в",
+     "atMs": 16600,
+     "endMs": 16640,
+     "phrase": 9
+    },
+    {
+     "text": "пустыне.",
+     "atMs": 16720,
+     "endMs": 17520,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}
