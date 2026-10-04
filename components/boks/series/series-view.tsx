@@ -36,6 +36,7 @@ const words = {
   start: "Start",
   again: "Again",
   opening: "Opening…",
+  more: "More in Series",
   empty: "No productions in your languages yet.",
   emptyAction: "Change languages",
   about: "About boks series",
@@ -299,6 +300,7 @@ function SeriesShelf({
 }) {
   return (
     <section className="series-shelf">
+      <h2 className="series-shelf__heading">{words.more}</h2>
       <ul className="series-shelf__grid">
         {pieces.map((piece) => {
           const opening = openingStoryId === piece.storyId;

@@ -5674,7 +5674,15 @@ textarea:focus-visible {
 }
 
 .series-shelf {
-  margin-top: 0.7rem;
+  margin-top: 1.8rem;
+}
+
+.series-shelf__heading {
+  margin: 0 0 0.8rem;
+  padding-inline: 0.25rem;
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 500;
 }
 
 .series-shelf__grid {
