@@ -5762,12 +5762,27 @@ textarea:focus-visible {
   opacity: 0.92;
 }
 
-.series-card__lang {
-  border: 1px solid rgb(246 239 226 / 50%);
+.series-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 2rem;
+  border: 1px dashed rgb(var(--series-gold-rgb) / 40%);
+  border-radius: 24px;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+
+.series-empty__action {
+  border: 1px solid rgb(var(--series-gold-rgb) / 55%);
   border-radius: 999px;
-  padding: 0.05rem 0.4rem;
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  color: var(--series-gold);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .series-card__done {

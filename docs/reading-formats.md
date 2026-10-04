@@ -543,8 +543,9 @@ Finishing a piece therefore has one more step:
 `series-catalogue.test.ts` fails if a finished piece is missing from the
 shelf, if a shelf entry would open as plain text, if a cover is missing or too
 heavy, or if the duration or counts disagree with the shipped recording. The
-newest piece in the reader's languages that they have not heard leads the
-shelf; it is called a premiere for 14 days.
+shelf shows only pieces in the reader's chosen languages - the same setting
+that filters the feed - and its own words follow that setting too. The newest
+piece the reader has not heard leads; it is called a premiere for 14 days.
 
 ## 6. Before shipping
 

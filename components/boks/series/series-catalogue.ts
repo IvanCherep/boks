@@ -120,18 +120,16 @@ export function isPremiere(piece: SeriesPiece, today: Date) {
 /**
  * The shelf, in the order it is shown.
  *
- * The reader's own languages first, because a piece read aloud in a language
- * the reader does not follow is a picture with noise over it; the others are
- * kept, after, rather than hidden, because the shelf is short and a reader
- * curious about the format should be able to see all of it. Inside each, the
- * newest first, and a piece already heard drops behind the ones not yet heard
- * - the shelf is for what to listen to next.
+ * Only the reader's languages, the same filter the feed applies: a piece read
+ * aloud in a language the reader has not chosen is a picture with noise over
+ * it. The newest first, and a piece already heard drops behind the ones not
+ * yet heard - the shelf is for what to listen to next.
  */
 export function orderSeries(
   pieces: readonly SeriesPiece[],
   readerLanguages: readonly string[],
   heard: ReadonlySet<string>
-): { mine: SeriesPiece[]; other: SeriesPiece[] } {
+): SeriesPiece[] {
   const accepted = new Set(readerLanguages);
   // No language known is not a refusal of every language.
   const reads = (piece: SeriesPiece) => accepted.size === 0 || accepted.has(piece.language);
@@ -141,7 +139,7 @@ export function orderSeries(
     if (a.premieredOn !== b.premieredOn) return a.premieredOn < b.premieredOn ? 1 : -1;
     return a.title.localeCompare(b.title);
   });
-  return { mine: sorted.filter(reads), other: sorted.filter((piece) => !reads(piece)) };
+  return sorted.filter(reads);
 }
 
 export type SeriesCopyLanguage = "ru" | "en";

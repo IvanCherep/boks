@@ -227,6 +227,17 @@ export type ReaderView = "feed" | "series";
 
 const seriesStoryIds = seriesPieces.map((piece) => piece.storyId);
 
+/** The shelf's language and filter, from the reader's languages. Client only. */
+function seriesContextFor(readerLanguages: readonly string[]) {
+  return {
+    language: seriesCopyLanguageFor(
+      readerLanguages,
+      navigator.languages?.length ? navigator.languages : [navigator.language]
+    ),
+    readerLanguages,
+  };
+}
+
 export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView } = {}) {
   const {
     stories,
@@ -1415,11 +1426,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
   /** Read on the client: the browser's languages are not known on the server. */
   function refreshSeriesContext() {
-    const readerLanguages = readingLanguagesRef.current;
-    setSeriesContext({
-      language: seriesCopyLanguageFor(readerLanguages, navigator.languages?.length ? navigator.languages : [navigator.language]),
-      readerLanguages,
-    });
+    setSeriesContext(seriesContextFor(readingLanguagesRef.current));
   }
 
   /**
@@ -1588,6 +1595,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     const next = normalizeReadingLanguages(languages);
     readingLanguagesRef.current = next;
     rememberReadingLanguages(next);
+    setSeriesContext(seriesContextFor(next));
 
     try {
       if (hasSignedInAccount) {
@@ -1884,6 +1892,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       const previous = readingLanguagesRef.current;
       const next = normalizeReadingLanguages(languages);
       readingLanguagesRef.current = next;
+      // The shelf follows the same setting as the feed.
+      setSeriesContext(seriesContextFor(next));
 
       if (readingLanguageChangeKeepsFeed(previous, next)) {
         feedExhausted.current = false;

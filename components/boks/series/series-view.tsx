@@ -40,8 +40,8 @@ const copy = {
     opening: "Открываем…",
     more: "Ещё в Series",
     moreNote: "короткие постановки",
-    other: "На других языках",
-    otherNote: "с голосом автора языка",
+    empty: "На выбранных языках постановок пока нет.",
+    emptyAction: "Изменить языки",
     about: "О boks series",
     aboutTitle: "Что такое boks series",
     aboutBody:
@@ -53,7 +53,7 @@ const copy = {
       ["Интерактивные моменты", "история ждёт, пока вы коснётесь, проведёте или задержите палец"],
     ],
     aboutHeadphones: "Лучше всего в наушниках, в тишине. Постановки также встречаются в ленте — там их можно открыть кнопкой с хлопушкой.",
-    aboutNext: "Новые постановки появляются здесь, как только готовы.",
+    aboutNext: "Новые постановки появляются здесь.",
     account: "Аккаунт",
     feed: "feed",
     seriesTab: "series",
@@ -70,8 +70,8 @@ const copy = {
     opening: "Opening…",
     more: "More in Series",
     moreNote: "short productions",
-    other: "In other languages",
-    otherNote: "read by a native voice",
+    empty: "No productions in your languages yet.",
+    emptyAction: "Change languages",
     about: "About boks series",
     aboutTitle: "What boks series is",
     aboutBody:
@@ -84,7 +84,7 @@ const copy = {
     ],
     aboutHeadphones:
       "Best with headphones, somewhere quiet. Productions turn up in the feed too - open them there with the clapperboard button.",
-    aboutNext: "New productions appear here as soon as they are ready.",
+    aboutNext: "New productions appear here.",
     account: "Account",
     feed: "feed",
     seriesTab: "series",
@@ -157,8 +157,7 @@ export function SeriesView({
     return orderSeries(published, readerLanguages, heard);
   }, [catalogue, heard, readerLanguages]);
 
-  const [lead, ...rest] = shelf.mine.length ? shelf.mine : shelf.other;
-  const others = shelf.mine.length ? shelf.other : [];
+  const [lead, ...rest] = shelf;
   const today = new Date();
 
   return (
@@ -223,18 +222,13 @@ export function SeriesView({
           />
         )}
 
-        {others.length > 0 && (
-          <SeriesShelf
-            title={words.other}
-            note={words.otherNote}
-            pieces={others}
-            words={words}
-            language={language}
-            heard={heard}
-            openingStoryId={openingStoryId}
-            onOpenPiece={onOpenPiece}
-            showLanguage
-          />
+        {!lead && (
+          <div className="series-empty">
+            <p>{words.empty}</p>
+            <button type="button" className="series-empty__action" onClick={onOpenAccount}>
+              {words.emptyAction}
+            </button>
+          </div>
         )}
 
         <p className="series__foot">
@@ -356,7 +350,6 @@ function SeriesShelf({
   heard,
   openingStoryId,
   onOpenPiece,
-  showLanguage = false,
 }: {
   title: string;
   note: string;
@@ -366,7 +359,6 @@ function SeriesShelf({
   heard: ReadonlySet<string>;
   openingStoryId: string | null;
   onOpenPiece: (piece: SeriesPiece) => void;
-  showLanguage?: boolean;
 }) {
   return (
     <section className="series-shelf">
@@ -399,7 +391,6 @@ function SeriesShelf({
                 <span className="series-card__veil" aria-hidden="true" />
                 <span className="series-card__top">
                   <span>{seriesDurationLabel(piece.durationSeconds, language)}</span>
-                  {showLanguage && <span className="series-card__lang">{piece.language.toUpperCase()}</span>}
                   {done && (
                     <span className="series-card__done" title={words.heard}>
                       <Check className="size-3" aria-hidden="true" />

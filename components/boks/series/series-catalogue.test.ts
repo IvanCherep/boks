@@ -101,25 +101,25 @@ describe("the order of the shelf", () => {
   const ru2 = piece({ storyId: "ru-new", language: "ru", premieredOn: "2026-10-01" });
   const en1 = piece({ storyId: "en-new", language: "en", premieredOn: "2026-10-02" });
 
-  it("puts the reader's languages first and keeps the rest after", () => {
-    const { mine, other } = orderSeries([en1, ru1, ru2], ["ru"], new Set());
-    expect(mine.map((p) => p.storyId)).toEqual(["ru-new", "ru-old"]);
-    expect(other.map((p) => p.storyId)).toEqual(["en-new"]);
+  it("shows only the reader's languages", () => {
+    expect(orderSeries([en1, ru1, ru2], ["ru"], new Set()).map((p) => p.storyId)).toEqual(["ru-new", "ru-old"]);
+    expect(orderSeries([en1, ru1, ru2], ["en"], new Set()).map((p) => p.storyId)).toEqual(["en-new"]);
   });
 
   it("treats a bilingual reader as reading everything, newest first", () => {
-    const { mine, other } = orderSeries([ru1, en1, ru2], ["en", "ru"], new Set());
-    expect(mine.map((p) => p.storyId)).toEqual(["en-new", "ru-new", "ru-old"]);
-    expect(other).toEqual([]);
+    expect(orderSeries([ru1, en1, ru2], ["en", "ru"], new Set()).map((p) => p.storyId)).toEqual([
+      "en-new",
+      "ru-new",
+      "ru-old",
+    ]);
   });
 
   it("does not hide everything from a reader whose language is unknown", () => {
-    expect(orderSeries([ru1, en1], [], new Set()).mine).toHaveLength(2);
+    expect(orderSeries([ru1, en1], [], new Set())).toHaveLength(2);
   });
 
   it("moves what was already heard behind what was not", () => {
-    const { mine } = orderSeries([ru1, ru2], ["ru"], new Set(["ru-new"]));
-    expect(mine.map((p) => p.storyId)).toEqual(["ru-old", "ru-new"]);
+    expect(orderSeries([ru1, ru2], ["ru"], new Set(["ru-new"])).map((p) => p.storyId)).toEqual(["ru-old", "ru-new"]);
   });
 });
 
