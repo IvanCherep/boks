@@ -5054,13 +5054,20 @@ body:has(.poem, .cinema) .reader-dock {
  * Settled is still readable. At a quarter opacity the first line of a stanza
  * was gone the moment the second began, which on top of a line every two
  * seconds was the text that would not stay. It steps back now rather than
- * out: half as bright, a breath of blur, and it stays until its picture goes.
+ * out: half as bright, softened, and it stays until its picture goes.
+ *
+ * No `filter: blur()` here, however small. A word is an inline box, and Safari
+ * 27 (iOS 27) does not initialise the filter buffer for inline boxes: every
+ * settled line came out heavily smeared with a magenta or grey bar painted
+ * across it, in every iOS browser. The softness is a faint halo in the shadow
+ * instead, which no WebKit version gets wrong.
  */
 .poem__word.is-settled {
   color: #e8edf5;
   opacity: 0.5;
-  filter: blur(0.3px);
-  text-shadow: 0 2px 12px rgb(6 9 16 / 70%);
+  text-shadow:
+    0 0 1px rgb(232 237 245 / 45%),
+    0 2px 12px rgb(6 9 16 / 70%);
 }
 
 /*

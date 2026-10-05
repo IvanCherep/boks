@@ -538,8 +538,10 @@ was composed around splits; a scene names which with `splitLine`.
 Learned the expensive way, each one having caused a visible stutter:
 
 - **`filter: blur()` in a transition.** It cannot run on the compositor and
-  re-rasterises glyphs every frame. A static blur is fine; an animated one is
-  not.
+  re-rasterises glyphs every frame. A static blur is fine on a block or an
+  image, but never on text in a flow: Safari 27 (iOS 27) leaves the filter
+  buffer of an inline box uninitialised, so a blurred word is smeared and gets
+  a magenta or grey bar across it. Soften words with `text-shadow` instead.
 - **`text-shadow` in a keyframe.** The same problem as a blur: the glyphs are
   redrawn every frame, and while an arrival is also moving the word by
   fractions of a pixel an iPhone draws it in a slightly different place each
