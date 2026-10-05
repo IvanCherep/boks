@@ -6094,3 +6094,27 @@ body:has(.poem, .cinema) .reader-dock {
     animation: none;
   }
 }
+
+/* ------------------------------------------------------- recording mode
+ * An admin filming a piece (`?recording=1`, `components/boks/recording-mode.ts`):
+ * the picture, the words and the moments stay; everything that is interface
+ * goes, the pointer included. Keyboard: Space plays and pauses, Escape leaves.
+ */
+.cinema.is-recording,
+.cinema.is-recording *,
+.poem.is-recording,
+.poem.is-recording * {
+  cursor: none !important;
+}
+
+.cinema.is-recording .cinema__close,
+.cinema.is-recording .cinema__transport,
+.cinema.is-recording .cinema__scenes,
+.cinema.is-recording .cinema__primary,
+.cinema.is-recording .cinema__quiet,
+.cinema.is-recording .cinema__note,
+.cinema.is-recording .moment__skip,
+.poem.is-recording .poem__close,
+.poem.is-recording .poem__controls {
+  display: none !important;
+}

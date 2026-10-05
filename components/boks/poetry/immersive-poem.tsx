@@ -46,6 +46,7 @@ const controlsIdleMs = 2600;
 export function ImmersivePoem({
   manifest,
   finale,
+  recording = false,
   onClose,
 }: {
   manifest: PoemManifest;
@@ -54,6 +55,8 @@ export function ImmersivePoem({
    * Absent only in the admin sandbox, where the poem has no boks yet.
    */
   finale?: FinaleActions;
+  /** Filming the piece: no close button and no controls - see `recording-mode.ts`. */
+  recording?: boolean;
   onClose: () => void;
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -346,11 +349,16 @@ export function ImmersivePoem({
       if (event.key === "Escape") {
         event.stopPropagation();
         onClose();
+      } else if (recording && event.key === " ") {
+        // Nothing on screen to press while filming; Space is the play button.
+        event.preventDefault();
+        event.stopPropagation();
+        toggle();
       }
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
+  }, [onClose, recording, toggle]);
 
   const preset = scene ? presetFor(scene) : "quiet-breath";
   const stanzas = useMemo(() => stanzasOf(manifest), [manifest]);
@@ -391,7 +399,7 @@ export function ImmersivePoem({
   return (
     <div
       ref={stage}
-      className={`poem poem--${preset} ${reduced ? "is-still" : ""} ${chromeVisible ? "" : "is-quiet"}`}
+      className={`poem poem--${preset} ${reduced ? "is-still" : ""} ${chromeVisible ? "" : "is-quiet"} ${recording ? "is-recording" : ""}`}
       style={
         {
           "--poem-text": manifest.palette.text,

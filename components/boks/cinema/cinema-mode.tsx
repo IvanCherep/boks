@@ -194,11 +194,18 @@ function languageOf(text: string) {
 export function CinemaMode({
   story,
   finale,
+  recording = false,
   onClose,
 }: {
   story: Story;
   /** What the ending's buttons do - the same object every format is given. */
   finale: FinaleActions;
+  /**
+   * Filming the piece: no close button, no bar, no transport. A tap on the
+   * cover starts from the beginning; Space pauses, the arrows skip, Escape
+   * leaves. See `recording-mode.ts`.
+   */
+  recording?: boolean;
   onClose: () => void;
 }) {
   const language = useMemo(() => languageOf(story.body), [story.body]);
@@ -323,13 +330,27 @@ export function CinemaMode({
     return () => warmed.forEach((image) => { image.src = ""; });
   }, [story.id]);
 
-  // Escape closes, as it does for every other sheet in the reader.
+  // Escape closes, as it does for every other sheet in the reader. While
+  // recording there is nothing on screen to press, so the keys do the rest.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.stopPropagation();
         close();
+        return;
       }
+      if (!recording || moment) return;
+      if (event.key === " ") {
+        if (phase === "cover") begin(0);
+        else if (phase === "playing") {
+          if (progress.speaking) narrator.current?.pause();
+          else narrator.current?.resume();
+        } else return;
+      } else if (phase === "playing" && event.key === "ArrowLeft") skip(-skipSeconds);
+      else if (phase === "playing" && event.key === "ArrowRight") skip(skipSeconds);
+      else return;
+      event.preventDefault();
+      event.stopPropagation();
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
@@ -427,7 +448,7 @@ export function CinemaMode({
 
   return (
     <div
-      className={`cinema ${bare ? "cinema--bare" : ""}`}
+      className={`cinema ${bare ? "cinema--bare" : ""} ${recording ? "is-recording" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label={story.title}
@@ -443,6 +464,10 @@ export function CinemaMode({
       <button type="button" className="cinema__close" onClick={close} aria-label={words.close}>
         <X className="size-5" />
       </button>
+
+      {phase === "cover" && recording && (
+        <button type="button" className="cinema__peek" onClick={() => begin(0)} aria-label={words.listen} />
+      )}
 
       {phase === "cover" && (
         <div className="cinema__cover">

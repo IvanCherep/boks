@@ -65,6 +65,7 @@ import {
 } from "@/components/boks/reading-music";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
+import { recordingRequested } from "@/components/boks/recording-mode";
 import type { FinaleActions } from "@/components/boks/reading-finale";
 import { giveScreenBack, takeScreen } from "@/components/boks/reading-fullscreen";
 import { paintBrowserChrome, playerChromeColor } from "@/components/boks/theme";
@@ -354,6 +355,13 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
   /** The admin-only "listen and read" prototype. See `components/boks/cinema`. */
   const [cinemaOpen, setCinemaOpen] = useState(false);
+  /**
+   * `?recording=1`, read once before the address bar is cleaned. Only the
+   * admin role turns it into anything - see `recording-mode.ts`.
+   */
+  const [recordingAsked] = useState(() =>
+    typeof window === "undefined" ? false : recordingRequested(window.location.search)
+  );
   /** A format took the whole screen, so closing it owes the screen back. */
   const formatTookScreen = useRef(false);
   /** A format silenced music the reader had on, so closing it owes the music back. */
@@ -1027,6 +1035,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    */
   const poemManifestUrl = currentStory ? poemManifestFor(currentStory.id) : null;
   const cinemaOffered = cinemaIsFinished || Boolean(poemManifestUrl) || isAdminReader;
+  /** The formats open without their interface, for filming. */
+  const recording = recordingAsked && isAdminReader;
   const currentSeriesPiece = seriesPieceFor(currentStory?.id);
   /** Exactly the condition the two players below are rendered under. */
   const formatOnScreen = Boolean(poem) || (cinemaOpen && Boolean(currentStory) && cinemaOffered);
@@ -2810,11 +2820,16 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             the boks under it, and its events carry `metadata.format` so an
             analysis can tell listening from reading - see `formatUsed`. */}
         {cinemaOpen && currentStory && cinemaOffered && (
-          <CinemaMode story={currentStory} finale={finale} onClose={() => setCinemaOpen(false)} />
+          <CinemaMode
+            story={currentStory}
+            finale={finale}
+            recording={recording}
+            onClose={() => setCinemaOpen(false)}
+          />
         )}
 
         {poem && (
-          <ImmersivePoem manifest={poem} finale={finale} onClose={() => setPoem(null)} />
+          <ImmersivePoem manifest={poem} finale={finale} recording={recording} onClose={() => setPoem(null)} />
         )}
       </section>
     </main>

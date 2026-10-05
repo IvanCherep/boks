@@ -12,6 +12,11 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Recording mode for the formats (2026-10-05).** `?recording=1` on a reader
+address opens cinema and immersive poems without close button, progress bar or
+transport, for admins only, so a piece can be screen-recorded. Keys: Space,
+arrows, Escape. See `docs/reading-formats.md` §5.
+
 **A full audit, and the fixes from it (2026-10-05).** Code, schema and docs
 were audited end to end and the defects fixed in one pass. Migrations
 `20261005100000`-`20261005113000` were pushed to production first, then the

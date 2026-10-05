@@ -585,6 +585,17 @@ shelf shows only pieces in the reader's chosen languages - the same setting
 that filters the feed - and its own words follow that setting too. The newest
 piece the reader has not heard leads; it is called a premiere for 14 days.
 
+### Recording mode, for filming a piece
+
+An admin adds `?recording=1` to any reader address - `/series?recording=1`,
+`/b/<id>?recording=1` - and both formats open with no interface over them: no
+close button, no bar, no transport, no scene column, no "Continue" on a moment,
+no pointer. The picture, the words, the moments and the finale stay. A tap on
+the cinema cover starts from the beginning (never "continue from"); Space plays
+and pauses, the arrows skip 15 seconds in cinema, Escape leaves. The flag is
+read once in `reader-feed.tsx` and only applies to `user_profiles.role =
+admin` - it hides controls and unlocks nothing (`components/boks/recording-mode.ts`).
+
 ## 6. Before shipping
 
 ```bash
