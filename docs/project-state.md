@@ -12,12 +12,17 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
-**A full audit, and the fixes from it (2026-10-05) - on branch
-`audit/2026-10-05`, NOT yet deployed.** Code, schema and docs were audited end
-to end and the defects fixed in one pass. The new migrations
-(`20261005100000` onward) must be pushed before the Worker is deployed. Move
-this entry out of the "not yet deployed" state once both are live. What a
-reader or the founder would notice:
+**A full audit, and the fixes from it (2026-10-05).** Code, schema and docs
+were audited end to end and the defects fixed in one pass. Migrations
+`20261005100000`-`20261005113000` were pushed to production first, then the
+Worker was deployed as version `26765e2c-dfe6-42c9-8e8d-7eb5c971b844`.
+Verified on production: `verify:supabase` all true against the new schema,
+every page 200, `POST /api/feed` 401 without a token and a Worker-ranked,
+non-degraded `ranking.v2` slate with one, an aftertaste event recorded while a
+malformed event in the same batch was dropped alone, `boks_public_identity`
+refused to a session, `boks_comments` still readable. One aftertaste row with
+`metadata.agentCheck = true` is from that probe. What a reader or the founder
+would notice:
 
 - **Aftertaste was being dropped.** Since 1 October every aftertaste event was
   silently filtered out by the ingest function, which kept its own copy of the
