@@ -9,7 +9,6 @@ export const recency = defineStrategy({
   name: "Newest first",
   description: "Chronological feed. The pre-experiment baseline the MVP shipped with.",
   family: "baseline",
-  segment: "all",
   weights: {
     freshness: 100,
   },

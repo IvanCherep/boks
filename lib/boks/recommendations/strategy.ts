@@ -40,13 +40,18 @@ export type RecommendationStrategy = {
   /** One sentence an operator can read in the admin lab. */
   description: string;
   family: StrategyFamily;
-  /** `all` means the strategy can serve any reader segment. */
-  segment: UserSegment | "all";
   /** Declared weights, kept for display even when `score` is custom. */
   weights: Partial<Record<StorySignalKey, number>>;
   score: (signals: StorySignals, candidate: StoryCandidate, context: RankingContext) => number;
   /** Optional second pass for strategies that need set-level shaping. */
   rerank?: (scored: ScoredCandidate[], context: RankingContext) => ScoredCandidate[];
+  /**
+   * True only for a strategy whose `rerank` grades reading fatigue itself.
+   * Every other strategy - including any new one with a `rerank` - gets the
+   * shared fatigue tiering applied after it, because a boks the reader already
+   * skipped or finished never outranking an unseen one is a product rule.
+   */
+  handlesFatigue?: boolean;
 };
 
 export type StrategyDefinition = {
@@ -54,10 +59,10 @@ export type StrategyDefinition = {
   name: string;
   description: string;
   family: StrategyFamily;
-  segment?: UserSegment | "all";
   weights?: Partial<Record<StorySignalKey, number>>;
   score?: RecommendationStrategy["score"];
   rerank?: RecommendationStrategy["rerank"];
+  handlesFatigue?: boolean;
 };
 
 /**
@@ -70,13 +75,12 @@ export function defineStrategy<const Definition extends StrategyDefinition>(defi
 
   return {
     ...definition,
-    segment: definition.segment ?? "all",
     weights,
     score: definition.score ?? ((signals) => weightedScore(signals, weights)),
   } satisfies RecommendationStrategy & { id: Definition["id"] };
 }
 
-export function weightedScore(signals: StorySignals, weights: Partial<Record<StorySignalKey, number>>) {
+function weightedScore(signals: StorySignals, weights: Partial<Record<StorySignalKey, number>>) {
   let total = 0;
   for (const [key, weight] of Object.entries(weights)) {
     if (typeof weight !== "number") continue;

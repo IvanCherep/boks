@@ -6,7 +6,6 @@ export const discovery = defineStrategy({
   name: "Discovery",
   description: "Gives newer and under-tested boks more chances without ignoring quality.",
   family: "exploration",
-  segment: "new_reader",
   weights: {
     exploration: 38,
     freshness: 22,

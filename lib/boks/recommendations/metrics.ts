@@ -1,8 +1,10 @@
 import { buildSampleSizeCurve, type SampleSizeCurve } from "@/lib/recsys/statistics/sample-size";
-import { recommendationAlgorithmName } from "@/lib/boks/recommendations/registry";
+import { controlAlgorithmId, recommendationAlgorithmName } from "@/lib/boks/recommendations/registry";
 import {
   compareAlgorithms,
   collapseToReaders,
+  RATE_PARTS,
+  type RateParts,
   totalsByReaderAndAlgorithm,
   type AlgorithmComparison,
   type ReaderMetricId,
@@ -120,7 +122,11 @@ export function buildRecommendationLab(
 ): RecommendationLabReport {
   const totals = totalsByReaderAndAlgorithm(rows);
   const readerSeries = collapseToReaders(rows, "active_seconds");
-  const arms = summariseArms(totals, readerSeries.valuesByAlgorithm, options);
+  // Crossed readers are out of every arm, in the summaries as in the
+  // comparisons: an arm's sessions and rates describe the readers it counts.
+  const crossed = new Set(readerSeries.crossedReaders);
+  const armTotals = totals.filter((entry) => !crossed.has(entry.userId));
+  const arms = summariseArms(armTotals, readerSeries.valuesByAlgorithm, options);
 
   const variants = arms.filter((arm) => !arm.isControl).map((arm) => arm.algorithmId);
   const metrics = options.metrics ?? LAB_COMPARISON_METRICS;
@@ -169,10 +175,15 @@ export function buildRecommendationLab(
    * older. Descriptive: a split halves each arm, so this answers "is the
    * effect plausibly different for new readers" and never "it is".
    */
+  const newReaders = readersInFirstWeek(totals);
   const cohorts = variants.length
     ? [
-        { id: "new" as const, label: "First week", rows: rows.filter((row) => row.tenureDays <= 6) },
-        { id: "returning" as const, label: "Beyond a week", rows: rows.filter((row) => row.tenureDays > 6) },
+        { id: "new" as const, label: "First week", rows: rows.filter((row) => newReaders.has(row.userId)) },
+        {
+          id: "returning" as const,
+          label: "Beyond a week",
+          rows: rows.filter((row) => !newReaders.has(row.userId)),
+        },
       ].map((group) => {
         const comparison = arms.some((arm) => arm.isControl)
           ? compareAlgorithms(group.rows, {
@@ -201,8 +212,8 @@ export function buildRecommendationLab(
     totals: {
       readers: readerSeries.totalReaders,
       crossedReaders: readerSeries.crossedReaders.length,
-      sessions: sumBy(totals, (entry) => entry.sessions),
-      activeSeconds: sumBy(totals, (entry) => entry.activeSeconds),
+      sessions: sumBy(armTotals, (entry) => entry.sessions),
+      activeSeconds: sumBy(armTotals, (entry) => entry.activeSeconds),
       events: sumBy(totals, (entry) => entry.totalEvents),
       attributedEvents: sumBy(totals, (entry) => entry.attributedEvents),
     },
@@ -211,6 +222,21 @@ export function buildRecommendationLab(
     sampleSize,
     cohorts,
   };
+}
+
+/**
+ * Readers who were in their first week when the window first saw them.
+ *
+ * A reader is classified once, by their earliest row. Filtering rows by each
+ * row's own tenure put a reader active on day 3 and day 10 into both cohorts,
+ * each with part of their totals.
+ */
+function readersInFirstWeek(totals: ReturnType<typeof totalsByReaderAndAlgorithm>) {
+  const earliest = new Map<string, number>();
+  for (const entry of totals) {
+    earliest.set(entry.userId, Math.min(earliest.get(entry.userId) ?? Infinity, entry.tenureDaysAtFirstRow));
+  }
+  return new Set([...earliest].filter(([, tenure]) => tenure <= 6).map(([userId]) => userId));
 }
 
 function summariseArms(
@@ -229,6 +255,12 @@ function summariseArms(
     const readerValues = valuesByAlgorithm[algorithmId] ?? [];
     const starts = sumBy(entries, (entry) => entry.starts);
     const reactions = sumBy(entries, (entry) => entry.reactions);
+    const pooled = {
+      starts,
+      completes: sumBy(entries, (entry) => entry.completes),
+      skips: sumBy(entries, (entry) => entry.skips),
+      reactions,
+    };
 
     return {
       algorithmId,
@@ -240,13 +272,13 @@ function summariseArms(
       boksOpened: sumBy(entries, (entry) => entry.boksOpened),
       medianActiveSeconds: round(median(readerValues), 0),
       medianBoksOpened: round(median(entries.map((entry) => entry.boksOpened)), 1),
-      completionRate: percent(sumBy(entries, (entry) => entry.completes), starts),
-      skipRate: percent(sumBy(entries, (entry) => entry.skips), starts),
-      reactionRate: percent(reactions, starts),
+      completionRate: percent(RATE_PARTS.completion(pooled)),
+      skipRate: percent(RATE_PARTS.skip(pooled)),
+      reactionRate: percent(RATE_PARTS.reaction(pooled)),
       impressions: sumBy(entries, (entry) => entry.impressions),
       starts,
-      completes: sumBy(entries, (entry) => entry.completes),
-      skips: sumBy(entries, (entry) => entry.skips),
+      completes: pooled.completes,
+      skips: pooled.skips,
       reactions,
       readiness: {
         readers: readerValues.length,
@@ -281,7 +313,7 @@ function sumBy<Row>(rows: Row[], value: (row: Row) => number) {
   return rows.reduce((total, row) => total + value(row), 0);
 }
 
-function percent(part: number, whole: number) {
+function percent([part, whole]: RateParts) {
   if (!whole || whole <= 0) return 0;
   return round((part / whole) * 100, 1);
 }
@@ -293,7 +325,7 @@ function round(value: number, digits = 0) {
 }
 
 export const emptyRecommendationLab: RecommendationLabReport = {
-  controlAlgorithmId: "balanced",
+  controlAlgorithmId,
   windowDays: 30,
   analysisUnit: "reader",
   minimumReadersPerArm: 10,

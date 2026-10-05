@@ -9,7 +9,6 @@ export const tasteMatch = defineStrategy({
   name: "Taste match",
   description: "Ranks by the genre and mood affinity a reader built through completions and likes.",
   family: "personal",
-  segment: "all",
   weights: {
     tasteMatch: 40,
     finishRate: 18,

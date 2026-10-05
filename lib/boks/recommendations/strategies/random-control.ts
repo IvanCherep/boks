@@ -9,7 +9,6 @@ export const randomControl = defineStrategy({
   name: "Random baseline",
   description: "Deterministic shuffle. Measures how much ranking is worth at all.",
   family: "baseline",
-  segment: "all",
   weights: {
     jitter: 100,
   },

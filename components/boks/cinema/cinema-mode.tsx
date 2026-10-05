@@ -262,15 +262,19 @@ export function CinemaMode({
   useEffect(() => {
     if (!track) return;
     let objectUrl = "";
+    // Closed before the download finished: the URL made afterwards would have
+    // nobody left to revoke it, and it pins the whole recording in memory.
+    let cancelled = false;
     void fetch(track.audio)
       .then((response) => (response.ok ? response.blob() : null))
       .then((blob) => {
-        if (!blob) return;
+        if (!blob || cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setLocalAudio(objectUrl);
       })
       .catch(() => undefined);
     return () => {
+      cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [track]);

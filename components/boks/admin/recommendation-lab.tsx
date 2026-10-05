@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, FlaskConical, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
@@ -34,6 +34,9 @@ import {
   type RecommendationLabReport,
 } from "@/lib/boks/recommendations";
 import {
+  collapseToReaders,
+  formatReaderDifference,
+  formatReaderValue,
   readerMetric,
   type AlgorithmComparison,
   type ReaderMetricId,
@@ -54,7 +57,7 @@ const labMetricOptions: { id: ReaderMetricId; help: string }[] = [
   },
   {
     id: "skip_rate",
-    help: "Skips over starts, per reader. Lower is better.",
+    help: "Skips over everything that reached a verdict (starts plus skips), per reader. Most skips happen before a start is recorded, so skips over starts alone could pass 100%. Lower is better.",
   },
 ];
 
@@ -86,15 +89,26 @@ export function RecommendationLab() {
   const [busy, setBusy] = useState(false);
   const [positions, setPositions] = useState<SlatePositionRow[]>([]);
   const [divergence, setDivergence] = useState<DivergenceReport | null>(null);
+  // Whether the divergence check compared the live arms or, with one live arm,
+  // every registered algorithm - the banner must say which.
+  const [divergenceScope, setDivergenceScope] = useState<"live" | "registered">("live");
+  // Only the newest request may write. Switching the window from 90 to 7 days
+  // while the 90-day load is still running otherwise lets the slower, older
+  // answer land last and label itself "7 days".
+  const latestRequest = useRef(0);
 
   const refresh = useCallback(async (nextDays: number) => {
+    const request = ++latestRequest.current;
+    const isCurrent = () => request === latestRequest.current;
     setBusy(true);
     try {
       const payload = await loadRecommendationLab(nextDays);
       // Loaded beside the lab rather than inside it: it is an aggregate over
       // events, not part of the reader-level comparison, and keeping them
       // separate stops one becoming a denominator for the other.
-      setPositions(await loadSlatePositionEffects(nextDays, payload.experiment.key));
+      const nextPositions = await loadSlatePositionEffects(nextDays, payload.experiment.key);
+      if (!isCurrent()) return;
+      setPositions(nextPositions);
       setLab(payload);
 
       // Before reading any comparison, check the algorithms are even producing
@@ -102,16 +116,18 @@ export function RecommendationLab() {
       try {
         const candidates = await loadRecommendationCandidates(400);
         const liveArms = payload.experiment.arms.filter((arm) => arm.weight > 0).map((arm) => arm.algorithmId);
-        setDivergence(
-          measureStrategyDivergence({
-            candidates,
-            algorithmIds: liveArms.length > 1 ? liveArms : undefined,
-          })
-        );
+        const report = measureStrategyDivergence({
+          candidates,
+          algorithmIds: liveArms.length > 1 ? liveArms : undefined,
+        });
+        if (!isCurrent()) return;
+        setDivergence(report);
+        setDivergenceScope(liveArms.length > 1 ? "live" : "registered");
       } catch {
-        setDivergence(null);
+        if (isCurrent()) setDivergence(null);
       }
 
+      if (!isCurrent()) return;
       setStatus(
         payload.available
           ? payload.report.arms.length
@@ -120,9 +136,9 @@ export function RecommendationLab() {
           : payload.notice
       );
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not load recommendation results.");
+      if (isCurrent()) setStatus(error instanceof Error ? error.message : "Could not load recommendation results.");
     } finally {
-      setBusy(false);
+      if (isCurrent()) setBusy(false);
     }
   }, []);
 
@@ -138,15 +154,28 @@ export function RecommendationLab() {
   const selectedHelp = labMetricOptions.find((option) => option.id === metric)?.help ?? "";
   const variantArms = report.arms.filter((arm) => !arm.isControl);
 
-  const barRows: MetricBarRow[] = report.arms.map((arm) => ({
-    id: arm.algorithmId,
-    label: arm.algorithmName,
-    sublabel: `${arm.readers} reader${arm.readers === 1 ? "" : "s"}${arm.isControl ? " · control" : ""}`,
-    value: armValue(arm, metric),
-    unit: definition.unit === "rate" ? "%" : definition.unit === "seconds" ? "s" : "",
-    note: arm.readiness.ready ? undefined : `needs ${arm.readiness.required - arm.readiness.readers} more readers`,
-    muted: !arm.readiness.ready,
-  }));
+  // Readiness is per metric: a rate leaves out readers with fewer than five
+  // starts, so an arm can hold enough readers for reading time and still too
+  // few for completion rate.
+  const metricSeries = useMemo(() => collapseToReaders(lab.outcomes, metric), [lab.outcomes, metric]);
+  const controlArm = report.arms.find((arm) => arm.isControl);
+  const barRows: MetricBarRow[] = report.arms.map((arm) => {
+    const readers = metricSeries.valuesByAlgorithm[arm.algorithmId]?.length ?? 0;
+    const ready = readers >= report.minimumReadersPerArm;
+    return {
+      id: arm.algorithmId,
+      label: arm.algorithmName,
+      sublabel: `${readers} reader${readers === 1 ? "" : "s"}${arm.isControl ? " · control" : ""}`,
+      value: armValue(arm, metric),
+      unit: definition.unit === "rate" ? "%" : definition.unit === "seconds" ? "s" : "",
+      note: ready ? undefined : `needs ${report.minimumReadersPerArm - readers} more readers`,
+      muted: !ready,
+    };
+  });
+  const barCaption =
+    definition.unit === "rate"
+      ? `${definition.label} pooled over each arm's events, last ${days} days. Dimmed arms hold too few readers to compare.`
+      : `Median ${definition.label.toLowerCase()} per reader, last ${days} days. Dimmed arms hold too few readers to compare.`;
 
   function exportLab() {
     const payload = {
@@ -255,6 +284,12 @@ export function RecommendationLab() {
                   ? "These algorithms only partly differ"
                   : "These algorithms produce genuinely different feeds"}
             </p>
+            {divergenceScope === "registered" && (
+              <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
+                Only one arm is live, so this compares every registered algorithm, parked ones
+                included - what a split would have to work with, not what readers are getting.
+              </p>
+            )}
             <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">{divergence.summary}</p>
             {divergence.verdict !== "usable" && (
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
@@ -288,8 +323,8 @@ export function RecommendationLab() {
             <>
               Every reader is assigned to one arm and stays in it. Their events are totalled over
               the window into one value per metric, and the two arms&apos; reader-level values are
-              compared with a Hodges–Lehmann shift, a percentile bootstrap interval and a
-              permutation test. &ldquo;Events with a feed&rdquo; is the share of events carrying the
+              compared as a difference in means, with a percentile bootstrap interval and a
+              permutation test on that same difference. &ldquo;Events with a feed&rdquo; is the share of events carrying the
               id of the slate that produced them, which is what makes a serve reconstructible.
             </>
           }
@@ -325,9 +360,16 @@ export function RecommendationLab() {
           <MetricBars
             rows={barRows}
             lowerIsBetter={definition.lowerIsBetter}
-            caption={`Median ${definition.label.toLowerCase()} per reader, last ${days} days. Dimmed arms hold too few readers to compare.`}
+            caption={barCaption}
           />
         </div>
+
+        {variantArms.length > 0 && !controlArm && (
+          <p className="text-sm leading-6 text-[var(--destructive)]">
+            The control, {report.controlAlgorithmId}, has no readers in this window, so no arm can
+            be compared. Give the control a weight in the traffic split, or pick a live control.
+          </p>
+        )}
 
         {variantArms.map((arm) => (
           <ComparisonReadout
@@ -446,13 +488,11 @@ function ComparisonReadout({
       ) : (
         <>
           <p className="text-sm leading-6">
+            <strong>{formatReaderDifference(comparison.metricId, comparison.effect)}</strong> difference
+            in means, 95% interval{" "}
             <strong>
-              {comparison.effect > 0 ? "+" : ""}
-              {comparison.effect}
-            </strong>{" "}
-            {comparison.estimator.startsWith("hodges") ? "shift" : "difference"}, 95% interval{" "}
-            <strong>
-              [{comparison.ci[0]}, {comparison.ci[1]}]
+              [{formatReaderDifference(comparison.metricId, comparison.ci[0])},{" "}
+              {formatReaderDifference(comparison.metricId, comparison.ci[1])}]
             </strong>
             {typeof comparison.pValue === "number" ? ` · permutation p = ${comparison.pValue}` : ""}
           </p>
@@ -471,9 +511,11 @@ function ComparisonReadout({
           {comparison.power && <PowerLine comparison={comparison} />}
           {comparison.perReaderValues && (
             <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-              Control: {comparison.perReaderValues.control.map((value) => Math.round(value)).join(", ")}
+              Control:{" "}
+              {comparison.perReaderValues.control.map((value) => formatReaderValue(comparison.metricId, value)).join(", ")}
               <br />
-              Variant: {comparison.perReaderValues.variant.map((value) => Math.round(value)).join(", ")}
+              Variant:{" "}
+              {comparison.perReaderValues.variant.map((value) => formatReaderValue(comparison.metricId, value)).join(", ")}
             </p>
           )}
         </>

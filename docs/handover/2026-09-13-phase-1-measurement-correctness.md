@@ -1,7 +1,7 @@
 # Handover — Phase 1: measurement correctness
 
 Date: 2026-09-13
-Plan: `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md` §L, Phase 1
+Plan: `docs/research/recsys-research-implementation-plan.md` §L, Phase 1
 Status: **complete**, verified locally. Nothing deployed, nothing committed.
 
 Phase 1 answers one question: *can any number this system produces be trusted?*

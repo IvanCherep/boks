@@ -131,7 +131,7 @@ export function AdminOverview() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <BigNumber label="Minutes per session" value={String(minutesPerSession)} note="" />
               <BigNumber label="Boks finished" value={String(reading?.boksCompleted ?? 0)} note={`${reading?.boksStarted ?? 0} started`} />
-              <BigNumber label="Minutes per finished boks" value={String(minutesPerBok)} note="" />
+              <BigNumber label="Active minutes per boks finished" value={String(minutesPerBok)} note="all reading, finished or not" />
               <BigNumber label="Finished after starting" value={`${reading?.boksStarted ? Math.round(((reading.boksCompleted ?? 0) / reading.boksStarted) * 100) : 0}%`} note="" />
             </div>
             <MetricNote
@@ -143,7 +143,12 @@ export function AdminOverview() {
                   stops on a locked phone or a hidden tab, each gap is capped at 120 seconds, and
                   the total per boks is rolled up with a maximum rather than a sum so a repeated
                   heartbeat cannot inflate it. Finished means the reader reached 85% of the text and
-                  spent at least half the time the word count implies at 238 words a minute.
+                  spent at least 40% of the time the word count implies at 238 words a minute, or
+                  stayed 70% of that time without reaching the end; a piece that fits on one screen
+                  is finished on 40% of the time alone. &ldquo;Active minutes per boks
+                  finished&rdquo; divides all reading time - skipped and unfinished reads included -
+                  by the boks finished: it is what one finish costs in attention, not how long a
+                  finished boks takes.
                 </>
               }
               not={

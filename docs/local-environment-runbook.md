@@ -13,8 +13,7 @@ problem.
 ## The short version
 
 ```bash
-cd /Users/iegorov/Documents/Codex/2026-09-09/fd
-npm ci
+npm ci                      # from the repository root
 npx supabase start          # Postgres, Auth, REST, and the local mailbox
 npm run dev                 # http://localhost:5173, against the local stack
 ```
@@ -29,14 +28,13 @@ Supabase - see §1.
 
 ## 1. Which backend am I talking to?
 
-Three env files, and the difference is not cosmetic. A build pointed at the
+Two env files, and the difference is not cosmetic. A build pointed at the
 wrong one has already shipped to production once.
 
 | File | Backend | Read by |
 |---|---|---|
 | `.env.local` | production Supabase | `build`, `start`, `deploy`, `verify:supabase` |
 | `.env.development.local` | local stack | `dev` **only** |
-| `.env.local-supabase` | local stack | nothing; kept for reference |
 
 Vite picks env files by mode. `.env.development.local` applies only in dev, so
 it can never reach a production bundle. That is the whole reason it has that
@@ -64,7 +62,7 @@ file that outranks production:
 
 ```bash
 VITE_SUPABASE_URL=http://127.0.0.1:54321 \
-VITE_SUPABASE_PUBLISHABLE_KEY=$(grep '^VITE_SUPABASE_PUBLISHABLE_KEY' .env.local-supabase | cut -d= -f2) \
+VITE_SUPABASE_PUBLISHABLE_KEY=$(grep '^VITE_SUPABASE_PUBLISHABLE_KEY' .env.development.local | cut -d= -f2) \
 npm run start
 ```
 
@@ -320,13 +318,12 @@ getting back in depends on email delivery that may not work. Do not click it to
 
 ## 8. Email delivery: the real constraint
 
-The sender is `onboarding@resend.dev`, a Resend sandbox address. It delivers
-essentially only to the verified account owner. It is fine for one person and
-will not serve 100-200 conference testers.
-
-Before inviting outside testers: a real sending domain, verified in Resend,
-with SPF, DKIM and DMARC, then change the sender and push the config. This is
-a pilot blocker, not a code problem, and it needs lead time for DNS.
+The sender is `hello@tryboks.com` on the Resend-verified `tryboks.com`
+domain (DKIM and a custom return path are published; DMARC is not yet). The
+constraint now is volume, not delivery: check the Resend plan's **daily** cap
+before a large invite wave - one wave plus the "send again" taps can reach it.
+Replies to `hello@` bounce until it has an Email Routing rule; `support@` is
+routed.
 
 ### `supabase config push` and the `env()` credential
 

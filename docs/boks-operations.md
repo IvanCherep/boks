@@ -27,16 +27,15 @@ Use `/author` during interviews. Ask an author to paste or write a short piece. 
 
 ## Data Model
 
-- Supabase production MVP:
-  - `reels`: published story inventory for the public reader.
-  - `views`: reader impressions/views for anonymous and permanent Supabase users.
-  - `likes`: one like per permanent user and reel.
-  - `comments`: profile-owned responses visible to all readers on published boks, attributed by unique `@nickname`.
-  - `user_profiles`: permanent reader settings, unique handle, and the `reader` or `admin` role.
-- D1 compatibility path:
-  - `stories`: published seed and author stories.
-  - `events`: impressions, starts, completions, likes, shares, preferences, and publishes.
-  - `comments`: one-sentence qualitative feedback tied to a story.
+Supabase is the only store. The tables an operator meets:
+
+- `reels`: every bok - published, pending review, refused or archived (the table keeps its legacy name).
+- `recommendation_events`: every attributed reader event; the source of all behaviour metrics.
+- `served_feed`, `served_feed_item`: what each slate contained and why.
+- `recommendation_experiments`, `recommendation_assignments`: the live split and each reader's arm.
+- `likes`, `comments`, `comment_likes`, `author_follows`: product features, not metrics.
+- `user_profiles`: account settings, the unique `@handle`, and the `reader` or `admin` role.
+- `boks_feedback`, `boks_journey_events`, `bok_rights`, `bok_reports`: feedback notes, guest journey, rights records, reader reports.
 
 ## Scale Notes
 
@@ -68,13 +67,12 @@ Rules:
 ## Maintenance
 
 - Add Supabase production schema changes through `supabase/migrations/`, then run `npm run verify:supabase`.
-- Keep Supabase custom SMTP active before inviting external testers. Magic-link auth depends on email delivery, and Supabase's default sender is too limited for a real pilot.
-- The current Resend setup uses `onboarding@resend.dev` for owner-only sandbox delivery to `ivanystal@gmail.com`. For testers, verify a real sending domain in Resend, update the Supabase SMTP sender to that domain, and re-test magic links before sharing the app.
-- Add D1 compatibility schema changes through `db/schema.ts`, then generate a new Drizzle migration.
-- Keep seed stories in `lib/boks/seed-stories.ts` until there is a real editorial tool or bulk import pipeline.
+- Keep Supabase custom SMTP active before inviting external testers. Email sign-in depends on email delivery, and Supabase's default sender is too limited for a real pilot.
+- Auth mail is sent through Resend from `hello@tryboks.com` (the verified `tryboks.com` domain; `supabase/config.toml`). Replies to it bounce until `hello@` gets an Email Routing rule or the sender moves to `support@tryboks.com` - see `docs/project-state.md`.
+- Load catalogue content through the import pipeline (`docs/catalogue-import.md`), not by hand.
 - Add a recommendation algorithm with one file in `lib/boks/recommendations/strategies/` plus a list entry in that folder's `index.ts`, then give it traffic in `/admin` -> Recommendation lab -> Traffic split.
 - Change the live split between existing algorithms from `/admin` alone; that needs no deploy.
-- Keep metric definitions in `lib/boks/analytics.ts` so admin UI and exports stay aligned.
+- Keep metric definitions in `lib/recsys/aggregate/metrics.ts` so the admin UI and exports stay aligned.
 - Use browser storage only for anonymous visitor/session ids, Supabase session persistence, and lightweight profile state. Production reader metrics stay in Supabase.
 - Export metrics before resetting or changing the production database.
 - Run `npm run verify:supabase` after Supabase config or migration changes.
@@ -82,4 +80,4 @@ Rules:
   leaked-password protection, and that manual linking remains off. Run
   `supabase config diff` first; config push leaves undeclared remote properties
   unchanged but can still overwrite declared rate limits.
-- For future AI-assisted changes, start with `AGENTS.md`, `docs/README.md`, `docs/ai-agent-guide.md`, and the relevant spec in `specs/`.
+- For AI-assisted changes, start with `AGENTS.md`.

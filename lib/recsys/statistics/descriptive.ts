@@ -32,18 +32,3 @@ export function quantile(sorted: number[], probability: number) {
   if (lower === upper) return sorted[lower];
   return sorted[lower] + (position - lower) * (sorted[upper] - sorted[lower]);
 }
-
-/**
- * Hodges-Lehmann location shift: the median of all pairwise differences.
- *
- * Preferred over a difference of means on reading time, which is strongly
- * right-skewed. At a dozen readers one enthusiast otherwise decides the answer.
- */
-export function hodgesLehmannShift(control: number[], variant: number[]) {
-  if (!control.length || !variant.length) return 0;
-  const differences: number[] = [];
-  for (const a of variant) {
-    for (const b of control) differences.push(a - b);
-  }
-  return median(differences);
-}

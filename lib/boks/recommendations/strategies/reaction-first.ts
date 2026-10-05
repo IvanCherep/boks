@@ -6,7 +6,6 @@ export const reactionFirst = defineStrategy({
   name: "Reaction first",
   description: "Prioritizes boks that produce likes, shares and comments quickly.",
   family: "engagement",
-  segment: "quick_reads",
   weights: {
     likeRate: 22,
     commentRate: 24,

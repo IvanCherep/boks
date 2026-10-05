@@ -1,5 +1,4 @@
 export {
-  algorithmsPresent,
   collapseToReaders,
   sessionsForReaders,
   totalsByReaderAndAlgorithm,
@@ -11,9 +10,11 @@ export {
 } from "@/lib/recsys/aggregate/compare-algorithms";
 export {
   READER_METRICS,
-  READER_METRIC_IDS,
+  RATE_PARTS,
+  formatReaderDifference,
   formatReaderValue,
   readerMetric,
+  type RateParts,
 } from "@/lib/recsys/aggregate/metrics";
 export type {
   ReaderMetricDefinition,

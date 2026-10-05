@@ -66,12 +66,12 @@ Recommended setup:
 Current pilot state:
 
 - Supabase Auth is configured to use Resend SMTP.
-- The current sender is `onboarding@resend.dev`, which is Resend's sandbox
-  sender. It has been verified against `ivanystal@gmail.com`.
-- This sandbox sender only delivers to the Resend account owner's exact email.
-  Before inviting outside testers, verify a real sending domain in Resend and
-  change `[auth.email.smtp].admin_email` to an address on that domain, for
-  example `login@tryboks.com`.
+- The sender is `hello@tryboks.com` (`[auth.email.smtp].admin_email` in
+  `supabase/config.toml`) on the Resend-verified `tryboks.com` domain, with
+  DKIM at `resend._domainkey.tryboks.com` and the return path on
+  `send.tryboks.com`. Mail *to* `hello@` has no Email Routing rule yet, so a
+  reply bounces; `support@tryboks.com` is routed (`docs/project-state.md`).
+- There is no DMARC record yet. Add one before a large invite wave.
 - Keep the Resend API key out of source. Push it with
   `RESEND_API_KEY=<secret> npx supabase config push --project-ref <project-ref>`.
 
@@ -79,15 +79,18 @@ Use `supabase config diff` before pushing config. Do not run a full config push 
 
 ## Deploy
 
-Before deploy:
+Before deploy, from a clean tree:
 
 ```bash
 git status --short
-npm run lint
-npm run verify:supabase
-npm run build
-node /Users/iegorov/.codex/plugins/cache/openai-bundled/sites/0.1.66/scripts/build-site.mjs
+npm run lint && npm run typecheck && npm test
+npm run verify:schema          # when migrations changed
+npx supabase db push --linked --dry-run   # when migrations changed: lists exactly what production will get
 ```
+
+Apply migrations **before** deploying code that depends on them, and only
+forward migrations that old code also survives - a deploy is not atomic with
+the database, and tabs already open run the old client for a while.
 
 Deploy:
 
@@ -95,7 +98,7 @@ Deploy:
 npm run deploy
 ```
 
-The deploy command builds the app and runs:
+The deploy command builds the app, refuses a bundle that points at a local backend (`npm run check:deploy-target`), and runs:
 
 ```bash
 wrangler deploy --config wrangler.jsonc --keep-vars
@@ -110,16 +113,17 @@ Run:
 ```bash
 curl -I https://tryboks.com/
 curl -I https://tryboks.com/admin
-curl 'https://tryboks.com/api/boks?view=reader&limit=20&visitorId=agent-check'
-curl 'https://tryboks.com/api/boks?view=admin&limit=20'
+curl -I https://tryboks.com/series
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://tryboks.com/api/feed
+curl -s https://tryboks.com/api/geo
 ```
 
 Expected:
 
-- `/` returns `200`.
-- `/admin` returns `200`.
-- Reader API returns a bounded story payload.
-- Admin API returns `403`; admin metrics load inside `/admin` through Supabase role-checked RPCs.
+- `/`, `/admin` and `/series` return `200`.
+- `POST /api/feed` without a session returns `401` - the feed needs the
+  reader's Supabase token; a real slate is checked in the browser.
+- `/api/geo` returns a two-letter country (or nothing) with `no-store`.
 - HTML responses include CSP, HSTS, `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: DENY`, Referrer-Policy, and Permissions-Policy.
 
@@ -145,8 +149,8 @@ Expected:
   kept alive by `"workers_dev": true` in `wrangler.jsonc` - omit that flag and
   a `triggers deploy` silently 404s it.
 - Preview URLs: optional; keep enabled only if useful for manual version checks.
-- Custom domains: none, unless a real domain is added later.
-- Routes: none, unless a real domain route is added later.
+- Custom domains: `tryboks.com` only (`docs/adr/0010-apex-only-origin.md`).
+- Routes: none.
 
 In `Workers & Pages`, old Workers may appear:
 

@@ -2,7 +2,6 @@ export { compareIndependent, comparePaired, signTest } from "@/lib/recsys/statis
 export { estimatePower, type PowerRequest } from "@/lib/recsys/statistics/power";
 export {
   coefficientOfVariation,
-  hodgesLehmannShift,
   mean,
   median,
   quantile,

@@ -37,32 +37,27 @@ declare global {
   }
 }
 
-type ReaderApiResponse = {
-  stories?: Story[];
-  comments?: Comment[];
-  metrics?: Metrics;
-  experiment?: RecommendationExperiment | null;
-  error?: string;
-};
-
 /**
- * Provenance for the legacy D1 endpoint.
+ * Provenance before any feed has been served.
  *
- * The D1 reader is a different store with its own rollups, so it is labelled
- * rather than treated as an equivalent serve. It is reached only when Supabase
- * is not configured at all: a *failing* Supabase reader is surfaced, never
- * quietly diverted here, because a diverted reader is one whose events vanish
- * from every comparison (ADR-001, V4).
+ * It claims nothing: no backend, no fallback reason. Events cannot be recorded
+ * against it anyway - there is no boks on screen until a feed arrives.
  */
-const d1Provenance: FeedProvenance = {
+const pendingProvenance: FeedProvenance = {
   feedId: null,
-  servingBackend: "d1_fallback",
-  degradedMode: true,
-  fallbackReason: "supabase_not_configured",
+  servingBackend: "unknown",
+  degradedMode: false,
+  fallbackReason: null,
   labelingVersion: LABELING_VERSION,
   catalogSize: 0,
   candidateCount: 0,
 };
+
+/**
+ * Supabase is the only store. A build without its address has nothing to
+ * read from, and says so rather than serving a second, unmeasured catalogue.
+ */
+const supabaseNotConfigured = "boks is not connected to its database in this build (VITE_SUPABASE_URL is missing).";
 
 export function useBoksData() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -72,7 +67,7 @@ export function useBoksData() {
   const [likedStoryIds, setLikedStoryIds] = useState<string[]>([]);
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   const [isSupabaseReader, setIsSupabaseReader] = useState(false);
-  const [provenance, setProvenance] = useState<FeedProvenance>(d1Provenance);
+  const [provenance, setProvenance] = useState<FeedProvenance>(pendingProvenance);
   const [status, setStatus] = useState("Loading");
   /**
    * Whether the feed has settled, kept apart from `status`.
@@ -87,36 +82,6 @@ export function useBoksData() {
    */
   const [phase, setPhase] = useState<"loading" | "ready" | "failed">("loading");
 
-  const loadFromApi = useCallback(async (options: LoadOptions, view: string) => {
-    setIsSupabaseReader(false);
-    const params = new URLSearchParams({
-      view,
-      limit: String(options.limit ?? (view === "admin" ? 100 : readerSlateSize)),
-    });
-    if (options.offset) params.set("offset", String(options.offset));
-    if (options.q?.trim()) params.set("q", options.q.trim());
-    if (options.sort) params.set("sort", options.sort);
-    if (options.visitorId) params.set("visitorId", options.visitorId);
-
-    const response = await fetch(`/api/boks?${params.toString()}`, { cache: "no-store" });
-    const data = (await response.json()) as ReaderApiResponse;
-    if (!response.ok) throw new Error(data.error || "Could not load boks.");
-    setStories(data.stories ?? []);
-    setComments(data.comments ?? []);
-    setMetrics(data.metrics ?? initialMetrics);
-    setExperiment(data.experiment ?? null);
-    setLikedStoryIds([]);
-    setSupabaseUserId(null);
-    setProvenance({
-      ...d1Provenance,
-      catalogSize: data.stories?.length ?? 0,
-      candidateCount: data.stories?.length ?? 0,
-    });
-    setStatus("Ready");
-    setPhase("ready");
-    return data;
-  }, []);
-
   const runLoad = useCallback(async (options: LoadOptions = {}) => {
     const view = options.view ?? "reader";
     const appending = Boolean(options.append) && view === "reader";
@@ -127,10 +92,11 @@ export function useBoksData() {
       setPhase("loading");
     }
 
-    // No catch: a reader whose Supabase feed fails must see the failure. The
-    // previous silent fall-through to /api/boks put their events in a second
-    // store under a locally recomputed arm, where no comparison could see them.
-    if (canUseSupabaseBrowserData() && view === "reader") {
+    if (!canUseSupabaseBrowserData()) throw new Error(supabaseNotConfigured);
+
+    // No catch: a reader whose Supabase feed fails must see the failure rather
+    // than a second store whose events no comparison can see.
+    if (view === "reader") {
       const data = await loadSupabaseReaderFeed({
         limit: options.limit ?? readerSlateSize,
         visitorId: options.visitorId ?? "anonymous",
@@ -155,26 +121,23 @@ export function useBoksData() {
       setProvenance(data.provenance);
       setIsSupabaseReader(true);
       setStatus("Ready");
-    setPhase("ready");
+      setPhase("ready");
       return data;
     }
 
-    if (canUseSupabaseBrowserData() && view === "admin") {
-      const supabaseMetrics = await loadSupabaseAdminMetrics(options);
-      setStories((supabaseMetrics.stories as Story[]) ?? []);
-      setComments([]);
-      setMetrics(supabaseMetrics);
-      setExperiment(null);
-      setLikedStoryIds([]);
-      setSupabaseUserId(null);
-      setIsSupabaseReader(false);
-      setStatus("Ready");
+    // view === "admin"
+    const supabaseMetrics = await loadSupabaseAdminMetrics(options);
+    setStories((supabaseMetrics.stories as Story[]) ?? []);
+    setComments([]);
+    setMetrics(supabaseMetrics);
+    setExperiment(null);
+    setLikedStoryIds([]);
+    setSupabaseUserId(null);
+    setIsSupabaseReader(false);
+    setStatus("Ready");
     setPhase("ready");
-      return { stories: supabaseMetrics.stories, comments: [], metrics: supabaseMetrics };
-    }
-
-    return loadFromApi(options, view);
-  }, [loadFromApi]);
+    return { stories: supabaseMetrics.stories, comments: [], metrics: supabaseMetrics };
+  }, []);
 
   /**
    * A failed load is not an empty one.

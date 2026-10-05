@@ -32,21 +32,7 @@ Engineering values:
 
 ## Naming Standards
 
-Use boks vocabulary consistently:
-
-- `reader`: person consuming stories.
-- `boks`: one short literature unit in product language.
-- `author`: person publishing stories.
-- `story`: browser-facing literature item.
-- `reel`: Supabase storage term for the current production MVP table.
-- `recommendation`: feed selection or ranking behavior.
-- `algorithm`: named recommendation strategy.
-- `experiment`: assignment and comparison context.
-- `event`: captured behavior signal.
-- `metric`: aggregated decision signal.
-- `segment`: stable user grouping for experiment comparison.
-- `userProfile`: permanent Supabase profile and role record.
-- `handle`: unique `@nickname` used for public comment identity.
+The domain vocabulary is `CONTEXT.md`: use its terms in new identifiers, tests, issues and commit messages, and never a synonym it lists under _Avoid_. Its "Legacy names in code" table lists the names that predate it (`reels`, `Story`, `storyId`); keep them where they already are and use the glossary term in new code.
 
 Avoid generic names when a domain name is clearer:
 
@@ -90,11 +76,10 @@ Recommendation logic starts in:
 - `lib/boks/recommendations/metrics.ts` for what a metric means
 - `lib/boks/recommendations/experiments.ts` for assignment and traffic split
 
-Server-side D1 compatibility starts in:
+Feed serving starts in:
 
-- `app/api/boks/route.ts`
-- `lib/boks/analytics.ts`
-- `lib/boks/request.ts`
+- `app/api/feed/route.ts`
+- `lib/boks/feed-service.ts`
 
 Supabase schema starts in:
 
@@ -104,12 +89,12 @@ Supabase schema starts in:
 ## Coupling Rules
 
 - Reader components may use browser-safe Supabase helpers.
-- Reader components must not import D1 schema or server-only helpers.
-- Server API code may import `lib/boks/*` and `db/*`.
+- Reader components must not import server-only helpers.
+- Server API code may import `lib/boks/*`.
 - `lib/boks/contracts.ts` imports nothing, so it is safe from browser, worker and test code.
-- `lib/boks/recommendations/` is browser-safe by design: the Supabase reader ranks its own feed. Never add a server-only import to it.
+- `lib/boks/recommendations/` runs in both the Worker (`/api/feed`, the canonical path) and the browser (the labelled fallback). Never add a server-only or browser-only import to it.
 - `lib/boks/recommendations/` owns the algorithm registry, ranking and metric definitions. SQL returns counters; it never decides an order or a rate.
-- `lib/boks/analytics.ts` owns D1 aggregate SQL.
+- `lib/recsys/aggregate/metrics.ts` owns metric definitions; nothing else redefines a rate.
 - Supabase aggregate SQL belongs in Supabase migrations until extracted into a managed SQL source folder.
 - Supabase user role checks belong in RLS policies or security-definer RPCs. Browser components may display role state but must not enforce it alone.
 - Shared UI components in `components/boks/shared-ui.tsx` should stay small and product-neutral.
@@ -125,7 +110,7 @@ Before implementation:
 5. Add tests or verification for the changed behavior.
 6. Update docs in the same task.
 
-For AI agents, `docs/ai-agent-guide.md` is the practical workflow. Treat specs as source of product truth and docs as the operating map. Code that changes product behavior without updating specs/docs is incomplete.
+For AI agents, `AGENTS.md` is the entry point. Treat specs as source of product truth and docs as the operating map. Code that changes product behavior without updating specs/docs is incomplete.
 
 If a change adds a recommendation algorithm, update:
 
@@ -211,14 +196,13 @@ Do not store or trust admin roles in browser storage, URL params, `user_metadata
 
 Future AI agents should:
 
-1. Read `AGENTS.md` and `docs/README.md`.
-2. Read `docs/ai-agent-guide.md`.
-3. Check `git status --short`.
-4. Inspect the owning files before editing.
-5. Make narrowly scoped changes.
-6. Avoid unrelated refactors.
-7. Run validation.
-8. Update docs and specs when behavior changes.
+1. Read `AGENTS.md` and follow its read order.
+2. Check `git status --short`.
+3. Inspect the owning files before editing.
+4. Make narrowly scoped changes.
+5. Avoid unrelated refactors.
+6. Run validation.
+7. Update docs and specs when behavior changes.
 
 When a file grows beyond comfortable review size, extract by responsibility, not by technical type alone. Example: split reader feed into reading state, story viewport, reaction rail, and comments only when those pieces start changing independently.
 

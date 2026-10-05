@@ -14,6 +14,7 @@ import {
   setSupabaseCommentLike,
 } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
+import { bareHandle } from "@/components/boks/reader/handles";
 
 type ReplyTarget = {
   rootId: number;
@@ -64,7 +65,7 @@ export function CommentsSheet({
   const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
   const [confirmingDelete, setConfirmingDelete] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const normalizedViewerHandle = (viewerHandle ?? "").replace(/^@+/, "").toLowerCase();
+  const normalizedViewerHandle = bareHandle(viewerHandle).toLowerCase();
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export function CommentsSheet({
   }, [isSupabaseReader, loadAttempt, storyId]);
 
   const threads = useMemo(() => buildCommentThreads(comments), [comments]);
-  const normalizedAuthorHandle = authorHandle.replace(/^@+/, "").toLowerCase();
+  const normalizedAuthorHandle = bareHandle(authorHandle).toLowerCase();
 
   function beginReply(comment: Comment) {
     if (!hasSignedInAccount) {
@@ -100,7 +101,7 @@ export function CommentsSheet({
       return;
     }
 
-    const handle = (comment.visitorHandle || comment.visitorName || "reader").replace(/^@+/, "");
+    const handle = bareHandle(comment.visitorHandle || comment.visitorName || "reader");
     const rootId = comment.parentCommentId ?? comment.id;
     setReplyTarget({ rootId, handle });
     setExpandedThreads((current) => new Set(current).add(rootId));
@@ -197,7 +198,7 @@ export function CommentsSheet({
   }
 
   function renderComment(comment: Comment, isReply = false) {
-    const handle = (comment.visitorHandle || comment.visitorName || "reader").replace(/^@+/, "");
+    const handle = bareHandle(comment.visitorHandle || comment.visitorName || "reader");
     const isAuthor = Boolean(normalizedAuthorHandle) && handle.toLowerCase() === normalizedAuthorHandle;
     const isMine = Boolean(normalizedViewerHandle) && handle.toLowerCase() === normalizedViewerHandle;
     const canDelete = hasSignedInAccount && isSupabaseReader && (isMine || canModerate);
@@ -353,7 +354,7 @@ export function CommentsSheet({
         {hasSignedInAccount ? (
           <div className="comment-composer">
             <div className="comment-avatar comment-avatar--viewer" aria-hidden="true">
-              {viewerHandle?.replace(/^@+/, "")[0]?.toUpperCase() || <UserRound className="size-4" />}
+              {bareHandle(viewerHandle)[0]?.toUpperCase() || <UserRound className="size-4" />}
             </div>
             <Textarea
               ref={composerRef}

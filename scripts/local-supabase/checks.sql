@@ -490,9 +490,9 @@ begin
 
   select id into v_reel from public.reels where status = 'published' order by created_at limit 1;
 
-  perform public.record_recommendation_assignment('boks-feed-v1', 'discovery', 'new_reader', 'visitor-x');
+  perform public.record_recommendation_assignment('boks-feed-v1', 'for_you', 'new_reader', 'visitor-x');
   perform public.boks_assert(
-    exists (select 1 from public.recommendation_assignments where user_id = v_reader and algorithm_id = 'discovery'),
+    exists (select 1 from public.recommendation_assignments where user_id = v_reader and algorithm_id = 'for_you'),
     'a reader assignment is recorded'
   );
 
@@ -500,26 +500,26 @@ begin
   -- before/after reading would be based on history that had been overwritten.
   perform public.record_recommendation_assignment('boks-feed-v1', 'balanced', 'general', 'visitor-x');
   perform public.boks_assert(
-    exists (select 1 from public.recommendation_assignments where user_id = v_reader and algorithm_id = 'discovery'),
+    exists (select 1 from public.recommendation_assignments where user_id = v_reader and algorithm_id = 'for_you'),
     'a second assignment call does not silently move the reader to another arm'
   );
 
   v_result := public.get_my_recommendation_assignment('boks-feed-v1');
-  perform public.boks_assert(v_result ->> 'algorithmId' = 'discovery', 'the stored assignment is readable by its owner');
+  perform public.boks_assert(v_result ->> 'algorithmId' = 'for_you', 'the stored assignment is readable by its owner');
 
   v_count := public.record_recommendation_events(jsonb_build_array(
-    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'for_you',
       'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
       'clientElapsedSeconds', 0, 'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
-    jsonb_build_object('eventType', 'start', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+    jsonb_build_object('eventType', 'start', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'for_you',
       'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
       'clientElapsedSeconds', 2, 'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
-    jsonb_build_object('eventType', 'complete', 'storyId', v_reel::text, 'value', 180, 'algorithmId', 'discovery',
+    jsonb_build_object('eventType', 'complete', 'storyId', v_reel::text, 'value', 180, 'algorithmId', 'for_you',
       'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
       'clientElapsedSeconds', 180, 'activeSeconds', 180, 'progress', 0.91,
       'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
-    jsonb_build_object('eventType', 'not_a_real_event', 'storyId', v_reel::text, 'algorithmId', 'discovery'),
-    jsonb_build_object('eventType', 'start', 'storyId', 'not-a-uuid', 'algorithmId', 'discovery')
+    jsonb_build_object('eventType', 'not_a_real_event', 'storyId', v_reel::text, 'algorithmId', 'for_you'),
+    jsonb_build_object('eventType', 'start', 'storyId', 'not-a-uuid', 'algorithmId', 'for_you')
   ));
   perform public.boks_assert(v_count = 3, 'the event batch accepts three valid events and drops two invalid ones');
 
@@ -561,16 +561,138 @@ begin
   -- Reading time is cumulative per (session, boks). Replaying the batch, or a
   -- heartbeat arriving after the final event, must not add time twice.
   v_count := public.record_recommendation_events(jsonb_build_array(
-    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'for_you',
       'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
       'clientElapsedSeconds', 60, 'activeSeconds', 60, 'progress', 0.4,
       'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x'),
-    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'discovery',
+    jsonb_build_object('eventType', 'heartbeat', 'storyId', v_reel::text, 'value', 1, 'algorithmId', 'for_you',
       'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'surface', 'reader', 'rank', 0,
       'clientElapsedSeconds', 120, 'activeSeconds', 120, 'progress', 0.7,
       'estimatedSeconds', 240, 'sessionId', 's1', 'visitorId', 'visitor-x')
   ));
   perform public.boks_assert(v_count = 2, 'heartbeat events are accepted');
+
+  -- Every event type the table accepts must also survive the RPC's own filter.
+  -- They were two literal lists once, and 'aftertaste' was added to one only:
+  -- a month of aftertaste events vanished without an error.
+  perform public.boks_assert(
+    (
+      select array_agg(m[1] order by m[1])
+      from regexp_matches(
+        (select pg_get_constraintdef(c.oid) from pg_constraint c
+         where c.conname = 'recommendation_events_event_type_check'),
+        '''([a-z_]+)''', 'g'
+      ) as m
+    ) = (select array_agg(t order by t) from unnest(public.boks_recommendation_event_types()) as t),
+    'the RPC accepts exactly the event types the table allows'
+  );
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'aftertaste', 'storyId', v_reel::text, 'algorithmId', 'for_you',
+      'experimentKey', 'boks-feed-v1', 'surface', 'reader', 'sessionId', 's1', 'visitorId', 'visitor-x',
+      'metadata', jsonb_build_object('tags', jsonb_build_array('moved')))
+  ));
+  perform public.boks_assert(v_count = 1, 'an aftertaste event is recorded, not silently dropped');
+  delete from public.recommendation_events where user_id = v_reader and event_type = 'aftertaste';
+
+  -- One bad event must not cost the batch: a bok that no longer exists, a
+  -- feed id that is not a uuid and a value that is not a number used to raise
+  -- and take every other event in the batch with them.
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'algorithmId', 'for_you',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'sessionId', 's-robust',
+      'metadata', jsonb_build_object('probe', 'robust')),
+    jsonb_build_object('eventType', 'impression', 'storyId', gen_random_uuid()::text, 'algorithmId', 'for_you',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'sessionId', 's-robust',
+      'metadata', jsonb_build_object('probe', 'robust')),
+    jsonb_build_object('eventType', 'start', 'storyId', v_reel::text, 'algorithmId', 'for_you',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'sessionId', 's-robust',
+      'value', 'not-a-number', 'rank', 'first', 'feedId', 'not-a-uuid', 'progress', 'NaN',
+      'metadata', jsonb_build_object('probe', 'robust'))
+  ));
+  perform public.boks_assert(
+    v_count = 2,
+    'a batch with an erased bok and malformed fields keeps its good events'
+  );
+  perform public.boks_assert(
+    (select value = 1 and rank = 0 and feed_id is null and progress = 0
+     from public.recommendation_events
+     where user_id = v_reader and metadata ->> 'probe' = 'robust' and event_type = 'start'),
+    'malformed numbers fall back to their defaults instead of raising'
+  );
+
+  -- The arm an event is credited to is the reader's stored live arm, not the
+  -- one the browser names; the claim is kept.
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'algorithmId', 'recency',
+      'experimentKey', 'boks-feed-v1', 'userSegment', 'new_reader', 'sessionId', 's-robust',
+      'metadata', jsonb_build_object('probe', 'claimed'))
+  ));
+  perform public.boks_assert(
+    (select algorithm_id = 'for_you' and metadata ->> 'claimedAlgorithmId' = 'recency'
+     from public.recommendation_events
+     where user_id = v_reader and metadata ->> 'probe' = 'claimed'),
+    'an event is credited to the reader''s stored arm, with the browser''s claim kept'
+  );
+  delete from public.recommendation_events
+  where user_id = v_reader and metadata ->> 'probe' in ('robust', 'claimed');
+
+  -- A served feed is credited the same way, and the candidate query refuses
+  -- the expensive part to a caller past the hourly feed ceiling. Both probed
+  -- inside a block that is rolled back.
+  begin
+    perform public.record_served_feed(
+      jsonb_build_object('experimentKey', 'boks-feed-v1', 'algorithmId', 'recency', 'sessionId', 's-probe'),
+      '[]'::jsonb
+    );
+    perform public.boks_assert(
+      (select algorithm_id = 'for_you' and profile_snapshot ->> 'claimedAlgorithmId' = 'recency'
+       from public.served_feed where user_id = v_reader and session_id = 's-probe'),
+      'a served feed is credited to the reader''s stored arm, with the claim kept'
+    );
+    insert into public.served_feed (user_id, session_id, experiment_key, algorithm_id, candidate_request_id)
+    select v_reader, 's-flood', 'boks-feed-v1', 'for_you', gen_random_uuid() from generate_series(1, 300);
+    perform public.boks_assert(
+      jsonb_array_length(public.get_recommendation_candidates(50)) = 0,
+      'a caller past the hourly feed ceiling gets no candidates'
+    );
+    raise exception 'boks_probe_rollback';
+  exception when raise_exception then
+    if sqlerrm <> 'boks_probe_rollback' then raise; end if;
+  end;
+  perform public.boks_assert(
+    jsonb_array_length(public.get_recommendation_candidates(50)) >= 1,
+    'under the ceiling the candidate query answers as before'
+  );
+
+  -- An assignment is recorded only for a live arm of the active experiment.
+  -- A fresh reader, created and removed inside a rolled-back block.
+  begin
+    insert into auth.users (id, email, is_anonymous)
+    values ('66666666-6666-4666-8666-666666666666', null, true);
+    perform public.boks_test_login('66666666-6666-4666-8666-666666666666', true);
+    v_result := public.record_recommendation_assignment('boks-feed-v1', 'recency', 'general', 'visitor-a');
+    perform public.boks_assert(
+      v_result ->> 'algorithmId' is null
+        and not exists (select 1 from public.recommendation_assignments
+                        where user_id = '66666666-6666-4666-8666-666666666666'),
+      'an algorithm the experiment is not running cannot be claimed as an assignment'
+    );
+    perform public.record_recommendation_assignment('invented-key', 'for_you', 'general', 'visitor-a');
+    perform public.boks_assert(
+      not exists (select 1 from public.recommendation_assignments
+                  where user_id = '66666666-6666-4666-8666-666666666666'),
+      'an assignment cannot be recorded under an invented experiment key'
+    );
+    v_result := public.record_recommendation_assignment('boks-feed-v1', 'for_you', 'general', 'visitor-a');
+    perform public.boks_assert(
+      v_result ->> 'algorithmId' = 'for_you',
+      'a live arm of the active experiment is recorded'
+    );
+    raise exception 'boks_probe_rollback';
+  exception when raise_exception then
+    if sqlerrm <> 'boks_probe_rollback' then raise; end if;
+  end;
+  perform public.boks_test_login(v_reader);
 
   v_result := public.get_recommendation_candidates(50);
   perform public.boks_assert(
@@ -605,6 +727,43 @@ begin
   );
   perform public.boks_assert(jsonb_array_length(v_result -> 'arms') = 2, 'an admin can change the live experiment split');
   perform public.boks_assert((v_result ->> 'minimumImpressionsPerArm')::int = 25, 'an admin can change the minimum sample');
+
+  -- The lab reads assignments and events of the active experiment only.
+  v_count := (
+    select coalesce(sum((a ->> 'readers')::int), 0)
+    from jsonb_array_elements(public.get_recommendation_lab(30) -> 'assignments') a
+  );
+  insert into public.recommendation_assignments (user_id, experiment_key, algorithm_id)
+  values (v_reader, 'an-old-experiment', 'recency');
+  perform public.boks_assert(
+    (
+      select coalesce(sum((a ->> 'readers')::int), 0)
+      from jsonb_array_elements(public.get_recommendation_lab(30) -> 'assignments') a
+    ) = v_count,
+    'a reader''s assignment under another experiment is not counted in the lab'
+  );
+  delete from public.recommendation_assignments
+  where user_id = v_reader and experiment_key = 'an-old-experiment';
+
+  -- The minimum sample is readers now, defaulting to 10 with a floor of 2.
+  perform public.boks_assert(
+    (select column_default = '10' from information_schema.columns
+     where table_schema = 'public' and table_name = 'recommendation_experiments'
+       and column_name = 'minimum_impressions_per_arm')
+      and (public.save_recommendation_experiment(
+        'boks-feed-v1', 'balanced',
+        '[{"algorithmId":"balanced","weight":50},{"algorithmId":"taste_match","weight":50}]'::jsonb,
+        1
+      ) ->> 'minimumImpressionsPerArm')::int = 2,
+    'the minimum readers per arm defaults to 10 and cannot go below 2'
+  );
+
+  -- The author limit's reset time carries its offset, so a browser cannot
+  -- read it as local time.
+  perform public.boks_assert(
+    (public.get_my_bok_quota() ->> 'resetsAt') ~ '(Z|[+-][0-9]{2}(:?[0-9]{2})?)$',
+    'the quota reset time is an absolute instant, not a local wall-clock time'
+  );
 
   perform public.boks_test_login(v_reader);
   begin
@@ -2109,6 +2268,15 @@ begin
   insert into public.reels (title, author_name, text, genre, mood, status, author_user_id)
   values ('Leaving author bok', null, 'A piece by someone about to leave.', 'literary', 'quiet', 'published', v_suspended_admin)
   returning id into v_qa_bok;
+  -- A reader with reactions: the cascade that removes them used to hit the
+  -- suspended-account trigger and roll the whole deletion back.
+  insert into public.likes (user_id, reel_id) values (v_suspended_admin, v_qa_bok);
+
+  -- Whether someone else is an admin or suspended is not a reader's question.
+  perform public.boks_assert(
+    not public.is_boks_admin(v_admin),
+    'a reader cannot ask whether another account is an admin'
+  );
   begin
     perform public.delete_my_boks_account('not-my-name');
     perform public.boks_assert(false, 'deleting your account needs your exact nickname');
@@ -2682,7 +2850,6 @@ declare
     array['published_boks', 'anon', 'SELECT'],
     array['published_boks', 'authenticated', 'SELECT'],
     array['boks_comments', 'anon', 'SELECT'],
-    array['boks_public_identity', 'anon', 'SELECT'],
     array['reels', 'authenticated', 'SELECT'],
     array['comments', 'authenticated', 'SELECT'],
     array['bok_rights', 'authenticated', 'SELECT'],
@@ -2690,7 +2857,6 @@ declare
     array['likes', 'authenticated', 'INSERT'],
     array['likes', 'authenticated', 'DELETE'],
     array['views', 'authenticated', 'INSERT'],
-    array['user_profiles', 'authenticated', 'INSERT'],
     array['comment_likes', 'authenticated', 'INSERT']
   ];
   v_row text[];
@@ -2762,6 +2928,19 @@ begin
     v_missing is null,
     coalesce('every object the Data API reaches is granted explicitly; missing: ' || v_missing,
              'every object the Data API reaches is granted explicitly')
+  );
+
+  -- A profile is created only by `ensure_boks_user_profile`, which enforces
+  -- reserved handles, terms and the publisher flag; a direct insert skipped all
+  -- three. And there is no directory of every account's id and handle.
+  perform public.boks_assert(
+    not has_table_privilege('authenticated', 'public.user_profiles', 'INSERT'),
+    'a reader cannot insert a profile row directly'
+  );
+  perform public.boks_assert(
+    not has_table_privilege('anon', 'public.boks_public_identity', 'SELECT')
+      and not has_table_privilege('authenticated', 'public.boks_public_identity', 'SELECT'),
+    'no reader can list every account through boks_public_identity'
   );
 end $$;
 

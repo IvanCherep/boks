@@ -24,8 +24,8 @@ Updated 2026-09-26 after the full application and Supabase audit.
   Public errors never return database or PostgREST messages.
 - `/api/feed` accepts only bounded bearer tokens with a UUID subject. Supabase
   still verifies the JWT signature before any data is read or written.
-- The D1 compatibility route is read plus bounded telemetry only. It cannot
-  publish a bok or create a comment.
+- There is no second data path: the D1 compatibility route was removed on
+  2026-10-05 (`docs/adr/0013-remove-d1-compatibility-path.md`).
 - `record_served_feed` and `record_recommendation_events` enforce batch, row,
   metadata, payload, and per-account hourly limits in PostgreSQL. The unchecked
   implementations are not executable by browser roles.

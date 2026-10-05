@@ -69,7 +69,7 @@ Watch for:
 
 Use `https://tryboks.com/admin`.
 
-Sign in by email magic link with a permanent account that has `admin` role in
+Sign in by email (link or code) with a permanent account that has `admin` role in
 Supabase. The first admin is bootstrapped by an operator as described in
 `docs/local-environment-runbook.md`; the browser cannot claim it. Every later
 admin must be granted from the People panel by an existing admin.
@@ -105,7 +105,7 @@ Reader:
 - Tapping/clicking reveals reactions.
 - Comments load only when their sheet opens. The sheet starts at partial height, expands to the full reader surface from the grip or expand control, and collapses without moving to another boks.
 - Guests can read every comment and reply. Trying to comment, reply, or like opens the gentle free-account flow while preserving the open conversation.
-- Signed-in readers can like and unlike each comment, reply to a root comment, reveal or hide replies, and cancel a reply before sending. Replies stay one level deep and use the account's `@nickname`.
+- Signed-in readers can like and unlike each comment, reply to a root comment, reveal or hide replies, and cancel a reply before sending. Replies stay one level deep and use the account's `@handle`.
 - With the comment sheet or account form open, Arrow keys, Space, edge taps, wheel gestures, and swipes do not navigate the background feed.
 - There is no finished button.
 - Text remains readable on small phones and desktop.
@@ -241,24 +241,13 @@ Then check:
 - `http://127.0.0.1:8787/`
 - `http://127.0.0.1:8787/author`
 - `http://127.0.0.1:8787/admin`
-- `http://127.0.0.1:8787/api/boks?view=reader&limit=20&visitorId=agent-check` - the response carries an `experiment` object; different `visitorId` values should land on different `algorithmId`s.
-- `http://127.0.0.1:8787/api/boks?view=admin&limit=20` returns `403`; admin metrics are loaded through Supabase role-checked RPCs from `/admin`.
+- `http://127.0.0.1:8787/series`
+- `POST http://127.0.0.1:8787/api/feed` without a session returns `401`; a real slate is checked by loading `/` and confirming the feed request returns a `feedId` and an `experiment`.
 
 If the local port differs, use the URL printed by Wrangler.
 
-To point the built client at a local Supabase stack without touching the real
-credentials in `.env.local`, create `.env.development.local` (dev mode only, so it
-cannot reach a production build; `.env.production.local` would have higher priority in
-Vite) with the local URL and publishable key, rebuild, and delete it afterwards.
-
-The local D1 database does not auto-migrate. After `npm run db:generate`, apply
-the new file to the running local worker:
-
-```bash
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js \
-  d1 execute DB --config dist/server/wrangler.json --local \
-  --persist-to .wrangler/state --file drizzle/<migration>.sql
-```
+To run the built client against a local Supabase stack, pass the env inline
+(`docs/local-environment-runbook.md` §1); never create `.env.production.local`.
 
 ## Mobile QA
 
@@ -286,7 +275,7 @@ Check:
 - The 15-boks account gate fits at both phone sizes with its email field, Terms control and primary action visible.
 - Guest readers can open and read comments without friction.
 - Guest readers see the free-account prompt when they try to like or write a comment.
-- Signed-in comments show the current unique `@nickname` only, and do not offer a separate name field.
+- Signed-in comments show the current unique `@handle` only, and do not offer a separate name field.
 
 ## Reading The Overview Tab
 

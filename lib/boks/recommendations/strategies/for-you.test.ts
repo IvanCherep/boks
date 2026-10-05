@@ -9,7 +9,7 @@ const config = {
   key: "for-you-test",
   controlAlgorithmId: "for_you",
   arms: [{ algorithmId: "for_you", weight: 100 }],
-  minimumImpressionsPerArm: 1,
+  minimumReadersPerArm: 2,
 };
 
 function candidate(over: Partial<StoryCandidate> & { id: string }): StoryCandidate {

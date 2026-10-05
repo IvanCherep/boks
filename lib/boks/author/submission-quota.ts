@@ -16,28 +16,47 @@ export type BokSubmissionQuota = {
   message: string;
 };
 
-export function describeBokSubmissionQuota(usedToday: number, now: Date = new Date()): BokSubmissionQuota {
+export function describeBokSubmissionQuota(
+  usedToday: number,
+  now: Date = new Date(),
+  limit: number = dailyBokSubmissionLimit
+): BokSubmissionQuota {
   const used = Math.max(0, Math.floor(Number(usedToday) || 0));
-  const remaining = Math.max(0, dailyBokSubmissionLimit - used);
+  const remaining = Math.max(0, limit - used);
   const resetsAt = nextDayStart(now);
 
   return {
-    limit: dailyBokSubmissionLimit,
+    limit,
     usedToday: used,
     remaining,
     exhausted: remaining === 0,
     resetsAt: resetsAt.toISOString(),
-    message: quotaMessage(remaining, dailyBokSubmissionLimit),
+    message: quotaMessage(remaining, limit),
   };
 }
 
+/**
+ * The database's answer, with the gaps filled in.
+ *
+ * Whatever the server states wins: if `boks_daily_submission_limit()` changes,
+ * the cabinet must not keep enabling or disabling Submit from the constant it
+ * was built with. The local rule only fills fields the payload lacks.
+ */
 export function normalizeBokSubmissionQuota(raw: unknown, now: Date = new Date()): BokSubmissionQuota {
   const source = (raw ?? {}) as Partial<BokSubmissionQuota>;
-  const fallback = describeBokSubmissionQuota(Number(source.usedToday) || 0, now);
+  const limit = Math.max(1, Math.round(Number(source.limit) || dailyBokSubmissionLimit));
+  const fallback = describeBokSubmissionQuota(Number(source.usedToday) || 0, now, limit);
+  const remaining =
+    typeof source.remaining === "number" && Number.isFinite(source.remaining)
+      ? Math.max(0, Math.floor(source.remaining))
+      : fallback.remaining;
+  const exhausted = typeof source.exhausted === "boolean" ? source.exhausted : remaining === 0;
 
   return {
     ...fallback,
-    limit: Math.max(1, Math.round(Number(source.limit) || fallback.limit)),
+    remaining,
+    exhausted,
+    message: quotaMessage(exhausted ? 0 : remaining, limit),
     resetsAt: typeof source.resetsAt === "string" && source.resetsAt ? source.resetsAt : fallback.resetsAt,
   };
 }

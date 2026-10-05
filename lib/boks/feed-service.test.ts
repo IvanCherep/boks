@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { serveReaderFeed, type FeedTransport } from "@/lib/boks/feed-service";
+import { describeErrorCode, serveReaderFeed, type FeedTransport } from "@/lib/boks/feed-service";
 import type { SupabaseCandidateRow, SupabaseReelRow } from "@/lib/boks/supabase-reels";
 
 const readerId = "8f1b1c8e-2f1a-4f0e-9a1a-9f2c3d4e5f60";
@@ -37,6 +37,10 @@ function createTransport(options: {
   failRpc?: Record<string, Error>;
   reels?: SupabaseReelRow[];
   count?: number;
+  failCount?: boolean;
+  /** The arm the fake database holds for this reader. */
+  storedArm?: string;
+  reelCalls?: { limit: number; languages?: readonly string[] }[];
 }): FeedTransport {
   const calls = options.calls ?? [];
   return {
@@ -53,20 +57,26 @@ function createTransport(options: {
             { algorithmId: "balanced", weight: 50 },
             { algorithmId: "recency", weight: 50 },
           ],
-          minimumImpressionsPerArm: 40,
+          minimumReadersPerArm: 10,
         } as Result;
       }
       if (name === "get_recommendation_candidates") return rows as Result;
       if (name === "record_recommendation_assignment") {
-        return { experimentKey: "boks-feed-v1", algorithmId: "recency", userSegment: "general" } as Result;
+        return {
+          experimentKey: "boks-feed-v1",
+          algorithmId: options.storedArm ?? "recency",
+          userSegment: "general",
+        } as Result;
       }
       if (name === "record_served_feed") return "feed-1" as Result;
       throw new Error(`Unexpected RPC: ${name}`);
     },
-    async publishedReels() {
+    async publishedReels(limit: number, languages?: readonly string[]) {
+      options.reelCalls?.push({ limit, languages });
       return options.reels ?? [];
     },
     async publishedCount() {
+      if (options.failCount) throw new Error("count failed");
       return options.count ?? 39;
     },
   };
@@ -237,5 +247,61 @@ describe("serveReaderFeed", () => {
       served.entries.map((entry) => entry.candidate.id)
     );
     expect(served.reels).toHaveLength(5);
+  });
+
+  it("does not honour a stored arm the active experiment no longer sends traffic to", async () => {
+    // `completion_first` is a registered strategy, but this experiment parks
+    // it; a reader stored there must be ranked - and credited - as assigned now.
+    const parked = await serveReaderFeed(createTransport({ storedArm: "completion_first" }), baseRequest);
+    expect(["balanced", "recency"]).toContain(parked.experiment.algorithmId);
+    expect(parked.experiment.source).toBe("fallback");
+
+    // The RPC's default for an empty id, and a strategy this build lacks.
+    for (const storedArm of ["unassigned", "retired_strategy"]) {
+      const served = await serveReaderFeed(createTransport({ storedArm }), baseRequest);
+      expect(["balanced", "recency"]).toContain(served.experiment.algorithmId);
+      expect(served.experiment.source).toBe("fallback");
+    }
+  });
+
+  it("applies the reader's languages on the degraded path too", async () => {
+    const reelCalls: { limit: number; languages?: readonly string[] }[] = [];
+    await serveReaderFeed(
+      createTransport({
+        reelCalls,
+        failRpc: { get_recommendation_candidates: new Error("statement timeout") },
+      }),
+      { ...baseRequest, readingLanguages: ["ru"] }
+    );
+    expect(reelCalls).toEqual([{ limit: 200, languages: ["ru"] }]);
+  });
+
+  it("never returns database text as the fallback reason", async () => {
+    const served = await serveReaderFeed(
+      createTransport({
+        failRpc: {
+          get_recommendation_candidates: Object.assign(
+            new Error('relation "secret_table" does not exist at character 42'),
+            { code: "42P01" }
+          ),
+        },
+      }),
+      baseRequest
+    );
+    expect(served.fallbackReason).toBe("candidate_rollups_unavailable: 42P01");
+  });
+
+  it("falls back to the offered candidates when the catalog count fails", async () => {
+    const served = await serveReaderFeed(createTransport({ failCount: true }), baseRequest);
+    expect(served.catalogSize).toBe(rows.length);
+  });
+});
+
+describe("describeErrorCode", () => {
+  it("keeps a short code and drops everything else", () => {
+    expect(describeErrorCode({ code: "PGRST202", message: "x" })).toBe("PGRST202");
+    expect(describeErrorCode({ code: 'drop table"; --' })).toBe("unknown");
+    expect(describeErrorCode(new Error("free text"))).toBe("unknown");
+    expect(describeErrorCode(Object.assign(new Error("t"), { name: "TimeoutError" }))).toBe("timeout");
   });
 });

@@ -20,7 +20,7 @@ pasted into a chat, or written into any file under `docs/`, `scripts/` or
 Load it for a one-off command:
 
 ```bash
-cd /Users/iegorov/Documents/Codex/2026-09-09/fd   # or wherever the repo is
+# from the repository root
 set -a && . ./.env.local && set +a
 ```
 

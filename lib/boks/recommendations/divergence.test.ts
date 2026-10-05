@@ -103,7 +103,7 @@ describe("kendallTau", () => {
     expect(Math.abs(kendallTau(["a", "b", "c", "d"], ["b", "a", "d", "c"]))).toBeLessThan(0.5);
   });
 
-  it("treats a single shared item as agreement rather than dividing by zero", () => {
-    expect(kendallTau(["a"], ["a", "b"])).toBe(1);
+  it("reads a single shared item as no information, not as agreement", () => {
+    expect(kendallTau(["a"], ["a", "b"])).toBe(0);
   });
 });

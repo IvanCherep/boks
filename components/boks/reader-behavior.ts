@@ -1,6 +1,7 @@
 import { randomBoksId } from "@/lib/boks/browser-id";
 import { initialProfile } from "@/components/boks/constants";
 import type { ReadOutcome, ReaderProfile, Story } from "@/components/boks/client-types";
+import type { ReaderSignals } from "@/lib/boks/recommendations/signals";
 
 const anonymousReadStateKey = "boks-anonymous-read-state";
 const anonymousNoticeStateKey = "boks-anonymous-notice-state";
@@ -118,13 +119,56 @@ export function clearLocalReaderState() {
   }
 }
 
+/**
+ * Ids issued while storage refused to keep them, so the same page asks once
+ * and gets the same answer for the rest of its life.
+ */
+const memoryBrowserIds = new Map<string, string>();
+
+/**
+ * A stable label for this browser. Storage can refuse - blocked site data,
+ * some private windows and in-app browsers throw on any access - and a throw
+ * here used to take the whole reader down while it booted. The id is then
+ * only stable for this page, which is the most that browser allows.
+ */
 export function getBrowserId(key: string) {
   if (typeof window === "undefined") return "server";
-  const existing = window.localStorage.getItem(key);
-  if (existing) return existing;
+  try {
+    const existing = window.localStorage.getItem(key);
+    if (existing) return existing;
+  } catch {
+    // Fall through to an id for this page.
+  }
+  const remembered = memoryBrowserIds.get(key);
+  if (remembered) return remembered;
   const id = `${key}-${randomBoksId()}`;
-  window.localStorage.setItem(key, id);
+  memoryBrowserIds.set(key, id);
+  writeStorage(key, id);
   return id;
+}
+
+/** A write that may be refused. Nothing that calls it is worth a crash. */
+function writeStorage(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Blocked or full storage. The in-memory state still holds for this page.
+  }
+}
+
+/**
+ * What the ranker is told about the reader, from the locally kept profile.
+ * One definition, because the first feed request reads it before React has
+ * rendered the profile into state.
+ */
+export function readerSignalsFromProfile(profile: ReaderProfile): ReaderSignals {
+  return {
+    genreAffinity: profile.genreScore,
+    moodAffinity: profile.moodScore,
+    completedStoryIds: profile.completed,
+    likedStoryIds: profile.liked,
+    skippedStoryIds: profile.skipped,
+  };
 }
 
 export function readProfile() {
@@ -137,7 +181,8 @@ export function readProfile() {
 }
 
 export function saveProfile(profile: ReaderProfile) {
-  window.localStorage.setItem("boks-profile", JSON.stringify(profile));
+  if (typeof window === "undefined") return;
+  writeStorage("boks-profile", JSON.stringify(profile));
 }
 
 export function readAnonymousReadState(): AnonymousReadState {
@@ -153,7 +198,7 @@ export function recordAnonymousBoksRead(storyId: string) {
   if (typeof window === "undefined") return 0;
   const current = readAnonymousReadState();
   const storyIds = current.storyIds.includes(storyId) ? current.storyIds : [...current.storyIds, storyId];
-  window.localStorage.setItem(anonymousReadStateKey, JSON.stringify({ storyIds: storyIds.slice(-300) }));
+  writeStorage(anonymousReadStateKey, JSON.stringify({ storyIds: storyIds.slice(-300) }));
   return storyIds.length;
 }
 
@@ -172,7 +217,7 @@ export function readAnonymousNoticeState(): Record<string, boolean> {
 
 export function saveAnonymousNoticeState(state: Record<string, boolean>) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(anonymousNoticeStateKey, JSON.stringify(state));
+  writeStorage(anonymousNoticeStateKey, JSON.stringify(state));
 }
 
 export function profileBump(profile: ReaderProfile, story: Story, event: "complete" | "like" | "skip") {

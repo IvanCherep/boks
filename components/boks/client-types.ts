@@ -19,6 +19,8 @@ export type Story = {
   minutes: number;
   /** Real word count. Zero when unknown; callers fall back to `minutes`. */
   wordCount: number;
+  /** ISO 639-1 code, `und` when the database could not tell. Absent on old rows. */
+  language?: string;
   likes: number;
   shares: number;
   starts: number;
@@ -74,7 +76,8 @@ export type RecommendationExperiment = {
  */
 export type FeedProvenance = {
   feedId: string | null;
-  servingBackend: "worker" | "browser" | "d1_fallback";
+  /** `unknown` only before the first feed has been served. */
+  servingBackend: "worker" | "browser" | "unknown";
   degradedMode: boolean;
   fallbackReason: string | null;
   labelingVersion: string;

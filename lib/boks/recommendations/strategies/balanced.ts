@@ -6,7 +6,6 @@ export const balanced = defineStrategy({
   name: "Balanced quality",
   description: "Control mix of completion, reactions, freshness and light exploration.",
   family: "quality",
-  segment: "all",
   weights: {
     finishRate: 30,
     reactionRate: 18,

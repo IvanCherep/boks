@@ -185,9 +185,7 @@ export function deriveFeedSignals(input: FeedSignalInput): Map<string, StorySign
   const now = input.now ?? new Date();
   const maxStarts = Math.max(1, ...input.candidates.map((candidate) => candidate.starts));
   const affinityScale = maxAffinity(reader);
-  const completed = new Set(reader.completedStoryIds);
-  const skipped = new Set(reader.skippedStoryIds);
-  const liked = new Set(reader.likedStoryIds);
+  const { completed, skipped, liked } = readerHistorySets(reader);
 
   return new Map(
     input.candidates.map((candidate) => {
@@ -205,13 +203,18 @@ export function deriveFeedSignals(input: FeedSignalInput): Map<string, StorySign
           )
         : 0;
 
+      // Ranking features, not metrics: clamped to 0..1 and computed per boks.
+      // The rates divide the same parts as the reader metrics in
+      // `lib/recsys/aggregate/metrics.ts` (`RATE_PARTS`) - completion and
+      // reactions over starts, skips over starts + skips - so a feature and
+      // the number the lab reports for it never disagree about what it means.
       const signals: StorySignals = {
         startRate: ratio(starts, impressions),
         finishRate: ratio(completes, starts),
-        reactionRate: ratio(reactions, Math.max(completes, starts)),
-        likeRate: ratio(candidate.likes, Math.max(completes, starts)),
-        commentRate: ratio(candidate.comments, Math.max(completes, starts)),
-        shareRate: ratio(candidate.shares, Math.max(completes, starts)),
+        reactionRate: ratio(reactions, starts),
+        likeRate: ratio(candidate.likes, starts),
+        commentRate: ratio(candidate.comments, starts),
+        shareRate: ratio(candidate.shares, starts),
         skipRate: ratio(candidate.skips, starts + Math.max(0, candidate.skips)),
         readDepth: clamp01(avgReadSeconds / estimatedSeconds),
         popularity: clamp01(starts / maxStarts),
@@ -233,6 +236,27 @@ export function deriveFeedSignals(input: FeedSignalInput): Map<string, StorySign
       return [candidate.id, signals] as const;
     })
   );
+}
+
+/**
+ * What the reader has finished, skipped and liked, as one set each.
+ *
+ * The server-derived `bokState` is the authority - it follows the reader
+ * across devices - and the browser lists are folded in only for what the
+ * server has not seen yet (events still in the outgoing queue). Reading the
+ * browser lists alone ranked a reader on a second device as a stranger under
+ * every strategy except `for_you`, which biased any comparison toward it.
+ */
+function readerHistorySets(reader: ReaderSignals) {
+  const completed = new Set(reader.completedStoryIds);
+  const skipped = new Set(reader.skippedStoryIds);
+  const liked = new Set(reader.likedStoryIds);
+  for (const [bokId, state] of Object.entries(reader.bokState ?? {})) {
+    if (state.completedAt) completed.add(bokId);
+    else if (state.quickSkipCount > 0) skipped.add(bokId);
+    if (state.liked) liked.add(bokId);
+  }
+  return { completed, skipped, liked };
 }
 
 function fatigueScore(storyId: string, completed: Set<string>, skipped: Set<string>, liked: Set<string>) {

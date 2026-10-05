@@ -13,6 +13,15 @@ import type {
  * A second copy of this mapping is a second definition of what a boks is.
  */
 
+/**
+ * The columns a reel is read with from `published_boks`.
+ *
+ * One list: it was spelled out four times, in the Worker transport and three
+ * places in the browser, and a column added to one silently missed the rest.
+ */
+export const publishedReelColumns =
+  "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at,language";
+
 export type SupabaseReelRow = {
   id: string;
   title: string;
@@ -25,6 +34,8 @@ export type SupabaseReelRow = {
   minutes: number;
   word_count?: number | null;
   created_at: string;
+  /** ISO 639-1 code from the database's detector, `und` when undetermined. */
+  language?: string | null;
   /**
    * Public totals: how many readers liked it and how many replied. Present
    * when the row came through an aggregate - the feed RPC or
@@ -68,6 +79,10 @@ export type SupabaseCandidateRow = {
   shares: number;
   comments: number;
   readSecondsTotal: number;
+  /** `und` when the detector could not tell. */
+  language?: string;
+  /** Retired opening line; the database keeps it empty. */
+  hook?: string;
   hasEmbedding?: boolean;
   tasteSimilarity?: number | string | null;
   tasteSamples?: number;
@@ -185,6 +200,7 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
           minutes: Number(row.minutes) || 5,
           word_count: Number(row.wordCount) || 0,
           created_at: String(row.createdAt),
+          language: row.language ?? null,
           // The feed RPC already returns both totals to every reader. They
           // used to stop here, feeding the ranker only, so the rail could not
           // show a like count at all.
@@ -216,8 +232,11 @@ export function candidatesFromReelRows(rows: SupabaseReelRow[]): CandidateSet {
         minutes: Number(reel.minutes) || 5,
         wordCount: Number(reel.word_count) || 0,
         createdAt: reel.created_at,
-        authorUserId: "",
+        // The row has both, and without them a degraded feed loses author
+        // spacing: every piece looks like a different writer.
+        authorUserId: reel.author_user_id ? String(reel.author_user_id) : "",
         authorHandle: reel.author_handle,
+        authorName: reel.author_name ?? "",
         readingShape: "unknown",
         lineBreakCount: 0,
         authorPublishedCount: 0,
@@ -261,6 +280,7 @@ export function mapSupabaseReelToStory(
     mood: reel.mood,
     minutes: reel.minutes,
     wordCount: Number(reel.word_count) || 0,
+    ...(reel.language ? { language: reel.language } : {}),
     likes: reel.likes_count ?? 0,
     shares: 0,
     starts: 0,

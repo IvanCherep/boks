@@ -12,8 +12,8 @@ import type { ReaderEvent, ReaderEventType } from "@/lib/boks/contracts";
  * the middle of a swipe, so the reader records into this queue and the queue
  * decides when to write.
  *
- * The transport is injected, so the Supabase reader and the D1 compatibility
- * reader share this batching, retry and flush-on-exit behavior.
+ * The transport is injected, so the batching, retry and flush-on-exit rules
+ * are tested without a network.
  */
 
 export type ReaderEventDelivery = {
@@ -34,6 +34,42 @@ export type ReaderEventQueueOptions = {
   /** Events that trigger an immediate flush instead of waiting. */
   maxBatchSize?: number;
 };
+
+/**
+ * Most events one request may carry. The database refuses more than 100 per
+ * call outright, and a refused batch used to be re-queued whole - so a reader
+ * who went offline long enough to queue 101 events never recorded anything
+ * again for the rest of the session.
+ */
+export const maxEventsPerRequest = 50;
+
+/** Most events kept for a retry while the backend is unreachable. */
+const maxRetainedEvents = 200;
+
+/**
+ * Whether a failed write would fail again if retried unchanged.
+ *
+ * Retrying is right for a network that dropped or a server that hiccupped
+ * (5xx, a rate limit). It is wrong for a request the database refused on its
+ * merits - a malformed or oversized event (22xxx), an event for a boks erased
+ * while it sat in the queue (23503), a session that cannot write (42501) - and
+ * re-queuing those blocks every later event behind them.
+ */
+export function isPermanentEventFailure(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { code, status, message } = error as { code?: unknown; status?: unknown; message?: unknown };
+  if (typeof code === "string" && /^(22|23|42)[0-9A-Z]{3}$/.test(code)) return true;
+  if (typeof status === "number") return isPermanentStatus(status);
+  if (typeof message === "string") {
+    const match = /\((\d{3})\)/.exec(message);
+    if (match) return isPermanentStatus(Number(match[1]));
+  }
+  return false;
+}
+
+function isPermanentStatus(status: number) {
+  return status >= 400 && status < 500 && status !== 404 && status !== 408 && status !== 429;
+}
 
 const immediateEventTypes = new Set<ReaderEventType>(["complete", "skip", "like", "comment", "share"]);
 
@@ -74,6 +110,26 @@ export function createReaderEventQueue(options: ReaderEventQueueOptions): Reader
     timer = null;
   }
 
+  /**
+   * Sends one chunk. A chunk the database refuses on its merits is split in
+   * half and retried, so one bad event costs only itself; what still fails
+   * alone is dropped. A transient failure hands the chunk back for later.
+   */
+  async function send(chunk: ReaderEvent[], delivery: ReaderEventDelivery): Promise<ReaderEvent[]> {
+    try {
+      await options.transport(chunk, delivery);
+      return [];
+    } catch (error) {
+      if (!isPermanentEventFailure(error)) return chunk;
+      // A page that is going away has no time to bisect.
+      if (chunk.length <= 1 || delivery.keepalive) return [];
+      const middle = Math.ceil(chunk.length / 2);
+      const left = await send(chunk.slice(0, middle), delivery);
+      const right = await send(chunk.slice(middle), delivery);
+      return [...left, ...right];
+    }
+  }
+
   async function flush(delivery: ReaderEventDelivery = { keepalive: false }): Promise<void> {
     clearTimer();
     if (inFlight) await inFlight.catch(() => undefined);
@@ -82,16 +138,24 @@ export function createReaderEventQueue(options: ReaderEventQueueOptions): Reader
     const batch = pending;
     pending = [];
 
-    inFlight = options
-      .transport(batch, delivery)
-      .catch(() => {
-        // Keep the batch for the next flush rather than losing behavior data,
-        // but never let a failing backend grow the queue without bound.
-        pending = [...batch, ...pending].slice(-200);
-      })
-      .finally(() => {
-        inFlight = null;
-      });
+    inFlight = (async () => {
+      const retry: ReaderEvent[] = [];
+      for (let start = 0; start < batch.length; start += maxEventsPerRequest) {
+        const chunk = batch.slice(start, start + maxEventsPerRequest);
+        // Once the backend is unreachable, the rest of this flush would fail
+        // the same way; keep it for the next one instead of hammering.
+        if (retry.length) {
+          retry.push(...chunk);
+          continue;
+        }
+        retry.push(...(await send(chunk, delivery)));
+      }
+      // Keep what failed transiently for the next flush rather than losing
+      // behavior data, but never let a failing backend grow it without bound.
+      if (retry.length) pending = [...retry, ...pending].slice(-maxRetainedEvents);
+    })().finally(() => {
+      inFlight = null;
+    });
 
     await inFlight;
   }
@@ -108,7 +172,11 @@ export function createReaderEventQueue(options: ReaderEventQueueOptions): Reader
     pending.push(event);
 
     if (pending.length >= maxBatchSize || immediateEventTypes.has(event.eventType)) {
-      void flush();
+      // An outcome recorded while the page is going away (the `exit` verdict on
+      // `pagehide`) must ride a request that outlives the document; an ordinary
+      // fetch started here is cancelled, and the queue's own exit flush then
+      // finds nothing left to send.
+      void flush({ keepalive: pageIsHidden() });
       return true;
     }
 
@@ -132,6 +200,10 @@ export function createReaderEventQueue(options: ReaderEventQueueOptions): Reader
       void flush();
     },
   };
+}
+
+function pageIsHidden() {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
 }
 
 /**

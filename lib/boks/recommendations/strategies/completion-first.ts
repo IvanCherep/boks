@@ -6,7 +6,6 @@ export const completionFirst = defineStrategy({
   name: "Completion first",
   description: "Prioritizes boks people finish after starting, and tolerates longer pieces.",
   family: "quality",
-  segment: "deep_reads",
   weights: {
     finishRate: 48,
     readDepth: 22,

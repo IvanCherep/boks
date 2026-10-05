@@ -23,8 +23,15 @@ export type RecommendationExperimentConfig = {
   key: string;
   controlAlgorithmId: string;
   arms: ExperimentArm[];
-  /** Impressions an arm needs before the lab calls its numbers readable. */
-  minimumImpressionsPerArm: number;
+  /**
+   * Readers an arm needs before the lab compares it. The analysis unit is the
+   * reader, so this is counted in readers.
+   *
+   * Stored as `minimum_impressions_per_arm` (and read back as the JSON key
+   * `minimumImpressionsPerArm`) for compatibility with the original schema,
+   * which counted impressions; that key is accepted on the way in.
+   */
+  minimumReadersPerArm: number;
   updatedAt?: string | null;
 };
 
@@ -46,7 +53,7 @@ export type RecommendationExperiment = {
  * The decision, taken with the founder before opening the platform to real
  * readers: **everyone gets `for_you`**, the strongest ranker in the registry,
  * now that it has the semantic source it was designed around (embeddings from
- * Supabase's `gte-small`, see `strategies/for-you.ts`). Nothing is measured by
+ * `multilingual-e5-small`, see `strategies/for-you.ts`). Nothing is measured by
  * splitting traffic at this size anyway - at 30 readers, an arm holds 15, and
  * the power to detect even a large difference in reading time is near nothing
  * - so a split would cost half the audience a worse feed and return no answer.
@@ -77,7 +84,7 @@ export const defaultExperimentConfig: RecommendationExperimentConfig = {
     // start comparing again.
     { algorithmId: "completion_first", weight: 0 },
   ],
-  minimumImpressionsPerArm: 40,
+  minimumReadersPerArm: 10,
 };
 
 /**
@@ -87,6 +94,7 @@ export const defaultExperimentConfig: RecommendationExperimentConfig = {
  */
 export function normalizeExperimentConfig(raw: unknown): RecommendationExperimentConfig {
   const source = (raw ?? {}) as Partial<RecommendationExperimentConfig>;
+  const legacy = (raw ?? {}) as { minimumImpressionsPerArm?: unknown };
   const arms = Array.isArray(source.arms) ? source.arms : [];
   const validArms = arms
     .filter((arm): arm is ExperimentArm => Boolean(arm) && isRecommendationAlgorithmId(arm.algorithmId))
@@ -105,9 +113,13 @@ export function normalizeExperimentConfig(raw: unknown): RecommendationExperimen
     key: typeof source.key === "string" && source.key.trim() ? source.key.trim().slice(0, 60) : defaultExperimentConfig.key,
     controlAlgorithmId: control,
     arms: liveArms.length ? validArms : defaultExperimentConfig.arms,
-    minimumImpressionsPerArm: Math.max(
-      1,
-      Math.round(Number(source.minimumImpressionsPerArm) || defaultExperimentConfig.minimumImpressionsPerArm)
+    // Two is the least any interval can be computed from.
+    minimumReadersPerArm: Math.max(
+      2,
+      Math.round(
+        Number(source.minimumReadersPerArm ?? legacy.minimumImpressionsPerArm) ||
+          defaultExperimentConfig.minimumReadersPerArm
+      )
     ),
     updatedAt: typeof source.updatedAt === "string" ? source.updatedAt : null,
   };

@@ -144,6 +144,8 @@ type Scored = {
   lengthAffinity: number;
   shape: ReadingShape;
   bucket: LengthBucket;
+  /** `coldStartPrior` at serving time, for the exploration budget. */
+  coldPrior: number;
   base: Contribution[];
 };
 
@@ -153,11 +155,13 @@ export const forYou = defineStrategy({
   description:
     "Ported from the original boks ranker: resume, affinity and discovery sources scored on reader history, author trust and freshness, then a greedy slate that spaces authors, shapes and lengths.",
   family: "personal",
-  segment: "all",
   // Declared for display only. This ranker is not a weighted sum of the shared
   // signals; it scores its own contributions and explains each one.
   weights: {},
   score: () => 0,
+  // Fatigue is graded in its own scoring (`skipPenalty`), so the shared tier
+  // would only flatten it.
+  handlesFatigue: true,
   rerank: (scored, context) => {
     const candidates = scored.map((entry) => entry.candidate);
     const profile = buildReaderProfile({ reader: context.reader, candidates, now: context.now });
@@ -211,6 +215,7 @@ function prepare(
     lengthAffinity,
     shape,
     bucket,
+    coldPrior: coldStartPrior(candidate, now),
     base: baseContributions({
       candidate,
       source,
@@ -616,8 +621,7 @@ function explorationBudgetBoost(candidate: Scored, placed: Scored[]) {
   const position = placed.length + 1;
   let boost = position <= 4 ? 1.45 : position <= 8 ? 1.1 : position <= 12 ? 0.85 : 0.55;
   if (!candidate.following && Math.abs(candidate.authorAffinity) < 0.1) boost += 0.38;
-  const cold = coldStartPrior(candidate.candidate, new Date(candidate.candidate.createdAt));
-  if (cold > 0) boost += Math.min(0.55, cold * 0.35);
+  if (candidate.coldPrior > 0) boost += Math.min(0.55, candidate.coldPrior * 0.35);
   if (Math.abs(candidate.shapeAffinity) < 0.12 && Math.abs(candidate.lengthAffinity) < 0.12) boost += 0.18;
   return boost * deficit;
 }

@@ -78,7 +78,7 @@ export function PoetrySandbox() {
           {manifest.id.startsWith("farewell-russia") && (
             <p className="text-xs text-muted-foreground">
               No autograph survives, the readings differ and the attribution is disputed; the academic
-              tradition keeps the poem in Lermontov's canon.
+              tradition keeps the poem in Lermontov&apos;s canon.
             </p>
           )}
         </div>

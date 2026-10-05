@@ -3,6 +3,7 @@ import {
   buildReaderFeed,
   defaultExperimentConfig,
   emptyReaderSignals,
+  isRecommendationAlgorithmId,
   normalizeExperimentConfig,
   recommendationAlgorithmName,
   type RankedStory,
@@ -23,6 +24,7 @@ import {
   type SupabaseReelRow,
 } from "@/lib/boks/supabase-reels";
 import type { UserSegment } from "@/lib/boks/contracts";
+import { randomBoksId } from "@/lib/boks/browser-id";
 
 /**
  * Assembling and recording a served feed.
@@ -34,13 +36,19 @@ import type { UserSegment } from "@/lib/boks/contracts";
  * transport instead of a sampled shadow comparison in production.
  */
 
-export type ServingBackend = "worker" | "browser" | "d1_fallback";
+export type ServingBackend = "worker" | "browser";
 
 export type FeedTransport = {
   /** Calls a PostgREST RPC as the reader whose feed this is. */
   rpc<Result>(name: string, body?: Record<string, unknown>): Promise<Result>;
-  /** Published reels, newest first. Used only when the rollup RPC is missing. */
-  publishedReels(limit: number): Promise<SupabaseReelRow[]>;
+  /**
+   * Published reels, newest first. Used only when the rollup RPC fails.
+   *
+   * `languages` is the same retrieval filter the RPC applies: empty means no
+   * filter; otherwise only those languages, and an undetermined one is not a
+   * yes (`docs/reading-languages.md`).
+   */
+  publishedReels(limit: number, languages?: readonly string[]): Promise<SupabaseReelRow[]>;
   /** Total published boks, so catalog headroom is a measurement, not a guess. */
   publishedCount(): Promise<number>;
 };
@@ -93,7 +101,7 @@ const recencyOnlyConfig: RecommendationExperimentConfig = {
   key: "boks-feed-unmigrated",
   controlAlgorithmId: "recency",
   arms: [{ algorithmId: "recency", weight: 100 }],
-  minimumImpressionsPerArm: defaultExperimentConfig.minimumImpressionsPerArm,
+  minimumReadersPerArm: defaultExperimentConfig.minimumReadersPerArm,
 };
 
 export async function serveReaderFeed(
@@ -101,8 +109,14 @@ export async function serveReaderFeed(
   request: ServeReaderFeedRequest
 ): Promise<ServedFeed> {
   const limit = Math.max(1, request.limit);
-  const config = await loadExperimentConfig(transport);
-  const candidateSet = await loadCandidates(transport, limit, request.readingLanguages);
+  // Independent reads go out together. Sequentially they were five round
+  // trips to the database before a reader saw anything, which on a
+  // high-latency connection outran the browser's patience for the Worker.
+  const [config, candidateSet, publishedCount] = await Promise.all([
+    loadExperimentConfig(transport),
+    loadCandidates(transport, limit, request.readingLanguages),
+    loadPublishedCount(transport),
+  ]);
   const activeConfig = candidateSet.degraded ? recencyOnlyConfig : config;
 
   // The reader is the unit of assignment, so the subject is the Supabase user
@@ -136,8 +150,10 @@ export async function serveReaderFeed(
     now: request.now,
   });
 
-  const catalogSize = await loadCatalogSize(transport, candidateSet.candidates.length);
-  const candidateRequestId = crypto.randomUUID();
+  // A wrong catalog size would understate how much of it a reader has
+  // consumed, so a failed count falls back to what was actually offered.
+  const catalogSize = publishedCount ?? candidateSet.candidates.length;
+  const candidateRequestId = randomBoksId();
 
   const feedId = await recordProvenance(transport, {
     sessionId: request.sessionId,
@@ -221,22 +237,20 @@ async function loadCandidates(
     // an expired session would hide a broken sign-in behind a working page and
     // attribute the reader's events to an arm nobody assigned them.
     if (isAuthFailure(error)) throw error;
-    const rows = await transport.publishedReels(Math.max(limit, 200));
+    const rows = await transport.publishedReels(Math.max(limit, 200), readingLanguages ?? []);
     return {
       ...candidatesFromReelRows(rows),
       degraded: true,
-      fallbackReason: `candidate_rollups_unavailable: ${describeError(error)}`,
+      fallbackReason: `candidate_rollups_unavailable: ${describeErrorCode(error)}`,
     };
   }
 }
 
-async function loadCatalogSize(transport: FeedTransport, candidateCount: number) {
+async function loadPublishedCount(transport: FeedTransport): Promise<number | null> {
   try {
     return await transport.publishedCount();
   } catch {
-    // A wrong catalog size would understate how much of it a reader has
-    // consumed, so fall back to what was actually offered rather than to zero.
-    return candidateCount;
+    return null;
   }
 }
 
@@ -272,6 +286,14 @@ async function resolveStoredExperiment(
     });
 
     if (!stored?.algorithmId) return proposed;
+
+    // A stored arm is honoured only while it is one this build can rank and
+    // the active experiment still sends traffic to. Anything else - a removed
+    // strategy, a parked arm, the RPC's `unassigned` default - would rank with
+    // one strategy and credit the events to another.
+    if (!isLiveArm(stored.algorithmId, config)) {
+      return { ...proposed, source: "fallback" };
+    }
 
     return {
       experimentKey: stored.experimentKey ?? proposed.experimentKey,
@@ -346,12 +368,29 @@ function isUserSegment(value: unknown): value is UserSegment {
   return typeof value === "string" && (userSegments as string[]).includes(value);
 }
 
+function isLiveArm(algorithmId: string, config: RecommendationExperimentConfig) {
+  return (
+    isRecommendationAlgorithmId(algorithmId) &&
+    config.arms.some((arm) => arm.algorithmId === algorithmId && arm.weight > 0)
+  );
+}
+
 /** Transports mark a rejected token with `isAuthFailure`; nothing else does. */
 function isAuthFailure(error: unknown) {
   return Boolean(error && typeof error === "object" && (error as { isAuthFailure?: boolean }).isAuthFailure);
 }
 
-function describeError(error: unknown) {
-  if (error instanceof Error) return error.message.slice(0, 160);
-  return String(error).slice(0, 160);
+/**
+ * A short, stable label for why the rollups failed.
+ *
+ * Only the code: the message is database text, and this string is returned to
+ * the browser and stored in `served_feed.fallback_reason`.
+ */
+export function describeErrorCode(error: unknown) {
+  const code = error && typeof error === "object" ? (error as { code?: unknown }).code : undefined;
+  if (typeof code === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(code)) return code;
+  if (typeof code === "number" && Number.isFinite(code)) return String(code);
+  if (error instanceof Error && error.name === "AbortError") return "timeout";
+  if (error instanceof Error && error.name === "TimeoutError") return "timeout";
+  return "unknown";
 }

@@ -1,5 +1,5 @@
 import type { FeedTransport } from "@/lib/boks/feed-service";
-import type { SupabaseReelRow } from "@/lib/boks/supabase-reels";
+import { publishedReelColumns, type SupabaseReelRow } from "@/lib/boks/supabase-reels";
 
 /**
  * A PostgREST transport that runs anywhere `fetch` does.
@@ -31,9 +31,28 @@ export type SupabaseRestOptions = {
   restUrl: string;
   apiKey: string;
   accessToken: string;
+  /** Aborts every call, e.g. when the reader's own request goes away. */
+  signal?: AbortSignal;
+  /**
+   * Upper bound on one call. The browser gives the Worker 4 s for the whole
+   * feed, so a database call that has not answered in 3 s is already too late
+   * to help it.
+   */
+  timeoutMs?: number;
 };
 
-const reelColumns = "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at";
+export const defaultSupabaseRestTimeoutMs = 3000;
+
+/**
+ * The PostgREST filter for a reader's languages, or nothing.
+ *
+ * Mirrors `get_recommendation_candidates`: no languages named means no
+ * filter; otherwise only the named ones, so an undetermined piece is left out.
+ */
+export function languageFilterParam(languages: readonly string[] | undefined) {
+  const codes = (languages ?? []).filter((code) => /^[a-z]{2,3}$/.test(code)).slice(0, 10);
+  return codes.length ? `&language=in.(${codes.join(",")})` : "";
+}
 
 export function createSupabaseRestTransport(options: SupabaseRestOptions): FeedTransport {
   const headers = {
@@ -44,8 +63,10 @@ export function createSupabaseRestTransport(options: SupabaseRestOptions): FeedT
   };
 
   async function request(path: string, init: RequestInit = {}) {
+    const timeout = AbortSignal.timeout(options.timeoutMs ?? defaultSupabaseRestTimeoutMs);
     const response = await fetch(`${options.restUrl}${path}`, {
       ...init,
+      signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
       headers: { ...headers, ...(init.headers ?? {}) },
     });
 
@@ -73,9 +94,10 @@ export function createSupabaseRestTransport(options: SupabaseRestOptions): FeedT
       return (text ? JSON.parse(text) : null) as Result;
     },
 
-    async publishedReels(limit: number) {
+    async publishedReels(limit: number, languages?: readonly string[]) {
       const response = await request(
-        `/published_boks?select=${reelColumns}&order=created_at.desc&limit=${limit}`
+        `/published_boks?select=${publishedReelColumns}${languageFilterParam(languages)}` +
+          `&order=created_at.desc&limit=${limit}`
       );
       return (await response.json()) as SupabaseReelRow[];
     },

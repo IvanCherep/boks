@@ -21,7 +21,7 @@ export type ComparisonStatus =
   /** Below the minimum sample the comparison declared. No estimate is offered. */
   | "insufficient_data";
 
-export type EffectKind = "absolute" | "relative" | "shift";
+export type EffectKind = "absolute" | "relative";
 
 export type PowerEstimate = {
   /** Spread the estimate was computed from, as sd / mean over readers. */
@@ -91,4 +91,12 @@ export type ComparisonOptions = {
   showValuesAtOrBelow?: number;
   /** Relative lift worth acting on, used for the power readout. */
   targetEffect?: number;
+  /**
+   * How much of the power readout to simulate. `full` is the default;
+   * `detectable-effect` skips the arm-size search (the expensive part) and is
+   * what a replay over many prefixes uses; `none` skips simulation entirely.
+   */
+  power?: "full" | "detectable-effect" | "none";
+  /** Simulation trials per power estimate. */
+  powerTrials?: number;
 };

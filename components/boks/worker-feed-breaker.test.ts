@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   markWorkerFeedHealthy,
   markWorkerFeedUnavailable,
+  opensWorkerFeedBreaker,
   shouldTryWorkerFeed,
+  WorkerFeedError,
   workerFeedCooldownMs,
 } from "@/components/boks/worker-feed-breaker";
 
@@ -52,5 +54,20 @@ describe("worker feed breaker", () => {
     expect(() => markWorkerFeedUnavailable(now, broken)).not.toThrow();
     expect(shouldTryWorkerFeed(now, broken)).toBe(true);
     expect(shouldTryWorkerFeed(now, null)).toBe(true);
+  });
+});
+
+describe("opensWorkerFeedBreaker", () => {
+  it("opens on no answer, a timeout or a server error", () => {
+    expect(opensWorkerFeedBreaker(new WorkerFeedError("aborted", 0))).toBe(true);
+    expect(opensWorkerFeedBreaker(new WorkerFeedError("bad gateway", 502))).toBe(true);
+    expect(opensWorkerFeedBreaker(new TypeError("Failed to fetch"))).toBe(true);
+  });
+
+  it("stays closed on a refusal of this request", () => {
+    // An expired session is the reader's problem for one request, not the
+    // Worker's for the next two minutes.
+    expect(opensWorkerFeedBreaker(new WorkerFeedError("session", 401))).toBe(false);
+    expect(opensWorkerFeedBreaker(new WorkerFeedError("too large", 413))).toBe(false);
   });
 });

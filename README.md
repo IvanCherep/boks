@@ -1,13 +1,13 @@
 # boks
 
-boks is a browser prototype for testing a short literature feed: readers discover stories that fit inside 15 minutes, authors publish from a simple cabinet, and the founder reviews engagement metrics.
+boks is a swipe-first feed of complete short literature - each **bok** fits inside 15 minutes - where readers read, authors publish from a simple cabinet, and the founder compares recommendation algorithms by measured reading behaviour. Live at https://tryboks.com.
 
 ## Two sections: feed and series
 
 The reader has two tabs at the bottom of the screen.
 
 - **feed** (`/`) - the product. One algorithmic, swipe-first stream of short
-  literature, ranked per reader. Every boks lives here, including every series
+  literature, ranked per reader. Every bok lives here, including every series
   piece.
 - **series** (`/series`) - **boks series**, the shelf of pieces produced in the
   new formats: read aloud by a real voice, over illustrations made for that
@@ -17,7 +17,7 @@ The reader has two tabs at the bottom of the screen.
   place where they can be found rather than waited for.
 
 **Every series piece is also in the feed.** Nothing is moved out of it. In the
-feed a series piece reads like any other boks, and carries a small
+feed a series piece reads like any other bok, and carries a small
 "boks series · listen to the production" mark above its title (and the
 clapperboard button in the reader's controls) that opens the same production
 the shelf opens. Both are available to **every reader**, signed in or not.
@@ -36,46 +36,22 @@ the shelf entry - is `docs/reading-formats.md`.
 
 ## What is included
 
-- Swipe-first reader feed ranked by a pluggable recommendation strategy, with attributed behavior events for every reader including guests.
-- Two reading formats alongside that feed, opened from the same button and chosen by the piece rather than the reader: a cinema format for prose, and an immersive format for verse. Neither changes how an ordinary boks is read.
-- The **series** tab (`/series`): every piece finished in one of those formats, on one shelf, filtered by the reader's languages. The same pieces stay in the feed with a button to open the production, for every reader.
-- Anonymous Supabase reader entry with reels, views, signed-in likes, profile-owned comments, and unique `@nickname` handles stored behind RLS/RPCs.
-- D1 compatibility path for the original prototype API and richer event contract reference.
-- Supabase author cabinet with a 15 minute reading-time guardrail, a database-enforced limit of 3 boks per author per day, and an admin moderation workflow.
-- `/admin` business console with funnel, genre/mood breakdowns, sortable content operations, JSON export, and a recommendation lab that compares algorithms with uplift against control and a live traffic split editor.
-- Supabase-backed production reader/admin test path, with D1 retained for the original author/API prototype path.
+- Swipe-first reader feed ranked per reader by the Worker (`/api/feed`) with a pluggable recommendation algorithm, and attributed reader events for every reader including guests.
+- Two reading formats alongside the feed, chosen by the piece rather than the reader: cinema for prose and immersive poems for verse. Neither changes how an ordinary bok is read.
+- The **series** tab (`/series`): every series piece on one shelf, filtered by the reader's languages.
+- Guest reading on anonymous Supabase sessions; accounts by passwordless email (a magic link or a 6-digit code); likes, comments with one-level replies and follows attributed to a unique `@handle`.
+- An author cabinet with the 15-minute guardrail, a database-enforced limit of 3 submissions per author per UTC day, and admin moderation.
+- `/admin`: overview, moderation, rights, content, people, guests, feedback, catalogue import, and a recommendation lab comparing algorithms against control with a live traffic-split editor.
 
-## Main files
+Supabase (Postgres with RLS and RPCs) is the only data store.
 
-- `AGENTS.md`: product philosophy, architecture routing, growth guardrails, and validation checklist for AI coding assistants.
-- `docs/README.md`: documentation index and recommended read order.
-- `docs/ai-agent-guide.md`: fast project onboarding, ownership map, spec-driven workflow, and validation rules for any AI agent.
-- `app/boks-client.tsx`: route compatibility exports for reader, author, and admin.
-- `components/boks/reader-feed.tsx`: reader experience.
-- `components/boks/cinema/`: the cinema format - prose read aloud over scenes that change with the story, with places where it stops and asks the reader to do something.
-- `components/boks/poetry/`: the immersive poetry format - verse, where each word arrives inside the picture at the moment it is spoken.
-- `components/boks/series/`: the series tab - the shelf list (tested against both format registries), the shelf and the feed/series tabs, and the per-device heard marks.
-- `app/series/page.tsx`: `/series`, the same reader opened on the shelf.
-- `docs/reading-formats.md`: both formats and the series shelf - how a piece is routed to a format, and how to add one.
-- `components/boks/author-console.tsx`: author cabinet.
-- `components/boks/admin-dashboard.tsx`: admin/business console.
-- `components/boks/`: browser-facing product helpers, Supabase data access, types, behavior inference, and shared UI primitives.
-- `app/api/boks/route.ts`: API orchestration for reader, author, admin, events, and exports.
-- `lib/boks/recommendations/`: story signals, the strategy contract, one file per algorithm, the registry, experiment assignment, feed ranking, and metric derivation.
-- `lib/boks/`: analytics SQL, request helpers, Supabase client, contracts, author quota, and seed stories.
-- `supabase/`: production MVP Auth config, RLS schema, seed reels, and admin aggregate RPC.
-- `db/schema.ts`: D1 compatibility schema.
-- `docs/architecture.md`: system map and data flows.
-- `docs/architecture-review.md`: architecture assessment, current risks, and next extraction points.
-- `docs/engineering-standards.md`: product values, naming, boundaries, and AI-agent workflow.
-- `docs/hosting.md`: Cloudflare hosting, deployment, URL, and production verification guide.
-- `docs/testing.md`: reader, author, admin, product QA, and technical validation guide.
-- `docs/boks-operations.md`: testing and operating guide.
-- `docs/future-updates-playbook.md`: practical guide for future app updates.
-- `docs/growth-readiness.md`: scale posture and next growth work.
-- `specs/boks-product-spec.md`: product scope and extension points.
-- `specs/boks-recommendation-experiments.md`: the recommendation architecture, signals, metrics, and how to add an algorithm.
-- `docs/handover/`: per-session work records for agents picking up in-flight work.
+## Where to start
+
+- `AGENTS.md` - rules and the read order for anyone, human or agent, changing the code. `CLAUDE.md` imports it.
+- `CONTEXT.md` - the glossary: bok, handle, byline, arm, series piece and the rest.
+- `docs/README.md` - which document owns which topic.
+- `docs/architecture.md` - the module map and data flows.
+- `docs/adr/` - the decisions behind the shape.
 
 ## Supabase MVP
 

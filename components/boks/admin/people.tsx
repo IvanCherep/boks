@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ban, RefreshCw, Search, Shield, ShieldOff, Trash2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +33,8 @@ const actionCopy: Record<PersonAction, { title: string; action: string }> = {
   delete: { title: "Permanently delete this account?", action: "Delete account" },
 };
 
+const pageSize = 100;
+
 /** Account governance. Every mutation is enforced again by an admin-only RPC. */
 export function AdminPeople({ currentUserId }: { currentUserId: string | null }) {
   const [rows, setRows] = useState<BoksPersonRow[]>([]);
@@ -50,24 +52,35 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
   // "@ivan" and "ivan" are the same answer to "type @ivan".
   const typedHandle = confirmation.trim().replace(/^@+/, "");
 
-  const refresh = useCallback(async (search: string) => {
+  const [page, setPage] = useState(0);
+  // Only the newest search may write: typing "iv" then "ivan" otherwise lets
+  // the slower "iv" answer land last and replace the list.
+  const latestRequest = useRef(0);
+
+  const refresh = useCallback(async (search: string, pageIndex: number) => {
+    const request = ++latestRequest.current;
     setBusy(true);
     try {
-      const payload = await loadBoksPeople({ query: search, limit: 200 });
+      const payload = await loadBoksPeople({ query: search, limit: pageSize, offset: pageIndex * pageSize });
+      if (request !== latestRequest.current) return;
       setRows(payload.rows);
       setTotal(payload.total);
       setStatus(payload.rows.length ? "" : "No permanent reader accounts match.");
     } catch (error) {
+      if (request !== latestRequest.current) return;
       setStatus(error instanceof Error ? error.message : "Could not load people.");
     } finally {
-      setBusy(false);
+      if (request === latestRequest.current) setBusy(false);
     }
   }, []);
 
   useEffect(() => {
-    const handle = window.setTimeout(() => refresh(query).catch(() => undefined), 200);
+    const handle = window.setTimeout(() => refresh(query, page).catch(() => undefined), 200);
     return () => window.clearTimeout(handle);
-  }, [query, refresh]);
+  }, [query, page, refresh]);
+
+  const pageStart = total ? page * pageSize + 1 : 0;
+  const pageEnd = Math.min((page + 1) * pageSize, total);
 
   const expectedConfirmation = useMemo(
     () => pending?.row.handle || pending?.row.userId || "",
@@ -99,7 +112,7 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
         setNotice(`Account deleted. ${result.archivedBoks} authored boks moved to Deleted.`);
       }
       setPending(null);
-      await refresh(query);
+      await refresh(query, page);
     } catch (error) {
       setDialogError(error instanceof Error ? error.message : "Could not update this account.");
     } finally {
@@ -118,6 +131,7 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
         <div>
           <h2 className="text-xl font-semibold tracking-normal">People</h2>
           <p className="text-sm text-[var(--muted-foreground)]">
+            {total > pageSize ? `${pageStart}-${pageEnd} of ` : ""}
             {total} account{total === 1 ? "" : "s"} · admin access and account safety
           </p>
         </div>
@@ -128,10 +142,13 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
               className="w-[220px] pl-9"
               placeholder="Search email or @nickname"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(0);
+              }}
             />
           </label>
-          <Button variant="outline" onClick={() => refresh(query)} disabled={busy}>
+          <Button variant="outline" onClick={() => refresh(query, page)} disabled={busy}>
             <RefreshCw className="size-4" /> Refresh
           </Button>
         </div>
@@ -209,6 +226,13 @@ export function AdminPeople({ currentUserId }: { currentUserId: string | null })
           );
         })}
       </div>
+
+      {total > pageSize && (
+        <div className="flex justify-end gap-2 border-t border-[var(--border)] p-4">
+          <Button variant="outline" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>Previous</Button>
+          <Button variant="outline" disabled={pageEnd >= total} onClick={() => setPage(page + 1)}>Next</Button>
+        </div>
+      )}
 
       <Dialog open={Boolean(pending)} onOpenChange={(open) => !open && !busy && setPending(null)}>
         <DialogContent>

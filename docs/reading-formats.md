@@ -27,9 +27,7 @@ in neither registry. Read this before changing anything under
 
 ## 0. Every file, in full
 
-Paths are from the repository root. On the machine this was written on that is
-`/Users/iegorov/Documents/Codex/2026-09-09/fd`, but nothing depends on it -
-work from the repo root wherever it is checked out.
+Paths are from the repository root.
 
 ### Shared
 

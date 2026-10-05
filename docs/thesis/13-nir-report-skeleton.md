@@ -172,8 +172,8 @@
     через PostgREST). `[факт]`
 22. Исследовательская рамка оформлена артефактами: `docs/thesis/` (паспорт,
     роли, карта литературы, дерево гипотез, дизайн эксперимента, baseline,
-    питч-дек, структура ВКРС, этот отчёт), `RECSYS-SYSTEM-REPORT.md`,
-    `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md`,
+    питч-дек, структура ВКРС, этот отчёт), `docs/research/recsys-system-report.md`,
+    `docs/research/recsys-research-implementation-plan.md`,
     `docs/analytics-and-thesis-readiness.md`. `[факт]`
 
 **Что не сделано — называется в отчёте, а не умалчивается**
@@ -563,7 +563,7 @@ Baseline берётся из `docs/thesis/07-baselines.md`.
 
 | Что | Выбор | Обоснование |
 |---|---|---|
-| Где считается порядок произведений | TypeScript на воркере, в одном месте кода — функции `buildReaderFeed` | `docs/adr/ADR-001-where-ranking-executes.md` `[факт]` |
+| Где считается порядок произведений | TypeScript на воркере, в одном месте кода — функции `buildReaderFeed` | `docs/adr/0001-ranking-executes-in-worker.md` `[факт]` |
 | Что берём за контроль | `for_you` — то, что читатели реально получают | новый вариант обязан побеждать живую выдачу, а не упрощённую точку отсчёта `[факт]` |
 | Кто соперник (челленджер) | `completion_first`, а не `recency` | `recency` отвергнут замером: совпадение первой десятки с `for_you` 100% и 80% `[факт]` |
 | Как сравниваем | интерливинг (team-draft) как основной способ, сравнение групп читателей (A/B) как вспомогательный | расчёт на выборке 50 читателей `[факт]` |
@@ -589,8 +589,8 @@ Baseline берётся из `docs/thesis/07-baselines.md`.
 |---|---|---|
 | Рекомендательный контур: стратегии, признаки, метрики, гейт расхождения | `lib/boks/recommendations/` | `<что>` |
 | Статистический движок и агрегация | `lib/recsys/statistics/`, `lib/recsys/aggregate/` | `<что>` |
-| Отчёт по системе рекомендаций | `RECSYS-SYSTEM-REPORT.md` | `<что>` |
-| Фазовый план исследования | `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md` | `<что>` |
+| Отчёт по системе рекомендаций | `docs/research/recsys-system-report.md` | `<что>` |
+| Фазовый план исследования | `docs/research/recsys-research-implementation-plan.md` | `<что>` |
 | Конвейеры корпусов | `scripts/`, `lib/boks/import/` | `<что>` |
 | Разделы ВКРС 2 и 3 | `docs/thesis/12-vkrs-structure.md` | `<разделы>` |
 | Индивидуальная презентация | `<ссылка>` | целиком |

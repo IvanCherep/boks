@@ -1,5 +1,5 @@
 import { createRandom, randomInt, shuffle } from "@/lib/recsys/statistics/random";
-import { hodgesLehmannShift, mean, quantile } from "@/lib/recsys/statistics/descriptive";
+import { mean, quantile } from "@/lib/recsys/statistics/descriptive";
 import { estimatePower } from "@/lib/recsys/statistics/power";
 import type {
   ComparisonOptions,
@@ -14,14 +14,23 @@ import type {
  * from one reader are correlated, so an estimator fed 100 impressions from 3
  * readers is answering a question nobody asked.
  *
- * Two estimators are reported together because neither is sufficient alone at
- * this scale:
+ * One estimand throughout: the difference in reader means, variant minus
+ * control. The effect, its interval, the p-value and the power readout all
+ * describe that same quantity:
  *
- *  - a percentile bootstrap interval, which is informative but undercovers on
- *    strongly skewed data below roughly 30 per arm, and is labelled as
- *    approximate when it does;
- *  - a permutation test on the arm labels, which is exact under the null by
- *    construction and cannot undercover.
+ *  - the effect is the observed difference in means;
+ *  - a percentile bootstrap interval of that difference, which is informative
+ *    but undercovers on strongly skewed data below roughly 30 per arm;
+ *  - a permutation test on the arm labels with the same statistic, exact under
+ *    the null by construction;
+ *  - power simulated with Welch's t on means (`power.ts`).
+ *
+ * Until 2026-10-05 the effect was a Hodges-Lehmann shift while the interval
+ * and the test were on means, so a variant whose whole interval lay above zero
+ * could be printed as "negative". A robust estimand is still the right idea
+ * for skewed reading time, but only if the interval and the test follow it;
+ * bootstrapping an O(n*m) estimator in the admin's browser does not scale, and
+ * at small samples every per-reader value is printed anyway.
  */
 
 /**
@@ -48,6 +57,7 @@ const defaults = {
   seed: 42,
   showValuesAtOrBelow: 25,
   targetEffect: 0.3,
+  power: "full" as "full" | "detectable-effect" | "none",
 };
 
 export function compareIndependent(
@@ -64,8 +74,8 @@ export function compareIndependent(
     metric: settings.metric,
     design: "independent" as const,
     analysisUnit: "reader" as const,
-    estimator: "hodges-lehmann shift, percentile bootstrap CI, permutation test",
-    effectKind: "shift" as const,
+    estimator: "difference in means, percentile bootstrap CI, permutation test",
+    effectKind: "absolute" as const,
     confidence: settings.confidence,
     controlValue: mean(controlValues),
     variantValue: mean(variantValues),
@@ -87,7 +97,7 @@ export function compareIndependent(
     };
   }
 
-  const effect = hodgesLehmannShift(controlValues, variantValues);
+  const effect = mean(variantValues) - mean(controlValues);
   const ci = bootstrapDifferenceCi(controlValues, variantValues, settings);
   const pValue = permutationTest(controlValues, variantValues, settings);
 
@@ -97,13 +107,18 @@ export function compareIndependent(
     ci,
     status: statusFor(ci, effect, settings.lowerIsBetter ?? false),
     pValue: roundProbability(pValue),
-    power: estimatePower({
-      controlValues,
-      variantValues,
-      targetEffect: settings.targetEffect,
-      confidence: settings.confidence,
-      seed: settings.seed,
-    }),
+    power:
+      settings.power === "none"
+        ? undefined
+        : estimatePower({
+            controlValues,
+            variantValues,
+            targetEffect: settings.targetEffect,
+            confidence: settings.confidence,
+            seed: settings.seed,
+            trials: settings.powerTrials,
+            searchReadersNeeded: settings.power !== "detectable-effect",
+          }),
     perReaderValues:
       readers <= settings.showValuesAtOrBelow
         ? { control: controlValues, variant: variantValues }
@@ -247,16 +262,19 @@ export function signTest(differences: number[]) {
   const decided = positive + negative;
   if (!decided) return 1;
 
+  // Summed in log space: `2 ** n` and the binomial coefficients overflow to
+  // Infinity above roughly a thousand readers, which turned the p-value NaN.
   const extreme = Math.max(positive, negative);
-  let tail = 0;
-  for (let k = extreme; k <= decided; k += 1) tail += binomial(decided, k);
-  const probability = tail / 2 ** decided;
+  let probability = 0;
+  for (let k = extreme; k <= decided; k += 1) {
+    probability += Math.exp(logBinomial(decided, k) - decided * Math.LN2);
+  }
   return Math.min(1, 2 * probability);
 }
 
-function binomial(n: number, k: number) {
-  let result = 1;
-  for (let index = 1; index <= k; index += 1) result = (result * (n - k + index)) / index;
+function logBinomial(n: number, k: number) {
+  let result = 0;
+  for (let index = 1; index <= k; index += 1) result += Math.log(n - k + index) - Math.log(index);
   return result;
 }
 

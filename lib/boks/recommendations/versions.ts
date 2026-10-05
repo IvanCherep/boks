@@ -15,7 +15,13 @@
  *                skip below 25% of expected time, complete at 85% progress and
  *                40% of expected time, or at 70% of expected time without it
  *                (2026-09-12)
+ *   ranking.v2   every strategy reads the server-side reader history
+ *                (`bokState`) for fatigue and novelty, not only the browser's;
+ *                `for_you`'s exploration budget ages a piece against serving
+ *                time instead of its own creation time; a stored arm naming a
+ *                strategy this build lacks is re-attributed to the one that
+ *                actually ranked (2026-10-05)
  */
 export const SIGNALS_VERSION = "signals.v1";
-export const RANKING_VERSION = "ranking.v1";
+export const RANKING_VERSION = "ranking.v2";
 export const LABELING_VERSION = "labeling.v1";

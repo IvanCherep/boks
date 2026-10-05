@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createReaderEventQueue } from "@/components/boks/reader-events";
+import { createReaderEventQueue, isPermanentEventFailure, maxEventsPerRequest } from "@/components/boks/reader-events";
 import type { ReaderEvent, ReaderEventType } from "@/lib/boks/contracts";
 
 function event(eventType: ReaderEventType, storyId = "story-1"): ReaderEvent {
@@ -118,5 +118,72 @@ describe("createReaderEventQueue", () => {
     await queue.flush();
 
     expect(transport).not.toHaveBeenCalled();
+  });
+
+  it("never sends more events in one request than the database accepts", async () => {
+    const transport = vi.fn().mockResolvedValue(undefined);
+    const queue = createReaderEventQueue({ transport, flushDelayMs: 10_000, maxBatchSize: 1000 });
+
+    for (let index = 0; index < 120; index += 1) queue.record(event("impression", `story-${index}`));
+    await queue.flush();
+
+    const sizes = transport.mock.calls.map((call) => (call[0] as ReaderEvent[]).length);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(maxEventsPerRequest);
+    expect(sizes.reduce((total, size) => total + size, 0)).toBe(120);
+    expect(queue.pendingCount()).toBe(0);
+  });
+
+  it("drops only the event the database refuses, not the whole batch", async () => {
+    const delivered: string[] = [];
+    const transport = vi.fn(async (events: ReaderEvent[]) => {
+      if (events.some((item) => item.storyId === "erased")) {
+        throw { code: "23503", message: "violates foreign key constraint" };
+      }
+      delivered.push(...events.map((item) => item.storyId));
+    });
+    const queue = createReaderEventQueue({ transport, flushDelayMs: 10_000 });
+
+    queue.record(event("impression", "a"));
+    queue.record(event("impression", "erased"));
+    queue.record(event("impression", "b"));
+    queue.record(event("impression", "c"));
+    await queue.flush();
+
+    expect(delivered.sort()).toEqual(["a", "b", "c"]);
+    expect(queue.pendingCount()).toBe(0);
+
+    // A refused event is gone, so it cannot block the next flush.
+    queue.record(event("impression", "d"));
+    await queue.flush();
+    expect(delivered).toContain("d");
+  });
+
+  it("keeps a batch for retry only when the failure is transient", async () => {
+    const transport = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Could not record reader events (503)."))
+      .mockResolvedValue(undefined);
+    const queue = createReaderEventQueue({ transport, flushDelayMs: 10_000 });
+
+    queue.record(event("impression"));
+    await queue.flush();
+    expect(queue.pendingCount()).toBe(1);
+  });
+});
+
+describe("isPermanentEventFailure", () => {
+  it("treats a refusal on the merits as permanent", () => {
+    expect(isPermanentEventFailure({ code: "22023" })).toBe(true);
+    expect(isPermanentEventFailure({ code: "23503" })).toBe(true);
+    expect(isPermanentEventFailure({ code: "42501" })).toBe(true);
+    expect(isPermanentEventFailure(new Error("Could not record reader events (400)."))).toBe(true);
+  });
+
+  it("treats network, server and rate-limit failures as worth retrying", () => {
+    expect(isPermanentEventFailure(new TypeError("Failed to fetch"))).toBe(false);
+    expect(isPermanentEventFailure(new Error("Could not record reader events (503)."))).toBe(false);
+    expect(isPermanentEventFailure({ status: 429 })).toBe(false);
+    expect(isPermanentEventFailure({ code: "54023" })).toBe(false);
+    expect(isPermanentEventFailure(null)).toBe(false);
   });
 });

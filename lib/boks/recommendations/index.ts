@@ -30,15 +30,12 @@ export {
   isRecommendationAlgorithmId,
   listRecommendationStrategies,
   recommendationAlgorithmName,
-  strategiesForSegment,
   type RecommendationAlgorithmId,
 } from "@/lib/boks/recommendations/registry";
 
 export {
-  indistinguishableOverlap,
   kendallTau,
   measureStrategyDivergence,
-  weakOverlap,
   type DivergenceReport,
   type DivergenceVerdict,
   type StrategyPairDivergence,
@@ -76,7 +73,6 @@ export {
 
 export {
   defineStrategy,
-  weightedScore,
   type RankingContext,
   type RecommendationStrategy,
   type ScoredCandidate,
@@ -86,7 +82,6 @@ export {
 export {
   buildReaderProfile,
   compactnessBand,
-  emptyReaderProfile,
   isFollowingAuthor,
   lengthBucketFor,
   readerBokState,

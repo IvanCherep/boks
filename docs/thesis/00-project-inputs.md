@@ -47,7 +47,7 @@ Evaluation and Regression Testing of Sequential Recommender Systems* `[факт,
 ### Рекомендательный контур `[факт]`
 
 - Ранжирование исполняется в TypeScript за единственным швом `buildReaderFeed`
-  (см. `docs/adr/ADR-001-where-ranking-executes.md`).
+  (см. `docs/adr/0001-ranking-executes-in-worker.md`).
 - Стратегия `for_you`: семейства извлечения кандидатов (первый шаг — быстро
   отобрать 200 произведений из 906), априорные веса, жадный отбор слейта
   (упорядоченной подборки, которую человек видит за один раз) со штрафами за
@@ -279,10 +279,10 @@ People / Experiments. Есть панель влияния позиции в с�
 | `docs/analytics-and-thesis-readiness.md` | разбор темы по четырём её утверждениям: что система доказывает, что нет, чего стоит закрыть дыру |
 | `docs/project-state.md` | что живо, что нет, очередь работ, известные проблемы |
 | `docs/admin-metrics.md` | каждое поле консоли, из чего считается, какое решение поддерживает |
-| `docs/adr/ADR-001-where-ranking-executes.md` | почему ранжирование в TypeScript |
+| `docs/adr/0001-ranking-executes-in-worker.md` | почему ранжирование в TypeScript |
 | `specs/boks-recommendation-experiments.md` | алгоритмы, метрики, правила экспериментов |
-| `RECSYS-SYSTEM-REPORT.md` | система целиком: сигналы, стратегии, инструментирование, статистика, что было сломано и как исправлено |
-| `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md` | фазовый план, разделы A–N; фаза 1 сделана, 2–7 нет |
+| `docs/research/recsys-system-report.md` | система целиком: сигналы, стратегии, инструментирование, статистика, что было сломано и как исправлено |
+| `docs/research/recsys-research-implementation-plan.md` | фазовый план, разделы A–N; фаза 1 сделана, 2–7 нет |
 | `lib/recsys/statistics/` | перестановочный тест, Ходжес—Леман, бутстрап, мощность, кривая размера выборки |
 | `lib/boks/recommendations/` | стратегии, признаки, метрики, гейт расхождения |
 | `docs/public-domain-corpus.md`, `docs/russian-corpus.md` | оба корпуса, правовая рамка, дефекты продукта, которые они вскрыли |

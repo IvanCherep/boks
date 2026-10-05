@@ -151,8 +151,41 @@ describe("buildRecommendationLab", () => {
     );
 
     expect(report.arms[0].completionRate).toBe(50);
-    expect(report.arms[0].skipRate).toBe(20);
+    // Skips are not a subset of starts: 2 skips over 10 starts + 2 skips.
+    expect(report.arms[0].skipRate).toBe(16.7);
     expect(report.arms[0].reactionRate).toBe(20);
+  });
+
+  it("keeps skip rate a share when most skips never became a start", () => {
+    const report = buildRecommendationLab([row({ userId: "a", starts: 5, skips: 9 })], options);
+    expect(report.arms[0].skipRate).toBeLessThanOrEqual(100);
+  });
+
+  it("leaves crossed readers out of an arm's sessions as well as its readers", () => {
+    const report = buildRecommendationLab(
+      [
+        row({ userId: "a", sessions: 2 }),
+        row({ userId: "crossed", sessions: 50 }),
+        row({ userId: "crossed", algorithmId: "recency", sessions: 50 }),
+      ],
+      options
+    );
+    expect(report.arms.find((entry) => entry.algorithmId === "balanced")?.sessions).toBe(2);
+    expect(report.totals.sessions).toBe(2);
+  });
+
+  it("puts a reader in one cohort, by the first row the window saw", () => {
+    const report = buildRecommendationLab(
+      [
+        ...arm("balanced", 3, () => 100, "control"),
+        row({ userId: "spanning", algorithmId: "recency", tenureDays: 3, day: "2026-09-01" }),
+        row({ userId: "spanning", algorithmId: "recency", tenureDays: 10, day: "2026-09-08" }),
+      ],
+      options
+    );
+    const [firstWeek, older] = report.cohorts;
+    expect(firstWeek.readers).toBe(4);
+    expect(older.readers).toBe(0);
   });
 });
 

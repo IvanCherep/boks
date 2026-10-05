@@ -1,4 +1,3 @@
-import type { UserSegment } from "@/lib/boks/contracts";
 import type { RecommendationStrategy } from "@/lib/boks/recommendations/strategy";
 import {
   type RecommendationAlgorithmId,
@@ -35,10 +34,6 @@ export function recommendationAlgorithmName(id: string) {
   return strategiesById.get(id)?.name ?? id;
 }
 
-export function strategiesForSegment(userSegment: UserSegment) {
-  return strategyList.filter((strategy) => strategy.segment === "all" || strategy.segment === userSegment);
-}
-
 /**
  * Browser- and admin-facing description of the registry. The admin lab renders
  * this so operators can see every algorithm the build knows about, including
@@ -50,7 +45,6 @@ export function describeRecommendationStrategies() {
     name: strategy.name,
     description: strategy.description,
     family: strategy.family,
-    segment: strategy.segment,
     weights: strategy.weights,
   }));
 }

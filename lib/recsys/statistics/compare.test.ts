@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compareIndependent, comparePaired, signTest } from "@/lib/recsys/statistics/compare";
-import { hodgesLehmannShift, quantile } from "@/lib/recsys/statistics/descriptive";
+import { quantile } from "@/lib/recsys/statistics/descriptive";
 
 /** Reader-level reading seconds: heavily skewed, a handful of enthusiasts. */
 const SKEWED_READERS = [
@@ -102,6 +102,24 @@ describe("compareIndependent", () => {
     expect(result.readers).toBe(40);
   });
 
+  it("reports one estimand: the effect, interval and p-value never disagree", () => {
+    // Under the old Hodges-Lehmann effect this printed "-4, interval [20, 195],
+    // negative": a variant whose whole interval lay above zero, called worse.
+    const control = Array.from({ length: 12 }, (_, index) => 100 + index);
+    const variant = [95, 96, 97, 98, 99, 100, 101, 102, 400, 420, 450, 480];
+    const result = compareIndependent(control, variant, { metric: "active_seconds" });
+
+    expect(result.effect).toBeCloseTo(
+      variant.reduce((a, b) => a + b, 0) / 12 - control.reduce((a, b) => a + b, 0) / 12,
+      4
+    );
+    expect(result.effect).toBeGreaterThanOrEqual(result.ci[0]);
+    expect(result.effect).toBeLessThanOrEqual(result.ci[1]);
+    if (result.status === "positive") expect(result.ci[0]).toBeGreaterThan(0);
+    if (result.status === "negative") expect(result.ci[1]).toBeLessThan(0);
+    expect(result.status).not.toBe("negative");
+  });
+
   it("stops printing every reader once the sample is too large to read", () => {
     const many = Array.from({ length: 60 }, (_, index) => 20 + index * 3);
     const result = compareIndependent(many, [...many], { metric: "active_seconds" });
@@ -157,6 +175,13 @@ describe("comparePaired", () => {
 });
 
 describe("signTest", () => {
+  it("stays a probability for a sample far beyond a thousand readers", () => {
+    const differences = Array.from({ length: 2000 }, (_, index) => (index % 2 ? 1 : -1));
+    const p = signTest(differences);
+    expect(Number.isFinite(p)).toBe(true);
+    expect(p).toBeGreaterThan(0.9);
+  });
+
   it("matches the exact binomial tail", () => {
     // 10 of 10 in one direction: 2 x (1/1024).
     expect(signTest([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])).toBeCloseTo(2 / 1024, 10);
@@ -167,24 +192,6 @@ describe("signTest", () => {
   it("treats ties as carrying no information", () => {
     expect(signTest([0, 0, 0])).toBe(1);
     expect(signTest([1, 1, 1, 0, 0])).toBeCloseTo(signTest([1, 1, 1]), 10);
-  });
-});
-
-describe("hodgesLehmannShift", () => {
-  it("is the median of all pairwise differences, not a difference of means", () => {
-    const control = [1, 2, 3];
-    const variant = [10, 20, 300];
-
-    // Pairwise differences: 7..299, median 18. The mean difference is 107.3,
-    // dragged there by one reader.
-    expect(hodgesLehmannShift(control, variant)).toBe(18);
-  });
-
-  it("ignores an outlier that would dominate a mean", () => {
-    const control = [10, 11, 12, 13, 14];
-    const withOutlier = [20, 21, 22, 23, 100000];
-
-    expect(hodgesLehmannShift(control, withOutlier)).toBeLessThan(30);
   });
 });
 

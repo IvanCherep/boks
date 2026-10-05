@@ -128,4 +128,38 @@ describe("createReaderClock", () => {
 
     expect(clock.activeSeconds()).toBe(60);
   });
+
+  it("keeps a paused clock paused when a new boks arrives", () => {
+    const time = fakeClock();
+    const clock = createReaderClock({ now: time.now });
+
+    clock.pause(); // the tab is in the background
+    clock.restart(); // a boks lands while nobody can see it
+    time.advance(90);
+    expect(clock.activeSeconds()).toBe(0);
+
+    clock.resume();
+    time.advance(4);
+    expect(clock.activeSeconds()).toBe(4);
+  });
+
+  it("stays stopped while held, even when the page becomes visible", () => {
+    const time = fakeClock();
+    const clock = createReaderClock({ now: time.now });
+
+    clock.restart();
+    time.advance(3);
+    clock.hold(); // the series shelf is over the boks
+    time.advance(60);
+    clock.resume(); // the tab came back to the foreground
+    clock.rebase();
+    time.advance(60);
+    expect(clock.activeSeconds()).toBe(3);
+
+    clock.release();
+    expect(clock.isRunning()).toBe(false);
+    clock.resume();
+    time.advance(2);
+    expect(clock.activeSeconds()).toBe(5);
+  });
 });

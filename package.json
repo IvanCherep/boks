@@ -16,7 +16,6 @@
     "test:watch": "vitest",
     "test:supabase": "node scripts/run-supabase-flow-test.mjs",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
     "verify:supabase": "node --env-file=.env.local scripts/verify-supabase-mvp.mjs",
     "verify:schema": "node scripts/verify-schema-local.mjs",
     "verify:divergence": "tsx --tsconfig tsconfig.json scripts/check-algorithm-divergence.mts",
@@ -37,7 +36,6 @@
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
     "date-fns": "4.4.0",
-    "drizzle-orm": "0.45.2",
     "embla-carousel-react": "8.6.0",
     "input-otp": "1.4.2",
     "lucide-react": "1.31.0",
@@ -66,7 +64,6 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.35",
-    "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.3.6",
     "react-server-dom-webpack": "19.3.0",
@@ -77,11 +74,6 @@
     "vite": "8.3.1",
     "vitest": "4.1.11",
     "wrangler": "4.140.0"
-  },
-  "overrides": {
-    "@esbuild-kit/core-utils": {
-      "esbuild": "0.25.12"
-    }
   },
   "type": "module"
 }

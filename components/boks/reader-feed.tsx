@@ -1,7 +1,6 @@
 "use client";
 
 import { randomBoksId } from "@/lib/boks/browser-id";
-import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -10,21 +9,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Clapperboard,
-  Music,
-  Flag,
-  Heart,
-  Link as LinkIcon,
-  MessageCircle,
   MoreHorizontal,
   Sparkles,
-  Share2,
-  Trash2,
   UserRound,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { initialMetrics, initialProfile } from "@/components/boks/constants";
 import type {
   BoksUserContext,
@@ -46,6 +36,7 @@ import {
   readAnonymousReadState,
   readAnonymousNoticeState,
   readProfile,
+  readerSignalsFromProfile,
   readerSlateSize,
   recordAnonymousBoksRead,
   saveAnonymousNoticeState,
@@ -67,14 +58,11 @@ import {
   verticalBoundaryPull,
   type ReaderNavigationDirection,
 } from "@/components/boks/reader-navigation";
-import { ActionButton } from "@/components/boks/shared-ui";
 import {
   readingMusicWanted,
   startReadingMusic,
   stopReadingMusic,
 } from "@/components/boks/reading-music";
-import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
-import { FeedbackForm } from "@/components/boks/feedback-form";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
 import type { FinaleActions } from "@/components/boks/reading-finale";
@@ -109,7 +97,6 @@ import {
   markPrompted,
   readFeedbackState,
   saveFeedbackState,
-  surfaceForMilestone,
   type FeedbackState,
 } from "@/components/boks/feedback";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -118,7 +105,6 @@ import {
   effectiveReadingLanguages,
   normalizeReadingLanguages,
   readingLanguageChangeKeepsFeed,
-  readingLanguageNames,
   rememberReadingLanguages,
 } from "@/components/boks/reading-languages";
 import { displayedLikeCount } from "@/components/boks/client-format";
@@ -150,6 +136,11 @@ import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendatio
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
+import { atHandle, bareHandle } from "@/components/boks/reader/handles";
+import { BokMenuSheet, type BokReportKind, type BokReportOutcome } from "@/components/boks/reader/bok-menu-sheet";
+import { EmptyFeedScreen } from "@/components/boks/reader/empty-feed-screen";
+import { FeedbackSheet } from "@/components/boks/reader/feedback-sheet";
+import { ReaderActionRail } from "@/components/boks/reader/reader-action-rail";
 
 const firstVisitHintKey = "boks-first-visit-hint-seen";
 
@@ -160,13 +151,16 @@ function releaseFocus(event: React.MouseEvent<HTMLElement>) {
 
 /** "Follow", or "Follow @boks" when the byline is a writer the account publishes. */
 function followLabel(following: boolean, authorName: string | undefined, authorHandle: string) {
-  const handle = authorHandle.replace(/^@+/, "");
+  const handle = bareHandle(authorHandle);
   const underByline = Boolean(authorName && handle && authorName.toLowerCase() !== handle.toLowerCase());
   const verb = following ? "Following" : "Follow";
   return underByline ? `${verb} @${handle}` : verb;
 }
 
 type AuthIntent = "general" | "like" | "comment" | "follow";
+
+/** How a reader reached a boks no ranker chose for them. See `entryRef`. */
+type ReaderEntry = "series" | "share" | "library" | "author";
 
 /**
  * `exit` is the one that was missing. Until now an outcome was only recorded
@@ -260,7 +254,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   // flash them again on every new bok; now reading comes first and the
   // controls appear when the reader asks, with a tap.
   const [readerChromeVisible, setReaderChromeVisible] = useState(false);
-  /** The boks the reader is on, held across a feed reload. See the effect below. */
   /**
    * The language filter in force. Held in a ref because the feed loader is
    * memoised on `load` alone, and a stale closure here would keep serving the
@@ -315,13 +308,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const likesInFlight = useRef<Set<string>>(new Set());
   // The one-time "how this works" line - see the effect near the render.
   const [firstVisitHint, setFirstVisitHint] = useState<"touch" | "pointer" | null>(null);
-  /**
-   * A message for the reader: "Link copied", or why a like, follow, report or
-   * language change did not go through. These used to go only to `status`,
-   * which the reader shows on the empty-feed screen and nowhere else - so with
-   * a bok on screen every one of them vanished, and a failed action looked
-   * like a tap that did nothing. `status` still gets it, for that screen.
-   */
   /*
    * A reader who had it on last time gets it back - but only after they touch
    * something, because no browser will start audio before that and silently
@@ -339,6 +325,13 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
   useEffect(() => () => stopReadingMusic(false), []);
 
+  /**
+   * A message for the reader: "Link copied", or why a like, follow, report or
+   * language change did not go through. These used to go only to `status`,
+   * which the reader shows on the empty-feed screen and nowhere else - so with
+   * a bok on screen every one of them vanished, and a failed action looked
+   * like a tap that did nothing. `status` still gets it, for that screen.
+   */
   const notify = useCallback(
     (message: string) => {
       if (!message) return;
@@ -363,6 +356,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [cinemaOpen, setCinemaOpen] = useState(false);
   /** A format took the whole screen, so closing it owes the screen back. */
   const formatTookScreen = useRef(false);
+  /** A format silenced music the reader had on, so closing it owes the music back. */
+  const musicPausedForFormat = useRef(false);
   /**
    * The series shelf, over the feed rather than instead of it. The feed keeps
    * its place, its clock is paused, and a piece opened from the shelf is loaded
@@ -383,15 +378,27 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   /** Waiting for the feed to land on this boks before opening its format. */
   const pendingSeriesFormat = useRef<string | null>(null);
   /**
-   * A boks the reader reached through the shelf, not the ranker. Its events
-   * carry `entry: "series"`, so a comparison of algorithms can leave out
-   * reads no algorithm chose.
+   * A boks the reader reached by their own choice - the shelf, a shared link,
+   * their library, an author's page - not through the ranker. Its events carry
+   * `entry`, so a comparison of algorithms can leave out reads no algorithm
+   * chose. `arrived` turns true once it is on screen; moving off it after that
+   * ends the tag.
    */
-  const seriesEntryStoryId = useRef<string | null>(null);
-  const [reportKind, setReportKind] = useState<"copyright" | "other">("copyright");
-  const [reportReason, setReportReason] = useState("");
-  const [reportSending, setReportSending] = useState(false);
-  const [reportDone, setReportDone] = useState<"received" | "already" | null>(null);
+  const entryRef = useRef<{ storyId: string; entry: ReaderEntry; arrived: boolean } | null>(null);
+  /**
+   * Where each boks sat in the slate that served it, and which served feed
+   * that was. The contract's `rank` is the position in the delivered feed and
+   * `feedId` the feed that delivered it - neither is the index on screen,
+   * which shifts when a library entry is inserted and keeps counting across
+   * appended slates.
+   */
+  const servedPlacement = useRef<Map<string, { rank: number; feedId: string | null }>>(new Map());
+  /**
+   * The boks a reading format was opened on, and which format. Time spent
+   * listening counts as reading, by decision; the tag lets an analysis tell
+   * a listened piece from a read one.
+   */
+  const formatUsed = useRef<{ storyId: string; format: "poem" | "cinema" } | null>(null);
   const [storyHasMore, setStoryHasMore] = useState(false);
   const [storyTransition, setStoryTransition] = useState<StoryTransition>({ phase: "idle", direction: null, axis: null });
   const [boundaryPull, setBoundaryPull] = useState<BoundaryPullState | null>(null);
@@ -428,7 +435,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   });
   const recordHeartbeatRef = useRef<(story: Story) => void>(() => undefined);
   const recordOutcomeRef = useRef<(reason: ReadOutcomeReason) => void>(() => undefined);
-  const openReadBoksRef = useRef<(storyId: string) => Promise<boolean>>(async () => false);
+  const openReadBoksRef = useRef<(storyId: string, entry: ReaderEntry) => Promise<boolean>>(async () => false);
   const chromeTimer = useRef<number | null>(null);
   const storyScroll = useRef<HTMLDivElement | null>(null);
   const storyTransitionLocked = useRef(false);
@@ -465,6 +472,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       if (wheelIdleTimer.current !== null) {
         window.clearTimeout(wheelIdleTimer.current);
       }
+      if (wheelReleaseTimer.current !== null) {
+        window.clearTimeout(wheelReleaseTimer.current);
+      }
     };
   }, []);
 
@@ -472,39 +482,46 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * Personalized strategies read affinity the reader built by behavior. The
    * reader is never asked to configure genres or moods.
    */
-  const readerSignals = useMemo<ReaderSignals>(
-    () => ({
-      genreAffinity: profile.genreScore,
-      moodAffinity: profile.moodScore,
-      completedStoryIds: profile.completed,
-      likedStoryIds: profile.liked,
-      skippedStoryIds: profile.skipped,
-    }),
-    [profile.completed, profile.genreScore, profile.liked, profile.moodScore, profile.skipped]
-  );
+  const readerSignals = useMemo<ReaderSignals>(() => readerSignalsFromProfile(profile), [profile]);
 
   useEffect(() => {
     readerSignalsRef.current = readerSignals;
   }, [readerSignals]);
 
-  const loadFeed = useCallback(
-    () =>
-      load({
-        view: "reader",
-        limit: readerSlateSize,
-        visitorId: visitorId.current,
-        sessionId: sessionId.current,
-        reader: readerSignalsRef.current,
-        // The profile the ranking saw. It changes with every read, so without a
-        // snapshot this serve could never be replayed.
-        profileSnapshot: { ...readerSignalsRef.current },
-        // A guest's language filter. Sent from the browser's languages until
-        // the reader says otherwise; a signed-in reader's stored choice wins
-        // inside the RPC, so this is never the authority for an account.
-        readingLanguages: readingLanguagesRef.current,
-      }),
-    [load]
+  /**
+   * One feed request, for a new feed or the next slate. `profileSnapshot` is
+   * the profile the ranking saw: it changes with every read, so without it a
+   * serve could never be replayed. `readingLanguages` is a guest's filter - a
+   * signed-in reader's stored choice wins inside the RPC.
+   */
+  const feedRequest = useCallback(
+    (append: boolean): Parameters<typeof load>[0] => ({
+      view: "reader",
+      limit: readerSlateSize,
+      visitorId: visitorId.current,
+      sessionId: sessionId.current,
+      reader: readerSignalsRef.current,
+      profileSnapshot: { ...readerSignalsRef.current },
+      readingLanguages: readingLanguagesRef.current,
+      ...(append ? { append: true } : {}),
+    }),
+    []
   );
+
+  /** Records each newly served boks' slate position and feed - see `servedPlacement`. */
+  const rememberServedPlacement = useCallback((data: unknown, append: boolean) => {
+    if (!data || typeof data !== "object") return;
+    const served = data as { stories?: Story[]; provenance?: FeedProvenance };
+    if (!Array.isArray(served.stories)) return;
+    if (!append) servedPlacement.current = new Map();
+    const feedId = served.provenance?.feedId ?? null;
+    served.stories.forEach((story, rank) => {
+      const id = String(story.id);
+      // An append skips boks already in the feed; they keep the slate that put them there.
+      if (append && servedPlacement.current.has(id)) return;
+      servedPlacement.current.set(id, { rank, feedId });
+    });
+  }, []);
 
   /**
    * The next slate, added after this one. The reader used to stop dead at the
@@ -514,38 +531,93 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * skipped by the append. A slate that adds nothing means there is nothing
    * left for this reader, and it is not asked for again this visit.
    */
-  const loadingMore = useRef(false);
+  const loadingMore = useRef<Promise<void> | null>(null);
   const feedExhausted = useRef(false);
+  /** A new feed is on its way; an append now would extend the one it replaces. */
+  const fullLoadsInFlight = useRef(0);
   const knownStoryIds = useRef<Set<string>>(new Set());
-  const loadMoreFeed = useCallback(async () => {
-    if (loadingMore.current || feedExhausted.current) return;
-    loadingMore.current = true;
+
+  /**
+   * A new feed. An append still in flight is waited for first: landing after
+   * this load, it would add a slate ranked under the old filter to the new
+   * feed, and it could take the hold's `release` meant for this one.
+   */
+  const loadFeed = useCallback(async () => {
+    fullLoadsInFlight.current += 1;
     try {
-      const data = await load({
-        view: "reader",
-        limit: readerSlateSize,
-        visitorId: visitorId.current,
-        sessionId: sessionId.current,
-        reader: readerSignalsRef.current,
-        profileSnapshot: { ...readerSignalsRef.current },
-        readingLanguages: readingLanguagesRef.current,
-        append: true,
-      });
-      const fresh = (data?.stories ?? []).filter((story) => !knownStoryIds.current.has(String(story.id)));
-      if (!fresh.length) feedExhausted.current = true;
-    } catch {
-      // Silently: the reader still has boks ahead, and the next approach to
-      // the end tries again.
+      if (loadingMore.current) await loadingMore.current;
+      feedExhausted.current = false;
+      const data = await load(feedRequest(false));
+      rememberServedPlacement(data, false);
+      return data;
     } finally {
-      loadingMore.current = false;
+      fullLoadsInFlight.current -= 1;
     }
-  }, [load]);
+  }, [feedRequest, load, rememberServedPlacement]);
+
+  /**
+   * A new feed that changes what the feed may contain - the reading
+   * languages - so the boks on screen is let go rather than held.
+   */
+  const reloadFeedReleasing = useCallback(async () => {
+    if (loadingMore.current) await loadingMore.current;
+    setHold((current) => ({ ...current, release: true }));
+    return loadFeed();
+  }, [loadFeed]);
+
+  const loadMoreFeed = useCallback(async () => {
+    if (loadingMore.current || feedExhausted.current || fullLoadsInFlight.current > 0) return;
+    const appending = (async () => {
+      try {
+        const data = await load(feedRequest(true));
+        rememberServedPlacement(data, true);
+        const fresh = (data?.stories ?? []).filter((story) => !knownStoryIds.current.has(String(story.id)));
+        if (!fresh.length) feedExhausted.current = true;
+      } catch {
+        // Silently: the reader still has boks ahead, and the next approach to
+        // the end tries again.
+      }
+    })();
+    loadingMore.current = appending;
+    try {
+      await appending;
+    } finally {
+      loadingMore.current = null;
+    }
+  }, [feedRequest, load, rememberServedPlacement]);
+
+  /**
+   * Who is reading, once it can be known. Separate from the feed: a reader
+   * whose first feed load failed used to stay a "guest" for the whole visit
+   * after a successful retry - likes asked them to sign up, and the 15-boks
+   * gate could fire on an account holder.
+   */
+  const adoptIdentity = useCallback(async (): Promise<BoksUserContext | null> => {
+    let context: BoksUserContext | null = null;
+    try {
+      context = await loadBoksUserContext();
+    } catch {
+      context = null;
+    }
+    setUser(context);
+    if (context && !context.isAnonymous) {
+      loadFollowedAuthors()
+        .then((authors) => setFollowedAuthorIds(authors.map((author) => author.authorUserId)))
+        .catch(() => undefined);
+    }
+    return context;
+  }, []);
 
   useEffect(() => {
     visitorId.current = getBrowserId("boks-reader");
     feedbackState.current = readFeedbackState();
     sessionId.current = `${Date.now()}-${randomBoksId()}`;
-    const profileTimer = window.setTimeout(() => setProfile(readProfile()), 0);
+    // The first feed request below reads the ref, so it gets the stored
+    // profile now; state follows on the next tick. Deferring both ranked every
+    // returning reader's first slate - usually the whole visit - as a stranger.
+    const storedProfile = readProfile();
+    readerSignalsRef.current = readerSignalsFromProfile(storedProfile);
+    const profileTimer = window.setTimeout(() => setProfile(storedProfile), 0);
     // Read before the address bar is cleaned below, which would take the utm
     // tags and the shared-link marker with it.
     visitAttribution.current = journeyAttribution(window.location.href, document.referrer);
@@ -568,13 +640,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
     loadFeed()
       .then(async () => {
-        let context: BoksUserContext | null = null;
-        try {
-          context = await loadBoksUserContext();
-        } catch {
-          context = null;
-        }
-        setUser(context);
+        const context = await adoptIdentity();
         // The identity is now known, whichever way it came out. Until this
         // moment nobody is a guest - see `isGuestReader`.
         setIdentitySettled(true);
@@ -586,8 +652,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         if (accountLanguages.join() !== readingLanguagesRef.current.join()) {
           readingLanguagesRef.current = accountLanguages;
           refreshSeriesContext();
-          setHold((current) => ({ ...current, release: true }));
-          await loadFeed();
+          await reloadFeedReleasing();
         }
         setGuestReadCount(getAnonymousBoksReadCount());
         // A link that did not work. A reader who is signed in anyway - an old
@@ -603,16 +668,15 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           setAuthPanelOpen(true);
           setReaderChromeVisible(true);
         }
-        if (context && !context.isAnonymous) {
-          loadFollowedAuthors()
-            .then((authors) => setFollowedAuthorIds(authors.map((author) => author.authorUserId)))
-            .catch(() => undefined);
-        }
-        if (shared) await openReadBoksRef.current(shared);
+        if (shared) await openReadBoksRef.current(shared, "share");
         // A shared author link names an account, so it opens the publisher.
-        if (sharedAuthor) setAuthorSheet({ handle: sharedAuthor.replace(/^@+/, "") });
+        if (sharedAuthor) setAuthorSheet({ handle: bareHandle(sharedAuthor) });
       })
-      .catch((error) => notify(error.message))
+      .catch((error) => {
+        notify(error.message);
+        // The account is still worth knowing - see `adoptIdentity`.
+        void adoptIdentity();
+      })
       // A failed feed load must still settle the identity, or a real guest
       // never meets the sign-up gate at all.
       .finally(() => setIdentitySettled(true));
@@ -622,7 +686,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     };
     // `initialView` is the route's, fixed for the life of the page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadFeed, notify, setStatus]);
+  }, [adoptIdentity, loadFeed, notify, reloadFeedReleasing, setStatus]);
 
   useEffect(() => {
     const detach = attachReaderClock(readingClock.current);
@@ -661,11 +725,17 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * the verdict stays open.
    */
   useEffect(() => {
-    const onTeardown = () => recordOutcomeRef.current("exit");
     const onHidden = () => {
       if (document.visibilityState !== "hidden") return;
       const story = currentStoryRef.current;
       if (story) recordHeartbeatRef.current(story);
+    };
+    // A page kept in the back/forward cache comes back - iOS Safari does this
+    // for every link followed and returned from - so that is backgrounding,
+    // not an ending, and the verdict stays open.
+    const onTeardown = (event?: PageTransitionEvent) => {
+      if (event?.persisted) onHidden();
+      else recordOutcomeRef.current("exit");
     };
 
     document.addEventListener("visibilitychange", onHidden);
@@ -679,29 +749,20 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }, []);
 
   /**
-   * One queue per reading session. The transport follows whichever backend the
-   * feed came from, so attribution is identical on Supabase and on D1.
+   * One queue for the life of the page. Events go to Supabase once the reader
+   * has a Supabase feed; until then the queue holds them (a transient failure
+   * keeps a batch), so nothing recorded before the first feed lands is lost,
+   * and nothing is sent anywhere else.
    */
+  const isSupabaseReaderRef = useRef(isSupabaseReader);
+  useEffect(() => {
+    isSupabaseReaderRef.current = isSupabaseReader;
+  }, [isSupabaseReader]);
   useEffect(() => {
     const queue = createReaderEventQueue({
       transport: async (events, delivery) => {
-        if (isSupabaseReader) {
-          await recordSupabaseReaderEvents(events, delivery);
-          return;
-        }
-
-        const response = await fetch("/api/boks", {
-          method: "POST",
-          keepalive: delivery.keepalive,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "events",
-            events,
-            visitorId: visitorId.current,
-            sessionId: sessionId.current,
-          }),
-        });
-        if (!response.ok) throw new Error("Could not record reader events.");
+        if (!isSupabaseReaderRef.current) throw new Error("The reader has no backend yet.");
+        await recordSupabaseReaderEvents(events, delivery);
       },
     });
 
@@ -713,7 +774,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       queue.dispose();
       eventQueue.current = null;
     };
-  }, [isSupabaseReader]);
+  }, []);
 
   const hideReaderChrome = useCallback(() => {
     if (!commentOpen) setReaderChromeVisible(false);
@@ -765,16 +826,25 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       // A guest session being created: the first feed load already covers it.
       if (!session?.user || session.user.is_anonymous) return;
       completePendingBoksMagicLinkProfile(currentBoksTermsVersion)
-        .then(async (context) => {
-          const nextUser = context ?? (await loadBoksUserContext());
-          setUser(nextUser);
-          loadFeed().catch((error) => notify(error instanceof Error ? error.message : "Could not refresh feed."));
+        .then(async () => {
+          // The same settling as a page load: the account, who it follows, and
+          // its stored languages, which are the authority once there is one.
+          const nextUser = await adoptIdentity();
+          const accountLanguages = effectiveReadingLanguages(nextUser?.readingLanguages);
+          const languagesChanged = accountLanguages.join() !== readingLanguagesRef.current.join();
+          if (languagesChanged) {
+            readingLanguagesRef.current = accountLanguages;
+            setSeriesContext(seriesContextFor(accountLanguages));
+          }
+          (languagesChanged ? reloadFeedReleasing() : loadFeed()).catch((error) =>
+            notify(error instanceof Error ? error.message : "Could not refresh feed.")
+          );
         })
         .catch((error) => notify(error instanceof Error ? error.message : "Could not finish sign in."));
     });
 
     return () => result.data.subscription.unsubscribe();
-  }, [loadFeed, notify, setStatus]);
+  }, [adoptIdentity, loadFeed, notify, reloadFeedReleasing, setStatus]);
 
   useEffect(() => {
     return () => {
@@ -791,6 +861,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     (eventType: ReaderEventType, story: Story, value = 1, metadata: Record<string, unknown> = {}) => {
       const experimentContext = experimentRef.current;
       const activeSeconds = readingClock.current.activeSeconds();
+      const placement = servedPlacement.current.get(story.id);
+      const entry = entryRef.current?.storyId === story.id ? entryRef.current.entry : null;
+      const format = formatUsed.current?.storyId === story.id ? formatUsed.current.format : null;
 
       const event: ReaderEvent = {
         eventType,
@@ -802,17 +875,19 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         experimentKey: experimentContext?.experimentKey ?? "",
         userSegment: experimentContext?.userSegment ?? "general",
         surface: "reader",
-        rank: selectedIndex,
+        // A boks no slate served - opened from a link or the library - has no
+        // rank; `entry` says so, and the database stores 0.
+        rank: placement?.rank ?? 0,
         clientElapsedSeconds: activeSeconds,
         sessionId: sessionId.current,
         visitorId: visitorId.current,
         // Derived from the real word count, not from `minutes`: every published
         // boks currently reports one minute, so the old estimate was a constant.
         estimatedSeconds: expectedReadingSeconds(story),
-        feedId: provenanceRef.current.feedId,
+        feedId: placement?.feedId ?? null,
         servingBackend: provenanceRef.current.servingBackend,
         labelingVersion: provenanceRef.current.labelingVersion,
-        metadata: seriesEntryStoryId.current === story.id ? { ...metadata, entry: "series" } : metadata,
+        metadata: { ...metadata, ...(entry ? { entry } : {}), ...(format ? { format } : {}) },
       };
 
       eventQueue.current?.record(event);
@@ -822,7 +897,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         recordSupabaseView(supabaseUserId, story.id).catch(() => undefined);
       }
     },
-    [isSupabaseReader, selectedIndex, supabaseUserId]
+    [isSupabaseReader, supabaseUserId]
   );
 
   /**
@@ -901,7 +976,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           (currentCommentDelta && currentCommentDelta.base === currentStory.commentsCount ? currentCommentDelta.added : 0)
       )
     : 0;
-  const currentAuthorLabel = currentStory?.authorName || (currentStory?.authorHandle ? `@${currentStory.authorHandle.replace(/^@+/, "")}` : "boks author");
+  const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || "boks author");
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
 
   // Ask for the next slate a few boks before the end, so it is there in time.
@@ -959,6 +1034,17 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   /** The screen and the browser's colour go back together, however a format closed. */
   function closedFormat() {
     paintBrowserChrome(null);
+    // The music the format silenced comes back with the feed. Closing is a
+    // tap, which is what a browser needs before it will play.
+    if (musicPausedForFormat.current) {
+      musicPausedForFormat.current = false;
+      if (readingMusicWanted()) {
+        startReadingMusic();
+        // The button follows on the next tick: this also runs from the effect
+        // that watches the format close.
+        window.setTimeout(() => setMusicOn(true), 0);
+      }
+    }
     if (!formatTookScreen.current) return;
     formatTookScreen.current = false;
     giveScreenBack();
@@ -1005,7 +1091,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     },
   };
   const readerInteractionBlocked = Boolean(
-    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen || seriesOpen
+    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen || poem || seriesOpen
   );
 
   /**
@@ -1110,11 +1196,12 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStoryId]);
 
-  /** Moving off the piece the shelf opened ends its `entry: "series"` tag. */
+  /** Moving off a boks the reader chose ends its `entry` tag. */
   useEffect(() => {
-    if (seriesEntryStoryId.current && currentStoryId !== seriesEntryStoryId.current && !pendingSeriesFormat.current) {
-      seriesEntryStoryId.current = null;
-    }
+    const chosen = entryRef.current;
+    if (!chosen) return;
+    if (currentStoryId === chosen.storyId) chosen.arrived = true;
+    else if (chosen.arrived) entryRef.current = null;
   }, [currentStoryId]);
 
   /** The browser's back and forward move between the feed and the shelf. */
@@ -1134,8 +1221,12 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * the shelf is reading, and runs the clock as it does from the feed.
    */
   useEffect(() => {
-    if (seriesOpen && !cinemaOpen && !poem) readingClock.current.pause();
-    else if (document.visibilityState === "visible") readingClock.current.resume();
+    if (seriesOpen && !cinemaOpen && !poem) {
+      readingClock.current.hold();
+      return;
+    }
+    readingClock.current.release();
+    if (document.visibilityState === "visible") readingClock.current.resume();
   }, [seriesOpen, cinemaOpen, poem]);
 
   // The latest values the arrival effect needs, without making them reasons
@@ -1164,6 +1255,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     if (wheelIdleTimer.current !== null) {
       window.clearTimeout(wheelIdleTimer.current);
       wheelIdleTimer.current = null;
+    }
+    // A wheel pull armed on the previous boks must not move on from this one.
+    if (wheelReleaseTimer.current !== null) {
+      window.clearTimeout(wheelReleaseTimer.current);
+      wheelReleaseTimer.current = null;
     }
     wheelBoundaryArmed.current = { previous: false, next: false };
     wheelTravel.current = {
@@ -1311,9 +1407,17 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     return () => lifecycle.abort();
   }, []);
 
-  function persistProfile(next: ReaderProfile) {
-    setProfile(next);
-    saveProfile(next);
+  /**
+   * Applies a change to the latest profile, not the one this render saw: a
+   * like resolving after a swipe used to write back a profile without the
+   * swipe's outcome, and the boks it had skipped could be served again.
+   */
+  function updateProfile(change: (current: ReaderProfile) => ReaderProfile) {
+    setProfile((current) => {
+      const next = change(current);
+      saveProfile(next);
+      return next;
+    });
   }
 
   function clearStoryTransitionTimers() {
@@ -1381,6 +1485,16 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     else void nextStory(reason, axis);
   }
 
+  /** "Try again" on a feed that failed: the feed, and the account if it never loaded. */
+  async function retryFeed() {
+    try {
+      await loadFeed();
+      if (!user) await adoptIdentity();
+    } catch (error) {
+      notify(readableBoksError(error, "Could not load boks."));
+    }
+  }
+
   function openAccount(reason: "manual" | "notice" | "required" = "manual", intent: AuthIntent = "general") {
     // The moment a guest meets the sign-up, and why - the limit, a like, a
     // follow, a comment, the notice, or their own tap on the account button.
@@ -1399,12 +1513,16 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     revealReaderChrome(0);
   }
 
-  async function openReadBoks(storyId: string): Promise<boolean> {
+  /**
+   * Opens a boks the reader chose. `entry` says how, and goes on its events -
+   * see `entryRef`. The boks already on screen is simply shown from the top:
+   * it already has its impression for this session.
+   */
+  async function openReadBoks(storyId: string, entry: ReaderEntry): Promise<boolean> {
     if (currentStoryId === storyId) {
       if (storyScroll.current) storyScroll.current.scrollTop = 0;
       setAuthPanelOpen(false);
       hideReaderChrome();
-      recordReaderEvent("impression", currentStory, 1, { from: "library", reread: true });
       return true;
     }
 
@@ -1424,6 +1542,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       }
 
       const { story, likedByMe } = loaded;
+      entryRef.current = { storyId: story.id, entry, arrived: false };
       setLiked((state) => ({ ...state, [story.id]: likedByMe }));
       setLibraryEntry({ story, index: selectedIndex });
       setPendingLibraryStoryId(story.id);
@@ -1445,8 +1564,21 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * reader - the same rule the rail button has always followed.
    */
   function openReadingFormat(storyId: string) {
+    // A format is reading too, so a guest who has used up their free boks
+    // meets the same gate here as in the feed - it used to play over it.
+    if (
+      isGuestReader &&
+      getAnonymousBoksReadCount() >= anonymousReadLimits.requiredSignup &&
+      !readAnonymousReadState().storyIds.includes(storyId)
+    ) {
+      setSeriesOpening(null);
+      closedFormat();
+      openAccount("required");
+      return;
+    }
     // Either renderer brings its own voice. Silence the reading music without
-    // forgetting the choice, so it returns after.
+    // forgetting the choice, so it returns after - see `closedFormat`.
+    if (musicOn) musicPausedForFormat.current = true;
     stopReadingMusic(false);
     setMusicOn(false);
     finaleAnswered.current = false;
@@ -1454,6 +1586,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // lets a browser hand over the whole screen.
     if (takeScreen()) formatTookScreen.current = true;
     const manifestUrl = poemManifestFor(storyId);
+    formatUsed.current = { storyId, format: manifestUrl ? "poem" : "cinema" };
     if (manifestUrl) {
       loadPoemManifest(manifestUrl)
         .then(setPoem, () => {
@@ -1493,7 +1626,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   async function openSeriesPiece(piece: SeriesPiece) {
     if (seriesOpening) return;
     formatFromSeries.current = true;
-    seriesEntryStoryId.current = piece.storyId;
     if (currentStoryId === piece.storyId) {
       openReadingFormat(piece.storyId);
       return;
@@ -1503,10 +1635,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     if (takeScreen()) formatTookScreen.current = true;
     setSeriesOpening(piece.storyId);
     pendingSeriesFormat.current = piece.storyId;
-    const found = await openReadBoks(piece.storyId);
+    const found = await openReadBoks(piece.storyId, "series");
     if (!found) {
       pendingSeriesFormat.current = null;
-      seriesEntryStoryId.current = null;
       setSeriesOpening(null);
       closedFormat();
     }
@@ -1562,7 +1693,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       scrollable: isStoryScrollable(),
     });
 
-    persistProfile(profileBump(profile, currentStory, outcome));
+    const judged = currentStory;
+    updateProfile((current) => profileBump(current, judged, outcome));
 
     // A bok actually read is the only thing that moves the feedback count, and
     // the prompt waits for the third, tenth and thirtieth. Asking here rather
@@ -1622,8 +1754,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         await setMyReadingLanguages(next);
         setUser(await loadBoksUserContext());
       }
-      setHold((current) => ({ ...current, release: true }));
-      await loadFeed();
+      await reloadFeedReleasing();
     } catch (error) {
       notify(readableBoksError(error, "Could not change your languages."));
     }
@@ -1631,9 +1762,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
   function openBokMenu() {
     setCommentOpen(false);
-    setReportReason("");
-    setReportDone(null);
-    setReportKind("copyright");
     setBokMenuOpen(true);
     revealReaderChrome(0);
   }
@@ -1655,27 +1783,20 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     }
   }
 
-  async function sendReport() {
-    if (!currentStory) return;
+  async function reportCurrentBok(kind: BokReportKind, reason: string): Promise<BokReportOutcome | null> {
+    if (!currentStory) return null;
     if (accountSuspended) {
       showSuspension();
-      return;
+      return null;
     }
 
-    setReportSending(true);
     setStatus("");
     try {
-      const result = await reportBok({
-        reelId: currentStory.id,
-        reason: reportReason,
-        kind: reportKind,
-      });
-      setReportDone(result.status);
-      setReportReason("");
+      const result = await reportBok({ reelId: currentStory.id, reason, kind });
+      return result.status;
     } catch (error) {
       notify(readableBoksError(error, "Could not send that report."));
-    } finally {
-      setReportSending(false);
+      return null;
     }
   }
 
@@ -1718,7 +1839,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
     if (nextLiked) {
       recordReaderEvent("like", story);
-      persistProfile(profileBump(profile, story, "like"));
+      updateProfile((current) => profileBump(current, story, "like"));
     }
     // No feed reload. The count and the heart are already right locally
     // (`displayedLikeCount`), and reloading 80 boks for one tap was most of
@@ -1786,7 +1907,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     if (!handle) return;
     setCommentOpen(false);
     setBokMenuOpen(false);
-    setAuthorSheet({ handle: handle.replace(/^@+/, ""), authorName });
+    setAuthorSheet({ handle: bareHandle(handle), authorName });
     revealReaderChrome(0);
   }
 
@@ -1839,37 +1960,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       throw new Error("Create a free account to join the conversation.");
     }
 
-    let created: Comment;
-    if (isSupabaseReader) {
-      created = await submitSupabaseComment(currentStory.id, body, parentCommentId);
-    } else {
-      if (parentCommentId != null) throw new Error("Replies are available in the hosted reader.");
-      const response = await fetch("/api/boks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "comment",
-          storyId: currentStory.id,
-          body,
-          visitorName: user?.handle || "reader",
-          visitorId: visitorId.current,
-          sessionId: sessionId.current,
-          surface: "reader",
-        }),
-      });
-      if (!response.ok) throw new Error("Could not send comment.");
-      created = {
-        id: Date.now(),
-        storyId: currentStory.id,
-        visitorName: user?.handle || "reader",
-        visitorHandle: user?.handle,
-        body,
-        createdAt: new Date().toISOString(),
-        parentCommentId: null,
-        likesCount: 0,
-        likedByMe: false,
-      };
-    }
+    if (!isSupabaseReader) throw new Error("Comments are not available right now.");
+    const created = await submitSupabaseComment(currentStory.id, body, parentCommentId);
 
     recordReaderEvent("comment", currentStory);
     adjustCommentCount(currentStory, 1);
@@ -1920,10 +2012,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         return;
       }
 
-      setHold((current) => ({ ...current, release: true }));
-      loadFeed().catch((error) => notify(readableBoksError(error, "Could not load the feed in those languages.")));
+      reloadFeedReleasing().catch((error) =>
+        notify(readableBoksError(error, "Could not load the feed in those languages."))
+      );
     },
-    [loadFeed, notify]
+    [notify, reloadFeedReleasing]
   );
 
   function clearBoundaryPull(immediate = false) {
@@ -2292,73 +2385,18 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }
 
   if (!currentStory) {
-    /**
-     * A feed emptied by the language filter has to say so. The alternative -
-     * quietly adding a language back - would break the only promise this
-     * feature makes, and a reader who asked for Russian and found none is also
-     * the most useful thing the console can learn about what to acquire.
-     *
-     * The rule itself lives in `emptyFeedNotice`, where it is tested.
-     */
-    const notice = emptyFeedNotice({
-      phase,
-      message: status,
-      languages: readingLanguagesRef.current,
-      coverage: user?.languageCoverage,
-    });
-
     return (
-      <main className="reader-shell grid min-h-screen place-items-center px-6">
-        <div className="max-w-md text-center">
-          <p className="brand-word">boks</p>
-          {notice.kind === "language" ? (
-            <>
-              <h1 className="mt-4 text-2xl font-semibold tracking-normal">{notice.title}</h1>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{notice.body}</p>
-              {notice.offer.length > 0 && (
-                <Button
-                  className="mt-4"
-                  onClick={() =>
-                    void applyReadingLanguages([...readingLanguagesRef.current, ...notice.offer])
-                  }
-                >
-                  Add {notice.offer.map((language) => readingLanguageNames[language]).join(" and ")}
-                </Button>
-              )}
-              <Button className="mt-2 w-full" variant="ghost" onClick={() => openAccount("manual")}>
-                Change my languages
-              </Button>
-            </>
-          ) : notice.kind === "unreachable" ? (
-            <>
-              {/* The reader can act on this one, so it says what to try. The
-                  page itself arrived, which means our server is up and the
-                  network is stopping the call the app makes next - on some
-                  providers that call is blocked while the site is not. */}
-              <h1 className="mt-4 text-2xl font-semibold tracking-normal">
-                boks cannot reach its server from this network
-              </h1>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                The page loaded, so boks itself is running. What failed is the connection your browser
-                makes next, and that is usually the network in between: another Wi-Fi, mobile data, or a
-                VPN normally fixes it.
-              </p>
-              <Button className="mt-4" onClick={() => void loadFeed()}>
-                Try again
-              </Button>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-                Still nothing? Write to{" "}
-                <a className="auth-link" href={supportMailto}>
-                  {supportEmail}
-                </a>{" "}
-                - tell us your provider and we will move the address boks talks to.
-              </p>
-            </>
-          ) : (
-            <p className="mt-3 text-[var(--muted-foreground)]">{notice.message}</p>
-          )}
-        </div>
-      </main>
+      <EmptyFeedScreen
+        notice={emptyFeedNotice({
+          phase,
+          message: status,
+          languages: readingLanguagesRef.current,
+          coverage: user?.languageCoverage,
+        })}
+        onAddLanguages={(offer) => void applyReadingLanguages([...readingLanguagesRef.current, ...offer])}
+        onChangeLanguages={() => openAccount("manual")}
+        onRetry={() => void retryFeed()}
+      />
     );
   }
 
@@ -2445,7 +2483,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                         onClick={() => openAuthor(currentStory.authorHandle)}
                         disabled={!currentStory.authorHandle}
                       >
-                        {currentStory.authorHandle ? `@${currentStory.authorHandle.replace(/^@+/, "")}` : "boks author"}
+                        {atHandle(currentStory.authorHandle) || "boks author"}
                       </button>
                     </span>
                   ) : (
@@ -2570,76 +2608,42 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
          * and the two buttons go away, because a swipe is the way there.
          */}
         <div className="reader-dock">
-          <aside
-            className="action-rail reader-ui pointer-events-none"
-            inert={readerInteractionBlocked ? true : undefined}
-          >
-          {/* Likes and replies carry their counts to the right of the icon,
-              always. The like total is public as an aggregate - how many,
-              never who - and is reconciled with this reader's own like so the
-              number moves the moment the heart does. A share has no count: it
-              cannot be seen once the link leaves the app. */}
-          <ActionButton
-            label={isCurrentStoryLiked ? "Remove like" : "Like"}
-            value={displayedLikeCount(
+          {/* The format button: open to everyone on a finished piece - its own
+              pictures and its own voice - and to admins alone on every other,
+              where the cinema is still a prototype in a shared stand-in. A
+              registered poem is finished by definition. */}
+          <ReaderActionRail
+            inert={readerInteractionBlocked}
+            liked={isCurrentStoryLiked}
+            likeCount={displayedLikeCount(
               currentStory.likes,
               persistedLikedStoryIds.has(currentStory.id),
               isCurrentStoryLiked
             )}
-            onClick={likeStory}
-            active={isCurrentStoryLiked}
-          >
-            {/* Filled when liked: the state has to read at a glance, not only
-                through a tinted background. */}
-            <Heart className="size-5" fill={isCurrentStoryLiked ? "currentColor" : "none"} />
-          </ActionButton>
-          <ActionButton label="Comments" value={currentCommentCount} onClick={() => setCommentOpen(true)}>
-            <MessageCircle className="size-5" />
-          </ActionButton>
-          <ActionButton label="Share" onClick={shareStory}>
-            <Share2 className="size-5" />
-          </ActionButton>
-          {/* A boks read aloud over pictures that change as it goes. Open to
-              everyone on a piece that is finished - its own paintings and its
-              own voice - and to admins alone on every other, where it is still
-              a prototype dressed in a shared stand-in. */}
-          {cinemaOffered && (
-            <ActionButton
-              label={
-                // A registered poem is finished by definition - it has its own
-                // recording, theme and pictures - so it is not a prototype.
-                cinemaIsFinished || poemManifestUrl
+            commentCount={currentCommentCount}
+            formatLabel={
+              !cinemaOffered
+                ? null
+                : cinemaIsFinished || poemManifestUrl
                   ? "Listen and read"
                   : "Listen and read (prototype, admins only)"
-              }
-              onClick={() => {
-                formatFromSeries.current = false;
-                openReadingFormat(currentStory.id);
-              }}
-            >
-              <Clapperboard className="size-5" />
-            </ActionButton>
-          )}
-          {/* Something to read to: one track for the whole catalogue, off
-              until asked for. */}
-          <ActionButton
-            label={musicOn ? "Turn the music off" : "Play music while you read"}
-            onClick={() => {
+            }
+            musicOn={musicOn}
+            canHide={isAdminReader}
+            onLike={() => void likeStory()}
+            onComments={() => setCommentOpen(true)}
+            onShare={() => void shareStory()}
+            onOpenFormat={() => {
+              formatFromSeries.current = false;
+              openReadingFormat(currentStory.id);
+            }}
+            onToggleMusic={() => {
               if (musicOn) stopReadingMusic();
               else startReadingMusic();
               setMusicOn(!musicOn);
             }}
-            active={musicOn}
-          >
-            <Music className="size-5" />
-          </ActionButton>
-          {/* Admins only, and only as a convenience: see `isAdminReader`. */}
-          {isAdminReader && (
-            <ActionButton label="Hide this bok from readers (admin)" onClick={openHideBok} tone="danger">
-              <Trash2 className="size-5" />
-            </ActionButton>
-          )}
-          </aside>
+            onHide={openHideBok}
+          />
 
           <nav className="reader-footer reader-ui" aria-label="Move through the feed">
             {selectedIndex > 0 && (
@@ -2710,7 +2714,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
             onOpenBok={(storyId) => {
               setAuthorSheet(null);
-              void openReadBoks(storyId);
+              void openReadBoks(storyId, "author");
             }}
             onRequestAccount={() => {
               setAuthorSheet(null);
@@ -2744,125 +2748,24 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           />
         )}
 
-        {/* Asked mid-story, so it asks for one thing and then gets out of the
-            way. Once the note is sent the sheet has nothing left to ask: the
-            heading thanks, and the button that used to say "Not now" - still
-            offering to decline something already done - says Close. */}
         {feedbackMilestone !== null && (
-          <ReaderSheet label="Tell us what you think" onClose={closeFeedbackSheet}>
-            <ReaderSheetHeader
-              label="Tell us what you think"
-              onClose={closeFeedbackSheet}
-              title={
-                feedbackSent
-                  ? "Thank you"
-                  : feedbackMilestone === 3
-                    ? "Three boks in - what do you think?"
-                    : feedbackMilestone === 10
-                      ? "Ten boks in - how is it going?"
-                      : "Thirty boks in - you know this place now"
-              }
-            />
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-              <FeedbackForm
-                surface={surfaceForMilestone(feedbackMilestone)}
-                boksRead={feedbackState.current.reads}
-                visitorId={visitorId.current}
-                onSent={() => setFeedbackSent(true)}
-                autoFocus
-              />
-              <Button className="mt-4 w-full" variant="ghost" onClick={closeFeedbackSheet}>
-                {feedbackSent ? "Close" : "Not now"}
-              </Button>
-            </div>
-          </ReaderSheet>
+          <FeedbackSheet
+            milestone={feedbackMilestone}
+            sent={feedbackSent}
+            boksRead={feedbackState.current.reads}
+            visitorId={visitorId.current}
+            onSent={() => setFeedbackSent(true)}
+            onClose={closeFeedbackSheet}
+          />
         )}
 
         {bokMenuOpen && currentStory && (
-          <ReaderSheet label="This bok" onClose={() => setBokMenuOpen(false)}>
-            <ReaderSheetHeader label="This bok" onClose={() => setBokMenuOpen(false)} title="This bok" />
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-              <p className="truncate text-sm font-medium">{currentStory.title}</p>
-              <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-                {currentStory.authorName
-                  ? `${currentStory.authorName} · @${currentStory.authorHandle.replace(/^@+/, "")}`
-                  : `@${currentStory.authorHandle.replace(/^@+/, "")}`}
-              </p>
-
-              <Button className="mt-4 w-full justify-start" variant="outline" onClick={copyBokLink}>
-                <LinkIcon className="size-4" /> Copy link to this bok
-              </Button>
-
-              {reportDone ? (
-                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-4">
-                  <p className="text-sm font-semibold">
-                    {reportDone === "received" ? "Report sent" : "You have already reported this bok"}
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                    {reportDone === "received"
-                      ? "A boks admin reads every report. If the piece has to come down, its author is told why."
-                      : "It is already with an admin. There is nothing more to do."}
-                  </p>
-                  <Button className="mt-3 w-full" variant="ghost" onClick={() => setBokMenuOpen(false)}>
-                    Back to reading
-                  </Button>
-                </div>
-              ) : (
-                <div className="mt-4">
-                  <h3 className="text-sm font-semibold">Report a problem</h3>
-                  <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                    Only boks admins see this. Tell us what is wrong and, if it is your work, how we
-                    can tell.
-                  </p>
-
-                  <div className="mt-3 flex gap-2">
-                    {(
-                      [
-                        ["copyright", "Copyright"],
-                        ["other", "Something else"],
-                      ] as const
-                    ).map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className={`report-kind${reportKind === value ? " report-kind--on" : ""}`}
-                        aria-pressed={reportKind === value}
-                        onClick={() => setReportKind(value)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <Textarea
-                    className="mt-3 min-h-[96px]"
-                    value={reportReason}
-                    placeholder={
-                      reportKind === "copyright"
-                        ? "This is my translation, first published in 1998. I never gave permission."
-                        : "What is wrong with this bok?"
-                    }
-                    onChange={(event) => setReportReason(event.target.value)}
-                  />
-
-                  <Button
-                    className="mt-3 w-full"
-                    onClick={sendReport}
-                    disabled={reportSending || reportReason.trim().length < 10}
-                  >
-                    <Flag className="size-4" /> {reportSending ? "Sending…" : "Send report"}
-                  </Button>
-                  {reportReason.trim().length > 0 && reportReason.trim().length < 10 && (
-                    <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                      A sentence or two, so an admin can act on it.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </ReaderSheet>
+          <BokMenuSheet
+            story={currentStory}
+            onClose={() => setBokMenuOpen(false)}
+            onCopyLink={() => void copyBokLink()}
+            onReport={reportCurrentBok}
+          />
         )}
 
         <UserAuthPanel
@@ -2876,7 +2779,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           onOpenReadBoks={(storyId) => {
             // A boks from the library is read in the feed, so the shelf steps aside.
             if (seriesOpen) openFeed();
-            void openReadBoks(storyId);
+            void openReadBoks(storyId, "library");
           }}
           onFollowsChanged={setFollowedAuthorIds}
           onUserChanged={handleUserChanged}
@@ -2902,8 +2805,10 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           </div>
         )}
 
-        {/* Above everything, and only for an admin. Nothing in here writes a
-            reading event, so a demo does not become recommendation data. */}
+        {/* Above everything. The cinema prototype is offered to admins only;
+            finished pieces to everyone. Time in a format counts as reading
+            the boks under it, and its events carry `metadata.format` so an
+            analysis can tell listening from reading - see `formatUsed`. */}
         {cinemaOpen && currentStory && cinemaOffered && (
           <CinemaMode story={currentStory} finale={finale} onClose={() => setCinemaOpen(false)} />
         )}

@@ -60,6 +60,8 @@ export async function POST(request: Request) {
     restUrl: `${supabaseUrl}/rest/v1`,
     apiKey: supabaseApiKey,
     accessToken,
+    // A reader who has gone away needs no feed; stop asking the database.
+    signal: request.signal,
   });
 
   const serveRequest: ServeReaderFeedRequest = {
@@ -96,7 +98,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.isAuthFailure) {
-      // The client refreshes its session and retries once on a 401.
+      // The browser refreshes its session and retries once on a 401
+      // (`loadSupabaseReaderFeed`).
       return jsonError("Supabase rejected the reader session.", 401);
     }
     console.error("Could not build a reader feed.", safeErrorDetails(error));

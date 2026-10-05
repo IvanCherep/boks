@@ -19,10 +19,33 @@ import type {
  */
 const MINIMUM_RATE_DENOMINATOR = 5;
 
-function rate(numerator: number, denominator: number) {
+function rate([numerator, denominator]: RateParts) {
   if (denominator < MINIMUM_RATE_DENOMINATOR) return null;
   return numerator / denominator;
 }
+
+/** Numerator and denominator of a rate, before any division. */
+export type RateParts = readonly [numerator: number, denominator: number];
+
+type RateCounters = Pick<ReaderTotals, "starts" | "completes" | "skips" | "reactions">;
+
+/**
+ * The one definition of each behavioural rate.
+ *
+ * Every rate in the system - a reader's value here, the lab's pooled arm
+ * figures, the ranking features in `signals.ts` - divides the same parts, so a
+ * number on one screen means what it means on every other. Before 2026-10-05
+ * skip rate had four definitions and could exceed 100%.
+ *
+ * Skips are not a subset of starts: `start` fires a few seconds after a boks
+ * arrives, and most skips happen before it does. So skip rate is over every
+ * boks that reached a verdict either way, `starts + skips`, and stays a share.
+ */
+export const RATE_PARTS = {
+  completion: (totals: RateCounters): RateParts => [totals.completes, totals.starts],
+  skip: (totals: RateCounters): RateParts => [totals.skips, totals.starts + totals.skips],
+  reaction: (totals: RateCounters): RateParts => [totals.reactions, totals.starts],
+};
 
 export const READER_METRICS: Record<ReaderMetricId, ReaderMetricDefinition> = {
   active_seconds: {
@@ -66,25 +89,23 @@ export const READER_METRICS: Record<ReaderMetricId, ReaderMetricDefinition> = {
     label: "Completion rate",
     unit: "rate",
     lowerIsBetter: false,
-    value: (totals) => rate(totals.completes, totals.starts),
+    value: (totals) => rate(RATE_PARTS.completion(totals)),
   },
   skip_rate: {
     id: "skip_rate",
     label: "Skip rate",
     unit: "rate",
     lowerIsBetter: true,
-    value: (totals) => rate(totals.skips, totals.starts),
+    value: (totals) => rate(RATE_PARTS.skip(totals)),
   },
   reaction_rate: {
     id: "reaction_rate",
     label: "Reaction rate",
     unit: "rate",
     lowerIsBetter: false,
-    value: (totals) => rate(totals.reactions, totals.starts),
+    value: (totals) => rate(RATE_PARTS.reaction(totals)),
   },
 };
-
-export const READER_METRIC_IDS = Object.keys(READER_METRICS) as ReaderMetricId[];
 
 export function readerMetric(id: ReaderMetricId): ReaderMetricDefinition {
   const definition = READER_METRICS[id];
@@ -97,6 +118,20 @@ export function formatReaderValue(id: ReaderMetricId, value: number) {
   if (definition.unit === "rate") return `${Math.round(value * 1000) / 10}%`;
   if (definition.unit === "seconds") return `${Math.round(value)}s`;
   return `${Math.round(value * 100) / 100}`;
+}
+
+/**
+ * A difference between two arms on this metric, in the metric's own unit.
+ *
+ * A rate difference is in percentage points, never "%": "+5%" next to a 40%
+ * bar reads as a relative change, and it is not one.
+ */
+export function formatReaderDifference(id: ReaderMetricId, value: number) {
+  const definition = readerMetric(id);
+  const sign = value > 0 ? "+" : "";
+  if (definition.unit === "rate") return `${sign}${Math.round(value * 1000) / 10} pp`;
+  if (definition.unit === "seconds") return `${sign}${Math.round(value)}s`;
+  return `${sign}${Math.round(value * 100) / 100}`;
 }
 
 export type { ReaderTotals };

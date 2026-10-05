@@ -30,7 +30,7 @@ export type SampleSizeStep = {
   readersPerArm: number;
   readers: number;
   status: ComparisonStatus;
-  /** Hodges-Lehmann shift on the prefix, or null when below the minimum. */
+  /** Difference in means on the prefix, or null when below the minimum. */
   effect: number | null;
   ci: [number, number] | null;
   /** Half the interval width: how precise the answer is at this size. */
@@ -101,7 +101,14 @@ export function buildSampleSizeCurve(
   const observed: SampleSizeStep[] = stepsUpTo(readersPerArmNow).map((step) => {
     const control = controlValues.slice(0, step);
     const variant = variantValues.slice(0, step);
-    const result = compareIndependent(control, variant, options);
+    // Only the detectable effect is read per step. The arm-size search is the
+    // expensive part of a power estimate and the headline already has it, so
+    // replaying it over up to seventeen prefixes froze the admin tab.
+    const result = compareIndependent(control, variant, {
+      ...options,
+      power: "detectable-effect",
+      powerTrials: 400,
+    });
     const ci = result.status === "insufficient_data" ? null : result.ci;
 
     return {
@@ -185,7 +192,7 @@ function describeCurve(input: {
 
   if (input.mde === null) {
     return (
-      `${size}. At this spread nothing short of a doubling would be reliably visible on ${input.metric}, ` +
+      `${size}. At this spread nothing short of a tripling would be reliably visible on ${input.metric}, ` +
       `so treat any difference on this screen as unresolved. ` +
       (input.needed
         ? `Detecting ${percent(input.targetEffect)} would take about ${input.needed} per arm.`

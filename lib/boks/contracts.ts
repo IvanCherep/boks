@@ -142,7 +142,7 @@ export type ReaderEvent = {
    * hint, never an authority.
    */
   feedId?: string | null;
-  /** Which path served the feed: `worker`, `browser` or `d1_fallback`. */
+  /** Which path served the feed: `worker` or `browser`. */
   servingBackend?: string;
   /** The read/skip inference rules in force when this event was labelled. */
   labelingVersion?: string;

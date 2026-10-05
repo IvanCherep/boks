@@ -14,30 +14,38 @@ Two things must stay cheap:
 
 ## Architecture
 
-Ranking is TypeScript, not SQL. The database returns candidates with their
-behavior counters; `lib/boks/recommendations` scores and orders them. That is
-why one strategy implementation serves both the Supabase production path and the
-D1 compatibility path, and why strategies can be unit-tested with no database.
+Ranking is TypeScript, not SQL (`docs/adr/0001-ranking-executes-in-worker.md`).
+The database returns candidates with their behaviour counters;
+`lib/boks/recommendations` scores and orders them, so one strategy
+implementation serves every serving path and strategies can be unit-tested with
+no database.
 
 ```text
 lib/boks/recommendations/
-  signals.ts           normalized 0..1 story signals every strategy scores against
+  signals.ts           normalized 0..1 story signals (ranking features)
   strategy.ts          the strategy contract and defineStrategy()
   strategies/          one file per algorithm + index.ts registry list
-  registry.ts          lookup, display, segment filtering
+  registry.ts          lookup and display
   experiments.ts       traffic split config and deterministic assignment
-  feed.ts              buildReaderFeed(): the one seam both backends rank through
-  metrics.ts           raw counters -> rates, uplift, confidence, readiness
+  feed.ts              buildReaderFeed(): the one seam every serving path ranks through
+  metrics.ts           the lab report: arm summaries, comparisons, readiness
+  divergence.ts        do the algorithms even produce different feeds?
   index.ts             public surface
+lib/recsys/
+  aggregate/           event rows -> one row per reader; the metric catalogue
+  statistics/          reader-level comparison, bootstrap, permutation, power
 ```
 
 Callers:
 
-- Supabase reader: `components/boks/supabase-browser-data.ts` calls
-  `get_recommendation_candidates`, then `buildReaderFeed`.
-- D1 reader: `app/api/boks/route.ts` selects candidates, then `buildReaderFeed`.
-- Admin lab: `components/boks/admin/recommendation-lab.tsx` calls
-  `get_recommendation_lab`, then `buildRecommendationLab`.
+- Reader feed: the Worker route `app/api/feed/route.ts` calls `serveReaderFeed`
+  (`lib/boks/feed-service.ts`), which loads candidates through
+  `get_recommendation_candidates` and ranks with `buildReaderFeed`. When the
+  Worker is unavailable the browser runs the same `serveReaderFeed` over its
+  own transport and the served feed is recorded as degraded.
+- Admin lab: `components/boks/admin/recommendation-lab.tsx` loads
+  `get_recommendation_lab` and `get_reader_outcomes`, then calls
+  `buildRecommendationLab`.
 
 ## Story Signals
 
@@ -48,15 +56,24 @@ strategy and strategies stay comparable. Negative weights are penalties.
 `shareRate`, `skipRate`, `readDepth`, `popularity`, `freshness`, `exploration`,
 `shortness`, `longform`, `tasteMatch`, `novelty`, `fatigue`, `jitter`.
 
+Signals are ranking features, not metrics. The rate-shaped ones divide the
+same parts as the reader metrics below (`RATE_PARTS`), so a feature and the
+number the lab reports for it never disagree about what it means.
+
 `fatigue` is not a weight. Reading fatigue is a product rule applied in
 `feed.ts`: a boks the reader already skipped or finished never outranks one they
-have not seen, whatever its signals say.
+have not seen, whatever its signals say. It is applied after a strategy's
+`rerank` as well; only a strategy that sets `handlesFatigue: true` (today only
+`for_you`, which grades fatigue in its own scoring) is exempt. The reader's
+history comes from the server (`bokState`), so it follows the reader across
+devices; the browser's own lists only add what the server has not seen yet.
 
 ## Current Algorithms
 
 | id | family | what it optimizes |
 |---|---|---|
-| `balanced` | quality | control: completion, reactions, freshness, light exploration |
+| `for_you` | personal | control and the product ranker: resume, affinity and discovery sources over reader history and semantic taste, then a greedy slate that spaces authors, shapes and lengths |
+| `balanced` | quality | completion, reactions, freshness, light exploration |
 | `completion_first` | quality | boks people finish after starting |
 | `reaction_first` | engagement | boks that cause likes, shares and comments quickly |
 | `discovery` | exploration | newer and under-tested boks |
@@ -75,7 +92,11 @@ bounces between variants during a study. Assignment is recorded once per reader
 in `public.recommendation_assignments`.
 
 Segments (`general`, `new_reader`, `quick_reads`, `deep_reads`) are derived from
-the visitor id and used only for breakdowns, never to pick an algorithm.
+the visitor id and recorded on events. They never pick an algorithm.
+
+A stored assignment that names an algorithm this build no longer registers is
+re-attributed to the algorithm that actually ranked (`source: "fallback"`), so
+events are never filed under an arm that produced none of them.
 
 ## Event Contract
 
@@ -87,7 +108,9 @@ Every reader event carries:
 - `surface`: reader, author, or admin surface.
 - `rank`: zero-based story position in the delivered feed.
 - `clientElapsedSeconds`: seconds since the current story impression.
-- `estimatedSeconds`: estimated reading seconds, needed for the pace index.
+- `estimatedSeconds`: estimated reading seconds from the word count.
+- `activeSeconds`, `progress`: foreground reading time and scroll depth.
+- `feedId`, `servingBackend`, `labelingVersion`: provenance of the served slate.
 - `value`: read seconds for `complete`, otherwise `1`.
 - `metadata`: optional JSON for low-volume exploratory fields.
 
@@ -98,39 +121,60 @@ are real anonymous Supabase users and are measured like everyone else.
 
 ## Metrics
 
-Rates are derived in `metrics.ts`, never in SQL, so both backends agree:
+The analysis unit is the reader. Event rows are collapsed to one value per
+reader per algorithm in `lib/recsys/aggregate`, and readers who produced events
+under more than one algorithm are removed from every arm - from the
+comparisons and from the arm summaries alike.
 
-- `startRate`: starts / impressions.
-- `finishRate`: completions / starts.
-- `reactionRate`: (likes + shares + comments) / completions.
-- `skipRate`: skips / (starts + skips).
-- `avgReadSeconds`, `avgSecondsToLike`, `avgSecondsToComment`, `avgStartRank`.
-- `paceIndex`: estimated duration / actual completion seconds. Above `1` means
-  faster-than-estimated reading.
-- `engagementScore`: weighted completions, reactions and comments minus skips.
-- `uplift`: percentage-point and relative change against the control arm, with a
-  coarse confidence label from a two-proportion z score (`unclear` below ~1.96).
-- `readiness`: impressions collected against `minimumImpressionsPerArm`. An arm
-  below its minimum is dimmed in the lab and never named a leader.
+Each rate has one definition, `RATE_PARTS` in `lib/recsys/aggregate/metrics.ts`:
+
+- completion rate: completions / starts.
+- skip rate: skips / (starts + skips). Most skips happen before a `start` is
+  recorded, so skips over starts alone could exceed 100%.
+- reaction rate: (likes + shares + comments) / starts.
+
+A reader's rate is computed only when its denominator is at least 5. The lab's
+per-arm rates are the same parts pooled over the arm's readers; they describe an
+arm and are never the basis of a verdict.
+
+Comparisons (`lib/recsys/statistics/compare.ts`) report one estimand, the
+difference in reader means (variant minus control): the effect, a percentile
+bootstrap interval of it, a permutation test on the same statistic, and power
+simulated with Welch's t on means. An interval spanning zero is
+`inconclusive`, never "no difference".
+
+Readiness: an arm is compared once it holds `minimumReadersPerArm` readers
+(set in the traffic split editor; stored as `minimum_impressions_per_arm` for
+compatibility, but counted in readers). Readiness is per metric, because a
+rate leaves out readers below its denominator floor.
+
+There are no composite scores. `engagementScore`, `paceIndex` and the
+two-proportion uplift label were removed: they could not be wrong, so they
+could not be informative.
 
 ## Adding An Algorithm
 
 1. Create `lib/boks/recommendations/strategies/<name>.ts` calling
-   `defineStrategy` with an id, name, description, family, segment, and either
-   `weights` over the signals above or a custom `score` / `rerank`.
+   `defineStrategy` with an id, name, description, family, and either
+   `weights` over the signals above or a custom `score` / `rerank`. A custom
+   `rerank` still gets the shared fatigue tiering unless it sets
+   `handlesFatigue: true` and grades fatigue itself.
 2. Add it to `registeredStrategies` in `strategies/index.ts`.
 3. Add a case to `lib/boks/recommendations/feed.test.ts` describing the ordering
    the strategy is supposed to produce.
 4. Run `npm test`. Nothing else needs to change: contracts, admin lab, traffic
    split editor and event attribution all read from the registry.
 5. Give it traffic in `/admin` -> Recommendation lab -> Traffic split.
-6. Let at least `minimumImpressionsPerArm` impressions accumulate before
-   comparing it with control.
+6. Run `npm run verify:divergence`: an arm that serves the same top ten as the
+   control cannot be told apart from it at any sample size.
+7. Let at least `minimumReadersPerArm` readers accumulate in each arm before
+   reading a comparison.
 
 ## Decision Rules
 
-Use `balanced` as control. A new algorithm should beat control on finish rate or
-reaction rate without a large skip-rate increase, with a confidence label above
-`unclear`. Do not optimize only for likes if average read time collapses or
+`for_you` is the control. A new algorithm should beat it on active reading
+seconds or boks opened per reader without a worse skip rate, with an interval
+that excludes zero. Do not optimize only for likes if reading time collapses or
 completion drops. `random_control` exists so "is ranking worth anything" stays a
-question with an answer.
+question with an answer. Before trusting any comparison, check divergence and
+the lab's data-quality panel.

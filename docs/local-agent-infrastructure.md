@@ -7,22 +7,9 @@ testing and deploying the application.
 
 ## Repository
 
-Project root:
-
-```bash
-/Users/iegorov/Documents/Codex/2026-09-09/fd
-```
-
-Read these first:
-
-1. `AGENTS.md`
-2. `docs/README.md`
-3. `docs/ai-agent-guide.md`
-4. `docs/hosting.md`
-5. The focused spec for the change:
-   - `specs/boks-product-spec.md`
-   - `specs/boks-recommendation-experiments.md`
-6. `docs/security.md` for any auth, API, dependency, RLS, RPC, or deployment-boundary change.
+Run every command from the repository root. Read `AGENTS.md` first and follow
+its read order; for deployment, `docs/hosting.md`; for any auth, API,
+dependency, RLS, RPC or deployment-boundary change, `docs/security.md`.
 
 Before editing:
 
@@ -38,15 +25,15 @@ boks is a browser MVP for a literature-only, swipe-first reading feed.
 
 Core product rules:
 
-- A `bok` is one content unit, similar to one reel in Instagram.
+- A bok is one content unit (`CONTEXT.md`), similar to one reel in Instagram.
 - Readers do not choose genre, mood, catalog item, or recommendation algorithm.
 - The main page is algorithmic and reading-focused.
 - Guests can read a limited number of boks before sign-up is required.
 - Likes and writing comments require a permanent account.
 - Guests can read comments.
-- Comments display the signed-in user's unique `@nickname`.
+- Comments display the signed-in account's unique `@handle`.
 - Every user can submit boks, but admin approval is required before publication.
-- User authentication is passwordless: Supabase email magic links only.
+- User authentication is passwordless: Supabase email OTP - a magic link or the 6-digit code from the same email.
 
 ## Services
 
@@ -124,7 +111,7 @@ Supabase responsibilities:
 
 - anonymous reader sessions;
 - permanent passwordless email accounts;
-- `user_profiles` with roles and unique `@nickname`;
+- `user_profiles` with roles and unique `@handle`;
 - published boks content;
 - comments, likes, views, and reader events;
 - author submissions and admin moderation;
@@ -225,64 +212,24 @@ When testing magic links:
 
 ### Resend SMTP
 
-Supabase Auth sends magic-link emails through Resend SMTP.
+Supabase Auth sends sign-in email (link and code) through Resend SMTP.
 
-Current pilot state:
+- SMTP host `smtp.resend.com`, user `resend`, password from `RESEND_API_KEY`.
+- Sender `hello@tryboks.com` (`[auth.email.smtp].admin_email` in
+  `supabase/config.toml`), on the Resend-verified `tryboks.com` domain.
+- Replies to `hello@` bounce until it gets an Email Routing rule;
+  `support@tryboks.com` is routed to the owner. DMARC is not published yet.
 
-- SMTP provider: Resend.
-- SMTP host: `smtp.resend.com`.
-- SMTP user: `resend`.
-- Sender currently configured in `supabase/config.toml`:
-  ```text
-  onboarding@resend.dev
-  ```
+Change SMTP settings in the Supabase dashboard. `supabase config push`
+overwrites the SMTP password unless `RESEND_API_KEY` is in the shell
+environment, so run `supabase config diff` first and never push without it:
 
-Important limitation:
-
-- `onboarding@resend.dev` is a Resend sandbox sender.
-- It is suitable only for very early testing.
-- It may deliver only to the exact verified account-owner email.
-- It is not suitable for 100-200 conference testers.
-
-Before inviting outside testers:
-
-1. Buy or connect a real sending domain.
-2. Verify that domain in Resend.
-3. Add SPF, DKIM, and DMARC DNS records.
-4. Change Supabase SMTP sender to something like:
-   ```text
-   login@tryboks.com
-   ```
-5. Push Supabase config with the Resend API key supplied through the shell
-   environment, not committed to source:
-   ```bash
-   RESEND_API_KEY=<secret> npx supabase config push --project-ref <project-ref>
-   ```
+```bash
+RESEND_API_KEY=<secret> npx supabase config push --project-ref <project-ref>
+```
 
 Never write the Resend API key into docs, source, screenshots, or chat logs.
-If a key was pasted into a chat, treat it as exposed and rotate it in Resend
-before a real pilot.
-
-### D1 Compatibility Path
-
-The project still contains a Cloudflare D1 compatibility API from the original
-prototype.
-
-Files:
-
-- `db/schema.ts`
-- `drizzle/`
-- `app/api/boks/route.ts`
-- `lib/boks/analytics.ts`
-
-Current role:
-
-- local/demo fallback;
-- compatibility reference for original event shapes;
-- not the primary production user/auth store.
-
-Do not move new MVP user/account/auth behavior into D1. Supabase is the
-production MVP backend.
+If a key was pasted into a chat, treat it as exposed and rotate it.
 
 ### OpenAI Sites Metadata
 
@@ -310,7 +257,6 @@ Local files:
   `verify:supabase`.
 - `.env.development.local` - the local Supabase stack. Vite reads it in *dev
   mode only*, so it can never reach a production build.
-- `.env.local-supabase` - the same local values, kept for reference.
 
 Never create `.env.production.local`. Vite gives it priority over `.env.local`
 in a production build, which is exactly how a local address reached production.
@@ -391,19 +337,19 @@ Run:
 curl -I https://tryboks.com/
 curl -I https://tryboks.com/admin
 curl -I https://tryboks.com/author
-curl 'https://tryboks.com/api/boks?view=reader&limit=3&visitorId=agent-live-check'
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://tryboks.com/api/feed
 ```
 
 Expected:
 
 - `/`, `/admin`, and `/author` return `200`.
-- Reader API returns a bounded payload.
+- `POST /api/feed` without a session returns `401`.
 - Admin browser UI requires an admin Supabase role for private metrics.
 
 For auth work, also test in Chrome:
 
-- request a magic link from the boks UI;
-- open the email link on the same browser;
+- request a sign-in email from the boks UI;
+- open the link on the same browser, and separately sign in with the code;
 - verify the app cleans the redirect URL;
 - verify old/used links show a recoverable sign-in experience rather than a
   broken global error.
@@ -439,9 +385,9 @@ Rules:
 - Browser local storage, URL flags, and `user_metadata` are not authorization.
 - RLS/RPC checks must enforce admin-only operations.
 
-If no admin exists, the app can expose an initial claim flow in `/admin`. After
-one admin exists, use the admin UI to grant admin role to another permanent
-user.
+There is no reader-accessible first-admin claim: bootstrapping the first admin
+is an operator action (`docs/security.md`, `docs/local-environment-runbook.md`).
+After that, use the admin UI to grant the role to another permanent account.
 
 ## Operational Safety
 
@@ -458,30 +404,9 @@ Claude or any local agent must follow these rules:
 - If production deploy succeeds, report the public URL and the checks run.
 - If deploy fails, report the concrete blocker and leave source changes intact.
 
-## Quick Deploy Checklist For Claude
+## Deploy
 
-From the project root:
-
-```bash
-git status --short
-npm run lint
-npm run typecheck
-npm run build
-npm run deploy
-curl -I https://tryboks.com/
-```
-
-If Supabase changed:
-
-```bash
-npm run verify:supabase
-```
-
-Final response should include:
-
-- what changed;
-- what checks passed;
-- whether production was deployed;
-- the live URL;
-- any unresolved operational risk, especially email delivery or Supabase
-  migration state.
+Follow `docs/hosting.md` -> Deploy. The final response should say what
+changed, which checks passed (and which could not run, and why), whether
+production was deployed and which Worker version is live, and any unresolved
+operational risk - especially email delivery or migration state.

@@ -19,7 +19,8 @@ describe("normalizeExperimentConfig", () => {
     });
 
     expect(config.arms.map((arm) => arm.algorithmId)).toEqual(["balanced"]);
-    expect(config.minimumImpressionsPerArm).toBe(25);
+    // The stored key predates readers as the unit and is still accepted.
+    expect(config.minimumReadersPerArm).toBe(25);
   });
 
   it("falls back to the default split when nothing is live", () => {

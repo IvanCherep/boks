@@ -14,7 +14,7 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { measureStrategyDivergence } from "@/lib/boks/recommendations/divergence";
-import type { StoryCandidate } from "@/lib/boks/recommendations/signals";
+import { candidatesFromRollupRows, type SupabaseCandidateRow } from "@/lib/boks/supabase-reels";
 
 const args = process.argv.slice(2);
 const envIndex = args.indexOf("--env");
@@ -42,25 +42,11 @@ if (signIn.error) throw signIn.error;
 const result = await client.rpc("get_recommendation_candidates", { p_limit: 400 });
 if (result.error) throw result.error;
 
-const candidates = (result.data as Array<Record<string, unknown>>).map(
-  (row): StoryCandidate => ({
-    id: String(row.id),
-    title: String(row.title),
-    genre: String(row.genre),
-    mood: String(row.mood),
-    minutes: Number(row.minutes),
-    wordCount: Number(row.wordCount),
-    createdAt: String(row.createdAt),
-    impressions: Number(row.impressions),
-    starts: Number(row.starts),
-    completes: Number(row.completes),
-    skips: Number(row.skips),
-    likes: Number(row.likes),
-    shares: Number(row.shares),
-    comments: Number(row.comments),
-    readSecondsTotal: Number(row.readSecondsTotal),
-  })
-);
+// The same mapping production ranks from. A hand-written copy here once left
+// out bylines, shapes, author counts and the semantic fields, so `for_you`
+// was measured with author spacing, shape spacing and its cold-start priors
+// all switched off - a different ranker from the one readers get.
+const { candidates } = candidatesFromRollupRows(result.data as SupabaseCandidateRow[]);
 
 const experiment = await client.rpc("get_active_recommendation_experiment");
 const liveArms: string[] = (experiment.data?.arms ?? [])

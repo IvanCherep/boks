@@ -23,14 +23,26 @@
  */
 
 export type ReaderClock = {
-  /** Begin timing a new boks. Discards any time accrued for the previous one. */
+  /**
+   * Begin timing a new boks. Discards any time accrued for the previous one,
+   * and keeps a paused clock paused: a boks arriving in a hidden tab, or under
+   * the series shelf, has not started being read.
+   */
   restart: () => void;
   /** Accrue time up to now and keep running. */
   mark: () => void;
   /** Accrue time up to now and stop. */
   pause: () => void;
-  /** Start accruing again from now. */
+  /** Start accruing again from now, unless the clock is held. */
   resume: () => void;
+  /**
+   * Stop and stay stopped until `release`, whatever page visibility does. For
+   * a screen in front of the boks - the series shelf - where returning to the
+   * tab must not start the clock on a text nobody can see.
+   */
+  hold: () => void;
+  /** End a hold. The clock stays paused; the caller resumes it if visible. */
+  release: () => void;
   /**
    * Drop any un-accrued interval and start again from now, without losing what
    * has already accrued. Used when a restored page makes the last timestamp
@@ -53,6 +65,7 @@ export function createReaderClock(options: ReaderClockOptions = {}): ReaderClock
 
   let accruedMs = 0;
   let lastMarkMs: number | null = now();
+  let held = false;
 
   function accrue() {
     if (lastMarkMs === null) return;
@@ -66,7 +79,7 @@ export function createReaderClock(options: ReaderClockOptions = {}): ReaderClock
   return {
     restart() {
       accruedMs = 0;
-      lastMarkMs = now();
+      if (lastMarkMs !== null) lastMarkMs = now();
     },
     mark: accrue,
     pause() {
@@ -74,10 +87,18 @@ export function createReaderClock(options: ReaderClockOptions = {}): ReaderClock
       lastMarkMs = null;
     },
     resume() {
-      if (lastMarkMs === null) lastMarkMs = now();
+      if (!held && lastMarkMs === null) lastMarkMs = now();
+    },
+    hold() {
+      accrue();
+      lastMarkMs = null;
+      held = true;
+    },
+    release() {
+      held = false;
     },
     rebase() {
-      lastMarkMs = now();
+      if (!held) lastMarkMs = now();
     },
     activeSeconds() {
       accrue();

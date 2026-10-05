@@ -47,8 +47,8 @@ export type DivergenceRequest = {
 };
 
 /** Above this share of shared top picks, an experiment cannot resolve anything. */
-export const indistinguishableOverlap = 0.8;
-export const weakOverlap = 0.6;
+const indistinguishableOverlap = 0.8;
+const weakOverlap = 0.6;
 
 export function measureStrategyDivergence(request: DivergenceRequest): DivergenceReport {
   const algorithmIds =
@@ -66,7 +66,7 @@ export function measureStrategyDivergence(request: DivergenceRequest): Divergenc
         key: "divergence-probe",
         controlAlgorithmId: algorithmId,
         arms: [{ algorithmId, weight: 100 }],
-        minimumImpressionsPerArm: 1,
+        minimumReadersPerArm: 2,
       },
       limit: Math.max(topK, candidateCount),
       now: request.now,
@@ -133,13 +133,17 @@ function topOverlap(left: string[], right: string[], k: number) {
 }
 
 /**
- * Kendall tau-b over the items both rankings contain. Counts how often the two
- * orderings agree about which of a pair comes first.
+ * Kendall tau over the items both rankings contain: how often the two orderings
+ * agree about which of a pair comes first. Positions in a ranking are unique,
+ * so there are no ties and tau-a and tau-b coincide.
+ *
+ * Fewer than two shared items carry no ordering information at all, which is
+ * 0 (no association), not 1 ("identical").
  */
 export function kendallTau(left: string[], right: string[]) {
   const rightPosition = new Map(right.map((id, index) => [id, index]));
   const shared = left.filter((id) => rightPosition.has(id));
-  if (shared.length < 2) return 1;
+  if (shared.length < 2) return 0;
 
   let concordant = 0;
   let discordant = 0;

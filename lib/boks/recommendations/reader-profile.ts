@@ -37,15 +37,6 @@ export type ReaderProfile = {
   preferredReadMinutes: number | null;
 };
 
-export const emptyReaderProfile: ReaderProfile = {
-  authorAffinity: {},
-  shapeAffinity: {},
-  lengthAffinity: {},
-  personalizationStrength: 0,
-  totalNegativeWeight: 0,
-  preferredReadMinutes: null,
-};
-
 export function lengthBucketFor(minutes: number): LengthBucket {
   if (minutes <= 1) return "extra_short";
   if (minutes <= 3) return "short";

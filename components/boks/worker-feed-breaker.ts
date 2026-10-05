@@ -65,3 +65,25 @@ export function markWorkerFeedHealthy(storage: BreakerStorage | null = defaultSt
     // Nothing to clear.
   }
 }
+
+/** A failed call to `/api/feed`, with the HTTP status (0 when none arrived). */
+export class WorkerFeedError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "WorkerFeedError";
+    this.status = status;
+  }
+}
+
+/**
+ * Whether a Worker failure says the Worker itself is unwell.
+ *
+ * Network errors, timeouts and 5xx do. A 4xx - an expired session, a refused
+ * body - does not, and must not cost the next two minutes of serves.
+ */
+export function opensWorkerFeedBreaker(error: unknown) {
+  if (error instanceof WorkerFeedError) return error.status === 0 || error.status >= 500;
+  return true;
+}

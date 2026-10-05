@@ -87,7 +87,7 @@ describe("buildSampleSizeCurve", () => {
     if (tightStep !== null && noisyStep !== null) {
       expect(noisyStep).toBeGreaterThan(tightStep);
     } else {
-      // A null means "not even a doubling", which is itself the worse case.
+      // A null means "not even a tripling", which is itself the worse case.
       expect(noisyStep).toBeNull();
     }
   });

@@ -4,7 +4,12 @@ import {
   type RecommendationExperiment,
   type RecommendationExperimentConfig,
 } from "@/lib/boks/recommendations/experiments";
-import { getRecommendationStrategy } from "@/lib/boks/recommendations/registry";
+import {
+  defaultAlgorithmId,
+  getRecommendationStrategy,
+  isRecommendationAlgorithmId,
+  recommendationAlgorithmName,
+} from "@/lib/boks/recommendations/registry";
 import {
   deriveFeedSignals,
   emptyReaderSignals,
@@ -55,8 +60,9 @@ export type ReaderFeedResult = {
 
 export function buildReaderFeed(request: ReaderFeedRequest): ReaderFeedResult {
   const config = request.experimentConfig ?? defaultExperimentConfig;
-  const experiment =
-    request.experiment ?? assignExperimentArm(request.visitorId, config, request.requestedAlgorithmId);
+  const experiment = rankableExperiment(
+    request.experiment ?? assignExperimentArm(request.visitorId, config, request.requestedAlgorithmId)
+  );
   const strategy = getRecommendationStrategy(experiment.algorithmId);
   const reader = request.reader ?? emptyReaderSignals;
   const now = request.now ?? new Date();
@@ -86,8 +92,16 @@ export function buildReaderFeed(request: ReaderFeedRequest): ReaderFeedResult {
     };
   });
 
+  // Fatigue tiering applies after any rerank too, unless the strategy says it
+  // grades fatigue itself. A new reranker otherwise lost the product rule
+  // without being told. The sort is stable, so within a tier the rerank's
+  // order stands.
   const ordered = strategy.rerank
-    ? strategy.rerank([...scored], context)
+    ? strategy.handlesFatigue
+      ? strategy.rerank([...scored], context)
+      : [...strategy.rerank([...scored], context)].sort(
+          (left, right) => fatigueTier(left) - fatigueTier(right)
+        )
     : [...scored].sort(compareScoredCandidates);
 
   return {
@@ -100,6 +114,22 @@ export function buildReaderFeed(request: ReaderFeedRequest): ReaderFeedResult {
       explanations: entry.explanations,
       candidateSource: entry.candidateSource,
     })),
+  };
+}
+
+/**
+ * A stored assignment can name a strategy this build no longer has (renamed or
+ * removed). The registry would quietly rank it with the default, and the
+ * events would then be filed under an arm that produced none of them - so the
+ * attribution is rewritten to what actually ranks.
+ */
+function rankableExperiment(experiment: RecommendationExperiment): RecommendationExperiment {
+  if (isRecommendationAlgorithmId(experiment.algorithmId)) return experiment;
+  return {
+    ...experiment,
+    algorithmId: defaultAlgorithmId,
+    algorithmName: recommendationAlgorithmName(defaultAlgorithmId),
+    source: "fallback",
   };
 }
 

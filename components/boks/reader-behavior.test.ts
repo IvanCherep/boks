@@ -1,5 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { expectedReadingSeconds, inferReadOutcome, readingWordsPerMinute } from "@/components/boks/reader-behavior";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  expectedReadingSeconds,
+  getBrowserId,
+  inferReadOutcome,
+  readerSignalsFromProfile,
+  readingWordsPerMinute,
+  recordAnonymousBoksRead,
+  saveAnonymousNoticeState,
+  saveProfile,
+} from "@/components/boks/reader-behavior";
+import { initialProfile } from "@/components/boks/constants";
 import type { Story } from "@/components/boks/client-types";
 
 function story(overrides: Partial<Story> = {}): Story {
@@ -103,5 +113,52 @@ describe("inferReadOutcome", () => {
     // instrument stays fixed.
     const outcomes = Array.from({ length: 5 }, () => inferReadOutcome(story(), 200, 0.9));
     expect(new Set(outcomes).size).toBe(1);
+  });
+});
+
+describe("browser storage that refuses", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function refuseStorage() {
+    const refuse = () => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    };
+    vi.stubGlobal("window", {
+      localStorage: { getItem: refuse, setItem: refuse, removeItem: refuse },
+    });
+  }
+
+  it("never throws while the reader boots or records a read", () => {
+    refuseStorage();
+    expect(() => saveProfile(initialProfile)).not.toThrow();
+    expect(() => recordAnonymousBoksRead("s1")).not.toThrow();
+    expect(() => saveAnonymousNoticeState({ first: true })).not.toThrow();
+  });
+
+  it("still issues one stable browser id for the page", () => {
+    refuseStorage();
+    const first = getBrowserId("boks-test-reader");
+    expect(first).toMatch(/^boks-test-reader-/);
+    expect(getBrowserId("boks-test-reader")).toBe(first);
+  });
+});
+
+describe("readerSignalsFromProfile", () => {
+  it("hands the ranker exactly what the profile holds", () => {
+    const signals = readerSignalsFromProfile({
+      ...initialProfile,
+      completed: ["a"],
+      liked: ["b"],
+      skipped: ["c"],
+      genreScore: { literary: 3 },
+      moodScore: { quiet: 1 },
+    });
+    expect(signals).toEqual({
+      genreAffinity: { literary: 3 },
+      moodAffinity: { quiet: 1 },
+      completedStoryIds: ["a"],
+      likedStoryIds: ["b"],
+      skippedStoryIds: ["c"],
+    });
   });
 });

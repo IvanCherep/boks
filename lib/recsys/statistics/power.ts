@@ -38,6 +38,12 @@ export type PowerRequest = {
   desiredPower?: number;
   trials?: number;
   seed?: number;
+  /**
+   * Also search for the readers needed to detect `targetEffect`. The most
+   * expensive of the three searches (arm sizes up to 1600), and only the
+   * headline needs it, so a per-prefix readout can skip it.
+   */
+  searchReadersNeeded?: boolean;
 };
 
 export type SimulationRequest = {
@@ -83,11 +89,13 @@ export function estimatePower(request: PowerRequest): PowerEstimate {
     ) ?? null;
 
   const readersNeededForTargetEffect =
-    SEARCHED_ARM_SIZES.find(
+    request.searchReadersNeeded === false
+      ? null
+      : SEARCHED_ARM_SIZES.find(
       (arm) =>
         simulatePower({ ...shared, readersPerArm: arm, lift: request.targetEffect }) >=
         desiredPower
-    ) ?? null;
+      ) ?? null;
 
   return {
     coefficientOfVariation: round(cv, 2),
@@ -108,7 +116,7 @@ export function estimatePower(request: PowerRequest): PowerEstimate {
  * null when the true lift is `lift`.
  *
  * Exported so the estimate can be checked against the power table recorded in
- * `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md` §A.3, which was measured
+ * `docs/research/recsys-research-implementation-plan.md` §A.3, which was measured
  * independently of this code.
  */
 export function simulatePower(request: SimulationRequest) {

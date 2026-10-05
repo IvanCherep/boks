@@ -1,179 +1,90 @@
 # boks Agent Guide
 
-This file is the first stop for AI coding assistants working on boks. After reading it, read `docs/project-state.md` to learn what is live and what is deliberately unfinished, `docs/local-environment-runbook.md` before running anything locally, then `docs/README.md` for the full read order and the focused spec or guide for the task. Keep changes aligned with the product promise: a reader opens the app, receives one algorithmic short literature feed, reads with minimal interface noise, and leaves behavioral signals that help compare recommendation systems.
+boks is a focused reading feed of complete short literature - each **bok** fits a 15-minute break - built so the founder can compare recommendation algorithms by measured reading behaviour. A reader opens the app, gets one algorithmic swipe-first feed, reads with minimal interface, and leaves attributed behavioural signals.
 
-## Product Philosophy
+Read in this order, then the focused doc for the task:
 
-boks is not a book catalog and not a generic social network. It is a focused reading feed for complete short stories or book fragments that fit inside a 15 minute break.
+1. `CONTEXT.md` - the glossary. Use its terms in code, tests, issues and commits.
+2. `docs/project-state.md` - what is live, what is deliberately unfinished, open issues.
+3. `docs/README.md` - the index: which doc owns which topic.
+4. `docs/architecture.md` - module map and data flows. `docs/adr/` - why things are the way they are.
 
-Reader rules:
+Before running anything locally, read `docs/local-environment-runbook.md`: which env file reaches which backend is not visible from the code.
 
-- The `/` surface stays swipe-first and algorithmic. Do not add a visible story picker, shelves, categories, or manual algorithm selection for readers.
-- The one shelf is boks series (`/series`, the second tab): only pieces produced in a reading format, never the catalogue. Do not grow it into a browser for ordinary boks.
-- Reading focus matters more than interface visibility. Controls may appear on story change, tap, hover, or pause, but the story should own the screen while a person reads.
-- There is no explicit finished button. Completion, drop-off, and skip behavior are inferred from elapsed time, scroll progress, and swipe timing.
-- Reader-facing language should stay minimal. Do not explain the interface inside the product unless the user must make a decision.
-- Guest readers see no sign-up controls at first. They receive gentle notices after 5 and 10 viewed boks and must sign up or sign in after 15 viewed boks.
-- User-facing authentication is passwordless. Use Supabase email magic links only; do not add password fields, password reset, or change-password UI.
-- Guest readers can read comments, but liking and writing comments require a permanent account.
-- Comments must be attributed to the signed-in user's unique `@nickname`; users cannot type an arbitrary commenter name, and no display name is shown beside a comment.
-- A bok's byline is derived from the author's profile by the database, not sent by the browser. `display_name` exists only so a byline reads as a name; `@nickname` is the identifier everywhere else.
-- Navigate between reader, author and admin with plain anchors. vinext's `next/link` client navigation is broken in this build and silently does nothing.
-- `boks` is the product term for one short content unit. `reel` remains the current Supabase table name for compatibility.
+## Reader rules
 
-Business rules:
+- The feed (`/`) is one algorithmic, swipe-first stream. No picker, categories or reader-chosen algorithm. The series shelf (`/series`) is the single exception and lists only series pieces (`docs/adr/0009-series-shelf-is-the-one-shelf.md`).
+- The bok owns the screen while a person reads; controls appear on story change, tap, hover or pause. Reader copy stays minimal; the interface is English, texts keep their own language.
+- There is no "finished" button. Read, skip and drop-off are inferred from foreground time, scroll progress and swipe timing.
+- Guests see no sign-up controls at first, get gentle notices after 5 and 10 boks, and must sign up after 15. Guests may read comments; liking, commenting and following need an account.
+- Sign-in is passwordless: Supabase email OTP - a magic link or the 6-digit code from the same email (`docs/adr/0006-passwordless-email-sign-in.md`). Never add password fields, reset or change-password UI.
+- A person is identified only by their unique `@handle`; comments are attributed to it and nobody types a commenter name. A bok's byline is a per-bok pen name chosen when publishing (`docs/adr/0005-handle-is-identity-byline-is-pen-name.md`).
+- Navigate between reader, author and admin with plain `<a>` anchors: vinext's `next/link` client navigation silently does nothing in this build.
 
-- The founder must be able to compare recommendation strategies by attributed behavior, not opinions alone.
-- Every number in the admin console must be a measurement. No invented composite scores, no rate whose denominator is a constant, and one source of truth per concept: behaviour comes from `recommendation_events`, never from `views` or `likes`, which are product features.
-- Reading time means foreground time. A clock that keeps running while the phone is locked is not a reading metric.
-- An experiment is only worth reading if the arms produce different feeds and there are enough readers per arm. Both are measured, not assumed - see `npm run verify:divergence` and the readiness line in the lab.
-- Admin access is a Supabase `user_profiles.role` decision. It must be granted from `/admin` and enforced by RLS/RPC checks, never by local storage, URL flags, or `user_metadata`.
-- Author submission stays simple, with the 15 minute promise enforced before review, a database-enforced limit of 3 boks per author per UTC day, and admin approval required before publication.
-- Recommendation ranking is TypeScript, not SQL. The database returns candidates with counters; `lib/boks/recommendations` decides the order. Adding an algorithm must stay a one-file change.
-- Production reader, author, account, moderation, comment, and admin test data belongs in Supabase. Browser storage is only for anonymous local reader identity, Supabase session persistence, and lightweight profile state. D1 remains a compatibility path for the original prototype API and richer event-contract reference.
+## Business rules
 
-## Architecture Map
+- Algorithms are compared by attributed behaviour, never opinions.
+- Every admin number is a measurement: no invented composite scores, no rate over a constant denominator, one source of truth per concept. Behaviour comes from `recommendation_events`, never from `views` or `likes` (those are product features).
+- Reading time means foreground time; a clock running on a locked phone is not a metric.
+- A comparison is only worth reading if the arms produce different feeds and each arm has enough readers - measured with `npm run verify:divergence` and the lab's readiness line, not assumed.
+- Admin access is `user_profiles.role`, granted from `/admin` and enforced by RLS/RPC. Never by local storage, URL flags or `user_metadata`.
+- Authors: 15-minute promise enforced before review, at most 3 submissions per author per UTC day (database-enforced), admin approval before publication.
+- Ranking is TypeScript, not SQL. The database returns candidates with counters; `lib/boks/recommendations` orders them. The Worker's `/api/feed` is the canonical ranking path and writes the served feed; the browser ranks only as a labelled fallback (`docs/adr/0001-ranking-executes-in-worker.md`). Adding an algorithm stays a one-file change.
+- Supabase is the only data store. Browser storage holds only the visitor id, the Supabase session and lightweight local profile state.
 
-- `app/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only.
-- `app/boks-client.tsx`: route compatibility exports for the three client surfaces.
-- `components/boks/reader-feed.tsx`: swipe-first reader experience and reaction controls.
-- `components/boks/series/`: the boks series tab - `series-catalogue.ts` (the shelf list, tested against both format registries in both directions), `series-view.tsx` (the shelf and the feed/series tabs), `series-progress.ts` (heard/seen marks in browser storage). `app/series/page.tsx` is the same reader opened on the shelf.
-- `components/boks/comments-sheet.tsx`: lazy-loaded comment conversation, one-level replies, comment likes, guest gates, and partial/full-screen sheet state.
-- `components/boks/comment-threads.ts`: pure root/reply shaping and ordering rules.
-- `components/boks/reader-navigation.ts`: pure direction, edge-tap, and text-boundary navigation rules shared by touch, pointer, wheel, and keyboard behavior.
-- `components/boks/author-console.tsx`: author submission cabinet, review status, rejection reason, revision flow, and length guardrail.
-- `components/boks/admin-dashboard.tsx`: admin auth, the tab shell, and per-tab data loading.
-- `components/boks/admin/overview.tsx`: the weekly page - returning readers, reads-per-reader distribution, reading time decomposed, supply health, catalog headroom, data quality.
-- `components/boks/admin/moderation-queue.tsx`, `people.tsx`, `content-operations.tsx`: the remaining tabs.
-- `components/boks/admin/admin-inspector.tsx` + `inspector-context.tsx`: the console's one detail surface. Every tab opens a boks or a person with `useAdminInspector().openBok(id)` / `openPerson(userId)`; never build a per-tab detail view.
-- `components/boks/admin/bok-inspector.tsx`, `person-inspector.tsx`: the two views (`get_admin_bok`, `get_admin_person`), metrics defined exactly as in the Content and People rows.
-- `components/boks/admin/bok-lifecycle-dialog.tsx`: the only hide / restore / erase confirmation, shared by Content, the boks view and the reader's admin Hide button. Authority is the RPC's `is_boks_admin`, never this UI.
-- `components/boks/admin/recommendation-lab.tsx`: algorithm comparison, uplift against control, sample readiness, and the live traffic split.
-- `components/boks/admin/experiment-editor.tsx`: traffic weights per registered algorithm, control selection, minimum sample.
-- `components/boks/admin/metric-bars.tsx`: single-series comparison bars and per-algorithm sparklines.
-- `components/boks/client-types.ts`: browser-facing TypeScript contracts.
-- `components/boks/constants.ts`: reusable client constants and empty state.
-- `components/boks/client-format.ts`: browser formatting, estimates, percentages, and story signal helpers.
-- `components/boks/reader-behavior.ts`: anonymous browser id, local reader profile, and word-count-based read/skip inference.
-- `components/boks/reader-clock.ts`: foreground-only reading clock. Time on platform must mean time a boks was on screen.
-- `components/boks/reading-fullscreen.ts`: a poem or the cinema takes the whole screen on Android and iPad when opened by a tap, and gives it back on close. iPhone Safari has no page fullscreen; there it does nothing.
-- `components/boks/home-screen-hint.ts`: the one-time line at the end of a reading format telling an iPhone reader how to open boks from the home screen - the only way to read there without browser chrome.
-- `components/boks/reader-library.ts`: pure Read/Liked/Commented account-library selection and ordering.
-- `components/boks/reader-events.ts`: attributed reader event queue, batching, retry, per-read dedupe, and keepalive flush on tab exit.
-- `components/boks/user-auth-panel.tsx`: reader email sign-up/sign-in, settings, the authenticated Read/Liked/Commented library, and admin shortcut.
-- `components/boks/supabase-browser-data.ts`: browser-safe Supabase reader, author, account, comment, and admin data access using only the publishable key, RLS, and narrowly scoped RPCs.
-- `components/boks/use-boks-data.ts`: Supabase-first reader/admin loading with D1 API fallback, mutation helpers, metrics export, and WebMCP reporting.
-- `components/boks/shared-ui.tsx`: small reusable UI primitives for prototype surfaces.
-- `app/globals.css`: visual system, reader focus behavior, responsive layout, and Claude-inspired light palette.
-- `app/api/boks/route.ts`: HTTP orchestration for reader, author, admin, comments, events, and exports.
-- `lib/boks/contracts.ts`: product vocabulary, the attributed `ReaderEvent` contract, and the daily submission limit. Imports nothing.
-- `lib/boks/recommendations/`: the recommendation module. Browser-safe - the Supabase reader ranks its own feed.
-  - `signals.ts`: normalized 0..1 story signals every strategy scores against.
-  - `strategy.ts`: the strategy contract and `defineStrategy`.
-  - `strategies/`: one file per algorithm. `strategies/index.ts` is the registry list and the only place to edit when adding one.
-  - `registry.ts`: lookup, display, segment filtering.
-  - `experiments.ts`: traffic split config, validation, deterministic assignment.
-  - `feed.ts`: `buildReaderFeed`, the one seam both backends rank through.
-  - `metrics.ts`: raw counters to rates, uplift, and sample readiness.
-  - `divergence.ts`: do the algorithms even produce different feeds? Run before trusting any comparison.
-- `lib/boks/author/submission-quota.ts`: the daily submission limit mirrored for the UI; the database stays the authority.
-- `lib/boks/analytics.ts`: reusable D1 SQL rollups, admin sorting, and algorithm counter queries.
-- `lib/boks/request.ts`: request parsing, validation, and API error helpers.
-- `lib/boks/http-security.ts`: bounded JSON request parsing and safe HTTP error boundaries.
-- `lib/boks/security-headers.ts`: CSP, HSTS, frame, referrer, MIME, and permissions headers applied by `proxy.ts`.
-- `lib/boks/seed-stories.ts`: demo story inventory for local and production seeding.
-- `lib/boks/supabase-client.ts`: browser Supabase client factory and anonymous auth helper.
-- `db/schema.ts` and `drizzle/`: D1 schema and migrations.
-- `supabase/config.toml` and `supabase/migrations/`: Supabase Auth config, user profiles, RLS schema, seed reels, moderation, author quota, recommendation experiments/assignments/events, and aggregate admin RPCs.
-- `scripts/verify-schema-local.mjs` and `scripts/local-supabase/`: offline migration + behavior checks on a throwaway Postgres container.
-- `scripts/run-supabase-flow-test.mjs`: full product flow against a local `supabase start` stack.
-- `specs/`: product and experiment contracts.
-- `docs/`: operating, architecture, and growth-readiness guidance.
-- `docs/project-state.md`: what is live, what is not in production, the state of the recommender and the identity model, and the known open issues. Start here.
-- `docs/local-environment-runbook.md`: getting a working local boks, and the traps that are invisible from the code - which env file reaches which backend, the local mailbox, an admin account, and why a passing `verify:schema` does not mean your migration is in the running stack.
-- `docs/catalogue-import.md`: loading a catalogue - the publisher-account model, the file format, the admin panel, and how to generate and remove test batches. Read it before putting content on the platform in bulk.
-- `docs/copyright.md`: the rights attestation on publishing, the per-bok report menu, and what an admin can do about a complaint. Read it before touching publishing or the reader's bok menu.
-- `docs/public-domain-corpus.md`: the 457 real pieces on the platform - where they come from, why they are free to publish, how the splitter works and what it got wrong first.
-- `docs/thesis/`: исследовательская часть магистерской работы в формате ВКРС - словарь терминов, вводные с замеренными цифрами, карта литературы, дерево гипотез, карточки отобранных гипотез с дизайном эксперимента, линейка baseline, питч-дек и каркасы отчётов. Начинать с `docs/thesis/README.md`.
-- `docs/russian-corpus.md`: the 449 Russian pieces - the source, the copyright bar, the wikitext converter and what it got wrong first.
-- `docs/reading-languages.md`: which language a reader is offered - the browser-derived default, the mandatory setting, the filter in retrieval, and why an undetermined language is not a yes.
-- `docs/analytics-and-thesis-readiness.md`: what the analytics can and cannot prove, claim by claim against the thesis title, the working loop for a comparison, and the ranked gaps.
-- `docs/README.md`: documentation index and read order.
-- `docs/ai-agent-guide.md`: fast onboarding, ownership map, spec-driven workflow, and deployment rules for any AI agent.
-- `docs/engineering-standards.md`: naming, boundaries, values, and AI-agent workflow.
-- `docs/hosting.md`: Cloudflare production deploy and URL operations.
-- `docs/testing.md`: user testing, product QA, and technical verification.
-- `docs/architecture-review.md`: current architecture risks and next refactor sequence.
+## Hard limits
 
-## Change Routing
+- Never put a Supabase service-role key, or any secret, in source, frontend code, Wrangler vars, docs, screenshots or console output.
+- Never load the whole catalogue into a reader or admin session: bounded batches, server-side search, sorting and pagination.
+- Never edit an applied migration. Production has every file in `supabase/migrations/`; change the schema with a new forward migration.
+- Never roll the Worker back on its own: the production schema has moved on, and older client code breaks against it. Redeploy from current source.
 
-- Reader experience: start in `components/boks/reader-feed.tsx`, `components/boks/reader-behavior.ts`, and `app/globals.css`.
-- Author cabinet: start in `components/boks/author-console.tsx`, `components/boks/supabase-browser-data.ts`, and Supabase submission/review RPC migrations.
-- Admin metrics and moderation: start in `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, Supabase RPC migrations, `lib/boks/analytics.ts`, and `app/api/boks/route.ts`.
-- User management: start in `components/boks/user-auth-panel.tsx`, `components/boks/admin-dashboard.tsx`, `components/boks/supabase-browser-data.ts`, `lib/boks/supabase-client.ts`, and Supabase migrations.
-- Recommendation algorithms: add one file under `lib/boks/recommendations/strategies/`, list it in that folder's `index.ts`, add a ranking case to `lib/boks/recommendations/feed.test.ts`. Update `specs/boks-recommendation-experiments.md` only if the contract itself changed.
-- Recommendation metrics or attribution: `lib/boks/recommendations/metrics.ts`, `lib/boks/contracts.ts`, the Supabase migration, and `specs/boks-recommendation-experiments.md` together.
-- Author submission limits: `lib/boks/contracts.ts`, `lib/boks/author/submission-quota.ts`, the Supabase `submit_bok_for_review` / `get_my_bok_quota` migration, and `components/boks/author-console.tsx`.
-- Generating any audio - a narration, the sound a story moment makes, a poem's theme, the lo-fi under the feed: read `docs/media-generation.md`. It carries the key and the scopes it needs, what each failure code actually means (401 is a missing scope, 403 is rate limiting), the endpoints and what they cost in credits, the two things that cost real money - a voice's credit multiplier and the fact that a licence follows the month rather than the file - and how takes are chosen by measurement, since nobody here can listen to one before shipping it.
-- Reading formats - the two renderers that sit alongside the ordinary feed: the cinema (prose read aloud over scenes, with places where the story stops and asks something) and immersive poetry (verse, where the words arrive inside the picture). Read `docs/reading-formats.md` first. It carries which format a piece gets and how it is routed there, the cast list, the image specification and the prompts to hand the user, the twelve existing effects and the frames each needs, where a moment may be placed, how a poem's manifest is built from its own recording, the properties that must never be animated, and how to set an audio level by measurement. Start in `components/boks/cinema/` or `components/boks/poetry/`. Both end on the same finale, `components/boks/reading-finale.tsx`; a format never draws its own ending.
-- Seed/demo content: update `lib/boks/seed-stories.ts`.
-- Supabase persistent data: update `supabase/migrations/` with RLS and indexes, then run `npm run verify:supabase`. A new table or view the Data API must reach needs its own `grant` in the same migration that creates it - Supabase stopped granting new objects in `public` automatically on 30 October 2026, and `scripts/local-supabase/checks.sql` asserts the whole grant matrix. Prefer a security-definer function over a grant, and never grant a write on a view: a view without `security_invoker` runs as its owner and bypasses RLS.
-- D1 compatibility data: update `db/schema.ts`, then generate a Drizzle migration.
-- Product decisions: update `specs/boks-product-spec.md` before or with implementation.
-- Hosting/deployment: update `wrangler.jsonc`, `docs/hosting.md`, and `docs/future-updates-playbook.md` together.
-- Testing process: update `docs/testing.md` and `docs/boks-operations.md` together.
+## Change routing
 
-## Growth Guardrails
+| Change | Start in | Also |
+|---|---|---|
+| Reader experience | `components/boks/reader-feed.tsx` | `reader-behavior.ts`, `reader-events.ts`, `app/globals.css` |
+| Reading formats (cinema, immersive poem), series shelf | `docs/reading-formats.md` | `components/boks/cinema/`, `poetry/`, `series/` |
+| Generating any audio | `docs/media-generation.md` | - |
+| Accounts, handles, comments | `components/boks/user-auth-panel.tsx`, `comments-sheet.tsx` | `components/boks/supabase-browser-data.ts`, migrations |
+| Author cabinet and limits | `components/boks/author-console.tsx` | `lib/boks/author/submission-quota.ts`, `lib/boks/contracts.ts` |
+| Admin console | `components/boks/admin-dashboard.tsx`, `components/boks/admin/` | `docs/admin-metrics.md` before adding a metric |
+| Add an algorithm | one file in `lib/boks/recommendations/strategies/` + its `index.ts` | a ranking case in `lib/boks/recommendations/feed.test.ts` |
+| Metrics or attribution | `lib/recsys/aggregate/metrics.ts`, `lib/boks/contracts.ts` | `specs/boks-recommendation-experiments.md` |
+| Feed serving | `app/api/feed/route.ts`, `lib/boks/feed-service.ts` | `components/boks/worker-feed-breaker.ts` |
+| Database | a new file in `supabase/migrations/` | `scripts/local-supabase/checks.sql`, `docs/security.md` |
+| Catalogue, rights | `docs/catalogue-import.md`, `docs/copyright.md` | `lib/boks/import/` |
+| Hosting, deploy | `docs/hosting.md` | `wrangler.jsonc` |
+| Product behaviour | `specs/boks-product-spec.md` first | - |
 
-- Never load the full story catalog into the reader or admin browser session. Use bounded batches, server-side search, sorting, and pagination.
-- Keep recommendation events attributed with `algorithmId`, `userSegment`, `surface`, `rank`, elapsed time, and useful metadata.
-- Add high-volume metrics as indexed structured fields only when the UI or algorithm queries them often. Keep exploratory signals in event metadata.
-- Preserve deterministic algorithm assignment until real authentication exists, so a tester does not bounce between variants during one study.
-- Never expose a Supabase service role key in source, frontend code, Wrangler vars, docs, screenshots, or browser console output.
-- Keep naming literal and domain-specific. Prefer `reader`, `story`, `recommendation`, `experiment`, `event`, `metric`, and `author` over generic names.
+A database change that adds a table or view the Data API must reach grants it in the same migration (`docs/adr/0011-explicit-data-api-grants.md`). Prefer a `security definer` function with its own checks over a table grant, and never grant a write on a view.
 
 ## Validation
-
-Run these before publishing changes:
 
 ```bash
 npm run lint
 npm run typecheck
-npm test                 # offline unit tests
-npm run verify:divergence # do the live arms actually differ? (needs a running stack)
-npm run verify:schema    # migrations + RLS behavior on a throwaway Postgres container (needs Docker)
-npm run verify:supabase  # RLS checks against the configured Supabase project
+npm test                  # offline unit tests
+npm run verify:schema     # every migration + RLS checks on a throwaway Postgres (Docker)
 npm run build
-npm run start
+npm run check:deploy-target
 ```
 
-Full product flow against a local Supabase stack (creates users; never point it
-at a real project):
+With a running stack, also `npm run verify:divergence` and `npm run verify:supabase` (RLS probes against the project in `.env.local`). The full product flow runs against a local stack only: `npx supabase start && npm run test:supabase`. What each layer proves: `docs/testing.md`. Before migrating production: `npx supabase db push --linked --dry-run`. Deploy and post-deploy checks: `docs/hosting.md`.
 
-```bash
-npx supabase start
-npm run test:supabase
-```
+## Agent skills
 
-With the local server running, check:
+### Issue tracker
 
-- `/`
-- `/author`
-- `/admin`
-- `/api/boks?view=reader&limit=20&visitorId=agent-check`
-- `/api/boks?view=admin&limit=20`
+GitHub Issues on `IvanCherep/boks` (the `github` remote; pass `-R IvanCherep/boks`). See `docs/agents/issue-tracker.md`.
 
-If the D1 schema changed, also generate and review a migration:
+### Domain docs
 
-```bash
-npm run db:generate
-```
+Single-context: `CONTEXT.md` at the root, ADRs in `docs/adr/`. See `docs/agents/domain.md`.
 
-Local D1 does not auto-migrate. Apply a new Drizzle migration to the running
-local worker with:
+## Record what you change
 
-```bash
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js \
-  d1 execute DB --config dist/server/wrangler.json --local \
-  --persist-to .wrangler/state --file drizzle/<migration>.sql
-```
+- A product rule changes: update `specs/boks-product-spec.md` with the code.
+- Something ships: update `docs/project-state.md`; leave a session log in `docs/handover/` if work is left in flight.
+- A hard-to-reverse, surprising trade-off: a short ADR in `docs/adr/`.
+- A new domain term: `CONTEXT.md`.

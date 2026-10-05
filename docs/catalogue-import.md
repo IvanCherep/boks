@@ -26,7 +26,7 @@ A publisher is an ordinary account. There is no special kind of user.
 
 1. Sign up with the address that should own it — `boks@…`, `press@…` — the
    normal way, through the app's email link.
-2. Set its nickname in the account panel. That nickname is what readers see and
+2. Set its handle in the account panel. That handle is what readers see and
    follow.
 3. An **admin** marks it as a publisher: console → **Catalogue** → *Mark an
    account as a publisher*.
@@ -38,11 +38,11 @@ account. Marking grants the account's holder nothing at all.
 ### `@boks` and the other reserved names
 
 `boks`, `admin`, `support`, `official`, `staff`, `team` and a few more are
-refused for ordinary accounts and are never handed out when a nickname is
+refused for ordinary accounts and are never handed out when a handle is
 derived from an email address — otherwise signing up as `boks@…` would be
-handed the platform's own name. **An admin may take a reserved nickname.** So
+handed the platform's own name. **An admin may take a reserved handle.** So
 the platform's own publisher account is your admin account: sign in as an
-admin, set its nickname to `boks`, then mark it as a publisher.
+admin, set its handle to `boks`, then mark it as a publisher.
 
 A publisher you do a deal with does not need a reserved name, so the ordinary
 path works for them.

@@ -30,7 +30,7 @@ The operating page. One window, no trends.
 | Minutes per reader | Σ max(`active_seconds`) per (session, boks) ÷ active readers | The north star, per person rather than in aggregate so it cannot be inflated by a single heavy week. |
 | Minutes per session | minutes ÷ sessions | Decomposes the north star: did people visit more, or stay longer? |
 | Boks finished · started | `complete` and `start` events, distinct per (session, boks) | Reading time without completions means people are stalling, not reading. |
-| Minutes per finished boks | minutes ÷ completions | **Goodhart guard.** Minutes alone reward long boks and slow readers; this exposes that immediately. |
+| Active minutes per boks finished | all active minutes (finished, skipped and unfinished reads) ÷ completions | **Goodhart guard.** Minutes alone reward long boks and slow readers; this exposes that immediately. |
 | Finished after starting | completions ÷ starts | Whether the feed is choosing boks people want to finish. |
 | Reads per reader (distribution) | readers bucketed 1 / 2-4 / 5-9 / 10+ | The product thesis is "people read more than one". A mean hides the split between one-and-done and regulars, which *is* the question. |
 | Published boks · added in 30 days | `reels` where `status = 'published'` | Supply. A feed starves before it mis-ranks. |
@@ -100,13 +100,13 @@ computed over readers.
 | Divergence verdict | pairwise overlap of each algorithm's top ten over the live catalog | **Read this before anything else on the page.** Above ~80% overlap the arms serve the same feed and no result below can mean anything, at any sample size. |
 | Readers measured · sessions · active reading | `get_reader_outcomes`, one row per (reader, algorithm, day) | The sample everything else is drawn from. |
 | Events with a feed | events carrying a `served_feed` id ÷ all reader events | Whether results are reconstructible. Anything well below 100% means part of the window cannot be replayed. |
-| Readers in both arms | readers with events under more than one algorithm | These are excluded from every comparison. A rising number means assignment is leaking. |
+| Readers in both arms | readers with events under more than one algorithm | These are excluded from every comparison and from the arm summaries. A rising number means assignment is leaking. |
 | Median read · median boks | median over readers in the arm | Arm summary, median because reading time is strongly right-skewed. |
-| Effect, 95% interval, permutation p | reader-level Hodges–Lehmann shift, percentile bootstrap, permutation test on arm labels | The comparison itself. An interval spanning zero is reported as **inconclusive**, never as "no difference". |
+| Effect, 95% interval, permutation p | one estimand throughout: the difference in reader means, its percentile bootstrap interval, and a permutation test on the same difference. Rates are shown in percentage points | The comparison itself. An interval spanning zero is reported as **inconclusive**, never as "no difference". |
 | Power line | simulated from the spread actually observed | What this sample could have detected. Below the minimum detectable effect, the honest reading is that no experiment is running. |
 | Per-reader values | printed whenever an arm holds 25 readers or fewer | At this size a founder reads twelve numbers better than one interval. |
-| Completion / skip / reaction rate (table) | pooled over the arm's events | **Description only.** A pooled rate weights a reader by how much they read; it is never the basis of a verdict. |
-| Traffic split editor | `recommendation_experiments.arms` | Changes which algorithms are live without a deploy. |
+| Completion / skip / reaction rate (table) | pooled over the arm's events, with one definition each (`RATE_PARTS`): completions ÷ starts, skips ÷ (starts + skips), reactions ÷ starts | **Description only.** A pooled rate weights a reader by how much they read; it is never the basis of a verdict. |
+| Traffic split editor | `recommendation_experiments.arms`, control, readers needed per arm | Changes which algorithms are live without a deploy. Refuses a control with no traffic, because every arm is compared against it. Readiness is counted in readers and checked per metric. |
 
 ### Data quality
 

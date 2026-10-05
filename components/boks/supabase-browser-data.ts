@@ -34,7 +34,9 @@ import { normalizeReadingLanguages } from "@/components/boks/reading-languages";
 import {
   markWorkerFeedHealthy,
   markWorkerFeedUnavailable,
+  opensWorkerFeedBreaker,
   shouldTryWorkerFeed,
+  WorkerFeedError,
   workerFeedTimeoutMs,
 } from "@/components/boks/worker-feed-breaker";
 import type { CatalogueRow } from "@/lib/boks/import/parse-catalogue";
@@ -43,6 +45,7 @@ import {
   candidatesFromReelRows,
   candidatesFromRollupRows,
   mapSupabaseReelToStory,
+  publishedReelColumns,
   type SupabaseCandidateRow,
   type SupabaseReelRow,
 } from "@/lib/boks/supabase-reels";
@@ -117,7 +120,7 @@ type WorkerFeedResponse = {
   experiment: RecommendationExperiment;
   entries: { reelId: string; rank: number; score: number }[];
   reels: SupabaseReelRow[];
-  servingBackend: "worker" | "browser" | "d1_fallback";
+  servingBackend: "worker" | "browser";
   degradedMode: boolean;
   fallbackReason: string | null;
   candidateCount: number;
@@ -153,22 +156,43 @@ export async function loadSupabaseReaderFeed(request: SupabaseFeedRequest): Prom
   }
 
   try {
-    const payload = await loadWorkerReaderFeed(userId, request);
+    const payload = await loadWorkerFeedRefreshingOnce(userId, request);
     markWorkerFeedHealthy();
     return payload;
   } catch (error) {
-    markWorkerFeedUnavailable();
+    // Only an unreachable or failing Worker opens the breaker. A 4xx is about
+    // this request, not about the Worker, and cooling down for two minutes on
+    // it labelled every feed in that window degraded for no reason.
+    if (opensWorkerFeedBreaker(error)) markWorkerFeedUnavailable();
     console.warn("Worker feed unavailable; ranking in the browser (degraded).", error);
     return loadBrowserReaderFeed(userId, request, describeFeedError(error));
   }
 }
 
+/**
+ * A tab back from the background can hold an access token that expired while
+ * it slept. The Worker answers 401; the session is refreshed and the request
+ * made once more before anything is treated as a failure.
+ */
+async function loadWorkerFeedRefreshingOnce(userId: string, request: SupabaseFeedRequest) {
+  try {
+    return await loadWorkerReaderFeed(userId, request);
+  } catch (error) {
+    if (!(error instanceof WorkerFeedError) || error.status !== 401 || !supabase) throw error;
+    const refreshed = await supabase.auth.refreshSession();
+    const token = refreshed.data.session?.access_token;
+    if (!token) throw error;
+    return loadWorkerReaderFeed(userId, request, token);
+  }
+}
+
 async function loadWorkerReaderFeed(
   userId: string,
-  request: SupabaseFeedRequest
+  request: SupabaseFeedRequest,
+  accessToken?: string
 ): Promise<SupabaseReaderPayload> {
-  const token = await currentAccessToken();
-  if (!token) throw new Error("No Supabase session to authorise the feed request.");
+  const token = accessToken ?? (await currentAccessToken());
+  if (!token) throw new WorkerFeedError("No Supabase session to authorise the feed request.", 401);
 
   // Bounded: a Worker stuck waiting on a slow database must not hold the
   // reader on "Loading" when the browser can rank the same feed itself.
@@ -198,12 +222,18 @@ async function loadWorkerReaderFeed(
     try {
       payload = JSON.parse(text) as WorkerFeedResponse;
     } catch {
-      throw new Error(`Feed request failed (${response.status}, not JSON).`);
+      throw new WorkerFeedError(`Feed request failed (${response.status}, not JSON).`, response.status);
     }
+  } catch (error) {
+    if (error instanceof WorkerFeedError) throw error;
+    // Aborted by the timeout, or no answer at all.
+    throw new WorkerFeedError(error instanceof Error ? error.message : "Feed request failed.", 0);
   } finally {
     clearTimeout(timeout);
   }
-  if (!response.ok) throw new Error(payload.error || `Feed request failed (${response.status}).`);
+  if (!response.ok) {
+    throw new WorkerFeedError(payload.error || `Feed request failed (${response.status}).`, response.status);
+  }
 
   return decorateServedFeed({
     userId,
@@ -285,8 +315,11 @@ async function currentAccessToken() {
   return session.data.session?.access_token ?? null;
 }
 
+/** Stored in `served_feed.fallback_reason`, so a status, never free text. */
 function describeFeedError(error: unknown) {
-  if (error instanceof Error) return `worker_feed_unavailable: ${error.message.slice(0, 160)}`;
+  if (error instanceof WorkerFeedError) {
+    return error.status ? `worker_feed_unavailable: http_${error.status}` : "worker_feed_unavailable: no_response";
+  }
   return "worker_feed_unavailable";
 }
 
@@ -306,14 +339,15 @@ export function createBrowserFeedTransport(): FeedTransport {
       return result.data as Result;
     },
 
-    async publishedReels(limit: number) {
+    async publishedReels(limit: number, languages?: readonly string[]) {
       if (!supabase) throw new Error("Supabase is not configured.");
-      const result = await supabase
-        // Published-only by definition; the view has no `status` to filter on.
-        .from("published_boks")
-        .select("id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at")
-        .order("created_at", { ascending: false })
-        .limit(limit);
+      // Published-only by definition; the view has no `status` to filter on.
+      let query = supabase.from("published_boks").select(publishedReelColumns);
+      // The same rule as the candidates RPC: nothing named, no filter;
+      // otherwise only what was named, so undetermined is not a yes.
+      const codes = normalizeReadingLanguages(languages);
+      if (codes.length) query = query.in("language", codes);
+      const result = await query.order("created_at", { ascending: false }).limit(limit);
       if (result.error) throw asTransportError(result.error);
       return (result.data ?? []) as SupabaseReelRow[];
     },
@@ -331,47 +365,27 @@ export function createBrowserFeedTransport(): FeedTransport {
 }
 
 /**
+ * PostgREST codes that mean "this session's token was refused".
+ *
+ * PGRST301 is a token that does not verify, PGRST303 one that has expired,
+ * 42501 a role without the privilege. The Worker's REST transport decides the
+ * same question by HTTP status (401/403); these are what supabase-js reports
+ * for the same answers.
+ */
+const authFailureCodes = new Set(["PGRST301", "PGRST302", "PGRST303", "42501"]);
+
+/**
  * A rejected token must be distinguishable from a missing table, or an expired
  * session silently becomes a recency feed attributed to an arm nobody assigned.
  */
-function asTransportError(error: { code?: string; message?: string }) {
+export function asTransportError(error: { code?: string; message?: string }) {
   const failure = new Error(error.message ?? "Supabase request failed.") as Error & {
     isAuthFailure?: boolean;
     code?: string;
   };
   failure.code = error.code;
-  failure.isAuthFailure = error.code === "PGRST301" || error.code === "42501";
+  failure.isAuthFailure = authFailureCodes.has(error.code ?? "");
   return failure;
-}
-
-async function loadFeedCandidates(limit: number, languages?: readonly string[]) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-
-  const candidatesResult = await supabase.rpc("get_recommendation_candidates", {
-    p_limit: Math.max(limit, 200),
-    // Sent for guests, who have no profile row to store a choice in. A
-    // signed-in reader's stored languages win over this inside the RPC, which
-    // is what makes the setting follow them between devices.
-    p_languages: normalizeReadingLanguages(languages),
-  });
-
-  if (!candidatesResult.error) {
-    const rows = (candidatesResult.data ?? []) as unknown as SupabaseCandidateRow[];
-    return { ...candidatesFromRollupRows(rows), degraded: false };
-  }
-
-  if (!isMissingDatabaseObject(candidatesResult.error)) throw candidatesResult.error;
-
-  const reelsResult = await supabase
-    // Published-only by definition; the view has no `status` to filter on.
-    .from("published_boks")
-    .select("id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at")
-    .order("created_at", { ascending: false })
-    .limit(Math.max(limit, 200));
-
-  if (reelsResult.error) throw reelsResult.error;
-
-  return { ...candidatesFromReelRows((reelsResult.data ?? []) as SupabaseReelRow[]), degraded: true };
 }
 
 export async function loadBoksOverview(days = 7): Promise<BoksOverview | null> {
@@ -505,9 +519,26 @@ export async function loadBoksAuthor(handle: string, authorName?: string): Promi
   return (result.data ?? null) as AuthorProfile | null;
 }
 
+/**
+ * The candidate set the admin lab's divergence check ranks.
+ *
+ * Through the same transport and mapper the feed uses, so the check sees what
+ * a reader's ranker sees. One caveat it cannot escape: the RPC answers as the
+ * caller, so the set reflects the admin's own stored languages, and each
+ * candidate's `mine` history is the admin's.
+ */
 export async function loadRecommendationCandidates(limit = 400): Promise<StoryCandidate[]> {
-  const { candidates } = await loadFeedCandidates(limit);
-  return candidates;
+  const transport = createBrowserFeedTransport();
+  try {
+    const rows = await transport.rpc<SupabaseCandidateRow[]>("get_recommendation_candidates", {
+      p_limit: Math.max(limit, 200),
+      p_languages: [],
+    });
+    return candidatesFromRollupRows(rows ?? []).candidates;
+  } catch (error) {
+    if (!isMissingDatabaseObject(error as { code?: string; message?: string })) throw error;
+    return candidatesFromReelRows(await transport.publishedReels(Math.max(limit, 200))).candidates;
+  }
 }
 
 export async function loadActiveExperimentConfig(): Promise<RecommendationExperimentConfig> {
@@ -532,7 +563,8 @@ export async function saveActiveExperimentConfig(
     p_key: safeConfig.key,
     p_control_algorithm_id: safeConfig.controlAlgorithmId,
     p_arms: safeConfig.arms,
-    p_minimum_impressions_per_arm: safeConfig.minimumImpressionsPerArm,
+    // The column predates readers as the unit; it holds readers now.
+    p_minimum_impressions_per_arm: safeConfig.minimumReadersPerArm,
   });
 
   if (result.error) throw result.error;
@@ -554,15 +586,21 @@ export async function recordSupabaseReaderEvents(
 ) {
   if (!supabase || !events.length) return;
 
-  if (delivery.keepalive && supabaseRestUrl && supabasePublishableApiKey) {
-    const token = getCachedAccessToken();
+  // Keepalive needs the reader's token up front: the RPC refuses a call
+  // without a user, so sending the publishable key in its place could never
+  // succeed. Without a cached token the batch goes through supabase-js, which
+  // can still find the session, and a cancelled request costs no more than a
+  // refused one did.
+  const keepaliveToken = delivery.keepalive ? getCachedAccessToken() : null;
+  if (keepaliveToken && supabaseRestUrl && supabasePublishableApiKey) {
+    const token = keepaliveToken;
     const response = await fetch(`${supabaseRestUrl}/rpc/record_recommendation_events`, {
       method: "POST",
       keepalive: true,
       headers: {
         "Content-Type": "application/json",
         apikey: supabasePublishableApiKey,
-        Authorization: `Bearer ${token ?? supabasePublishableApiKey}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ p_events: events }),
     });
@@ -650,7 +688,7 @@ export async function loadRecommendationLab(days = 30): Promise<RecommendationLa
     outcomes: rows,
     report: buildRecommendationLab(rows, {
       controlAlgorithmId: experiment.controlAlgorithmId,
-      minimumReadersPerArm: minimumReadersPerArm,
+      minimumReadersPerArm: experiment.minimumReadersPerArm,
       windowDays: days,
       // Fewer resamples than a thesis run: this is a console, and the interval
       // moves by well under a second of reading time between the two.
@@ -663,15 +701,6 @@ export async function loadRecommendationLab(days = 30): Promise<RecommendationLa
     notice: "",
   };
 }
-
-/**
- * Readers per arm before a comparison is attempted.
- *
- * Ten is not a power calculation - the report carries one of those. It is the
- * floor below which an interval is so wide that printing it invites the reader
- * to see a winner in noise.
- */
-const minimumReadersPerArm = 10;
 
 /** Postgres returns numeric columns as strings over PostgREST. */
 function normalizeReaderOutcomes(data: unknown): ReaderOutcomeRow[] {
@@ -1094,7 +1123,7 @@ export async function loadSupabaseStory(storyId: string): Promise<{ story: Story
 
   const reelResult = await supabase
     .from("published_boks")
-    .select("id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at")
+    .select(publishedReelColumns)
     .eq("id", storyId)
     .maybeSingle();
 
@@ -1163,8 +1192,9 @@ export async function deleteBoksUser(userId: string, confirmation: string) {
 /**
  * One note from a reader.
  *
- * Works without an account: the RPC is granted to `anon`, and the visitor id
- * is what groups a guest's notes. Everything the note needs to be read in
+ * Works without an account: a guest already holds an anonymous Supabase
+ * session, which the RPC accepts (bare publishable-key calls are refused since
+ * `20260925160420`), and the visitor id is what groups a guest's notes. Everything the note needs to be read in
  * context - where the box was opened, how many boks they had read - travels
  * with it, because none of it can be reconstructed afterwards.
  */

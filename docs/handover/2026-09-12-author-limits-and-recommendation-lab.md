@@ -70,7 +70,7 @@ New module `lib/boks/recommendations/` replacing the old single file:
 | `metrics.ts` | raw counters to rates, uplift, confidence, sample readiness |
 
 Key decisions, in full in
-`docs/decisions/2026-09-12-typescript-ranking-and-attributed-events.md`:
+`docs/adr/0003-typescript-ranking-and-attributed-events.md`:
 
 - **Ranking is TypeScript, not SQL.** SQL returns candidates with counters. Both
   the Supabase reader and the D1 API call `buildReaderFeed`. One implementation,

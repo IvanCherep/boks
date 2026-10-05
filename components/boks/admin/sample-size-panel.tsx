@@ -79,7 +79,7 @@ export function SampleSizePanel({
               Readers are the unit. The spread of the metric across readers is{" "}
               {curve.coefficientOfVariation} (standard deviation over mean), and power is simulated
               at that spread for each sample size. The observed rows re-run the same estimator -
-              Hodges–Lehmann shift with a percentile bootstrap interval - on the first k readers of
+              difference in means with a percentile bootstrap interval - on the first k readers of
               each arm, in arrival order.
             </>
           }

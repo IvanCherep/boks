@@ -1,16 +1,82 @@
 # Where boks Stands
 
-One page so a new session can orient without reading four handovers and two
-research reports. Updated 2026-10-04 (the feed and series sections); before
-that 2026-09-26 (security audit, dependency refresh, request/database limits,
-confirmed email auth, and admin bootstrap hardening).
+The standing summary: what is live, what is not, and what is known to be open,
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-05
+(the full audit below).
 
-For *why* a thing is the way it is, the handovers and ADRs are the record. This
-says only what is true now.
+For *why* a thing is the way it is, `docs/adr/` and the handovers are the
+record. Test, check and migration counts are deliberately not kept here - they
+go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ---
 
 ## Live
+
+**A full audit, and the fixes from it (2026-10-05) - on branch
+`audit/2026-10-05`, NOT yet deployed.** Code, schema and docs were audited end
+to end and the defects fixed in one pass. The new migrations
+(`20261005100000` onward) must be pushed before the Worker is deployed. Move
+this entry out of the "not yet deployed" state once both are live. What a
+reader or the founder would notice:
+
+- **Aftertaste was being dropped.** Since 1 October every aftertaste event was
+  silently filtered out by the ingest function, which kept its own copy of the
+  event-type list. Migration `20261005100000` makes one list
+  (`boks_recommendation_event_types()`), and `checks.sql` asserts it equals the
+  table's CHECK constraint. Nothing recorded before the fix can be recovered.
+- **Ranking `ranking.v2`.** Every algorithm now reads the reader's server-side
+  history for fatigue and novelty (challengers used to see only the browser's,
+  so a second device ranked as a stranger); `for_you`'s exploration budget ages
+  a piece against serving time, not its own creation time; a stored arm naming
+  a strategy this build lacks is attributed to the one that actually ranked.
+- **The D1 compatibility path is gone** (`docs/adr/0013-remove-d1-compatibility-path.md`).
+  Production could never reach it - `wrangler.jsonc` has no D1 binding.
+- **Schema hardening** (`20261005110000`, `…112000`, `…113000`). A bad event
+  no longer aborts its batch; the arm an event or served feed is credited to
+  comes from the reader's stored assignment, not the browser's claim; the
+  candidate query has an hourly ceiling and its hot-path indexes; the lab,
+  overview and guest funnel count per reader and per active experiment; the
+  author quota's day is cut in UTC and `resetsAt` carries an offset. **A
+  reader with any like, comment or follow could not delete their own account**
+  - the cascade hit the suspended-account trigger and rolled the deletion back;
+  fixed. A profile can no longer be inserted directly (bypassing reserved
+  handles and terms), `boks_public_identity` no longer lists every account,
+  and `is_boks_admin(uuid)` / `is_boks_user_blocked(uuid)` no longer answer a
+  reader about someone else. Deliberately left: raw `reels`/`comments` SELECT
+  for signed-in sessions, nullable `rank`, cascade deletion of experiment
+  history with an account, tighter rules on `likes`/`views` writes.
+- **Reader telemetry.** The first slate of a page load is ranked with the
+  stored profile (it used to be ranked with an empty one); `rank` and `feedId`
+  are the position and feed that actually served the bok; boks the reader chose
+  (shared link, library, author page, series shelf) carry `metadata.entry`;
+  time in a reading format carries `metadata.format`; the `exit` outcome is
+  sent with keepalive; the event queue sends at most 50 per call and drops a
+  permanently refused event instead of blocking every later batch; the
+  reading clock no longer runs under the series shelf or in a background tab.
+- **Reader UX.** An open poem blocks feed navigation; the 15-read guest wall
+  also applies to reading formats; a failed first load no longer leaves a
+  signed-in reader treated as a guest; storage that throws no longer blanks
+  the reader. Menu, feedback, empty-feed and action-rail pieces moved out of
+  `reader-feed.tsx` into `components/boks/reader/`.
+- **Worker feed.** Config, candidates and catalogue count load in parallel
+  with a 3 s per-call timeout; a 401 refreshes the session and retries
+  instead of opening the breaker; the degraded path honours reading languages
+  and keeps author spacing; no database error text reaches clients or
+  `served_feed`.
+- **Recommendation lab.** Effect, interval, p-value and power now all measure
+  the same thing (difference in means) - they could disagree before; each rate
+  has one definition (`lib/recsys/aggregate/metrics.ts`); crossed readers are
+  excluded from arm totals; cohorts classify each reader once; readiness is
+  readers per arm, per metric, editable in the experiment editor; the shared
+  fatigue rule applies after a strategy's own rerank unless it declares
+  `handlesFatigue`; `verify:divergence` ranks with the same candidate mapping
+  production uses. The author quota trusts the server's `remaining`.
+- **Documentation for agents:** a glossary (`CONTEXT.md`), numbered ADRs in
+  `docs/adr/` (the old `docs/decisions/` merged in), a short `AGENTS.md` that
+  `CLAUDE.md` imports, the module map in `docs/architecture.md`, GitHub Issues
+  as the tracker (`docs/agents/`), and the research reports under
+  `docs/research/`. `docs/ai-agent-guide.md` and
+  `docs/future-updates-playbook.md` were folded in and removed.
 
 **Two sections, feed and series (2026-10-04).** The reader has two tabs. The
 feed (`/`) is unchanged and holds every boks. The series tab (`/series`) is
@@ -54,7 +120,8 @@ things to know about it:
   belongs behind a zone-level redirect rule to the apex. Production backend is the Supabase project
 `vcmrvnihbptostnzaean` (eu-west-2).
 
-All 49 migrations are applied to production. The production database is on the
+Every migration in `supabase/migrations/` is applied to production (check with
+`npx supabase migration list --linked`). The production database is on the
 current schema, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.
@@ -78,7 +145,7 @@ Migration `20260925160420` wraps high-volume feed/event RPCs with size, batch,
 metadata, and hourly limits; requires terms for social/author writes; removes
 bare-anon telemetry writes; closes browser first-admin claiming; and supplies
 all missing foreign-key indexes. Auth now confirms email, disables manual
-linking, and rejects leaked passwords. Verified with 434 unit tests, 356 schema
+linking, and rejects leaked passwords. Verified with the unit tests, the schema
 checks from a clean database, production RLS probes, Advisor review, build, and
 live header/API checks. `docs/security.md` is the standing threat model and
 records the intentional Advisor exceptions and remaining CAPTCHA/CSP work.
@@ -115,7 +182,7 @@ fetch", "Load failed", "net::ERR_…", and our own marker), and the reader gets 
 screen that says the page loaded, the connection after it did not, that another
 network or a VPN usually fixes it, with **Try again** and the support address.
 Verified by building against an unreachable host and watching it: 8 s, then the
-screen. 377 unit tests.
+screen.
 
 **Guests: who they are and where they stop (2026-09-22).** The founder's
 question was "we bring people and nobody registers - why?", and the reading
@@ -147,8 +214,7 @@ seconds**, and nobody reached the 15-bok limit. Caveats it states itself:
 finishing was only recorded correctly from 21 September, prompts and sources
 only from 22 September, and the team's own testing is inside every number. But
 the shape is already clear enough to act on: guests leave before any sign-up
-wall is shown, so the wall is not what is losing them. 10 schema checks, 13
-unit tests.
+wall is shown, so the wall is not what is losing them.
 
 **Countries, and telling the team from strangers (2026-09-22).** Two
 questions the Guests tab could not answer: where the audience is (which decides
@@ -173,8 +239,7 @@ source, so the funnel, the daily table and new accounts all agree.
 On production right after the deploy: 3 team devices recognised automatically;
 27 guest devices without the team, 28 with it, 26 with Serbia hidden. Devices
 seen before today show as "unknown" - countries start now. Privacy states the
-new field. At that stage: 46 migrations, 341 schema checks, and 5 focused unit
-tests; the current totals are in the security-audit entry above.
+new field.
 
 **Licences and terms, audited (2026-09-22).** Three findings, all fixed:
 
@@ -250,7 +315,7 @@ client child, `open-shared-bok.tsx`.
 Verified on production with Telegram's user agent: "Незнакомка — Александр
 Блок" with Blok's first lines, absolute image URLs, every asset 200, an unknown
 id answering 200 with generic tags, and the shared link opening that exact bok
-in the reader. 397 unit tests, 11 of them on the preview shaping.
+in the reader.
 
 **The share button was damaging its own links (2026-09-22).** It handed the
 system share sheet both a text ("Read "Конкурс" on boks") and the URL, and
@@ -461,7 +526,7 @@ message and never signs anyone out; "Sign out of this device" is local; a
 reader can delete their own account (Settings, nickname to confirm); `/privacy`
 exists and Terms link to it. For admins: Approve requires confirmed rights,
 restore returns a bok to the status it had before it was hidden. Migration
-`20260919260000`; `checks.sql` 300 checks; 355 unit tests.
+`20260919260000`.
 
 **Dark theme, English-only interface, Escape closes Settings (2026-09-19).**
 Settings -> Appearance offers System (default), Light and Dark; guests get the
@@ -645,9 +710,8 @@ appearing as a 401 in somebody's browser.
 | Thing | Why |
 |---|---|
 | Delivery to somebody other than the account owner | Applied on 2026-09-17: production `site_url` is `https://tryboks.com`, the redirect allow-list carries both origins with their `/**` forms, and the sender is `hello@tryboks.com` on a Resend-verified domain (`tryboks.com`, eu-west-1). What is **not** proven is delivery: the Resend log shows every email ever sent went from the `onboarding@resend.dev` sandbox to the account owner's own address and nowhere else. Until a magic link arrives in somebody else's inbox, "email works" stays an assumption. |
-| Inbound mail and DMARC on `tryboks.com` | No MX records, so anything a reader replies to `hello@tryboks.com` bounces; Cloudflare Email Routing would forward it. And no `_dmarc` record - not required, but Gmail and Yahoo treat a sender without one more harshly. Neither blocks sending. |
+| Replies to `hello@` and DMARC on `tryboks.com` | Cloudflare Email Routing forwards `support@tryboks.com`, but `hello@` - the auth sender - has no rule, so a reply to a sign-in email bounces. No `_dmarc` record - not required, but Gmail and Yahoo treat a sender without one more harshly. Neither blocks sending. |
 | The current reader redesign | Source Serif 4, reversible edge/gesture navigation, deliberate progress-ring boundary pulls, axis-matched transitions, the simplified reaction rail, and the in-app font license are implemented and deployed. |
-| Anything uncommitted | The worktree carries the current production code. There is no commit for it, so the only rollback is the previous Worker version in Cloudflare. |
 
 ---
 
@@ -655,34 +719,32 @@ appearing as a 401 in somebody's browser.
 
 The substance lives in three documents, in this order:
 
-1. **`RECSYS-SYSTEM-REPORT.md`** — the whole system described for an outside
+1. **`docs/research/recsys-system-report.md`** — the whole system described for an outside
    reader: signals, strategies, instrumentation, statistics, what was wrong and
    how it was fixed, and the measured state. Start here.
-2. **`RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md`** — the phased plan, sections
+2. **`docs/research/recsys-research-implementation-plan.md`** — the phased plan, sections
    A–N. Phase 1 is done; Phases 2–7 are not.
-3. `docs/adr/ADR-001-where-ranking-executes.md` — why ranking moved to the
+3. `docs/adr/0001-ranking-executes-in-worker.md` — why ranking moved to the
    Worker.
 
 ### What is true about it now
 
-- `for_you` is the control arm and the product ranker, ported from the original
-  boks backend. `completion_first` is the challenger at 50/50.
-- The challenger is **not** `recency`, which is what a young product would
-  normally want. It was measured and rejected: on this corpus `for_you` and
-  `recency` share 100% of their top ten for a cold reader and 80% for a reader
-  with two weeks of history. `completion_first` shares 30–40%.
+- `for_you` is the control arm and, since 2026-09-20, the only live arm
+  (`docs/adr/0008-for-you-is-control-single-live-arm.md`). `completion_first`
+  is parked at weight 0 as the challenger to reopen with.
+- The challenger is **not** `recency`: on this corpus `for_you` and `recency`
+  share 100% of their top ten for a cold reader and 80% for a reader with two
+  weeks of history. `completion_first` shares 30–40%.
 - Every comparison is **reader-level**. One reader is one sample however much
   they read. An interval spanning zero reports `inconclusive`, never "no
-  difference"; below ten readers per arm nothing is estimated at all.
-- **No experiment has produced a readable result, and none can yet.** The
-  binding constraint is the corpus, not the statistics. Production carries **37
-  published boks, every one of them a single minute** (76-167 words), and six of
-  the seventeen signals are constants on a corpus like that - the four reaction
-  signals because nobody has reacted, and both length signals because nothing
-  differs in length.
-- A local database usually has a boks or two more than production, from
-  fixtures. Measurements quoted in the research documents were taken locally and
-  are labelled as such; re-measure before citing one as a production figure.
+  difference"; below the minimum readers per arm nothing is estimated at all.
+- **No experiment has produced a readable result yet**: with one live arm there
+  is nothing to compare, by design.
+- `for_you` has a semantic source: `multilingual-e5-small` embeddings
+  (`docs/adr/0012-single-embedding-model.md`).
+- A local database differs from production. Measurements quoted in the
+  research documents were taken locally and are labelled as such; re-measure
+  before citing one as a production figure.
 
 ### The honest limits
 
@@ -691,10 +753,11 @@ The substance lives in three documents, in this order:
 - The design is between-reader, which is the weak design at this scale.
   Interleaving is in the schema but not in the serving path.
 - Weights are hand-set. Nothing is trained.
-- No candidate generation: every ranker sees the whole corpus.
-- No semantic embeddings, and no explicit negative feedback
-  (`not interested`, `hide author`). Both existed in the original backend; both
-  are the cheapest remaining sources of the variance this corpus lacks.
+- No candidate generation beyond a bounded, language-filtered candidate set
+  (400 newest published boks).
+- No explicit negative feedback (`not interested`, `hide author`). It existed in
+  the original backend and is the cheapest remaining source of the variance
+  this corpus lacks.
 
 ---
 
@@ -874,8 +937,9 @@ Agreed follow-ups, in the order they are worth doing:
    a shell, never through a chat.
 5. **Delete the dead `Story.likes` plumbing on the Supabase path.** It carries
    the viewer's own 0-or-1 and nothing reads it now that the action rail shows a
-   like as a state. The field stays for the frozen D1 path; the `likedSet`
-   argument to `mapSupabaseReelToStory` can go.
+   like as a state. With the D1 path removed nothing fills it with a real
+   total either; the field and the `likedSet` argument to
+   `mapSupabaseReelToStory` can go.
 6. **Apply the sender address, then prove delivery to a third party.** The
    domain work is done and `config.toml` is updated; what remains is pushing
    it and then actually sending a magic link to an address that is not the
@@ -1024,7 +1088,7 @@ Small, real, and written down so they are not rediscovered:
   `reaction_first`, `recency`, `random_control`. MostPop is the baseline a
   recsys reviewer expects first and is often hard to beat; its absence is a
   methodological gap for the thesis, not just a missing feature.
-- **`RECSYS-SYSTEM-REPORT.md` §16-17 is stale by an order of magnitude** - it
+- **`docs/research/recsys-system-report.md` §16-17 is stale by an order of magnitude** - it
   reasons about 38 published pieces where there are now 906, so its arm
   divergence table and its justification of the live split are no longer valid.
 - **Fixed 2026-09-19: a per-boks share link opened a different boks.** Two
@@ -1061,9 +1125,8 @@ Small, real, and written down so they are not rediscovered:
   sites (follows, comments, reader events) should move to it too.
 - `mapSupabaseReelToStory` still fills `Story.likes` with the viewer's own
   `0 or 1`, which nothing reads now that the action rail shows a like as a state
-  rather than a count. The field stays because the frozen D1 path fills it with
-  a real total; the Supabase side of the plumbing (and the `likedSet` argument)
-  can go.
+  rather than a count. The D1 path that filled it with a real total is gone,
+  so the field and the `likedSet` argument can go.
 
 ---
 
@@ -1072,8 +1135,8 @@ Small, real, and written down so they are not rediscovered:
 | Task | Read |
 |---|---|
 | Get a local environment working | `docs/local-environment-runbook.md` |
-| Deploy, or manage services | `docs/local-agent-infrastructure.md` |
-| Change the recommender | `RECSYS-SYSTEM-REPORT.md`, then the plan |
+| Deploy, or manage services | `docs/hosting.md`, `docs/local-agent-infrastructure.md` |
+| Change the recommender | `docs/research/recsys-system-report.md`, then the plan |
 | Add or change a metric | `docs/admin-metrics.md` |
 | Change product scope | `specs/boks-product-spec.md` |
-| Pick up in-flight work | the newest file in `docs/handover/` |
+| Pick up in-flight work | GitHub Issues (`docs/agents/issue-tracker.md`), then the newest file in `docs/handover/` |

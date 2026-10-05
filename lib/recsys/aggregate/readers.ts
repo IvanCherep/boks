@@ -144,7 +144,3 @@ export function sessionsForReaders(
     .filter((row) => row.algorithmId === algorithmId && included.has(row.userId))
     .reduce((total, row) => total + row.sessions, 0);
 }
-
-export function algorithmsPresent(rows: ReaderOutcomeRow[]) {
-  return [...new Set(rows.map((row) => row.algorithmId))].sort();
-}

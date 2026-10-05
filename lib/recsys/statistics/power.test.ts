@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { estimatePower, simulatePower } from "@/lib/recsys/statistics/power";
 
 /**
- * The power table in `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md` §A.3 was measured
+ * The power table in `docs/research/recsys-research-implementation-plan.md` §A.3 was measured
  * before this module existed, by a separate simulation. That makes it ground
  * truth this code can be checked against rather than a restatement of itself.
  *

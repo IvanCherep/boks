@@ -59,6 +59,7 @@ import {
   requestBoksMagicLink,
   signOutBoksUser,
 } from "@/lib/boks/supabase-client";
+import { atHandle, bareHandle } from "@/components/boks/reader/handles";
 
 // boks routes are separate surfaces with separate data loads, so they are
 // linked with plain anchors. vinext's `next/link` client navigation throws
@@ -790,7 +791,7 @@ export function UserAuthPanel({
                   >
                     <span className="font-medium">{item.title}</span>
                     <span className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      {item.authorName || (item.authorHandle ? `@${item.authorHandle.replace(/^@+/, "")}` : "boks author")} · {item.minutes} min
+                      {item.authorName || atHandle(item.authorHandle) || "boks author"} · {item.minutes} min
                     </span>
                   </button>
                 )) : (
@@ -843,7 +844,7 @@ export function UserAuthPanel({
                         onClick={() => void deleteAccount()}
                         disabled={
                           busy ||
-                          deleteConfirmation.trim().replace(/^@+/, "").toLowerCase() !==
+                          bareHandle(deleteConfirmation.trim()).toLowerCase() !==
                             (accountUser?.handle ?? "").toLowerCase()
                         }
                       >

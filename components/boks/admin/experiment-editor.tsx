@@ -42,7 +42,7 @@ export function ExperimentEditor({
     Object.fromEntries(config.arms.map((arm) => [arm.algorithmId, arm.weight]))
   );
   const [control, setControl] = useState(config.controlAlgorithmId);
-  const [minimumImpressions, setMinimumImpressions] = useState(config.minimumImpressionsPerArm);
+  const [minimumReaders, setMinimumReaders] = useState(config.minimumReadersPerArm);
   const [status, setStatus] = useState(notice);
   const [saving, setSaving] = useState(false);
 
@@ -56,11 +56,17 @@ export function ExperimentEditor({
         algorithmId: strategy.id,
         weight: Math.max(0, Math.round(weights[strategy.id] ?? 0)),
       })),
-      minimumImpressionsPerArm: minimumImpressions,
+      minimumReadersPerArm: minimumReaders,
     });
 
     if (!next.arms.some((arm) => arm.weight > 0)) {
       setStatus("Give at least one algorithm a share of traffic.");
+      return;
+    }
+    // A parked control has no readers, and every comparison is against it:
+    // the lab would silently show nothing at all.
+    if (!next.arms.some((arm) => arm.algorithmId === next.controlAlgorithmId && arm.weight > 0)) {
+      setStatus("The control needs a share of traffic - every arm is compared against it.");
       return;
     }
 
@@ -92,9 +98,7 @@ export function ExperimentEditor({
                   {strategy.id === control && <span className="strategy-tag strategy-tag--control">control</span>}
                 </div>
                 <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">{strategy.description}</p>
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  {strategy.id} · fits {strategy.segment === "all" ? "every segment" : strategy.segment}
-                </p>
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">{strategy.id}</p>
               </div>
               <div className="grid content-start gap-2">
                 <label className="grid gap-1 text-xs font-medium text-[var(--muted-foreground)]">
@@ -135,15 +139,15 @@ export function ExperimentEditor({
           </select>
         </label>
         <label className="grid gap-1 text-sm font-medium">
-          Impressions needed per arm
+          Readers needed per arm
           <Input
             type="number"
-            min={1}
+            min={2}
             max={100000}
             inputMode="numeric"
             disabled={disabled}
-            value={minimumImpressions}
-            onChange={(event) => setMinimumImpressions(Number(event.target.value) || 1)}
+            value={minimumReaders}
+            onChange={(event) => setMinimumReaders(Number(event.target.value) || 2)}
           />
         </label>
         <Button onClick={save} disabled={disabled || saving}>

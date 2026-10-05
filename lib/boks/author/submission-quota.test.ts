@@ -39,4 +39,16 @@ describe("normalizeBokSubmissionQuota", () => {
     expect(quota.usedToday).toBe(0);
     expect(quota.exhausted).toBe(false);
   });
+
+  it("takes the limit and the verdict from the database, not the constant", () => {
+    const quota = normalizeBokSubmissionQuota({ limit: 5, usedToday: 3, remaining: 2, exhausted: false }, now);
+    expect(quota.limit).toBe(5);
+    expect(quota.remaining).toBe(2);
+    expect(quota.exhausted).toBe(false);
+    expect(quota.message).toBe("2 submissions left today.");
+
+    const closed = normalizeBokSubmissionQuota({ limit: 5, usedToday: 1, remaining: 0, exhausted: true }, now);
+    expect(closed.exhausted).toBe(true);
+    expect(closed.message).toContain("5 boks a day");
+  });
 });

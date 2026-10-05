@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Archive, RefreshCw, RotateCcw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,12 @@ export function ContentOperations() {
   const [coverage, setCoverage] = useState<{ model: string; publishedTotal: number; publishedEmbedded: number; publishedMissing: number } | null>(null);
   const { openBok, changes } = useAdminInspector();
 
+  // Only the newest request may write; a slow page-1 answer otherwise lands
+  // after page 2 and replaces it.
+  const latestRequest = useRef(0);
+
   const refresh = useCallback(async (search: string, order: string, pageIndex: number, nextScope: ContentScope) => {
+    const request = ++latestRequest.current;
     setBusy(true);
     try {
       const payload = await loadBoksContent({
@@ -41,13 +46,15 @@ export function ContentOperations() {
         limit: pageSize,
         offset: pageIndex * pageSize,
       });
+      if (request !== latestRequest.current) return;
       setRows(payload.rows);
       setTotal(payload.total);
       setStatus(payload.rows.length ? "" : `No ${nextScope === "published" ? "published" : "deleted"} boks match.`);
     } catch (error) {
+      if (request !== latestRequest.current) return;
       setStatus(error instanceof Error ? error.message : "Could not load content.");
     } finally {
-      setBusy(false);
+      if (request === latestRequest.current) setBusy(false);
     }
   }, []);
 

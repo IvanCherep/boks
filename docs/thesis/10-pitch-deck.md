@@ -999,12 +999,12 @@ N_active = Reach × CTR × Act
 | Состояние проекта | `docs/project-state.md` |
 | Что аналитика может доказать | `docs/analytics-and-thesis-readiness.md` |
 | Метрики консоли | `docs/admin-metrics.md` |
-| Система рекомендаций целиком | `RECSYS-SYSTEM-REPORT.md` |
-| Фазовый план исследования | `RECSYS-RESEARCH-IMPLEMENTATION-PLAN.md` |
+| Система рекомендаций целиком | `docs/research/recsys-system-report.md` |
+| Фазовый план исследования | `docs/research/recsys-research-implementation-plan.md` |
 | Правила экспериментов | `specs/boks-recommendation-experiments.md` |
 | Продуктовая спецификация | `specs/boks-product-spec.md` |
 | Корпуса и правовая рамка | `docs/public-domain-corpus.md`, `docs/russian-corpus.md` |
-| Где исполняется ранжирование | `docs/adr/ADR-001-where-ranking-executes.md` |
+| Где исполняется ранжирование | `docs/adr/0001-ranking-executes-in-worker.md` |
 | Операции и сценарии тестов | `docs/boks-operations.md`, `docs/testing.md` |
 
 Требование к оформлению для сдачи: все ссылки — внешние, с доступом **на

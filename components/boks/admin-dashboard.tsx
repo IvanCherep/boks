@@ -252,8 +252,11 @@ export function AdminDashboard() {
 
   return (
     // One boks view and one person view for the whole console: every tab opens
-    // the same inspector rather than keeping a detail view of its own.
-    <AdminInspectorProvider onChange={() => needsSnapshot && loadSnapshot().catch((error) => setStatus(error.message))}>
+    // the same inspector rather than keeping a detail view of its own. Any
+    // change made there reloads the snapshot whichever tab is open, because the
+    // Moderation badge reads from it and hiding a boks from Content or People
+    // changes the count too.
+    <AdminInspectorProvider onChange={() => loadSnapshot().catch((error) => setStatus(error.message))}>
     <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
       <div className="mx-auto grid max-w-7xl gap-5">
         <header className="flex flex-wrap items-start justify-between gap-4">

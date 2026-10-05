@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildReaderFeed } from "@/lib/boks/recommendations/feed";
+import { emptyReaderBokState } from "@/lib/boks/recommendations/signals";
 import { listRecommendationStrategies } from "@/lib/boks/recommendations/registry";
 import type { StoryCandidate } from "@/lib/boks/recommendations/signals";
 import type { RecommendationExperimentConfig } from "@/lib/boks/recommendations/experiments";
@@ -31,7 +32,7 @@ function singleArm(algorithmId: string): RecommendationExperimentConfig {
     key: "test",
     controlAlgorithmId: "balanced",
     arms: [{ algorithmId, weight: 100 }],
-    minimumImpressionsPerArm: 10,
+    minimumReadersPerArm: 10,
   };
 }
 
@@ -142,6 +143,48 @@ describe("buildReaderFeed", () => {
 
       expect(feed.entries.at(-1)?.candidate.id, `strategy ${strategy.id}`).toBe("finisher");
     }
+  });
+
+  it("reads a finish recorded on another device, not only the browser's own lists", () => {
+    // The browser has never seen this reader finish anything; the server has.
+    for (const strategy of listRecommendationStrategies()) {
+      const feed = buildReaderFeed({
+        visitorId: "reader-1",
+        candidates: [finisher, untested],
+        reader: {
+          genreAffinity: {},
+          moodAffinity: {},
+          completedStoryIds: [],
+          likedStoryIds: [],
+          skippedStoryIds: [],
+          bokState: {
+            [finisher.id]: { ...emptyReaderBokState, seenCount: 1, quickSkipCount: 3, eventCount: 3 },
+          },
+        },
+        experimentConfig: singleArm(strategy.id),
+        now,
+      });
+
+      expect(feed.entries.at(-1)?.candidate.id, `strategy ${strategy.id}`).toBe("finisher");
+    }
+  });
+
+  it("credits a stored arm this build no longer has to the strategy that ranked", () => {
+    const feed = buildReaderFeed({
+      visitorId: "reader-1",
+      candidates: [finisher, untested],
+      experiment: {
+        experimentKey: "test",
+        algorithmId: "retired_strategy",
+        algorithmName: "Retired",
+        userSegment: "general",
+        source: "assigned",
+      },
+      now,
+    });
+
+    expect(feed.experiment.algorithmId).toBe("for_you");
+    expect(feed.experiment.source).toBe("fallback");
   });
 
   it("assigns stable zero-based ranks", () => {
