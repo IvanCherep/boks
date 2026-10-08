@@ -598,6 +598,11 @@ and pauses, the arrows skip 15 seconds in cinema, Escape leaves. The flag is
 read once in `reader-feed.tsx` and only applies to `user_profiles.role =
 admin` - it hides controls and unlocks nothing (`components/boks/recording-mode.ts`).
 
+`?recording=true` is equivalent. In immersive poems, text zones start at least
+16% down the frame in recording mode so the Reels header does not cover the
+words. Zones already below that boundary keep their position; ordinary
+playback keeps every scene's original placement.
+
 ## 6. Before shipping
 
 ```bash

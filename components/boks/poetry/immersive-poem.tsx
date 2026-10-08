@@ -473,7 +473,9 @@ export function ImmersivePoem({
                   className="poem__zone"
                   style={{
                     left: `${group.zone.x * 100}%`,
-                    top: `${group.zone.y * 100}%`,
+                    // Leave room for the Reels header when filming; zones
+                    // already lower in the picture keep their composition.
+                    top: `${(recording ? Math.max(0.16, group.zone.y) : group.zone.y) * 100}%`,
                     width: `${group.zone.width * 100}%`,
                   }}
                 >

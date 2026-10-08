@@ -1,8 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-05
-(the full audit below).
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-08.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -11,6 +10,12 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live
+
+**Recording text clears the Reels header (2026-10-08).** In immersive poems,
+`?recording=true` (also `?recording=1`) places text zones at least 16% down
+the frame. Zones already lower keep their position, and ordinary playback
+keeps the original scene composition. Checked all 20 poem manifests in WebKit
+and Chromium at three phone sizes and a desktop size.
 
 **Recording mode for the formats (2026-10-05).** `?recording=1` on a reader
 address opens cinema and immersive poems without close button, progress bar or

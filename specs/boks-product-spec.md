@@ -61,6 +61,7 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Algorithm comparison is reader-level: one reader is one sample, however much they read. Each comparison reports an effect, a 95% interval, the readers behind it, and what a sample that size could have detected. An interval spanning zero is reported as inconclusive, never as "no difference". Composite scores, event-level confidence labels and per-segment breakdowns were removed for being numbers that looked like measurements and were not.
 - JSON metric export for analysis or investor updates.
 - Browser code uses only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`; service role keys are never used in frontend code.
+- Admin recording mode (`?recording=true` or `?recording=1`) keeps immersive-poem text at least 16% below the top of the frame to clear the Reels header. Text zones already lower stay in place; ordinary playback uses the original scene positions.
 
 ## Validation Questions
 
