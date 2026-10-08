@@ -88,12 +88,15 @@ function sleepSync(milliseconds) {
 
 /**
  * `pg_isready` is not enough: the official image runs a temporary server for
- * initdb, answers as ready, then shuts it down to start the real one. Waiting
- * on an actual query is the only signal that survives that.
+ * initdb, answers as ready, then shuts it down to start the real one. That
+ * temporary server listens on the Unix socket only, so the query goes over
+ * TCP: on a fresh container a socket query succeeded against it, the reset
+ * below raced the image creating `boks`, and the entrypoint exited (first
+ * seen in CI, where the container is always fresh).
  */
 function waitForPostgres() {
   for (let attempt = 0; attempt < 90; attempt += 1) {
-    const result = psql("postgres", ["-tAc", "select 1"]);
+    const result = psql("postgres", ["-h", "127.0.0.1", "-tAc", "select 1"]);
     if (result.status === 0 && result.stdout.trim() === "1") return;
     sleepSync(1000);
   }

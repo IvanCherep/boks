@@ -21,7 +21,7 @@ jobs:
       - run: npm run check
       - run: npm run build
         env:
-          VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+          VITE_SUPABASE_URL: https://ciplaceholder.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       - run: npm run check:deploy-target
 
