@@ -156,20 +156,24 @@ Admin:
 
 ## Technical Validation
 
-Everything below runs locally. Nothing here deploys.
+Everything below runs locally. Nothing here deploys. GitHub Actions
+(`.github/workflows/ci.yml`) runs sections 1 and 2 plus a build and
+`check:deploy-target` on every push to `main` and every pull request, with
+placeholder public Supabase values and no secrets.
 
 ### 1. Offline checks (no database, no network)
 
 ```bash
-npm run lint
-npm run typecheck
-npm test
+npm run check   # = npm run lint && npm run typecheck && npm test
 ```
 
 `npm test` covers the parts where a mistake is expensive and invisible:
 recommendation ranking per strategy, deterministic experiment assignment,
 metric/uplift math, the reader event queue, comment thread ordering, and the
-daily submission quota.
+daily submission quota. It also fails when a standing doc (`AGENTS.md`,
+`CONTEXT.md`, `README.md`, `docs/*.md`, `specs/`) names a repo path or an
+`npm run` script that no longer exists (`lib/doc-references.test.ts`), so a
+rename has to update the docs that route agents to it.
 
 ### 1b. Can the experiment resolve anything?
 

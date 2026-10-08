@@ -24,10 +24,6 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const containerName = "boks-local-pg";
 // pgvector, not plain postgres: since `20260920100000` the schema declares
 // `create extension vector` and a `vector(384)` column, which the official
-// image cannot install. This image is the same Postgres 17 with the extension
-// available, so the checks still run against the real types.
-// pgvector, not plain postgres: since `20260920100000` the schema declares
-// `create extension vector` and a `vector(384)` column, which the official
 // image cannot install. Supabase's own image has the extension and is the one
 // production runs, but it is amd64-only and exits immediately on an Apple
 // Silicon machine, so this multi-architecture image is the one that works on

@@ -62,13 +62,13 @@ A database change that adds a table or view the Data API must reach grants it in
 ## Validation
 
 ```bash
-npm run lint
-npm run typecheck
-npm test                  # offline unit tests
+npm run check             # lint + typecheck + offline unit tests (incl. doc-reference check)
 npm run verify:schema     # every migration + RLS checks on a throwaway Postgres (Docker)
 npm run build
 npm run check:deploy-target
 ```
+
+CI (`.github/workflows/ci.yml`) runs all four on every push and pull request. Renaming or moving a file, or an npm script, fails `npm test` until the standing docs that name it are updated.
 
 With a running stack, also `npm run verify:divergence` and `npm run verify:supabase` (RLS probes against the project in `.env.local`). The full product flow runs against a local stack only: `npx supabase start && npm run test:supabase`. What each layer proves: `docs/testing.md`. Before migrating production: `npx supabase db push --linked --dry-run`. Deploy and post-deploy checks: `docs/hosting.md`.
 

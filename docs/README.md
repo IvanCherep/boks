@@ -34,6 +34,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 - `docs/reading-languages.md`: which language a reader is offered, why the filter lives in retrieval, why an undetermined language is not a yes.
 - `docs/analytics-and-thesis-readiness.md`: what the analytics can and cannot prove, claim by claim, and the ranked gaps.
 - `docs/research/`: the recommender system report and the phased research implementation plan.
+- `docs/ai-context.md`: a one-page Russian briefing to paste into an AI chat that has no repo access. A dated snapshot derived from the documents above - when they disagree, they win; refresh it after a large change.
 - `docs/thesis/`: исследовательская часть магистерской работы (ВКРС). Начинать с `docs/thesis/README.md`.
 
 ## Picking up work
