@@ -1,0 +1,35 @@
+# The gates AGENTS.md asks for, run on every push and pull request so a change
+# that skips them locally is still caught. No secrets: the build gets
+# placeholder public values, and the schema check runs on a throwaway Postgres.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      - run: npm run check:deploy-target
+
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run verify:schema
