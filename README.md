@@ -47,6 +47,7 @@ Supabase (Postgres with RLS and RPCs) is the only data store.
 
 ## Where to start
 
+- `docs/onboarding.md` - new here? Access, tools, env files and first checks, from a fresh laptop to deploying.
 - `AGENTS.md` - rules and the read order for anyone, human or agent, changing the code. `CLAUDE.md` imports it.
 - `CONTEXT.md` - the glossary: bok, handle, byline, arm, series piece and the rest.
 - `docs/README.md` - which document owns which topic.

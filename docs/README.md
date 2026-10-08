@@ -16,6 +16,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 | Code standards, boundaries, UI and data standards | `docs/engineering-standards.md` |
 | Architecture risks and the next refactors | `docs/architecture-review.md` |
 | Trust boundaries, controls, Advisor exceptions | `docs/security.md` - read before auth, grants, API or database-boundary work |
+| New developer: access, tools, env files, first checks | `docs/onboarding.md` |
 | Running boks locally, and the env-file traps | `docs/local-environment-runbook.md` |
 | Services and credentials an agent may touch (Cloudflare, Supabase, Resend) | `docs/local-agent-infrastructure.md` |
 | Hosting, deploy, post-deploy checks, rollback, plan costs | `docs/hosting.md` |
