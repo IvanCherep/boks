@@ -107,7 +107,9 @@ export function ImmersivePoem({
   // One element, built once. Created here rather than as <audio> in the tree so
   // the frame loop can read it without waiting for a ref to attach.
   useEffect(() => {
-    const element = new window.Audio(manifest.audio);
+    // No source yet: it is set to the in-memory copy below, and "Loading…"
+    // stays up until that copy can play.
+    const element = new window.Audio();
     element.preload = "auto";
     element.playbackRate = 1;
     audio.current = element;
@@ -124,7 +126,10 @@ export function ImmersivePoem({
     element.addEventListener("canplaythrough", ready);
     element.addEventListener("error", failed);
     element.addEventListener("ended", done);
-    const release = holdInMemory(element, manifest.audio);
+    const release = inMemoryCopy(manifest.audio, (src) => {
+      element.src = src;
+      element.load();
+    });
     return () => {
       release();
       element.pause();
@@ -148,13 +153,25 @@ export function ImmersivePoem({
   useEffect(() => {
     const score = manifest.theme;
     if (!score) return;
-    const element = new window.Audio(score.src);
+    const element = new window.Audio();
     element.preload = "auto";
     element.volume = Math.min(1, score.gain);
     theme.current = element;
-    // Back in step with the voice once the copy is in: the swap reloads it.
-    const release = holdInMemory(element, score.src, () => {
-      if (audio.current) element.currentTime = audio.current.currentTime;
+    // The voice does not wait for the theme. If the reading has begun by the
+    // time the theme's copy is in, it joins at the voice's place.
+    const release = inMemoryCopy(score.src, (src) => {
+      element.src = src;
+      element.load();
+      const voice = audio.current;
+      if (!voice || voice.paused) return;
+      element.addEventListener(
+        "loadedmetadata",
+        () => {
+          element.currentTime = voice.currentTime;
+          if (!voice.paused) void element.play().catch(() => undefined);
+        },
+        { once: true }
+      );
     });
     return () => {
       release();
@@ -278,6 +295,9 @@ export function ImmersivePoem({
     const element = audio.current;
     if (!element) return;
     revealChrome();
+    // Still downloading: a play now would fail on an element with no source
+    // and put up "did not load". "Loading…" is on screen; the next tap plays.
+    if (!element.src) return;
     if (element.paused) {
       if (status === "ended") element.currentTime = 0;
       void element.play().then(
@@ -655,17 +675,21 @@ export function ImmersivePoem({
 }
 
 /**
- * Moves an element onto an in-memory copy of its recording, keeping its place.
+ * Hands `use` an in-memory copy of a recording, or its address if the
+ * download fails.
  *
- * The poem plays from the file's address so it starts at once, but a streamed
- * file can only be seeked if the server answers range requests, and ours
- * answers one with the whole file and a 200. The element then reports an
- * empty `seekable` range and clamps every seek to zero: the bar, the line
- * steps and "again" all did nothing, which on a six-minute poem is the whole
- * transport. A blob is seekable whatever the server does - the same fix the
- * cinema has (`cinema-mode.tsx`). Returns the cleanup.
+ * A streamed file can only be seeked if the server answers range requests,
+ * and ours answers one with the whole file and a 200. The element then
+ * reports an empty `seekable` range and clamps every seek to zero: the bar,
+ * the line steps and "again" all did nothing, which on a six-minute poem is
+ * the whole transport. A blob is seekable whatever the server does - the
+ * cinema's fix too (`cinema-mode.tsx`).
+ *
+ * Given before the first play rather than swapped in during it: changing the
+ * source of a playing element interrupts its `play()`, and the theme, which
+ * starts when the voice's play resolves, never started. Returns the cleanup.
  */
-function holdInMemory(element: HTMLAudioElement, url: string, onSwapped?: () => void) {
+function inMemoryCopy(url: string, use: (src: string) => void) {
   let objectUrl = "";
   // Closed before the download finished: nobody would be left to revoke the
   // URL made afterwards, and it pins the whole recording in memory.
@@ -673,21 +697,15 @@ function holdInMemory(element: HTMLAudioElement, url: string, onSwapped?: () => 
   void fetch(url)
     .then((response) => (response.ok ? response.blob() : null))
     .then((blob) => {
-      if (!blob || cancelled) return;
+      if (cancelled) return;
+      if (!blob) return use(url);
       objectUrl = URL.createObjectURL(blob);
-      const at = element.currentTime;
-      const wasPlaying = !element.paused && !element.ended;
-      element.src = objectUrl;
-      element.load();
-      const resume = () => {
-        element.currentTime = at;
-        onSwapped?.();
-        if (wasPlaying) void element.play().catch(() => undefined);
-      };
-      if (element.readyState >= 1) resume();
-      else element.addEventListener("loadedmetadata", resume, { once: true });
+      use(objectUrl);
     })
-    .catch(() => undefined);
+    .catch(() => {
+      // Playable, if not seekable: better than a poem that never starts.
+      if (!cancelled) use(url);
+    });
   return () => {
     cancelled = true;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
