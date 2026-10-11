@@ -57,6 +57,19 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "99ee280f-faf5-4026-99fc-9cbec9d79a2a",
+    format: "poem",
+    language: "en",
+    title: "Binsey Poplars",
+    author: "Gerard Manley Hopkins",
+    cover: "/series/binsey-poplars.webp",
+    coverFocus: "36% 50%",
+    durationSeconds: 63,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-11",
+  },
+  {
     storyId: "7082de8a-56c4-441e-82d2-2c1ecb3c2d2c",
     format: "poem",
     language: "ru",

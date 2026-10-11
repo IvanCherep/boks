@@ -25,7 +25,16 @@ describe("who reads a boks", () => {
         expect(voice.voiceId).toMatch(/^[A-Za-z0-9]{20}$/);
       }
     }
-    expect(allNarrators()).toHaveLength(4);
+    // Four by the rule, and the one British voice beside it.
+    expect(allNarrators()).toHaveLength(5);
+  });
+
+  it("reads a British classic in a British voice where there is one", () => {
+    expect(narratorFor("en", "male", "british").name).toBe("Julian");
+    // No British woman's voice yet: the ordinary English one reads it.
+    expect(narratorFor("en", "female", "british").name).toBe("Sha");
+    // Asking for nothing never gets the British voice.
+    expect(narratorFor("en", "male").name).toBe("Jerry B.");
   });
 
   it("keeps every voice at one credit per character", () => {

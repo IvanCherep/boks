@@ -17,6 +17,12 @@
  * is invisible on one piece and worth hundreds of dollars across the
  * catalogue, so a replacement has to be checked for it. See
  * `docs/interactive-boks.md`.
+ *
+ * One refinement, by the same kind of rule: a British author's English classic
+ * may be read in a British voice, where the series has one for that gender.
+ * Hopkins is not Whitman, and a General American reading of "Binsey Poplars"
+ * places the poem in the wrong country. Where there is no British voice yet
+ * (a woman's verse, today) the ordinary English voice reads it.
  */
 
 export type NarrationLanguage = "ru" | "en";
@@ -31,6 +37,8 @@ export type Narrator = {
   authorGender: AuthorGender;
   /** Credits per character in the ElevenLabs library. Keep this at 1. */
   rate: number;
+  /** Set only on the voice that reads British classics; see above. */
+  accent?: "british";
 };
 
 const narrators: readonly Narrator[] = [
@@ -38,12 +46,20 @@ const narrators: readonly Narrator[] = [
   { name: "Mariia", voiceId: "EDpEYNf6XIeKYRzYcx4I", language: "ru", authorGender: "female", rate: 1 },
   { name: "Jerry B.", voiceId: "QuzlkGvsGTSxjYyGssV4", language: "en", authorGender: "male", rate: 1 },
   { name: "Sha", voiceId: "9GiYR5zXBWwc0khQNQA8", language: "en", authorGender: "female", rate: 1 },
+  // Chosen from four British candidates on the opening of "Binsey Poplars"
+  // for the most room between lines - 27% of the take against 15-20%.
+  { name: "Julian", voiceId: "7p1Ofvcwsv7UBPoFNcpI", language: "en", authorGender: "male", rate: 1, accent: "british" },
 ];
 
-export function narratorFor(language: NarrationLanguage, authorGender: AuthorGender): Narrator {
-  const found = narrators.find(
-    (voice) => voice.language === language && voice.authorGender === authorGender
-  );
+export function narratorFor(
+  language: NarrationLanguage,
+  authorGender: AuthorGender,
+  accent?: "british"
+): Narrator {
+  const matches = (voice: Narrator) => voice.language === language && voice.authorGender === authorGender;
+  const found =
+    (accent && narrators.find((voice) => matches(voice) && voice.accent === accent)) ||
+    narrators.find((voice) => matches(voice) && !voice.accent);
   // Every combination exists; the throw is here so a future language cannot be
   // added to the catalogue and quietly fall back to reading Russian in English.
   if (!found) throw new Error(`No narrator for ${language}/${authorGender}.`);

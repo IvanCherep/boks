@@ -1,0 +1,1174 @@
+{
+ "id": "binsey-poplars-immersive-v1",
+ "title": "Binsey Poplars",
+ "author": "Gerard Manley Hopkins",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/binsey-poplars/narration.mp3",
+ "theme": {
+  "src": "/poetry/binsey-poplars/theme.mp3",
+  "gain": 0.092
+ },
+ "durationMs": 62720,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF4E6",
+  "active": "#FFE4A8",
+  "shadow": "rgba(10, 12, 8, 0.62)"
+ },
+ "textScale": 0.78,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 640,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "living-landscape",
+   "image": "/poetry/binsey-poplars/scenes/01-living-landscape.webp",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 900,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "My aspens dear, whose airy cages quelled,",
+   "startMs": 0
+  },
+  {
+   "id": "leaves-and-light",
+   "image": "/poetry/binsey-poplars/scenes/02-leaves-and-light.webp",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 900,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "Quelled or quenched in leaves the leaping sun,",
+   "startMs": 3920
+  },
+  {
+   "id": "felled-landscape",
+   "image": "/poetry/binsey-poplars/scenes/03-felled-landscape.webp",
+   "lines": 16,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 680,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "All felled, felled, are all felled; … When we hew or delve:",
+   "startMs": 8120
+  },
+  {
+   "id": "memory-landscape",
+   "image": "/poetry/binsey-poplars/scenes/04-memory-landscape.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "After-comers cannot guess the beauty been. … Sweet especial rural scene.",
+   "startMs": 47680
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "living-landscape",
+   "startMs": 0,
+   "endMs": 3920,
+   "tokens": [
+    {
+     "text": "My",
+     "atMs": 0,
+     "endMs": 240,
+     "phrase": 0
+    },
+    {
+     "text": "aspens",
+     "atMs": 400,
+     "endMs": 800,
+     "phrase": 0
+    },
+    {
+     "text": "dear,",
+     "atMs": 880,
+     "endMs": 1520,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "whose",
+     "atMs": 1680,
+     "endMs": 1840,
+     "phrase": 1
+    },
+    {
+     "text": "airy",
+     "atMs": 2040,
+     "endMs": 2240,
+     "phrase": 1
+    },
+    {
+     "text": "cages",
+     "atMs": 2280,
+     "endMs": 2800,
+     "phrase": 1
+    },
+    {
+     "text": "quelled,",
+     "atMs": 2880,
+     "endMs": 3840,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "leaves-and-light",
+   "startMs": 3920,
+   "endMs": 8120,
+   "tokens": [
+    {
+     "text": "Quelled",
+     "atMs": 3920,
+     "endMs": 4400,
+     "phrase": 2
+    },
+    {
+     "text": "or",
+     "atMs": 4480,
+     "endMs": 4560,
+     "phrase": 2
+    },
+    {
+     "text": "quenched",
+     "atMs": 4720,
+     "endMs": 5120,
+     "phrase": 2
+    },
+    {
+     "text": "in",
+     "atMs": 5200,
+     "endMs": 5280,
+     "phrase": 2
+    },
+    {
+     "text": "leaves",
+     "atMs": 5360,
+     "endMs": 5760,
+     "phrase": 2
+    },
+    {
+     "text": "the",
+     "atMs": 5800,
+     "endMs": 5840,
+     "phrase": 2
+    },
+    {
+     "text": "leaping",
+     "atMs": 5920,
+     "endMs": 6320,
+     "phrase": 2
+    },
+    {
+     "text": "sun,",
+     "atMs": 6400,
+     "endMs": 8000,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 8120,
+   "endMs": 12160,
+   "tokens": [
+    {
+     "text": "All",
+     "atMs": 8120,
+     "endMs": 8240,
+     "phrase": 3
+    },
+    {
+     "text": "felled,",
+     "atMs": 8400,
+     "endMs": 9280,
+     "phrase": 3,
+     "emphasis": "lead"
+    },
+    {
+     "text": "felled,",
+     "atMs": 9360,
+     "endMs": 10160,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "are",
+     "atMs": 10280,
+     "endMs": 10400,
+     "phrase": 5
+    },
+    {
+     "text": "all",
+     "atMs": 10480,
+     "endMs": 10720,
+     "phrase": 5
+    },
+    {
+     "text": "felled;",
+     "atMs": 10880,
+     "endMs": 12080,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 12160,
+   "endMs": 14560,
+   "tokens": [
+    {
+     "text": "Of",
+     "atMs": 12160,
+     "endMs": 12240,
+     "phrase": 6
+    },
+    {
+     "text": "a",
+     "atMs": 12280,
+     "endMs": 12320,
+     "phrase": 6
+    },
+    {
+     "text": "fresh",
+     "atMs": 12400,
+     "endMs": 12720,
+     "phrase": 6
+    },
+    {
+     "text": "and",
+     "atMs": 12840,
+     "endMs": 12960,
+     "phrase": 6
+    },
+    {
+     "text": "following",
+     "atMs": 13200,
+     "endMs": 13440,
+     "phrase": 6
+    },
+    {
+     "text": "folded",
+     "atMs": 13520,
+     "endMs": 13920,
+     "phrase": 6
+    },
+    {
+     "text": "rank",
+     "atMs": 14000,
+     "endMs": 14320,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 14560,
+   "endMs": 16720,
+   "tokens": [
+    {
+     "text": "Not",
+     "atMs": 14560,
+     "endMs": 14720,
+     "phrase": 7
+    },
+    {
+     "text": "spared,",
+     "atMs": 14800,
+     "endMs": 15440,
+     "phrase": 7,
+     "emphasis": "lead"
+    },
+    {
+     "text": "not",
+     "atMs": 15560,
+     "endMs": 15680,
+     "phrase": 8
+    },
+    {
+     "text": "one",
+     "atMs": 15840,
+     "endMs": 16080,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 16720,
+   "endMs": 18240,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 16720,
+     "endMs": 16880,
+     "phrase": 9
+    },
+    {
+     "text": "dandled",
+     "atMs": 16960,
+     "endMs": 17440,
+     "phrase": 9
+    },
+    {
+     "text": "a",
+     "atMs": 17520,
+     "endMs": 17600,
+     "phrase": 9
+    },
+    {
+     "text": "sandalled",
+     "atMs": 17680,
+     "endMs": 18160,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 18240,
+   "endMs": 20320,
+   "tokens": [
+    {
+     "text": "Shadow",
+     "atMs": 18240,
+     "endMs": 18640,
+     "phrase": 10
+    },
+    {
+     "text": "that",
+     "atMs": 18720,
+     "endMs": 18800,
+     "phrase": 10
+    },
+    {
+     "text": "swam",
+     "atMs": 18960,
+     "endMs": 19360,
+     "phrase": 10
+    },
+    {
+     "text": "or",
+     "atMs": 19440,
+     "endMs": 19520,
+     "phrase": 10
+    },
+    {
+     "text": "sank",
+     "atMs": 19600,
+     "endMs": 19920,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 20320,
+   "endMs": 24720,
+   "tokens": [
+    {
+     "text": "On",
+     "atMs": 20320,
+     "endMs": 20400,
+     "phrase": 11
+    },
+    {
+     "text": "meadow",
+     "atMs": 20560,
+     "endMs": 20880,
+     "phrase": 11
+    },
+    {
+     "text": "and",
+     "atMs": 20960,
+     "endMs": 21040,
+     "phrase": 11
+    },
+    {
+     "text": "river",
+     "atMs": 21120,
+     "endMs": 21520,
+     "phrase": 11
+    },
+    {
+     "text": "and",
+     "atMs": 21760,
+     "endMs": 21920,
+     "phrase": 11
+    },
+    {
+     "text": "wind-wandering",
+     "atMs": 22000,
+     "endMs": 22800,
+     "phrase": 11
+    },
+    {
+     "text": "weed-winding",
+     "atMs": 22880,
+     "endMs": 23600,
+     "phrase": 11
+    },
+    {
+     "text": "bank.",
+     "atMs": 23680,
+     "endMs": 24400,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 24720,
+   "endMs": 26960,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 24720,
+     "endMs": 24960,
+     "phrase": 12
+    },
+    {
+     "text": "if",
+     "atMs": 25040,
+     "endMs": 25200,
+     "phrase": 12
+    },
+    {
+     "text": "we",
+     "atMs": 25280,
+     "endMs": 25360,
+     "phrase": 12
+    },
+    {
+     "text": "but",
+     "atMs": 25440,
+     "endMs": 25600,
+     "phrase": 12
+    },
+    {
+     "text": "knew",
+     "atMs": 25760,
+     "endMs": 26000,
+     "phrase": 12
+    },
+    {
+     "text": "what",
+     "atMs": 26120,
+     "endMs": 26240,
+     "phrase": 12
+    },
+    {
+     "text": "we",
+     "atMs": 26320,
+     "endMs": 26400,
+     "phrase": 12
+    },
+    {
+     "text": "do",
+     "atMs": 26480,
+     "endMs": 26800,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 26960,
+   "endMs": 29040,
+   "tokens": [
+    {
+     "text": "When",
+     "atMs": 26960,
+     "endMs": 27120,
+     "phrase": 13
+    },
+    {
+     "text": "we",
+     "atMs": 27160,
+     "endMs": 27200,
+     "phrase": 13
+    },
+    {
+     "text": "delve",
+     "atMs": 27360,
+     "endMs": 27760,
+     "phrase": 13
+    },
+    {
+     "text": "or",
+     "atMs": 27840,
+     "endMs": 27920,
+     "phrase": 13
+    },
+    {
+     "text": "hew—",
+     "atMs": 28000,
+     "endMs": 28880,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 29040,
+   "endMs": 31440,
+   "tokens": [
+    {
+     "text": "Hack",
+     "atMs": 29040,
+     "endMs": 29200,
+     "phrase": 14
+    },
+    {
+     "text": "and",
+     "atMs": 29280,
+     "endMs": 29360,
+     "phrase": 14
+    },
+    {
+     "text": "rack",
+     "atMs": 29520,
+     "endMs": 29840,
+     "phrase": 14
+    },
+    {
+     "text": "the",
+     "atMs": 29880,
+     "endMs": 29920,
+     "phrase": 14
+    },
+    {
+     "text": "growing",
+     "atMs": 30000,
+     "endMs": 30400,
+     "phrase": 14
+    },
+    {
+     "text": "green!",
+     "atMs": 30480,
+     "endMs": 31160,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 31440,
+   "endMs": 33080,
+   "tokens": [
+    {
+     "text": "Since",
+     "atMs": 31440,
+     "endMs": 31680,
+     "phrase": 15
+    },
+    {
+     "text": "country",
+     "atMs": 31760,
+     "endMs": 32160,
+     "phrase": 15
+    },
+    {
+     "text": "is",
+     "atMs": 32240,
+     "endMs": 32320,
+     "phrase": 15
+    },
+    {
+     "text": "so",
+     "atMs": 32400,
+     "endMs": 32480,
+     "phrase": 15
+    },
+    {
+     "text": "tender",
+     "atMs": 32640,
+     "endMs": 33040,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 33080,
+   "endMs": 35840,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 33080,
+     "endMs": 33120,
+     "phrase": 16
+    },
+    {
+     "text": "touch,",
+     "atMs": 33200,
+     "endMs": 33920,
+     "phrase": 16,
+     "emphasis": "lead"
+    },
+    {
+     "text": "her",
+     "atMs": 34000,
+     "endMs": 34080,
+     "phrase": 17
+    },
+    {
+     "text": "being",
+     "atMs": 34160,
+     "endMs": 34480,
+     "phrase": 17
+    },
+    {
+     "text": "so",
+     "atMs": 34560,
+     "endMs": 34720,
+     "phrase": 17
+    },
+    {
+     "text": "slender,",
+     "atMs": 34800,
+     "endMs": 35760,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 35840,
+   "endMs": 38640,
+   "tokens": [
+    {
+     "text": "That,",
+     "atMs": 35840,
+     "endMs": 36400,
+     "phrase": 18,
+     "emphasis": "lead"
+    },
+    {
+     "text": "like",
+     "atMs": 36480,
+     "endMs": 36640,
+     "phrase": 19
+    },
+    {
+     "text": "this",
+     "atMs": 36720,
+     "endMs": 36880,
+     "phrase": 19
+    },
+    {
+     "text": "sleek",
+     "atMs": 36960,
+     "endMs": 37280,
+     "phrase": 19
+    },
+    {
+     "text": "and",
+     "atMs": 37360,
+     "endMs": 37440,
+     "phrase": 19
+    },
+    {
+     "text": "seeing",
+     "atMs": 37600,
+     "endMs": 37920,
+     "phrase": 19
+    },
+    {
+     "text": "ball",
+     "atMs": 38000,
+     "endMs": 38320,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 38640,
+   "endMs": 41240,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 38640,
+     "endMs": 38800,
+     "phrase": 20
+    },
+    {
+     "text": "a",
+     "atMs": 38880,
+     "endMs": 38960,
+     "phrase": 20
+    },
+    {
+     "text": "prick",
+     "atMs": 39000,
+     "endMs": 39280,
+     "phrase": 20
+    },
+    {
+     "text": "will",
+     "atMs": 39360,
+     "endMs": 39440,
+     "phrase": 20
+    },
+    {
+     "text": "make",
+     "atMs": 39520,
+     "endMs": 39680,
+     "phrase": 20
+    },
+    {
+     "text": "no",
+     "atMs": 39760,
+     "endMs": 39920,
+     "phrase": 20
+    },
+    {
+     "text": "eye",
+     "atMs": 40000,
+     "endMs": 40160,
+     "phrase": 20
+    },
+    {
+     "text": "at",
+     "atMs": 40240,
+     "endMs": 40320,
+     "phrase": 20
+    },
+    {
+     "text": "all,",
+     "atMs": 40400,
+     "endMs": 41120,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 41240,
+   "endMs": 43360,
+   "tokens": [
+    {
+     "text": "Where",
+     "atMs": 41240,
+     "endMs": 41360,
+     "phrase": 21
+    },
+    {
+     "text": "we,",
+     "atMs": 41440,
+     "endMs": 42000,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "even",
+     "atMs": 42160,
+     "endMs": 42320,
+     "phrase": 22
+    },
+    {
+     "text": "where",
+     "atMs": 42400,
+     "endMs": 42480,
+     "phrase": 22
+    },
+    {
+     "text": "we",
+     "atMs": 42560,
+     "endMs": 42720,
+     "phrase": 22
+    },
+    {
+     "text": "mean",
+     "atMs": 42880,
+     "endMs": 43040,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 43360,
+   "endMs": 45440,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 43360,
+     "endMs": 43440,
+     "phrase": 23
+    },
+    {
+     "text": "mend",
+     "atMs": 43600,
+     "endMs": 43840,
+     "phrase": 23
+    },
+    {
+     "text": "her",
+     "atMs": 43920,
+     "endMs": 44080,
+     "phrase": 23
+    },
+    {
+     "text": "we",
+     "atMs": 44320,
+     "endMs": 44480,
+     "phrase": 23
+    },
+    {
+     "text": "end",
+     "atMs": 44560,
+     "endMs": 44800,
+     "phrase": 23
+    },
+    {
+     "text": "her,",
+     "atMs": 44880,
+     "endMs": 45360,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "felled-landscape",
+   "startMs": 45440,
+   "endMs": 47680,
+   "tokens": [
+    {
+     "text": "When",
+     "atMs": 45440,
+     "endMs": 45520,
+     "phrase": 24
+    },
+    {
+     "text": "we",
+     "atMs": 45600,
+     "endMs": 45760,
+     "phrase": 24
+    },
+    {
+     "text": "hew",
+     "atMs": 45840,
+     "endMs": 46160,
+     "phrase": 24
+    },
+    {
+     "text": "or",
+     "atMs": 46240,
+     "endMs": 46320,
+     "phrase": 24
+    },
+    {
+     "text": "delve:",
+     "atMs": 46400,
+     "endMs": 47520,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "memory-landscape",
+   "startMs": 47680,
+   "endMs": 50560,
+   "tokens": [
+    {
+     "text": "After-comers",
+     "atMs": 47680,
+     "endMs": 48320,
+     "phrase": 25
+    },
+    {
+     "text": "cannot",
+     "atMs": 48520,
+     "endMs": 48720,
+     "phrase": 25
+    },
+    {
+     "text": "guess",
+     "atMs": 48880,
+     "endMs": 49040,
+     "phrase": 25
+    },
+    {
+     "text": "the",
+     "atMs": 49120,
+     "endMs": 49200,
+     "phrase": 25
+    },
+    {
+     "text": "beauty",
+     "atMs": 49240,
+     "endMs": 49520,
+     "phrase": 25
+    },
+    {
+     "text": "been.",
+     "atMs": 49600,
+     "endMs": 50280,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "memory-landscape",
+   "startMs": 50560,
+   "endMs": 53200,
+   "tokens": [
+    {
+     "text": "Ten",
+     "atMs": 50560,
+     "endMs": 50800,
+     "phrase": 26
+    },
+    {
+     "text": "or",
+     "atMs": 50880,
+     "endMs": 51040,
+     "phrase": 26
+    },
+    {
+     "text": "twelve,",
+     "atMs": 51160,
+     "endMs": 51840,
+     "phrase": 26,
+     "emphasis": "lead"
+    },
+    {
+     "text": "only",
+     "atMs": 51920,
+     "endMs": 52240,
+     "phrase": 27
+    },
+    {
+     "text": "ten",
+     "atMs": 52320,
+     "endMs": 52480,
+     "phrase": 27
+    },
+    {
+     "text": "or",
+     "atMs": 52560,
+     "endMs": 52640,
+     "phrase": 27
+    },
+    {
+     "text": "twelve",
+     "atMs": 52720,
+     "endMs": 53120,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "memory-landscape",
+   "startMs": 53200,
+   "endMs": 55200,
+   "tokens": [
+    {
+     "text": "Strokes",
+     "atMs": 53200,
+     "endMs": 53600,
+     "phrase": 28
+    },
+    {
+     "text": "of",
+     "atMs": 53640,
+     "endMs": 53680,
+     "phrase": 28
+    },
+    {
+     "text": "havoc",
+     "atMs": 53840,
+     "endMs": 54160,
+     "phrase": 28
+    },
+    {
+     "text": "unselve",
+     "atMs": 54320,
+     "endMs": 54880,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "memory-landscape",
+   "startMs": 55200,
+   "endMs": 57360,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 55200,
+     "endMs": 55360,
+     "phrase": 29
+    },
+    {
+     "text": "sweet",
+     "atMs": 55520,
+     "endMs": 55680,
+     "phrase": 29
+    },
+    {
+     "text": "especial",
+     "atMs": 55760,
+     "endMs": 56320,
+     "phrase": 29
+    },
+    {
+     "text": "scene,",
+     "atMs": 56400,
+     "endMs": 57280,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "memory-landscape",
+   "startMs": 57360,
+   "endMs": 60320,
+   "tokens": [
+    {
+     "text": "Rural",
+     "atMs": 57360,
+     "endMs": 57760,
+     "phrase": 30
+    },
+    {
+     "text": "scene,",
+     "atMs": 57920,
+     "endMs": 58640,
+     "phrase": 30,
+     "emphasis": "lead"
+    },
+    {
+     "text": "a",
+     "atMs": 58680,
+     "endMs": 58720,
+     "phrase": 31
+    },
+    {
+     "text": "rural",
+     "atMs": 58880,
+     "endMs": 59200,
+     "phrase": 31
+    },
+    {
+     "text": "scene,",
+     "atMs": 59360,
+     "endMs": 60160,
+     "phrase": 31,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "memory-landscape",
+   "startMs": 60320,
+   "endMs": 62720,
+   "tokens": [
+    {
+     "text": "Sweet",
+     "atMs": 60320,
+     "endMs": 60640,
+     "phrase": 32
+    },
+    {
+     "text": "especial",
+     "atMs": 60800,
+     "endMs": 61440,
+     "phrase": 32
+    },
+    {
+     "text": "rural",
+     "atMs": 61600,
+     "endMs": 61920,
+     "phrase": 32
+    },
+    {
+     "text": "scene.",
+     "atMs": 62080,
+     "endMs": 62720,
+     "phrase": 32,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

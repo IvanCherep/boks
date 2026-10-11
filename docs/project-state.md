@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-08.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-11.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,20 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live
+
+**Binsey Poplars on the series shelf (2026-10-11).** Hopkins's poem, bok
+`99ee280f-faf5-4026-99fc-9cbec9d79a2a`, added to the catalogue by the curated
+route (`work/catalogue-2026-10-11/`, text from the 1918 edition on Wikisource)
+and produced as an ordinary immersive poem: four pictures, read by **Julian**,
+the first British voice in `voices.ts` (British classics, male), theme take 1
+of 2 at gain 0.092. The recording has 0.8 s of silence inserted before «All
+felled» so the second picture holds longer than 3.5 s; the untouched alignment
+is `docs/poetry/binsey-poplars/alignment.raw.json`. The touch-and-hold, ambience
+and research events from the original brief (`docs/poetry/binsey-poplars/brief.md`)
+are not built: the poetry format has no gestures, and adding one is a
+scene-map field in the existing renderer, still to decide. The whole-table
+re-spread of publication dates (`docs/catalogue-import.md` §4b step 3) was not
+run; the new bok carries a synthetic date inside the 30-day window.
 
 **Tracked links (2026-10-11).** For sending boks
 to universities: the admin console's **Links** tab makes a link per place - a

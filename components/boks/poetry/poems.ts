@@ -48,6 +48,8 @@ const poems: Record<string, string> = {
   "7082de8a-56c4-441e-82d2-2c1ecb3c2d2c": "/poetry/ne-zhaleyu/manifest.json",
   // Валерий Брюсов — Первый снег
   "7a67ce67-bceb-4e41-8f66-191718345880": "/poetry/perviy-sneg/manifest.json",
+  // Gerard Manley Hopkins — Binsey Poplars
+  "99ee280f-faf5-4026-99fc-9cbec9d79a2a": "/poetry/binsey-poplars/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

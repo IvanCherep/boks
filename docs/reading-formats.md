@@ -126,6 +126,11 @@ executable copy and both formats use it.
 | Russian | female | **Mariia** | `EDpEYNf6XIeKYRzYcx4I` |
 | English | male | **Jerry B.** | `QuzlkGvsGTSxjYyGssV4` |
 | English | female | **Sha** | `9GiYR5zXBWwc0khQNQA8` |
+| English, a British author's classic | male | **Julian** | `7p1Ofvcwsv7UBPoFNcpI` |
+
+A British author's English classic may be read in a British voice where the
+series has one for that gender (`narratorFor("en", gender, "british")`);
+otherwise the ordinary English voice reads it.
 
 Model `eleven_v4`. Stability is the one setting that changes with the material:
 prose 0.5, verse 0.8 for metre, 0.3 with `style` up when the piece wants acting.
@@ -392,6 +397,7 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | «Мужичок с ноготок», Некрасов (из «Крестьянских детей») | `9db4cce3-9594-4a6c-a860-324a330e89f8` | Alex Bell | 4 | 4, 4, 8, 4 |
 | «Не жалею, не зову, не плачу…», Есенин | `7082de8a-56c4-441e-82d2-2c1ecb3c2d2c` | Alex Bell | 4 | 4, 8, 4, 4 |
 | «Первый снег», Брюсов | `7a67ce67-bceb-4e41-8f66-191718345880` | Alex Bell | 4 | 4, 4, 4, 4 |
+| *Binsey Poplars*, Hopkins | `99ee280f-faf5-4026-99fc-9cbec9d79a2a` | Julian (British) | 4 | 1, 1, 16, 6 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,

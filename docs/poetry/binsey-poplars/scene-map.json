@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "title": "Binsey Poplars",
+ "author": "Gerard Manley Hopkins",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF4E6",
+  "active": "#FFE4A8",
+  "shadow": "rgba(10, 12, 8, 0.62)"
+ },
+ "themeGain": 0.092,
+ "textScale": 0.78,
+ "scenes": [
+  {
+   "id": "living-landscape",
+   "image": "01-living-landscape.png",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "My aspens dear, whose airy cages quelled,"
+  },
+  {
+   "id": "leaves-and-light",
+   "image": "02-leaves-and-light.png",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1200,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "Quelled or quenched in leaves the leaping sun,"
+  },
+  {
+   "id": "felled-landscape",
+   "image": "03-felled-landscape.png",
+   "lines": 16,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 900,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "All felled, felled, are all felled; … When we hew or delve:"
+  },
+  {
+   "id": "memory-landscape",
+   "image": "04-memory-landscape.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.36,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 2000,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.84,
+     "height": 0.2
+    }
+   ],
+   "line": "After-comers cannot guess the beauty been. … Sweet especial rural scene."
+  }
+ ]
+}
