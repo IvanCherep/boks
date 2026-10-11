@@ -5,6 +5,12 @@ const baseDirectives = [
   "frame-ancestors 'none'",
   "form-action 'self'",
   "img-src 'self' data: blob:",
+  // The formats play their recordings from an in-memory copy (an object URL),
+  // because the asset server answers a range request with the whole file and
+  // a 200, and a streamed file that cannot be ranged cannot be seeked. Without
+  // `blob:` here the copy is refused under `default-src`: the poem would not
+  // play at all once it swapped, and the cinema fell back to the browser voice.
+  "media-src 'self' blob:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   // vinext currently emits the RSC bootstrap as inline scripts.

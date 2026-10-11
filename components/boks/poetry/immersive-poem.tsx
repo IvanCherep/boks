@@ -124,7 +124,9 @@ export function ImmersivePoem({
     element.addEventListener("canplaythrough", ready);
     element.addEventListener("error", failed);
     element.addEventListener("ended", done);
+    const release = holdInMemory(element, manifest.audio);
     return () => {
+      release();
       element.pause();
       element.src = "";
       element.removeEventListener("canplaythrough", ready);
@@ -150,7 +152,12 @@ export function ImmersivePoem({
     element.preload = "auto";
     element.volume = Math.min(1, score.gain);
     theme.current = element;
+    // Back in step with the voice once the copy is in: the swap reloads it.
+    const release = holdInMemory(element, score.src, () => {
+      if (audio.current) element.currentTime = audio.current.currentTime;
+    });
     return () => {
+      release();
       element.pause();
       element.src = "";
       theme.current = null;
@@ -645,6 +652,46 @@ export function ImmersivePoem({
       )}
     </div>
   );
+}
+
+/**
+ * Moves an element onto an in-memory copy of its recording, keeping its place.
+ *
+ * The poem plays from the file's address so it starts at once, but a streamed
+ * file can only be seeked if the server answers range requests, and ours
+ * answers one with the whole file and a 200. The element then reports an
+ * empty `seekable` range and clamps every seek to zero: the bar, the line
+ * steps and "again" all did nothing, which on a six-minute poem is the whole
+ * transport. A blob is seekable whatever the server does - the same fix the
+ * cinema has (`cinema-mode.tsx`). Returns the cleanup.
+ */
+function holdInMemory(element: HTMLAudioElement, url: string, onSwapped?: () => void) {
+  let objectUrl = "";
+  // Closed before the download finished: nobody would be left to revoke the
+  // URL made afterwards, and it pins the whole recording in memory.
+  let cancelled = false;
+  void fetch(url)
+    .then((response) => (response.ok ? response.blob() : null))
+    .then((blob) => {
+      if (!blob || cancelled) return;
+      objectUrl = URL.createObjectURL(blob);
+      const at = element.currentTime;
+      const wasPlaying = !element.paused && !element.ended;
+      element.src = objectUrl;
+      element.load();
+      const resume = () => {
+        element.currentTime = at;
+        onSwapped?.();
+        if (wasPlaying) void element.play().catch(() => undefined);
+      };
+      if (element.readyState >= 1) resume();
+      else element.addEventListener("loadedmetadata", resume, { once: true });
+    })
+    .catch(() => undefined);
+  return () => {
+    cancelled = true;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  };
 }
 
 /**

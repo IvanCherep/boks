@@ -20,6 +20,12 @@ describe("security headers", () => {
     expect(policy).toContain("https://cloudflareinsights.com");
   });
 
+  it("lets the formats play a recording from an in-memory copy", () => {
+    // Seeking needs the copy: the asset server ignores range requests. Under
+    // `default-src 'self'` alone a blob: recording is refused and nothing plays.
+    expect(contentSecurityPolicy()).toContain("media-src 'self' blob:");
+  });
+
   it("adds HSTS only to HTTPS responses", () => {
     const secure = applySecurityHeaders(new Response(), new URL("https://tryboks.com"));
     expect(secure.headers.get("strict-transport-security")).toBe("max-age=31536000");
