@@ -7,7 +7,7 @@
  "audio": "/poetry/redwood-tree/narration.mp3",
  "theme": {
   "src": "/poetry/redwood-tree/theme.mp3",
-  "gain": 0.08
+  "gain": 0.111
  },
  "durationMs": 378780,
  "canvas": {

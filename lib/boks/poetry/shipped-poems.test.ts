@@ -18,6 +18,26 @@ const slugs = readdirSync("public/poetry", { withFileTypes: true })
 
 const publicFile = (url: string) => `public${url}`;
 
+/**
+ * Seconds in a constant-bitrate MP3, from its size and its first frame's
+ * bitrate. Every recording and theme here is CBR (ElevenLabs' `mp3_44100_128`,
+ * or ffmpeg at `-b:a 128k`), so this is exact to a frame without a decoder.
+ */
+function mp3Seconds(path: string) {
+  const bytes = new Uint8Array(readFileSync(path));
+  let offset = 0;
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+    offset = 10 + (((bytes[6] & 0x7f) << 21) | ((bytes[7] & 0x7f) << 14) | ((bytes[8] & 0x7f) << 7) | (bytes[9] & 0x7f));
+  }
+  while (offset < bytes.length - 4 && !(bytes[offset] === 0xff && (bytes[offset + 1] & 0xe0) === 0xe0)) offset += 1;
+  const mpeg1 = ((bytes[offset + 1] >> 3) & 3) === 3;
+  const index = bytes[offset + 2] >> 4;
+  const kbps = (mpeg1
+    ? [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+    : [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160])[index];
+  return ((bytes.length - offset) * 8) / (kbps * 1000);
+}
+
 describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
   const manifest = JSON.parse(
     readFileSync(`public/poetry/${slug}/manifest.json`, "utf8")
@@ -94,6 +114,15 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
       if (previous.from !== now.from) expect(previous.to, `at ${ms}`).toBe(now.from);
       previous = now;
     }
+  });
+
+  it("has a theme that lasts as long as the voice", () => {
+    // A music take can come back shorter than it was asked for - one returned
+    // 249 s of a requested 380 after a rate-limit retry, and the last two
+    // minutes of the poem played without it, and a seek past its end stopped it.
+    const voice = mp3Seconds(publicFile(manifest.audio));
+    expect(voice, "narration").toBeGreaterThanOrEqual(manifest.durationMs / 1000 - 0.5);
+    expect(mp3Seconds(publicFile(manifest.theme!.src)), "theme").toBeGreaterThanOrEqual(voice - 1);
   });
 
   it("keeps its theme audibly under the voice", () => {
