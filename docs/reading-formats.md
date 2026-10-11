@@ -398,6 +398,7 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | «Не жалею, не зову, не плачу…», Есенин | `7082de8a-56c4-441e-82d2-2c1ecb3c2d2c` | Alex Bell | 4 | 4, 8, 4, 4 |
 | «Первый снег», Брюсов | `7a67ce67-bceb-4e41-8f66-191718345880` | Alex Bell | 4 | 4, 4, 4, 4 |
 | *Binsey Poplars*, Hopkins | `99ee280f-faf5-4026-99fc-9cbec9d79a2a` | Julian (British) | 4 | 1, 1, 16, 6 |
+| *Song of the Redwood-Tree*, Part 1, Whitman | `dc5150c6-fb9b-417c-8b29-40d274103acc` | Jerry B. | 4 | 5, 14, 53, 10 |
 | *The Old Vicarage, Grantchester*, Rupert Brooke | `afa5a1ed-3019-455e-b550-475c9a498db3` | Julian (British) | 4 - the third holds the long middle, as the brief asks for the complete poem | 6, 27, 106, 2 |
 
 The last two were not in the catalogue and were added for this, through the
@@ -427,17 +428,31 @@ check that it works.
    little; choose by dynamic range and share of silence - more room between
    lines matters more here than anywhere, because the words arrive in the
    picture. Assert the alignment's length equals the text's.
-3. **Generate the theme** to the recording's length, two takes, with
+3. **Bring the voice to the series' level: −22 LUFS integrated**, after any
+   silence is inserted and before anything is measured against it:
+
+   ```bash
+   ffmpeg -nostats -i edited.wav -af loudnorm=print_format=json -f null - 2>&1 | grep input_i
+   ffmpeg -i edited.wav -af "volume=<−22 − input_i>dB,alimiter=limit=0.89:level=false" \
+     -codec:a libmp3lame -b:a 128k -ar 44100 public/poetry/<slug>/narration.mp3
+   ```
+
+   The shipped readings sit between −21 and −24 LUFS. A voice new to the
+   series can arrive far below that: Julian's first two takes were −30, and
+   both poems shipped eight decibels quieter than everything beside them
+   (fixed 2026-10-11). Gain only, never compression; the limiter only keeps
+   the peaks under −1 dBTP.
+4. **Generate the theme** to the recording's length, two takes, with
    `force_instrumental: true` and without the poem's title in the prompt -
    named, the model sings the poem, and the reader hears two voices at once.
    Run each take through speech-to-text and require zero words. Keep the one
    with less energy in 1–3 kHz and a steadier envelope
    (`docs/media-generation.md` §3–4).
-4. **Measure the theme gain.** Active RMS of each (frames within 40 dB of the
+5. **Measure the theme gain.** Active RMS of each (frames within 40 dB of the
    peak), then `20·log10(gain) = voice − theme − 13`. It goes in the scene map
    as `themeGain`.
-5. **Convert the pictures** to WebP into `public/poetry/<slug>/scenes/`.
-6. **Write the scene map** in `docs/poetry/<slug>/scene-map.json` - copy one of
+6. **Convert the pictures** to WebP into `public/poetry/<slug>/scenes/`.
+7. **Write the scene map** in `docs/poetry/<slug>/scene-map.json` - copy one of
    the existing ones. Per scene: image, `lines`, `textPreset`, `focalPoint`, and
    `safeZones` in fractions of the **screen**, not the image: a 9:16 picture on
    a phone loses about a tenth on each side. A zone that reaches the right edge
@@ -445,7 +460,7 @@ check that it works.
    `themeGain`, and when needed `textScale` (long lines: 0.82 for Lazarus, 0.68
    for Whitman's hundred-character ones) and `veil` (a daylight poem: 1.55 for
    Whitman).
-7. **Build the manifest:**
+8. **Build the manifest:**
 
    ```bash
    node scripts/build-poem-manifest.mjs <slug> docs/poetry/<slug>/alignment.json docs/poetry/<slug>/lines.json docs/poetry/<slug>/scene-map.json
@@ -453,10 +468,10 @@ check that it works.
 
    It refuses if the word counts disagree rather than cutting the poem in the
    wrong places.
-8. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
+9. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
    One line. The sandbox lists it, the feed offers it, and the finale is
    shared, so a new poem has nothing to add there.
-9. **Look at it** at phone size in WebKit (§6) - the tests cannot tell whether
+10. **Look at it** at phone size in WebKit (§6) - the tests cannot tell whether
    words sit on a face.
 
 No new component, ever. If a poem needs something the renderer cannot do, the

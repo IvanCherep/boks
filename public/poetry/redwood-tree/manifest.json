@@ -1,0 +1,5616 @@
+{
+ "id": "redwood-tree-immersive-v1",
+ "title": "Song of the Redwood-Tree — Part 1",
+ "author": "Walt Whitman",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/redwood-tree/narration.mp3",
+ "theme": {
+  "src": "/poetry/redwood-tree/theme.mp3",
+  "gain": 0.08
+ },
+ "durationMs": 378780,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F6F1E4",
+  "active": "#FFD9A0",
+  "shadow": "rgba(8, 12, 8, 0.62)"
+ },
+ "textScale": 0.64,
+ "veil": 1.3,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 910,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "ancient-redwood-before-touch",
+   "image": "/poetry/redwood-tree/scenes/01_ancient_redwood_before_touch.webp",
+   "lines": 5,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 860,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.64,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "A California song, … Voice of a mighty dying tree in the redwood forest dense.",
+   "startMs": 0
+  },
+  {
+   "id": "ancient-redwood-awakened",
+   "image": "/poetry/redwood-tree/scenes/02_ancient_redwood_awakened.webp",
+   "lines": 14,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 860,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.64,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "Farewell my brethren, … But in my soul I plainly heard.",
+   "startMs": 25260
+  },
+  {
+   "id": "canopy-voice",
+   "image": "/poetry/redwood-tree/scenes/03_canopy_voice.webp",
+   "lines": 53,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.4
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1180,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.64,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "Murmuring out of its myriad leaves, … To disappear, to serve.",
+   "startMs": 82060
+  },
+  {
+   "id": "farewell-stump-and-sprout",
+   "image": "/poetry/redwood-tree/scenes/04_farewell_stump_and_sprout.webp",
+   "lines": 10,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.6
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.1,
+     "width": 0.62,
+     "height": 0.2
+    }
+   ],
+   "line": "Thus on the northern coast, … In the Mendocino woods I caught.",
+   "startMs": 333500
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "ancient-redwood-before-touch",
+   "startMs": 0,
+   "endMs": 1840,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 0,
+     "endMs": 80,
+     "phrase": 0
+    },
+    {
+     "text": "California",
+     "atMs": 160,
+     "endMs": 844,
+     "phrase": 0
+    },
+    {
+     "text": "song,",
+     "atMs": 880,
+     "endMs": 1360,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-before-touch",
+   "startMs": 1840,
+   "endMs": 7920,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 1840,
+     "endMs": 1920,
+     "phrase": 1
+    },
+    {
+     "text": "prophecy",
+     "atMs": 2000,
+     "endMs": 2680,
+     "phrase": 1
+    },
+    {
+     "text": "and",
+     "atMs": 2800,
+     "endMs": 3067,
+     "phrase": 1
+    },
+    {
+     "text": "indirection,",
+     "atMs": 3120,
+     "endMs": 4560,
+     "phrase": 1,
+     "emphasis": "lead"
+    },
+    {
+     "text": "a",
+     "atMs": 4600,
+     "endMs": 4640,
+     "phrase": 2
+    },
+    {
+     "text": "thought",
+     "atMs": 4800,
+     "endMs": 5040,
+     "phrase": 2
+    },
+    {
+     "text": "impalpable",
+     "atMs": 5120,
+     "endMs": 5920,
+     "phrase": 2
+    },
+    {
+     "text": "to",
+     "atMs": 6000,
+     "endMs": 6080,
+     "phrase": 2
+    },
+    {
+     "text": "breathe",
+     "atMs": 6240,
+     "endMs": 6560,
+     "phrase": 2
+    },
+    {
+     "text": "as",
+     "atMs": 6640,
+     "endMs": 6800,
+     "phrase": 2
+    },
+    {
+     "text": "air,",
+     "atMs": 6880,
+     "endMs": 7600,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-before-touch",
+   "startMs": 7920,
+   "endMs": 14240,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 7920,
+     "endMs": 8000,
+     "phrase": 3
+    },
+    {
+     "text": "chorus",
+     "atMs": 8160,
+     "endMs": 8560,
+     "phrase": 3
+    },
+    {
+     "text": "of",
+     "atMs": 8640,
+     "endMs": 8720,
+     "phrase": 3
+    },
+    {
+     "text": "dryads,",
+     "atMs": 8800,
+     "endMs": 9840,
+     "phrase": 3,
+     "emphasis": "lead"
+    },
+    {
+     "text": "fading,",
+     "atMs": 9920,
+     "endMs": 10720,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "departing,",
+     "atMs": 10960,
+     "endMs": 11840,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 11920,
+     "endMs": 12000,
+     "phrase": 6
+    },
+    {
+     "text": "hamadryads",
+     "atMs": 12080,
+     "endMs": 12880,
+     "phrase": 6
+    },
+    {
+     "text": "departing,",
+     "atMs": 13080,
+     "endMs": 14160,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-before-touch",
+   "startMs": 14240,
+   "endMs": 19680,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 14240,
+     "endMs": 14320,
+     "phrase": 7
+    },
+    {
+     "text": "murmuring,",
+     "atMs": 14400,
+     "endMs": 15280,
+     "phrase": 7,
+     "emphasis": "lead"
+    },
+    {
+     "text": "fateful,",
+     "atMs": 15320,
+     "endMs": 16080,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "giant",
+     "atMs": 16120,
+     "endMs": 16480,
+     "phrase": 9
+    },
+    {
+     "text": "voice,",
+     "atMs": 16560,
+     "endMs": 17360,
+     "phrase": 9,
+     "emphasis": "lead"
+    },
+    {
+     "text": "out",
+     "atMs": 17440,
+     "endMs": 17520,
+     "phrase": 10
+    },
+    {
+     "text": "of",
+     "atMs": 17600,
+     "endMs": 17680,
+     "phrase": 10
+    },
+    {
+     "text": "the",
+     "atMs": 17720,
+     "endMs": 17760,
+     "phrase": 10
+    },
+    {
+     "text": "earth",
+     "atMs": 17920,
+     "endMs": 18240,
+     "phrase": 10
+    },
+    {
+     "text": "and",
+     "atMs": 18320,
+     "endMs": 18400,
+     "phrase": 10
+    },
+    {
+     "text": "sky,",
+     "atMs": 18480,
+     "endMs": 19520,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-before-touch",
+   "startMs": 19680,
+   "endMs": 25260,
+   "tokens": [
+    {
+     "text": "Voice",
+     "atMs": 19680,
+     "endMs": 20000,
+     "phrase": 11
+    },
+    {
+     "text": "of",
+     "atMs": 20080,
+     "endMs": 20160,
+     "phrase": 11
+    },
+    {
+     "text": "a",
+     "atMs": 20240,
+     "endMs": 20360,
+     "phrase": 11
+    },
+    {
+     "text": "mighty",
+     "atMs": 20480,
+     "endMs": 20800,
+     "phrase": 11
+    },
+    {
+     "text": "dying",
+     "atMs": 20960,
+     "endMs": 21360,
+     "phrase": 11
+    },
+    {
+     "text": "tree",
+     "atMs": 21520,
+     "endMs": 21840,
+     "phrase": 11
+    },
+    {
+     "text": "in",
+     "atMs": 21920,
+     "endMs": 22000,
+     "phrase": 11
+    },
+    {
+     "text": "the",
+     "atMs": 22080,
+     "endMs": 22160,
+     "phrase": 11
+    },
+    {
+     "text": "redwood",
+     "atMs": 22240,
+     "endMs": 22640,
+     "phrase": 11
+    },
+    {
+     "text": "forest",
+     "atMs": 22800,
+     "endMs": 23200,
+     "phrase": 11
+    },
+    {
+     "text": "dense.",
+     "atMs": 23280,
+     "endMs": 23840,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 25260,
+   "endMs": 27100,
+   "tokens": [
+    {
+     "text": "Farewell",
+     "atMs": 25260,
+     "endMs": 25820,
+     "phrase": 12
+    },
+    {
+     "text": "my",
+     "atMs": 25900,
+     "endMs": 25980,
+     "phrase": 12
+    },
+    {
+     "text": "brethren,",
+     "atMs": 26060,
+     "endMs": 27020,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 27100,
+   "endMs": 32140,
+   "tokens": [
+    {
+     "text": "Farewell",
+     "atMs": 27100,
+     "endMs": 27740,
+     "phrase": 13
+    },
+    {
+     "text": "O",
+     "atMs": 27900,
+     "endMs": 27980,
+     "phrase": 13
+    },
+    {
+     "text": "earth",
+     "atMs": 28140,
+     "endMs": 28380,
+     "phrase": 13
+    },
+    {
+     "text": "and",
+     "atMs": 28460,
+     "endMs": 28540,
+     "phrase": 13
+    },
+    {
+     "text": "sky,",
+     "atMs": 28620,
+     "endMs": 29500,
+     "phrase": 13,
+     "emphasis": "lead"
+    },
+    {
+     "text": "farewell",
+     "atMs": 29660,
+     "endMs": 30220,
+     "phrase": 14
+    },
+    {
+     "text": "ye",
+     "atMs": 30300,
+     "endMs": 30460,
+     "phrase": 14
+    },
+    {
+     "text": "neighboring",
+     "atMs": 30540,
+     "endMs": 30940,
+     "phrase": 14
+    },
+    {
+     "text": "waters,",
+     "atMs": 31020,
+     "endMs": 32060,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 32140,
+   "endMs": 35900,
+   "tokens": [
+    {
+     "text": "My",
+     "atMs": 32140,
+     "endMs": 32300,
+     "phrase": 15
+    },
+    {
+     "text": "time",
+     "atMs": 32380,
+     "endMs": 32700,
+     "phrase": 15
+    },
+    {
+     "text": "has",
+     "atMs": 32780,
+     "endMs": 32860,
+     "phrase": 15
+    },
+    {
+     "text": "ended,",
+     "atMs": 32940,
+     "endMs": 33740,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "my",
+     "atMs": 33820,
+     "endMs": 33980,
+     "phrase": 16
+    },
+    {
+     "text": "term",
+     "atMs": 34060,
+     "endMs": 34460,
+     "phrase": 16
+    },
+    {
+     "text": "has",
+     "atMs": 34540,
+     "endMs": 34700,
+     "phrase": 16
+    },
+    {
+     "text": "come.",
+     "atMs": 34780,
+     "endMs": 35180,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 35900,
+   "endMs": 37900,
+   "tokens": [
+    {
+     "text": "Along",
+     "atMs": 35900,
+     "endMs": 36300,
+     "phrase": 17
+    },
+    {
+     "text": "the",
+     "atMs": 36380,
+     "endMs": 36460,
+     "phrase": 17
+    },
+    {
+     "text": "northern",
+     "atMs": 36540,
+     "endMs": 36860,
+     "phrase": 17
+    },
+    {
+     "text": "coast,",
+     "atMs": 37020,
+     "endMs": 37820,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 37900,
+   "endMs": 41220,
+   "tokens": [
+    {
+     "text": "Just",
+     "atMs": 37900,
+     "endMs": 38140,
+     "phrase": 18
+    },
+    {
+     "text": "back",
+     "atMs": 38220,
+     "endMs": 38460,
+     "phrase": 18
+    },
+    {
+     "text": "from",
+     "atMs": 38540,
+     "endMs": 38620,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 38700,
+     "endMs": 38780,
+     "phrase": 18
+    },
+    {
+     "text": "rock-bound",
+     "atMs": 38860,
+     "endMs": 39420,
+     "phrase": 18
+    },
+    {
+     "text": "shore",
+     "atMs": 39580,
+     "endMs": 39900,
+     "phrase": 18
+    },
+    {
+     "text": "and",
+     "atMs": 39940,
+     "endMs": 39980,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 40060,
+     "endMs": 40140,
+     "phrase": 18
+    },
+    {
+     "text": "caves,",
+     "atMs": 40220,
+     "endMs": 41180,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 41220,
+   "endMs": 45180,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 41220,
+     "endMs": 41260,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 41340,
+     "endMs": 41420,
+     "phrase": 19
+    },
+    {
+     "text": "saline",
+     "atMs": 41500,
+     "endMs": 42060,
+     "phrase": 19
+    },
+    {
+     "text": "air",
+     "atMs": 42140,
+     "endMs": 42380,
+     "phrase": 19
+    },
+    {
+     "text": "from",
+     "atMs": 42460,
+     "endMs": 42620,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 42700,
+     "endMs": 42820,
+     "phrase": 19
+    },
+    {
+     "text": "sea",
+     "atMs": 42940,
+     "endMs": 43180,
+     "phrase": 19
+    },
+    {
+     "text": "in",
+     "atMs": 43220,
+     "endMs": 43260,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 43340,
+     "endMs": 43380,
+     "phrase": 19
+    },
+    {
+     "text": "Mendocino",
+     "atMs": 43420,
+     "endMs": 44060,
+     "phrase": 19
+    },
+    {
+     "text": "country,",
+     "atMs": 44140,
+     "endMs": 45100,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 45180,
+   "endMs": 49340,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 45180,
+     "endMs": 45260,
+     "phrase": 20
+    },
+    {
+     "text": "the",
+     "atMs": 45300,
+     "endMs": 45340,
+     "phrase": 20
+    },
+    {
+     "text": "surge",
+     "atMs": 45500,
+     "endMs": 45900,
+     "phrase": 20
+    },
+    {
+     "text": "for",
+     "atMs": 45980,
+     "endMs": 46060,
+     "phrase": 20
+    },
+    {
+     "text": "base",
+     "atMs": 46220,
+     "endMs": 46620,
+     "phrase": 20
+    },
+    {
+     "text": "and",
+     "atMs": 46700,
+     "endMs": 46780,
+     "phrase": 20
+    },
+    {
+     "text": "accompaniment",
+     "atMs": 46860,
+     "endMs": 47580,
+     "phrase": 20
+    },
+    {
+     "text": "low",
+     "atMs": 47740,
+     "endMs": 48060,
+     "phrase": 20
+    },
+    {
+     "text": "and",
+     "atMs": 48140,
+     "endMs": 48220,
+     "phrase": 20
+    },
+    {
+     "text": "hoarse,",
+     "atMs": 48300,
+     "endMs": 49260,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 49340,
+   "endMs": 54700,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 49340,
+     "endMs": 49420,
+     "phrase": 21
+    },
+    {
+     "text": "crackling",
+     "atMs": 49580,
+     "endMs": 50060,
+     "phrase": 21
+    },
+    {
+     "text": "blows",
+     "atMs": 50140,
+     "endMs": 50540,
+     "phrase": 21
+    },
+    {
+     "text": "of",
+     "atMs": 50620,
+     "endMs": 50700,
+     "phrase": 21
+    },
+    {
+     "text": "axes",
+     "atMs": 50860,
+     "endMs": 51340,
+     "phrase": 21
+    },
+    {
+     "text": "sounding",
+     "atMs": 51420,
+     "endMs": 51820,
+     "phrase": 21
+    },
+    {
+     "text": "musically",
+     "atMs": 51900,
+     "endMs": 52380,
+     "phrase": 21
+    },
+    {
+     "text": "driven",
+     "atMs": 52540,
+     "endMs": 52860,
+     "phrase": 21
+    },
+    {
+     "text": "by",
+     "atMs": 52940,
+     "endMs": 53100,
+     "phrase": 21
+    },
+    {
+     "text": "strong",
+     "atMs": 53180,
+     "endMs": 53580,
+     "phrase": 21
+    },
+    {
+     "text": "arms,",
+     "atMs": 53660,
+     "endMs": 54540,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 54700,
+   "endMs": 60620,
+   "tokens": [
+    {
+     "text": "Riven",
+     "atMs": 54700,
+     "endMs": 55020,
+     "phrase": 22
+    },
+    {
+     "text": "deep",
+     "atMs": 55180,
+     "endMs": 55500,
+     "phrase": 22
+    },
+    {
+     "text": "by",
+     "atMs": 55540,
+     "endMs": 55580,
+     "phrase": 22
+    },
+    {
+     "text": "the",
+     "atMs": 55660,
+     "endMs": 55740,
+     "phrase": 22
+    },
+    {
+     "text": "sharp",
+     "atMs": 55900,
+     "endMs": 56140,
+     "phrase": 22
+    },
+    {
+     "text": "tongues",
+     "atMs": 56300,
+     "endMs": 56620,
+     "phrase": 22
+    },
+    {
+     "text": "of",
+     "atMs": 56700,
+     "endMs": 56780,
+     "phrase": 22
+    },
+    {
+     "text": "the",
+     "atMs": 56820,
+     "endMs": 56860,
+     "phrase": 22
+    },
+    {
+     "text": "axes,",
+     "atMs": 56940,
+     "endMs": 57900,
+     "phrase": 22,
+     "emphasis": "lead"
+    },
+    {
+     "text": "there",
+     "atMs": 57980,
+     "endMs": 58380,
+     "phrase": 23
+    },
+    {
+     "text": "in",
+     "atMs": 58420,
+     "endMs": 58460,
+     "phrase": 23
+    },
+    {
+     "text": "the",
+     "atMs": 58540,
+     "endMs": 58620,
+     "phrase": 23
+    },
+    {
+     "text": "redwood",
+     "atMs": 58700,
+     "endMs": 59100,
+     "phrase": 23
+    },
+    {
+     "text": "forest",
+     "atMs": 59260,
+     "endMs": 59580,
+     "phrase": 23
+    },
+    {
+     "text": "dense,",
+     "atMs": 59660,
+     "endMs": 60540,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 60620,
+   "endMs": 64780,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 60620,
+     "endMs": 60780,
+     "phrase": 24
+    },
+    {
+     "text": "heard",
+     "atMs": 60860,
+     "endMs": 61180,
+     "phrase": 24
+    },
+    {
+     "text": "the",
+     "atMs": 61220,
+     "endMs": 61260,
+     "phrase": 24
+    },
+    {
+     "text": "mighty",
+     "atMs": 61500,
+     "endMs": 61740,
+     "phrase": 24
+    },
+    {
+     "text": "tree",
+     "atMs": 61900,
+     "endMs": 62300,
+     "phrase": 24
+    },
+    {
+     "text": "its",
+     "atMs": 62460,
+     "endMs": 62620,
+     "phrase": 24
+    },
+    {
+     "text": "death-chant",
+     "atMs": 62780,
+     "endMs": 63420,
+     "phrase": 24
+    },
+    {
+     "text": "chanting.",
+     "atMs": 63500,
+     "endMs": 64420,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 64780,
+   "endMs": 68940,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 64780,
+     "endMs": 64860,
+     "phrase": 25
+    },
+    {
+     "text": "choppers",
+     "atMs": 65020,
+     "endMs": 65500,
+     "phrase": 25
+    },
+    {
+     "text": "heard",
+     "atMs": 65620,
+     "endMs": 65740,
+     "phrase": 25
+    },
+    {
+     "text": "not,",
+     "atMs": 65820,
+     "endMs": 66620,
+     "phrase": 25,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 66700,
+     "endMs": 66780,
+     "phrase": 26
+    },
+    {
+     "text": "camp",
+     "atMs": 66860,
+     "endMs": 67100,
+     "phrase": 26
+    },
+    {
+     "text": "shanties",
+     "atMs": 67180,
+     "endMs": 67660,
+     "phrase": 26
+    },
+    {
+     "text": "echoed",
+     "atMs": 67740,
+     "endMs": 68060,
+     "phrase": 26
+    },
+    {
+     "text": "not,",
+     "atMs": 68140,
+     "endMs": 68860,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 68940,
+   "endMs": 73260,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 68940,
+     "endMs": 69020,
+     "phrase": 27
+    },
+    {
+     "text": "quick-ear'd",
+     "atMs": 69100,
+     "endMs": 69580,
+     "phrase": 27
+    },
+    {
+     "text": "teamsters",
+     "atMs": 69660,
+     "endMs": 70300,
+     "phrase": 27
+    },
+    {
+     "text": "and",
+     "atMs": 70380,
+     "endMs": 70460,
+     "phrase": 27
+    },
+    {
+     "text": "chain",
+     "atMs": 70620,
+     "endMs": 70940,
+     "phrase": 27
+    },
+    {
+     "text": "and",
+     "atMs": 71020,
+     "endMs": 71100,
+     "phrase": 27
+    },
+    {
+     "text": "jack-screw",
+     "atMs": 71180,
+     "endMs": 71740,
+     "phrase": 27
+    },
+    {
+     "text": "men",
+     "atMs": 71860,
+     "endMs": 71980,
+     "phrase": 27
+    },
+    {
+     "text": "heard",
+     "atMs": 72140,
+     "endMs": 72380,
+     "phrase": 27
+    },
+    {
+     "text": "not,",
+     "atMs": 72460,
+     "endMs": 73180,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 73260,
+   "endMs": 78700,
+   "tokens": [
+    {
+     "text": "As",
+     "atMs": 73260,
+     "endMs": 73340,
+     "phrase": 28
+    },
+    {
+     "text": "the",
+     "atMs": 73420,
+     "endMs": 73500,
+     "phrase": 28
+    },
+    {
+     "text": "wood-spirits",
+     "atMs": 73660,
+     "endMs": 74380,
+     "phrase": 28
+    },
+    {
+     "text": "came",
+     "atMs": 74460,
+     "endMs": 74700,
+     "phrase": 28
+    },
+    {
+     "text": "from",
+     "atMs": 74780,
+     "endMs": 74940,
+     "phrase": 28
+    },
+    {
+     "text": "their",
+     "atMs": 75020,
+     "endMs": 75100,
+     "phrase": 28
+    },
+    {
+     "text": "haunts",
+     "atMs": 75180,
+     "endMs": 75500,
+     "phrase": 28
+    },
+    {
+     "text": "of",
+     "atMs": 75540,
+     "endMs": 75580,
+     "phrase": 28
+    },
+    {
+     "text": "a",
+     "atMs": 75660,
+     "endMs": 75740,
+     "phrase": 28
+    },
+    {
+     "text": "thousand",
+     "atMs": 75900,
+     "endMs": 76380,
+     "phrase": 28
+    },
+    {
+     "text": "years",
+     "atMs": 76460,
+     "endMs": 76860,
+     "phrase": 28
+    },
+    {
+     "text": "to",
+     "atMs": 76940,
+     "endMs": 77100,
+     "phrase": 28
+    },
+    {
+     "text": "join",
+     "atMs": 77260,
+     "endMs": 77420,
+     "phrase": 28
+    },
+    {
+     "text": "the",
+     "atMs": 77460,
+     "endMs": 77500,
+     "phrase": 28
+    },
+    {
+     "text": "refrain,",
+     "atMs": 77580,
+     "endMs": 78620,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "ancient-redwood-awakened",
+   "startMs": 78700,
+   "endMs": 82060,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 78700,
+     "endMs": 78780,
+     "phrase": 29
+    },
+    {
+     "text": "in",
+     "atMs": 78860,
+     "endMs": 78940,
+     "phrase": 29
+    },
+    {
+     "text": "my",
+     "atMs": 79020,
+     "endMs": 79260,
+     "phrase": 29
+    },
+    {
+     "text": "soul",
+     "atMs": 79340,
+     "endMs": 79740,
+     "phrase": 29
+    },
+    {
+     "text": "I",
+     "atMs": 79980,
+     "endMs": 80220,
+     "phrase": 29
+    },
+    {
+     "text": "plainly",
+     "atMs": 80300,
+     "endMs": 80780,
+     "phrase": 29
+    },
+    {
+     "text": "heard.",
+     "atMs": 80860,
+     "endMs": 81660,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 82060,
+   "endMs": 84620,
+   "tokens": [
+    {
+     "text": "Murmuring",
+     "atMs": 82060,
+     "endMs": 82620,
+     "phrase": 30
+    },
+    {
+     "text": "out",
+     "atMs": 82700,
+     "endMs": 82780,
+     "phrase": 30
+    },
+    {
+     "text": "of",
+     "atMs": 82860,
+     "endMs": 82940,
+     "phrase": 30
+    },
+    {
+     "text": "its",
+     "atMs": 83020,
+     "endMs": 83100,
+     "phrase": 30
+    },
+    {
+     "text": "myriad",
+     "atMs": 83260,
+     "endMs": 83660,
+     "phrase": 30
+    },
+    {
+     "text": "leaves,",
+     "atMs": 83740,
+     "endMs": 84540,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 84620,
+   "endMs": 88780,
+   "tokens": [
+    {
+     "text": "Down",
+     "atMs": 84620,
+     "endMs": 84940,
+     "phrase": 31
+    },
+    {
+     "text": "from",
+     "atMs": 85020,
+     "endMs": 85100,
+     "phrase": 31
+    },
+    {
+     "text": "its",
+     "atMs": 85180,
+     "endMs": 85340,
+     "phrase": 31
+    },
+    {
+     "text": "lofty",
+     "atMs": 85420,
+     "endMs": 85740,
+     "phrase": 31
+    },
+    {
+     "text": "top",
+     "atMs": 85900,
+     "endMs": 86220,
+     "phrase": 31
+    },
+    {
+     "text": "rising",
+     "atMs": 86300,
+     "endMs": 86780,
+     "phrase": 31
+    },
+    {
+     "text": "two",
+     "atMs": 86900,
+     "endMs": 87020,
+     "phrase": 31
+    },
+    {
+     "text": "hundred",
+     "atMs": 87180,
+     "endMs": 87500,
+     "phrase": 31
+    },
+    {
+     "text": "feet",
+     "atMs": 87660,
+     "endMs": 87820,
+     "phrase": 31
+    },
+    {
+     "text": "high,",
+     "atMs": 87900,
+     "endMs": 88700,
+     "phrase": 31,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 88780,
+   "endMs": 93500,
+   "tokens": [
+    {
+     "text": "Out",
+     "atMs": 88780,
+     "endMs": 88940,
+     "phrase": 32
+    },
+    {
+     "text": "of",
+     "atMs": 89020,
+     "endMs": 89060,
+     "phrase": 32
+    },
+    {
+     "text": "its",
+     "atMs": 89100,
+     "endMs": 89260,
+     "phrase": 32
+    },
+    {
+     "text": "stalwart",
+     "atMs": 89340,
+     "endMs": 89980,
+     "phrase": 32
+    },
+    {
+     "text": "trunk",
+     "atMs": 90060,
+     "endMs": 90380,
+     "phrase": 32
+    },
+    {
+     "text": "and",
+     "atMs": 90460,
+     "endMs": 90540,
+     "phrase": 32
+    },
+    {
+     "text": "limbs,",
+     "atMs": 90620,
+     "endMs": 91340,
+     "phrase": 32,
+     "emphasis": "lead"
+    },
+    {
+     "text": "out",
+     "atMs": 91420,
+     "endMs": 91500,
+     "phrase": 33
+    },
+    {
+     "text": "of",
+     "atMs": 91580,
+     "endMs": 91660,
+     "phrase": 33
+    },
+    {
+     "text": "its",
+     "atMs": 91740,
+     "endMs": 91820,
+     "phrase": 33
+    },
+    {
+     "text": "foot-thick",
+     "atMs": 91980,
+     "endMs": 92540,
+     "phrase": 33
+    },
+    {
+     "text": "bark,",
+     "atMs": 92620,
+     "endMs": 93420,
+     "phrase": 33,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 93500,
+   "endMs": 100140,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 93500,
+     "endMs": 93740,
+     "phrase": 34
+    },
+    {
+     "text": "chant",
+     "atMs": 93900,
+     "endMs": 94220,
+     "phrase": 34
+    },
+    {
+     "text": "of",
+     "atMs": 94300,
+     "endMs": 94340,
+     "phrase": 34
+    },
+    {
+     "text": "the",
+     "atMs": 94380,
+     "endMs": 94460,
+     "phrase": 34
+    },
+    {
+     "text": "seasons",
+     "atMs": 94620,
+     "endMs": 95100,
+     "phrase": 34
+    },
+    {
+     "text": "and",
+     "atMs": 95180,
+     "endMs": 95260,
+     "phrase": 34
+    },
+    {
+     "text": "time,",
+     "atMs": 95340,
+     "endMs": 96220,
+     "phrase": 34,
+     "emphasis": "lead"
+    },
+    {
+     "text": "chant",
+     "atMs": 96300,
+     "endMs": 96620,
+     "phrase": 35
+    },
+    {
+     "text": "not",
+     "atMs": 96700,
+     "endMs": 96860,
+     "phrase": 35
+    },
+    {
+     "text": "of",
+     "atMs": 96900,
+     "endMs": 96940,
+     "phrase": 35
+    },
+    {
+     "text": "the",
+     "atMs": 97020,
+     "endMs": 97100,
+     "phrase": 35
+    },
+    {
+     "text": "past",
+     "atMs": 97180,
+     "endMs": 97580,
+     "phrase": 35
+    },
+    {
+     "text": "only",
+     "atMs": 97780,
+     "endMs": 97980,
+     "phrase": 35
+    },
+    {
+     "text": "but",
+     "atMs": 98300,
+     "endMs": 98460,
+     "phrase": 35
+    },
+    {
+     "text": "the",
+     "atMs": 98540,
+     "endMs": 98620,
+     "phrase": 35
+    },
+    {
+     "text": "future.",
+     "atMs": 98700,
+     "endMs": 99260,
+     "phrase": 35,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 100140,
+   "endMs": 102540,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 100140,
+     "endMs": 100380,
+     "phrase": 36
+    },
+    {
+     "text": "untold",
+     "atMs": 100540,
+     "endMs": 101180,
+     "phrase": 36
+    },
+    {
+     "text": "life",
+     "atMs": 101340,
+     "endMs": 101580,
+     "phrase": 36
+    },
+    {
+     "text": "of",
+     "atMs": 101660,
+     "endMs": 101740,
+     "phrase": 36
+    },
+    {
+     "text": "me,",
+     "atMs": 101820,
+     "endMs": 102460,
+     "phrase": 36,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 102540,
+   "endMs": 105860,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 102540,
+     "endMs": 102620,
+     "phrase": 37
+    },
+    {
+     "text": "all",
+     "atMs": 102780,
+     "endMs": 103020,
+     "phrase": 37
+    },
+    {
+     "text": "you",
+     "atMs": 103100,
+     "endMs": 103260,
+     "phrase": 37
+    },
+    {
+     "text": "venerable",
+     "atMs": 103340,
+     "endMs": 103980,
+     "phrase": 37
+    },
+    {
+     "text": "and",
+     "atMs": 104060,
+     "endMs": 104140,
+     "phrase": 37
+    },
+    {
+     "text": "innocent",
+     "atMs": 104300,
+     "endMs": 104700,
+     "phrase": 37
+    },
+    {
+     "text": "joys,",
+     "atMs": 104780,
+     "endMs": 105740,
+     "phrase": 37,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 105860,
+   "endMs": 111100,
+   "tokens": [
+    {
+     "text": "Perennial",
+     "atMs": 105860,
+     "endMs": 106380,
+     "phrase": 38
+    },
+    {
+     "text": "hardy",
+     "atMs": 106540,
+     "endMs": 106860,
+     "phrase": 38
+    },
+    {
+     "text": "life",
+     "atMs": 106940,
+     "endMs": 107180,
+     "phrase": 38
+    },
+    {
+     "text": "of",
+     "atMs": 107260,
+     "endMs": 107340,
+     "phrase": 38
+    },
+    {
+     "text": "me",
+     "atMs": 107420,
+     "endMs": 107580,
+     "phrase": 38
+    },
+    {
+     "text": "with",
+     "atMs": 107660,
+     "endMs": 107820,
+     "phrase": 38
+    },
+    {
+     "text": "joys",
+     "atMs": 107980,
+     "endMs": 108380,
+     "phrase": 38
+    },
+    {
+     "text": "'mid",
+     "atMs": 108420,
+     "endMs": 108620,
+     "phrase": 38
+    },
+    {
+     "text": "rain",
+     "atMs": 108700,
+     "endMs": 109100,
+     "phrase": 38
+    },
+    {
+     "text": "and",
+     "atMs": 109180,
+     "endMs": 109260,
+     "phrase": 38
+    },
+    {
+     "text": "many",
+     "atMs": 109420,
+     "endMs": 109660,
+     "phrase": 38
+    },
+    {
+     "text": "a",
+     "atMs": 109740,
+     "endMs": 109820,
+     "phrase": 38
+    },
+    {
+     "text": "summer",
+     "atMs": 109900,
+     "endMs": 110140,
+     "phrase": 38
+    },
+    {
+     "text": "sun,",
+     "atMs": 110300,
+     "endMs": 111020,
+     "phrase": 38,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 111100,
+   "endMs": 114900,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 111100,
+     "endMs": 111180,
+     "phrase": 39
+    },
+    {
+     "text": "the",
+     "atMs": 111220,
+     "endMs": 111260,
+     "phrase": 39
+    },
+    {
+     "text": "white",
+     "atMs": 111420,
+     "endMs": 111660,
+     "phrase": 39
+    },
+    {
+     "text": "snows",
+     "atMs": 111740,
+     "endMs": 112300,
+     "phrase": 39
+    },
+    {
+     "text": "and",
+     "atMs": 112380,
+     "endMs": 112460,
+     "phrase": 39
+    },
+    {
+     "text": "night",
+     "atMs": 112620,
+     "endMs": 112940,
+     "phrase": 39
+    },
+    {
+     "text": "and",
+     "atMs": 113020,
+     "endMs": 113100,
+     "phrase": 39
+    },
+    {
+     "text": "the",
+     "atMs": 113140,
+     "endMs": 113180,
+     "phrase": 39
+    },
+    {
+     "text": "wild",
+     "atMs": 113340,
+     "endMs": 113660,
+     "phrase": 39
+    },
+    {
+     "text": "winds;",
+     "atMs": 113740,
+     "endMs": 114780,
+     "phrase": 39,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 114900,
+   "endMs": 121473,
+   "tokens": [
+    {
+     "text": "O",
+     "atMs": 114900,
+     "endMs": 115020,
+     "phrase": 40
+    },
+    {
+     "text": "the",
+     "atMs": 115100,
+     "endMs": 115180,
+     "phrase": 40
+    },
+    {
+     "text": "great",
+     "atMs": 115340,
+     "endMs": 115660,
+     "phrase": 40
+    },
+    {
+     "text": "patient",
+     "atMs": 115820,
+     "endMs": 116300,
+     "phrase": 40
+    },
+    {
+     "text": "rugged",
+     "atMs": 116460,
+     "endMs": 116780,
+     "phrase": 40
+    },
+    {
+     "text": "joys,",
+     "atMs": 116940,
+     "endMs": 117740,
+     "phrase": 40,
+     "emphasis": "lead"
+    },
+    {
+     "text": "my",
+     "atMs": 117820,
+     "endMs": 118060,
+     "phrase": 41
+    },
+    {
+     "text": "soul's",
+     "atMs": 118140,
+     "endMs": 118540,
+     "phrase": 41
+    },
+    {
+     "text": "strong",
+     "atMs": 118780,
+     "endMs": 119020,
+     "phrase": 41
+    },
+    {
+     "text": "joys",
+     "atMs": 119180,
+     "endMs": 119580,
+     "phrase": 41
+    },
+    {
+     "text": "unreck'd",
+     "atMs": 119660,
+     "endMs": 120220,
+     "phrase": 41
+    },
+    {
+     "text": "by",
+     "atMs": 120300,
+     "endMs": 120460,
+     "phrase": 41
+    },
+    {
+     "text": "man,",
+     "atMs": 120540,
+     "endMs": 121420,
+     "phrase": 41,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 121473,
+   "endMs": 127500,
+   "tokens": [
+    {
+     "text": "(For",
+     "atMs": 121473,
+     "endMs": 121580,
+     "phrase": 42
+    },
+    {
+     "text": "know",
+     "atMs": 121740,
+     "endMs": 121980,
+     "phrase": 42
+    },
+    {
+     "text": "I",
+     "atMs": 122140,
+     "endMs": 122300,
+     "phrase": 42
+    },
+    {
+     "text": "bear",
+     "atMs": 122380,
+     "endMs": 122620,
+     "phrase": 42
+    },
+    {
+     "text": "the",
+     "atMs": 122700,
+     "endMs": 122780,
+     "phrase": 42
+    },
+    {
+     "text": "soul",
+     "atMs": 122940,
+     "endMs": 123180,
+     "phrase": 42
+    },
+    {
+     "text": "befitting",
+     "atMs": 123260,
+     "endMs": 123740,
+     "phrase": 42
+    },
+    {
+     "text": "me,",
+     "atMs": 123860,
+     "endMs": 124380,
+     "phrase": 42,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 124460,
+     "endMs": 124620,
+     "phrase": 43
+    },
+    {
+     "text": "too",
+     "atMs": 124780,
+     "endMs": 125020,
+     "phrase": 43
+    },
+    {
+     "text": "have",
+     "atMs": 125100,
+     "endMs": 125260,
+     "phrase": 43
+    },
+    {
+     "text": "consciousness,",
+     "atMs": 125340,
+     "endMs": 126380,
+     "phrase": 43,
+     "emphasis": "lead"
+    },
+    {
+     "text": "identity,",
+     "atMs": 126700,
+     "endMs": 127420,
+     "phrase": 44,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 127500,
+   "endMs": 131820,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 127500,
+     "endMs": 127580,
+     "phrase": 45
+    },
+    {
+     "text": "all",
+     "atMs": 127740,
+     "endMs": 127900,
+     "phrase": 45
+    },
+    {
+     "text": "the",
+     "atMs": 127980,
+     "endMs": 128140,
+     "phrase": 45
+    },
+    {
+     "text": "rocks",
+     "atMs": 128220,
+     "endMs": 128620,
+     "phrase": 45
+    },
+    {
+     "text": "and",
+     "atMs": 128700,
+     "endMs": 128780,
+     "phrase": 45
+    },
+    {
+     "text": "mountains",
+     "atMs": 128860,
+     "endMs": 129260,
+     "phrase": 45
+    },
+    {
+     "text": "have,",
+     "atMs": 129340,
+     "endMs": 129980,
+     "phrase": 45,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 130060,
+     "endMs": 130140,
+     "phrase": 46
+    },
+    {
+     "text": "all",
+     "atMs": 130300,
+     "endMs": 130460,
+     "phrase": 46
+    },
+    {
+     "text": "the",
+     "atMs": 130540,
+     "endMs": 130620,
+     "phrase": 46
+    },
+    {
+     "text": "earth,)",
+     "atMs": 130700,
+     "endMs": 131660,
+     "phrase": 46,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 131820,
+   "endMs": 135260,
+   "tokens": [
+    {
+     "text": "Joys",
+     "atMs": 131820,
+     "endMs": 132140,
+     "phrase": 47
+    },
+    {
+     "text": "of",
+     "atMs": 132220,
+     "endMs": 132300,
+     "phrase": 47
+    },
+    {
+     "text": "the",
+     "atMs": 132380,
+     "endMs": 132460,
+     "phrase": 47
+    },
+    {
+     "text": "life",
+     "atMs": 132540,
+     "endMs": 132780,
+     "phrase": 47
+    },
+    {
+     "text": "befitting",
+     "atMs": 132860,
+     "endMs": 133340,
+     "phrase": 47
+    },
+    {
+     "text": "me",
+     "atMs": 133420,
+     "endMs": 133580,
+     "phrase": 47
+    },
+    {
+     "text": "and",
+     "atMs": 133660,
+     "endMs": 133820,
+     "phrase": 47
+    },
+    {
+     "text": "brothers",
+     "atMs": 133900,
+     "endMs": 134300,
+     "phrase": 47
+    },
+    {
+     "text": "mine",
+     "atMs": 134380,
+     "endMs": 134700,
+     "phrase": 47,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 135260,
+   "endMs": 138780,
+   "tokens": [
+    {
+     "text": "Our",
+     "atMs": 135260,
+     "endMs": 135420,
+     "phrase": 48
+    },
+    {
+     "text": "time,",
+     "atMs": 135580,
+     "endMs": 136380,
+     "phrase": 48,
+     "emphasis": "lead"
+    },
+    {
+     "text": "our",
+     "atMs": 136460,
+     "endMs": 136620,
+     "phrase": 49
+    },
+    {
+     "text": "term",
+     "atMs": 136780,
+     "endMs": 137180,
+     "phrase": 49
+    },
+    {
+     "text": "has",
+     "atMs": 137340,
+     "endMs": 137500,
+     "phrase": 49
+    },
+    {
+     "text": "come.",
+     "atMs": 137580,
+     "endMs": 137980,
+     "phrase": 49,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 138780,
+   "endMs": 141900,
+   "tokens": [
+    {
+     "text": "Nor",
+     "atMs": 138780,
+     "endMs": 139020,
+     "phrase": 50
+    },
+    {
+     "text": "yield",
+     "atMs": 139180,
+     "endMs": 139420,
+     "phrase": 50
+    },
+    {
+     "text": "we",
+     "atMs": 139500,
+     "endMs": 139660,
+     "phrase": 50
+    },
+    {
+     "text": "mournfully",
+     "atMs": 139740,
+     "endMs": 140300,
+     "phrase": 50
+    },
+    {
+     "text": "majestic",
+     "atMs": 140380,
+     "endMs": 140860,
+     "phrase": 50
+    },
+    {
+     "text": "brothers,",
+     "atMs": 140940,
+     "endMs": 141820,
+     "phrase": 50,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 141900,
+   "endMs": 144780,
+   "tokens": [
+    {
+     "text": "We",
+     "atMs": 141900,
+     "endMs": 142140,
+     "phrase": 51
+    },
+    {
+     "text": "who",
+     "atMs": 142220,
+     "endMs": 142300,
+     "phrase": 51
+    },
+    {
+     "text": "have",
+     "atMs": 142380,
+     "endMs": 142460,
+     "phrase": 51
+    },
+    {
+     "text": "grandly",
+     "atMs": 142540,
+     "endMs": 143020,
+     "phrase": 51
+    },
+    {
+     "text": "fill'd",
+     "atMs": 143180,
+     "endMs": 143500,
+     "phrase": 51
+    },
+    {
+     "text": "our",
+     "atMs": 143580,
+     "endMs": 143660,
+     "phrase": 51
+    },
+    {
+     "text": "time;",
+     "atMs": 143740,
+     "endMs": 144700,
+     "phrase": 51,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 144780,
+   "endMs": 149100,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 144780,
+     "endMs": 144860,
+     "phrase": 52
+    },
+    {
+     "text": "Nature's",
+     "atMs": 144940,
+     "endMs": 145500,
+     "phrase": 52
+    },
+    {
+     "text": "calm",
+     "atMs": 145620,
+     "endMs": 145820,
+     "phrase": 52
+    },
+    {
+     "text": "content,",
+     "atMs": 145900,
+     "endMs": 146780,
+     "phrase": 52,
+     "emphasis": "lead"
+    },
+    {
+     "text": "with",
+     "atMs": 146860,
+     "endMs": 146940,
+     "phrase": 53
+    },
+    {
+     "text": "tacit",
+     "atMs": 147100,
+     "endMs": 147580,
+     "phrase": 53
+    },
+    {
+     "text": "huge",
+     "atMs": 147660,
+     "endMs": 148060,
+     "phrase": 53
+    },
+    {
+     "text": "delight,",
+     "atMs": 148140,
+     "endMs": 149020,
+     "phrase": 53,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 149100,
+   "endMs": 152060,
+   "tokens": [
+    {
+     "text": "We",
+     "atMs": 149100,
+     "endMs": 149260,
+     "phrase": 54
+    },
+    {
+     "text": "welcome",
+     "atMs": 149340,
+     "endMs": 149740,
+     "phrase": 54
+    },
+    {
+     "text": "what",
+     "atMs": 149820,
+     "endMs": 149900,
+     "phrase": 54
+    },
+    {
+     "text": "we",
+     "atMs": 149980,
+     "endMs": 150060,
+     "phrase": 54
+    },
+    {
+     "text": "wrought",
+     "atMs": 150220,
+     "endMs": 150540,
+     "phrase": 54
+    },
+    {
+     "text": "for",
+     "atMs": 150620,
+     "endMs": 150700,
+     "phrase": 54
+    },
+    {
+     "text": "through",
+     "atMs": 150780,
+     "endMs": 150940,
+     "phrase": 54
+    },
+    {
+     "text": "the",
+     "atMs": 151020,
+     "endMs": 151100,
+     "phrase": 54
+    },
+    {
+     "text": "past,",
+     "atMs": 151180,
+     "endMs": 151980,
+     "phrase": 54,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 152060,
+   "endMs": 154300,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 152060,
+     "endMs": 152140,
+     "phrase": 55
+    },
+    {
+     "text": "leave",
+     "atMs": 152220,
+     "endMs": 152460,
+     "phrase": 55
+    },
+    {
+     "text": "the",
+     "atMs": 152540,
+     "endMs": 152620,
+     "phrase": 55
+    },
+    {
+     "text": "field",
+     "atMs": 152700,
+     "endMs": 153100,
+     "phrase": 55
+    },
+    {
+     "text": "for",
+     "atMs": 153180,
+     "endMs": 153260,
+     "phrase": 55
+    },
+    {
+     "text": "them.",
+     "atMs": 153340,
+     "endMs": 153740,
+     "phrase": 55,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 154300,
+   "endMs": 156300,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 154300,
+     "endMs": 154380,
+     "phrase": 56
+    },
+    {
+     "text": "them",
+     "atMs": 154460,
+     "endMs": 154780,
+     "phrase": 56
+    },
+    {
+     "text": "predicted",
+     "atMs": 154860,
+     "endMs": 155420,
+     "phrase": 56
+    },
+    {
+     "text": "long,",
+     "atMs": 155500,
+     "endMs": 156220,
+     "phrase": 56,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 156300,
+   "endMs": 161100,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 156300,
+     "endMs": 156380,
+     "phrase": 57
+    },
+    {
+     "text": "a",
+     "atMs": 156420,
+     "endMs": 156460,
+     "phrase": 57
+    },
+    {
+     "text": "superber",
+     "atMs": 156540,
+     "endMs": 157100,
+     "phrase": 57
+    },
+    {
+     "text": "race,",
+     "atMs": 157260,
+     "endMs": 157980,
+     "phrase": 57,
+     "emphasis": "lead"
+    },
+    {
+     "text": "they",
+     "atMs": 158060,
+     "endMs": 158220,
+     "phrase": 58
+    },
+    {
+     "text": "too",
+     "atMs": 158380,
+     "endMs": 158700,
+     "phrase": 58
+    },
+    {
+     "text": "to",
+     "atMs": 158780,
+     "endMs": 158860,
+     "phrase": 58
+    },
+    {
+     "text": "grandly",
+     "atMs": 158940,
+     "endMs": 159420,
+     "phrase": 58
+    },
+    {
+     "text": "fill",
+     "atMs": 159580,
+     "endMs": 159820,
+     "phrase": 58
+    },
+    {
+     "text": "their",
+     "atMs": 159900,
+     "endMs": 160060,
+     "phrase": 58
+    },
+    {
+     "text": "time,",
+     "atMs": 160140,
+     "endMs": 161020,
+     "phrase": 58,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 161100,
+   "endMs": 166060,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 161100,
+     "endMs": 161260,
+     "phrase": 59
+    },
+    {
+     "text": "them",
+     "atMs": 161340,
+     "endMs": 161660,
+     "phrase": 59
+    },
+    {
+     "text": "we",
+     "atMs": 161740,
+     "endMs": 161900,
+     "phrase": 59
+    },
+    {
+     "text": "abdicate,",
+     "atMs": 161980,
+     "endMs": 162940,
+     "phrase": 59,
+     "emphasis": "lead"
+    },
+    {
+     "text": "in",
+     "atMs": 163020,
+     "endMs": 163180,
+     "phrase": 60
+    },
+    {
+     "text": "them",
+     "atMs": 163260,
+     "endMs": 163500,
+     "phrase": 60
+    },
+    {
+     "text": "ourselves",
+     "atMs": 163580,
+     "endMs": 164300,
+     "phrase": 60
+    },
+    {
+     "text": "ye",
+     "atMs": 164380,
+     "endMs": 164540,
+     "phrase": 60
+    },
+    {
+     "text": "forest",
+     "atMs": 164620,
+     "endMs": 165020,
+     "phrase": 60
+    },
+    {
+     "text": "kings!",
+     "atMs": 165100,
+     "endMs": 165580,
+     "phrase": 60,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 166060,
+   "endMs": 171980,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 166060,
+     "endMs": 166140,
+     "phrase": 61
+    },
+    {
+     "text": "them",
+     "atMs": 166300,
+     "endMs": 166540,
+     "phrase": 61
+    },
+    {
+     "text": "these",
+     "atMs": 166620,
+     "endMs": 166860,
+     "phrase": 61
+    },
+    {
+     "text": "skies",
+     "atMs": 166940,
+     "endMs": 167420,
+     "phrase": 61
+    },
+    {
+     "text": "and",
+     "atMs": 167500,
+     "endMs": 167580,
+     "phrase": 61
+    },
+    {
+     "text": "airs,",
+     "atMs": 167740,
+     "endMs": 168380,
+     "phrase": 61,
+     "emphasis": "lead"
+    },
+    {
+     "text": "these",
+     "atMs": 168460,
+     "endMs": 168620,
+     "phrase": 62
+    },
+    {
+     "text": "mountain",
+     "atMs": 168780,
+     "endMs": 169100,
+     "phrase": 62
+    },
+    {
+     "text": "peaks,",
+     "atMs": 169180,
+     "endMs": 169900,
+     "phrase": 62,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Shasta,",
+     "atMs": 169980,
+     "endMs": 170780,
+     "phrase": 63,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Nevadas,",
+     "atMs": 170820,
+     "endMs": 171900,
+     "phrase": 64,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 171980,
+   "endMs": 178380,
+   "tokens": [
+    {
+     "text": "These",
+     "atMs": 171980,
+     "endMs": 172220,
+     "phrase": 65
+    },
+    {
+     "text": "huge",
+     "atMs": 172380,
+     "endMs": 172700,
+     "phrase": 65
+    },
+    {
+     "text": "precipitous",
+     "atMs": 172780,
+     "endMs": 173420,
+     "phrase": 65
+    },
+    {
+     "text": "cliffs,",
+     "atMs": 173500,
+     "endMs": 174300,
+     "phrase": 65,
+     "emphasis": "lead"
+    },
+    {
+     "text": "this",
+     "atMs": 174420,
+     "endMs": 174540,
+     "phrase": 66
+    },
+    {
+     "text": "amplitude,",
+     "atMs": 174620,
+     "endMs": 175580,
+     "phrase": 66,
+     "emphasis": "lead"
+    },
+    {
+     "text": "these",
+     "atMs": 175660,
+     "endMs": 175820,
+     "phrase": 67
+    },
+    {
+     "text": "valleys,",
+     "atMs": 175980,
+     "endMs": 176780,
+     "phrase": 67,
+     "emphasis": "lead"
+    },
+    {
+     "text": "far",
+     "atMs": 176860,
+     "endMs": 177180,
+     "phrase": 68
+    },
+    {
+     "text": "Yosemite,",
+     "atMs": 177260,
+     "endMs": 178300,
+     "phrase": 68,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 178380,
+   "endMs": 181980,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 178380,
+     "endMs": 178460,
+     "phrase": 69
+    },
+    {
+     "text": "be",
+     "atMs": 178620,
+     "endMs": 178700,
+     "phrase": 69
+    },
+    {
+     "text": "in",
+     "atMs": 178780,
+     "endMs": 178860,
+     "phrase": 69
+    },
+    {
+     "text": "them",
+     "atMs": 178940,
+     "endMs": 179180,
+     "phrase": 69
+    },
+    {
+     "text": "absorbed,",
+     "atMs": 179260,
+     "endMs": 180300,
+     "phrase": 69,
+     "emphasis": "lead"
+    },
+    {
+     "text": "assimilated.",
+     "atMs": 180460,
+     "endMs": 181260,
+     "phrase": 70,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 181980,
+   "endMs": 184140,
+   "tokens": [
+    {
+     "text": "Then",
+     "atMs": 181980,
+     "endMs": 182300,
+     "phrase": 71
+    },
+    {
+     "text": "to",
+     "atMs": 182380,
+     "endMs": 182540,
+     "phrase": 71
+    },
+    {
+     "text": "a",
+     "atMs": 182580,
+     "endMs": 182620,
+     "phrase": 71
+    },
+    {
+     "text": "loftier",
+     "atMs": 182700,
+     "endMs": 183260,
+     "phrase": 71
+    },
+    {
+     "text": "strain,",
+     "atMs": 183340,
+     "endMs": 184060,
+     "phrase": 71,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 184140,
+   "endMs": 187580,
+   "tokens": [
+    {
+     "text": "Still",
+     "atMs": 184140,
+     "endMs": 184380,
+     "phrase": 72
+    },
+    {
+     "text": "prouder,",
+     "atMs": 184540,
+     "endMs": 185260,
+     "phrase": 72,
+     "emphasis": "lead"
+    },
+    {
+     "text": "more",
+     "atMs": 185340,
+     "endMs": 185500,
+     "phrase": 73
+    },
+    {
+     "text": "ecstatic",
+     "atMs": 185620,
+     "endMs": 186140,
+     "phrase": 73
+    },
+    {
+     "text": "rose",
+     "atMs": 186220,
+     "endMs": 186460,
+     "phrase": 73
+    },
+    {
+     "text": "the",
+     "atMs": 186540,
+     "endMs": 186620,
+     "phrase": 73
+    },
+    {
+     "text": "chant,",
+     "atMs": 186700,
+     "endMs": 187500,
+     "phrase": 73,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 187580,
+   "endMs": 190620,
+   "tokens": [
+    {
+     "text": "As",
+     "atMs": 187580,
+     "endMs": 187660,
+     "phrase": 74
+    },
+    {
+     "text": "if",
+     "atMs": 187740,
+     "endMs": 187820,
+     "phrase": 74
+    },
+    {
+     "text": "the",
+     "atMs": 187900,
+     "endMs": 187980,
+     "phrase": 74
+    },
+    {
+     "text": "heirs,",
+     "atMs": 188060,
+     "endMs": 188780,
+     "phrase": 74,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 188860,
+     "endMs": 188940,
+     "phrase": 75
+    },
+    {
+     "text": "deities",
+     "atMs": 189020,
+     "endMs": 189500,
+     "phrase": 75
+    },
+    {
+     "text": "of",
+     "atMs": 189540,
+     "endMs": 189580,
+     "phrase": 75
+    },
+    {
+     "text": "the",
+     "atMs": 189660,
+     "endMs": 189740,
+     "phrase": 75
+    },
+    {
+     "text": "West,",
+     "atMs": 189820,
+     "endMs": 190540,
+     "phrase": 75,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 190620,
+   "endMs": 193340,
+   "tokens": [
+    {
+     "text": "Joining",
+     "atMs": 190620,
+     "endMs": 191020,
+     "phrase": 76
+    },
+    {
+     "text": "with",
+     "atMs": 191100,
+     "endMs": 191180,
+     "phrase": 76
+    },
+    {
+     "text": "master-tongue",
+     "atMs": 191340,
+     "endMs": 192300,
+     "phrase": 76
+    },
+    {
+     "text": "bore",
+     "atMs": 192340,
+     "endMs": 192620,
+     "phrase": 76
+    },
+    {
+     "text": "part.",
+     "atMs": 192700,
+     "endMs": 193260,
+     "phrase": 76,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 193340,
+   "endMs": 196060,
+   "tokens": [
+    {
+     "text": "Not",
+     "atMs": 193340,
+     "endMs": 193607,
+     "phrase": 77
+    },
+    {
+     "text": "wan",
+     "atMs": 193660,
+     "endMs": 194033,
+     "phrase": 77
+    },
+    {
+     "text": "from",
+     "atMs": 194140,
+     "endMs": 194340,
+     "phrase": 77
+    },
+    {
+     "text": "Asia's",
+     "atMs": 194380,
+     "endMs": 194860,
+     "phrase": 77
+    },
+    {
+     "text": "fetiches,",
+     "atMs": 194940,
+     "endMs": 195980,
+     "phrase": 77,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 196060,
+   "endMs": 199820,
+   "tokens": [
+    {
+     "text": "Nor",
+     "atMs": 196060,
+     "endMs": 196300,
+     "phrase": 78
+    },
+    {
+     "text": "red",
+     "atMs": 196380,
+     "endMs": 196700,
+     "phrase": 78
+    },
+    {
+     "text": "from",
+     "atMs": 196780,
+     "endMs": 196940,
+     "phrase": 78
+    },
+    {
+     "text": "Europe's",
+     "atMs": 197020,
+     "endMs": 197420,
+     "phrase": 78
+    },
+    {
+     "text": "old",
+     "atMs": 197500,
+     "endMs": 197660,
+     "phrase": 78
+    },
+    {
+     "text": "dynastic",
+     "atMs": 197740,
+     "endMs": 198460,
+     "phrase": 78
+    },
+    {
+     "text": "slaughter-house,",
+     "atMs": 198540,
+     "endMs": 199740,
+     "phrase": 78,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 199820,
+   "endMs": 206140,
+   "tokens": [
+    {
+     "text": "(Area",
+     "atMs": 199820,
+     "endMs": 200140,
+     "phrase": 79
+    },
+    {
+     "text": "of",
+     "atMs": 200220,
+     "endMs": 200300,
+     "phrase": 79
+    },
+    {
+     "text": "murder-plots",
+     "atMs": 200460,
+     "endMs": 201100,
+     "phrase": 79
+    },
+    {
+     "text": "of",
+     "atMs": 201180,
+     "endMs": 201260,
+     "phrase": 79
+    },
+    {
+     "text": "thrones,",
+     "atMs": 201340,
+     "endMs": 202140,
+     "phrase": 79,
+     "emphasis": "lead"
+    },
+    {
+     "text": "with",
+     "atMs": 202220,
+     "endMs": 202300,
+     "phrase": 80
+    },
+    {
+     "text": "scent",
+     "atMs": 202460,
+     "endMs": 202780,
+     "phrase": 80
+    },
+    {
+     "text": "left",
+     "atMs": 202860,
+     "endMs": 203100,
+     "phrase": 80
+    },
+    {
+     "text": "yet",
+     "atMs": 203180,
+     "endMs": 203340,
+     "phrase": 80
+    },
+    {
+     "text": "of",
+     "atMs": 203420,
+     "endMs": 203500,
+     "phrase": 80
+    },
+    {
+     "text": "wars",
+     "atMs": 203580,
+     "endMs": 203980,
+     "phrase": 80
+    },
+    {
+     "text": "and",
+     "atMs": 204060,
+     "endMs": 204220,
+     "phrase": 80
+    },
+    {
+     "text": "scaffolds",
+     "atMs": 204300,
+     "endMs": 204940,
+     "phrase": 80
+    },
+    {
+     "text": "everywhere,)",
+     "atMs": 205020,
+     "endMs": 205660,
+     "phrase": 80,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 206140,
+   "endMs": 211820,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 206140,
+     "endMs": 206300,
+     "phrase": 81
+    },
+    {
+     "text": "come",
+     "atMs": 206380,
+     "endMs": 206620,
+     "phrase": 81
+    },
+    {
+     "text": "from",
+     "atMs": 206700,
+     "endMs": 206860,
+     "phrase": 81
+    },
+    {
+     "text": "Nature's",
+     "atMs": 206940,
+     "endMs": 207420,
+     "phrase": 81
+    },
+    {
+     "text": "long",
+     "atMs": 207500,
+     "endMs": 207900,
+     "phrase": 81
+    },
+    {
+     "text": "and",
+     "atMs": 207980,
+     "endMs": 208060,
+     "phrase": 81
+    },
+    {
+     "text": "harmless",
+     "atMs": 208220,
+     "endMs": 208700,
+     "phrase": 81
+    },
+    {
+     "text": "throes,",
+     "atMs": 208860,
+     "endMs": 209460,
+     "phrase": 81,
+     "emphasis": "lead"
+    },
+    {
+     "text": "peacefully",
+     "atMs": 209660,
+     "endMs": 210220,
+     "phrase": 82
+    },
+    {
+     "text": "builded",
+     "atMs": 210380,
+     "endMs": 210780,
+     "phrase": 82
+    },
+    {
+     "text": "thence,",
+     "atMs": 210820,
+     "endMs": 211540,
+     "phrase": 82,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 211820,
+   "endMs": 215620,
+   "tokens": [
+    {
+     "text": "These",
+     "atMs": 211820,
+     "endMs": 212140,
+     "phrase": 83
+    },
+    {
+     "text": "virgin",
+     "atMs": 212300,
+     "endMs": 212700,
+     "phrase": 83
+    },
+    {
+     "text": "lands,",
+     "atMs": 212780,
+     "endMs": 213580,
+     "phrase": 83,
+     "emphasis": "lead"
+    },
+    {
+     "text": "lands",
+     "atMs": 213660,
+     "endMs": 213980,
+     "phrase": 84
+    },
+    {
+     "text": "of",
+     "atMs": 214060,
+     "endMs": 214140,
+     "phrase": 84
+    },
+    {
+     "text": "the",
+     "atMs": 214180,
+     "endMs": 214220,
+     "phrase": 84
+    },
+    {
+     "text": "Western",
+     "atMs": 214380,
+     "endMs": 214780,
+     "phrase": 84
+    },
+    {
+     "text": "shore,",
+     "atMs": 214860,
+     "endMs": 215580,
+     "phrase": 84,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 215620,
+   "endMs": 220060,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 215620,
+     "endMs": 215660,
+     "phrase": 85
+    },
+    {
+     "text": "the",
+     "atMs": 215740,
+     "endMs": 215820,
+     "phrase": 85
+    },
+    {
+     "text": "new",
+     "atMs": 215980,
+     "endMs": 216140,
+     "phrase": 85
+    },
+    {
+     "text": "culminating",
+     "atMs": 216300,
+     "endMs": 216860,
+     "phrase": 85
+    },
+    {
+     "text": "man,",
+     "atMs": 217020,
+     "endMs": 217660,
+     "phrase": 85,
+     "emphasis": "lead"
+    },
+    {
+     "text": "to",
+     "atMs": 217740,
+     "endMs": 217820,
+     "phrase": 86
+    },
+    {
+     "text": "you,",
+     "atMs": 217980,
+     "endMs": 218460,
+     "phrase": 86,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 218500,
+     "endMs": 218540,
+     "phrase": 87
+    },
+    {
+     "text": "empire",
+     "atMs": 218700,
+     "endMs": 219180,
+     "phrase": 87
+    },
+    {
+     "text": "new,",
+     "atMs": 219340,
+     "endMs": 219980,
+     "phrase": 87,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 220060,
+   "endMs": 224220,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 220060,
+     "endMs": 220220,
+     "phrase": 88
+    },
+    {
+     "text": "promised",
+     "atMs": 220380,
+     "endMs": 220780,
+     "phrase": 88
+    },
+    {
+     "text": "long,",
+     "atMs": 220940,
+     "endMs": 221580,
+     "phrase": 88,
+     "emphasis": "lead"
+    },
+    {
+     "text": "we",
+     "atMs": 221700,
+     "endMs": 221820,
+     "phrase": 89
+    },
+    {
+     "text": "pledge,",
+     "atMs": 221900,
+     "endMs": 222700,
+     "phrase": 89,
+     "emphasis": "lead"
+    },
+    {
+     "text": "we",
+     "atMs": 222780,
+     "endMs": 222860,
+     "phrase": 90
+    },
+    {
+     "text": "dedicate.",
+     "atMs": 223020,
+     "endMs": 223900,
+     "phrase": 90,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 224220,
+   "endMs": 226620,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 224220,
+     "endMs": 224460,
+     "phrase": 91
+    },
+    {
+     "text": "occult",
+     "atMs": 224540,
+     "endMs": 225100,
+     "phrase": 91
+    },
+    {
+     "text": "deep",
+     "atMs": 225180,
+     "endMs": 225420,
+     "phrase": 91
+    },
+    {
+     "text": "volitions,",
+     "atMs": 225500,
+     "endMs": 226540,
+     "phrase": 91,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 226620,
+   "endMs": 234140,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 226620,
+     "endMs": 226780,
+     "phrase": 92
+    },
+    {
+     "text": "average",
+     "atMs": 227020,
+     "endMs": 227260,
+     "phrase": 92
+    },
+    {
+     "text": "spiritual",
+     "atMs": 227340,
+     "endMs": 227900,
+     "phrase": 92
+    },
+    {
+     "text": "manhood,",
+     "atMs": 227980,
+     "endMs": 228860,
+     "phrase": 92,
+     "emphasis": "lead"
+    },
+    {
+     "text": "purpose",
+     "atMs": 228940,
+     "endMs": 229340,
+     "phrase": 93
+    },
+    {
+     "text": "of",
+     "atMs": 229420,
+     "endMs": 229500,
+     "phrase": 93
+    },
+    {
+     "text": "all,",
+     "atMs": 229580,
+     "endMs": 230060,
+     "phrase": 93,
+     "emphasis": "lead"
+    },
+    {
+     "text": "poised",
+     "atMs": 230140,
+     "endMs": 230540,
+     "phrase": 94
+    },
+    {
+     "text": "on",
+     "atMs": 230620,
+     "endMs": 230700,
+     "phrase": 94
+    },
+    {
+     "text": "yourself,",
+     "atMs": 230820,
+     "endMs": 231660,
+     "phrase": 94,
+     "emphasis": "lead"
+    },
+    {
+     "text": "giving",
+     "atMs": 231740,
+     "endMs": 232140,
+     "phrase": 95
+    },
+    {
+     "text": "not",
+     "atMs": 232380,
+     "endMs": 232620,
+     "phrase": 95
+    },
+    {
+     "text": "taking",
+     "atMs": 232700,
+     "endMs": 233020,
+     "phrase": 95
+    },
+    {
+     "text": "law,",
+     "atMs": 233100,
+     "endMs": 233980,
+     "phrase": 95,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 234140,
+   "endMs": 242860,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 234140,
+     "endMs": 234380,
+     "phrase": 96
+    },
+    {
+     "text": "womanhood",
+     "atMs": 234540,
+     "endMs": 235100,
+     "phrase": 96
+    },
+    {
+     "text": "divine,",
+     "atMs": 235260,
+     "endMs": 236060,
+     "phrase": 96,
+     "emphasis": "lead"
+    },
+    {
+     "text": "mistress",
+     "atMs": 236140,
+     "endMs": 236700,
+     "phrase": 97
+    },
+    {
+     "text": "and",
+     "atMs": 236780,
+     "endMs": 236860,
+     "phrase": 97
+    },
+    {
+     "text": "source",
+     "atMs": 237020,
+     "endMs": 237340,
+     "phrase": 97
+    },
+    {
+     "text": "of",
+     "atMs": 237420,
+     "endMs": 237500,
+     "phrase": 97
+    },
+    {
+     "text": "all,",
+     "atMs": 237580,
+     "endMs": 238220,
+     "phrase": 97,
+     "emphasis": "lead"
+    },
+    {
+     "text": "whence",
+     "atMs": 238260,
+     "endMs": 238540,
+     "phrase": 98
+    },
+    {
+     "text": "life",
+     "atMs": 238620,
+     "endMs": 239020,
+     "phrase": 98
+    },
+    {
+     "text": "and",
+     "atMs": 239100,
+     "endMs": 239260,
+     "phrase": 98
+    },
+    {
+     "text": "love",
+     "atMs": 239340,
+     "endMs": 239740,
+     "phrase": 98
+    },
+    {
+     "text": "and",
+     "atMs": 239900,
+     "endMs": 240060,
+     "phrase": 98
+    },
+    {
+     "text": "aught",
+     "atMs": 240220,
+     "endMs": 240460,
+     "phrase": 98
+    },
+    {
+     "text": "that",
+     "atMs": 240540,
+     "endMs": 240620,
+     "phrase": 98
+    },
+    {
+     "text": "comes",
+     "atMs": 240780,
+     "endMs": 241100,
+     "phrase": 98
+    },
+    {
+     "text": "from",
+     "atMs": 241180,
+     "endMs": 241340,
+     "phrase": 98
+    },
+    {
+     "text": "life",
+     "atMs": 241420,
+     "endMs": 241660,
+     "phrase": 98
+    },
+    {
+     "text": "and",
+     "atMs": 241740,
+     "endMs": 241820,
+     "phrase": 98
+    },
+    {
+     "text": "love,",
+     "atMs": 241900,
+     "endMs": 242780,
+     "phrase": 98,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 242860,
+   "endMs": 252300,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 242860,
+     "endMs": 243100,
+     "phrase": 99
+    },
+    {
+     "text": "unseen",
+     "atMs": 243260,
+     "endMs": 243900,
+     "phrase": 99
+    },
+    {
+     "text": "moral",
+     "atMs": 243980,
+     "endMs": 244300,
+     "phrase": 99
+    },
+    {
+     "text": "essence",
+     "atMs": 244460,
+     "endMs": 244860,
+     "phrase": 99
+    },
+    {
+     "text": "of",
+     "atMs": 244940,
+     "endMs": 245020,
+     "phrase": 99
+    },
+    {
+     "text": "all",
+     "atMs": 245180,
+     "endMs": 245340,
+     "phrase": 99
+    },
+    {
+     "text": "the",
+     "atMs": 245420,
+     "endMs": 245500,
+     "phrase": 99
+    },
+    {
+     "text": "vast",
+     "atMs": 245740,
+     "endMs": 245980,
+     "phrase": 99
+    },
+    {
+     "text": "materials",
+     "atMs": 246060,
+     "endMs": 246700,
+     "phrase": 99
+    },
+    {
+     "text": "of",
+     "atMs": 246780,
+     "endMs": 246820,
+     "phrase": 99
+    },
+    {
+     "text": "America,",
+     "atMs": 246860,
+     "endMs": 247900,
+     "phrase": 99,
+     "emphasis": "lead"
+    },
+    {
+     "text": "(age",
+     "atMs": 248060,
+     "endMs": 248220,
+     "phrase": 100
+    },
+    {
+     "text": "upon",
+     "atMs": 248300,
+     "endMs": 248620,
+     "phrase": 100
+    },
+    {
+     "text": "age",
+     "atMs": 248780,
+     "endMs": 249180,
+     "phrase": 100
+    },
+    {
+     "text": "working",
+     "atMs": 249340,
+     "endMs": 249660,
+     "phrase": 100
+    },
+    {
+     "text": "in",
+     "atMs": 249740,
+     "endMs": 249820,
+     "phrase": 100
+    },
+    {
+     "text": "death",
+     "atMs": 249980,
+     "endMs": 250300,
+     "phrase": 100
+    },
+    {
+     "text": "the",
+     "atMs": 250460,
+     "endMs": 250540,
+     "phrase": 100
+    },
+    {
+     "text": "same",
+     "atMs": 250700,
+     "endMs": 250940,
+     "phrase": 100
+    },
+    {
+     "text": "as",
+     "atMs": 251020,
+     "endMs": 251100,
+     "phrase": 100
+    },
+    {
+     "text": "life,)",
+     "atMs": 251180,
+     "endMs": 251940,
+     "phrase": 100,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 252300,
+   "endMs": 261580,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 252300,
+     "endMs": 252540,
+     "phrase": 101
+    },
+    {
+     "text": "that,",
+     "atMs": 252780,
+     "endMs": 253260,
+     "phrase": 101,
+     "emphasis": "lead"
+    },
+    {
+     "text": "sometimes",
+     "atMs": 253540,
+     "endMs": 253820,
+     "phrase": 102
+    },
+    {
+     "text": "known,",
+     "atMs": 253900,
+     "endMs": 254540,
+     "phrase": 102,
+     "emphasis": "lead"
+    },
+    {
+     "text": "oftener",
+     "atMs": 254620,
+     "endMs": 255100,
+     "phrase": 103
+    },
+    {
+     "text": "unknown,",
+     "atMs": 255180,
+     "endMs": 256060,
+     "phrase": 103,
+     "emphasis": "lead"
+    },
+    {
+     "text": "really",
+     "atMs": 256140,
+     "endMs": 256460,
+     "phrase": 104
+    },
+    {
+     "text": "shape",
+     "atMs": 256620,
+     "endMs": 256940,
+     "phrase": 104
+    },
+    {
+     "text": "and",
+     "atMs": 257020,
+     "endMs": 257100,
+     "phrase": 104
+    },
+    {
+     "text": "mould",
+     "atMs": 257260,
+     "endMs": 257580,
+     "phrase": 104
+    },
+    {
+     "text": "the",
+     "atMs": 257620,
+     "endMs": 257660,
+     "phrase": 104
+    },
+    {
+     "text": "New",
+     "atMs": 257820,
+     "endMs": 257900,
+     "phrase": 104
+    },
+    {
+     "text": "World,",
+     "atMs": 258060,
+     "endMs": 258780,
+     "phrase": 104,
+     "emphasis": "lead"
+    },
+    {
+     "text": "adjusting",
+     "atMs": 259020,
+     "endMs": 259340,
+     "phrase": 105
+    },
+    {
+     "text": "it",
+     "atMs": 259420,
+     "endMs": 259500,
+     "phrase": 105
+    },
+    {
+     "text": "to",
+     "atMs": 259580,
+     "endMs": 259740,
+     "phrase": 105
+    },
+    {
+     "text": "Time",
+     "atMs": 259820,
+     "endMs": 260140,
+     "phrase": 105
+    },
+    {
+     "text": "and",
+     "atMs": 260220,
+     "endMs": 260300,
+     "phrase": 105
+    },
+    {
+     "text": "Space,",
+     "atMs": 260460,
+     "endMs": 261420,
+     "phrase": 105,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 261580,
+   "endMs": 267340,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 261580,
+     "endMs": 261740,
+     "phrase": 106
+    },
+    {
+     "text": "hidden",
+     "atMs": 261900,
+     "endMs": 262220,
+     "phrase": 106
+    },
+    {
+     "text": "national",
+     "atMs": 262300,
+     "endMs": 262780,
+     "phrase": 106
+    },
+    {
+     "text": "will",
+     "atMs": 262860,
+     "endMs": 263180,
+     "phrase": 106
+    },
+    {
+     "text": "lying",
+     "atMs": 263340,
+     "endMs": 263740,
+     "phrase": 106
+    },
+    {
+     "text": "in",
+     "atMs": 263780,
+     "endMs": 263820,
+     "phrase": 106
+    },
+    {
+     "text": "your",
+     "atMs": 263900,
+     "endMs": 263980,
+     "phrase": 106
+    },
+    {
+     "text": "abysms,",
+     "atMs": 264060,
+     "endMs": 264940,
+     "phrase": 106,
+     "emphasis": "lead"
+    },
+    {
+     "text": "conceal'd",
+     "atMs": 265100,
+     "endMs": 265740,
+     "phrase": 107
+    },
+    {
+     "text": "but",
+     "atMs": 265820,
+     "endMs": 265980,
+     "phrase": 107
+    },
+    {
+     "text": "ever",
+     "atMs": 266140,
+     "endMs": 266300,
+     "phrase": 107
+    },
+    {
+     "text": "alert,",
+     "atMs": 266380,
+     "endMs": 267260,
+     "phrase": 107,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 267340,
+   "endMs": 273580,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 267340,
+     "endMs": 267580,
+     "phrase": 108
+    },
+    {
+     "text": "past",
+     "atMs": 267740,
+     "endMs": 268140,
+     "phrase": 108
+    },
+    {
+     "text": "and",
+     "atMs": 268220,
+     "endMs": 268300,
+     "phrase": 108
+    },
+    {
+     "text": "present",
+     "atMs": 268380,
+     "endMs": 268700,
+     "phrase": 108
+    },
+    {
+     "text": "purposes",
+     "atMs": 268780,
+     "endMs": 269340,
+     "phrase": 108
+    },
+    {
+     "text": "tenaciously",
+     "atMs": 269420,
+     "endMs": 270140,
+     "phrase": 108
+    },
+    {
+     "text": "pursued,",
+     "atMs": 270220,
+     "endMs": 271180,
+     "phrase": 108,
+     "emphasis": "lead"
+    },
+    {
+     "text": "may-be",
+     "atMs": 271260,
+     "endMs": 271660,
+     "phrase": 109
+    },
+    {
+     "text": "unconscious",
+     "atMs": 271740,
+     "endMs": 272380,
+     "phrase": 109
+    },
+    {
+     "text": "of",
+     "atMs": 272420,
+     "endMs": 272460,
+     "phrase": 109
+    },
+    {
+     "text": "yourselves,",
+     "atMs": 272540,
+     "endMs": 273500,
+     "phrase": 109,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 273580,
+   "endMs": 278780,
+   "tokens": [
+    {
+     "text": "Unswerv'd",
+     "atMs": 273580,
+     "endMs": 274380,
+     "phrase": 110
+    },
+    {
+     "text": "by",
+     "atMs": 274460,
+     "endMs": 274540,
+     "phrase": 110
+    },
+    {
+     "text": "all",
+     "atMs": 274700,
+     "endMs": 274940,
+     "phrase": 110
+    },
+    {
+     "text": "the",
+     "atMs": 275020,
+     "endMs": 275100,
+     "phrase": 110
+    },
+    {
+     "text": "passing",
+     "atMs": 275180,
+     "endMs": 275580,
+     "phrase": 110
+    },
+    {
+     "text": "errors,",
+     "atMs": 275740,
+     "endMs": 276380,
+     "phrase": 110,
+     "emphasis": "lead"
+    },
+    {
+     "text": "perturbations",
+     "atMs": 276500,
+     "endMs": 277260,
+     "phrase": 111
+    },
+    {
+     "text": "of",
+     "atMs": 277300,
+     "endMs": 277340,
+     "phrase": 111
+    },
+    {
+     "text": "the",
+     "atMs": 277420,
+     "endMs": 277500,
+     "phrase": 111
+    },
+    {
+     "text": "surface;",
+     "atMs": 277580,
+     "endMs": 278620,
+     "phrase": 111,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 278780,
+   "endMs": 286620,
+   "tokens": [
+    {
+     "text": "You",
+     "atMs": 278780,
+     "endMs": 279020,
+     "phrase": 112
+    },
+    {
+     "text": "vital,",
+     "atMs": 279260,
+     "endMs": 279820,
+     "phrase": 112,
+     "emphasis": "lead"
+    },
+    {
+     "text": "universal,",
+     "atMs": 279900,
+     "endMs": 280780,
+     "phrase": 113,
+     "emphasis": "lead"
+    },
+    {
+     "text": "deathless",
+     "atMs": 280860,
+     "endMs": 281340,
+     "phrase": 114
+    },
+    {
+     "text": "germs,",
+     "atMs": 281420,
+     "endMs": 282220,
+     "phrase": 114,
+     "emphasis": "lead"
+    },
+    {
+     "text": "beneath",
+     "atMs": 282260,
+     "endMs": 282620,
+     "phrase": 115
+    },
+    {
+     "text": "all",
+     "atMs": 282700,
+     "endMs": 282940,
+     "phrase": 115
+    },
+    {
+     "text": "creeds,",
+     "atMs": 283100,
+     "endMs": 283900,
+     "phrase": 115,
+     "emphasis": "lead"
+    },
+    {
+     "text": "arts,",
+     "atMs": 284100,
+     "endMs": 284540,
+     "phrase": 116,
+     "emphasis": "lead"
+    },
+    {
+     "text": "statutes,",
+     "atMs": 284740,
+     "endMs": 285420,
+     "phrase": 117,
+     "emphasis": "lead"
+    },
+    {
+     "text": "literatures,",
+     "atMs": 285540,
+     "endMs": 286540,
+     "phrase": 118,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 286620,
+   "endMs": 294300,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 286620,
+     "endMs": 286940,
+     "phrase": 119
+    },
+    {
+     "text": "build",
+     "atMs": 287100,
+     "endMs": 287340,
+     "phrase": 119
+    },
+    {
+     "text": "your",
+     "atMs": 287420,
+     "endMs": 287500,
+     "phrase": 119
+    },
+    {
+     "text": "homes",
+     "atMs": 287660,
+     "endMs": 287980,
+     "phrase": 119
+    },
+    {
+     "text": "for",
+     "atMs": 288060,
+     "endMs": 288140,
+     "phrase": 119
+    },
+    {
+     "text": "good,",
+     "atMs": 288300,
+     "endMs": 288940,
+     "phrase": 119,
+     "emphasis": "lead"
+    },
+    {
+     "text": "establish",
+     "atMs": 289020,
+     "endMs": 289660,
+     "phrase": 120
+    },
+    {
+     "text": "here,",
+     "atMs": 289820,
+     "endMs": 290140,
+     "phrase": 120,
+     "emphasis": "lead"
+    },
+    {
+     "text": "these",
+     "atMs": 290220,
+     "endMs": 290460,
+     "phrase": 121
+    },
+    {
+     "text": "areas",
+     "atMs": 290620,
+     "endMs": 291020,
+     "phrase": 121
+    },
+    {
+     "text": "entire,",
+     "atMs": 291180,
+     "endMs": 292060,
+     "phrase": 121,
+     "emphasis": "lead"
+    },
+    {
+     "text": "lands",
+     "atMs": 292140,
+     "endMs": 292540,
+     "phrase": 122
+    },
+    {
+     "text": "of",
+     "atMs": 292620,
+     "endMs": 292660,
+     "phrase": 122
+    },
+    {
+     "text": "the",
+     "atMs": 292700,
+     "endMs": 292780,
+     "phrase": 122
+    },
+    {
+     "text": "Western",
+     "atMs": 292860,
+     "endMs": 293260,
+     "phrase": 122
+    },
+    {
+     "text": "shore,",
+     "atMs": 293420,
+     "endMs": 294220,
+     "phrase": 122,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 294300,
+   "endMs": 297580,
+   "tokens": [
+    {
+     "text": "We",
+     "atMs": 294300,
+     "endMs": 294460,
+     "phrase": 123
+    },
+    {
+     "text": "pledge,",
+     "atMs": 294620,
+     "endMs": 295420,
+     "phrase": 123,
+     "emphasis": "lead"
+    },
+    {
+     "text": "we",
+     "atMs": 295500,
+     "endMs": 295660,
+     "phrase": 124
+    },
+    {
+     "text": "dedicate",
+     "atMs": 295820,
+     "endMs": 296380,
+     "phrase": 124
+    },
+    {
+     "text": "to",
+     "atMs": 296460,
+     "endMs": 296540,
+     "phrase": 124
+    },
+    {
+     "text": "you.",
+     "atMs": 296620,
+     "endMs": 297260,
+     "phrase": 124,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 297580,
+   "endMs": 300620,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 297580,
+     "endMs": 297740,
+     "phrase": 125
+    },
+    {
+     "text": "man",
+     "atMs": 297820,
+     "endMs": 298060,
+     "phrase": 125
+    },
+    {
+     "text": "of",
+     "atMs": 298140,
+     "endMs": 298220,
+     "phrase": 125
+    },
+    {
+     "text": "you,",
+     "atMs": 298300,
+     "endMs": 298700,
+     "phrase": 125,
+     "emphasis": "lead"
+    },
+    {
+     "text": "your",
+     "atMs": 298780,
+     "endMs": 298860,
+     "phrase": 126
+    },
+    {
+     "text": "characteristic",
+     "atMs": 298940,
+     "endMs": 299740,
+     "phrase": 126
+    },
+    {
+     "text": "race,",
+     "atMs": 299820,
+     "endMs": 300540,
+     "phrase": 126,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 300620,
+   "endMs": 307260,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 300620,
+     "endMs": 300940,
+     "phrase": 127
+    },
+    {
+     "text": "may",
+     "atMs": 301020,
+     "endMs": 301100,
+     "phrase": 127
+    },
+    {
+     "text": "he",
+     "atMs": 301180,
+     "endMs": 301420,
+     "phrase": 127
+    },
+    {
+     "text": "hardy,",
+     "atMs": 301500,
+     "endMs": 302140,
+     "phrase": 127,
+     "emphasis": "lead"
+    },
+    {
+     "text": "sweet,",
+     "atMs": 302220,
+     "endMs": 302700,
+     "phrase": 128,
+     "emphasis": "lead"
+    },
+    {
+     "text": "gigantic",
+     "atMs": 302740,
+     "endMs": 303420,
+     "phrase": 129
+    },
+    {
+     "text": "grow,",
+     "atMs": 303500,
+     "endMs": 304300,
+     "phrase": 129,
+     "emphasis": "lead"
+    },
+    {
+     "text": "here",
+     "atMs": 304380,
+     "endMs": 304700,
+     "phrase": 130
+    },
+    {
+     "text": "tower",
+     "atMs": 304860,
+     "endMs": 305260,
+     "phrase": 130
+    },
+    {
+     "text": "proportionate",
+     "atMs": 305340,
+     "endMs": 306060,
+     "phrase": 130
+    },
+    {
+     "text": "to",
+     "atMs": 306100,
+     "endMs": 306140,
+     "phrase": 130
+    },
+    {
+     "text": "Nature,",
+     "atMs": 306220,
+     "endMs": 307180,
+     "phrase": 130,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 307260,
+   "endMs": 313580,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 307260,
+     "endMs": 307580,
+     "phrase": 131
+    },
+    {
+     "text": "climb",
+     "atMs": 307660,
+     "endMs": 308060,
+     "phrase": 131
+    },
+    {
+     "text": "the",
+     "atMs": 308140,
+     "endMs": 308220,
+     "phrase": 131
+    },
+    {
+     "text": "vast",
+     "atMs": 308380,
+     "endMs": 308700,
+     "phrase": 131
+    },
+    {
+     "text": "pure",
+     "atMs": 308860,
+     "endMs": 309100,
+     "phrase": 131
+    },
+    {
+     "text": "spaces",
+     "atMs": 309180,
+     "endMs": 309740,
+     "phrase": 131
+    },
+    {
+     "text": "unconfined,",
+     "atMs": 309900,
+     "endMs": 311020,
+     "phrase": 131,
+     "emphasis": "lead"
+    },
+    {
+     "text": "uncheck'd",
+     "atMs": 311100,
+     "endMs": 311740,
+     "phrase": 132
+    },
+    {
+     "text": "by",
+     "atMs": 311820,
+     "endMs": 311900,
+     "phrase": 132
+    },
+    {
+     "text": "wall",
+     "atMs": 312060,
+     "endMs": 312380,
+     "phrase": 132
+    },
+    {
+     "text": "or",
+     "atMs": 312460,
+     "endMs": 312540,
+     "phrase": 132
+    },
+    {
+     "text": "roof,",
+     "atMs": 312620,
+     "endMs": 313500,
+     "phrase": 132,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 313580,
+   "endMs": 319580,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 313580,
+     "endMs": 313900,
+     "phrase": 133
+    },
+    {
+     "text": "laugh",
+     "atMs": 314060,
+     "endMs": 314460,
+     "phrase": 133
+    },
+    {
+     "text": "with",
+     "atMs": 314540,
+     "endMs": 314620,
+     "phrase": 133
+    },
+    {
+     "text": "storm",
+     "atMs": 314780,
+     "endMs": 315260,
+     "phrase": 133
+    },
+    {
+     "text": "or",
+     "atMs": 315300,
+     "endMs": 315340,
+     "phrase": 133
+    },
+    {
+     "text": "sun,",
+     "atMs": 315500,
+     "endMs": 316220,
+     "phrase": 133,
+     "emphasis": "lead"
+    },
+    {
+     "text": "here",
+     "atMs": 316300,
+     "endMs": 316540,
+     "phrase": 134
+    },
+    {
+     "text": "joy,",
+     "atMs": 316700,
+     "endMs": 317420,
+     "phrase": 134,
+     "emphasis": "lead"
+    },
+    {
+     "text": "here",
+     "atMs": 317500,
+     "endMs": 317740,
+     "phrase": 135
+    },
+    {
+     "text": "patiently",
+     "atMs": 317900,
+     "endMs": 318460,
+     "phrase": 135
+    },
+    {
+     "text": "inure,",
+     "atMs": 318580,
+     "endMs": 319500,
+     "phrase": 135,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 319580,
+   "endMs": 326860,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 319580,
+     "endMs": 319900,
+     "phrase": 136
+    },
+    {
+     "text": "heed",
+     "atMs": 319980,
+     "endMs": 320220,
+     "phrase": 136
+    },
+    {
+     "text": "himself,",
+     "atMs": 320300,
+     "endMs": 321180,
+     "phrase": 136,
+     "emphasis": "lead"
+    },
+    {
+     "text": "unfold",
+     "atMs": 321260,
+     "endMs": 321820,
+     "phrase": 137
+    },
+    {
+     "text": "himself,",
+     "atMs": 321940,
+     "endMs": 322780,
+     "phrase": 137,
+     "emphasis": "lead"
+    },
+    {
+     "text": "(not",
+     "atMs": 322940,
+     "endMs": 323100,
+     "phrase": 138
+    },
+    {
+     "text": "others'",
+     "atMs": 323260,
+     "endMs": 323500,
+     "phrase": 138
+    },
+    {
+     "text": "formulas",
+     "atMs": 323620,
+     "endMs": 323980,
+     "phrase": 138
+    },
+    {
+     "text": "heed,)",
+     "atMs": 324060,
+     "endMs": 324860,
+     "phrase": 138
+    },
+    {
+     "text": "here",
+     "atMs": 324940,
+     "endMs": 325260,
+     "phrase": 138
+    },
+    {
+     "text": "fill",
+     "atMs": 325420,
+     "endMs": 325660,
+     "phrase": 138
+    },
+    {
+     "text": "his",
+     "atMs": 325740,
+     "endMs": 325900,
+     "phrase": 138
+    },
+    {
+     "text": "time,",
+     "atMs": 325980,
+     "endMs": 326780,
+     "phrase": 138,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 326860,
+   "endMs": 330700,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 326860,
+     "endMs": 326940,
+     "phrase": 139
+    },
+    {
+     "text": "duly",
+     "atMs": 327020,
+     "endMs": 327340,
+     "phrase": 139
+    },
+    {
+     "text": "fall,",
+     "atMs": 327500,
+     "endMs": 328140,
+     "phrase": 139,
+     "emphasis": "lead"
+    },
+    {
+     "text": "to",
+     "atMs": 328220,
+     "endMs": 328300,
+     "phrase": 140
+    },
+    {
+     "text": "aid,",
+     "atMs": 328380,
+     "endMs": 329020,
+     "phrase": 140,
+     "emphasis": "lead"
+    },
+    {
+     "text": "unreck'd",
+     "atMs": 329100,
+     "endMs": 329660,
+     "phrase": 141
+    },
+    {
+     "text": "at",
+     "atMs": 329700,
+     "endMs": 329740,
+     "phrase": 141
+    },
+    {
+     "text": "last,",
+     "atMs": 329820,
+     "endMs": 330620,
+     "phrase": 141,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "canopy-voice",
+   "startMs": 330700,
+   "endMs": 333500,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 330700,
+     "endMs": 330780,
+     "phrase": 142
+    },
+    {
+     "text": "disappear,",
+     "atMs": 330860,
+     "endMs": 331980,
+     "phrase": 142,
+     "emphasis": "lead"
+    },
+    {
+     "text": "to",
+     "atMs": 332060,
+     "endMs": 332140,
+     "phrase": 143
+    },
+    {
+     "text": "serve.",
+     "atMs": 332300,
+     "endMs": 333140,
+     "phrase": 143,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 333500,
+   "endMs": 335420,
+   "tokens": [
+    {
+     "text": "Thus",
+     "atMs": 333500,
+     "endMs": 333820,
+     "phrase": 144
+    },
+    {
+     "text": "on",
+     "atMs": 333900,
+     "endMs": 333980,
+     "phrase": 144
+    },
+    {
+     "text": "the",
+     "atMs": 334060,
+     "endMs": 334140,
+     "phrase": 144
+    },
+    {
+     "text": "northern",
+     "atMs": 334220,
+     "endMs": 334540,
+     "phrase": 144
+    },
+    {
+     "text": "coast,",
+     "atMs": 334620,
+     "endMs": 335340,
+     "phrase": 144,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 335420,
+   "endMs": 341180,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 335420,
+     "endMs": 335500,
+     "phrase": 145
+    },
+    {
+     "text": "the",
+     "atMs": 335540,
+     "endMs": 335580,
+     "phrase": 145
+    },
+    {
+     "text": "echo",
+     "atMs": 335740,
+     "endMs": 336060,
+     "phrase": 145
+    },
+    {
+     "text": "of",
+     "atMs": 336100,
+     "endMs": 336140,
+     "phrase": 145
+    },
+    {
+     "text": "teamsters'",
+     "atMs": 336300,
+     "endMs": 336860,
+     "phrase": 145
+    },
+    {
+     "text": "calls",
+     "atMs": 337100,
+     "endMs": 337340,
+     "phrase": 145
+    },
+    {
+     "text": "and",
+     "atMs": 337380,
+     "endMs": 337420,
+     "phrase": 145
+    },
+    {
+     "text": "the",
+     "atMs": 337500,
+     "endMs": 337580,
+     "phrase": 145
+    },
+    {
+     "text": "clinking",
+     "atMs": 337660,
+     "endMs": 337980,
+     "phrase": 145
+    },
+    {
+     "text": "chains,",
+     "atMs": 338140,
+     "endMs": 338860,
+     "phrase": 145,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 338940,
+     "endMs": 338980,
+     "phrase": 146
+    },
+    {
+     "text": "the",
+     "atMs": 339020,
+     "endMs": 339100,
+     "phrase": 146
+    },
+    {
+     "text": "music",
+     "atMs": 339180,
+     "endMs": 339580,
+     "phrase": 146
+    },
+    {
+     "text": "of",
+     "atMs": 339620,
+     "endMs": 339660,
+     "phrase": 146
+    },
+    {
+     "text": "choppers'",
+     "atMs": 339820,
+     "endMs": 340220,
+     "phrase": 146
+    },
+    {
+     "text": "axes,",
+     "atMs": 340500,
+     "endMs": 341100,
+     "phrase": 146,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 341180,
+   "endMs": 346860,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 341180,
+     "endMs": 341340,
+     "phrase": 147
+    },
+    {
+     "text": "falling",
+     "atMs": 341460,
+     "endMs": 341740,
+     "phrase": 147
+    },
+    {
+     "text": "trunk",
+     "atMs": 341820,
+     "endMs": 342220,
+     "phrase": 147
+    },
+    {
+     "text": "and",
+     "atMs": 342300,
+     "endMs": 342380,
+     "phrase": 147
+    },
+    {
+     "text": "limbs,",
+     "atMs": 342460,
+     "endMs": 343180,
+     "phrase": 147,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 343220,
+     "endMs": 343260,
+     "phrase": 148
+    },
+    {
+     "text": "crash,",
+     "atMs": 343420,
+     "endMs": 344140,
+     "phrase": 148,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 344180,
+     "endMs": 344220,
+     "phrase": 149
+    },
+    {
+     "text": "muffled",
+     "atMs": 344380,
+     "endMs": 344700,
+     "phrase": 149
+    },
+    {
+     "text": "shriek,",
+     "atMs": 344860,
+     "endMs": 345500,
+     "phrase": 149,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 345540,
+     "endMs": 345580,
+     "phrase": 150
+    },
+    {
+     "text": "groan,",
+     "atMs": 345660,
+     "endMs": 346700,
+     "phrase": 150,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 346860,
+   "endMs": 353260,
+   "tokens": [
+    {
+     "text": "Such",
+     "atMs": 346860,
+     "endMs": 347100,
+     "phrase": 151
+    },
+    {
+     "text": "words",
+     "atMs": 347180,
+     "endMs": 347500,
+     "phrase": 151
+    },
+    {
+     "text": "combined",
+     "atMs": 347580,
+     "endMs": 348140,
+     "phrase": 151
+    },
+    {
+     "text": "from",
+     "atMs": 348220,
+     "endMs": 348300,
+     "phrase": 151
+    },
+    {
+     "text": "the",
+     "atMs": 348340,
+     "endMs": 348380,
+     "phrase": 151
+    },
+    {
+     "text": "redwood-tree,",
+     "atMs": 348460,
+     "endMs": 349580,
+     "phrase": 151,
+     "emphasis": "lead"
+    },
+    {
+     "text": "as",
+     "atMs": 349660,
+     "endMs": 349740,
+     "phrase": 152
+    },
+    {
+     "text": "of",
+     "atMs": 349820,
+     "endMs": 349900,
+     "phrase": 152
+    },
+    {
+     "text": "voices",
+     "atMs": 349980,
+     "endMs": 350380,
+     "phrase": 152
+    },
+    {
+     "text": "ecstatic,",
+     "atMs": 350460,
+     "endMs": 351500,
+     "phrase": 152,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ancient",
+     "atMs": 351620,
+     "endMs": 351980,
+     "phrase": 153
+    },
+    {
+     "text": "and",
+     "atMs": 352060,
+     "endMs": 352140,
+     "phrase": 153
+    },
+    {
+     "text": "rustling,",
+     "atMs": 352220,
+     "endMs": 353180,
+     "phrase": 153,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 353260,
+   "endMs": 358220,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 353260,
+     "endMs": 353420,
+     "phrase": 154
+    },
+    {
+     "text": "century-lasting,",
+     "atMs": 353500,
+     "endMs": 354700,
+     "phrase": 154,
+     "emphasis": "lead"
+    },
+    {
+     "text": "unseen",
+     "atMs": 354860,
+     "endMs": 355260,
+     "phrase": 155
+    },
+    {
+     "text": "dryads,",
+     "atMs": 355340,
+     "endMs": 356220,
+     "phrase": 155,
+     "emphasis": "lead"
+    },
+    {
+     "text": "singing,",
+     "atMs": 356380,
+     "endMs": 357020,
+     "phrase": 156,
+     "emphasis": "lead"
+    },
+    {
+     "text": "withdrawing,",
+     "atMs": 357140,
+     "endMs": 358140,
+     "phrase": 157,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 358220,
+   "endMs": 361820,
+   "tokens": [
+    {
+     "text": "All",
+     "atMs": 358220,
+     "endMs": 358380,
+     "phrase": 158
+    },
+    {
+     "text": "their",
+     "atMs": 358460,
+     "endMs": 358620,
+     "phrase": 158
+    },
+    {
+     "text": "recesses",
+     "atMs": 358700,
+     "endMs": 359340,
+     "phrase": 158
+    },
+    {
+     "text": "of",
+     "atMs": 359420,
+     "endMs": 359500,
+     "phrase": 158
+    },
+    {
+     "text": "forests",
+     "atMs": 359580,
+     "endMs": 360060,
+     "phrase": 158
+    },
+    {
+     "text": "and",
+     "atMs": 360140,
+     "endMs": 360220,
+     "phrase": 158
+    },
+    {
+     "text": "mountains",
+     "atMs": 360300,
+     "endMs": 360780,
+     "phrase": 158
+    },
+    {
+     "text": "leaving,",
+     "atMs": 360860,
+     "endMs": 361740,
+     "phrase": 158,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 361820,
+   "endMs": 366860,
+   "tokens": [
+    {
+     "text": "From",
+     "atMs": 361820,
+     "endMs": 361900,
+     "phrase": 159
+    },
+    {
+     "text": "the",
+     "atMs": 361980,
+     "endMs": 362060,
+     "phrase": 159
+    },
+    {
+     "text": "Cascade",
+     "atMs": 362140,
+     "endMs": 362700,
+     "phrase": 159
+    },
+    {
+     "text": "range",
+     "atMs": 362780,
+     "endMs": 363100,
+     "phrase": 159
+    },
+    {
+     "text": "to",
+     "atMs": 363180,
+     "endMs": 363260,
+     "phrase": 159
+    },
+    {
+     "text": "the",
+     "atMs": 363300,
+     "endMs": 363340,
+     "phrase": 159
+    },
+    {
+     "text": "Wahsatch,",
+     "atMs": 363420,
+     "endMs": 364300,
+     "phrase": 159,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 364380,
+     "endMs": 364460,
+     "phrase": 160
+    },
+    {
+     "text": "Idaho",
+     "atMs": 364540,
+     "endMs": 364940,
+     "phrase": 160
+    },
+    {
+     "text": "far,",
+     "atMs": 365020,
+     "endMs": 365660,
+     "phrase": 160,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 365740,
+     "endMs": 365820,
+     "phrase": 161
+    },
+    {
+     "text": "Utah,",
+     "atMs": 365900,
+     "endMs": 366780,
+     "phrase": 161,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 366860,
+   "endMs": 370060,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 366860,
+     "endMs": 366940,
+     "phrase": 162
+    },
+    {
+     "text": "the",
+     "atMs": 367020,
+     "endMs": 367100,
+     "phrase": 162
+    },
+    {
+     "text": "deities",
+     "atMs": 367180,
+     "endMs": 367660,
+     "phrase": 162
+    },
+    {
+     "text": "of",
+     "atMs": 367740,
+     "endMs": 367780,
+     "phrase": 162
+    },
+    {
+     "text": "the",
+     "atMs": 367820,
+     "endMs": 367900,
+     "phrase": 162
+    },
+    {
+     "text": "modern",
+     "atMs": 367980,
+     "endMs": 368300,
+     "phrase": 162
+    },
+    {
+     "text": "henceforth",
+     "atMs": 368460,
+     "endMs": 369020,
+     "phrase": 162
+    },
+    {
+     "text": "yielding,",
+     "atMs": 369100,
+     "endMs": 369980,
+     "phrase": 162,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 370060,
+   "endMs": 376500,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 370060,
+     "endMs": 370140,
+     "phrase": 163
+    },
+    {
+     "text": "chorus",
+     "atMs": 370220,
+     "endMs": 370700,
+     "phrase": 163
+    },
+    {
+     "text": "and",
+     "atMs": 370780,
+     "endMs": 370860,
+     "phrase": 163
+    },
+    {
+     "text": "indications,",
+     "atMs": 370940,
+     "endMs": 371980,
+     "phrase": 163,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 372060,
+     "endMs": 372140,
+     "phrase": 164
+    },
+    {
+     "text": "vistas",
+     "atMs": 372220,
+     "endMs": 372700,
+     "phrase": 164
+    },
+    {
+     "text": "of",
+     "atMs": 372740,
+     "endMs": 372780,
+     "phrase": 164
+    },
+    {
+     "text": "coming",
+     "atMs": 372940,
+     "endMs": 373180,
+     "phrase": 164
+    },
+    {
+     "text": "humanity,",
+     "atMs": 373260,
+     "endMs": 374220,
+     "phrase": 164,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 374260,
+     "endMs": 374300,
+     "phrase": 165
+    },
+    {
+     "text": "settlements,",
+     "atMs": 374460,
+     "endMs": 375260,
+     "phrase": 165,
+     "emphasis": "lead"
+    },
+    {
+     "text": "features",
+     "atMs": 375340,
+     "endMs": 375740,
+     "phrase": 166
+    },
+    {
+     "text": "all,",
+     "atMs": 375820,
+     "endMs": 376460,
+     "phrase": 166,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-stump-and-sprout",
+   "startMs": 376500,
+   "endMs": 378780,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 376500,
+     "endMs": 376540,
+     "phrase": 167
+    },
+    {
+     "text": "the",
+     "atMs": 376620,
+     "endMs": 376700,
+     "phrase": 167
+    },
+    {
+     "text": "Mendocino",
+     "atMs": 376780,
+     "endMs": 377420,
+     "phrase": 167
+    },
+    {
+     "text": "woods",
+     "atMs": 377580,
+     "endMs": 377900,
+     "phrase": 167
+    },
+    {
+     "text": "I",
+     "atMs": 377980,
+     "endMs": 378060,
+     "phrase": 167
+    },
+    {
+     "text": "caught.",
+     "atMs": 378140,
+     "endMs": 378780,
+     "phrase": 167,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

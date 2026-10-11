@@ -204,6 +204,7 @@ it is actually speaking, not the mean across its pauses):
 |---|---|
 | An effect loop | match the voice |
 | A poem's theme | **−13 dB** — part of the reading; −10 played too loud across the series (2026-10-11) |
+| The narration itself | **−22 LUFS integrated**, the series' own level - match a new voice to it before measuring anything against it |
 | Music under speech generally | −20 dB, the middle of broadcast's 15–25 dB |
 | Lo-fi under silent reading | −3 dB, because continuous music reads louder than speech, which is half pauses |
 

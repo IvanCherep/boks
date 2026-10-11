@@ -57,6 +57,19 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "dc5150c6-fb9b-417c-8b29-40d274103acc",
+    format: "poem",
+    language: "en",
+    title: "Song of the Redwood-Tree — Part 1",
+    author: "Walt Whitman",
+    cover: "/series/redwood-tree.webp",
+    coverFocus: "50% 40%",
+    durationSeconds: 379,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-11",
+  },
+  {
     storyId: "afa5a1ed-3019-455e-b550-475c9a498db3",
     format: "poem",
     language: "en",

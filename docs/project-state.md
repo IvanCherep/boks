@@ -11,6 +11,20 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Song of the Redwood-Tree, Part 1 on the series shelf; the British voice
+brought up to level (2026-10-11).** Whitman's Part 1, bok
+`dc5150c6-fb9b-417c-8b29-40d274103acc`, added by the curated route
+(`work/catalogue-2026-10-11b/`, the 1882 text on Wikisource; the Whitman
+Archive transcription the brief names is behind a bot wall) and produced as an
+ordinary immersive poem from `docs/poetry/redwood-tree/`: Jerry B., take 2 of 2
+(more silence, slower), 0.7 s more breath before «Farewell», 1.8 s after the
+end, voice at −22 LUFS; theme take 1 of 2 at 16 dB under (0.08), as the brief
+asks for a near-silent drone. Not built: the hold-the-bark reveal, forest
+ambience and its events. The Binsey Poplars and Grantchester readings had
+shipped at −30 LUFS against the series' −22 and were raised to −22.9 and
+−22.7 (gain and a peak limiter only; timings unchanged); the narration level is
+now a step in `docs/reading-formats.md` § Adding a poem.
+
 **The Old Vicarage, Grantchester on the series shelf (2026-10-11).** Rupert
 Brooke's poem, bok `afa5a1ed-3019-455e-b550-475c9a498db3` (already in the
 catalogue), produced as an ordinary immersive poem from the four pictures and
