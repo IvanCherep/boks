@@ -50,6 +50,8 @@ const poems: Record<string, string> = {
   "7a67ce67-bceb-4e41-8f66-191718345880": "/poetry/perviy-sneg/manifest.json",
   // Gerard Manley Hopkins — Binsey Poplars
   "99ee280f-faf5-4026-99fc-9cbec9d79a2a": "/poetry/binsey-poplars/manifest.json",
+  // Rupert Brooke — The Old Vicarage, Grantchester
+  "afa5a1ed-3019-455e-b550-475c9a498db3": "/poetry/grantchester/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

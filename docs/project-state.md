@@ -11,6 +11,21 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**The Old Vicarage, Grantchester on the series shelf (2026-10-11).** Rupert
+Brooke's poem, bok `afa5a1ed-3019-455e-b550-475c9a498db3` (already in the
+catalogue), produced as an ordinary immersive poem from the four pictures and
+brief in `docs/poetry/grantchester/`. The complete poem, not selected passages;
+the Berlin dateline is not read. Julian, take 1 of 2 (more silence); 0.7 s
+inserted before «Stands the Church clock» and 1.8 s of silence after the last
+line, as the brief asks - the untouched alignment is `alignment.raw.json`.
+Theme take 1 of 2, 16 dB under the voice (gain 0.035) because the brief wants
+an almost imperceptible bed; `shipped-poems.test.ts` now allows gains down to
+0.03. Not built from the brief: the wipe-the-glass reveal, rain/river ambience
+and its reveal events (the poetry format has no gestures), and the historical
+note it suggests for the poem's dated lines («Temperamentvoll German Jews»).
+The reading runs at ~142 wpm against the brief's 105-115; the model ignores
+speed.
+
 **Binsey Poplars on the series shelf (2026-10-11).** Hopkins's poem, bok
 `99ee280f-faf5-4026-99fc-9cbec9d79a2a`, added to the catalogue by the curated
 route (`work/catalogue-2026-10-11/`, text from the 1918 edition on Wikisource)

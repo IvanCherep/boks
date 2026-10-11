@@ -97,9 +97,11 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
   });
 
   it("keeps its theme audibly under the voice", () => {
-    // Measured per poem, ten decibels apart; a gain outside this range has
-    // either buried the theme or let it compete.
-    expect(manifest.theme!.gain).toBeGreaterThan(0.05);
+    // Measured per poem, 13 dB under the voice since 2026-10-11 (10 before;
+    // the music read too loud across the series), or further for a piece
+    // that asks for an almost silent bed. Outside this range it has either
+    // vanished or begun to compete.
+    expect(manifest.theme!.gain).toBeGreaterThan(0.03);
     expect(manifest.theme!.gain).toBeLessThan(0.4);
   });
 });

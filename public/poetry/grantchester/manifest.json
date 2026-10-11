@@ -1,0 +1,6474 @@
+{
+ "id": "grantchester-immersive-v1",
+ "title": "The Old Vicarage, Grantchester",
+ "author": "Rupert Brooke",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/grantchester/narration.mp3",
+ "theme": {
+  "src": "/poetry/grantchester/theme.mp3",
+  "gain": 0.035
+ },
+ "durationMs": 362940,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF4E6",
+  "active": "#FFE2A6",
+  "shadow": "rgba(10, 12, 16, 0.6)"
+ },
+ "textScale": 0.8,
+ "veil": 1.2,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1060,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "berlin-misted-window",
+   "image": "/poetry/grantchester/scenes/01_berlin_misted_window.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1000,
+   "safeZones": [
+    {
+     "x": 0.24,
+     "y": 0.6,
+     "width": 0.68,
+     "height": 0.18
+    }
+   ],
+   "line": "Just now the lilac is in bloom, … The poppy and the pansy blow…",
+   "startMs": 0
+  },
+  {
+   "id": "grantchester-reveal",
+   "image": "/poetry/grantchester/scenes/02_grantchester_reveal.webp",
+   "lines": 27,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.45
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1130,
+   "safeZones": [
+    {
+     "x": 0.24,
+     "y": 0.62,
+     "width": 0.68,
+     "height": 0.17
+    }
+   ],
+   "line": "Oh! there the chestnuts, summer through, … Where das Betreten's not verboten.",
+   "startMs": 14640
+  },
+  {
+   "id": "river-cam-twilight",
+   "image": "/poetry/grantchester/scenes/03_river_cam_twilight.webp",
+   "lines": 106,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1380,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.62,
+     "width": 0.8,
+     "height": 0.18
+    }
+   ],
+   "line": "εἴθε γενοίμην… would I were … The lies, and truths, and pain?… oh! yet",
+   "startMs": 82880
+  },
+  {
+   "id": "honey-still-for-tea",
+   "image": "/poetry/grantchester/scenes/04_honey_still_for_tea.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.12,
+     "y": 0.12,
+     "width": 0.64,
+     "height": 0.16
+    }
+   ],
+   "line": "Stands the Church clock at ten to three? / And is there honey still for tea?",
+   "startMs": 358300
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "berlin-misted-window",
+   "startMs": 0,
+   "endMs": 2480,
+   "tokens": [
+    {
+     "text": "Just",
+     "atMs": 0,
+     "endMs": 320,
+     "phrase": 0
+    },
+    {
+     "text": "now",
+     "atMs": 400,
+     "endMs": 640,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 720,
+     "endMs": 800,
+     "phrase": 0
+    },
+    {
+     "text": "lilac",
+     "atMs": 880,
+     "endMs": 1280,
+     "phrase": 0
+    },
+    {
+     "text": "is",
+     "atMs": 1320,
+     "endMs": 1360,
+     "phrase": 0
+    },
+    {
+     "text": "in",
+     "atMs": 1440,
+     "endMs": 1520,
+     "phrase": 0
+    },
+    {
+     "text": "bloom,",
+     "atMs": 1600,
+     "endMs": 2400,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "berlin-misted-window",
+   "startMs": 2480,
+   "endMs": 4880,
+   "tokens": [
+    {
+     "text": "All",
+     "atMs": 2480,
+     "endMs": 2720,
+     "phrase": 1
+    },
+    {
+     "text": "before",
+     "atMs": 2800,
+     "endMs": 3200,
+     "phrase": 1
+    },
+    {
+     "text": "my",
+     "atMs": 3280,
+     "endMs": 3440,
+     "phrase": 1
+    },
+    {
+     "text": "little",
+     "atMs": 3520,
+     "endMs": 3680,
+     "phrase": 1
+    },
+    {
+     "text": "room;",
+     "atMs": 3840,
+     "endMs": 4800,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "berlin-misted-window",
+   "startMs": 4880,
+   "endMs": 6960,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 4880,
+     "endMs": 4960,
+     "phrase": 2
+    },
+    {
+     "text": "in",
+     "atMs": 5000,
+     "endMs": 5040,
+     "phrase": 2
+    },
+    {
+     "text": "my",
+     "atMs": 5120,
+     "endMs": 5280,
+     "phrase": 2
+    },
+    {
+     "text": "flower-beds,",
+     "atMs": 5360,
+     "endMs": 6040,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 6080,
+     "endMs": 6160,
+     "phrase": 3
+    },
+    {
+     "text": "think,",
+     "atMs": 6320,
+     "endMs": 6880,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "berlin-misted-window",
+   "startMs": 6960,
+   "endMs": 9680,
+   "tokens": [
+    {
+     "text": "Smile",
+     "atMs": 6960,
+     "endMs": 7360,
+     "phrase": 4
+    },
+    {
+     "text": "the",
+     "atMs": 7440,
+     "endMs": 7520,
+     "phrase": 4
+    },
+    {
+     "text": "carnation",
+     "atMs": 7560,
+     "endMs": 8240,
+     "phrase": 4
+    },
+    {
+     "text": "and",
+     "atMs": 8320,
+     "endMs": 8400,
+     "phrase": 4
+    },
+    {
+     "text": "the",
+     "atMs": 8440,
+     "endMs": 8480,
+     "phrase": 4
+    },
+    {
+     "text": "pink;",
+     "atMs": 8560,
+     "endMs": 9600,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "berlin-misted-window",
+   "startMs": 9680,
+   "endMs": 11920,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 9680,
+     "endMs": 9760,
+     "phrase": 5
+    },
+    {
+     "text": "down",
+     "atMs": 9880,
+     "endMs": 10000,
+     "phrase": 5
+    },
+    {
+     "text": "the",
+     "atMs": 10080,
+     "endMs": 10160,
+     "phrase": 5
+    },
+    {
+     "text": "borders,",
+     "atMs": 10320,
+     "endMs": 10720,
+     "phrase": 5,
+     "emphasis": "lead"
+    },
+    {
+     "text": "well",
+     "atMs": 10800,
+     "endMs": 10960,
+     "phrase": 6
+    },
+    {
+     "text": "I",
+     "atMs": 11120,
+     "endMs": 11227,
+     "phrase": 6
+    },
+    {
+     "text": "know,",
+     "atMs": 11333,
+     "endMs": 11840,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "berlin-misted-window",
+   "startMs": 11920,
+   "endMs": 14640,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 11920,
+     "endMs": 12000,
+     "phrase": 7
+    },
+    {
+     "text": "poppy",
+     "atMs": 12080,
+     "endMs": 12480,
+     "phrase": 7
+    },
+    {
+     "text": "and",
+     "atMs": 12560,
+     "endMs": 12640,
+     "phrase": 7
+    },
+    {
+     "text": "the",
+     "atMs": 12693,
+     "endMs": 12747,
+     "phrase": 7
+    },
+    {
+     "text": "pansy",
+     "atMs": 12800,
+     "endMs": 13200,
+     "phrase": 7
+    },
+    {
+     "text": "blow…",
+     "atMs": 13280,
+     "endMs": 14480,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 14640,
+   "endMs": 17480,
+   "tokens": [
+    {
+     "text": "Oh!",
+     "atMs": 14640,
+     "endMs": 15040,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "there",
+     "atMs": 15120,
+     "endMs": 15280,
+     "phrase": 9
+    },
+    {
+     "text": "the",
+     "atMs": 15360,
+     "endMs": 15440,
+     "phrase": 9
+    },
+    {
+     "text": "chestnuts,",
+     "atMs": 15520,
+     "endMs": 16240,
+     "phrase": 9,
+     "emphasis": "lead"
+    },
+    {
+     "text": "summer",
+     "atMs": 16400,
+     "endMs": 16560,
+     "phrase": 10
+    },
+    {
+     "text": "through,",
+     "atMs": 16640,
+     "endMs": 17360,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 17480,
+   "endMs": 19520,
+   "tokens": [
+    {
+     "text": "Beside",
+     "atMs": 17480,
+     "endMs": 17840,
+     "phrase": 11
+    },
+    {
+     "text": "the",
+     "atMs": 17880,
+     "endMs": 17920,
+     "phrase": 11
+    },
+    {
+     "text": "river",
+     "atMs": 18000,
+     "endMs": 18240,
+     "phrase": 11
+    },
+    {
+     "text": "make",
+     "atMs": 18320,
+     "endMs": 18560,
+     "phrase": 11
+    },
+    {
+     "text": "for",
+     "atMs": 18640,
+     "endMs": 18720,
+     "phrase": 11
+    },
+    {
+     "text": "you",
+     "atMs": 18800,
+     "endMs": 19040,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 19520,
+   "endMs": 22320,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 19520,
+     "endMs": 19680,
+     "phrase": 12
+    },
+    {
+     "text": "tunnel",
+     "atMs": 19720,
+     "endMs": 20000,
+     "phrase": 12
+    },
+    {
+     "text": "of",
+     "atMs": 20080,
+     "endMs": 20160,
+     "phrase": 12
+    },
+    {
+     "text": "green",
+     "atMs": 20240,
+     "endMs": 20560,
+     "phrase": 12
+    },
+    {
+     "text": "gloom,",
+     "atMs": 20640,
+     "endMs": 21440,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 21520,
+     "endMs": 21600,
+     "phrase": 13
+    },
+    {
+     "text": "sleep",
+     "atMs": 21760,
+     "endMs": 22160,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 22320,
+   "endMs": 25280,
+   "tokens": [
+    {
+     "text": "Deeply",
+     "atMs": 22320,
+     "endMs": 22720,
+     "phrase": 14
+    },
+    {
+     "text": "above;",
+     "atMs": 22960,
+     "endMs": 23840,
+     "phrase": 14,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 23920,
+     "endMs": 24000,
+     "phrase": 15
+    },
+    {
+     "text": "green",
+     "atMs": 24080,
+     "endMs": 24480,
+     "phrase": 15
+    },
+    {
+     "text": "and",
+     "atMs": 24560,
+     "endMs": 24640,
+     "phrase": 15
+    },
+    {
+     "text": "deep",
+     "atMs": 24720,
+     "endMs": 24960,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 25280,
+   "endMs": 28160,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 25280,
+     "endMs": 25360,
+     "phrase": 16
+    },
+    {
+     "text": "stream",
+     "atMs": 25440,
+     "endMs": 25840,
+     "phrase": 16
+    },
+    {
+     "text": "mysterious",
+     "atMs": 25880,
+     "endMs": 26640,
+     "phrase": 16
+    },
+    {
+     "text": "glides",
+     "atMs": 26720,
+     "endMs": 27040,
+     "phrase": 16
+    },
+    {
+     "text": "beneath,",
+     "atMs": 27120,
+     "endMs": 28080,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 28160,
+   "endMs": 31520,
+   "tokens": [
+    {
+     "text": "Green",
+     "atMs": 28160,
+     "endMs": 28480,
+     "phrase": 17
+    },
+    {
+     "text": "as",
+     "atMs": 28560,
+     "endMs": 28640,
+     "phrase": 17
+    },
+    {
+     "text": "a",
+     "atMs": 28680,
+     "endMs": 28720,
+     "phrase": 17
+    },
+    {
+     "text": "dream",
+     "atMs": 28800,
+     "endMs": 29280,
+     "phrase": 17
+    },
+    {
+     "text": "and",
+     "atMs": 29520,
+     "endMs": 29680,
+     "phrase": 17
+    },
+    {
+     "text": "deep",
+     "atMs": 29840,
+     "endMs": 30080,
+     "phrase": 17
+    },
+    {
+     "text": "as",
+     "atMs": 30160,
+     "endMs": 30320,
+     "phrase": 17
+    },
+    {
+     "text": "death.",
+     "atMs": 30400,
+     "endMs": 30880,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 31520,
+   "endMs": 34320,
+   "tokens": [
+    {
+     "text": "—Oh,",
+     "atMs": 31520,
+     "endMs": 31840,
+     "phrase": 18,
+     "emphasis": "lead"
+    },
+    {
+     "text": "damn!",
+     "atMs": 31920,
+     "endMs": 32373,
+     "phrase": 19,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 32427,
+     "endMs": 32480,
+     "phrase": 20
+    },
+    {
+     "text": "know",
+     "atMs": 32640,
+     "endMs": 32720,
+     "phrase": 20
+    },
+    {
+     "text": "it!",
+     "atMs": 32800,
+     "endMs": 33120,
+     "phrase": 20,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 33600,
+     "endMs": 33760,
+     "phrase": 21
+    },
+    {
+     "text": "I",
+     "atMs": 33840,
+     "endMs": 33920,
+     "phrase": 21
+    },
+    {
+     "text": "know",
+     "atMs": 34000,
+     "endMs": 34240,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 34320,
+   "endMs": 37040,
+   "tokens": [
+    {
+     "text": "How",
+     "atMs": 34320,
+     "endMs": 34480,
+     "phrase": 22
+    },
+    {
+     "text": "the",
+     "atMs": 34520,
+     "endMs": 34560,
+     "phrase": 22
+    },
+    {
+     "text": "May",
+     "atMs": 34640,
+     "endMs": 34880,
+     "phrase": 22
+    },
+    {
+     "text": "fields",
+     "atMs": 34960,
+     "endMs": 35360,
+     "phrase": 22
+    },
+    {
+     "text": "all",
+     "atMs": 35440,
+     "endMs": 35520,
+     "phrase": 22
+    },
+    {
+     "text": "golden",
+     "atMs": 35680,
+     "endMs": 36080,
+     "phrase": 22
+    },
+    {
+     "text": "show,",
+     "atMs": 36160,
+     "endMs": 36960,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 37040,
+   "endMs": 39320,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 37040,
+     "endMs": 37120,
+     "phrase": 23
+    },
+    {
+     "text": "when",
+     "atMs": 37200,
+     "endMs": 37280,
+     "phrase": 23
+    },
+    {
+     "text": "the",
+     "atMs": 37320,
+     "endMs": 37360,
+     "phrase": 23
+    },
+    {
+     "text": "day",
+     "atMs": 37440,
+     "endMs": 37680,
+     "phrase": 23
+    },
+    {
+     "text": "is",
+     "atMs": 37760,
+     "endMs": 37840,
+     "phrase": 23
+    },
+    {
+     "text": "young",
+     "atMs": 38000,
+     "endMs": 38240,
+     "phrase": 23
+    },
+    {
+     "text": "and",
+     "atMs": 38320,
+     "endMs": 38400,
+     "phrase": 23
+    },
+    {
+     "text": "sweet,",
+     "atMs": 38480,
+     "endMs": 39280,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 39320,
+   "endMs": 41360,
+   "tokens": [
+    {
+     "text": "Gild",
+     "atMs": 39320,
+     "endMs": 39600,
+     "phrase": 24
+    },
+    {
+     "text": "gloriously",
+     "atMs": 39680,
+     "endMs": 40400,
+     "phrase": 24
+    },
+    {
+     "text": "the",
+     "atMs": 40480,
+     "endMs": 40560,
+     "phrase": 24
+    },
+    {
+     "text": "bare",
+     "atMs": 40720,
+     "endMs": 40880,
+     "phrase": 24
+    },
+    {
+     "text": "feet",
+     "atMs": 40960,
+     "endMs": 41280,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 41360,
+   "endMs": 43080,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 41360,
+     "endMs": 41520,
+     "phrase": 25
+    },
+    {
+     "text": "run",
+     "atMs": 41600,
+     "endMs": 41760,
+     "phrase": 25
+    },
+    {
+     "text": "to",
+     "atMs": 41840,
+     "endMs": 41920,
+     "phrase": 25
+    },
+    {
+     "text": "bathe…",
+     "atMs": 42000,
+     "endMs": 42960,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 43080,
+   "endMs": 45040,
+   "tokens": [
+    {
+     "text": "Du",
+     "atMs": 43080,
+     "endMs": 43200,
+     "phrase": 26
+    },
+    {
+     "text": "lieber",
+     "atMs": 43360,
+     "endMs": 43840,
+     "phrase": 26
+    },
+    {
+     "text": "Gott!",
+     "atMs": 44000,
+     "endMs": 44480,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 45040,
+   "endMs": 48320,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 45040,
+     "endMs": 45200,
+     "phrase": 27
+    },
+    {
+     "text": "am",
+     "atMs": 45280,
+     "endMs": 45360,
+     "phrase": 27
+    },
+    {
+     "text": "I,",
+     "atMs": 45440,
+     "endMs": 45920,
+     "phrase": 27,
+     "emphasis": "lead"
+    },
+    {
+     "text": "sweating,",
+     "atMs": 46000,
+     "endMs": 46720,
+     "phrase": 28,
+     "emphasis": "lead"
+    },
+    {
+     "text": "sick,",
+     "atMs": 46800,
+     "endMs": 47120,
+     "phrase": 29,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 47200,
+     "endMs": 47280,
+     "phrase": 30
+    },
+    {
+     "text": "hot,",
+     "atMs": 47360,
+     "endMs": 48240,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 48320,
+   "endMs": 50640,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 48320,
+     "endMs": 48400,
+     "phrase": 31
+    },
+    {
+     "text": "there",
+     "atMs": 48480,
+     "endMs": 48800,
+     "phrase": 31
+    },
+    {
+     "text": "the",
+     "atMs": 48840,
+     "endMs": 48880,
+     "phrase": 31
+    },
+    {
+     "text": "shadowed",
+     "atMs": 48960,
+     "endMs": 49360,
+     "phrase": 31
+    },
+    {
+     "text": "waters",
+     "atMs": 49440,
+     "endMs": 49840,
+     "phrase": 31
+    },
+    {
+     "text": "fresh",
+     "atMs": 49920,
+     "endMs": 50240,
+     "phrase": 31,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 50640,
+   "endMs": 53440,
+   "tokens": [
+    {
+     "text": "Lean",
+     "atMs": 50640,
+     "endMs": 50880,
+     "phrase": 32
+    },
+    {
+     "text": "up",
+     "atMs": 50960,
+     "endMs": 51120,
+     "phrase": 32
+    },
+    {
+     "text": "to",
+     "atMs": 51200,
+     "endMs": 51280,
+     "phrase": 32
+    },
+    {
+     "text": "embrace",
+     "atMs": 51400,
+     "endMs": 51840,
+     "phrase": 32
+    },
+    {
+     "text": "the",
+     "atMs": 51920,
+     "endMs": 52000,
+     "phrase": 32
+    },
+    {
+     "text": "naked",
+     "atMs": 52080,
+     "endMs": 52400,
+     "phrase": 32
+    },
+    {
+     "text": "flesh.",
+     "atMs": 52480,
+     "endMs": 52960,
+     "phrase": 32,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 53440,
+   "endMs": 55240,
+   "tokens": [
+    {
+     "text": "Temperamentvoll",
+     "atMs": 53440,
+     "endMs": 54240,
+     "phrase": 33
+    },
+    {
+     "text": "German",
+     "atMs": 54320,
+     "endMs": 54640,
+     "phrase": 33
+    },
+    {
+     "text": "Jews",
+     "atMs": 54720,
+     "endMs": 55120,
+     "phrase": 33,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 55240,
+   "endMs": 57840,
+   "tokens": [
+    {
+     "text": "Drink",
+     "atMs": 55240,
+     "endMs": 55360,
+     "phrase": 34
+    },
+    {
+     "text": "beer",
+     "atMs": 55440,
+     "endMs": 55680,
+     "phrase": 34
+    },
+    {
+     "text": "around;—and",
+     "atMs": 55760,
+     "endMs": 56720,
+     "phrase": 34
+    },
+    {
+     "text": "there",
+     "atMs": 56800,
+     "endMs": 57040,
+     "phrase": 34
+    },
+    {
+     "text": "the",
+     "atMs": 57080,
+     "endMs": 57120,
+     "phrase": 34
+    },
+    {
+     "text": "dews",
+     "atMs": 57200,
+     "endMs": 57600,
+     "phrase": 34,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 57840,
+   "endMs": 60400,
+   "tokens": [
+    {
+     "text": "Are",
+     "atMs": 57840,
+     "endMs": 58000,
+     "phrase": 35
+    },
+    {
+     "text": "soft",
+     "atMs": 58080,
+     "endMs": 58480,
+     "phrase": 35
+    },
+    {
+     "text": "beneath",
+     "atMs": 58560,
+     "endMs": 58800,
+     "phrase": 35
+    },
+    {
+     "text": "a",
+     "atMs": 58880,
+     "endMs": 58920,
+     "phrase": 35
+    },
+    {
+     "text": "morn",
+     "atMs": 58960,
+     "endMs": 59280,
+     "phrase": 35
+    },
+    {
+     "text": "of",
+     "atMs": 59320,
+     "endMs": 59360,
+     "phrase": 35
+    },
+    {
+     "text": "gold.",
+     "atMs": 59440,
+     "endMs": 60000,
+     "phrase": 35,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 60400,
+   "endMs": 63200,
+   "tokens": [
+    {
+     "text": "Here",
+     "atMs": 60400,
+     "endMs": 60720,
+     "phrase": 36
+    },
+    {
+     "text": "tulips",
+     "atMs": 60880,
+     "endMs": 61360,
+     "phrase": 36
+    },
+    {
+     "text": "bloom",
+     "atMs": 61400,
+     "endMs": 61680,
+     "phrase": 36
+    },
+    {
+     "text": "as",
+     "atMs": 61760,
+     "endMs": 61840,
+     "phrase": 36
+    },
+    {
+     "text": "they",
+     "atMs": 61920,
+     "endMs": 62000,
+     "phrase": 36
+    },
+    {
+     "text": "are",
+     "atMs": 62040,
+     "endMs": 62080,
+     "phrase": 36
+    },
+    {
+     "text": "told;",
+     "atMs": 62160,
+     "endMs": 63120,
+     "phrase": 36,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 63200,
+   "endMs": 65360,
+   "tokens": [
+    {
+     "text": "Unkempt",
+     "atMs": 63200,
+     "endMs": 63680,
+     "phrase": 37
+    },
+    {
+     "text": "about",
+     "atMs": 63760,
+     "endMs": 64000,
+     "phrase": 37
+    },
+    {
+     "text": "those",
+     "atMs": 64120,
+     "endMs": 64240,
+     "phrase": 37
+    },
+    {
+     "text": "hedges",
+     "atMs": 64320,
+     "endMs": 64640,
+     "phrase": 37
+    },
+    {
+     "text": "blows",
+     "atMs": 64720,
+     "endMs": 65120,
+     "phrase": 37,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 65360,
+   "endMs": 67920,
+   "tokens": [
+    {
+     "text": "An",
+     "atMs": 65360,
+     "endMs": 65440,
+     "phrase": 38
+    },
+    {
+     "text": "English",
+     "atMs": 65600,
+     "endMs": 66000,
+     "phrase": 38
+    },
+    {
+     "text": "unofficial",
+     "atMs": 66160,
+     "endMs": 66720,
+     "phrase": 38
+    },
+    {
+     "text": "rose;",
+     "atMs": 66800,
+     "endMs": 67840,
+     "phrase": 38,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 67920,
+   "endMs": 70000,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 67920,
+     "endMs": 68000,
+     "phrase": 39
+    },
+    {
+     "text": "there",
+     "atMs": 68080,
+     "endMs": 68400,
+     "phrase": 39
+    },
+    {
+     "text": "the",
+     "atMs": 68440,
+     "endMs": 68480,
+     "phrase": 39
+    },
+    {
+     "text": "unregulated",
+     "atMs": 68640,
+     "endMs": 69360,
+     "phrase": 39
+    },
+    {
+     "text": "sun",
+     "atMs": 69520,
+     "endMs": 69840,
+     "phrase": 39,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 70000,
+   "endMs": 72800,
+   "tokens": [
+    {
+     "text": "Slopes",
+     "atMs": 70000,
+     "endMs": 70320,
+     "phrase": 40
+    },
+    {
+     "text": "down",
+     "atMs": 70400,
+     "endMs": 70560,
+     "phrase": 40
+    },
+    {
+     "text": "to",
+     "atMs": 70640,
+     "endMs": 70720,
+     "phrase": 40
+    },
+    {
+     "text": "rest",
+     "atMs": 70800,
+     "endMs": 71120,
+     "phrase": 40
+    },
+    {
+     "text": "when",
+     "atMs": 71200,
+     "endMs": 71360,
+     "phrase": 40
+    },
+    {
+     "text": "day",
+     "atMs": 71440,
+     "endMs": 71600,
+     "phrase": 40
+    },
+    {
+     "text": "is",
+     "atMs": 71680,
+     "endMs": 71760,
+     "phrase": 40
+    },
+    {
+     "text": "done,",
+     "atMs": 71840,
+     "endMs": 72720,
+     "phrase": 40,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 72800,
+   "endMs": 75520,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 72800,
+     "endMs": 72880,
+     "phrase": 41
+    },
+    {
+     "text": "wakes",
+     "atMs": 72920,
+     "endMs": 73200,
+     "phrase": 41
+    },
+    {
+     "text": "a",
+     "atMs": 73240,
+     "endMs": 73280,
+     "phrase": 41
+    },
+    {
+     "text": "vague",
+     "atMs": 73440,
+     "endMs": 73760,
+     "phrase": 41
+    },
+    {
+     "text": "unpunctual",
+     "atMs": 73840,
+     "endMs": 74560,
+     "phrase": 41
+    },
+    {
+     "text": "star,",
+     "atMs": 74640,
+     "endMs": 75440,
+     "phrase": 41,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 75520,
+   "endMs": 77600,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 75520,
+     "endMs": 75600,
+     "phrase": 42
+    },
+    {
+     "text": "slippered",
+     "atMs": 75680,
+     "endMs": 76000,
+     "phrase": 42
+    },
+    {
+     "text": "Hesper;",
+     "atMs": 76080,
+     "endMs": 77040,
+     "phrase": 42,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 77120,
+     "endMs": 77200,
+     "phrase": 43
+    },
+    {
+     "text": "there",
+     "atMs": 77280,
+     "endMs": 77360,
+     "phrase": 43
+    },
+    {
+     "text": "are",
+     "atMs": 77440,
+     "endMs": 77520,
+     "phrase": 43,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 77600,
+   "endMs": 80240,
+   "tokens": [
+    {
+     "text": "Meads",
+     "atMs": 77600,
+     "endMs": 78000,
+     "phrase": 44
+    },
+    {
+     "text": "towards",
+     "atMs": 78040,
+     "endMs": 78400,
+     "phrase": 44
+    },
+    {
+     "text": "Haslingfield",
+     "atMs": 78480,
+     "endMs": 79200,
+     "phrase": 44
+    },
+    {
+     "text": "and",
+     "atMs": 79240,
+     "endMs": 79280,
+     "phrase": 44
+    },
+    {
+     "text": "Coton",
+     "atMs": 79360,
+     "endMs": 79840,
+     "phrase": 44,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "grantchester-reveal",
+   "startMs": 80240,
+   "endMs": 82880,
+   "tokens": [
+    {
+     "text": "Where",
+     "atMs": 80240,
+     "endMs": 80400,
+     "phrase": 45
+    },
+    {
+     "text": "das",
+     "atMs": 80480,
+     "endMs": 80640,
+     "phrase": 45
+    },
+    {
+     "text": "Betreten's",
+     "atMs": 80720,
+     "endMs": 81440,
+     "phrase": 45
+    },
+    {
+     "text": "not",
+     "atMs": 81520,
+     "endMs": 81680,
+     "phrase": 45
+    },
+    {
+     "text": "verboten.",
+     "atMs": 81760,
+     "endMs": 82400,
+     "phrase": 45,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 82880,
+   "endMs": 85760,
+   "tokens": [
+    {
+     "text": "εἴθε",
+     "atMs": 82880,
+     "endMs": 83360,
+     "phrase": 46
+    },
+    {
+     "text": "γενοίμην…",
+     "atMs": 83440,
+     "endMs": 84720,
+     "phrase": 46
+    },
+    {
+     "text": "would",
+     "atMs": 84800,
+     "endMs": 84880,
+     "phrase": 46
+    },
+    {
+     "text": "I",
+     "atMs": 84960,
+     "endMs": 85040,
+     "phrase": 46
+    },
+    {
+     "text": "were",
+     "atMs": 85120,
+     "endMs": 85440,
+     "phrase": 46,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 85760,
+   "endMs": 88960,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 85760,
+     "endMs": 85920,
+     "phrase": 47
+    },
+    {
+     "text": "Grantchester,",
+     "atMs": 86000,
+     "endMs": 87120,
+     "phrase": 47,
+     "emphasis": "lead"
+    },
+    {
+     "text": "in",
+     "atMs": 87200,
+     "endMs": 87280,
+     "phrase": 48
+    },
+    {
+     "text": "Grantchester!—",
+     "atMs": 87440,
+     "endMs": 88880,
+     "phrase": 48,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 88960,
+   "endMs": 91120,
+   "tokens": [
+    {
+     "text": "Some,",
+     "atMs": 88960,
+     "endMs": 89240,
+     "phrase": 49,
+     "emphasis": "lead"
+    },
+    {
+     "text": "it",
+     "atMs": 89280,
+     "endMs": 89360,
+     "phrase": 50
+    },
+    {
+     "text": "may",
+     "atMs": 89440,
+     "endMs": 89600,
+     "phrase": 50
+    },
+    {
+     "text": "be,",
+     "atMs": 89680,
+     "endMs": 89840,
+     "phrase": 50,
+     "emphasis": "lead"
+    },
+    {
+     "text": "can",
+     "atMs": 89920,
+     "endMs": 90080,
+     "phrase": 51
+    },
+    {
+     "text": "get",
+     "atMs": 90160,
+     "endMs": 90240,
+     "phrase": 51
+    },
+    {
+     "text": "in",
+     "atMs": 90320,
+     "endMs": 90400,
+     "phrase": 51
+    },
+    {
+     "text": "touch",
+     "atMs": 90480,
+     "endMs": 90800,
+     "phrase": 51,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 91120,
+   "endMs": 94000,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 91120,
+     "endMs": 91280,
+     "phrase": 52
+    },
+    {
+     "text": "Nature",
+     "atMs": 91480,
+     "endMs": 91680,
+     "phrase": 52
+    },
+    {
+     "text": "there,",
+     "atMs": 91760,
+     "endMs": 92160,
+     "phrase": 52,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 92240,
+     "endMs": 92320,
+     "phrase": 53
+    },
+    {
+     "text": "Earth,",
+     "atMs": 92400,
+     "endMs": 92800,
+     "phrase": 53,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 92880,
+     "endMs": 92960,
+     "phrase": 54
+    },
+    {
+     "text": "such.",
+     "atMs": 93040,
+     "endMs": 93440,
+     "phrase": 54,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 94000,
+   "endMs": 95920,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 94000,
+     "endMs": 94080,
+     "phrase": 55
+    },
+    {
+     "text": "clever",
+     "atMs": 94160,
+     "endMs": 94480,
+     "phrase": 55
+    },
+    {
+     "text": "modern",
+     "atMs": 94560,
+     "endMs": 94800,
+     "phrase": 55
+    },
+    {
+     "text": "men",
+     "atMs": 94880,
+     "endMs": 95120,
+     "phrase": 55
+    },
+    {
+     "text": "have",
+     "atMs": 95200,
+     "endMs": 95280,
+     "phrase": 55
+    },
+    {
+     "text": "seen",
+     "atMs": 95360,
+     "endMs": 95680,
+     "phrase": 55,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 95920,
+   "endMs": 98480,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 95920,
+     "endMs": 96000,
+     "phrase": 56
+    },
+    {
+     "text": "Faun",
+     "atMs": 96080,
+     "endMs": 96480,
+     "phrase": 56
+    },
+    {
+     "text": "a-peeping",
+     "atMs": 96560,
+     "endMs": 97120,
+     "phrase": 56
+    },
+    {
+     "text": "through",
+     "atMs": 97200,
+     "endMs": 97360,
+     "phrase": 56
+    },
+    {
+     "text": "the",
+     "atMs": 97400,
+     "endMs": 97440,
+     "phrase": 56
+    },
+    {
+     "text": "green,",
+     "atMs": 97520,
+     "endMs": 98400,
+     "phrase": 56,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 98480,
+   "endMs": 100720,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 98480,
+     "endMs": 98560,
+     "phrase": 57
+    },
+    {
+     "text": "felt",
+     "atMs": 98640,
+     "endMs": 98880,
+     "phrase": 57
+    },
+    {
+     "text": "the",
+     "atMs": 98920,
+     "endMs": 98960,
+     "phrase": 57
+    },
+    {
+     "text": "Classics",
+     "atMs": 99040,
+     "endMs": 99520,
+     "phrase": 57
+    },
+    {
+     "text": "were",
+     "atMs": 99600,
+     "endMs": 99680,
+     "phrase": 57
+    },
+    {
+     "text": "not",
+     "atMs": 99760,
+     "endMs": 99920,
+     "phrase": 57
+    },
+    {
+     "text": "dead,",
+     "atMs": 100000,
+     "endMs": 100640,
+     "phrase": 57,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 100720,
+   "endMs": 103200,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 100720,
+     "endMs": 100800,
+     "phrase": 58
+    },
+    {
+     "text": "glimpse",
+     "atMs": 100840,
+     "endMs": 101200,
+     "phrase": 58
+    },
+    {
+     "text": "a",
+     "atMs": 101240,
+     "endMs": 101280,
+     "phrase": 58
+    },
+    {
+     "text": "Naiad's",
+     "atMs": 101360,
+     "endMs": 101920,
+     "phrase": 58
+    },
+    {
+     "text": "reedy",
+     "atMs": 102000,
+     "endMs": 102320,
+     "phrase": 58
+    },
+    {
+     "text": "head,",
+     "atMs": 102400,
+     "endMs": 103120,
+     "phrase": 58,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 103200,
+   "endMs": 105707,
+   "tokens": [
+    {
+     "text": "Or",
+     "atMs": 103200,
+     "endMs": 103280,
+     "phrase": 59
+    },
+    {
+     "text": "hear",
+     "atMs": 103360,
+     "endMs": 103520,
+     "phrase": 59
+    },
+    {
+     "text": "the",
+     "atMs": 103600,
+     "endMs": 103680,
+     "phrase": 59
+    },
+    {
+     "text": "Goat-foot",
+     "atMs": 103760,
+     "endMs": 104240,
+     "phrase": 59
+    },
+    {
+     "text": "piping",
+     "atMs": 104320,
+     "endMs": 104720,
+     "phrase": 59
+    },
+    {
+     "text": "low:…",
+     "atMs": 104800,
+     "endMs": 105653,
+     "phrase": 59,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 105707,
+   "endMs": 107960,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 105707,
+     "endMs": 105760,
+     "phrase": 60
+    },
+    {
+     "text": "these",
+     "atMs": 105880,
+     "endMs": 106000,
+     "phrase": 60
+    },
+    {
+     "text": "are",
+     "atMs": 106080,
+     "endMs": 106160,
+     "phrase": 60
+    },
+    {
+     "text": "things",
+     "atMs": 106320,
+     "endMs": 106480,
+     "phrase": 60
+    },
+    {
+     "text": "I",
+     "atMs": 106560,
+     "endMs": 106640,
+     "phrase": 60
+    },
+    {
+     "text": "do",
+     "atMs": 106720,
+     "endMs": 106800,
+     "phrase": 60
+    },
+    {
+     "text": "not",
+     "atMs": 106880,
+     "endMs": 107040,
+     "phrase": 60
+    },
+    {
+     "text": "know.",
+     "atMs": 107120,
+     "endMs": 107920,
+     "phrase": 60,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 107960,
+   "endMs": 109600,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 107960,
+     "endMs": 108000,
+     "phrase": 61
+    },
+    {
+     "text": "only",
+     "atMs": 108080,
+     "endMs": 108320,
+     "phrase": 61
+    },
+    {
+     "text": "know",
+     "atMs": 108400,
+     "endMs": 108560,
+     "phrase": 61
+    },
+    {
+     "text": "that",
+     "atMs": 108640,
+     "endMs": 108720,
+     "phrase": 61
+    },
+    {
+     "text": "you",
+     "atMs": 108800,
+     "endMs": 108880,
+     "phrase": 61
+    },
+    {
+     "text": "may",
+     "atMs": 108960,
+     "endMs": 109040,
+     "phrase": 61
+    },
+    {
+     "text": "lie",
+     "atMs": 109200,
+     "endMs": 109440,
+     "phrase": 61,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 109600,
+   "endMs": 112480,
+   "tokens": [
+    {
+     "text": "Day",
+     "atMs": 109600,
+     "endMs": 109840,
+     "phrase": 62
+    },
+    {
+     "text": "long",
+     "atMs": 109920,
+     "endMs": 110240,
+     "phrase": 62
+    },
+    {
+     "text": "and",
+     "atMs": 110320,
+     "endMs": 110400,
+     "phrase": 62
+    },
+    {
+     "text": "watch",
+     "atMs": 110480,
+     "endMs": 110800,
+     "phrase": 62
+    },
+    {
+     "text": "the",
+     "atMs": 110840,
+     "endMs": 110880,
+     "phrase": 62
+    },
+    {
+     "text": "Cambridge",
+     "atMs": 110960,
+     "endMs": 111440,
+     "phrase": 62
+    },
+    {
+     "text": "sky,",
+     "atMs": 111520,
+     "endMs": 112400,
+     "phrase": 62,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 112480,
+   "endMs": 115280,
+   "tokens": [
+    {
+     "text": "And,",
+     "atMs": 112480,
+     "endMs": 112960,
+     "phrase": 63,
+     "emphasis": "lead"
+    },
+    {
+     "text": "flower-lulled",
+     "atMs": 113160,
+     "endMs": 113760,
+     "phrase": 64
+    },
+    {
+     "text": "in",
+     "atMs": 113840,
+     "endMs": 113920,
+     "phrase": 64
+    },
+    {
+     "text": "sleepy",
+     "atMs": 114000,
+     "endMs": 114320,
+     "phrase": 64
+    },
+    {
+     "text": "grass,",
+     "atMs": 114400,
+     "endMs": 115200,
+     "phrase": 64,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 115280,
+   "endMs": 118080,
+   "tokens": [
+    {
+     "text": "Hear",
+     "atMs": 115280,
+     "endMs": 115440,
+     "phrase": 65
+    },
+    {
+     "text": "the",
+     "atMs": 115520,
+     "endMs": 115600,
+     "phrase": 65
+    },
+    {
+     "text": "cool",
+     "atMs": 115680,
+     "endMs": 115920,
+     "phrase": 65
+    },
+    {
+     "text": "lapse",
+     "atMs": 116000,
+     "endMs": 116400,
+     "phrase": 65
+    },
+    {
+     "text": "of",
+     "atMs": 116480,
+     "endMs": 116560,
+     "phrase": 65
+    },
+    {
+     "text": "hours",
+     "atMs": 116640,
+     "endMs": 116960,
+     "phrase": 65
+    },
+    {
+     "text": "pass,",
+     "atMs": 117040,
+     "endMs": 118000,
+     "phrase": 65,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 118080,
+   "endMs": 120720,
+   "tokens": [
+    {
+     "text": "Until",
+     "atMs": 118080,
+     "endMs": 118320,
+     "phrase": 66
+    },
+    {
+     "text": "the",
+     "atMs": 118400,
+     "endMs": 118480,
+     "phrase": 66
+    },
+    {
+     "text": "centuries",
+     "atMs": 118560,
+     "endMs": 119120,
+     "phrase": 66
+    },
+    {
+     "text": "blend",
+     "atMs": 119200,
+     "endMs": 119680,
+     "phrase": 66
+    },
+    {
+     "text": "and",
+     "atMs": 119760,
+     "endMs": 119840,
+     "phrase": 66
+    },
+    {
+     "text": "blur",
+     "atMs": 119920,
+     "endMs": 120320,
+     "phrase": 66,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 120720,
+   "endMs": 123760,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 120720,
+     "endMs": 120800,
+     "phrase": 67
+    },
+    {
+     "text": "Grantchester,",
+     "atMs": 120960,
+     "endMs": 122080,
+     "phrase": 67,
+     "emphasis": "lead"
+    },
+    {
+     "text": "in",
+     "atMs": 122160,
+     "endMs": 122240,
+     "phrase": 68
+    },
+    {
+     "text": "Grantchester….",
+     "atMs": 122400,
+     "endMs": 123680,
+     "phrase": 68,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 123760,
+   "endMs": 125920,
+   "tokens": [
+    {
+     "text": "Still",
+     "atMs": 123760,
+     "endMs": 124080,
+     "phrase": 69
+    },
+    {
+     "text": "in",
+     "atMs": 124160,
+     "endMs": 124240,
+     "phrase": 69
+    },
+    {
+     "text": "the",
+     "atMs": 124280,
+     "endMs": 124320,
+     "phrase": 69
+    },
+    {
+     "text": "dawnlit",
+     "atMs": 124400,
+     "endMs": 124800,
+     "phrase": 69
+    },
+    {
+     "text": "waters",
+     "atMs": 124880,
+     "endMs": 125200,
+     "phrase": 69
+    },
+    {
+     "text": "cool",
+     "atMs": 125280,
+     "endMs": 125680,
+     "phrase": 69,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 125920,
+   "endMs": 128800,
+   "tokens": [
+    {
+     "text": "His",
+     "atMs": 125920,
+     "endMs": 126160,
+     "phrase": 70
+    },
+    {
+     "text": "ghostly",
+     "atMs": 126240,
+     "endMs": 126640,
+     "phrase": 70
+    },
+    {
+     "text": "Lordship",
+     "atMs": 126720,
+     "endMs": 127200,
+     "phrase": 70
+    },
+    {
+     "text": "swims",
+     "atMs": 127280,
+     "endMs": 127600,
+     "phrase": 70
+    },
+    {
+     "text": "his",
+     "atMs": 127680,
+     "endMs": 127760,
+     "phrase": 70
+    },
+    {
+     "text": "pool,",
+     "atMs": 127920,
+     "endMs": 128720,
+     "phrase": 70,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 128800,
+   "endMs": 131600,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 128800,
+     "endMs": 128880,
+     "phrase": 71
+    },
+    {
+     "text": "tries",
+     "atMs": 128960,
+     "endMs": 129280,
+     "phrase": 71
+    },
+    {
+     "text": "the",
+     "atMs": 129320,
+     "endMs": 129360,
+     "phrase": 71
+    },
+    {
+     "text": "strokes,",
+     "atMs": 129440,
+     "endMs": 130160,
+     "phrase": 71,
+     "emphasis": "lead"
+    },
+    {
+     "text": "essays",
+     "atMs": 130280,
+     "endMs": 130560,
+     "phrase": 72
+    },
+    {
+     "text": "the",
+     "atMs": 130640,
+     "endMs": 130720,
+     "phrase": 72
+    },
+    {
+     "text": "tricks,",
+     "atMs": 130800,
+     "endMs": 131520,
+     "phrase": 72,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 131600,
+   "endMs": 134440,
+   "tokens": [
+    {
+     "text": "Long",
+     "atMs": 131600,
+     "endMs": 131840,
+     "phrase": 73
+    },
+    {
+     "text": "learnt",
+     "atMs": 131920,
+     "endMs": 132160,
+     "phrase": 73
+    },
+    {
+     "text": "on",
+     "atMs": 132240,
+     "endMs": 132320,
+     "phrase": 73
+    },
+    {
+     "text": "Hellespont,",
+     "atMs": 132400,
+     "endMs": 133120,
+     "phrase": 73,
+     "emphasis": "lead"
+    },
+    {
+     "text": "or",
+     "atMs": 133160,
+     "endMs": 133200,
+     "phrase": 74
+    },
+    {
+     "text": "Styx.",
+     "atMs": 133360,
+     "endMs": 134320,
+     "phrase": 74,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 134440,
+   "endMs": 136720,
+   "tokens": [
+    {
+     "text": "Dan",
+     "atMs": 134440,
+     "endMs": 134560,
+     "phrase": 75
+    },
+    {
+     "text": "Chaucer",
+     "atMs": 134640,
+     "endMs": 135120,
+     "phrase": 75
+    },
+    {
+     "text": "hears",
+     "atMs": 135200,
+     "endMs": 135440,
+     "phrase": 75
+    },
+    {
+     "text": "his",
+     "atMs": 135520,
+     "endMs": 135600,
+     "phrase": 75
+    },
+    {
+     "text": "river",
+     "atMs": 135680,
+     "endMs": 135920,
+     "phrase": 75
+    },
+    {
+     "text": "still",
+     "atMs": 136000,
+     "endMs": 136320,
+     "phrase": 75,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 136720,
+   "endMs": 138960,
+   "tokens": [
+    {
+     "text": "Chatter",
+     "atMs": 136720,
+     "endMs": 137120,
+     "phrase": 76
+    },
+    {
+     "text": "beneath",
+     "atMs": 137160,
+     "endMs": 137360,
+     "phrase": 76
+    },
+    {
+     "text": "a",
+     "atMs": 137440,
+     "endMs": 137520,
+     "phrase": 76
+    },
+    {
+     "text": "phantom",
+     "atMs": 137600,
+     "endMs": 138000,
+     "phrase": 76
+    },
+    {
+     "text": "mill.",
+     "atMs": 138080,
+     "endMs": 138880,
+     "phrase": 76,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 138960,
+   "endMs": 141320,
+   "tokens": [
+    {
+     "text": "Tennyson",
+     "atMs": 138960,
+     "endMs": 139440,
+     "phrase": 77
+    },
+    {
+     "text": "notes,",
+     "atMs": 139600,
+     "endMs": 139840,
+     "phrase": 77,
+     "emphasis": "lead"
+    },
+    {
+     "text": "with",
+     "atMs": 139920,
+     "endMs": 140000,
+     "phrase": 78
+    },
+    {
+     "text": "studious",
+     "atMs": 140080,
+     "endMs": 140560,
+     "phrase": 78
+    },
+    {
+     "text": "eye,",
+     "atMs": 140640,
+     "endMs": 141200,
+     "phrase": 78,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 141320,
+   "endMs": 143680,
+   "tokens": [
+    {
+     "text": "How",
+     "atMs": 141320,
+     "endMs": 141440,
+     "phrase": 79
+    },
+    {
+     "text": "Cambridge",
+     "atMs": 141560,
+     "endMs": 141840,
+     "phrase": 79
+    },
+    {
+     "text": "waters",
+     "atMs": 141920,
+     "endMs": 142400,
+     "phrase": 79
+    },
+    {
+     "text": "hurry",
+     "atMs": 142480,
+     "endMs": 142720,
+     "phrase": 79
+    },
+    {
+     "text": "by…",
+     "atMs": 142800,
+     "endMs": 143600,
+     "phrase": 79,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 143680,
+   "endMs": 146000,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 143680,
+     "endMs": 143760,
+     "phrase": 80
+    },
+    {
+     "text": "in",
+     "atMs": 143840,
+     "endMs": 143920,
+     "phrase": 80
+    },
+    {
+     "text": "that",
+     "atMs": 144040,
+     "endMs": 144160,
+     "phrase": 80
+    },
+    {
+     "text": "garden,",
+     "atMs": 144200,
+     "endMs": 144720,
+     "phrase": 80,
+     "emphasis": "lead"
+    },
+    {
+     "text": "black",
+     "atMs": 144880,
+     "endMs": 145040,
+     "phrase": 81
+    },
+    {
+     "text": "and",
+     "atMs": 145120,
+     "endMs": 145200,
+     "phrase": 81
+    },
+    {
+     "text": "white,",
+     "atMs": 145280,
+     "endMs": 145920,
+     "phrase": 81,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 146000,
+   "endMs": 148800,
+   "tokens": [
+    {
+     "text": "Creep",
+     "atMs": 146000,
+     "endMs": 146240,
+     "phrase": 82
+    },
+    {
+     "text": "whispers",
+     "atMs": 146280,
+     "endMs": 146800,
+     "phrase": 82
+    },
+    {
+     "text": "through",
+     "atMs": 146880,
+     "endMs": 146960,
+     "phrase": 82
+    },
+    {
+     "text": "the",
+     "atMs": 147040,
+     "endMs": 147080,
+     "phrase": 82
+    },
+    {
+     "text": "grass",
+     "atMs": 147120,
+     "endMs": 147600,
+     "phrase": 82
+    },
+    {
+     "text": "all",
+     "atMs": 147680,
+     "endMs": 147760,
+     "phrase": 82
+    },
+    {
+     "text": "night;",
+     "atMs": 147840,
+     "endMs": 148720,
+     "phrase": 82,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 148800,
+   "endMs": 151280,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 148800,
+     "endMs": 148880,
+     "phrase": 83
+    },
+    {
+     "text": "spectral",
+     "atMs": 148960,
+     "endMs": 149440,
+     "phrase": 83
+    },
+    {
+     "text": "dance,",
+     "atMs": 149520,
+     "endMs": 150000,
+     "phrase": 83,
+     "emphasis": "lead"
+    },
+    {
+     "text": "before",
+     "atMs": 150160,
+     "endMs": 150320,
+     "phrase": 84
+    },
+    {
+     "text": "the",
+     "atMs": 150400,
+     "endMs": 150440,
+     "phrase": 84
+    },
+    {
+     "text": "dawn,",
+     "atMs": 150480,
+     "endMs": 151200,
+     "phrase": 84,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 151280,
+   "endMs": 153600,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 151280,
+     "endMs": 151360,
+     "phrase": 85
+    },
+    {
+     "text": "hundred",
+     "atMs": 151400,
+     "endMs": 151680,
+     "phrase": 85
+    },
+    {
+     "text": "Vicars",
+     "atMs": 151760,
+     "endMs": 152240,
+     "phrase": 85
+    },
+    {
+     "text": "down",
+     "atMs": 152360,
+     "endMs": 152480,
+     "phrase": 85
+    },
+    {
+     "text": "the",
+     "atMs": 152560,
+     "endMs": 152600,
+     "phrase": 85
+    },
+    {
+     "text": "lawn;",
+     "atMs": 152640,
+     "endMs": 153520,
+     "phrase": 85,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 153600,
+   "endMs": 156320,
+   "tokens": [
+    {
+     "text": "Curates,",
+     "atMs": 153600,
+     "endMs": 154320,
+     "phrase": 86,
+     "emphasis": "lead"
+    },
+    {
+     "text": "long",
+     "atMs": 154400,
+     "endMs": 154640,
+     "phrase": 87
+    },
+    {
+     "text": "dust,",
+     "atMs": 154720,
+     "endMs": 155120,
+     "phrase": 87,
+     "emphasis": "lead"
+    },
+    {
+     "text": "will",
+     "atMs": 155200,
+     "endMs": 155280,
+     "phrase": 88
+    },
+    {
+     "text": "come",
+     "atMs": 155360,
+     "endMs": 155440,
+     "phrase": 88
+    },
+    {
+     "text": "and",
+     "atMs": 155520,
+     "endMs": 155600,
+     "phrase": 88
+    },
+    {
+     "text": "go",
+     "atMs": 155680,
+     "endMs": 155920,
+     "phrase": 88,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 156320,
+   "endMs": 159280,
+   "tokens": [
+    {
+     "text": "On",
+     "atMs": 156320,
+     "endMs": 156480,
+     "phrase": 89
+    },
+    {
+     "text": "lissom,",
+     "atMs": 156560,
+     "endMs": 157040,
+     "phrase": 89,
+     "emphasis": "lead"
+    },
+    {
+     "text": "clerical,",
+     "atMs": 157120,
+     "endMs": 157760,
+     "phrase": 90,
+     "emphasis": "lead"
+    },
+    {
+     "text": "printless",
+     "atMs": 157920,
+     "endMs": 158240,
+     "phrase": 91
+    },
+    {
+     "text": "toe;",
+     "atMs": 158320,
+     "endMs": 159200,
+     "phrase": 91,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 159280,
+   "endMs": 161360,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 159280,
+     "endMs": 159360,
+     "phrase": 92
+    },
+    {
+     "text": "oft",
+     "atMs": 159440,
+     "endMs": 159680,
+     "phrase": 92
+    },
+    {
+     "text": "between",
+     "atMs": 159760,
+     "endMs": 160000,
+     "phrase": 92
+    },
+    {
+     "text": "the",
+     "atMs": 160080,
+     "endMs": 160120,
+     "phrase": 92
+    },
+    {
+     "text": "boughs",
+     "atMs": 160160,
+     "endMs": 160480,
+     "phrase": 92
+    },
+    {
+     "text": "is",
+     "atMs": 160560,
+     "endMs": 160720,
+     "phrase": 92
+    },
+    {
+     "text": "seen",
+     "atMs": 160880,
+     "endMs": 161040,
+     "phrase": 92,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 161360,
+   "endMs": 164160,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 161360,
+     "endMs": 161440,
+     "phrase": 93
+    },
+    {
+     "text": "sly",
+     "atMs": 161600,
+     "endMs": 161920,
+     "phrase": 93
+    },
+    {
+     "text": "shade",
+     "atMs": 162000,
+     "endMs": 162400,
+     "phrase": 93
+    },
+    {
+     "text": "of",
+     "atMs": 162480,
+     "endMs": 162560,
+     "phrase": 93
+    },
+    {
+     "text": "a",
+     "atMs": 162600,
+     "endMs": 162640,
+     "phrase": 93
+    },
+    {
+     "text": "Rural",
+     "atMs": 162720,
+     "endMs": 163040,
+     "phrase": 93
+    },
+    {
+     "text": "Dean…",
+     "atMs": 163200,
+     "endMs": 164080,
+     "phrase": 93,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 164160,
+   "endMs": 166400,
+   "tokens": [
+    {
+     "text": "Till,",
+     "atMs": 164160,
+     "endMs": 164640,
+     "phrase": 94,
+     "emphasis": "lead"
+    },
+    {
+     "text": "at",
+     "atMs": 164720,
+     "endMs": 164800,
+     "phrase": 95
+    },
+    {
+     "text": "a",
+     "atMs": 164840,
+     "endMs": 164880,
+     "phrase": 95
+    },
+    {
+     "text": "shiver",
+     "atMs": 164960,
+     "endMs": 165200,
+     "phrase": 95
+    },
+    {
+     "text": "in",
+     "atMs": 165280,
+     "endMs": 165360,
+     "phrase": 95
+    },
+    {
+     "text": "the",
+     "atMs": 165400,
+     "endMs": 165440,
+     "phrase": 95
+    },
+    {
+     "text": "skies,",
+     "atMs": 165520,
+     "endMs": 166320,
+     "phrase": 95,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 166400,
+   "endMs": 168600,
+   "tokens": [
+    {
+     "text": "Vanishing",
+     "atMs": 166400,
+     "endMs": 166880,
+     "phrase": 96
+    },
+    {
+     "text": "with",
+     "atMs": 166960,
+     "endMs": 167040,
+     "phrase": 96
+    },
+    {
+     "text": "Satanic",
+     "atMs": 167120,
+     "endMs": 167600,
+     "phrase": 96
+    },
+    {
+     "text": "cries,",
+     "atMs": 167680,
+     "endMs": 168560,
+     "phrase": 96,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 168600,
+   "endMs": 170640,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 168600,
+     "endMs": 168640,
+     "phrase": 97
+    },
+    {
+     "text": "prim",
+     "atMs": 168800,
+     "endMs": 169040,
+     "phrase": 97
+    },
+    {
+     "text": "ecclesiastic",
+     "atMs": 169120,
+     "endMs": 169920,
+     "phrase": 97
+    },
+    {
+     "text": "rout",
+     "atMs": 170000,
+     "endMs": 170240,
+     "phrase": 97,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 170640,
+   "endMs": 173200,
+   "tokens": [
+    {
+     "text": "Leaves",
+     "atMs": 170640,
+     "endMs": 170960,
+     "phrase": 98
+    },
+    {
+     "text": "but",
+     "atMs": 171040,
+     "endMs": 171120,
+     "phrase": 98
+    },
+    {
+     "text": "a",
+     "atMs": 171160,
+     "endMs": 171200,
+     "phrase": 98
+    },
+    {
+     "text": "startled",
+     "atMs": 171360,
+     "endMs": 171840,
+     "phrase": 98
+    },
+    {
+     "text": "sleeper-out,",
+     "atMs": 171920,
+     "endMs": 173120,
+     "phrase": 98,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 173200,
+   "endMs": 176640,
+   "tokens": [
+    {
+     "text": "Grey",
+     "atMs": 173200,
+     "endMs": 173440,
+     "phrase": 99
+    },
+    {
+     "text": "heavens,",
+     "atMs": 173520,
+     "endMs": 174320,
+     "phrase": 99,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 174360,
+     "endMs": 174400,
+     "phrase": 100
+    },
+    {
+     "text": "first",
+     "atMs": 174480,
+     "endMs": 174800,
+     "phrase": 100
+    },
+    {
+     "text": "bird's",
+     "atMs": 174880,
+     "endMs": 175280,
+     "phrase": 100
+    },
+    {
+     "text": "drowsy",
+     "atMs": 175320,
+     "endMs": 175680,
+     "phrase": 100
+    },
+    {
+     "text": "calls,",
+     "atMs": 175760,
+     "endMs": 176320,
+     "phrase": 100,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 176640,
+   "endMs": 179360,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 176640,
+     "endMs": 176720,
+     "phrase": 101
+    },
+    {
+     "text": "falling",
+     "atMs": 176880,
+     "endMs": 177200,
+     "phrase": 101
+    },
+    {
+     "text": "house",
+     "atMs": 177440,
+     "endMs": 177680,
+     "phrase": 101
+    },
+    {
+     "text": "that",
+     "atMs": 177760,
+     "endMs": 177920,
+     "phrase": 101
+    },
+    {
+     "text": "never",
+     "atMs": 178000,
+     "endMs": 178240,
+     "phrase": 101
+    },
+    {
+     "text": "falls.",
+     "atMs": 178320,
+     "endMs": 178880,
+     "phrase": 101,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 179360,
+   "endMs": 182280,
+   "tokens": [
+    {
+     "text": "God!",
+     "atMs": 179360,
+     "endMs": 179840,
+     "phrase": 102,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 180240,
+     "endMs": 180320,
+     "phrase": 103
+    },
+    {
+     "text": "will",
+     "atMs": 180440,
+     "endMs": 180560,
+     "phrase": 103
+    },
+    {
+     "text": "pack,",
+     "atMs": 180720,
+     "endMs": 181040,
+     "phrase": 103,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 181080,
+     "endMs": 181120,
+     "phrase": 104
+    },
+    {
+     "text": "take",
+     "atMs": 181200,
+     "endMs": 181360,
+     "phrase": 104
+    },
+    {
+     "text": "a",
+     "atMs": 181440,
+     "endMs": 181480,
+     "phrase": 104
+    },
+    {
+     "text": "train,",
+     "atMs": 181520,
+     "endMs": 182240,
+     "phrase": 104,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 182280,
+   "endMs": 184320,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 182280,
+     "endMs": 182320,
+     "phrase": 105
+    },
+    {
+     "text": "get",
+     "atMs": 182480,
+     "endMs": 182560,
+     "phrase": 105
+    },
+    {
+     "text": "me",
+     "atMs": 182640,
+     "endMs": 182720,
+     "phrase": 105
+    },
+    {
+     "text": "to",
+     "atMs": 182800,
+     "endMs": 182880,
+     "phrase": 105
+    },
+    {
+     "text": "England",
+     "atMs": 182960,
+     "endMs": 183280,
+     "phrase": 105
+    },
+    {
+     "text": "once",
+     "atMs": 183360,
+     "endMs": 183600,
+     "phrase": 105
+    },
+    {
+     "text": "again!",
+     "atMs": 183840,
+     "endMs": 184240,
+     "phrase": 105,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 184320,
+   "endMs": 187120,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 184320,
+     "endMs": 184560,
+     "phrase": 106
+    },
+    {
+     "text": "England's",
+     "atMs": 184800,
+     "endMs": 185120,
+     "phrase": 106
+    },
+    {
+     "text": "the",
+     "atMs": 185200,
+     "endMs": 185280,
+     "phrase": 106
+    },
+    {
+     "text": "one",
+     "atMs": 185360,
+     "endMs": 185600,
+     "phrase": 106
+    },
+    {
+     "text": "land,",
+     "atMs": 185680,
+     "endMs": 186080,
+     "phrase": 106,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 186160,
+     "endMs": 186240,
+     "phrase": 107
+    },
+    {
+     "text": "know,",
+     "atMs": 186400,
+     "endMs": 187040,
+     "phrase": 107,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 187120,
+   "endMs": 190160,
+   "tokens": [
+    {
+     "text": "Where",
+     "atMs": 187120,
+     "endMs": 187280,
+     "phrase": 108
+    },
+    {
+     "text": "men",
+     "atMs": 187360,
+     "endMs": 187600,
+     "phrase": 108
+    },
+    {
+     "text": "with",
+     "atMs": 187680,
+     "endMs": 187840,
+     "phrase": 108
+    },
+    {
+     "text": "Splendid",
+     "atMs": 187920,
+     "endMs": 188480,
+     "phrase": 108
+    },
+    {
+     "text": "Hearts",
+     "atMs": 188560,
+     "endMs": 188880,
+     "phrase": 108
+    },
+    {
+     "text": "may",
+     "atMs": 188960,
+     "endMs": 189120,
+     "phrase": 108
+    },
+    {
+     "text": "go;",
+     "atMs": 189200,
+     "endMs": 190080,
+     "phrase": 108,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 190160,
+   "endMs": 192440,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 190160,
+     "endMs": 190240,
+     "phrase": 109
+    },
+    {
+     "text": "Cambridgeshire,",
+     "atMs": 190320,
+     "endMs": 191120,
+     "phrase": 109,
+     "emphasis": "lead"
+    },
+    {
+     "text": "of",
+     "atMs": 191200,
+     "endMs": 191280,
+     "phrase": 110
+    },
+    {
+     "text": "all",
+     "atMs": 191400,
+     "endMs": 191520,
+     "phrase": 110
+    },
+    {
+     "text": "England,",
+     "atMs": 191600,
+     "endMs": 192400,
+     "phrase": 110,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 192440,
+   "endMs": 195280,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 192440,
+     "endMs": 192480,
+     "phrase": 111
+    },
+    {
+     "text": "shire",
+     "atMs": 192560,
+     "endMs": 192960,
+     "phrase": 111
+    },
+    {
+     "text": "for",
+     "atMs": 193040,
+     "endMs": 193120,
+     "phrase": 111
+    },
+    {
+     "text": "Men",
+     "atMs": 193280,
+     "endMs": 193520,
+     "phrase": 111
+    },
+    {
+     "text": "who",
+     "atMs": 193600,
+     "endMs": 193680,
+     "phrase": 111
+    },
+    {
+     "text": "Understand;",
+     "atMs": 193840,
+     "endMs": 195200,
+     "phrase": 111,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 195280,
+   "endMs": 197200,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 195280,
+     "endMs": 195360,
+     "phrase": 112
+    },
+    {
+     "text": "of",
+     "atMs": 195440,
+     "endMs": 195520,
+     "phrase": 112
+    },
+    {
+     "text": "that",
+     "atMs": 195600,
+     "endMs": 195680,
+     "phrase": 112
+    },
+    {
+     "text": "district",
+     "atMs": 195760,
+     "endMs": 196160,
+     "phrase": 112
+    },
+    {
+     "text": "I",
+     "atMs": 196240,
+     "endMs": 196320,
+     "phrase": 112
+    },
+    {
+     "text": "prefer",
+     "atMs": 196400,
+     "endMs": 196800,
+     "phrase": 112,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 197200,
+   "endMs": 199680,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 197200,
+     "endMs": 197280,
+     "phrase": 113
+    },
+    {
+     "text": "lovely",
+     "atMs": 197360,
+     "endMs": 197680,
+     "phrase": 113
+    },
+    {
+     "text": "hamlet",
+     "atMs": 197760,
+     "endMs": 198160,
+     "phrase": 113
+    },
+    {
+     "text": "Grantchester.",
+     "atMs": 198320,
+     "endMs": 199360,
+     "phrase": 113,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 199680,
+   "endMs": 202160,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 199680,
+     "endMs": 199760,
+     "phrase": 114
+    },
+    {
+     "text": "Cambridge",
+     "atMs": 199840,
+     "endMs": 200320,
+     "phrase": 114
+    },
+    {
+     "text": "people",
+     "atMs": 200400,
+     "endMs": 200720,
+     "phrase": 114
+    },
+    {
+     "text": "rarely",
+     "atMs": 200800,
+     "endMs": 201120,
+     "phrase": 114
+    },
+    {
+     "text": "smile,",
+     "atMs": 201280,
+     "endMs": 201840,
+     "phrase": 114,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 202160,
+   "endMs": 205680,
+   "tokens": [
+    {
+     "text": "Being",
+     "atMs": 202160,
+     "endMs": 202400,
+     "phrase": 115
+    },
+    {
+     "text": "urban,",
+     "atMs": 202480,
+     "endMs": 203120,
+     "phrase": 115,
+     "emphasis": "lead"
+    },
+    {
+     "text": "squat,",
+     "atMs": 203200,
+     "endMs": 203760,
+     "phrase": 116,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 203840,
+     "endMs": 203920,
+     "phrase": 117
+    },
+    {
+     "text": "packed",
+     "atMs": 204000,
+     "endMs": 204320,
+     "phrase": 117
+    },
+    {
+     "text": "with",
+     "atMs": 204400,
+     "endMs": 204480,
+     "phrase": 117
+    },
+    {
+     "text": "guile;",
+     "atMs": 204560,
+     "endMs": 205600,
+     "phrase": 117,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 205680,
+   "endMs": 207680,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 205680,
+     "endMs": 205760,
+     "phrase": 118
+    },
+    {
+     "text": "Royston",
+     "atMs": 205840,
+     "endMs": 206240,
+     "phrase": 118
+    },
+    {
+     "text": "men",
+     "atMs": 206320,
+     "endMs": 206480,
+     "phrase": 118
+    },
+    {
+     "text": "in",
+     "atMs": 206560,
+     "endMs": 206640,
+     "phrase": 118
+    },
+    {
+     "text": "the",
+     "atMs": 206680,
+     "endMs": 206720,
+     "phrase": 118
+    },
+    {
+     "text": "far",
+     "atMs": 206800,
+     "endMs": 206960,
+     "phrase": 118
+    },
+    {
+     "text": "South",
+     "atMs": 207120,
+     "endMs": 207440,
+     "phrase": 118,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 207680,
+   "endMs": 211040,
+   "tokens": [
+    {
+     "text": "Are",
+     "atMs": 207680,
+     "endMs": 207840,
+     "phrase": 119
+    },
+    {
+     "text": "black",
+     "atMs": 207920,
+     "endMs": 208320,
+     "phrase": 119
+    },
+    {
+     "text": "and",
+     "atMs": 208400,
+     "endMs": 208480,
+     "phrase": 119
+    },
+    {
+     "text": "fierce",
+     "atMs": 208640,
+     "endMs": 209040,
+     "phrase": 119
+    },
+    {
+     "text": "and",
+     "atMs": 209120,
+     "endMs": 209200,
+     "phrase": 119
+    },
+    {
+     "text": "strange",
+     "atMs": 209360,
+     "endMs": 209760,
+     "phrase": 119
+    },
+    {
+     "text": "of",
+     "atMs": 209840,
+     "endMs": 209920,
+     "phrase": 119
+    },
+    {
+     "text": "mouth;",
+     "atMs": 210000,
+     "endMs": 210960,
+     "phrase": 119,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 211040,
+   "endMs": 213440,
+   "tokens": [
+    {
+     "text": "At",
+     "atMs": 211040,
+     "endMs": 211200,
+     "phrase": 120
+    },
+    {
+     "text": "Over",
+     "atMs": 211280,
+     "endMs": 211600,
+     "phrase": 120
+    },
+    {
+     "text": "they",
+     "atMs": 211720,
+     "endMs": 211840,
+     "phrase": 120
+    },
+    {
+     "text": "fling",
+     "atMs": 211880,
+     "endMs": 212080,
+     "phrase": 120
+    },
+    {
+     "text": "oaths",
+     "atMs": 212240,
+     "endMs": 212560,
+     "phrase": 120
+    },
+    {
+     "text": "at",
+     "atMs": 212640,
+     "endMs": 212720,
+     "phrase": 120
+    },
+    {
+     "text": "one,",
+     "atMs": 212800,
+     "endMs": 213360,
+     "phrase": 120,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 213440,
+   "endMs": 215840,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 213440,
+     "endMs": 213520,
+     "phrase": 121
+    },
+    {
+     "text": "worse",
+     "atMs": 213600,
+     "endMs": 213840,
+     "phrase": 121
+    },
+    {
+     "text": "than",
+     "atMs": 213920,
+     "endMs": 214000,
+     "phrase": 121
+    },
+    {
+     "text": "oaths",
+     "atMs": 214080,
+     "endMs": 214320,
+     "phrase": 121
+    },
+    {
+     "text": "at",
+     "atMs": 214400,
+     "endMs": 214480,
+     "phrase": 121
+    },
+    {
+     "text": "Trumpington,",
+     "atMs": 214560,
+     "endMs": 215760,
+     "phrase": 121,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 215840,
+   "endMs": 218400,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 215840,
+     "endMs": 215920,
+     "phrase": 122
+    },
+    {
+     "text": "Ditton",
+     "atMs": 216000,
+     "endMs": 216320,
+     "phrase": 122
+    },
+    {
+     "text": "girls",
+     "atMs": 216400,
+     "endMs": 216720,
+     "phrase": 122
+    },
+    {
+     "text": "are",
+     "atMs": 216800,
+     "endMs": 216960,
+     "phrase": 122
+    },
+    {
+     "text": "mean",
+     "atMs": 217120,
+     "endMs": 217280,
+     "phrase": 122
+    },
+    {
+     "text": "and",
+     "atMs": 217400,
+     "endMs": 217520,
+     "phrase": 122
+    },
+    {
+     "text": "dirty,",
+     "atMs": 217720,
+     "endMs": 218320,
+     "phrase": 122,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 218400,
+   "endMs": 221040,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 218400,
+     "endMs": 218480,
+     "phrase": 123
+    },
+    {
+     "text": "there's",
+     "atMs": 218520,
+     "endMs": 218720,
+     "phrase": 123
+    },
+    {
+     "text": "none",
+     "atMs": 218800,
+     "endMs": 218880,
+     "phrase": 123
+    },
+    {
+     "text": "in",
+     "atMs": 218960,
+     "endMs": 219040,
+     "phrase": 123
+    },
+    {
+     "text": "Harston",
+     "atMs": 219120,
+     "endMs": 219600,
+     "phrase": 123
+    },
+    {
+     "text": "under",
+     "atMs": 219760,
+     "endMs": 219920,
+     "phrase": 123
+    },
+    {
+     "text": "thirty,",
+     "atMs": 219960,
+     "endMs": 220960,
+     "phrase": 123,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 221040,
+   "endMs": 223400,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 221040,
+     "endMs": 221200,
+     "phrase": 124
+    },
+    {
+     "text": "folks",
+     "atMs": 221280,
+     "endMs": 221520,
+     "phrase": 124
+    },
+    {
+     "text": "in",
+     "atMs": 221600,
+     "endMs": 221680,
+     "phrase": 124
+    },
+    {
+     "text": "Shelford",
+     "atMs": 221760,
+     "endMs": 222160,
+     "phrase": 124
+    },
+    {
+     "text": "and",
+     "atMs": 222240,
+     "endMs": 222320,
+     "phrase": 124
+    },
+    {
+     "text": "those",
+     "atMs": 222400,
+     "endMs": 222640,
+     "phrase": 124
+    },
+    {
+     "text": "parts",
+     "atMs": 222960,
+     "endMs": 223280,
+     "phrase": 124,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 223400,
+   "endMs": 226280,
+   "tokens": [
+    {
+     "text": "Have",
+     "atMs": 223400,
+     "endMs": 223520,
+     "phrase": 125
+    },
+    {
+     "text": "twisted",
+     "atMs": 223560,
+     "endMs": 224000,
+     "phrase": 125
+    },
+    {
+     "text": "lips",
+     "atMs": 224080,
+     "endMs": 224400,
+     "phrase": 125
+    },
+    {
+     "text": "and",
+     "atMs": 224520,
+     "endMs": 224640,
+     "phrase": 125
+    },
+    {
+     "text": "twisted",
+     "atMs": 224720,
+     "endMs": 225120,
+     "phrase": 125
+    },
+    {
+     "text": "hearts,",
+     "atMs": 225200,
+     "endMs": 226160,
+     "phrase": 125,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 226280,
+   "endMs": 228760,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 226280,
+     "endMs": 226400,
+     "phrase": 126
+    },
+    {
+     "text": "Barton",
+     "atMs": 226533,
+     "endMs": 226800,
+     "phrase": 126
+    },
+    {
+     "text": "men",
+     "atMs": 226920,
+     "endMs": 227040,
+     "phrase": 126
+    },
+    {
+     "text": "make",
+     "atMs": 227120,
+     "endMs": 227360,
+     "phrase": 126
+    },
+    {
+     "text": "Cockney",
+     "atMs": 227440,
+     "endMs": 227680,
+     "phrase": 126
+    },
+    {
+     "text": "rhymes,",
+     "atMs": 227840,
+     "endMs": 228640,
+     "phrase": 126,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 228760,
+   "endMs": 231360,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 228760,
+     "endMs": 228880,
+     "phrase": 127
+    },
+    {
+     "text": "Coton's",
+     "atMs": 229013,
+     "endMs": 229440,
+     "phrase": 127
+    },
+    {
+     "text": "full",
+     "atMs": 229480,
+     "endMs": 229520,
+     "phrase": 127
+    },
+    {
+     "text": "of",
+     "atMs": 229600,
+     "endMs": 229760,
+     "phrase": 127
+    },
+    {
+     "text": "nameless",
+     "atMs": 229880,
+     "endMs": 230240,
+     "phrase": 127
+    },
+    {
+     "text": "crimes,",
+     "atMs": 230320,
+     "endMs": 231280,
+     "phrase": 127,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 231360,
+   "endMs": 233680,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 231360,
+     "endMs": 231520,
+     "phrase": 128
+    },
+    {
+     "text": "things",
+     "atMs": 231600,
+     "endMs": 231840,
+     "phrase": 128
+    },
+    {
+     "text": "are",
+     "atMs": 231920,
+     "endMs": 232000,
+     "phrase": 128
+    },
+    {
+     "text": "done",
+     "atMs": 232120,
+     "endMs": 232240,
+     "phrase": 128
+    },
+    {
+     "text": "you'd",
+     "atMs": 232320,
+     "endMs": 232560,
+     "phrase": 128
+    },
+    {
+     "text": "not",
+     "atMs": 232680,
+     "endMs": 232800,
+     "phrase": 128
+    },
+    {
+     "text": "believe",
+     "atMs": 232880,
+     "endMs": 233600,
+     "phrase": 128,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 233680,
+   "endMs": 236360,
+   "tokens": [
+    {
+     "text": "At",
+     "atMs": 233680,
+     "endMs": 233760,
+     "phrase": 129
+    },
+    {
+     "text": "Madingley,",
+     "atMs": 233840,
+     "endMs": 234613,
+     "phrase": 129,
+     "emphasis": "lead"
+    },
+    {
+     "text": "on",
+     "atMs": 234667,
+     "endMs": 234720,
+     "phrase": 130
+    },
+    {
+     "text": "Christmas",
+     "atMs": 234800,
+     "endMs": 235200,
+     "phrase": 130
+    },
+    {
+     "text": "Eve.",
+     "atMs": 235280,
+     "endMs": 236160,
+     "phrase": 130,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 236360,
+   "endMs": 239200,
+   "tokens": [
+    {
+     "text": "Strong",
+     "atMs": 236360,
+     "endMs": 236560,
+     "phrase": 131
+    },
+    {
+     "text": "men",
+     "atMs": 236640,
+     "endMs": 236880,
+     "phrase": 131
+    },
+    {
+     "text": "have",
+     "atMs": 237000,
+     "endMs": 237120,
+     "phrase": 131
+    },
+    {
+     "text": "run",
+     "atMs": 237240,
+     "endMs": 237360,
+     "phrase": 131
+    },
+    {
+     "text": "for",
+     "atMs": 237440,
+     "endMs": 237680,
+     "phrase": 131
+    },
+    {
+     "text": "miles",
+     "atMs": 237720,
+     "endMs": 238160,
+     "phrase": 131
+    },
+    {
+     "text": "and",
+     "atMs": 238240,
+     "endMs": 238320,
+     "phrase": 131
+    },
+    {
+     "text": "miles,",
+     "atMs": 238400,
+     "endMs": 239120,
+     "phrase": 131,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 239200,
+   "endMs": 241920,
+   "tokens": [
+    {
+     "text": "When",
+     "atMs": 239200,
+     "endMs": 239280,
+     "phrase": 132
+    },
+    {
+     "text": "one",
+     "atMs": 239360,
+     "endMs": 239520,
+     "phrase": 132
+    },
+    {
+     "text": "from",
+     "atMs": 239600,
+     "endMs": 239760,
+     "phrase": 132
+    },
+    {
+     "text": "Cherry",
+     "atMs": 239840,
+     "endMs": 240080,
+     "phrase": 132
+    },
+    {
+     "text": "Hinton",
+     "atMs": 240160,
+     "endMs": 240560,
+     "phrase": 132
+    },
+    {
+     "text": "smiles;",
+     "atMs": 240640,
+     "endMs": 241840,
+     "phrase": 132,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 241920,
+   "endMs": 245040,
+   "tokens": [
+    {
+     "text": "Strong",
+     "atMs": 241920,
+     "endMs": 242240,
+     "phrase": 133
+    },
+    {
+     "text": "men",
+     "atMs": 242320,
+     "endMs": 242480,
+     "phrase": 133
+    },
+    {
+     "text": "have",
+     "atMs": 242560,
+     "endMs": 242720,
+     "phrase": 133
+    },
+    {
+     "text": "blanched,",
+     "atMs": 242800,
+     "endMs": 243440,
+     "phrase": 133,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 243520,
+     "endMs": 243600,
+     "phrase": 134
+    },
+    {
+     "text": "shot",
+     "atMs": 243680,
+     "endMs": 243920,
+     "phrase": 134
+    },
+    {
+     "text": "their",
+     "atMs": 244040,
+     "endMs": 244160,
+     "phrase": 134
+    },
+    {
+     "text": "wives,",
+     "atMs": 244400,
+     "endMs": 244880,
+     "phrase": 134,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 245040,
+   "endMs": 247440,
+   "tokens": [
+    {
+     "text": "Rather",
+     "atMs": 245040,
+     "endMs": 245200,
+     "phrase": 135
+    },
+    {
+     "text": "than",
+     "atMs": 245280,
+     "endMs": 245440,
+     "phrase": 135
+    },
+    {
+     "text": "send",
+     "atMs": 245520,
+     "endMs": 245680,
+     "phrase": 135
+    },
+    {
+     "text": "them",
+     "atMs": 245760,
+     "endMs": 245840,
+     "phrase": 135
+    },
+    {
+     "text": "to",
+     "atMs": 245920,
+     "endMs": 246000,
+     "phrase": 135
+    },
+    {
+     "text": "St.",
+     "atMs": 246080,
+     "endMs": 246240,
+     "phrase": 135,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Ives;",
+     "atMs": 246320,
+     "endMs": 247360,
+     "phrase": 136,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 247440,
+   "endMs": 250400,
+   "tokens": [
+    {
+     "text": "Strong",
+     "atMs": 247440,
+     "endMs": 247760,
+     "phrase": 137
+    },
+    {
+     "text": "men",
+     "atMs": 247840,
+     "endMs": 248000,
+     "phrase": 137
+    },
+    {
+     "text": "have",
+     "atMs": 248080,
+     "endMs": 248240,
+     "phrase": 137
+    },
+    {
+     "text": "cried",
+     "atMs": 248320,
+     "endMs": 248720,
+     "phrase": 137
+    },
+    {
+     "text": "like",
+     "atMs": 248800,
+     "endMs": 248880,
+     "phrase": 137
+    },
+    {
+     "text": "babes,",
+     "atMs": 249120,
+     "endMs": 249600,
+     "phrase": 137,
+     "emphasis": "lead"
+    },
+    {
+     "text": "bydam,",
+     "atMs": 249720,
+     "endMs": 250320,
+     "phrase": 138,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 250400,
+   "endMs": 252720,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 250400,
+     "endMs": 250480,
+     "phrase": 139
+    },
+    {
+     "text": "hear",
+     "atMs": 250560,
+     "endMs": 250720,
+     "phrase": 139
+    },
+    {
+     "text": "what",
+     "atMs": 250800,
+     "endMs": 250880,
+     "phrase": 139
+    },
+    {
+     "text": "happened",
+     "atMs": 250960,
+     "endMs": 251280,
+     "phrase": 139
+    },
+    {
+     "text": "at",
+     "atMs": 251360,
+     "endMs": 251520,
+     "phrase": 139
+    },
+    {
+     "text": "Babraham.",
+     "atMs": 251560,
+     "endMs": 252240,
+     "phrase": 139,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 252720,
+   "endMs": 256720,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 252720,
+     "endMs": 252880,
+     "phrase": 140
+    },
+    {
+     "text": "Grantchester!",
+     "atMs": 253040,
+     "endMs": 254080,
+     "phrase": 140,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ah,",
+     "atMs": 254480,
+     "endMs": 255120,
+     "phrase": 141,
+     "emphasis": "lead"
+    },
+    {
+     "text": "Grantchester!",
+     "atMs": 255200,
+     "endMs": 256160,
+     "phrase": 142,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 256720,
+   "endMs": 259440,
+   "tokens": [
+    {
+     "text": "There's",
+     "atMs": 256720,
+     "endMs": 257040,
+     "phrase": 143
+    },
+    {
+     "text": "peace",
+     "atMs": 257240,
+     "endMs": 257440,
+     "phrase": 143
+    },
+    {
+     "text": "and",
+     "atMs": 257520,
+     "endMs": 257600,
+     "phrase": 143
+    },
+    {
+     "text": "holy",
+     "atMs": 257680,
+     "endMs": 258000,
+     "phrase": 143
+    },
+    {
+     "text": "quiet",
+     "atMs": 258160,
+     "endMs": 258480,
+     "phrase": 143
+    },
+    {
+     "text": "there,",
+     "atMs": 258560,
+     "endMs": 259360,
+     "phrase": 143,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 259440,
+   "endMs": 262240,
+   "tokens": [
+    {
+     "text": "Great",
+     "atMs": 259440,
+     "endMs": 259680,
+     "phrase": 144
+    },
+    {
+     "text": "clouds",
+     "atMs": 259760,
+     "endMs": 260240,
+     "phrase": 144
+    },
+    {
+     "text": "along",
+     "atMs": 260400,
+     "endMs": 260560,
+     "phrase": 144
+    },
+    {
+     "text": "pacific",
+     "atMs": 260640,
+     "endMs": 261120,
+     "phrase": 144
+    },
+    {
+     "text": "skies,",
+     "atMs": 261200,
+     "endMs": 262160,
+     "phrase": 144,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 262240,
+   "endMs": 264800,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 262240,
+     "endMs": 262320,
+     "phrase": 145
+    },
+    {
+     "text": "men",
+     "atMs": 262400,
+     "endMs": 262640,
+     "phrase": 145
+    },
+    {
+     "text": "and",
+     "atMs": 262720,
+     "endMs": 262800,
+     "phrase": 145
+    },
+    {
+     "text": "women",
+     "atMs": 262880,
+     "endMs": 263120,
+     "phrase": 145
+    },
+    {
+     "text": "with",
+     "atMs": 263200,
+     "endMs": 263360,
+     "phrase": 145
+    },
+    {
+     "text": "straight",
+     "atMs": 263440,
+     "endMs": 263760,
+     "phrase": 145
+    },
+    {
+     "text": "eyes,",
+     "atMs": 263840,
+     "endMs": 264720,
+     "phrase": 145,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 264800,
+   "endMs": 267600,
+   "tokens": [
+    {
+     "text": "Lithe",
+     "atMs": 264800,
+     "endMs": 265200,
+     "phrase": 146
+    },
+    {
+     "text": "children",
+     "atMs": 265280,
+     "endMs": 265760,
+     "phrase": 146
+    },
+    {
+     "text": "lovelier",
+     "atMs": 265920,
+     "endMs": 266320,
+     "phrase": 146
+    },
+    {
+     "text": "than",
+     "atMs": 266400,
+     "endMs": 266480,
+     "phrase": 146
+    },
+    {
+     "text": "a",
+     "atMs": 266520,
+     "endMs": 266560,
+     "phrase": 146
+    },
+    {
+     "text": "dream,",
+     "atMs": 266640,
+     "endMs": 267520,
+     "phrase": 146,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 267600,
+   "endMs": 270640,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 267600,
+     "endMs": 267680,
+     "phrase": 147
+    },
+    {
+     "text": "bosky",
+     "atMs": 267760,
+     "endMs": 268160,
+     "phrase": 147
+    },
+    {
+     "text": "wood,",
+     "atMs": 268240,
+     "endMs": 268800,
+     "phrase": 147,
+     "emphasis": "lead"
+    },
+    {
+     "text": "a",
+     "atMs": 268840,
+     "endMs": 268880,
+     "phrase": 148
+    },
+    {
+     "text": "slumbrous",
+     "atMs": 269040,
+     "endMs": 269600,
+     "phrase": 148
+    },
+    {
+     "text": "stream,",
+     "atMs": 269840,
+     "endMs": 270560,
+     "phrase": 148,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 270640,
+   "endMs": 273040,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 270640,
+     "endMs": 270720,
+     "phrase": 149
+    },
+    {
+     "text": "little",
+     "atMs": 270800,
+     "endMs": 271040,
+     "phrase": 149
+    },
+    {
+     "text": "kindly",
+     "atMs": 271200,
+     "endMs": 271600,
+     "phrase": 149
+    },
+    {
+     "text": "winds",
+     "atMs": 271680,
+     "endMs": 272080,
+     "phrase": 149
+    },
+    {
+     "text": "that",
+     "atMs": 272160,
+     "endMs": 272320,
+     "phrase": 149
+    },
+    {
+     "text": "creep",
+     "atMs": 272400,
+     "endMs": 272640,
+     "phrase": 149,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 273040,
+   "endMs": 276000,
+   "tokens": [
+    {
+     "text": "Round",
+     "atMs": 273040,
+     "endMs": 273280,
+     "phrase": 150
+    },
+    {
+     "text": "twilight",
+     "atMs": 273360,
+     "endMs": 273760,
+     "phrase": 150
+    },
+    {
+     "text": "corners,",
+     "atMs": 273840,
+     "endMs": 274640,
+     "phrase": 150,
+     "emphasis": "lead"
+    },
+    {
+     "text": "half",
+     "atMs": 274760,
+     "endMs": 274880,
+     "phrase": 151
+    },
+    {
+     "text": "asleep.",
+     "atMs": 274960,
+     "endMs": 275920,
+     "phrase": 151,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 276000,
+   "endMs": 278600,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 276000,
+     "endMs": 276080,
+     "phrase": 152
+    },
+    {
+     "text": "Grantchester",
+     "atMs": 276160,
+     "endMs": 276880,
+     "phrase": 152
+    },
+    {
+     "text": "their",
+     "atMs": 277000,
+     "endMs": 277120,
+     "phrase": 152
+    },
+    {
+     "text": "skins",
+     "atMs": 277320,
+     "endMs": 277520,
+     "phrase": 152
+    },
+    {
+     "text": "are",
+     "atMs": 277600,
+     "endMs": 277680,
+     "phrase": 152
+    },
+    {
+     "text": "white;",
+     "atMs": 277880,
+     "endMs": 278480,
+     "phrase": 152,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 278600,
+   "endMs": 281520,
+   "tokens": [
+    {
+     "text": "They",
+     "atMs": 278600,
+     "endMs": 278720,
+     "phrase": 153
+    },
+    {
+     "text": "bathe",
+     "atMs": 278800,
+     "endMs": 279040,
+     "phrase": 153
+    },
+    {
+     "text": "by",
+     "atMs": 279160,
+     "endMs": 279280,
+     "phrase": 153
+    },
+    {
+     "text": "day,",
+     "atMs": 279440,
+     "endMs": 279840,
+     "phrase": 153,
+     "emphasis": "lead"
+    },
+    {
+     "text": "they",
+     "atMs": 279960,
+     "endMs": 280080,
+     "phrase": 154
+    },
+    {
+     "text": "bathe",
+     "atMs": 280160,
+     "endMs": 280400,
+     "phrase": 154
+    },
+    {
+     "text": "by",
+     "atMs": 280480,
+     "endMs": 280560,
+     "phrase": 154
+    },
+    {
+     "text": "night;",
+     "atMs": 280640,
+     "endMs": 281440,
+     "phrase": 154,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 281520,
+   "endMs": 283640,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 281520,
+     "endMs": 281600,
+     "phrase": 155
+    },
+    {
+     "text": "women",
+     "atMs": 281680,
+     "endMs": 281920,
+     "phrase": 155
+    },
+    {
+     "text": "there",
+     "atMs": 282000,
+     "endMs": 282240,
+     "phrase": 155
+    },
+    {
+     "text": "do",
+     "atMs": 282320,
+     "endMs": 282400,
+     "phrase": 155
+    },
+    {
+     "text": "all",
+     "atMs": 282480,
+     "endMs": 282640,
+     "phrase": 155
+    },
+    {
+     "text": "they",
+     "atMs": 282720,
+     "endMs": 282800,
+     "phrase": 155
+    },
+    {
+     "text": "ought;",
+     "atMs": 282880,
+     "endMs": 283600,
+     "phrase": 155,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 283640,
+   "endMs": 286480,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 283640,
+     "endMs": 283680,
+     "phrase": 156
+    },
+    {
+     "text": "men",
+     "atMs": 283760,
+     "endMs": 284080,
+     "phrase": 156
+    },
+    {
+     "text": "observe",
+     "atMs": 284160,
+     "endMs": 284640,
+     "phrase": 156
+    },
+    {
+     "text": "the",
+     "atMs": 284720,
+     "endMs": 284880,
+     "phrase": 156
+    },
+    {
+     "text": "Rules",
+     "atMs": 285040,
+     "endMs": 285200,
+     "phrase": 156
+    },
+    {
+     "text": "of",
+     "atMs": 285280,
+     "endMs": 285360,
+     "phrase": 156
+    },
+    {
+     "text": "Thought.",
+     "atMs": 285440,
+     "endMs": 286400,
+     "phrase": 156,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 286480,
+   "endMs": 289240,
+   "tokens": [
+    {
+     "text": "They",
+     "atMs": 286480,
+     "endMs": 286560,
+     "phrase": 157
+    },
+    {
+     "text": "love",
+     "atMs": 286640,
+     "endMs": 286800,
+     "phrase": 157
+    },
+    {
+     "text": "the",
+     "atMs": 286880,
+     "endMs": 286960,
+     "phrase": 157
+    },
+    {
+     "text": "Good;",
+     "atMs": 287040,
+     "endMs": 287600,
+     "phrase": 157,
+     "emphasis": "lead"
+    },
+    {
+     "text": "they",
+     "atMs": 287720,
+     "endMs": 287840,
+     "phrase": 158
+    },
+    {
+     "text": "worship",
+     "atMs": 287960,
+     "endMs": 288320,
+     "phrase": 158
+    },
+    {
+     "text": "Truth;",
+     "atMs": 288520,
+     "endMs": 289120,
+     "phrase": 158,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 289240,
+   "endMs": 291720,
+   "tokens": [
+    {
+     "text": "They",
+     "atMs": 289240,
+     "endMs": 289360,
+     "phrase": 159
+    },
+    {
+     "text": "laugh",
+     "atMs": 289440,
+     "endMs": 289680,
+     "phrase": 159
+    },
+    {
+     "text": "uproariously",
+     "atMs": 289880,
+     "endMs": 290640,
+     "phrase": 159
+    },
+    {
+     "text": "in",
+     "atMs": 290720,
+     "endMs": 290800,
+     "phrase": 159
+    },
+    {
+     "text": "youth;",
+     "atMs": 290840,
+     "endMs": 291680,
+     "phrase": 159,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 291720,
+   "endMs": 293440,
+   "tokens": [
+    {
+     "text": "(And",
+     "atMs": 291720,
+     "endMs": 291840,
+     "phrase": 160
+    },
+    {
+     "text": "when",
+     "atMs": 291880,
+     "endMs": 291920,
+     "phrase": 160
+    },
+    {
+     "text": "they",
+     "atMs": 292000,
+     "endMs": 292080,
+     "phrase": 160
+    },
+    {
+     "text": "get",
+     "atMs": 292160,
+     "endMs": 292240,
+     "phrase": 160
+    },
+    {
+     "text": "to",
+     "atMs": 292320,
+     "endMs": 292400,
+     "phrase": 160
+    },
+    {
+     "text": "feeling",
+     "atMs": 292440,
+     "endMs": 292720,
+     "phrase": 160
+    },
+    {
+     "text": "old,",
+     "atMs": 292800,
+     "endMs": 293360,
+     "phrase": 160,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 293440,
+   "endMs": 295760,
+   "tokens": [
+    {
+     "text": "They",
+     "atMs": 293440,
+     "endMs": 293520,
+     "phrase": 161
+    },
+    {
+     "text": "up",
+     "atMs": 293560,
+     "endMs": 293600,
+     "phrase": 161
+    },
+    {
+     "text": "and",
+     "atMs": 293680,
+     "endMs": 293840,
+     "phrase": 161
+    },
+    {
+     "text": "shoot",
+     "atMs": 293960,
+     "endMs": 294080,
+     "phrase": 161
+    },
+    {
+     "text": "themselves,",
+     "atMs": 294120,
+     "endMs": 294640,
+     "phrase": 161,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I'm",
+     "atMs": 294693,
+     "endMs": 294800,
+     "phrase": 162
+    },
+    {
+     "text": "told)…",
+     "atMs": 294840,
+     "endMs": 295720,
+     "phrase": 162,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 295760,
+   "endMs": 299200,
+   "tokens": [
+    {
+     "text": "Ah",
+     "atMs": 295760,
+     "endMs": 296080,
+     "phrase": 163
+    },
+    {
+     "text": "God!",
+     "atMs": 296400,
+     "endMs": 297200,
+     "phrase": 163,
+     "emphasis": "lead"
+    },
+    {
+     "text": "to",
+     "atMs": 297280,
+     "endMs": 297360,
+     "phrase": 164
+    },
+    {
+     "text": "see",
+     "atMs": 297440,
+     "endMs": 297600,
+     "phrase": 164
+    },
+    {
+     "text": "the",
+     "atMs": 297680,
+     "endMs": 297760,
+     "phrase": 164
+    },
+    {
+     "text": "branches",
+     "atMs": 298080,
+     "endMs": 298400,
+     "phrase": 164
+    },
+    {
+     "text": "stir",
+     "atMs": 298480,
+     "endMs": 298880,
+     "phrase": 164,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 299200,
+   "endMs": 301680,
+   "tokens": [
+    {
+     "text": "Across",
+     "atMs": 299200,
+     "endMs": 299600,
+     "phrase": 165
+    },
+    {
+     "text": "the",
+     "atMs": 299640,
+     "endMs": 299680,
+     "phrase": 165
+    },
+    {
+     "text": "moon",
+     "atMs": 299840,
+     "endMs": 300080,
+     "phrase": 165
+    },
+    {
+     "text": "at",
+     "atMs": 300160,
+     "endMs": 300240,
+     "phrase": 165
+    },
+    {
+     "text": "Grantchester!",
+     "atMs": 300320,
+     "endMs": 301600,
+     "phrase": 165,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 301680,
+   "endMs": 304320,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 301680,
+     "endMs": 301760,
+     "phrase": 166
+    },
+    {
+     "text": "smell",
+     "atMs": 301840,
+     "endMs": 302160,
+     "phrase": 166
+    },
+    {
+     "text": "the",
+     "atMs": 302240,
+     "endMs": 302400,
+     "phrase": 166
+    },
+    {
+     "text": "thrilling-sweet",
+     "atMs": 302480,
+     "endMs": 303280,
+     "phrase": 166
+    },
+    {
+     "text": "and",
+     "atMs": 303360,
+     "endMs": 303520,
+     "phrase": 166
+    },
+    {
+     "text": "rotten",
+     "atMs": 303600,
+     "endMs": 303920,
+     "phrase": 166,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 304320,
+   "endMs": 306480,
+   "tokens": [
+    {
+     "text": "Unforgettable,",
+     "atMs": 304320,
+     "endMs": 305440,
+     "phrase": 167,
+     "emphasis": "lead"
+    },
+    {
+     "text": "unforgotten",
+     "atMs": 305520,
+     "endMs": 306400,
+     "phrase": 168,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 306480,
+   "endMs": 309040,
+   "tokens": [
+    {
+     "text": "River-smell,",
+     "atMs": 306480,
+     "endMs": 307600,
+     "phrase": 169,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 307680,
+     "endMs": 307760,
+     "phrase": 170
+    },
+    {
+     "text": "hear",
+     "atMs": 307840,
+     "endMs": 308000,
+     "phrase": 170
+    },
+    {
+     "text": "the",
+     "atMs": 308080,
+     "endMs": 308160,
+     "phrase": 170
+    },
+    {
+     "text": "breeze",
+     "atMs": 308240,
+     "endMs": 308720,
+     "phrase": 170,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 309040,
+   "endMs": 311120,
+   "tokens": [
+    {
+     "text": "Sobbing",
+     "atMs": 309040,
+     "endMs": 309440,
+     "phrase": 171
+    },
+    {
+     "text": "in",
+     "atMs": 309520,
+     "endMs": 309600,
+     "phrase": 171
+    },
+    {
+     "text": "the",
+     "atMs": 309640,
+     "endMs": 309680,
+     "phrase": 171
+    },
+    {
+     "text": "little",
+     "atMs": 309760,
+     "endMs": 309920,
+     "phrase": 171
+    },
+    {
+     "text": "trees.",
+     "atMs": 310000,
+     "endMs": 311040,
+     "phrase": 171,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 311120,
+   "endMs": 314080,
+   "tokens": [
+    {
+     "text": "Say,",
+     "atMs": 311120,
+     "endMs": 311840,
+     "phrase": 172,
+     "emphasis": "lead"
+    },
+    {
+     "text": "do",
+     "atMs": 311920,
+     "endMs": 312000,
+     "phrase": 173
+    },
+    {
+     "text": "the",
+     "atMs": 312040,
+     "endMs": 312080,
+     "phrase": 173
+    },
+    {
+     "text": "elm-clumps",
+     "atMs": 312160,
+     "endMs": 312800,
+     "phrase": 173
+    },
+    {
+     "text": "greatly",
+     "atMs": 312880,
+     "endMs": 313280,
+     "phrase": 173
+    },
+    {
+     "text": "stand",
+     "atMs": 313360,
+     "endMs": 313760,
+     "phrase": 173,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 314080,
+   "endMs": 316680,
+   "tokens": [
+    {
+     "text": "Still",
+     "atMs": 314080,
+     "endMs": 314320,
+     "phrase": 174
+    },
+    {
+     "text": "guardians",
+     "atMs": 314400,
+     "endMs": 314960,
+     "phrase": 174
+    },
+    {
+     "text": "of",
+     "atMs": 315000,
+     "endMs": 315040,
+     "phrase": 174
+    },
+    {
+     "text": "that",
+     "atMs": 315120,
+     "endMs": 315280,
+     "phrase": 174
+    },
+    {
+     "text": "holy",
+     "atMs": 315360,
+     "endMs": 315600,
+     "phrase": 174
+    },
+    {
+     "text": "land?",
+     "atMs": 315680,
+     "endMs": 316640,
+     "phrase": 174,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 316680,
+   "endMs": 319400,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 316680,
+     "endMs": 316720,
+     "phrase": 175
+    },
+    {
+     "text": "chestnuts",
+     "atMs": 316800,
+     "endMs": 317360,
+     "phrase": 175
+    },
+    {
+     "text": "shade,",
+     "atMs": 317440,
+     "endMs": 317920,
+     "phrase": 175,
+     "emphasis": "lead"
+    },
+    {
+     "text": "in",
+     "atMs": 318000,
+     "endMs": 318080,
+     "phrase": 176
+    },
+    {
+     "text": "reverend",
+     "atMs": 318160,
+     "endMs": 318640,
+     "phrase": 176
+    },
+    {
+     "text": "dream,",
+     "atMs": 318880,
+     "endMs": 319360,
+     "phrase": 176,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 319400,
+   "endMs": 321840,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 319400,
+     "endMs": 319440,
+     "phrase": 177
+    },
+    {
+     "text": "yet",
+     "atMs": 319520,
+     "endMs": 319760,
+     "phrase": 177
+    },
+    {
+     "text": "unacademic",
+     "atMs": 319920,
+     "endMs": 320560,
+     "phrase": 177
+    },
+    {
+     "text": "stream?",
+     "atMs": 320720,
+     "endMs": 321760,
+     "phrase": 177,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 321840,
+   "endMs": 324400,
+   "tokens": [
+    {
+     "text": "Is",
+     "atMs": 321840,
+     "endMs": 322000,
+     "phrase": 178
+    },
+    {
+     "text": "dawn",
+     "atMs": 322080,
+     "endMs": 322400,
+     "phrase": 178
+    },
+    {
+     "text": "a",
+     "atMs": 322480,
+     "endMs": 322560,
+     "phrase": 178
+    },
+    {
+     "text": "secret",
+     "atMs": 322640,
+     "endMs": 323040,
+     "phrase": 178
+    },
+    {
+     "text": "shy",
+     "atMs": 323120,
+     "endMs": 323520,
+     "phrase": 178
+    },
+    {
+     "text": "and",
+     "atMs": 323600,
+     "endMs": 323680,
+     "phrase": 178
+    },
+    {
+     "text": "cold",
+     "atMs": 323760,
+     "endMs": 324080,
+     "phrase": 178,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 324400,
+   "endMs": 327040,
+   "tokens": [
+    {
+     "text": "Anadyomene,",
+     "atMs": 324400,
+     "endMs": 325520,
+     "phrase": 179,
+     "emphasis": "lead"
+    },
+    {
+     "text": "silver-gold?",
+     "atMs": 325600,
+     "endMs": 326960,
+     "phrase": 180,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 327040,
+   "endMs": 329440,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 327040,
+     "endMs": 327120,
+     "phrase": 181
+    },
+    {
+     "text": "sunset",
+     "atMs": 327200,
+     "endMs": 327760,
+     "phrase": 181
+    },
+    {
+     "text": "still",
+     "atMs": 327840,
+     "endMs": 328160,
+     "phrase": 181
+    },
+    {
+     "text": "a",
+     "atMs": 328200,
+     "endMs": 328240,
+     "phrase": 181
+    },
+    {
+     "text": "golden",
+     "atMs": 328400,
+     "endMs": 328800,
+     "phrase": 181
+    },
+    {
+     "text": "sea",
+     "atMs": 328960,
+     "endMs": 329200,
+     "phrase": 181,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 329440,
+   "endMs": 331760,
+   "tokens": [
+    {
+     "text": "From",
+     "atMs": 329440,
+     "endMs": 329600,
+     "phrase": 182
+    },
+    {
+     "text": "Haslingfield",
+     "atMs": 329680,
+     "endMs": 330400,
+     "phrase": 182
+    },
+    {
+     "text": "to",
+     "atMs": 330480,
+     "endMs": 330560,
+     "phrase": 182
+    },
+    {
+     "text": "Madingley?",
+     "atMs": 330640,
+     "endMs": 331680,
+     "phrase": 182,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 331760,
+   "endMs": 334080,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 331760,
+     "endMs": 331840,
+     "phrase": 183
+    },
+    {
+     "text": "after,",
+     "atMs": 331920,
+     "endMs": 332560,
+     "phrase": 183,
+     "emphasis": "lead"
+    },
+    {
+     "text": "ere",
+     "atMs": 332640,
+     "endMs": 332720,
+     "phrase": 184
+    },
+    {
+     "text": "the",
+     "atMs": 332800,
+     "endMs": 332880,
+     "phrase": 184
+    },
+    {
+     "text": "night",
+     "atMs": 333000,
+     "endMs": 333120,
+     "phrase": 184
+    },
+    {
+     "text": "is",
+     "atMs": 333200,
+     "endMs": 333280,
+     "phrase": 184
+    },
+    {
+     "text": "born,",
+     "atMs": 333360,
+     "endMs": 334000,
+     "phrase": 184,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 334080,
+   "endMs": 336600,
+   "tokens": [
+    {
+     "text": "Do",
+     "atMs": 334080,
+     "endMs": 334160,
+     "phrase": 185
+    },
+    {
+     "text": "hares",
+     "atMs": 334240,
+     "endMs": 334560,
+     "phrase": 185
+    },
+    {
+     "text": "come",
+     "atMs": 334640,
+     "endMs": 334800,
+     "phrase": 185
+    },
+    {
+     "text": "out",
+     "atMs": 334880,
+     "endMs": 335040,
+     "phrase": 185
+    },
+    {
+     "text": "about",
+     "atMs": 335160,
+     "endMs": 335280,
+     "phrase": 185
+    },
+    {
+     "text": "the",
+     "atMs": 335320,
+     "endMs": 335360,
+     "phrase": 185
+    },
+    {
+     "text": "corn?",
+     "atMs": 335440,
+     "endMs": 336400,
+     "phrase": 185,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 336600,
+   "endMs": 339440,
+   "tokens": [
+    {
+     "text": "Oh,",
+     "atMs": 336600,
+     "endMs": 337040,
+     "phrase": 186,
+     "emphasis": "lead"
+    },
+    {
+     "text": "is",
+     "atMs": 337120,
+     "endMs": 337200,
+     "phrase": 187
+    },
+    {
+     "text": "the",
+     "atMs": 337240,
+     "endMs": 337280,
+     "phrase": 187
+    },
+    {
+     "text": "water",
+     "atMs": 337360,
+     "endMs": 337760,
+     "phrase": 187
+    },
+    {
+     "text": "sweet",
+     "atMs": 337920,
+     "endMs": 338320,
+     "phrase": 187
+    },
+    {
+     "text": "and",
+     "atMs": 338400,
+     "endMs": 338480,
+     "phrase": 187
+    },
+    {
+     "text": "cool,",
+     "atMs": 338640,
+     "endMs": 339360,
+     "phrase": 187,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 339440,
+   "endMs": 342000,
+   "tokens": [
+    {
+     "text": "Gentle",
+     "atMs": 339440,
+     "endMs": 339840,
+     "phrase": 188
+    },
+    {
+     "text": "and",
+     "atMs": 339920,
+     "endMs": 340000,
+     "phrase": 188
+    },
+    {
+     "text": "brown,",
+     "atMs": 340080,
+     "endMs": 340520,
+     "phrase": 188,
+     "emphasis": "lead"
+    },
+    {
+     "text": "above",
+     "atMs": 340560,
+     "endMs": 340800,
+     "phrase": 189
+    },
+    {
+     "text": "the",
+     "atMs": 340880,
+     "endMs": 340960,
+     "phrase": 189
+    },
+    {
+     "text": "pool?",
+     "atMs": 341040,
+     "endMs": 341920,
+     "phrase": 189,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 342000,
+   "endMs": 344160,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 342000,
+     "endMs": 342080,
+     "phrase": 190
+    },
+    {
+     "text": "laughs",
+     "atMs": 342160,
+     "endMs": 342560,
+     "phrase": 190
+    },
+    {
+     "text": "the",
+     "atMs": 342600,
+     "endMs": 342640,
+     "phrase": 190
+    },
+    {
+     "text": "immortal",
+     "atMs": 342760,
+     "endMs": 343120,
+     "phrase": 190
+    },
+    {
+     "text": "river",
+     "atMs": 343200,
+     "endMs": 343440,
+     "phrase": 190
+    },
+    {
+     "text": "still",
+     "atMs": 343520,
+     "endMs": 343920,
+     "phrase": 190,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 344160,
+   "endMs": 346720,
+   "tokens": [
+    {
+     "text": "Under",
+     "atMs": 344160,
+     "endMs": 344400,
+     "phrase": 191
+    },
+    {
+     "text": "the",
+     "atMs": 344440,
+     "endMs": 344480,
+     "phrase": 191
+    },
+    {
+     "text": "mill,",
+     "atMs": 344640,
+     "endMs": 345200,
+     "phrase": 191,
+     "emphasis": "lead"
+    },
+    {
+     "text": "under",
+     "atMs": 345320,
+     "endMs": 345440,
+     "phrase": 192
+    },
+    {
+     "text": "the",
+     "atMs": 345520,
+     "endMs": 345600,
+     "phrase": 192
+    },
+    {
+     "text": "mill?",
+     "atMs": 345680,
+     "endMs": 346560,
+     "phrase": 192,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 346720,
+   "endMs": 349320,
+   "tokens": [
+    {
+     "text": "Say,",
+     "atMs": 346720,
+     "endMs": 347280,
+     "phrase": 193,
+     "emphasis": "lead"
+    },
+    {
+     "text": "is",
+     "atMs": 347360,
+     "endMs": 347440,
+     "phrase": 194
+    },
+    {
+     "text": "there",
+     "atMs": 347520,
+     "endMs": 347680,
+     "phrase": 194
+    },
+    {
+     "text": "Beauty",
+     "atMs": 347880,
+     "endMs": 348080,
+     "phrase": 194
+    },
+    {
+     "text": "yet",
+     "atMs": 348160,
+     "endMs": 348320,
+     "phrase": 194
+    },
+    {
+     "text": "to",
+     "atMs": 348400,
+     "endMs": 348480,
+     "phrase": 194
+    },
+    {
+     "text": "find?",
+     "atMs": 348680,
+     "endMs": 349200,
+     "phrase": 194,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 349320,
+   "endMs": 352040,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 349320,
+     "endMs": 349440,
+     "phrase": 195
+    },
+    {
+     "text": "Certainty?",
+     "atMs": 349560,
+     "endMs": 350267,
+     "phrase": 195,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 350293,
+     "endMs": 350320,
+     "phrase": 196
+    },
+    {
+     "text": "Quiet",
+     "atMs": 350480,
+     "endMs": 350800,
+     "phrase": 196
+    },
+    {
+     "text": "kind?",
+     "atMs": 350960,
+     "endMs": 351920,
+     "phrase": 196,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 352040,
+   "endMs": 353920,
+   "tokens": [
+    {
+     "text": "Deep",
+     "atMs": 352040,
+     "endMs": 352160,
+     "phrase": 197
+    },
+    {
+     "text": "meadows",
+     "atMs": 352240,
+     "endMs": 352640,
+     "phrase": 197
+    },
+    {
+     "text": "yet,",
+     "atMs": 352720,
+     "endMs": 353200,
+     "phrase": 197,
+     "emphasis": "lead"
+    },
+    {
+     "text": "for",
+     "atMs": 353240,
+     "endMs": 353280,
+     "phrase": 198
+    },
+    {
+     "text": "to",
+     "atMs": 353360,
+     "endMs": 353440,
+     "phrase": 198
+    },
+    {
+     "text": "forget",
+     "atMs": 353640,
+     "endMs": 353840,
+     "phrase": 198,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "river-cam-twilight",
+   "startMs": 353920,
+   "endMs": 358300,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 353920,
+     "endMs": 354000,
+     "phrase": 199
+    },
+    {
+     "text": "lies,",
+     "atMs": 354240,
+     "endMs": 354560,
+     "phrase": 199,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 354640,
+     "endMs": 354720,
+     "phrase": 200
+    },
+    {
+     "text": "truths,",
+     "atMs": 354920,
+     "endMs": 355240,
+     "phrase": 200,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 355280,
+     "endMs": 355440,
+     "phrase": 201
+    },
+    {
+     "text": "pain?…",
+     "atMs": 355640,
+     "endMs": 356533,
+     "phrase": 201
+    },
+    {
+     "text": "oh!",
+     "atMs": 356667,
+     "endMs": 357280,
+     "phrase": 201,
+     "emphasis": "lead"
+    },
+    {
+     "text": "yet",
+     "atMs": 357400,
+     "endMs": 357520,
+     "phrase": 202,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "honey-still-for-tea",
+   "startMs": 358300,
+   "endMs": 360940,
+   "tokens": [
+    {
+     "text": "Stands",
+     "atMs": 358300,
+     "endMs": 358620,
+     "phrase": 203
+    },
+    {
+     "text": "the",
+     "atMs": 358700,
+     "endMs": 358780,
+     "phrase": 203
+    },
+    {
+     "text": "Church",
+     "atMs": 358860,
+     "endMs": 359100,
+     "phrase": 203
+    },
+    {
+     "text": "clock",
+     "atMs": 359180,
+     "endMs": 359420,
+     "phrase": 203
+    },
+    {
+     "text": "at",
+     "atMs": 359500,
+     "endMs": 359580,
+     "phrase": 203
+    },
+    {
+     "text": "ten",
+     "atMs": 359660,
+     "endMs": 359820,
+     "phrase": 203
+    },
+    {
+     "text": "to",
+     "atMs": 359900,
+     "endMs": 359980,
+     "phrase": 203
+    },
+    {
+     "text": "three?",
+     "atMs": 360060,
+     "endMs": 360860,
+     "phrase": 203,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "honey-still-for-tea",
+   "startMs": 360940,
+   "endMs": 362940,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 360940,
+     "endMs": 361020,
+     "phrase": 204
+    },
+    {
+     "text": "is",
+     "atMs": 361100,
+     "endMs": 361180,
+     "phrase": 204
+    },
+    {
+     "text": "there",
+     "atMs": 361300,
+     "endMs": 361420,
+     "phrase": 204
+    },
+    {
+     "text": "honey",
+     "atMs": 361460,
+     "endMs": 361740,
+     "phrase": 204
+    },
+    {
+     "text": "still",
+     "atMs": 361820,
+     "endMs": 362060,
+     "phrase": 204
+    },
+    {
+     "text": "for",
+     "atMs": 362140,
+     "endMs": 362300,
+     "phrase": 204
+    },
+    {
+     "text": "tea?",
+     "atMs": 362460,
+     "endMs": 362940,
+     "phrase": 204,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

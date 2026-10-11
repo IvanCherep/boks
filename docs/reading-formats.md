@@ -398,6 +398,7 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | «Не жалею, не зову, не плачу…», Есенин | `7082de8a-56c4-441e-82d2-2c1ecb3c2d2c` | Alex Bell | 4 | 4, 8, 4, 4 |
 | «Первый снег», Брюсов | `7a67ce67-bceb-4e41-8f66-191718345880` | Alex Bell | 4 | 4, 4, 4, 4 |
 | *Binsey Poplars*, Hopkins | `99ee280f-faf5-4026-99fc-9cbec9d79a2a` | Julian (British) | 4 | 1, 1, 16, 6 |
+| *The Old Vicarage, Grantchester*, Rupert Brooke | `afa5a1ed-3019-455e-b550-475c9a498db3` | Julian (British) | 4 - the third holds the long middle, as the brief asks for the complete poem | 6, 27, 106, 2 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,

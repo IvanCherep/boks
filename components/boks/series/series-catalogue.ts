@@ -57,6 +57,19 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "afa5a1ed-3019-455e-b550-475c9a498db3",
+    format: "poem",
+    language: "en",
+    title: "The Old Vicarage, Grantchester",
+    author: "Rupert Brooke",
+    cover: "/series/grantchester.webp",
+    coverFocus: "60% 45%",
+    durationSeconds: 363,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-11",
+  },
+  {
     storyId: "99ee280f-faf5-4026-99fc-9cbec9d79a2a",
     format: "poem",
     language: "en",
