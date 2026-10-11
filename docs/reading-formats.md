@@ -188,7 +188,7 @@ Reference levels, against the narration's active level:
 | | |
 |---|---|
 | Effect loops | match the voice |
-| A poem's theme | **−10 dB** — part of the reading, not behind it |
+| A poem's theme | **−13 dB** — part of the reading, not behind it. It was −10 until 2026-10-11, and readers found the music too loud across the series |
 | Music under speech generally | −20 dB, the middle of broadcast's 15–25 dB |
 
 Quiet is not enough on its own: anything spread across 1–3 kHz blurs consonants
@@ -433,7 +433,7 @@ check that it works.
    with less energy in 1–3 kHz and a steadier envelope
    (`docs/media-generation.md` §3–4).
 4. **Measure the theme gain.** Active RMS of each (frames within 40 dB of the
-   peak), then `20·log10(gain) = voice − theme − 10`. It goes in the scene map
+   peak), then `20·log10(gain) = voice − theme − 13`. It goes in the scene map
    as `themeGain`.
 5. **Convert the pictures** to WebP into `public/poetry/<slug>/scenes/`.
 6. **Write the scene map** in `docs/poetry/<slug>/scene-map.json` - copy one of
