@@ -11,6 +11,20 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Tracked links (2026-10-11, in source, not yet deployed).** For sending boks
+to universities: the admin console's **Links** tab makes a link per place - a
+label ("MSU, philology"), usually a bok, a code - as `/b/<id>?link=<code>` (or
+`/?link=<code>`), and reports per link: visits, arriving devices, where they
+came from, who opened and finished the bok, opened its production, read
+another, came back, signed up, median minutes. Below it, the same outcomes per
+landed bok for every shared-bok visit. Visits now also record the bok they
+landed on (`landing_reel_id`) and the series shelf as a landing. Migration
+`20261011100000_boks_tracked_links.sql` (replaces `record_boks_journey_event`
+with two new trailing defaults; tabs already open keep working), RPCs
+`create_tracked_link`, `set_tracked_link_archived`, `get_link_attribution`;
+metric definitions in `docs/admin-metrics.md` § Links. Deploy order as always:
+migration first, then the Worker.
+
 **Recording text clears the Reels header (2026-10-08).** In immersive poems,
 `?recording=true` (also `?recording=1`) places text zones at least 16% down
 the frame. Zones already lower keep their position, and ordinary playback

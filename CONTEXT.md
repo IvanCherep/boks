@@ -68,6 +68,10 @@ _Avoid_: browser id, device id, reader id, guest id
 One continuous visit, identified by a session id.
 _Avoid_: visit
 
+**Tracked link**:
+A link an admin makes in the console for one place boks is sent to, usually opening one bok, whose code (`?link=`) lets the console say what that link brought.
+_Avoid_: campaign, referral link, utm link
+
 **Team device**:
 A visitor id belonging to the people who build boks, left out of guest numbers.
 _Avoid_: internal user, test device

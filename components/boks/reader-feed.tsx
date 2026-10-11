@@ -634,7 +634,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     const params = new URLSearchParams(window.location.search);
     const shared = params.get("bok");
     const sharedAuthor = params.get("author");
-    if (shared || sharedAuthor) window.history.replaceState(null, "", window.location.pathname);
+    // A tracked link on its own (`/?link=…`, `/series?link=…`) is cleaned too:
+    // a refresh is a new page load, and it should not arrive through the link twice.
+    if (shared || sharedAuthor || params.has("link")) window.history.replaceState(null, "", window.location.pathname);
 
     // The filter has to be in place before the first feed request, or the
     // reader's first page is unfiltered and then changes under them.

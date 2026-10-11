@@ -2834,6 +2834,208 @@ begin
 end $$;
 
 
+-- Tracked links (migration 20261011100000).
+--
+-- The question the feature answers is "the link we sent there: did anyone
+-- come, read the bok, read another, sign up". Each check is a way that answer
+-- could be wrong: a hand-typed code counted as a link, a damaged bok id
+-- failing a page, the arriving session's own reading missed because the visit
+-- row landed after it, a sign-in to an old account counted as a sign-up, a
+-- reader seeing any of it.
+do $$
+declare
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_guest uuid := '88888888-8888-4888-8888-888888888888';
+  v_new_account uuid := '99999999-9999-4999-8999-999999999999';
+  v_old_guest uuid := 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  v_reel uuid;
+  v_other uuid;
+  v_link jsonb;
+  v_code text;
+  v_report jsonb;
+  v_row jsonb;
+begin
+  select id into v_reel from public.reels where status = 'published' order by created_at, id limit 1;
+  select id into v_other from public.reels where status = 'published' and id <> v_reel order by created_at, id limit 1;
+
+  -- Only admins make links.
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  begin
+    perform public.create_tracked_link('nope', v_reel::text);
+    perform public.boks_assert(false, 'a reader cannot create a tracked link');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot create a tracked link');
+  end;
+  begin
+    perform public.get_link_attribution(30);
+    perform public.boks_assert(false, 'a reader cannot read link attribution');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot read link attribution');
+  end;
+  begin
+    perform 1 from public.boks_tracked_links;
+    perform public.boks_assert(false, 'a reader cannot read tracked links');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot read tracked links');
+  end;
+  reset role;
+
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  v_link := public.create_tracked_link('Check university', v_reel::text);
+  v_code := v_link ->> 'code';
+  perform public.boks_assert(v_code ~ '^[0-9a-f]{6}$', 'a link without a code gets a generated one');
+  perform public.boks_assert((v_link ->> 'bokId')::uuid = v_reel, 'a link remembers its bok');
+  perform public.create_tracked_link('Check home page', null, 'check-home');
+  begin
+    perform public.create_tracked_link('Duplicate', null, 'check-home');
+    perform public.boks_assert(false, 'a taken code is refused');
+  exception when unique_violation then
+    perform public.boks_assert(true, 'a taken code is refused');
+  end;
+  begin
+    perform public.create_tracked_link('Bad', null, 'Not A Code!');
+    perform public.boks_assert(false, 'a malformed code is refused');
+  exception when sqlstate '22023' then
+    perform public.boks_assert(true, 'a malformed code is refused');
+  end;
+  begin
+    perform public.create_tracked_link('Bad', '00000000-0000-4000-8000-000000000000');
+    perform public.boks_assert(false, 'a link to a bok that does not exist is refused');
+  exception when sqlstate '22023' then
+    perform public.boks_assert(true, 'a link to a bok that does not exist is refused');
+  end;
+  reset role;
+
+  -- An account that predates the visit, used by the device that signs in.
+  insert into auth.users (id, is_anonymous, created_at)
+  values (v_old_guest, false, now() - interval '30 days')
+  on conflict (id) do nothing;
+  insert into auth.users (id, is_anonymous) values (v_guest, true) on conflict (id) do nothing;
+
+  -- Device 1 arrives through the link as a guest. Its start of the landed bok
+  -- is a second before the visit row, as on production; it opens the
+  -- production, finishes it, finishes another, comes back tomorrow, and signs
+  -- up as a new account.
+  insert into public.recommendation_events (user_id, reel_id, visitor_id, session_id, event_type, surface, value, active_seconds, metadata, created_at)
+  values
+    (v_guest, v_reel, 'link-device-1', 'link-s1', 'start', 'reader', 1, 0, '{"entry":"share"}', now() - interval '1 day' - interval '1 second'),
+    (v_guest, v_reel, 'link-device-1', 'link-s1', 'heartbeat', 'reader', 1, 120, '{"entry":"share","format":"cinema"}', now() - interval '1 day' + interval '2 minutes'),
+    (v_guest, v_reel, 'link-device-1', 'link-s1', 'complete', 'reader', 1, 180, '{"entry":"share","format":"cinema"}', now() - interval '1 day' + interval '3 minutes'),
+    (v_guest, v_other, 'link-device-1', 'link-s1', 'complete', 'reader', 1, 60, '{}', now() - interval '1 day' + interval '6 minutes');
+
+  -- Device 2 arrives through the link and leaves at once, then signs in to
+  -- an account it already had: that is not a sign-up.
+  insert into public.recommendation_events (user_id, reel_id, visitor_id, session_id, event_type, surface, value, created_at)
+  values
+    (v_guest, v_reel, 'link-device-2', 'link-s2', 'impression', 'reader', 1, now() - interval '1 day'),
+    (v_old_guest, v_other, 'link-device-2', 'link-s3', 'start', 'reader', 1, now() - interval '1 day' + interval '1 minute');
+
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
+  perform public.record_boks_journey_event('visit', 'link-device-1', 'link-s1', null, 'shared_bok', 'vk.com', null, null, null, 'RU', upper(v_reel::text), upper(v_code));
+  perform public.record_boks_journey_event('visit', 'link-device-2', 'link-s2', null, 'shared_bok', null, null, null, null, 'RU', v_reel::text, v_code);
+  -- A hand-typed code and a damaged id are dropped, not raised.
+  perform public.record_boks_journey_event('visit', 'link-device-3', 'link-s4', null, 'shared_bok', null, null, null, null, null, 'a1e3baf7-damaged', 'not-a-link');
+  -- A sign-up prompt does not carry a link even if a client sends one.
+  perform public.record_boks_journey_event('signup_prompt', 'link-device-1', 'link-s1', 'limit', null, null, null, null, null, null, v_reel::text, v_code);
+  reset role;
+
+  -- Backdate the visits to when the reading above happened.
+  update public.boks_journey_events set created_at = now() - interval '1 day'
+  where visitor_id in ('link-device-1', 'link-device-2');
+  -- Tomorrow, device 1 reads again - as the account it just created.
+  insert into auth.users (id, is_anonymous, created_at)
+  values (v_new_account, false, now() - interval '1 day' + interval '10 minutes')
+  on conflict (id) do nothing;
+  insert into public.recommendation_events (user_id, reel_id, visitor_id, session_id, event_type, surface, value, created_at)
+  values (v_new_account, v_other, 'link-device-1', 'link-s5', 'start', 'reader', 1, now());
+
+  perform public.boks_assert(
+    (select link_code = v_code and landing_reel_id = v_reel from public.boks_journey_events
+     where visitor_id = 'link-device-1' and event = 'visit'),
+    'a visit carries its link and its landed bok, whatever their case'
+  );
+  perform public.boks_assert(
+    (select link_code is null and landing_reel_id is null from public.boks_journey_events where visitor_id = 'link-device-3'),
+    'an unknown code and a damaged bok id are stored as nothing, and the visit is still recorded'
+  );
+  perform public.boks_assert(
+    (select link_code is null and landing_reel_id is null from public.boks_journey_events
+     where visitor_id = 'link-device-1' and event = 'signup_prompt'),
+    'only a visit carries a link and a landed bok'
+  );
+
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  v_report := public.get_link_attribution(30);
+  reset role;
+  perform public.boks_test_logout();
+
+  select l into v_row from jsonb_array_elements(v_report -> 'links') l where l ->> 'code' = v_code;
+  perform public.boks_assert((v_row -> 'stats' ->> 'visits')::integer = 2, 'a link counts its visits');
+  perform public.boks_assert((v_row -> 'stats' ->> 'devices')::integer = 2, 'a link counts its arriving devices');
+  perform public.boks_assert(
+    (v_row -> 'stats' ->> 'startedBok')::integer = 1,
+    'the arriving session''s start counts even though it was recorded before the visit'
+  );
+  perform public.boks_assert((v_row -> 'stats' ->> 'finishedBok')::integer = 1, 'finishing the landed bok is counted');
+  perform public.boks_assert((v_row -> 'stats' ->> 'openedFormat')::integer = 1, 'opening the production is counted');
+  perform public.boks_assert((v_row -> 'stats' ->> 'readAnother')::integer = 1, 'reading on past the landed bok is counted');
+  perform public.boks_assert((v_row -> 'stats' ->> 'cameBack')::integer = 1, 'coming back on a later day is counted');
+  perform public.boks_assert(
+    (v_row -> 'stats' ->> 'createdAccount')::integer = 1,
+    'a guest who signs up after arriving is counted, and signing in to an older account is not'
+  );
+  perform public.boks_assert(
+    exists (select 1 from jsonb_array_elements(v_row -> 'referrers') r where r ->> 'value' = 'vk.com'),
+    'a link reports where its visits came from'
+  );
+  perform public.boks_assert(
+    exists (select 1 from jsonb_array_elements(v_report -> 'links') l
+            where l ->> 'code' = 'check-home' and (l -> 'stats' ->> 'visits')::integer = 0),
+    'a link nobody used yet is listed with zero visits'
+  );
+  perform public.boks_assert(
+    exists (select 1 from jsonb_array_elements(v_report -> 'boks') b
+            where (b ->> 'bokId')::uuid = v_reel and (b -> 'stats' ->> 'devices')::integer = 2
+              and (b ->> 'throughLinks')::integer = 2),
+    'the landed bok is reported, with how many arrived through a tracked link'
+  );
+
+  -- Hiding the country removes both devices; archiving keeps the history.
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  perform public.boks_assert(
+    coalesce((select (l -> 'stats' ->> 'devices')::integer from jsonb_array_elements(public.get_link_attribution(30, false, array['ru']) -> 'links') l where l ->> 'code' = v_code), 0) = 0,
+    'a hidden country leaves the link numbers'
+  );
+  perform public.set_tracked_link_archived(v_code, true);
+  perform public.boks_assert(
+    (select (l ->> 'archived')::boolean and (l -> 'stats' ->> 'devices')::integer = 2
+     from jsonb_array_elements(public.get_link_attribution(30) -> 'links') l where l ->> 'code' = v_code),
+    'an archived link keeps its numbers'
+  );
+  reset role;
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
+  perform public.record_boks_journey_event('visit', 'link-device-4', 'link-s6', null, 'shared_bok', null, null, null, null, null, v_reel::text, v_code);
+  reset role;
+  perform public.boks_test_logout();
+  perform public.boks_assert(
+    (select link_code = v_code from public.boks_journey_events where visitor_id = 'link-device-4'),
+    'an archived link still records visits - old links keep being tapped'
+  );
+
+  delete from public.boks_journey_events where visitor_id like 'link-device-%';
+  delete from public.recommendation_events where visitor_id like 'link-device-%';
+  delete from public.boks_tracked_links where code in (v_code, 'check-home');
+  delete from auth.users where id in (v_guest, v_new_account, v_old_guest);
+end $$;
+
+
 -- The Data API surface (migration 20260925100000).
 --
 -- Two mistakes this makes impossible. A reader able to write through a view -
@@ -2895,7 +3097,7 @@ begin
       'EXECUTE'
     ) and not has_function_privilege(
       'anon',
-      'public.record_boks_journey_event(text,text,text,text,text,text,text,text,text,text)',
+      'public.record_boks_journey_event(text,text,text,text,text,text,text,text,text,text,text,text)',
       'EXECUTE'
     ),
     'bare anonymous requests cannot write feedback or journey telemetry'
@@ -2907,7 +3109,7 @@ begin
       'EXECUTE'
     ) and has_function_privilege(
       'authenticated',
-      'public.record_boks_journey_event(text,text,text,text,text,text,text,text,text,text)',
+      'public.record_boks_journey_event(text,text,text,text,text,text,text,text,text,text,text,text)',
       'EXECUTE'
     ),
     'anonymous Supabase sessions can still write guest feedback and telemetry'

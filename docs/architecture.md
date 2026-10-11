@@ -52,7 +52,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 - `components/boks/author-console.tsx`: submission cabinet, review status, refusal reason, revision, the length guardrail. `lib/boks/author/submission-quota.ts` mirrors the daily limit for the UI; the database is the authority. `lib/boks/bok-title.ts` mirrors the title-from-first-line rule.
 - `components/boks/admin-dashboard.tsx`: admin auth, the tab shell, per-tab loading.
-- `components/boks/admin/`: one file per tab - `overview.tsx`, `moderation-queue.tsx`, `rights-review.tsx`, `content-operations.tsx`, `people.tsx`, `guest-funnel.tsx`, `growth.tsx`, `feedback-inbox.tsx`, `catalogue-import.tsx`, `recommendation-lab.tsx` (+ `experiment-editor.tsx`, `sample-size-panel.tsx`, `position-effects.tsx`, `metric-bars.tsx`), and the poetry/interaction sandboxes.
+- `components/boks/admin/`: one file per tab - `overview.tsx`, `moderation-queue.tsx`, `rights-review.tsx`, `content-operations.tsx`, `people.tsx`, `guest-funnel.tsx`, `tracked-links.tsx`, `growth.tsx`, `feedback-inbox.tsx`, `catalogue-import.tsx`, `recommendation-lab.tsx` (+ `experiment-editor.tsx`, `sample-size-panel.tsx`, `position-effects.tsx`, `metric-bars.tsx`), and the poetry/interaction sandboxes.
 - `components/boks/admin/admin-inspector.tsx` + `inspector-context.tsx`: the console's one detail surface. Every tab opens a bok or a person with `useAdminInspector().openBok(id)` / `openPerson(userId)`; never build a per-tab detail view. Views: `bok-inspector.tsx`, `person-inspector.tsx`.
 - `components/boks/admin/bok-lifecycle-dialog.tsx`: the only hide / restore / erase confirmation. Authority is the RPC's `is_boks_admin`, never this UI.
 

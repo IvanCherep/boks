@@ -6,6 +6,8 @@ describe("where a visit came from", () => {
     const visit = journeyAttribution("https://tryboks.com/?bok=a1e3baf7-44da-4867-a817-088f1cdfbd26&from=share&ref=t.me", "");
     expect(visit).toEqual({
       landing: "shared_bok",
+      landingBokId: "a1e3baf7-44da-4867-a817-088f1cdfbd26",
+      linkCode: null,
       referrerHost: "t.me",
       utmSource: null,
       utmMedium: null,
@@ -33,11 +35,38 @@ describe("where a visit came from", () => {
   it("calls a visit with no referrer direct", () => {
     expect(journeyAttribution("https://tryboks.com/", "")).toEqual({
       landing: "home",
+      landingBokId: null,
+      linkCode: null,
       referrerHost: null,
       utmSource: null,
       utmMedium: null,
       utmCampaign: null,
     });
+  });
+
+  it("names the bok and the tracked link a university link opened", () => {
+    // `/b/<id>?link=msu-philology` after the /b page's redirect.
+    const visit = journeyAttribution(
+      "https://tryboks.com/?bok=A1E3BAF7-44DA-4867-A817-088F1CDFBD26&from=share&link=MSU-Philology",
+      ""
+    );
+    expect(visit.landing).toBe("shared_bok");
+    expect(visit.landingBokId).toBe("a1e3baf7-44da-4867-a817-088f1cdfbd26");
+    expect(visit.linkCode).toBe("msu-philology");
+  });
+
+  it("keeps a tracked link to a page, and knows the series shelf from the feed", () => {
+    expect(journeyAttribution("https://tryboks.com/?link=spbu", "").linkCode).toBe("spbu");
+    expect(journeyAttribution("https://tryboks.com/series?link=spbu", "").landing).toBe("series");
+    expect(journeyAttribution("https://tryboks.com/series/", "").landing).toBe("series");
+  });
+
+  it("drops a code or a bok id that cannot be one, rather than sending noise", () => {
+    const visit = journeyAttribution("https://tryboks.com/?bok=a1e3baf7-damaged&link=<script>", "");
+    expect(visit.landingBokId).toBeNull();
+    expect(visit.linkCode).toBeNull();
+    // Still a shared-bok visit: the reader came through a link, it was just damaged.
+    expect(visit.landing).toBe("shared_bok");
   });
 
   it("survives an address it cannot parse", () => {

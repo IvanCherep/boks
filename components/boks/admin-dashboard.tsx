@@ -19,6 +19,7 @@ import { AdminOverview } from "@/components/boks/admin/overview";
 import { AdminPeople } from "@/components/boks/admin/people";
 import { FeedbackInbox } from "@/components/boks/admin/feedback-inbox";
 import { GuestFunnelPanel } from "@/components/boks/admin/guest-funnel";
+import { TrackedLinksPanel } from "@/components/boks/admin/tracked-links";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
 import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
@@ -40,6 +41,7 @@ import {
 const adminTabs = [
   { id: "overview", label: "This week" },
   { id: "guests", label: "Guests" },
+  { id: "links", label: "Links" },
   { id: "growth", label: "Growth" },
   { id: "moderation", label: "Moderation" },
   { id: "rights", label: "Rights" },
@@ -322,6 +324,7 @@ export function AdminDashboard() {
         {tab === "poetry" && <PoetrySandbox />}
 
         {tab === "guests" && <GuestFunnelPanel />}
+        {tab === "links" && <TrackedLinksPanel />}
         {tab === "growth" && <AdminGrowth />}
 
         {tab === "content" && <ContentOperations />}

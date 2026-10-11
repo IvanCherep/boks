@@ -655,3 +655,58 @@ export type GuestFunnel = {
     newAccounts: number;
   }[];
 };
+
+/** What one tracked link, or one landed bok, brought - counted by arriving device. See `get_link_attribution`. */
+export type LinkArrivalStats = {
+  /** Sessions that arrived (one visit per session). */
+  visits: number;
+  /** Distinct devices that arrived; the denominator of every count below. */
+  devices: number;
+  /** Devices that arrived without an account; the denominator of `createdAccount`. */
+  guests: number;
+  startedBok: number;
+  finishedBok: number;
+  /** Opened the landed bok's production (cinema or immersive poem). */
+  openedFormat: number;
+  /** Finished at least one bok other than the one they landed on. */
+  readAnother: number;
+  finishedThree: number;
+  /** Read again on a later UTC day than they arrived. */
+  cameBack: number;
+  /** Guests at arrival who then read as an account created after arriving. */
+  createdAccount: number;
+  minutes: number;
+  medianMinutes: number | null;
+  firstVisit: string | null;
+  lastVisit: string | null;
+};
+
+export type TrackedLinkReport = {
+  code: string;
+  label: string;
+  bokId: string | null;
+  bokTitle: string | null;
+  bokAuthor: string | null;
+  createdAt: string;
+  archived: boolean;
+  referrers: { value: string; visits: number }[];
+  stats: LinkArrivalStats;
+};
+
+export type LandedBokReport = {
+  bokId: string;
+  bokTitle: string;
+  bokAuthor: string | null;
+  /** Of the arriving devices, how many came through a tracked link rather than a reader's share. */
+  throughLinks: number;
+  stats: LinkArrivalStats;
+};
+
+export type LinkAttribution = {
+  days: number;
+  since: string;
+  /** When visits started carrying the landed bok and the link. */
+  trackedSince: string | null;
+  links: TrackedLinkReport[];
+  boks: LandedBokReport[];
+};

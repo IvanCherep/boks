@@ -5,6 +5,7 @@ import type { FeedbackSurface } from "@/components/boks/feedback";
 import type {
   BoksFeedbackPage,
   GuestFunnel,
+  LinkAttribution,
   AdminBokDetail,
   AdminPersonDetail,
   AuthorBokQuota,
@@ -1230,6 +1231,42 @@ export async function loadGuestFunnel(
   });
   if (result.error) throw result.error;
   return result.data as GuestFunnel;
+}
+
+/** What each tracked link and each landed bok brought. Admin-only on the server. */
+export async function loadLinkAttribution(
+  days = 30,
+  options: { includeTeam?: boolean; hideCountries?: string[] } = {}
+) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("get_link_attribution", {
+    p_days: days,
+    p_include_team: options.includeTeam ?? false,
+    p_hide_countries: options.hideCountries?.length ? options.hideCountries : null,
+  });
+  if (result.error) throw result.error;
+  return result.data as LinkAttribution;
+}
+
+/** Makes a tracked link. The code is generated when not given. Admin-only on the server. */
+export async function createTrackedLink(input: { label: string; bokId?: string | null; code?: string | null }) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("create_tracked_link", {
+    p_label: input.label,
+    p_bok_id: input.bokId ?? null,
+    p_code: input.code ?? null,
+  });
+  if (result.error) throw result.error;
+  return result.data as { code: string; label: string; bokId: string | null; bokTitle: string | null };
+}
+
+/** Archives or restores a tracked link; an archived one still counts visits. Admin-only on the server. */
+export async function setTrackedLinkArchived(code: string, archived: boolean) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("set_tracked_link_archived", { p_code: code, p_archived: archived });
+  if (result.error) throw result.error;
 }
 
 /** Keeps this browser out of the guest numbers. Admin-only on the server. */

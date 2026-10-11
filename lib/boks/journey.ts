@@ -12,17 +12,23 @@
  */
 
 import { supabase } from "@/lib/boks/supabase-client";
+import { bokIdFrom, linkCodeFrom } from "@/lib/boks/tracked-links";
 
-export type JourneyLanding = "home" | "shared_bok";
+export type JourneyLanding = "home" | "shared_bok" | "series";
 
 export type JourneyAttribution = {
   landing: JourneyLanding;
+  /** The bok a shared link opened, or null when the visit landed on a page. */
+  landingBokId: string | null;
+  /** The tracked link's code (`?link=`); the database keeps only codes an admin created. */
+  linkCode: string | null;
   /** The host that sent the visitor, or null for a direct visit. */
   referrerHost: string | null;
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
 };
+
 
 /** boks's own hosts: a referrer from one of them is navigation, not a source. */
 const ownHosts = new Set(["tryboks.com", "read.tryboks.workers.dev", "localhost", "127.0.0.1"]);
@@ -44,11 +50,17 @@ function hostOf(value: string | null | undefined) {
  * redirect loses the original referrer, so the `/b` page passes it along as
  * `ref` and marks the landing with `from=share`. Either signal, or the `bok`
  * parameter itself, means the visitor came through a shared bok.
+ *
+ * `link` is a tracked link's code (`lib/boks/tracked-links.ts`), and the `/b`
+ * page carries it across the redirect too.
  */
 export function journeyAttribution(href: string, referrer: string): JourneyAttribution {
   let params = new URLSearchParams();
+  let pathname = "/";
   try {
-    params = new URL(href).searchParams;
+    const url = new URL(href);
+    params = url.searchParams;
+    pathname = url.pathname;
   } catch {
     // A malformed address is still a visit; it just has no source.
   }
@@ -63,7 +75,9 @@ export function journeyAttribution(href: string, referrer: string): JourneyAttri
   };
 
   return {
-    landing: shared ? "shared_bok" : "home",
+    landing: shared ? "shared_bok" : pathname.replace(/\/+$/, "") === "/series" ? "series" : "home",
+    landingBokId: bokIdFrom(params.get("bok")),
+    linkCode: linkCodeFrom(params.get("link")),
     referrerHost,
     utmSource: utm("utm_source"),
     utmMedium: utm("utm_medium"),
@@ -133,6 +147,8 @@ export function recordJourneyEvent(step: JourneyEvent, context: { visitorId?: st
       p_utm_medium: attribution?.utmMedium ?? null,
       p_utm_campaign: attribution?.utmCampaign ?? null,
       p_country: step.event === "visit" ? step.country ?? null : null,
+      p_landing_bok: attribution?.landingBokId ?? null,
+      p_link_code: attribution?.linkCode ?? null,
     })
     .then(
       () => undefined,

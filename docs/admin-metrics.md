@@ -59,6 +59,30 @@ The trajectory. Everything plotted weekly is a count or a total.
 | Arrived / finished one / finished three / created an account | readers whose first event was in the last 30 days | Activation. A reader who never finishes a boks has not experienced the product, so acquisition spend on them is wasted. |
 | Boks published per week | `reels` published by week | Whether supply keeps pace with consumption. |
 
+## Links
+
+Tracked links: a link made here for one place you send boks to (a faculty chat,
+a newsletter), and what it brought. Source: `get_link_attribution`, over
+`boks_journey_events` visits (which carry `link_code` and `landing_reel_id`
+since `20261011100000`) and `recommendation_events` for everything after.
+The unit is the arriving **device**, as on the Guests tab, with the team and the
+Guests tab's hidden countries left out the same way. A device counts once per
+link, from its first visit through it in the window; outcomes run from that
+arrival to today, so a newer link has had less time. Every share is printed
+beside its denominator (the devices on the same row).
+
+| Field | Computed from | Decision it supports |
+|---|---|---|
+| Visits · devices | sessions with a `visit` carrying the code; distinct `visitor_id` | Whether the link was opened at all, and by how many people rather than how many taps. |
+| From | `referrer_host` of those visits | Was it opened where it was sent, or forwarded somewhere else. |
+| Opened the bok · finished it | a `start` / `complete` on the link's bok by the arriving device, the arriving session included even when its event predates the visit row | Did the chosen bok work as a first bok. |
+| Production | any event on the link's bok carrying `metadata.format` | Did they open the cinema or the immersive poem, the reason a series piece was sent. |
+| Read another | a `complete` on any other bok after arriving | The product thesis per link: did one bok turn into reading. |
+| Came back | reading on a later UTC day than the arrival | Habit, per link. |
+| New accounts | of devices that arrived as guests, those later reading as an account created after the arrival | Conversion per link. Signing in to an older account is not counted. |
+| Median min | median over arriving devices of Σ max(`active_seconds`) per (session, bok) from arrival | Depth, robust to one heavy reader. |
+| Which bok they landed on | the same columns per `landing_reel_id`, for every shared-bok visit, tracked or not; "via tracked links" says how many came through one | Which piece to send next. |
+
 ## Moderation
 
 | Field | Computed from | Decision it supports |

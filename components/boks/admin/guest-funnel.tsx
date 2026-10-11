@@ -11,10 +11,13 @@ import { biggestDrop, funnelSteps, percent } from "@/components/boks/admin/guest
 
 const windows = [7, 14, 30] as const;
 
-/** Remembered per admin browser: a filter you set yesterday should still be set. */
+/**
+ * Remembered per admin browser: a filter you set yesterday should still be set.
+ * The Links tab reads the same filter, so one country is hidden everywhere.
+ */
 const hiddenCountriesKey = "boks-guests-hidden-countries";
 
-function readHiddenCountries(): string[] {
+export function readHiddenCountries(): string[] {
   try {
     const raw = window.localStorage.getItem(hiddenCountriesKey);
     const parsed = raw ? (JSON.parse(raw) as unknown) : [];
@@ -46,6 +49,7 @@ const reasonLabels: Record<string, string> = {
 const landingLabels: Record<string, string> = {
   home: "The home page",
   shared_bok: "A shared bok link",
+  series: "The series shelf",
 };
 
 /**

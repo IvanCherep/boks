@@ -29,8 +29,10 @@ export function OpenSharedBok({ id }: { id: string }) {
       // No referrer is a direct visit, which is also worth knowing.
     }
     const incoming = new URLSearchParams(window.location.search);
-    // `recording` is an admin's own link to film the piece - see `recording-mode.ts`.
-    for (const key of ["utm_source", "utm_medium", "utm_campaign", "recording"]) {
+    // `link` names a tracked link - the one sent to a particular place - see
+    // `lib/boks/journey.ts`. `recording` is an admin's own link to film the
+    // piece - see `recording-mode.ts`.
+    for (const key of ["link", "utm_source", "utm_medium", "utm_campaign", "recording"]) {
       const value = incoming.get(key);
       if (value) next.set(key, value);
     }
