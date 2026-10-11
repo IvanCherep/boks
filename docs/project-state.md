@@ -11,7 +11,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
-**Tracked links (2026-10-11, in source, not yet deployed).** For sending boks
+**Tracked links (2026-10-11).** For sending boks
 to universities: the admin console's **Links** tab makes a link per place - a
 label ("MSU, philology"), usually a bok, a code - as `/b/<id>?link=<code>` (or
 `/?link=<code>`), and reports per link: visits, arriving devices, where they
@@ -22,8 +22,11 @@ landed on (`landing_reel_id`) and the series shelf as a landing. Migration
 `20261011100000_boks_tracked_links.sql` (replaces `record_boks_journey_event`
 with two new trailing defaults; tabs already open keep working), RPCs
 `create_tracked_link`, `set_tracked_link_archived`, `get_link_attribution`;
-metric definitions in `docs/admin-metrics.md` § Links. Deploy order as always:
-migration first, then the Worker.
+metric definitions in `docs/admin-metrics.md` § Links. Migration pushed to
+production first, then the Worker deployed as version
+`71c8e029-c9b8-4223-a8eb-3eacc3c318ee`; verified: every page 200, `POST
+/api/feed` 401 without a token, `verify:supabase` all true, and the new
+admin RPCs refuse a bare request with 42501.
 
 **Recording text clears the Reels header (2026-10-08).** In immersive poems,
 `?recording=true` (also `?recording=1`) places text zones at least 16% down
