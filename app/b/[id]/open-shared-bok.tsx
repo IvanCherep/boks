@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { sharedBokTarget } from "@/lib/boks/shared-bok-redirect";
 
 /**
  * Hands the shared id to the reader.
@@ -13,30 +14,16 @@ import { useEffect } from "react";
  */
 export function OpenSharedBok({ id }: { id: string }) {
   useEffect(() => {
-    if (!id) {
-      window.location.replace("/");
-      return;
-    }
-    // A redirect drops the referrer, and the referrer is how the console knows
-    // a visitor came from Telegram rather than from nowhere. So it travels as
-    // `ref`, with `from=share` marking the landing, alongside any utm tags the
-    // link was posted with.
-    const next = new URLSearchParams({ bok: id, from: "share" });
-    try {
-      const referrer = document.referrer ? new URL(document.referrer).hostname : "";
-      if (referrer && referrer !== window.location.hostname) next.set("ref", referrer);
-    } catch {
-      // No referrer is a direct visit, which is also worth knowing.
-    }
-    const incoming = new URLSearchParams(window.location.search);
-    // `link` names a tracked link - the one sent to a particular place - see
-    // `lib/boks/journey.ts`. `recording` is an admin's own link to film the
-    // piece - see `recording-mode.ts`.
-    for (const key of ["link", "utm_source", "utm_medium", "utm_campaign", "recording"]) {
-      const value = incoming.get(key);
-      if (value) next.set(key, value);
-    }
-    window.location.replace(`/?${next.toString()}`);
+    // Normally the inline script in page.tsx has already left; this is the
+    // fallback for a browser where it did not run.
+    window.location.replace(
+      sharedBokTarget({
+        id,
+        search: window.location.search,
+        referrer: document.referrer,
+        hostname: window.location.hostname,
+      })
+    );
   }, [id]);
 
   return null;

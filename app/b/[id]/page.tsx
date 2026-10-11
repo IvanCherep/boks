@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { boksOrigin } from "@/app/layout";
 import {
@@ -7,6 +8,7 @@ import {
   shareTitle,
   sharedBokIdFrom,
 } from "@/lib/boks/share-preview";
+import { sharedBokRedirectScript } from "@/lib/boks/shared-bok-redirect";
 import { OpenSharedBok } from "./open-shared-bok";
 
 /**
@@ -70,35 +72,49 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * What the link is, for a crawler that reads the page rather than its Open
+ * Graph tags. Streamed behind the redirect script, so the script reaches a
+ * person's browser without waiting for this lookup.
+ */
+async function SharedBokText({ id }: { id: string }) {
+  const bok = await loadBokForShare(id);
+  if (!bok) return null;
+  return (
+    <>
+      <h1 className="mt-8">{bok.title}</h1>
+      <p className="text-sm text-[var(--muted-foreground)]">
+        {[bok.authorName, shareReadingNote(bok)].filter(Boolean).join(" · ")}
+      </p>
+      <p className="mt-4">{shareDescription(bok.text, 320)}</p>
+    </>
+  );
+}
+
 export default async function SharedBokPage({
   params,
 }: {
   params: RouteParams | Promise<RouteParams>;
 }) {
   const id = await idFrom(params);
-  const bok = await loadBokForShare(id);
 
   return (
-    <main className="legal-page">
-      <article className="legal-document">
-        <a href="/" className="brand-word brand-button">
-          boks
-        </a>
-        {bok ? (
-          <>
-            {/* Server-rendered, so a crawler without Open Graph support still
-                sees what this link is - and so does a reader on a connection
-                slow enough to watch the redirect happen. */}
-            <h1 className="mt-8">{bok.title}</h1>
-            <p className="text-sm text-[var(--muted-foreground)]">
-              {[bok.authorName, shareReadingNote(bok)].filter(Boolean).join(" · ")}
-            </p>
-            <p className="mt-4">{shareDescription(bok.text, 320)}</p>
-          </>
-        ) : null}
-        <p className="mt-8 text-sm text-[var(--muted-foreground)]">Opening this bok…</p>
-      </article>
-      <OpenSharedBok id={id} />
-    </main>
+    <>
+      {/* Before anything below is painted: a person goes straight to the
+          reader, and a crawler, which runs no script, keeps the page. */}
+      <script dangerouslySetInnerHTML={{ __html: sharedBokRedirectScript(id) }} />
+      <main className="legal-page shared-bok-page">
+        <article className="legal-document">
+          <a href="/" className="brand-word brand-button">
+            boks
+          </a>
+          <Suspense fallback={null}>
+            <SharedBokText id={id} />
+          </Suspense>
+          <p className="mt-8 text-sm text-[var(--muted-foreground)]">Opening this bok…</p>
+        </article>
+        <OpenSharedBok id={id} />
+      </main>
+    </>
   );
 }

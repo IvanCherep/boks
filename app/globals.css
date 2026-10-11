@@ -1658,6 +1658,12 @@ textarea:focus-visible {
   font-size: 0.95rem;
 }
 
+/* A shared link's text page is for crawlers; a person is already on the way
+   to the reader - see lib/boks/shared-bok-redirect.ts. */
+:root[data-opening-bok] .shared-bok-page {
+  visibility: hidden;
+}
+
 .legal-page {
   min-height: 100svh;
   background:
