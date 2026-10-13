@@ -19,6 +19,13 @@ import {
   type PoemToken,
   type SafeZone,
 } from "@/lib/boks/poetry/manifest";
+import {
+  approach,
+  dragLean,
+  gestureSceneAt,
+  isGestureNotTap,
+} from "@/lib/boks/poetry/gesture";
+import { createGestureLayer, type GestureLayer } from "@/components/boks/poetry/gesture-layer";
 
 /**
  * A poem as a place rather than a page.
@@ -72,7 +79,29 @@ export function ImmersivePoem({
    * it - all eight lines and thirty-three words. Written on the elements that
    * actually read them, the recalculation is a picture or a control bar.
    */
-  const pictures = useRef<(HTMLImageElement | null)[]>([]);
+  const pictures = useRef<(HTMLElement | null)[]>([]);
+  /*
+   * A gesture scene's own picture and the canvas that redraws it, by scene
+   * index. Empty for every poem without a `gesture` in its scene map.
+   */
+  const gestureImages = useRef<(HTMLImageElement | null)[]>([]);
+  const gestureCanvases = useRef<(HTMLCanvasElement | null)[]>([]);
+  const gestureLayers = useRef<(GestureLayer | null)[]>([]);
+  /*
+   * Where the hand is and where the picture is, outside React: both change
+   * every frame while a finger is down. `hold` and `lean` ease towards their
+   * targets in the frame loop, so letting go returns the water to ripples and
+   * the landscape to its middle gradually rather than in one frame.
+   */
+  const hand = useRef({
+    hold: 0,
+    holdTarget: 0,
+    lean: 0,
+    leanTarget: 0,
+    pointer: null as null | { id: number; x: number; y: number; at: number; moved: number; scene: number },
+    swallowClick: false,
+  });
+  const stillRef = useRef(false);
   const controls = useRef<HTMLDivElement>(null);
   /** The last values written to the DOM, so an unchanged frame writes nothing. */
   const painted = useRef({ from: -1, to: -1, fade: -1, played: -1, ms: -1 });
@@ -90,6 +119,8 @@ export function ImmersivePoem({
   const [at, setAt] = useState({ line: 0, token: 0 });
   const [chromeVisible, setChromeVisible] = useState(true);
   const [reduced, setReduced] = useState(false);
+  /** Scenes whose gesture the reader has already found; their hint stays away. */
+  const [gestureFound, setGestureFound] = useState<Record<string, true>>({});
 
   const lineIndex = at.line;
   const activeToken = at.token;
@@ -98,7 +129,11 @@ export function ImmersivePoem({
 
   useEffect(() => {
     const handle = window.setTimeout(
-      () => setReduced(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false),
+      () => {
+        const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+        stillRef.current = still;
+        setReduced(still);
+      },
       0
     );
     return () => window.clearTimeout(handle);
@@ -181,6 +216,38 @@ export function ImmersivePoem({
     };
   }, [manifest.theme]);
 
+  /*
+   * A layer for each gesture scene, built once its picture has decoded.
+   *
+   * Built up front with the rest of the pictures, not when the scene arrives:
+   * compiling a shader and uploading a texture is exactly the kind of cost
+   * that, paid at the start of a dissolve, shows as the one frame that jumps.
+   */
+  useEffect(() => {
+    const layers = gestureLayers.current;
+    const waiting: (() => void)[] = [];
+    manifest.scenes.forEach((poemScene, index) => {
+      const gesture = poemScene.gesture;
+      const image = gestureImages.current[index];
+      const canvas = gestureCanvases.current[index];
+      if (!gesture || !image || !canvas) return;
+      const build = () => {
+        if (layers[index] || !image.naturalWidth) return;
+        layers[index] = createGestureLayer(canvas, image, gesture, poemScene.focalPoint);
+      };
+      if (image.complete) build();
+      else {
+        image.addEventListener("load", build, { once: true });
+        waiting.push(() => image.removeEventListener("load", build));
+      }
+    });
+    return () => {
+      waiting.forEach((stop) => stop());
+      layers.forEach((layer) => layer?.dispose());
+      gestureLayers.current = [];
+    };
+  }, [manifest]);
+
   // The frame loop. It owns the clock and writes straight to the DOM.
   useEffect(() => {
     let raf = 0;
@@ -202,6 +269,20 @@ export function ImmersivePoem({
      * visible to the compositor - the next one at zero opacity, so its
      * texture is uploaded while nothing is happening.
      */
+    /*
+     * The cinematic change, for a poem that asks for it: the arriving picture
+     * settles from six percent closer while the leaving one drifts on. Scale
+     * and opacity only, both of which the compositor does on its own.
+     */
+    const cinematic = manifest.transitionStyle === "cinematic";
+    const moveDissolve = (pair: { from: number; to: number }, fade: number) => {
+      if (!cinematic || stillRef.current || pair.to < 0) return;
+      const settle = 1 - (1 - fade) * (1 - fade);
+      const arriving = pictures.current[pair.to];
+      const leaving = pictures.current[pair.from];
+      if (arriving) arriving.style.transform = `translateZ(0) scale(${(1.06 - 0.06 * settle).toFixed(4)})`;
+      if (leaving) leaving.style.transform = `translateZ(0) scale(${(1 + 0.035 * fade).toFixed(4)})`;
+    };
     const paintBackdrop = (pair: { from: number; to: number; progress: number }) => {
       const fade = Math.round(pair.progress * 200) / 200;
       const shown = painted.current;
@@ -209,6 +290,7 @@ export function ImmersivePoem({
         if (fade !== shown.fade && pair.to >= 0) {
           const arriving = pictures.current[pair.to];
           if (arriving) arriving.style.opacity = String(fade);
+          moveDissolve(pair, fade);
         }
         shown.fade = fade;
         return;
@@ -226,11 +308,36 @@ export function ImmersivePoem({
         picture.style.zIndex = arriving ? "1" : "0";
         picture.style.visibility =
           index === pair.from || arriving || index === next ? "visible" : "hidden";
+        if (cinematic) picture.style.transform = "";
+      });
+      moveDissolve(pair, fade);
+    };
+
+    /*
+     * The gesture scene, drawn every frame it is on screen - paused or not.
+     *
+     * The water keeps moving while the voice is stopped; a picture that froze
+     * with the pause would say the gesture belongs to the recording, and it
+     * does not. Only the layers that are visible are drawn.
+     */
+    let lastFrame = performance.now();
+    const paintGestures = (now: number) => {
+      const elapsed = Math.min(100, now - lastFrame);
+      lastFrame = now;
+      const state = hand.current;
+      state.hold = approach(state.hold, state.holdTarget, elapsed, state.holdTarget > state.hold ? 600 : 900);
+      state.lean = approach(state.lean, state.leanTarget, elapsed, state.pointer ? 180 : 700);
+      const shown = painted.current;
+      const next = shown.to >= 0 ? shown.to : shown.from + 1;
+      gestureLayers.current.forEach((layer, index) => {
+        if (!layer || (index !== shown.from && index !== shown.to && index !== next)) return;
+        layer.paint({ time: stillRef.current ? 0 : now / 1000, hold: state.hold, lean: state.lean });
       });
     };
     paintBackdrop(backdropAt(manifest, (audio.current?.currentTime ?? 0) * 1000));
 
-    const tick = () => {
+    const tick = (now: number) => {
+      paintGestures(now);
       const element = audio.current;
       if (element) {
         const ms = element.currentTime * 1000;
@@ -387,6 +494,28 @@ export function ImmersivePoem({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [onClose, recording, toggle]);
 
+  /*
+   * The hand lifts: the water ripples again and the landscape goes back to its
+   * ambiguous middle, both eased by the frame loop. A press long enough, or a
+   * movement far enough, to have been the gesture does not also pause.
+   */
+  function releaseHand(pointerId: number) {
+    const state = hand.current;
+    const pointer = state.pointer;
+    if (!pointer || pointer.id !== pointerId) return;
+    state.pointer = null;
+    state.holdTarget = 0;
+    state.leanTarget = 0;
+    if (isGestureNotTap(performance.now() - pointer.at, pointer.moved)) {
+      state.swallowClick = true;
+      const found = manifest.scenes[pointer.scene];
+      if (found) setGestureFound((seen) => (seen[found.id] ? seen : { ...seen, [found.id]: true }));
+    }
+  }
+
+  const gestureHint =
+    scene?.gesture && !gestureFound[scene.id] && status !== "ended" && !recording ? scene.gesture.hint : null;
+
   const preset = scene ? presetFor(scene) : "quiet-breath";
   const stanzas = useMemo(() => stanzasOf(manifest), [manifest]);
   const currentStanza = stanzas.findIndex((stanza) =>
@@ -441,7 +570,50 @@ export function ImmersivePoem({
       aria-label={`${manifest.title} — ${manifest.author}`}
     >
       {/* A tap anywhere that is not a control plays or pauses. */}
-      <button type="button" className="poem__surface" onClick={toggle} aria-label={playing ? "Pause" : "Listen"} />
+      {/* A press or a sideways movement on a gesture scene works the picture;
+          only a quick tap still plays and pauses. */}
+      <button
+        type="button"
+        className="poem__surface"
+        onClick={() => {
+          if (hand.current.swallowClick) {
+            hand.current.swallowClick = false;
+            return;
+          }
+          toggle();
+        }}
+        onPointerDown={(event) => {
+          const shown = painted.current;
+          const index = gestureSceneAt(manifest.scenes, { from: shown.from, to: shown.to, progress: shown.fade });
+          const gesture = manifest.scenes[index]?.gesture;
+          if (!gesture) return;
+          hand.current.swallowClick = false;
+          hand.current.pointer = {
+            id: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            at: performance.now(),
+            moved: 0,
+            scene: index,
+          };
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+          if (gesture.kind === "hold") hand.current.holdTarget = 1;
+        }}
+        onPointerMove={(event) => {
+          const pointer = hand.current.pointer;
+          if (!pointer || pointer.id !== event.pointerId) return;
+          const dx = event.clientX - pointer.x;
+          pointer.moved = Math.max(pointer.moved, Math.hypot(dx, event.clientY - pointer.y));
+          if (manifest.scenes[pointer.scene]?.gesture?.kind === "drag-x") {
+            hand.current.leanTarget = dragLean(dx, event.currentTarget.clientWidth);
+          }
+        }}
+        onPointerUp={(event) => releaseHand(event.pointerId)}
+        onPointerCancel={(event) => releaseHand(event.pointerId)}
+        // A long press is the gesture here, not a request for a menu.
+        onContextMenu={(event) => event.preventDefault()}
+        aria-label={playing ? "Pause" : "Listen"}
+      />
 
       {/*
         One picture per scene, mounted once, never moved and never given
@@ -457,6 +629,12 @@ export function ImmersivePoem({
             scene={poemScene}
             ref={(element) => {
               pictures.current[index] = element;
+            }}
+            imageRef={(element) => {
+              gestureImages.current[index] = element;
+            }}
+            canvasRef={(element) => {
+              gestureCanvases.current[index] = element;
             }}
           />
         ))}
@@ -656,6 +834,13 @@ export function ImmersivePoem({
         </div>
       </div>
 
+      {/* Keyed by scene so it fades in afresh on its own picture. */}
+      {gestureHint && (
+        <p key={scene?.id} className="poem__hint" aria-hidden="true">
+          {gestureHint}
+        </p>
+      )}
+
       {status === "loading" && <p className="poem__state">Loading…</p>}
       {status === "error" && <p className="poem__state">The recording did not load</p>}
 
@@ -781,17 +966,51 @@ function stanzasOf(manifest: PoemManifest) {
   return stanzas;
 }
 
-function Backdrop({ scene, ref }: { scene: PoemScene; ref: React.Ref<HTMLImageElement> }) {
+function Backdrop({
+  scene,
+  ref,
+  imageRef,
+  canvasRef,
+}: {
+  scene: PoemScene;
+  ref: React.Ref<HTMLElement>;
+  imageRef: React.Ref<HTMLImageElement>;
+  canvasRef: React.Ref<HTMLCanvasElement>;
+}) {
+  const objectPosition = `${scene.focalPoint.x * 100}% ${scene.focalPoint.y * 100}%`;
+  /*
+   * A gesture scene is a layer holding its picture and the canvas that
+   * redraws it, so the frame loop's opacity dissolves both as one. The
+   * picture stays underneath: until the canvas has drawn, or wherever WebGL
+   * is missing, it is the scene.
+   */
+  if (scene.gesture) {
+    return (
+      <div ref={ref as React.Ref<HTMLDivElement>} className="poem__scene poem__scene--gesture">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={imageRef}
+          className="poem__scene-image"
+          src={scene.image}
+          alt=""
+          draggable={false}
+          decoding="async"
+          style={{ objectPosition }}
+        />
+        <canvas ref={canvasRef} className="poem__gesture" aria-hidden="true" />
+      </div>
+    );
+  }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      ref={ref}
+      ref={ref as React.Ref<HTMLImageElement>}
       className="poem__scene"
       src={scene.image}
       alt=""
       draggable={false}
       decoding="async"
-      style={{ objectPosition: `${scene.focalPoint.x * 100}% ${scene.focalPoint.y * 100}%` }}
+      style={{ objectPosition }}
     />
   );
 }

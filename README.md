@@ -24,8 +24,8 @@ the shelf opens. Both are available to **every reader**, signed in or not.
 
 The shelf shows only pieces in the reader's chosen reading languages, newest
 first, with what they have already heard moved behind what they have not; the
-newest piece is marked *Premiere* for two weeks. Today it holds 23 pieces -
-13 in English and 10 in Russian, 22 poems and one illustrated story with
+newest piece is marked *Premiere* for two weeks. Today it holds 25 pieces -
+15 in English and 10 in Russian, 24 poems and one illustrated story with
 interactive moments (Tolstoy's «Лев и собачка»).
 
 The interface is English everywhere; titles, authors and the texts themselves

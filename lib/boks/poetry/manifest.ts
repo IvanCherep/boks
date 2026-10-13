@@ -12,6 +12,8 @@
  * frame from that moment alone.
  */
 
+import type { PoemGesture } from "@/lib/boks/poetry/gesture";
+
 export type SafeZone = {
   /** Named when a line is deliberately split between two parts of the frame. */
   role?: string;
@@ -33,6 +35,11 @@ export type PoemScene = {
   safeZones: SafeZone[];
   textPreset: string;
   transitionMs: number;
+  /**
+   * Something the picture does under the reader's hand while it is on screen -
+   * see `gesture.ts`. Most scenes have none.
+   */
+  gesture?: PoemGesture;
 };
 
 export type PoemToken = {
@@ -97,6 +104,13 @@ export type PoemManifest = {
    * its settled lines vanish into the clouds.
    */
   veil?: number;
+  /**
+   * How one picture gives way to the next. A plain dissolve when left out;
+   * `cinematic` also lets the arriving picture settle from slightly closer
+   * while the leaving one drifts on - scale and opacity only, both of which
+   * the compositor does on its own.
+   */
+  transitionStyle?: "dissolve" | "cinematic";
   playback: {
     /** How early a word begins arriving, so it is whole when it is spoken. */
     tokenLeadMs?: number;

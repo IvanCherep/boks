@@ -4807,6 +4807,12 @@ body:has(.poem, .cinema) .reader-dock {
   border: 0;
   background: transparent;
   cursor: pointer;
+  /* A press and a sideways drag belong to the picture on a gesture scene:
+     no scroll, no zoom, no long-press menu, no selection. */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /*
@@ -4851,6 +4857,52 @@ body:has(.poem, .cinema) .reader-dock {
    * arriving, next - and the rest are `visibility: hidden`.
    */
   will-change: opacity;
+}
+
+/* A gesture scene: its picture, and the canvas that redraws it under the
+   reader's hand (gesture-layer.ts), dissolving together as one layer. */
+.poem__scene-image,
+.poem__gesture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poem__gesture {
+  display: block;
+}
+
+/* What the picture will do if touched - once, until the reader has tried it. */
+.poem__hint {
+  position: absolute;
+  /* Under the lowest text zone (0.82 of the screen) and over the controls -
+     where "Loading…" sits, which is never up by the time a gesture scene is. */
+  inset: auto 1.5rem calc(5.4rem + env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+  margin: 0;
+  color: rgb(250 240 218 / 82%);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow: 0 1px 10px rgb(6 9 16 / 70%);
+  pointer-events: none;
+  opacity: 0;
+  animation: poem-hint 7s ease-in-out 1.2s forwards;
+}
+
+@keyframes poem-hint {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
 }
 
 /* Which picture is showing, which is arriving and how far, and which are out

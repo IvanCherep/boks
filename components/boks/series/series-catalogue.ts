@@ -57,6 +57,32 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "e07795ca-f5ee-4472-8646-f9dc64736c91",
+    format: "poem",
+    language: "en",
+    title: "Because She Would Ask Me Why I Loved Her",
+    author: "Christopher Brennan",
+    cover: "/series/why-i-loved-her.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 56,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-13",
+  },
+  {
+    storyId: "8e2ae832-c00c-43f0-ba4b-0acd5653df03",
+    format: "poem",
+    language: "en",
+    title: "Australia",
+    author: "Bernard O'Dowd",
+    cover: "/series/australia.webp",
+    coverFocus: "50% 40%",
+    durationSeconds: 50,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-13",
+  },
+  {
     storyId: "dc5150c6-fb9b-417c-8b29-40d274103acc",
     format: "poem",
     language: "en",

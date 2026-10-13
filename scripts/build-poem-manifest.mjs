@@ -237,6 +237,8 @@ const manifest = {
   // How much darker the sky is made behind the words. Daylight pictures need
   // more than the night the format was first drawn for.
   ...(sceneMap.veil ? { veil: sceneMap.veil } : {}),
+  // A dissolve unless the poem asks for the slower, closer cinematic one.
+  ...(sceneMap.transitionStyle ? { transitionStyle: sceneMap.transitionStyle } : {}),
   playback: {
     /*
      * A word appears a little before it is said.

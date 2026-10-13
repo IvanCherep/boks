@@ -80,6 +80,9 @@ Tests:
 | `lib/boks/poetry/manifest.test.ts` | every rule above, asserted against the shipped manifest |
 | `components/boks/poetry/immersive-poem.tsx` | the renderer; knows no particular poem |
 | `components/boks/poetry/poems.ts` | which boks open in it |
+| `lib/boks/poetry/gesture.ts` | scene gestures as data, and their maths: cover crop, easing, drag, tap or gesture |
+| `lib/boks/poetry/gesture.test.ts` | holds that maths |
+| `components/boks/poetry/gesture-layer.ts` | the WebGL layer that redraws a gesture scene's picture |
 | `components/boks/admin/poetry-sandbox.tsx` | `/admin` → Poetry, for a poem with no boks yet |
 | `scripts/build-poem-manifest.mjs` | builds a manifest from a recording's own alignment |
 | `docs/farewell-russia-scene-map.json` | the first poem's scene map |
@@ -400,6 +403,8 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *Binsey Poplars*, Hopkins | `99ee280f-faf5-4026-99fc-9cbec9d79a2a` | Julian (British) | 4 | 1, 1, 16, 6 |
 | *Song of the Redwood-Tree*, Part 1, Whitman | `dc5150c6-fb9b-417c-8b29-40d274103acc` | Jerry B. | 4 | 5, 14, 53, 10 |
 | *The Old Vicarage, Grantchester*, Rupert Brooke | `afa5a1ed-3019-455e-b550-475c9a498db3` | Julian (British) | 4 - the third holds the long middle, as the brief asks for the complete poem | 6, 27, 106, 2 |
+| *Because She Would Ask Me Why I Loved Her*, Christopher Brennan | `e07795ca-f5ee-4472-8646-f9dc64736c91` | Jerry B. | 4 - the second has a hold gesture: the reflections meet, the water stills | 2, 2, 8, 4 |
+| *Australia*, Bernard O'Dowd | `8e2ae832-c00c-43f0-ba4b-0acd5653df03` | Jerry B. | 4, cinematic transitions - the second has a sideways gesture between Eden and Mammon | 4, 4, 3, 3 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
@@ -476,6 +481,34 @@ check that it works.
 
 No new component, ever. If a poem needs something the renderer cannot do, the
 thing to add is a preset or a scene-map field, not a component.
+
+### Scene gestures
+
+A scene can answer the reader's hand while the voice goes on - a **scene
+gesture**, the `gesture` field of a scene in the scene map. Unlike a cinema
+moment it never stops the reading and never waits: it is something the picture
+does while it is on screen, and the poem is whole without it. Two exist, both
+drawn by one WebGL shader over the scene's own picture
+(`components/boks/poetry/gesture-layer.ts`; the maths, tested, in
+`lib/boks/poetry/gesture.ts`):
+
+| `kind` / `effect` | Gesture | What it does | Fields |
+|---|---|---|---|
+| `hold` / `converge-reflections` | press and hold | below `waterline` the picture is a reflection: at rest it ripples; held, the ripples die and the two halves slide `pull` towards the middle; released, the ripples return | `waterline`, `pull`, `ripple` (image fractions) |
+| `drag-x` / `lean-between` | move sideways | one picture holding two worlds side by side; the camera pushes `zoom` towards `leftFocus` or `rightFocus`, warming the left or draining the right, and eases back to the ambiguous middle when released | `leftFocus`, `rightFocus`, `zoom` |
+
+Both need **one** picture, not a before/after pair - the effect is a warp and a
+grade of the frame itself. A quick tap still plays and pauses; a press longer
+than 280 ms or a movement over 10 px is the gesture and does not. The `hint`
+is shown once on the scene until the reader has tried it, and never in
+recording mode. Give a gesture scene room: insert silence after its lines (see
+step 3) so it holds for ten seconds or more - Brennan's has 3.5 s after «each to
+each», O'Dowd's 2.5 s after «Eden ’neath your face». Without WebGL the canvas
+stays empty and the `<img>` beneath it is the scene.
+
+`transitionStyle: "cinematic"` on the scene map makes every change of picture
+a settle as well as a dissolve: the arriving picture comes in from 6 % closer,
+the leaving one drifts 3.5 % on. Scale and opacity only.
 
 ### How many pictures
 

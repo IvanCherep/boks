@@ -166,6 +166,10 @@ _Avoid_: cinema mode, video
 A verse bok whose words arrive inside the picture as they are spoken.
 _Avoid_: poetry mode, poem player
 
+**Scene gesture**:
+Something a poem's picture does under the reader's hand while the voice goes on - holding stills the water, moving sideways leans the landscape. It never stops the reading.
+_Avoid_: moment, interaction (for this), effect
+
 **Story moment**:
 A point where a cinema bok stops and asks the reader for a gesture.
 _Avoid_: interaction, effect, interactive scene

@@ -54,6 +54,10 @@ const poems: Record<string, string> = {
   "afa5a1ed-3019-455e-b550-475c9a498db3": "/poetry/grantchester/manifest.json",
   // Walt Whitman — Song of the Redwood-Tree, Part 1
   "dc5150c6-fb9b-417c-8b29-40d274103acc": "/poetry/redwood-tree/manifest.json",
+  // Christopher Brennan — Because She Would Ask Me Why I Loved Her
+  "e07795ca-f5ee-4472-8646-f9dc64736c91": "/poetry/why-i-loved-her/manifest.json",
+  // Bernard O'Dowd — Australia
+  "8e2ae832-c00c-43f0-ba4b-0acd5653df03": "/poetry/australia/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

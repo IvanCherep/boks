@@ -116,6 +116,32 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
     }
   });
 
+  it("gives a gesture scene time to be found, and keeps its effect inside the picture", () => {
+    for (let index = 0; index < manifest.scenes.length; index += 1) {
+      const scene = manifest.scenes[index];
+      const gesture = scene.gesture;
+      if (!gesture) continue;
+      const until = manifest.scenes[index + 1]?.startMs ?? manifest.durationMs;
+      // A gesture needs noticing, then trying: shorter and the picture is gone
+      // before the hand has done anything.
+      expect(until - scene.startMs, scene.id).toBeGreaterThan(8000);
+      expect(gesture.hint.length, scene.id).toBeGreaterThan(0);
+      if (gesture.kind === "hold") {
+        expect(gesture.waterline, scene.id).toBeGreaterThan(0.2);
+        expect(gesture.waterline, scene.id).toBeLessThan(0.9);
+        expect(gesture.pull, scene.id).toBeLessThanOrEqual(0.15);
+        expect(gesture.ripple, scene.id).toBeLessThanOrEqual(0.02);
+      } else {
+        for (const focus of [gesture.leftFocus, gesture.rightFocus]) {
+          expect(focus.x, scene.id).toBeGreaterThanOrEqual(0);
+          expect(focus.x, scene.id).toBeLessThanOrEqual(1);
+        }
+        expect(gesture.leftFocus.x, scene.id).toBeLessThan(gesture.rightFocus.x);
+        expect(gesture.zoom, scene.id).toBeLessThanOrEqual(0.4);
+      }
+    }
+  });
+
   it("has a theme that lasts as long as the voice", () => {
     // A music take can come back shorter than it was asked for - one returned
     // 249 s of a requested 380 after a rate-limit retry, and the last two

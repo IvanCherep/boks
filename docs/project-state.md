@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-11.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-13.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,26 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live
+
+**Two Australian poems with scene gestures (2026-10-13).** Christopher
+Brennan's *Because She Would Ask Me Why I Loved Her* (bok
+`e07795ca-f5ee-4472-8646-f9dc64736c91`) and Bernard O'Dowd's *Australia* (bok
+`8e2ae832-c00c-43f0-ba4b-0acd5653df03`) were not in the catalogue and were
+added by the curated route (`work/catalogue-2026-10-13/`; O'Dowd from
+Wikisource, Brennan from PoemHunter - Brennan d. 1932, O'Dowd d. 1953 and the
+sonnet published 1900), embedded, and produced as immersive poems from the
+four Sydney and four Melbourne pictures in numerical order. Jerry B. reads
+both (Australian authors: no British voice by rule), take 1 of 2 each, at
+−22.4 LUFS; themes take 2 of 2, zero words in speech-to-text, 13 dB under.
+New: **scene gestures** (`docs/reading-formats.md` § Scene gestures). On
+Brennan's second picture, holding the screen draws the two reflections
+together and stills the water, releasing restores the ripples; on O'Dowd's
+second, moving sideways leans the landscape into Eden or into its industrial
+counterpart and it returns to the ambiguous middle when released. O'Dowd
+also gets `transitionStyle: "cinematic"`. Looked at in WebKit at iPhone 15
+size against the built app (seeked by the bar: headless WebKit does not
+decode the MP3s, for the shipped poems either); frame rate not measured.
+No events record the gestures yet.
 
 **Song of the Redwood-Tree, Part 1 on the series shelf; the British voice
 brought up to level (2026-10-11).** Whitman's Part 1, bok
