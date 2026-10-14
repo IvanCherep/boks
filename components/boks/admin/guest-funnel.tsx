@@ -274,6 +274,8 @@ export function GuestFunnelPanel() {
             </p>
           </div>
 
+          {data.hands && <GuestHands hands={data.hands} />}
+
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <h3 className="text-sm font-semibold">How much guests read</h3>
@@ -401,5 +403,50 @@ export function GuestFunnelPanel() {
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Did guests touch a bok at all - the question between "arrived" and
+ * "finished" that `start`, a timer, cannot answer. A page nobody taps is a
+ * different problem from a page people try and leave.
+ */
+function GuestHands({ hands }: { hands: NonNullable<GuestFunnel["hands"]> }) {
+  const of = (count: number) => percent(hands.shown ? count / hands.shown : null);
+  const rows: [string, number][] = [
+    ["Shown a bok", hands.shown],
+    ["Touched one: tap, scroll or swipe", hands.touched],
+    ["Tapped", hands.tapped],
+    ["Scrolled the text", hands.scrolled],
+    ["Swiped to another bok", hands.swiped],
+  ];
+  return (
+    <div>
+      <h3 className="text-sm font-semibold">Did they touch it</h3>
+      <table className="mt-2 w-full text-sm">
+        <thead>
+          <tr className="text-left text-[var(--muted-foreground)]">
+            <th className="py-1 font-medium">Guest devices</th>
+            <th className="py-1 text-right font-medium">Devices</th>
+            <th className="py-1 text-right font-medium">Of those shown a bok</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([label, count]) => (
+            <tr key={label} className="border-t border-[var(--border)]">
+              <td className="py-2">{label}</td>
+              <td className="py-2 text-right tabular-nums">{count}</td>
+              <td className="py-2 text-right tabular-nums">{of(count)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+        {hands.swipes} swipes to another bok in all; {hands.boksTouched} of {hands.boksShown} boks shown were
+        touched. Taps and scrolls count the first touch on each bok and are recorded{" "}
+        {hands.since ? `from ${new Date(hands.since).toLocaleDateString()}` : "from now on"}; swipes cover the
+        whole window.
+      </p>
+    </div>
   );
 }

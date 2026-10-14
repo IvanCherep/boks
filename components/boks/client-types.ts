@@ -636,6 +636,23 @@ export type GuestFunnel = {
     requestedLink: number;
     createdAccount: number;
   };
+  /**
+   * Whether guests put a hand on a bok at all. Devices, except `swipes`,
+   * `boksShown` and `boksTouched`. `tapped` and `scrolled` go by the first
+   * touch on each bok and start at `since`; `swiped` comes from the outcomes
+   * and covers the whole window. Absent from a database before the migration.
+   */
+  hands?: {
+    since: string | null;
+    shown: number;
+    touched: number;
+    tapped: number;
+    scrolled: number;
+    swiped: number;
+    swipes: number;
+    boksShown: number;
+    boksTouched: number;
+  };
   readsPerGuest: { none: number; oneOrTwo: number; threeToNine: number; tenToFourteen: number; fifteenPlus: number };
   medianGuestMinutes: number | null;
   limit: { hit: number; requested: number; converted: number };

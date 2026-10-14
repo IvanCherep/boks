@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import {
   aftertasteTags,
   isAftertasteTag,
@@ -31,7 +31,15 @@ describe("the aftertaste vocabulary", () => {
     // a whole evening of reader answers landing in a rejected batch, and the
     // reader would never see a thing go wrong. So the two lists are compared
     // rather than trusted to have been updated together.
-    const sql = readFileSync("supabase/migrations/20261001090000_boks_aftertaste.sql", "utf8");
+    // The latest migration that sets the constraint is the one in force.
+    const latest = readdirSync("supabase/migrations")
+      .filter((name) => name.endsWith(".sql"))
+      .sort()
+      .filter((name) =>
+        readFileSync(`supabase/migrations/${name}`, "utf8").includes("add constraint recommendation_events_event_type_check")
+      )
+      .at(-1);
+    const sql = readFileSync(`supabase/migrations/${latest}`, "utf8");
     const allowed = sql
       .slice(sql.indexOf("check (event_type in ("))
       .match(/'([a-z]+)'/g)

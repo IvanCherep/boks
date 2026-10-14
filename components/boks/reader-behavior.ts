@@ -94,6 +94,17 @@ export function inferReadOutcome(
 }
 
 /**
+ * A press read back at its release, for the `touch` event: a finger that
+ * travelled less than this was a tap, more was a swipe or a drag - whether or
+ * not it went far enough to change the bok, which the outcome records.
+ */
+export const touchTapPx = 10;
+
+export function touchKind(dx: number, dy: number): "tap" | "swipe" {
+  return Math.hypot(dx, dy) < touchTapPx ? "tap" : "swipe";
+}
+
+/**
  * Forgets what this browser learned about the reader.
  *
  * Signing out has to take the reading profile with it. It shapes the feed and

@@ -41,6 +41,7 @@ import {
   recordAnonymousBoksRead,
   saveAnonymousNoticeState,
   saveProfile,
+  touchKind,
 } from "@/components/boks/reader-behavior";
 import {
   composeReaderRanking,
@@ -132,7 +133,7 @@ import {
   setSupabaseLike,
   submitSupabaseComment,
 } from "@/components/boks/supabase-browser-data";
-import type { ReaderEvent, ReaderEventType } from "@/lib/boks/contracts";
+import type { ReaderEvent, ReaderEventType, TouchKind } from "@/lib/boks/contracts";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
@@ -442,6 +443,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     unseenCount: 0,
   });
   const recordHeartbeatRef = useRef<(story: Story) => void>(() => undefined);
+  const recordTouchRef = useRef<(kind: TouchKind) => void>(() => undefined);
   const recordOutcomeRef = useRef<(reason: ReadOutcomeReason) => void>(() => undefined);
   const openReadBoksRef = useRef<(storyId: string, entry: ReaderEntry) => Promise<boolean>>(async () => false);
   const chromeTimer = useRef<number | null>(null);
@@ -1689,7 +1691,57 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       updateStoryProgress();
       recordReaderEvent("heartbeat", story);
     };
+    // Once per bok and session - the queue drops the rest - so this can be
+    // called on every touch without counting them.
+    recordTouchRef.current = (kind) => {
+      const story = currentStoryRef.current;
+      if (story) recordReaderEvent("touch", story, 1, { kind });
+    };
   });
+
+  /*
+   * Did the reader touch the bok at all?
+   *
+   * On the window, in the capture phase, so every hand on the page counts -
+   * the text, the controls, an immersive poem over the feed - and nothing the
+   * reader's own handlers do (stopping propagation, changing bok) can hide it.
+   * A press is classified when it is let go, while the bok it began on is
+   * still the current one.
+   */
+  useEffect(() => {
+    let down: { x: number; y: number } | null = null;
+    const onDown = (event: PointerEvent) => {
+      down = { x: event.clientX, y: event.clientY };
+    };
+    const onUp = (event: PointerEvent) => {
+      if (!down) return;
+      recordTouchRef.current(touchKind(event.clientX - down.x, event.clientY - down.y));
+      down = null;
+    };
+    let cancelled = 0;
+    const onCancel = () => {
+      // A cancelled press is the browser taking over a gesture. When it is
+      // scrolling the text the scroll handler says so first; give it the
+      // moment to, so a reader is not counted as swiping who was reading.
+      if (down) cancelled = window.setTimeout(() => recordTouchRef.current("swipe"), 300);
+      down = null;
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (!event.metaKey && !event.ctrlKey && !event.altKey) recordTouchRef.current("key");
+    };
+    const options = { capture: true, passive: true };
+    window.addEventListener("pointerdown", onDown, options);
+    window.addEventListener("pointerup", onUp, options);
+    window.addEventListener("pointercancel", onCancel, options);
+    window.addEventListener("keydown", onKey, options);
+    return () => {
+      window.removeEventListener("pointerdown", onDown, options);
+      window.removeEventListener("pointerup", onUp, options);
+      window.removeEventListener("pointercancel", onCancel, options);
+      window.removeEventListener("keydown", onKey, options);
+      window.clearTimeout(cancelled);
+    };
+  }, []);
 
   function recordReadingOutcome(reason: ReadOutcomeReason) {
     if (!currentStory) return;
@@ -2351,6 +2403,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       });
     }
     updateStoryProgress();
+    // A bok arrives at the top, so only a reader moves it this far.
+    if (element && element.scrollTop > 24) recordTouchRef.current("scroll");
     // Scrolling is reading. It puts the controls away and never brings them up.
     hideReaderChrome();
     updateStoryOverflow();

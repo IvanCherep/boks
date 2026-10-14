@@ -59,6 +59,32 @@ The trajectory. Everything plotted weekly is a count or a total.
 | Arrived / finished one / finished three / created an account | readers whose first event was in the last 30 days | Activation. A reader who never finishes a boks has not experienced the product, so acquisition spend on them is wasted. |
 | Boks published per week | `reels` published by week | Whether supply keeps pace with consumption. |
 
+## Guests
+
+Source: `get_guest_funnel` (latest in `20261014120000`). The unit is the guest
+**device**; the team and hidden countries are left out as described on the tab.
+
+### Did they touch it
+
+Between "arrived" and "finished a bok" the funnel had only `start`, which is a
+timer - 2.6 seconds on a bok - not a reader doing anything. This block says
+whether guests put a hand on the page at all. Every share is of the devices
+that were shown a bok.
+
+| Field | Computed from | Decision it supports |
+|---|---|---|
+| Shown a bok | guest devices with an `impression` | The denominator. |
+| Touched one | a `touch` event, or an outcome left by swipe, button or key | A page nobody touches is a first-screen problem (it does not invite a hand); a page people touch and leave is a choice-of-bok problem. |
+| Tapped · scrolled the text | `touch` with `metadata.kind` `tap` / `scroll` - the **first** touch on each bok | Whether they tried to read, or only to move on. |
+| Swiped to another bok | `complete`/`skip` with `metadata.from` in `swipe`, `button`, `keyboard` | Whether they found that there is more than one bok. |
+| Swipes · boks touched of boks shown | count of those outcomes; distinct (session, bok) with a `touch` over those with an `impression` | Depth of trying, per bok rather than per device. |
+
+`touch` is recorded by the reader once per bok and session, from window-level
+pointer, key and text-scroll listeners (`components/boks/reader-feed.tsx`), with
+the kind of the first touch; taps and scrolls start on 2026-10-14. Swipes come
+from outcomes and reach back over the whole window. A press the browser takes
+over (`pointercancel`) is counted as a swipe unless the text scrolled.
+
 ## Links
 
 Tracked links: a link made here for one place you send boks to (a faculty chat,

@@ -11,6 +11,18 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Did guests touch a bok (2026-10-14).** The Guests tab's funnel went from
+"arrived" to "finished" with only `start` - a 2.6-second timer - between, so a
+day of visitors who finished nothing could not say whether anyone had even
+tapped. A new reader event, `touch`, records the first tap, scroll, swipe or
+key on each bok per session (`metadata.kind`), and the tab gains *Did they
+touch it*: shown a bok, touched one, tapped, scrolled, swiped to another bok.
+Swipes come from outcomes and reach back; taps and scrolls start today.
+Migration `20261014120000` widens the event list and CHECK together and
+replaces `get_guest_funnel`; pushed. On the 14 days before it: 103 guest
+devices shown a bok, 3 had swiped to another. See `docs/admin-metrics.md` §
+Guests.
+
 **Byron's *Napoleon's Farewell* (2026-10-14).** From
 `byron_napoleons_farewell_boks.zip`, pictures in numerical order, brief in
 `docs/poetry/napoleons-farewell/brief.md`. Added to the catalogue (bok

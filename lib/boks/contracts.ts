@@ -23,7 +23,17 @@ export const readerEventTypes = [
    * Carries `metadata.tags`; see `aftertasteTags`.
    */
   "aftertaste",
+  /**
+   * The first time a hand meets a boks - a tap, a scroll into the text, a
+   * swipe, a key. Once per boks and session, with that first `metadata.kind`
+   * (`touchKinds`). It is what tells a reader who never touched the page from
+   * one who tried it and left.
+   */
+  "touch",
 ] as const;
+
+export const touchKinds = ["tap", "swipe", "scroll", "key"] as const;
+export type TouchKind = (typeof touchKinds)[number];
 
 export type ReaderEventType = (typeof readerEventTypes)[number];
 

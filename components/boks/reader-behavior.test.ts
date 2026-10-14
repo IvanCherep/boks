@@ -8,6 +8,7 @@ import {
   recordAnonymousBoksRead,
   saveAnonymousNoticeState,
   saveProfile,
+  touchKind,
 } from "@/components/boks/reader-behavior";
 import { initialProfile } from "@/components/boks/constants";
 import type { Story } from "@/components/boks/client-types";
@@ -160,5 +161,14 @@ describe("readerSignalsFromProfile", () => {
       likedStoryIds: ["b"],
       skippedStoryIds: ["c"],
     });
+  });
+});
+
+describe("touchKind", () => {
+  it("calls a press that barely moved a tap, and anything further a swipe", () => {
+    expect(touchKind(0, 0)).toBe("tap");
+    expect(touchKind(6, -5)).toBe("tap");
+    expect(touchKind(-40, 3)).toBe("swipe");
+    expect(touchKind(0, 120)).toBe("swipe");
   });
 });
