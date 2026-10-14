@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import {
   isPremiere,
+  effectiveSeriesFilter,
   orderSeries,
+  seriesLanguages,
   seriesDurationLabel,
   seriesFeatures,
   seriesFormatOf,
@@ -100,7 +102,7 @@ describe("the order of the shelf", () => {
   const ru2 = piece({ storyId: "ru-new", language: "ru", premieredOn: "2026-10-01" });
   const en1 = piece({ storyId: "en-new", language: "en", premieredOn: "2026-10-02" });
 
-  it("shows only the reader's languages", () => {
+  it("shows only the languages the shelf is filtered to", () => {
     expect(orderSeries([en1, ru1, ru2], ["ru"], new Set()).map((p) => p.storyId)).toEqual(["ru-new", "ru-old"]);
     expect(orderSeries([en1, ru1, ru2], ["en"], new Set()).map((p) => p.storyId)).toEqual(["en-new"]);
   });
@@ -113,12 +115,34 @@ describe("the order of the shelf", () => {
     ]);
   });
 
-  it("does not hide everything from a reader whose language is unknown", () => {
+  it("shows every language when there is no filter", () => {
     expect(orderSeries([ru1, en1], [], new Set())).toHaveLength(2);
   });
 
   it("moves what was already heard behind what was not", () => {
     expect(orderSeries([ru1, ru2], ["ru"], new Set(["ru-new"])).map((p) => p.storyId)).toEqual(["ru-old", "ru-new"]);
+  });
+});
+
+describe("the language filter", () => {
+  it("offers the languages on the shelf, most pieces first, any tag", () => {
+    const pieces = [
+      piece({ storyId: "a", language: "en" }),
+      piece({ storyId: "b", language: "ru" }),
+      piece({ storyId: "c", language: "ru" }),
+      piece({ storyId: "d", language: "it" }),
+    ];
+    expect(seriesLanguages(pieces)).toEqual([
+      { language: "ru", count: 2 },
+      { language: "en", count: 1 },
+      { language: "it", count: 1 },
+    ]);
+  });
+
+  it("never filters to nothing, and every language is no filter", () => {
+    expect(effectiveSeriesFilter(["sr"], ["en", "ru"])).toEqual([]);
+    expect(effectiveSeriesFilter(["en", "ru"], ["en", "ru"])).toEqual([]);
+    expect(effectiveSeriesFilter(["ru", "sr"], ["en", "ru"])).toEqual(["ru"]);
   });
 });
 
@@ -134,6 +158,13 @@ describe("the words on a card", () => {
     // Every piece on the shelf is a production; a poem is not labelled as one.
     expect(seriesFeatures(piece({ scenes: 4, moments: 0 }))).toEqual(["Voice", "4 scenes"]);
     expect(seriesFeatures(piece({ scenes: 1, moments: 1 }))).toEqual(["Voice", "1 scene", "1 interactive moment"]);
+  });
+
+  it("speaks Russian with Russian plurals", () => {
+    expect(seriesDurationLabel(49, "ru")).toBe("49 сек");
+    expect(seriesDurationLabel(127, "ru")).toBe("2 мин");
+    expect(seriesFeatures(piece({ scenes: 5, moments: 2 }), "ru")).toEqual(["Голос", "5 сцен", "2 интерактивных момента"]);
+    expect(seriesFeatures(piece({ scenes: 1, moments: 1 }), "ru")).toEqual(["Голос", "1 сцена", "1 интерактивный момент"]);
   });
 
   it("shortens a name to initials", () => {

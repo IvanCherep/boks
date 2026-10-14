@@ -5,6 +5,7 @@ import "@fontsource-variable/source-serif-4/standard.css";
 import "@fontsource-variable/playfair-display/wght.css";
 import "./globals.css";
 import { themeBootScript, themeColor } from "@/components/boks/theme";
+import { uiLanguageBootScript } from "@/lib/i18n/ui-language";
 
 /**
  * The canonical origin, and the reason it is written down.
@@ -91,13 +92,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // The theme script below sets `data-theme` before React hydrates, so the
-    // attribute legitimately differs from the server's markup.
+    // The boot scripts below set `data-theme` and `lang` before React
+    // hydrates, so the attributes legitimately differ from the server's markup.
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content={themeColor.light} />
         {/* Before first paint: a reader in dark mode never sees a white flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        {/* `<html lang>` follows the interface language: the device's, or the reader's choice. */}
+        <script dangerouslySetInnerHTML={{ __html: uiLanguageBootScript }} />
       </head>
       <body className="antialiased">{children}</body>
     </html>

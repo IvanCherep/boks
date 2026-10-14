@@ -27,6 +27,7 @@ import {
 } from "@/lib/boks/contracts";
 import { anonymousReadLimits } from "@/components/boks/reader-behavior";
 import { ThemeSetting } from "@/components/boks/theme-setting";
+import { UiLanguageSetting } from "@/components/boks/ui-language-setting";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { readFeedbackState } from "@/components/boks/feedback";
@@ -652,6 +653,8 @@ export function UserAuthPanel({
 
             <ThemeSetting />
 
+            <UiLanguageSetting />
+
             <div className="grid gap-3">
               <label className="grid gap-1 text-sm font-medium" htmlFor="boks-handle">
                 Unique @nickname
@@ -1036,7 +1039,12 @@ export function UserAuthPanel({
 
         {/* A guest has no settings page, and should not need an account to
             read in the dark. */}
-        {!showingAccount && !sentMagicLink && !(accountLoading && !user) && <ThemeSetting compact />}
+        {!showingAccount && !sentMagicLink && !(accountLoading && !user) && (
+          <>
+            <ThemeSetting compact />
+            <UiLanguageSetting compact />
+          </>
+        )}
 
         {/* A guest has no settings panel, so the box lives here too - and a
             guest's note is the one this product can least afford to lose. */}

@@ -5559,7 +5559,7 @@ body:has(.poem, .cinema) .reader-dock {
 
 .series__top {
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: 92px 1fr 92px;
   align-items: center;
   width: 100%;
   max-width: 680px;
@@ -5567,8 +5567,81 @@ body:has(.poem, .cinema) .reader-dock {
   padding: max(1rem, env(safe-area-inset-top)) 1rem 0.35rem;
 }
 
-.series__top .reader-more {
+.series__actions {
+  display: flex;
   justify-self: end;
+  gap: 4px;
+}
+
+.series__filter {
+  position: relative;
+}
+
+.series__filter.is-active {
+  color: var(--series-gold);
+}
+
+.series__filter-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--series-gold);
+}
+
+.series__filtered {
+  display: block;
+  margin: 0 auto 0.75rem;
+  border: 1px solid rgb(var(--series-gold-rgb) / 45%);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  background: transparent;
+  color: var(--series-gold);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.series-languages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.series-languages__option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0 0.9rem;
+  cursor: pointer;
+}
+
+.series-languages__option:has(input:checked) {
+  border-color: rgb(var(--series-gold-rgb) / 60%);
+  background: rgb(var(--series-gold-rgb) / 8%);
+}
+
+.series-languages__option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--series-gold);
+}
+
+.series-languages__option span:first-of-type {
+  flex: 1;
+}
+
+.series-languages__count {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .series__mark {

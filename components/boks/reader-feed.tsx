@@ -2432,7 +2432,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     return (
       <main className="reader-shell reader-shell--focus h-[100svh] overflow-hidden text-[var(--foreground)]">
         <SeriesView
-          readerLanguages={seriesContext.readerLanguages}
           heard={seriesHeard}
           openingStoryId={seriesOpening}
           signedIn={hasSignedInAccount}
@@ -2729,7 +2728,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
         {seriesOpen && seriesContext && (
           <SeriesView
-              readerLanguages={seriesContext.readerLanguages}
             heard={seriesHeard}
             openingStoryId={seriesOpening}
             signedIn={hasSignedInAccount}

@@ -1,5 +1,7 @@
 import { poemManifestFor } from "@/components/boks/poetry/poems";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
+import { plural } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * boks series: the pieces made in the new format, gathered in one place.
@@ -24,7 +26,13 @@ import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 
 export type SeriesFormat = "cinema" | "poem";
 
-export type SeriesLanguage = "ru" | "en";
+/**
+ * The language a piece is read in: any tag, `"it"` and `"sr"` included. The
+ * shelf's filter offers whatever languages the pieces on it carry, so a new
+ * language needs no change outside its pieces (`lib/i18n/content-languages.ts`
+ * names it).
+ */
+export type SeriesLanguage = string;
 
 export type SeriesPiece = {
   /** The boks id - the same id the feed, likes and comments use. */
@@ -459,18 +467,18 @@ export function isPremiere(piece: SeriesPiece, today: Date) {
 /**
  * The shelf, in the order it is shown.
  *
- * Only the reader's languages, the same filter the feed applies: a piece read
- * aloud in a language the reader has not chosen is a picture with noise over
- * it. The newest first, and a piece already heard drops behind the ones not
- * yet heard - the shelf is for what to listen to next.
+ * Every language by default: the shelf is small and a production is pictures
+ * and a voice as much as words. A reader narrows it with the shelf's own
+ * language filter (`languages`); an empty filter is "all", never "none". The
+ * newest first, and a piece already heard drops behind the ones not yet heard
+ * - the shelf is for what to listen to next.
  */
 export function orderSeries(
   pieces: readonly SeriesPiece[],
-  readerLanguages: readonly string[],
+  languages: readonly string[],
   heard: ReadonlySet<string>
 ): SeriesPiece[] {
-  const accepted = new Set(readerLanguages);
-  // No language known is not a refusal of every language.
+  const accepted = new Set(languages);
   const reads = (piece: SeriesPiece) => accepted.size === 0 || accepted.has(piece.language);
   const sorted = [...pieces].sort((a, b) => {
     const heardOrder = Number(heard.has(a.storyId)) - Number(heard.has(b.storyId));
@@ -481,10 +489,50 @@ export function orderSeries(
   return sorted.filter(reads);
 }
 
+/** The languages on the shelf, most pieces first, with how many each has. */
+export function seriesLanguages(pieces: readonly SeriesPiece[]): { language: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const piece of pieces) counts.set(piece.language, (counts.get(piece.language) ?? 0) + 1);
+  return [...counts]
+    .map(([language, count]) => ({ language, count }))
+    .sort((a, b) => b.count - a.count || a.language.localeCompare(b.language));
+}
+
+/**
+ * A filter that names only languages the shelf no longer has would hide
+ * everything; one that names every language it has is no filter. Both become
+ * "all".
+ */
+export function effectiveSeriesFilter(filter: readonly string[], available: readonly string[]): string[] {
+  const kept = filter.filter((language) => available.includes(language));
+  return kept.length === 0 || kept.length === available.length ? [] : kept;
+}
+
+const seriesFilterKey = "boks-series-languages";
+
+/** The shelf's filter is a view preference, kept on this device. */
+export function storedSeriesFilter(): string[] {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(seriesFilterKey) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function rememberSeriesFilter(languages: readonly string[]) {
+  try {
+    window.localStorage.setItem(seriesFilterKey, JSON.stringify(languages));
+  } catch {
+    // Private mode: the filter still holds for this visit.
+  }
+}
+
 /** "2 min", "49 sec": a piece under a minute says so rather than rounding up. */
-export function seriesDurationLabel(seconds: number) {
-  if (seconds < 60) return `${Math.max(1, Math.round(seconds))} sec`;
-  return `${Math.round(seconds / 60)} min`;
+export function seriesDurationLabel(seconds: number, language: UiLanguage = "en") {
+  const ru = language === "ru";
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))} ${ru ? "сек" : "sec"}`;
+  return `${Math.round(seconds / 60)} ${ru ? "мин" : "min"}`;
 }
 
 /**
@@ -493,7 +541,21 @@ export function seriesDurationLabel(seconds: number) {
  * the shelf has a voice and pictures, so moments are named only where there
  * are some.
  */
-export function seriesFeatures(piece: SeriesPiece): string[] {
+export function seriesFeatures(piece: SeriesPiece, language: UiLanguage = "en"): string[] {
+  if (language === "ru") {
+    const scenes = plural("ru", piece.scenes, { one: "сцена", few: "сцены", many: "сцен", other: "сцены" });
+    const features = ["Голос", `${piece.scenes} ${scenes}`];
+    if (piece.moments > 0) {
+      const moments = plural("ru", piece.moments, {
+        one: "интерактивный момент",
+        few: "интерактивных момента",
+        many: "интерактивных моментов",
+        other: "интерактивных момента",
+      });
+      features.push(`${piece.moments} ${moments}`);
+    }
+    return features;
+  }
   const features = ["Voice", `${piece.scenes} ${piece.scenes === 1 ? "scene" : "scenes"}`];
   if (piece.moments > 0) {
     features.push(`${piece.moments} interactive ${piece.moments === 1 ? "moment" : "moments"}`);
