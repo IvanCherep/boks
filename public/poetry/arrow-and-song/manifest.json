@@ -1,0 +1,784 @@
+{
+ "id": "arrow-and-song-immersive-v1",
+ "title": "The Arrow and the Song",
+ "author": "Henry Wadsworth Longfellow",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/arrow-and-song/narration.mp3",
+ "theme": {
+  "src": "/poetry/arrow-and-song/theme.mp3",
+  "gain": 0.119
+ },
+ "durationMs": 39440,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FBF2E2",
+  "active": "#FFD58E",
+  "shadow": "rgba(10, 10, 16, 0.7)"
+ },
+ "textScale": 0.88,
+ "veil": 1.4,
+ "transitionStyle": "cinematic",
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 850,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "arrow-released",
+   "image": "/poetry/arrow-and-song/scenes/01_arrow_released.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1300,
+   "safeZones": [
+    {
+     "x": 0.12,
+     "y": 0.12,
+     "width": 0.76,
+     "height": 0.16
+    }
+   ],
+   "gesture": {
+    "kind": "fling",
+    "effect": "arrow",
+    "hint": "Draw back and let go",
+    "origin": {
+     "x": 0.36,
+     "y": 0.53
+    }
+   },
+   "line": "I shot an arrow into the air, … Could not follow it in its flight.",
+   "startMs": 0
+  },
+  {
+   "id": "song-released",
+   "image": "/poetry/arrow-and-song/scenes/02_song_released.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.3,
+     "y": 0.22,
+     "width": 0.62,
+     "height": 0.15
+    }
+   ],
+   "gesture": {
+    "kind": "fling",
+    "effect": "song",
+    "hint": "Draw back and let go",
+    "origin": {
+     "x": 0.28,
+     "y": 0.425
+    }
+   },
+   "line": "I breathed a song into the air, … That it can follow the flight of song?",
+   "startMs": 13540
+  },
+  {
+   "id": "arrow-found",
+   "image": "/poetry/arrow-and-song/scenes/03_arrow_found.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.12,
+     "width": 0.56,
+     "height": 0.16
+    }
+   ],
+   "line": "Long, long afterward, in an oak / I found the arrow, still unbroke;",
+   "startMs": 27560
+  },
+  {
+   "id": "song-found",
+   "image": "/poetry/arrow-and-song/scenes/04_song_found.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.62,
+     "width": 0.74,
+     "height": 0.16
+    }
+   ],
+   "ambience": {
+    "effect": "returning-song",
+    "from": {
+     "x": 0.24,
+     "y": 0.2
+    },
+    "to": {
+     "x": 0.745,
+     "y": 0.42
+    }
+   },
+   "line": "And the song, from beginning to end, / I found again in the heart of a friend.",
+   "startMs": 34160
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "arrow-released",
+   "startMs": 0,
+   "endMs": 2400,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 0,
+     "endMs": 80,
+     "phrase": 0
+    },
+    {
+     "text": "shot",
+     "atMs": 160,
+     "endMs": 420,
+     "phrase": 0
+    },
+    {
+     "text": "an",
+     "atMs": 480,
+     "endMs": 660,
+     "phrase": 0
+    },
+    {
+     "text": "arrow",
+     "atMs": 720,
+     "endMs": 1080,
+     "phrase": 0
+    },
+    {
+     "text": "into",
+     "atMs": 1120,
+     "endMs": 1380,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 1440,
+     "endMs": 1507,
+     "phrase": 0
+    },
+    {
+     "text": "air,",
+     "atMs": 1520,
+     "endMs": 2000,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arrow-released",
+   "startMs": 2400,
+   "endMs": 5600,
+   "tokens": [
+    {
+     "text": "It",
+     "atMs": 2400,
+     "endMs": 2560,
+     "phrase": 1
+    },
+    {
+     "text": "fell",
+     "atMs": 2640,
+     "endMs": 2900,
+     "phrase": 1
+    },
+    {
+     "text": "to",
+     "atMs": 2960,
+     "endMs": 3080,
+     "phrase": 1
+    },
+    {
+     "text": "earth,",
+     "atMs": 3120,
+     "endMs": 3520,
+     "phrase": 1,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 3840,
+     "endMs": 3920,
+     "phrase": 2
+    },
+    {
+     "text": "knew",
+     "atMs": 4080,
+     "endMs": 4293,
+     "phrase": 2
+    },
+    {
+     "text": "not",
+     "atMs": 4320,
+     "endMs": 4507,
+     "phrase": 2
+    },
+    {
+     "text": "where;",
+     "atMs": 4560,
+     "endMs": 5040,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arrow-released",
+   "startMs": 5600,
+   "endMs": 8480,
+   "tokens": [
+    {
+     "text": "For,",
+     "atMs": 5600,
+     "endMs": 6000,
+     "phrase": 3,
+     "emphasis": "lead"
+    },
+    {
+     "text": "so",
+     "atMs": 6080,
+     "endMs": 6240,
+     "phrase": 4
+    },
+    {
+     "text": "swiftly",
+     "atMs": 6400,
+     "endMs": 6880,
+     "phrase": 4
+    },
+    {
+     "text": "it",
+     "atMs": 6960,
+     "endMs": 7040,
+     "phrase": 4
+    },
+    {
+     "text": "flew,",
+     "atMs": 7120,
+     "endMs": 7840,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "the",
+     "atMs": 7920,
+     "endMs": 8000,
+     "phrase": 5
+    },
+    {
+     "text": "sight",
+     "atMs": 8080,
+     "endMs": 8400,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arrow-released",
+   "startMs": 8480,
+   "endMs": 13540,
+   "tokens": [
+    {
+     "text": "Could",
+     "atMs": 8480,
+     "endMs": 8640,
+     "phrase": 6
+    },
+    {
+     "text": "not",
+     "atMs": 8760,
+     "endMs": 8880,
+     "phrase": 6
+    },
+    {
+     "text": "follow",
+     "atMs": 9040,
+     "endMs": 9280,
+     "phrase": 6
+    },
+    {
+     "text": "it",
+     "atMs": 9360,
+     "endMs": 9440,
+     "phrase": 6
+    },
+    {
+     "text": "in",
+     "atMs": 9520,
+     "endMs": 9600,
+     "phrase": 6
+    },
+    {
+     "text": "its",
+     "atMs": 9680,
+     "endMs": 9760,
+     "phrase": 6
+    },
+    {
+     "text": "flight.",
+     "atMs": 9840,
+     "endMs": 13140,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "song-released",
+   "startMs": 13540,
+   "endMs": 16100,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 13540,
+     "endMs": 13700,
+     "phrase": 7
+    },
+    {
+     "text": "breathed",
+     "atMs": 13780,
+     "endMs": 14100,
+     "phrase": 7
+    },
+    {
+     "text": "a",
+     "atMs": 14180,
+     "endMs": 14260,
+     "phrase": 7
+    },
+    {
+     "text": "song",
+     "atMs": 14340,
+     "endMs": 14740,
+     "phrase": 7
+    },
+    {
+     "text": "into",
+     "atMs": 14860,
+     "endMs": 14980,
+     "phrase": 7
+    },
+    {
+     "text": "the",
+     "atMs": 15060,
+     "endMs": 15140,
+     "phrase": 7
+    },
+    {
+     "text": "air,",
+     "atMs": 15220,
+     "endMs": 16020,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "song-released",
+   "startMs": 16100,
+   "endMs": 19140,
+   "tokens": [
+    {
+     "text": "It",
+     "atMs": 16100,
+     "endMs": 16180,
+     "phrase": 8
+    },
+    {
+     "text": "fell",
+     "atMs": 16340,
+     "endMs": 16500,
+     "phrase": 8
+    },
+    {
+     "text": "to",
+     "atMs": 16580,
+     "endMs": 16740,
+     "phrase": 8
+    },
+    {
+     "text": "earth,",
+     "atMs": 16940,
+     "endMs": 17380,
+     "phrase": 8,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 17460,
+     "endMs": 17700,
+     "phrase": 9
+    },
+    {
+     "text": "knew",
+     "atMs": 17740,
+     "endMs": 17860,
+     "phrase": 9
+    },
+    {
+     "text": "not",
+     "atMs": 17940,
+     "endMs": 18100,
+     "phrase": 9
+    },
+    {
+     "text": "where;",
+     "atMs": 18180,
+     "endMs": 19060,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "song-released",
+   "startMs": 19140,
+   "endMs": 22180,
+   "tokens": [
+    {
+     "text": "For",
+     "atMs": 19140,
+     "endMs": 19300,
+     "phrase": 10
+    },
+    {
+     "text": "who",
+     "atMs": 19380,
+     "endMs": 19540,
+     "phrase": 10
+    },
+    {
+     "text": "has",
+     "atMs": 19620,
+     "endMs": 19860,
+     "phrase": 10
+    },
+    {
+     "text": "sight",
+     "atMs": 19940,
+     "endMs": 20260,
+     "phrase": 10
+    },
+    {
+     "text": "so",
+     "atMs": 20420,
+     "endMs": 20580,
+     "phrase": 10
+    },
+    {
+     "text": "keen",
+     "atMs": 20660,
+     "endMs": 20980,
+     "phrase": 10
+    },
+    {
+     "text": "and",
+     "atMs": 21060,
+     "endMs": 21140,
+     "phrase": 10
+    },
+    {
+     "text": "strong,",
+     "atMs": 21220,
+     "endMs": 22100,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "song-released",
+   "startMs": 22180,
+   "endMs": 27560,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 22180,
+     "endMs": 22260,
+     "phrase": 11
+    },
+    {
+     "text": "it",
+     "atMs": 22300,
+     "endMs": 22340,
+     "phrase": 11
+    },
+    {
+     "text": "can",
+     "atMs": 22420,
+     "endMs": 22660,
+     "phrase": 11
+    },
+    {
+     "text": "follow",
+     "atMs": 22740,
+     "endMs": 23060,
+     "phrase": 11
+    },
+    {
+     "text": "the",
+     "atMs": 23180,
+     "endMs": 23300,
+     "phrase": 11
+    },
+    {
+     "text": "flight",
+     "atMs": 23420,
+     "endMs": 23540,
+     "phrase": 11
+    },
+    {
+     "text": "of",
+     "atMs": 23620,
+     "endMs": 23700,
+     "phrase": 11
+    },
+    {
+     "text": "song?",
+     "atMs": 23780,
+     "endMs": 24620,
+     "phrase": 11,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arrow-found",
+   "startMs": 27560,
+   "endMs": 30360,
+   "tokens": [
+    {
+     "text": "Long,",
+     "atMs": 27560,
+     "endMs": 28200,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "long",
+     "atMs": 28280,
+     "endMs": 28600,
+     "phrase": 13
+    },
+    {
+     "text": "afterward,",
+     "atMs": 28760,
+     "endMs": 29640,
+     "phrase": 13,
+     "emphasis": "lead"
+    },
+    {
+     "text": "in",
+     "atMs": 29680,
+     "endMs": 29720,
+     "phrase": 14
+    },
+    {
+     "text": "an",
+     "atMs": 29800,
+     "endMs": 29960,
+     "phrase": 14
+    },
+    {
+     "text": "oak",
+     "atMs": 30040,
+     "endMs": 30280,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "arrow-found",
+   "startMs": 30360,
+   "endMs": 34160,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 30360,
+     "endMs": 30520,
+     "phrase": 15
+    },
+    {
+     "text": "found",
+     "atMs": 30640,
+     "endMs": 30760,
+     "phrase": 15
+    },
+    {
+     "text": "the",
+     "atMs": 30840,
+     "endMs": 30920,
+     "phrase": 15
+    },
+    {
+     "text": "arrow,",
+     "atMs": 31000,
+     "endMs": 31560,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "still",
+     "atMs": 31640,
+     "endMs": 31960,
+     "phrase": 16
+    },
+    {
+     "text": "unbroke;",
+     "atMs": 32040,
+     "endMs": 34080,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "song-found",
+   "startMs": 34160,
+   "endMs": 36800,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 34160,
+     "endMs": 34240,
+     "phrase": 17
+    },
+    {
+     "text": "the",
+     "atMs": 34320,
+     "endMs": 34400,
+     "phrase": 17
+    },
+    {
+     "text": "song,",
+     "atMs": 34640,
+     "endMs": 35040,
+     "phrase": 17,
+     "emphasis": "lead"
+    },
+    {
+     "text": "from",
+     "atMs": 35120,
+     "endMs": 35200,
+     "phrase": 18
+    },
+    {
+     "text": "beginning",
+     "atMs": 35280,
+     "endMs": 35760,
+     "phrase": 18
+    },
+    {
+     "text": "to",
+     "atMs": 35840,
+     "endMs": 35920,
+     "phrase": 18
+    },
+    {
+     "text": "end,",
+     "atMs": 36000,
+     "endMs": 36720,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "song-found",
+   "startMs": 36800,
+   "endMs": 39440,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 36800,
+     "endMs": 36960,
+     "phrase": 19
+    },
+    {
+     "text": "found",
+     "atMs": 37080,
+     "endMs": 37200,
+     "phrase": 19
+    },
+    {
+     "text": "again",
+     "atMs": 37280,
+     "endMs": 37840,
+     "phrase": 19
+    },
+    {
+     "text": "in",
+     "atMs": 37920,
+     "endMs": 38000,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 38080,
+     "endMs": 38160,
+     "phrase": 19
+    },
+    {
+     "text": "heart",
+     "atMs": 38240,
+     "endMs": 38480,
+     "phrase": 19
+    },
+    {
+     "text": "of",
+     "atMs": 38560,
+     "endMs": 38640,
+     "phrase": 19
+    },
+    {
+     "text": "a",
+     "atMs": 38720,
+     "endMs": 38800,
+     "phrase": 19
+    },
+    {
+     "text": "friend.",
+     "atMs": 39000,
+     "endMs": 39440,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-13.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-14.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,27 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live
+
+**Four poems with gestures for the investor set (2026-10-14).** From
+`boks_investor_poems.zip`, pictures in numerical order, briefs in
+`docs/poetry/<slug>/brief.md`. Longfellow's *The Arrow and the Song* (bok
+`45035e98-5bbf-4f3f-bb1b-f88f2bc02ac2`) and Dickinson's *There is no Frigate
+like a Book* (bok `7cf8f28a-3d1a-49df-a4bb-b10a274e5347`, the 1896 *Poems:
+Third Series* text, not the later dashed one) added to the catalogue
+(`work/catalogue-2026-10-14/`, `CATALOGUE_MIN_CHARACTERS=150`) and embedded;
+Whitman's *A Noiseless Patient Spider* (bok
+`011660ae-2795-4b28-bd77-0404a4a2a8ba`) was in the catalogue and gained its
+production; *Invictus* was already a poem and was redrawn on the new pictures
+with its own recording and theme. Jerry B. reads the three men, Sha
+Dickinson; new takes at −22.45 LUFS, silence inserted where a gesture needs
+room (Dickinson's lines run together, so one cut is placed by hand in the
+waveform between «book» and «To»); themes 13 dB under, zero words. New
+gesture kinds - `fling`, `threads`, `shelter-flame`, `swipe` - and scene
+`ambience` (rain, the returning song), all in `docs/reading-formats.md` §
+Scene gestures, plus a `page-turn` transition. Looked at in WebKit at iPhone
+15 size against the built app with real pointer gestures; frame rate not
+measured. Reduced motion stops the rain and the returning song but leaves the
+gestures as gestures, not taps.
 
 **Two Australian poems with scene gestures (2026-10-13).** Christopher
 Brennan's *Because She Would Ask Me Why I Loved Her* (bok

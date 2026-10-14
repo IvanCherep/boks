@@ -20,81 +20,106 @@
  "veil": 1.3,
  "scenes": [
   {
-   "id": "night-covers-me",
-   "image": "01-night-covers-me.png",
+   "id": "night",
+   "image": "01_night.png",
    "lines": 4,
    "focalPoint": {
-    "x": 0.4,
-    "y": 0.45
+    "x": 0.5,
+    "y": 0.5
    },
    "textPreset": "quiet-breath",
    "transitionMs": 1100,
    "safeZones": [
     {
-     "x": 0.4,
-     "y": 0.08,
-     "width": 0.52,
-     "height": 0.26
+     "x": 0.12,
+     "y": 0.1,
+     "width": 0.76,
+     "height": 0.16
     }
    ],
+   "gesture": {
+    "kind": "hold",
+    "effect": "shelter-flame",
+    "hint": "Hold to shelter the flame",
+    "flame": {
+     "x": 0.383,
+     "y": 0.532
+    },
+    "size": 0.034
+   },
+   "ambience": {
+    "effect": "rain",
+    "intensity": 1,
+    "wind": 0.8
+   },
    "line": "Out of the night that covers me, / Black as the pit from pole to pole, / I thank whatever gods may be / For my unconquerable soul."
   },
   {
-   "id": "head-unbowed",
-   "image": "02-head-unbowed.png",
+   "id": "unbowed",
+   "image": "02_unbowed.png",
    "lines": 4,
    "focalPoint": {
-    "x": 0.45,
-    "y": 0.25
+    "x": 0.5,
+    "y": 0.5
    },
-   "textPreset": "searchlight-scan",
-   "transitionMs": 1000,
+   "textPreset": "quiet-breath",
+   "transitionMs": 1200,
    "safeZones": [
     {
-     "x": 0.24,
-     "y": 0.05,
-     "width": 0.68,
-     "height": 0.12
+     "x": 0.44,
+     "y": 0.12,
+     "width": 0.5,
+     "height": 0.2
     }
    ],
+   "ambience": {
+    "effect": "rain",
+    "intensity": 0.6,
+    "wind": 0.6
+   },
    "line": "In the fell clutch of circumstance / I have not winced nor cried aloud. / Under the bludgeonings of chance / My head is bloody, but unbow'd."
   },
   {
-   "id": "strait-gate",
-   "image": "03-strait-gate.png",
+   "id": "gate",
+   "image": "03_gate.png",
    "lines": 6,
    "focalPoint": {
-    "x": 0.38,
-    "y": 0.35
+    "x": 0.5,
+    "y": 0.5
    },
-   "textPreset": "ridge-reveal",
-   "transitionMs": 1100,
-   "safeZones": [
-    {
-     "x": 0.42,
-     "y": 0.06,
-     "width": 0.5,
-     "height": 0.22
-    }
-   ],
-   "line": "Beyond this place of wrath and tears / Looms but the Horror of the shade, / And yet the menace of the years / Finds and shall find me unafraid. / It matters not how strait the gate, / How charged with punishments the scroll,"
-  },
-  {
-   "id": "captain-of-my-soul",
-   "image": "04-captain-of-my-soul.png",
-   "lines": 2,
-   "focalPoint": {
-    "x": 0.3,
-    "y": 0.3
-   },
-   "textPreset": "farewell-drift",
+   "textPreset": "quiet-breath",
    "transitionMs": 1300,
    "safeZones": [
     {
-     "x": 0.42,
-     "y": 0.08,
-     "width": 0.5,
+     "x": 0.08,
+     "y": 0.1,
+     "width": 0.52,
      "height": 0.18
+    }
+   ],
+   "ambience": {
+    "effect": "rain",
+    "intensity": 0.25,
+    "wind": 0.4
+   },
+   "line": "Beyond this place of wrath and tears / Looms but the Horror of the shade, / And yet the menace of the years / Finds and shall find me unafraid. / It matters not how strait the gate, / How charged with punishments the scroll,"
+  },
+  {
+   "id": "captain",
+   "image": "04_captain.png",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.4,
+     "y": 0.1,
+     "width": 0.52,
+     "height": 0.16
     }
    ],
    "line": "I am the master of my fate: / I am the captain of my soul."

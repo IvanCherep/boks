@@ -1,4 +1,4 @@
-import { coverTransform, type PoemGesture } from "@/lib/boks/poetry/gesture";
+import { coverTransform, type WaterHold, type DragGesture } from "@/lib/boks/poetry/gesture";
 
 /**
  * The picture of a gesture scene, redrawn by the GPU as the hand moves it.
@@ -17,14 +17,31 @@ import { coverTransform, type PoemGesture } from "@/lib/boks/poetry/gesture";
 export type GestureFrame = {
   /** Seconds, for the ripples. Frozen under reduced motion. */
   time: number;
+  /** The frame's own clock, milliseconds, for things that travel. */
+  now: number;
+  /** Reduced motion: nothing moves on its own; the hand still works. */
+  still: boolean;
   /** 0 at rest, 1 fully held. */
   hold: number;
   /** -1 full left, 0 the ambiguous middle, 1 full right. */
   lean: number;
 };
 
+/**
+ * What the hand is doing, shared by every gesture layer of a poem: a drag in
+ * progress, drags let go and not yet taken by their scene, and what the reader
+ * has already done that a later picture answers - songs sent away, threads
+ * that held. Pixels are relative to the poem's frame.
+ */
+export type GestureInput = {
+  drag: null | { scene: number; x0: number; y0: number; x: number; y: number };
+  releases: { scene: number; x0: number; y0: number; x: number; y: number }[];
+  flown: number;
+  connections: number;
+};
+
 export type GestureLayer = {
-  paint: (frame: GestureFrame) => void;
+  paint: (frame: GestureFrame, input?: GestureInput) => void;
   dispose: () => void;
 };
 
@@ -117,7 +134,7 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
 export function createGestureLayer(
   canvas: HTMLCanvasElement,
   image: HTMLImageElement,
-  gesture: PoemGesture,
+  gesture: WaterHold | DragGesture,
   focal: { x: number; y: number }
 ): GestureLayer | null {
   const gl = canvas.getContext("webgl", { alpha: true, antialias: false, premultipliedAlpha: true });
@@ -154,7 +171,7 @@ export function createGestureLayer(
   const hold = at("u_hold");
   const lean = at("u_lean");
   gl.uniform1i(at("u_image"), 0);
-  if (gesture.kind === "hold") {
+  if (gesture.effect === "converge-reflections") {
     gl.uniform1i(at("u_kind"), 0);
     gl.uniform4f(at("u_water"), gesture.waterline, gesture.pull, gesture.ripple, 0);
   } else {

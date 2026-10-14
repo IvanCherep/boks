@@ -3,8 +3,15 @@ import {
   approach,
   coverTransform,
   dragLean,
+  flameLean,
+  flingFrom,
   gestureSceneAt,
+  imageToScreen,
   isGestureNotTap,
+  isWarpGesture,
+  lightNear,
+  needsLayer,
+  swipeStep,
   type PoemGesture,
 } from "@/lib/boks/poetry/gesture";
 
@@ -104,5 +111,69 @@ describe("isGestureNotTap", () => {
   it("takes a press or a movement as the gesture", () => {
     expect(isGestureNotTap(400, 0)).toBe(true);
     expect(isGestureNotTap(100, 30)).toBe(true);
+  });
+});
+
+describe("imageToScreen", () => {
+  it("undoes coverTransform", () => {
+    const t = coverTransform({ width: 390, height: 844 }, { width: 941, height: 1672 }, { x: 0.5, y: 0.5 });
+    const screen = imageToScreen({ x: 0.36, y: 0.53 }, t);
+    expect(screen.x * t.scaleX + t.offsetX).toBeCloseTo(0.36, 6);
+    expect(screen.y * t.scaleY + t.offsetY).toBeCloseTo(0.53, 6);
+  });
+});
+
+describe("flingFrom", () => {
+  it("shoots the opposite way to the pull", () => {
+    const shot = flingFrom({ x: 100, y: 100 }, { x: 40, y: 180 }, 200)!;
+    expect(shot.x).toBeGreaterThan(0);
+    expect(shot.y).toBeLessThan(0);
+    expect(Math.hypot(shot.x, shot.y)).toBeCloseTo(1, 6);
+    expect(shot.power).toBeCloseTo(0.5, 6);
+  });
+
+  it("launches nothing from a hesitant touch, and caps a long draw", () => {
+    expect(flingFrom({ x: 0, y: 0 }, { x: 10, y: 10 }, 200)).toBeNull();
+    expect(flingFrom({ x: 0, y: 0 }, { x: -900, y: 0 }, 200)!.power).toBe(1);
+  });
+});
+
+describe("lightNear", () => {
+  const lights = [{ x: 100, y: 100 }, { x: 300, y: 100 }];
+  it("finds the nearest light in reach and none out of it", () => {
+    expect(lightNear({ x: 290, y: 110 }, lights, 40)).toBe(1);
+    expect(lightNear({ x: 200, y: 300 }, lights, 40)).toBe(-1);
+  });
+});
+
+describe("swipeStep", () => {
+  it("turns forward on a leftward swipe and back on a rightward one", () => {
+    expect(swipeStep(-120, 10, 390)).toBe(1);
+    expect(swipeStep(120, -10, 390)).toBe(-1);
+  });
+
+  it("ignores a short or mostly vertical movement", () => {
+    expect(swipeStep(-40, 0, 390)).toBe(0);
+    expect(swipeStep(-100, 200, 390)).toBe(0);
+  });
+});
+
+describe("flameLean", () => {
+  it("stands upright when sheltered and always leans when not, without lying flat", () => {
+    for (let t = 0; t < 30; t += 0.25) {
+      expect(flameLean(t, 1)).toBe(0);
+      const lean = flameLean(t, 0);
+      expect(lean).toBeGreaterThanOrEqual(0.2);
+      expect(lean).toBeLessThanOrEqual(0.72);
+    }
+  });
+});
+
+describe("needsLayer and isWarpGesture", () => {
+  it("draws a canvas for everything but a swipe, and warps only the two picture effects", () => {
+    expect(needsLayer({ gesture: { kind: "swipe", effect: "turn-page", hint: "Swipe" } })).toBe(false);
+    expect(needsLayer({ ambience: { effect: "rain", intensity: 0.5, wind: 0.3 } })).toBe(true);
+    expect(needsLayer({})).toBe(false);
+    expect(isWarpGesture({ kind: "fling", effect: "arrow", hint: "", origin: { x: 0, y: 0 } })).toBe(false);
   });
 });

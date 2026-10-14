@@ -13,7 +13,12 @@
  * computed without a screen is here, and tested.
  */
 
-export type HoldGesture = {
+/** A place in the picture, as fractions of the image's width and height. */
+export type ImagePoint = { x: number; y: number };
+
+export type HoldGesture = WaterHold | FlameHold;
+
+export type WaterHold = {
   kind: "hold";
   /** The two reflections come together and the water stills. */
   effect: "converge-reflections";
@@ -27,6 +32,58 @@ export type HoldGesture = {
   ripple: number;
 };
 
+/** Held, the flame stands upright against the wind; released, it bends and never goes out. */
+export type FlameHold = {
+  kind: "hold";
+  effect: "shelter-flame";
+  hint: string;
+  /** The middle of the painted flame. */
+  flame: ImagePoint;
+  /** Its height, in image heights. */
+  size: number;
+};
+
+/**
+ * Draw back and let go, as with a bow: something leaves `origin` in the
+ * direction opposite to the pull and is lost in the distance. An arrow, or the
+ * same gesture made a song - a golden wave.
+ */
+export type FlingGesture = {
+  kind: "fling";
+  effect: "arrow" | "song";
+  hint: string;
+  origin: ImagePoint;
+};
+
+/**
+ * Threads drawn from `anchor` to the lights; one let go on a light holds.
+ * Once `bridgeAfter` hold - counted across the whole poem - the lights join
+ * into a luminous bridge.
+ */
+export type ThreadGesture = {
+  kind: "threads";
+  effect: "filaments";
+  hint: string;
+  anchor: ImagePoint;
+  lights: ImagePoint[];
+  bridgeAfter: number;
+};
+
+/** A swipe turns the page: to the next picture, or back to the one before. */
+export type SwipeGesture = {
+  kind: "swipe";
+  effect: "turn-page";
+  hint: string;
+};
+
+/**
+ * Something a picture does on its own, with no hand: rain that thins as a
+ * storm passes, or the song coming back from the distance into a heart.
+ */
+export type SceneAmbience =
+  | { effect: "rain"; intensity: number; wind: number }
+  | { effect: "returning-song"; from: ImagePoint; to: ImagePoint };
+
 export type DragGesture = {
   kind: "drag-x";
   /** One picture holding two worlds side by side; moving leans into one. */
@@ -39,7 +96,85 @@ export type DragGesture = {
   zoom: number;
 };
 
-export type PoemGesture = HoldGesture | DragGesture;
+export type PoemGesture = HoldGesture | DragGesture | FlingGesture | ThreadGesture | SwipeGesture;
+
+/** The two gestures drawn by warping the picture itself, in WebGL. */
+export function isWarpGesture(gesture?: PoemGesture) {
+  return gesture?.effect === "converge-reflections" || gesture?.effect === "lean-between";
+}
+
+/** Whether a scene needs a canvas over its picture at all. A swipe draws nothing. */
+export function needsLayer(scene: { gesture?: PoemGesture; ambience?: SceneAmbience }) {
+  return Boolean(scene.ambience) || (Boolean(scene.gesture) && scene.gesture?.kind !== "swipe");
+}
+
+/**
+ * Where a point of the picture is on the screen, as fractions of the screen -
+ * the inverse of `coverTransform`.
+ */
+export function imageToScreen(point: ImagePoint, transform: ReturnType<typeof coverTransform>) {
+  return {
+    x: (point.x - transform.offsetX) / transform.scaleX,
+    y: (point.y - transform.offsetY) / transform.scaleY,
+  };
+}
+
+/**
+ * A pull, read as a bow is: the shot goes the opposite way to the hand, as
+ * hard as the hand drew back. Too short a pull is no shot, so a hesitant touch
+ * launches nothing. `reach` is how far a full draw is, in pixels.
+ */
+export function flingFrom(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  reach: number,
+  minimum = 24
+) {
+  const dx = start.x - end.x;
+  const dy = start.y - end.y;
+  const length = Math.hypot(dx, dy);
+  if (length < minimum || reach <= 0) return null;
+  return { x: dx / length, y: dy / length, power: Math.min(1, length / reach) };
+}
+
+/** The nearest light within `radius` of a point, or -1. */
+export function lightNear(
+  point: { x: number; y: number },
+  lights: readonly { x: number; y: number }[],
+  radius: number
+) {
+  let best = -1;
+  let bestDistance = radius;
+  lights.forEach((light, index) => {
+    const distance = Math.hypot(light.x - point.x, light.y - point.y);
+    if (distance <= bestDistance) {
+      best = index;
+      bestDistance = distance;
+    }
+  });
+  return best;
+}
+
+/**
+ * A page turned by a swipe: 1 forward (the finger moved left), -1 back, 0 for
+ * anything that was not clearly sideways or not far enough - a sixth of the
+ * screen, and more across than down.
+ */
+export function swipeStep(dx: number, dy: number, width: number): -1 | 0 | 1 {
+  if (width <= 0 || Math.abs(dx) < width / 6 || Math.abs(dx) < Math.abs(dy) * 1.5) return 0;
+  return dx < 0 ? 1 : -1;
+}
+
+/**
+ * How far the flame leans, in radians, away from the wind.
+ *
+ * Gusting, never still, and never flat: at its worst it lies over by about
+ * forty degrees and comes back. Sheltered (`hold` 1) it stands upright.
+ */
+export function flameLean(seconds: number, hold: number) {
+  const gust = 0.5 + 0.14 * Math.sin(seconds * 1.7) + 0.08 * Math.sin(seconds * 4.3 + 1);
+  return (1 - hold) * Math.min(0.72, Math.max(0.2, gust));
+}
 
 /**
  * How a screen position maps into the picture under `object-fit: cover`.

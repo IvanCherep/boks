@@ -117,29 +117,70 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
   });
 
   it("gives a gesture scene time to be found, and keeps its effect inside the picture", () => {
+    const inside = (point: { x: number; y: number }, id: string) => {
+      expect(point.x, id).toBeGreaterThanOrEqual(0);
+      expect(point.x, id).toBeLessThanOrEqual(1);
+      expect(point.y, id).toBeGreaterThanOrEqual(0);
+      expect(point.y, id).toBeLessThanOrEqual(1);
+    };
     for (let index = 0; index < manifest.scenes.length; index += 1) {
       const scene = manifest.scenes[index];
       const gesture = scene.gesture;
+      if (scene.ambience?.effect === "rain") {
+        expect(scene.ambience.intensity, scene.id).toBeLessThanOrEqual(1);
+      } else if (scene.ambience) {
+        inside(scene.ambience.from, scene.id);
+        inside(scene.ambience.to, scene.id);
+      }
       if (!gesture) continue;
-      const until = manifest.scenes[index + 1]?.startMs ?? manifest.durationMs;
-      // A gesture needs noticing, then trying: shorter and the picture is gone
-      // before the hand has done anything.
-      expect(until - scene.startMs, scene.id).toBeGreaterThan(8000);
       expect(gesture.hint.length, scene.id).toBeGreaterThan(0);
-      if (gesture.kind === "hold") {
-        expect(gesture.waterline, scene.id).toBeGreaterThan(0.2);
-        expect(gesture.waterline, scene.id).toBeLessThan(0.9);
-        expect(gesture.pull, scene.id).toBeLessThanOrEqual(0.15);
-        expect(gesture.ripple, scene.id).toBeLessThanOrEqual(0.02);
-      } else {
-        for (const focus of [gesture.leftFocus, gesture.rightFocus]) {
-          expect(focus.x, scene.id).toBeGreaterThanOrEqual(0);
-          expect(focus.x, scene.id).toBeLessThanOrEqual(1);
-        }
-        expect(gesture.leftFocus.x, scene.id).toBeLessThan(gesture.rightFocus.x);
-        expect(gesture.zoom, scene.id).toBeLessThanOrEqual(0.4);
+      // A warp redraws the picture, so it cannot share it with an overlay.
+      if (gesture.effect === "converge-reflections" || gesture.effect === "lean-between") {
+        expect(scene.ambience, scene.id).toBeUndefined();
+      }
+      // A gesture needs noticing, then trying: shorter and the picture is gone
+      // before the hand has done anything. A swipe is only a page turn.
+      if (gesture.kind !== "swipe") {
+        const until = manifest.scenes[index + 1]?.startMs ?? manifest.durationMs;
+        expect(until - scene.startMs, scene.id).toBeGreaterThan(8000);
+      }
+      switch (gesture.effect) {
+        case "converge-reflections":
+          expect(gesture.waterline, scene.id).toBeGreaterThan(0.2);
+          expect(gesture.waterline, scene.id).toBeLessThan(0.9);
+          expect(gesture.pull, scene.id).toBeLessThanOrEqual(0.15);
+          expect(gesture.ripple, scene.id).toBeLessThanOrEqual(0.02);
+          break;
+        case "lean-between":
+          inside(gesture.leftFocus, scene.id);
+          inside(gesture.rightFocus, scene.id);
+          expect(gesture.leftFocus.x, scene.id).toBeLessThan(gesture.rightFocus.x);
+          expect(gesture.zoom, scene.id).toBeLessThanOrEqual(0.4);
+          break;
+        case "shelter-flame":
+          inside(gesture.flame, scene.id);
+          expect(gesture.size, scene.id).toBeLessThanOrEqual(0.15);
+          break;
+        case "arrow":
+        case "song":
+          inside(gesture.origin, scene.id);
+          break;
+        case "filaments":
+          inside(gesture.anchor, scene.id);
+          gesture.lights.forEach((light) => inside(light, scene.id));
+          expect(gesture.bridgeAfter, scene.id).toBeGreaterThan(0);
+          break;
       }
     }
+  });
+
+  it("can build its bridge: enough lights across the poem for the threads it asks for", () => {
+    const threads = manifest.scenes.flatMap((scene) =>
+      scene.gesture?.kind === "threads" ? [scene.gesture] : []
+    );
+    if (threads.length === 0) return;
+    const lights = threads.reduce((sum, gesture) => sum + gesture.lights.length, 0);
+    for (const gesture of threads) expect(lights).toBeGreaterThanOrEqual(gesture.bridgeAfter);
   });
 
   it("has a theme that lasts as long as the voice", () => {

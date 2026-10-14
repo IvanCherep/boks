@@ -58,6 +58,12 @@ const poems: Record<string, string> = {
   "e07795ca-f5ee-4472-8646-f9dc64736c91": "/poetry/why-i-loved-her/manifest.json",
   // Bernard O'Dowd — Australia
   "8e2ae832-c00c-43f0-ba4b-0acd5653df03": "/poetry/australia/manifest.json",
+  // Henry Wadsworth Longfellow — The Arrow and the Song
+  "45035e98-5bbf-4f3f-bb1b-f88f2bc02ac2": "/poetry/arrow-and-song/manifest.json",
+  // Walt Whitman — A Noiseless Patient Spider
+  "011660ae-2795-4b28-bd77-0404a4a2a8ba": "/poetry/noiseless-spider/manifest.json",
+  // Emily Dickinson — There is no Frigate like a Book
+  "7cf8f28a-3d1a-49df-a4bb-b10a274e5347": "/poetry/no-frigate/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

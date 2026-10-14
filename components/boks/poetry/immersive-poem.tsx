@@ -24,8 +24,18 @@ import {
   dragLean,
   gestureSceneAt,
   isGestureNotTap,
+  isWarpGesture,
+  needsLayer,
+  swipeStep,
+  type DragGesture,
+  type WaterHold,
 } from "@/lib/boks/poetry/gesture";
-import { createGestureLayer, type GestureLayer } from "@/components/boks/poetry/gesture-layer";
+import {
+  createGestureLayer,
+  type GestureInput,
+  type GestureLayer,
+} from "@/components/boks/poetry/gesture-layer";
+import { createOverlayLayer } from "@/components/boks/poetry/gesture-overlay";
 
 /**
  * A poem as a place rather than a page.
@@ -101,6 +111,8 @@ export function ImmersivePoem({
     pointer: null as null | { id: number; x: number; y: number; at: number; moved: number; scene: number },
     swallowClick: false,
   });
+  /** The hand as the overlay gestures read it - see `GestureInput`. */
+  const input = useRef<GestureInput>({ drag: null, releases: [], flown: 0, connections: 0 });
   const stillRef = useRef(false);
   const controls = useRef<HTMLDivElement>(null);
   /** The last values written to the DOM, so an unchanged frame writes nothing. */
@@ -230,10 +242,13 @@ export function ImmersivePoem({
       const gesture = poemScene.gesture;
       const image = gestureImages.current[index];
       const canvas = gestureCanvases.current[index];
-      if (!gesture || !image || !canvas) return;
+      if (!needsLayer(poemScene) || !image || !canvas) return;
       const build = () => {
         if (layers[index] || !image.naturalWidth) return;
-        layers[index] = createGestureLayer(canvas, image, gesture, poemScene.focalPoint);
+        // A warp redraws the picture in WebGL; everything else is drawn over it.
+        layers[index] = isWarpGesture(gesture)
+          ? createGestureLayer(canvas, image, gesture as WaterHold | DragGesture, poemScene.focalPoint)
+          : createOverlayLayer(canvas, image, poemScene, index);
       };
       if (image.complete) build();
       else {
@@ -274,12 +289,27 @@ export function ImmersivePoem({
      * settles from six percent closer while the leaving one drifts on. Scale
      * and opacity only, both of which the compositor does on its own.
      */
-    const cinematic = manifest.transitionStyle === "cinematic";
+    const style = manifest.transitionStyle;
+    const cinematic = style === "cinematic" || style === "page-turn";
     const moveDissolve = (pair: { from: number; to: number }, fade: number) => {
       if (!cinematic || stillRef.current || pair.to < 0) return;
       const settle = 1 - (1 - fade) * (1 - fade);
       const arriving = pictures.current[pair.to];
       const leaving = pictures.current[pair.from];
+      if (style === "page-turn") {
+        /*
+         * A page turning towards the reader: the arriving picture swings in
+         * on its left edge as a leaf does, the one under it sinks a little.
+         * A 3D transform and opacity only - still the compositor's work.
+         */
+        if (arriving) {
+          arriving.style.transformOrigin = "left center";
+          arriving.style.transform = `translateZ(0) perspective(1600px) rotateY(${(-70 * (1 - settle)).toFixed(2)}deg)`;
+          arriving.style.opacity = String(Math.min(1, fade * 1.6));
+        }
+        if (leaving) leaving.style.transform = `translateZ(0) scale(${(1 - 0.04 * fade).toFixed(4)})`;
+        return;
+      }
       if (arriving) arriving.style.transform = `translateZ(0) scale(${(1.06 - 0.06 * settle).toFixed(4)})`;
       if (leaving) leaving.style.transform = `translateZ(0) scale(${(1 + 0.035 * fade).toFixed(4)})`;
     };
@@ -308,7 +338,10 @@ export function ImmersivePoem({
         picture.style.zIndex = arriving ? "1" : "0";
         picture.style.visibility =
           index === pair.from || arriving || index === next ? "visible" : "hidden";
-        if (cinematic) picture.style.transform = "";
+        if (cinematic) {
+          picture.style.transform = "";
+          picture.style.transformOrigin = "";
+        }
       });
       moveDissolve(pair, fade);
     };
@@ -331,7 +364,10 @@ export function ImmersivePoem({
       const next = shown.to >= 0 ? shown.to : shown.from + 1;
       gestureLayers.current.forEach((layer, index) => {
         if (!layer || (index !== shown.from && index !== shown.to && index !== next)) return;
-        layer.paint({ time: stillRef.current ? 0 : now / 1000, hold: state.hold, lean: state.lean });
+        layer.paint(
+          { time: stillRef.current ? 0 : now / 1000, now, still: stillRef.current, hold: state.hold, lean: state.lean },
+          input.current
+        );
       });
     };
     paintBackdrop(backdropAt(manifest, (audio.current?.currentTime ?? 0) * 1000));
@@ -499,13 +535,31 @@ export function ImmersivePoem({
    * ambiguous middle, both eased by the frame loop. A press long enough, or a
    * movement far enough, to have been the gesture does not also pause.
    */
-  function releaseHand(pointerId: number) {
+  function releaseHand(pointerId: number, x?: number, y?: number, width = 0) {
     const state = hand.current;
     const pointer = state.pointer;
     if (!pointer || pointer.id !== pointerId) return;
     state.pointer = null;
     state.holdTarget = 0;
     state.leanTarget = 0;
+    // A drag let go - an arrow loosed, a thread laid on a light - is handed
+    // to the scene's layer, which decides what it became. A cancelled one is
+    // dropped: the browser took the touch, the reader did not let go.
+    const drag = input.current.drag;
+    input.current.drag = null;
+    if (drag && x !== undefined) input.current.releases.push(drag);
+    const gesture = manifest.scenes[pointer.scene]?.gesture;
+    if (gesture?.kind === "swipe" && x !== undefined && y !== undefined) {
+      const step = swipeStep(x - pointer.x, y - pointer.y, width);
+      const target = manifest.scenes[pointer.scene + step];
+      if (step !== 0 && target) {
+        // Playing, land just before the page so it turns in front of the
+        // reader; paused, land on the turned page.
+        const element = audio.current;
+        const turned = target.startMs + manifest.playback.crossfadeOffsetMs + target.transitionMs;
+        seekMs(element && !element.paused ? Math.max(0, target.startMs - 40) : turned);
+      }
+    }
     if (isGestureNotTap(performance.now() - pointer.at, pointer.moved)) {
       state.swallowClick = true;
       const found = manifest.scenes[pointer.scene];
@@ -588,6 +642,12 @@ export function ImmersivePoem({
           const gesture = manifest.scenes[index]?.gesture;
           if (!gesture) return;
           hand.current.swallowClick = false;
+          const box = event.currentTarget.getBoundingClientRect();
+          if (gesture.kind === "fling" || gesture.kind === "threads") {
+            const x = event.clientX - box.left;
+            const y = event.clientY - box.top;
+            input.current.drag = { scene: index, x0: x, y0: y, x, y };
+          }
           hand.current.pointer = {
             id: event.pointerId,
             x: event.clientX,
@@ -604,11 +664,18 @@ export function ImmersivePoem({
           if (!pointer || pointer.id !== event.pointerId) return;
           const dx = event.clientX - pointer.x;
           pointer.moved = Math.max(pointer.moved, Math.hypot(dx, event.clientY - pointer.y));
-          if (manifest.scenes[pointer.scene]?.gesture?.kind === "drag-x") {
+          const kind = manifest.scenes[pointer.scene]?.gesture?.kind;
+          if (kind === "drag-x") {
             hand.current.leanTarget = dragLean(dx, event.currentTarget.clientWidth);
           }
+          const drag = input.current.drag;
+          if (drag) {
+            const box = event.currentTarget.getBoundingClientRect();
+            drag.x = event.clientX - box.left;
+            drag.y = event.clientY - box.top;
+          }
         }}
-        onPointerUp={(event) => releaseHand(event.pointerId)}
+        onPointerUp={(event) => releaseHand(event.pointerId, event.clientX, event.clientY, event.currentTarget.clientWidth)}
         onPointerCancel={(event) => releaseHand(event.pointerId)}
         // A long press is the gesture here, not a request for a menu.
         onContextMenu={(event) => event.preventDefault()}
@@ -984,7 +1051,7 @@ function Backdrop({
    * picture stays underneath: until the canvas has drawn, or wherever WebGL
    * is missing, it is the scene.
    */
-  if (scene.gesture) {
+  if (needsLayer(scene)) {
     return (
       <div ref={ref as React.Ref<HTMLDivElement>} className="poem__scene poem__scene--gesture">
         {/* eslint-disable-next-line @next/next/no-img-element */}

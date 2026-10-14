@@ -1,0 +1,448 @@
+{
+ "id": "no-frigate-immersive-v1",
+ "title": "There is no Frigate like a Book",
+ "author": "Emily Dickinson",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/no-frigate/narration.mp3",
+ "theme": {
+  "src": "/poetry/no-frigate/theme.mp3",
+  "gain": 0.151
+ },
+ "durationMs": 23000,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#FFF7EA",
+  "active": "#FFD48A",
+  "shadow": "rgba(14, 12, 18, 0.75)"
+ },
+ "textScale": 0.95,
+ "veil": 1.6,
+ "transitionStyle": "page-turn",
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1060,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "book-opens",
+   "image": "/poetry/no-frigate/scenes/01_book_opens.webp",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1250,
+   "safeZones": [
+    {
+     "x": 0.36,
+     "y": 0.12,
+     "width": 0.56,
+     "height": 0.14
+    }
+   ],
+   "gesture": {
+    "kind": "swipe",
+    "effect": "turn-page",
+    "hint": "Swipe to turn the page"
+   },
+   "line": "There is no frigate like a book",
+   "startMs": 0
+  },
+  {
+   "id": "frigate",
+   "image": "/poetry/no-frigate/scenes/02_frigate.webp",
+   "lines": 1,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1380,
+   "safeZones": [
+    {
+     "x": 0.5,
+     "y": 0.12,
+     "width": 0.42,
+     "height": 0.14
+    }
+   ],
+   "gesture": {
+    "kind": "swipe",
+    "effect": "turn-page",
+    "hint": "Swipe to turn the page"
+   },
+   "line": "To take us lands away,",
+   "startMs": 4380
+  },
+  {
+   "id": "coursers",
+   "image": "/poetry/no-frigate/scenes/03_coursers.webp",
+   "lines": 2,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1380,
+   "safeZones": [
+    {
+     "x": 0.3,
+     "y": 0.1,
+     "width": 0.62,
+     "height": 0.14
+    }
+   ],
+   "gesture": {
+    "kind": "swipe",
+    "effect": "turn-page",
+    "hint": "Swipe to turn the page"
+   },
+   "line": "Nor any coursers like a page / Of prancing poetry.",
+   "startMs": 8680
+  },
+  {
+   "id": "human-soul",
+   "image": "/poetry/no-frigate/scenes/04_human_soul.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.6,
+     "width": 0.84,
+     "height": 0.16
+    }
+   ],
+   "line": "This traverse may the poorest take … That bears a human soul!",
+   "startMs": 14840
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "book-opens",
+   "startMs": 0,
+   "endMs": 4380,
+   "tokens": [
+    {
+     "text": "There",
+     "atMs": 0,
+     "endMs": 216,
+     "phrase": 0
+    },
+    {
+     "text": "is",
+     "atMs": 240,
+     "endMs": 360,
+     "phrase": 0
+    },
+    {
+     "text": "no",
+     "atMs": 400,
+     "endMs": 640,
+     "phrase": 0
+    },
+    {
+     "text": "frigate",
+     "atMs": 720,
+     "endMs": 1280,
+     "phrase": 0
+    },
+    {
+     "text": "like",
+     "atMs": 1360,
+     "endMs": 1520,
+     "phrase": 0
+    },
+    {
+     "text": "a",
+     "atMs": 1560,
+     "endMs": 1600,
+     "phrase": 0
+    },
+    {
+     "text": "book",
+     "atMs": 1760,
+     "endMs": 2000,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "frigate",
+   "startMs": 4380,
+   "endMs": 8680,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 4380,
+     "endMs": 4540,
+     "phrase": 1
+    },
+    {
+     "text": "take",
+     "atMs": 4660,
+     "endMs": 4780,
+     "phrase": 1
+    },
+    {
+     "text": "us",
+     "atMs": 4860,
+     "endMs": 4940,
+     "phrase": 1
+    },
+    {
+     "text": "lands",
+     "atMs": 5020,
+     "endMs": 5340,
+     "phrase": 1
+    },
+    {
+     "text": "away,",
+     "atMs": 5420,
+     "endMs": 6300,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "coursers",
+   "startMs": 8680,
+   "endMs": 10760,
+   "tokens": [
+    {
+     "text": "Nor",
+     "atMs": 8680,
+     "endMs": 8920,
+     "phrase": 2
+    },
+    {
+     "text": "any",
+     "atMs": 9040,
+     "endMs": 9160,
+     "phrase": 2
+    },
+    {
+     "text": "coursers",
+     "atMs": 9240,
+     "endMs": 9880,
+     "phrase": 2
+    },
+    {
+     "text": "like",
+     "atMs": 9960,
+     "endMs": 10040,
+     "phrase": 2
+    },
+    {
+     "text": "a",
+     "atMs": 10120,
+     "endMs": 10200,
+     "phrase": 2
+    },
+    {
+     "text": "page",
+     "atMs": 10280,
+     "endMs": 10680,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "coursers",
+   "startMs": 10760,
+   "endMs": 14840,
+   "tokens": [
+    {
+     "text": "Of",
+     "atMs": 10760,
+     "endMs": 10840,
+     "phrase": 3
+    },
+    {
+     "text": "prancing",
+     "atMs": 11000,
+     "endMs": 11480,
+     "phrase": 3
+    },
+    {
+     "text": "poetry.",
+     "atMs": 11560,
+     "endMs": 12520,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "human-soul",
+   "startMs": 14840,
+   "endMs": 17080,
+   "tokens": [
+    {
+     "text": "This",
+     "atMs": 14840,
+     "endMs": 15080,
+     "phrase": 4
+    },
+    {
+     "text": "traverse",
+     "atMs": 15160,
+     "endMs": 15720,
+     "phrase": 4
+    },
+    {
+     "text": "may",
+     "atMs": 15800,
+     "endMs": 15880,
+     "phrase": 4
+    },
+    {
+     "text": "the",
+     "atMs": 15960,
+     "endMs": 16040,
+     "phrase": 4
+    },
+    {
+     "text": "poorest",
+     "atMs": 16120,
+     "endMs": 16600,
+     "phrase": 4
+    },
+    {
+     "text": "take",
+     "atMs": 16760,
+     "endMs": 16920,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "human-soul",
+   "startMs": 17080,
+   "endMs": 19200,
+   "tokens": [
+    {
+     "text": "Without",
+     "atMs": 17080,
+     "endMs": 17480,
+     "phrase": 5
+    },
+    {
+     "text": "oppress",
+     "atMs": 17560,
+     "endMs": 17880,
+     "phrase": 5
+    },
+    {
+     "text": "of",
+     "atMs": 17960,
+     "endMs": 18040,
+     "phrase": 5
+    },
+    {
+     "text": "toll;",
+     "atMs": 18120,
+     "endMs": 19080,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "human-soul",
+   "startMs": 19200,
+   "endMs": 20920,
+   "tokens": [
+    {
+     "text": "How",
+     "atMs": 19200,
+     "endMs": 19320,
+     "phrase": 6
+    },
+    {
+     "text": "frugal",
+     "atMs": 19480,
+     "endMs": 19880,
+     "phrase": 6
+    },
+    {
+     "text": "is",
+     "atMs": 19960,
+     "endMs": 20120,
+     "phrase": 6
+    },
+    {
+     "text": "the",
+     "atMs": 20160,
+     "endMs": 20200,
+     "phrase": 6
+    },
+    {
+     "text": "chariot",
+     "atMs": 20360,
+     "endMs": 20840,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "human-soul",
+   "startMs": 20920,
+   "endMs": 23000,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 20920,
+     "endMs": 21080,
+     "phrase": 7
+    },
+    {
+     "text": "bears",
+     "atMs": 21160,
+     "endMs": 21480,
+     "phrase": 7
+    },
+    {
+     "text": "a",
+     "atMs": 21560,
+     "endMs": 21640,
+     "phrase": 7
+    },
+    {
+     "text": "human",
+     "atMs": 21800,
+     "endMs": 22120,
+     "phrase": 7
+    },
+    {
+     "text": "soul!",
+     "atMs": 22280,
+     "endMs": 23000,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

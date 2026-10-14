@@ -83,6 +83,7 @@ Tests:
 | `lib/boks/poetry/gesture.ts` | scene gestures as data, and their maths: cover crop, easing, drag, tap or gesture |
 | `lib/boks/poetry/gesture.test.ts` | holds that maths |
 | `components/boks/poetry/gesture-layer.ts` | the WebGL layer that redraws a gesture scene's picture |
+| `components/boks/poetry/gesture-overlay.ts` | the 2D layer drawn over it: arrow, song, threads, flame, rain |
 | `components/boks/admin/poetry-sandbox.tsx` | `/admin` → Poetry, for a poem with no boks yet |
 | `scripts/build-poem-manifest.mjs` | builds a manifest from a recording's own alignment |
 | `docs/farewell-russia-scene-map.json` | the first poem's scene map |
@@ -390,7 +391,7 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *A Dream Within a Dream*, Edgar Allan Poe | `9aa49ad9-579e-4721-881d-d84595a49975` | Jerry B. | 4 | 5, 6, 7, 6 |
 | *The Tyger*, William Blake | `11cbb669-6c1b-4e03-a80a-27951c9abca9` | Jerry B. | 4 in 5 scenes - the opening returns with the closing stanza | 4, 4, 8, 4, 4 |
 | *Ozymandias*, Shelley | `d86fa888-50ab-493d-ae34-8ad574fc0845` | Jerry B. | 4 | 3, 5, 3, 3 |
-| *Invictus*, Henley | `c8e05b68-5a45-4eb0-935e-d8b0ad8e6b45` | Jerry B. | 4 | 4, 4, 6, 2 |
+| *Invictus*, Henley | `c8e05b68-5a45-4eb0-935e-d8b0ad8e6b45` | Jerry B. | 4, redrawn 2026-10-14 - rain thinning picture by picture, and a hold that shelters the flame in the first | 4, 4, 6, 2 |
 | *The Lake Isle of Innisfree*, Yeats | `9d42d01d-5a3e-4ddb-a334-3f4dfdf5dffe` | Jerry B. | 4 - a ring: grey pavement, the island, evening, the pavement again | 1, 3, 4, 4 |
 | *O Captain! My Captain!*, Whitman | `7322a7ff-0abf-4aba-b340-49477030ebed` | Jerry B. | 4 | 8, 6, 2, 8 |
 | *Remember*, Christina Rossetti | `da98c07c-3386-48b4-8d1f-be02a1ff6d74` | Sha | 4 | 4, 4, 4, 2 |
@@ -405,6 +406,9 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *The Old Vicarage, Grantchester*, Rupert Brooke | `afa5a1ed-3019-455e-b550-475c9a498db3` | Julian (British) | 4 - the third holds the long middle, as the brief asks for the complete poem | 6, 27, 106, 2 |
 | *Because She Would Ask Me Why I Loved Her*, Christopher Brennan | `e07795ca-f5ee-4472-8646-f9dc64736c91` | Jerry B. | 4 - the second has a hold gesture: the reflections meet, the water stills | 2, 2, 8, 4 |
 | *Australia*, Bernard O'Dowd | `8e2ae832-c00c-43f0-ba4b-0acd5653df03` | Jerry B. | 4, cinematic transitions - the second has a sideways gesture between Eden and Mammon | 4, 4, 3, 3 |
+| *The Arrow and the Song*, Longfellow | `45035e98-5bbf-4f3f-bb1b-f88f2bc02ac2` | Jerry B. | 4, cinematic - draw back and let go: an arrow in the first, a song in the second, the song coming home in the last | 4, 4, 2, 2 |
+| *A Noiseless Patient Spider*, Whitman | `011660ae-2795-4b28-bd77-0404a4a2a8ba` | Jerry B. | 4 - threads to the lights in the second and third; three that hold make a bridge | 2, 3, 3, 2 |
+| *There is no Frigate like a Book*, Dickinson (1896 text) | `7cf8f28a-3d1a-49df-a4bb-b10a274e5347` | Sha | 4, page-turn transitions - a swipe turns the page | 1, 1, 2, 4 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
@@ -496,8 +500,20 @@ drawn by one WebGL shader over the scene's own picture
 |---|---|---|---|
 | `hold` / `converge-reflections` | press and hold | below `waterline` the picture is a reflection: at rest it ripples; held, the ripples die and the two halves slide `pull` towards the middle; released, the ripples return | `waterline`, `pull`, `ripple` (image fractions) |
 | `drag-x` / `lean-between` | move sideways | one picture holding two worlds side by side; the camera pushes `zoom` towards `leftFocus` or `rightFocus`, warming the left or draining the right, and eases back to the ambiguous middle when released | `leftFocus`, `rightFocus`, `zoom` |
+| `hold` / `shelter-flame` | press and hold | a flame drawn over the painted one leans in gusting wind; held, it stands upright; released, it bends and never goes out | `flame`, `size` |
+| `fling` / `arrow`, `song` | draw back and let go | aimed like a bow from `origin`, opposite to the pull: an arrow that shrinks into the distance, or the same gesture as a golden wave | `origin` |
+| `threads` / `filaments` | drag to a light | a thread from `anchor` follows the finger; let go on a light it holds, anywhere else it springs back. Once `bridgeAfter` hold, counted over the whole poem, the lights join into a luminous bridge | `anchor`, `lights`, `bridgeAfter` |
+| `swipe` / `turn-page` | swipe sideways | turns to the next picture (or back), seeking the voice to its first line; no canvas | - |
 
-Both need **one** picture, not a before/after pair - the effect is a warp and a
+The first two are warps of the picture in WebGL
+(`components/boks/poetry/gesture-layer.ts`); the rest are drawn over it on a
+2D canvas (`components/boks/poetry/gesture-overlay.ts`), and so is a scene's
+`ambience` - something the picture does without a hand: `rain` (`intensity`,
+`wind`; Invictus thins it 1 → 0.6 → 0.25 → none so the storm passes) and
+`returning-song` (`from`, `to`; brighter when the reader sent a song away
+earlier). A warp and an ambience cannot share a scene; the test says so.
+
+All of them need **one** picture, not a before/after pair - the effect is a warp and a
 grade of the frame itself. A quick tap still plays and pauses; a press longer
 than 280 ms or a movement over 10 px is the gesture and does not. The `hint`
 is shown once on the scene until the reader has tried it, and never in
@@ -508,7 +524,9 @@ stays empty and the `<img>` beneath it is the scene.
 
 `transitionStyle: "cinematic"` on the scene map makes every change of picture
 a settle as well as a dissolve: the arriving picture comes in from 6 % closer,
-the leaving one drifts 3.5 % on. Scale and opacity only.
+the leaving one drifts 3.5 % on. `"page-turn"` swings the arriving picture in
+on its left edge, as a leaf turns, over the one beneath. Transform and opacity
+only, both.
 
 ### How many pictures
 

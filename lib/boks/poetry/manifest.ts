@@ -12,7 +12,7 @@
  * frame from that moment alone.
  */
 
-import type { PoemGesture } from "@/lib/boks/poetry/gesture";
+import type { PoemGesture, SceneAmbience } from "@/lib/boks/poetry/gesture";
 
 export type SafeZone = {
   /** Named when a line is deliberately split between two parts of the frame. */
@@ -40,6 +40,8 @@ export type PoemScene = {
    * see `gesture.ts`. Most scenes have none.
    */
   gesture?: PoemGesture;
+  /** Something the picture does on its own - rain, a song coming home. */
+  ambience?: SceneAmbience;
 };
 
 export type PoemToken = {
@@ -110,7 +112,7 @@ export type PoemManifest = {
    * while the leaving one drifts on - scale and opacity only, both of which
    * the compositor does on its own.
    */
-  transitionStyle?: "dissolve" | "cinematic";
+  transitionStyle?: "dissolve" | "cinematic" | "page-turn";
   playback: {
     /** How early a word begins arriving, so it is whole when it is spoken. */
     tokenLeadMs?: number;

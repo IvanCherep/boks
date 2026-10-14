@@ -27,90 +27,115 @@
  "playback": {
   "tokenLeadMs": 220,
   "crossfadeOffsetMs": 380,
-  "defaultCrossfadeMs": 980,
+  "defaultCrossfadeMs": 850,
   "backgroundScaleFrom": 1,
   "backgroundScaleTo": 1.035
  },
  "scenes": [
   {
-   "id": "night-covers-me",
-   "image": "/poetry/invictus/scenes/01-night-covers-me.webp",
+   "id": "night",
+   "image": "/poetry/invictus/scenes/01_night.webp",
    "lines": 4,
    "focalPoint": {
-    "x": 0.4,
-    "y": 0.45
+    "x": 0.5,
+    "y": 0.5
    },
    "textPreset": "quiet-breath",
-   "transitionMs": 1270,
+   "transitionMs": 1100,
    "safeZones": [
     {
-     "x": 0.4,
-     "y": 0.08,
-     "width": 0.52,
-     "height": 0.26
+     "x": 0.12,
+     "y": 0.1,
+     "width": 0.76,
+     "height": 0.16
     }
    ],
+   "gesture": {
+    "kind": "hold",
+    "effect": "shelter-flame",
+    "hint": "Hold to shelter the flame",
+    "flame": {
+     "x": 0.383,
+     "y": 0.532
+    },
+    "size": 0.034
+   },
+   "ambience": {
+    "effect": "rain",
+    "intensity": 1,
+    "wind": 0.8
+   },
    "line": "Out of the night that covers me, / Black as the pit from pole to pole, / I thank whatever gods may be / For my unconquerable soul.",
    "startMs": 0
   },
   {
-   "id": "head-unbowed",
-   "image": "/poetry/invictus/scenes/02-head-unbowed.webp",
+   "id": "unbowed",
+   "image": "/poetry/invictus/scenes/02_unbowed.webp",
    "lines": 4,
    "focalPoint": {
-    "x": 0.45,
-    "y": 0.25
+    "x": 0.5,
+    "y": 0.5
    },
-   "textPreset": "searchlight-scan",
-   "transitionMs": 1150,
+   "textPreset": "quiet-breath",
+   "transitionMs": 1200,
    "safeZones": [
     {
-     "x": 0.24,
-     "y": 0.05,
-     "width": 0.68,
-     "height": 0.12
+     "x": 0.44,
+     "y": 0.12,
+     "width": 0.5,
+     "height": 0.2
     }
    ],
+   "ambience": {
+    "effect": "rain",
+    "intensity": 0.6,
+    "wind": 0.6
+   },
    "line": "In the fell clutch of circumstance / I have not winced nor cried aloud. / Under the bludgeonings of chance / My head is bloody, but unbow'd.",
    "startMs": 11040
   },
   {
-   "id": "strait-gate",
-   "image": "/poetry/invictus/scenes/03-strait-gate.webp",
+   "id": "gate",
+   "image": "/poetry/invictus/scenes/03_gate.webp",
    "lines": 6,
    "focalPoint": {
-    "x": 0.38,
-    "y": 0.35
+    "x": 0.5,
+    "y": 0.5
    },
-   "textPreset": "ridge-reveal",
-   "transitionMs": 1270,
+   "textPreset": "quiet-breath",
+   "transitionMs": 1300,
    "safeZones": [
     {
-     "x": 0.42,
-     "y": 0.06,
-     "width": 0.5,
-     "height": 0.22
+     "x": 0.08,
+     "y": 0.1,
+     "width": 0.52,
+     "height": 0.18
     }
    ],
+   "ambience": {
+    "effect": "rain",
+    "intensity": 0.25,
+    "wind": 0.4
+   },
    "line": "Beyond this place of wrath and tears / Looms but the Horror of the shade, / And yet the menace of the years / Finds and shall find me unafraid. / It matters not how strait the gate, / How charged with punishments the scroll,",
    "startMs": 22080
   },
   {
-   "id": "captain-of-my-soul",
-   "image": "/poetry/invictus/scenes/04-captain-of-my-soul.webp",
+   "id": "captain",
+   "image": "/poetry/invictus/scenes/04_captain.webp",
    "lines": 2,
    "focalPoint": {
-    "x": 0.3,
-    "y": 0.3
+    "x": 0.5,
+    "y": 0.5
    },
-   "textPreset": "farewell-drift",
+   "textPreset": "echo-fade",
    "transitionMs": 1500,
    "safeZones": [
     {
-     "x": 0.42,
-     "y": 0.08,
-     "width": 0.5,
-     "height": 0.18
+     "x": 0.4,
+     "y": 0.1,
+     "width": 0.52,
+     "height": 0.16
     }
    ],
    "line": "I am the master of my fate: / I am the captain of my soul.",
@@ -119,7 +144,7 @@
  ],
  "lines": [
   {
-   "sceneId": "night-covers-me",
+   "sceneId": "night",
    "startMs": 0,
    "endMs": 2560,
    "tokens": [
@@ -169,7 +194,7 @@
    ]
   },
   {
-   "sceneId": "night-covers-me",
+   "sceneId": "night",
    "startMs": 2560,
    "endMs": 5760,
    "tokens": [
@@ -225,7 +250,7 @@
    ]
   },
   {
-   "sceneId": "night-covers-me",
+   "sceneId": "night",
    "startMs": 5760,
    "endMs": 8160,
    "tokens": [
@@ -269,7 +294,7 @@
    ]
   },
   {
-   "sceneId": "night-covers-me",
+   "sceneId": "night",
    "startMs": 8160,
    "endMs": 11040,
    "tokens": [
@@ -301,7 +326,7 @@
    ]
   },
   {
-   "sceneId": "head-unbowed",
+   "sceneId": "unbowed",
    "startMs": 11040,
    "endMs": 13520,
    "tokens": [
@@ -345,7 +370,7 @@
    ]
   },
   {
-   "sceneId": "head-unbowed",
+   "sceneId": "unbowed",
    "startMs": 13520,
    "endMs": 16480,
    "tokens": [
@@ -395,7 +420,7 @@
    ]
   },
   {
-   "sceneId": "head-unbowed",
+   "sceneId": "unbowed",
    "startMs": 16480,
    "endMs": 18640,
    "tokens": [
@@ -433,7 +458,7 @@
    ]
   },
   {
-   "sceneId": "head-unbowed",
+   "sceneId": "unbowed",
    "startMs": 18640,
    "endMs": 22080,
    "tokens": [
@@ -478,7 +503,7 @@
    ]
   },
   {
-   "sceneId": "strait-gate",
+   "sceneId": "gate",
    "startMs": 22080,
    "endMs": 25040,
    "tokens": [
@@ -528,7 +553,7 @@
    ]
   },
   {
-   "sceneId": "strait-gate",
+   "sceneId": "gate",
    "startMs": 25040,
    "endMs": 27840,
    "tokens": [
@@ -578,7 +603,7 @@
    ]
   },
   {
-   "sceneId": "strait-gate",
+   "sceneId": "gate",
    "startMs": 27840,
    "endMs": 30000,
    "tokens": [
@@ -628,7 +653,7 @@
    ]
   },
   {
-   "sceneId": "strait-gate",
+   "sceneId": "gate",
    "startMs": 30000,
    "endMs": 33680,
    "tokens": [
@@ -672,7 +697,7 @@
    ]
   },
   {
-   "sceneId": "strait-gate",
+   "sceneId": "gate",
    "startMs": 33680,
    "endMs": 36240,
    "tokens": [
@@ -722,7 +747,7 @@
    ]
   },
   {
-   "sceneId": "strait-gate",
+   "sceneId": "gate",
    "startMs": 36240,
    "endMs": 39200,
    "tokens": [
@@ -766,7 +791,7 @@
    ]
   },
   {
-   "sceneId": "captain-of-my-soul",
+   "sceneId": "captain",
    "startMs": 39200,
    "endMs": 42000,
    "tokens": [
@@ -816,7 +841,7 @@
    ]
   },
   {
-   "sceneId": "captain-of-my-soul",
+   "sceneId": "captain",
    "startMs": 42000,
    "endMs": 44720,
    "tokens": [
