@@ -22,3 +22,11 @@ describe("describeMagicLinkRedirectError", () => {
     expect(describeMagicLinkRedirectError(null)).toMatch(/did not work/);
   });
 });
+
+describe("describeMagicLinkRedirectError in Russian", () => {
+  it("says the same things in Russian", () => {
+    expect(describeMagicLinkRedirectError("PKCE code verifier not found", "ru")).toMatch(/не в том браузере/);
+    expect(describeMagicLinkRedirectError("otp_expired", "ru")).toMatch(/устарела или уже использована/);
+    expect(describeMagicLinkRedirectError("odd", "ru")).toMatch(/не сработала/);
+  });
+});

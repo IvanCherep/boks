@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw, RotateCw, X } from "lucide-react";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { StoryMomentScene } from "@/components/boks/cinema/story-moment";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
 import {
   momentDueAt,
   momentsToRearm,
@@ -121,23 +123,43 @@ function Backdrop({
   );
 }
 
-/** The interface speaks English; the story keeps its own language. */
-const words = {
-  listen: "Listen and read",
-  minutes: (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`,
-  close: "Close",
-  back: "Back 15 seconds",
-  forward: "Forward 15 seconds",
-  scrub: "Position",
-  resume: (at: string) => `Continue from ${at}`,
-  fromStart: "From the beginning",
-  hideWords: "Hide the words",
-  showWords: "Show the words",
-  pause: "Pause",
-  play: "Resume",
-  silent: "This browser has no voice - the story runs without sound",
-  placeholder: "placeholder art, the same for every boks",
-};
+/** Only the interface is translated; the story keeps its own language. */
+const messages = defineMessages(
+  {
+    listen: "Listen and read",
+    minutes: (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`,
+    close: "Close",
+    back: "Back 15 seconds",
+    forward: "Forward 15 seconds",
+    scrub: "Position",
+    resume: (at: string) => `Continue from ${at}`,
+    fromStart: "From the beginning",
+    hideWords: "Hide the words",
+    showWords: "Show the words",
+    pause: "Pause",
+    play: "Resume",
+    silent: "This browser has no voice - the story runs without sound",
+    placeholder: "placeholder art, the same for every boks",
+  },
+  {
+    ru: {
+      listen: "Слушать и читать",
+      minutes: (n: number) => `${n} ${plural("ru", n, { one: "минута", few: "минуты", many: "минут", other: "минуты" })}`,
+      close: "Закрыть",
+      back: "Назад на 15 секунд",
+      forward: "Вперёд на 15 секунд",
+      scrub: "Позиция",
+      resume: (at: string) => `Продолжить с ${at}`,
+      fromStart: "С начала",
+      hideWords: "Скрыть текст",
+      showWords: "Показать текст",
+      pause: "Пауза",
+      play: "Продолжить",
+      silent: "В этом браузере нет голоса - история идёт без звука",
+      placeholder: "временная картинка, одна для всех boks",
+    },
+  }
+);
 
 const skipSeconds = 15;
 
@@ -208,6 +230,7 @@ export function CinemaMode({
   recording?: boolean;
   onClose: () => void;
 }) {
+  const words = useMessages(messages);
   const language = useMemo(() => languageOf(story.body), [story.body]);
   const plan = useMemo(() => planScenes({ id: story.id, text: story.body }), [story.id, story.body]);
   const totalSeconds = useMemo(

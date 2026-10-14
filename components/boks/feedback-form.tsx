@@ -7,6 +7,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { readableBoksError } from "@/lib/boks/errors";
 import { sendBoksFeedback } from "@/components/boks/supabase-browser-data";
 import type { FeedbackSurface } from "@/components/boks/feedback";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const messages = defineMessages(
+  {
+    failed: "Could not send that. Try again in a moment.",
+    sent: "Sent. Every note is read.",
+    prompt: "What you liked, what annoyed you, what is missing. Nothing is too small.",
+    placeholder: "What would make boks better for you?",
+    label: "Your feedback",
+    sending: "Sending…",
+    send: "Send feedback",
+    noAccount: "No account or email needed. Your name is attached only if you are signed in.",
+  },
+  {
+    ru: {
+      failed: "Не получилось отправить. Попробуйте через минуту.",
+      sent: "Отправлено. Мы читаем каждое сообщение.",
+      prompt: "Что понравилось, что раздражало, чего не хватает. Мелочей не бывает.",
+      placeholder: "Что сделало бы boks лучше для вас?",
+      label: "Ваш отзыв",
+      sending: "Отправляем…",
+      send: "Отправить отзыв",
+      noAccount: "Аккаунт и email не нужны. Ваше имя прикрепится, только если вы вошли.",
+    },
+  }
+);
 
 /**
  * The feedback box, in one component because it appears in two places: inside
@@ -43,6 +70,7 @@ export function FeedbackForm({
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const t = useMessages(messages);
 
   async function submit() {
     const text = message.trim();
@@ -55,7 +83,7 @@ export function FeedbackForm({
       setMessage("");
       onSent?.();
     } catch (caught) {
-      setError(readableBoksError(caught, "Could not send that. Try again in a moment."));
+      setError(readableBoksError(caught, t.failed));
     } finally {
       setBusy(false);
     }
@@ -64,7 +92,7 @@ export function FeedbackForm({
   if (sent) {
     return (
       <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status">
-        Sent. Every note is read.
+        {t.sent}
       </p>
     );
   }
@@ -78,15 +106,15 @@ export function FeedbackForm({
       }}
     >
       <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        What you liked, what annoyed you, what is missing. Nothing is too small.
+        {t.prompt}
       </p>
       <Textarea
         value={message}
         onChange={(event) => setMessage(event.target.value)}
         maxLength={4000}
         rows={5}
-        placeholder="What would make boks better for you?"
-        aria-label="Your feedback"
+        placeholder={t.placeholder}
+        aria-label={t.label}
         autoFocus={autoFocus}
       />
       {error && (
@@ -96,10 +124,10 @@ export function FeedbackForm({
       )}
       <Button type="submit" disabled={busy || message.trim().length < 2}>
         <Send className="size-4" />
-        {busy ? "Sending…" : "Send feedback"}
+        {busy ? t.sending : t.send}
       </Button>
       <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        No account or email needed. Your name is attached only if you are signed in.
+        {t.noAccount}
       </p>
     </form>
   );

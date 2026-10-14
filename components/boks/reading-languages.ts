@@ -1,4 +1,5 @@
 import { isUnreachableBoksError } from "@/lib/boks/network-errors";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 /**
  * Which languages a reader accepts.
  *
@@ -26,6 +27,15 @@ export const readingLanguageNames: Record<ReadingLanguage, string> = {
   en: "English",
   ru: "Russian",
 };
+
+/** The same names in the interface language - what a pill or a button says. */
+export const readingLanguageNamesIn: Record<UiLanguage, Record<ReadingLanguage, string>> = {
+  en: readingLanguageNames,
+  ru: { en: "Английский", ru: "Русский" },
+};
+
+/** Russian puts a language after "на" in the prepositional case: "на русском". */
+const russianPrepositional: Record<ReadingLanguage, string> = { en: "английском", ru: "русском" };
 
 const storageKey = "boks-reading-languages";
 
@@ -124,7 +134,8 @@ export function effectiveReadingLanguages(stored: readonly string[] | null | und
  */
 export function describeEmptyLanguageFeed(
   languages: readonly string[],
-  coverage: Record<string, number> | null | undefined
+  coverage: Record<string, number> | null | undefined,
+  language: UiLanguage = "en"
 ) {
   const chosen = normalizeReadingLanguages(languages);
   if (!chosen.length) return null;
@@ -133,6 +144,22 @@ export function describeEmptyLanguageFeed(
   const available = supportedReadingLanguages.filter(
     (language) => !chosen.includes(language) && (coverage?.[language] ?? 0) > 0
   );
+
+  if (language === "ru") {
+    const on = chosen.map((code) => russianPrepositional[code]);
+    return {
+      title: `Пока нет текстов на ${on.join(" или ")}`,
+      body:
+        available.length > 0
+          ? `В boks пока ничего нет на ${on.join(" или ")}. Зато много на ${available
+              .map((code) => russianPrepositional[code])
+              .join(" и ")} — добавьте его в свои языки, чтобы начать читать, или оставьте как есть, а мы восполним пробел.`
+          : `boks пока нечего вам показать. Ваши языки: ${chosen
+              .map((code) => readingLanguageNamesIn.ru[code].toLowerCase())
+              .join(" и ")}.`,
+      offer: available,
+    };
+  }
 
   return {
     title: `No boks in ${names.join(" or ")} yet`,
@@ -174,13 +201,15 @@ export function emptyFeedNotice(input: {
   message: string;
   languages: readonly string[];
   coverage: Record<string, number> | null | undefined;
+  /** The interface language the notice is written in. */
+  uiLanguage?: UiLanguage;
 }): EmptyFeedNotice {
   // A network that cannot reach our server is not a feed with nothing in it,
   // and it is the one failure a reader can act on. Checked before the phase,
   // because the phase says only that the load failed, never why.
   if (isUnreachableBoksError(input.message)) return { kind: "unreachable" };
   if (input.phase !== "ready") return { kind: "message", message: input.message };
-  const gap = describeEmptyLanguageFeed(input.languages, input.coverage);
+  const gap = describeEmptyLanguageFeed(input.languages, input.coverage, input.uiLanguage);
   if (!gap) return { kind: "message", message: input.message };
   return { kind: "language", ...gap };
 }

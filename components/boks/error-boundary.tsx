@@ -2,6 +2,29 @@
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
+import { currentUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const messages = defineMessages(
+  {
+    title: "boks stopped before it could open",
+    body: "Something in this browser stopped the app rather than the network: the page arrived, then the reader failed to start. Reloading often works, and another browser almost always does.",
+    reload: "Reload boks",
+    sendTo: "If it keeps happening, send the lines below to",
+    withBrowser: "with your browser name - that is usually enough for us to fix it.",
+    what: "What went wrong",
+  },
+  {
+    ru: {
+      title: "boks остановился, не успев открыться",
+      body: "Приложение остановило что-то в этом браузере, а не сеть: страница загрузилась, но читалка не запустилась. Часто помогает перезагрузка, а другой браузер - почти всегда.",
+      reload: "Перезагрузить boks",
+      sendTo: "Если это повторяется, пришлите строки ниже на",
+      withBrowser: "и укажите ваш браузер - обычно этого хватает, чтобы мы всё исправили.",
+      what: "Что пошло не так",
+    },
+  }
+);
 
 /**
  * The last line before a white screen.
@@ -39,32 +62,33 @@ export class BoksErrorBoundary extends Component<{ children: ReactNode }, Bounda
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
+    // A class component has no hooks; the language is read once, as it fails.
+    const t = messages[currentUiLanguage()];
 
     return (
       <main className="reader-shell grid min-h-screen place-items-center px-6">
         <div className="max-w-md text-center">
           <p className="brand-word">boks</p>
-          <h1 className="mt-4 text-2xl font-semibold tracking-normal">boks stopped before it could open</h1>
+          <h1 className="mt-4 text-2xl font-semibold tracking-normal">{t.title}</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-            Something in this browser stopped the app rather than the network: the page arrived, then the
-            reader failed to start. Reloading often works, and another browser almost always does.
+            {t.body}
           </p>
           <button
             type="button"
             className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]"
             onClick={() => window.location.reload()}
           >
-            Reload boks
+            {t.reload}
           </button>
           <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-            If it keeps happening, send the lines below to{" "}
+            {t.sendTo}{" "}
             <a className="auth-link" href={supportMailto}>
               {supportEmail}
             </a>{" "}
-            with your browser name - that is usually enough for us to fix it.
+            {t.withBrowser}
           </p>
           <details className="settings-disclosure mt-4 text-left">
-            <summary>What went wrong</summary>
+            <summary>{t.what}</summary>
             <div className="settings-disclosure__body">
               <p className="break-words font-mono text-xs leading-5">
                 {error.name}: {error.message}

@@ -10,11 +10,38 @@ import {
   writeThemePreference,
   type ThemePreference,
 } from "@/components/boks/theme";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 
-const options: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
-  { value: "system", label: "System", Icon: Monitor },
-  { value: "light", label: "Light", Icon: Sun },
-  { value: "dark", label: "Dark", Icon: Moon },
+const messages = defineMessages(
+  {
+    system: "System",
+    light: "Light",
+    dark: "Dark",
+    legend: "Appearance",
+    follows: (current: "light" | "dark") => `Follows your device, which is ${current} right now.`,
+    always: (current: "light" | "dark") => `Always ${current}, whatever your device uses.`,
+    saved: "Saved on this device.",
+  },
+  {
+    ru: {
+      system: "Системная",
+      light: "Светлая",
+      dark: "Тёмная",
+      legend: "Тема",
+      follows: (current: "light" | "dark") =>
+        `Как на устройстве - сейчас ${current === "dark" ? "тёмная" : "светлая"}.`,
+      always: (current: "light" | "dark") =>
+        `Всегда ${current === "dark" ? "тёмная" : "светлая"}, что бы ни стояло на устройстве.`,
+      saved: "Сохраняется на этом устройстве.",
+    },
+  }
+);
+
+const options: { value: ThemePreference; Icon: typeof Sun }[] = [
+  { value: "system", Icon: Monitor },
+  { value: "light", Icon: Sun },
+  { value: "dark", Icon: Moon },
 ];
 
 function prefersDarkNow() {
@@ -33,6 +60,7 @@ function prefersDarkNow() {
 export function ThemeSetting({ compact = false }: { compact?: boolean }) {
   const [preference, setPreference] = useState<ThemePreference>(() => readThemePreference());
   const [systemDark, setSystemDark] = useState(prefersDarkNow);
+  const t = useMessages(messages);
 
   // Stay truthful while open: the device can switch at sunset, and another
   // tab can change the setting.
@@ -60,17 +88,14 @@ export function ThemeSetting({ compact = false }: { compact?: boolean }) {
 
   return (
     <fieldset className={`theme-setting${compact ? " theme-setting--compact" : ""}`}>
-      <legend className="text-sm font-medium">Appearance</legend>
+      <legend className="text-sm font-medium">{t.legend}</legend>
       {!compact && (
         <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-          {preference === "system"
-            ? `Follows your device, which is ${current} right now.`
-            : `Always ${current}, whatever your device uses.`}{" "}
-          Saved on this device.
+          {preference === "system" ? t.follows(current) : t.always(current)} {t.saved}
         </p>
       )}
       <div className="theme-options">
-        {options.map(({ value, label, Icon }) => (
+        {options.map(({ value, Icon }) => (
           <label key={value} className="theme-option">
             <input
               type="radio"
@@ -80,7 +105,7 @@ export function ThemeSetting({ compact = false }: { compact?: boolean }) {
               onChange={() => choose(value)}
             />
             <Icon className="size-4" aria-hidden="true" />
-            <span>{label}</span>
+            <span>{t[value]}</span>
           </label>
         ))}
       </div>

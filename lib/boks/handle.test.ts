@@ -54,3 +54,12 @@ describe("describeBoksHandleProblem", () => {
     expect(describeBoksHandleProblem("иван_ivan")).toMatch(/English letters, numbers and underscores/);
   });
 });
+
+describe("describeBoksHandleProblem in Russian", () => {
+  it("names the same rules in Russian", () => {
+    expect(describeBoksHandleProblem("ivan_ystal", "ru")).toBeNull();
+    expect(describeBoksHandleProblem("", "ru")).toBe("Введите никнейм.");
+    expect(describeBoksHandleProblem("иван_ivan", "ru")).toMatch(/латинские буквы/);
+    expect(describeBoksHandleProblem("1van", "ru")).toMatch(/начинаться с буквы/);
+  });
+});

@@ -228,10 +228,12 @@ piece, whatever it was read in, ends on the same two screens from
 2. **Where next** - "Where next?": Share (the accent), Listen again and Like
    side by side, Choose the next one.
 
-**The interface is English everywhere**, whatever language the piece is in:
-the finale, the players' controls, a moment's hint, the series shelf. Titles,
-authors and the texts themselves keep their own language. A second interface
-language, when it comes, is a setting - not a guess from the piece.
+**The interface follows the interface language**, whatever language the piece
+is in: the finale, the players' controls, a moment's hint, the series shelf
+are Russian on a Russian device and English otherwise, or what the reader
+pinned (`docs/adr/0015-interface-language-follows-the-device.md`). Titles,
+authors and the texts themselves keep their own language. It is never a guess
+from the piece.
 
 The format's side of it is two lines: mount `<ReadingFinale>` when the reading
 is over, with a way to start again, and hide its own
@@ -658,8 +660,11 @@ Finishing a piece therefore has one more step:
 `series-catalogue.test.ts` fails if a finished piece is missing from the
 shelf, if a shelf entry would open as plain text, if a cover is missing or too
 heavy, or if the duration or counts disagree with the shipped recording. The
-shelf shows only pieces in the reader's chosen languages - the same setting
-that filters the feed - and its own words follow that setting too. The newest
+shelf shows every language by default. Its one control is a language filter
+(the icon next to "About"), kept on this device, which offers exactly the
+languages the pieces carry - a piece with `language: "it"` brings Italian with
+it, named by `lib/i18n/content-languages.ts`. The feed's reading languages do
+not apply to the shelf. The newest
 piece the reader has not heard leads; it is called a premiere for 14 days.
 
 ### Recording mode, for filming a piece

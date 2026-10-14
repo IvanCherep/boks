@@ -25,8 +25,156 @@ import {
   loadMyDefaultAuthorName,
   submitBokForReview,
 } from "@/components/boks/supabase-browser-data";
-import { describeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
+import { bokSubmissionQuotaMessage, describeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
 import { UserAuthPanel } from "@/components/boks/user-auth-panel";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
+
+/** The cabinet's words. The author's own text, title and byline are never translated. */
+const messages = defineMessages(
+  {
+    statusSignIn: "Sign in to submit a bok.",
+    statusSignUp: "Sign up or sign in to submit a bok.",
+    statusHistory: "Your boks review history is below.",
+    statusWrite: "Write a bok and submit it for review.",
+    statusRevising: "Refused bok loaded into the editor. Confirm the rights again and submit.",
+    statusSuspended: "This account is suspended and cannot submit boks.",
+    statusSubmitted: "Submitted for review. An admin will approve it before readers see it.",
+    loadFailed: "Could not load author cabinet.",
+    submitFailed: "Could not submit this bok.",
+    reviewWaiting: "Waiting for review",
+    reviewPublished: "Published",
+    reviewRejected: "Needs changes",
+    reviewArchived: "Archived",
+    reviewDraft: "Draft",
+    title: "Author cabinet",
+    intro: "Submit one focused bok for review. Readers will see it only after boks admin approval.",
+    needAccount: "Authors need a boks account.",
+    needAccountWhy: "This lets you track whether each bok is waiting, approved, or refused with a reason.",
+    continueEmail: "Continue with email",
+    suspended: "This account is suspended and cannot publish.",
+    contactAdmin: "Contact a boks administrator for details.",
+    publishingAs: "Publishing as",
+    publishingAsWhy: "Every bok you publish carries that, so readers can always find your other work.",
+    readerHandle: "reader",
+    authorName: "Author name (optional)",
+    authorNameKept:
+      "A name to print above your @nickname. Left as you had it last time; clear it to publish under the @nickname alone.",
+    authorNameEmpty:
+      "Leave this empty to publish under your @nickname. Fill it in if you want a name printed above it.",
+    optional: "Optional",
+    revising: "Revising",
+    revisingWhy: "Submitting sends this same bok back for review.",
+    startNew: "Start a new bok instead",
+    titleLabel: "Title (optional)",
+    titleHintEmpty: "Leave it empty and the first line of the text becomes the title.",
+    titleHintFromLine: (title: string) => `Left empty, the title will be “${title}”.`,
+    text: "Text",
+    rights: "I hold the rights to publish this bok.",
+    rightsWhy:
+      "Your own work, or work you are allowed to publish - public domain, an open licence, or permission you have been given.",
+    rightsSource: "Where the rights come from (optional)",
+    rightsSourceHint:
+      "Only boks admins see this. A line is enough: “Project Gutenberg #1342, public domain”, “my translation”, “permission from the estate”.",
+    submit: "Submit for review",
+    daily: "Daily submissions",
+    usedToday: (used: number, limit: number) => `${used} of ${limit} used today`,
+    dailyWhy: "The limit keeps the review queue readable. It resets at midnight UTC.",
+    fifteen: "Fifteen minutes",
+    minutes: "Minutes",
+    words: "Words",
+    characters: (used: string, max: string) => `${used} of ${max} characters`,
+    overLength: (over: string) => `That is ${over} characters past the promise. Split it into episodes.`,
+    fits: "A bok is one break. Fits.",
+    status: "Status",
+    published: "Published",
+    inReview: "In review",
+    needsWork: "Needs work",
+    yourBoks: "Your boks",
+    min: "min",
+    liked: (n: number) => `${n} liked`,
+    replied: (n: number) => `${n} replied`,
+    revise: "Revise",
+    nothingYet: "Nothing submitted yet. Your first bok will appear here with its likes and replies.",
+    afterSignIn: "Submitted boks will appear here after you sign in.",
+  },
+  {
+    ru: {
+      statusSignIn: "Войдите, чтобы отправить текст.",
+      statusSignUp: "Зарегистрируйтесь или войдите, чтобы отправить текст.",
+      statusHistory: "Ниже - история проверки ваших текстов.",
+      statusWrite: "Напишите текст и отправьте его на проверку.",
+      statusRevising: "Отклонённый текст открыт в редакторе. Ещё раз подтвердите права и отправьте.",
+      statusSuspended: "Этот аккаунт заблокирован и не может отправлять тексты.",
+      statusSubmitted: "Отправлено на проверку. Читатели увидят текст после одобрения администратора.",
+      loadFailed: "Не удалось загрузить кабинет автора.",
+      submitFailed: "Не удалось отправить этот текст.",
+      reviewWaiting: "Ждёт проверки",
+      reviewPublished: "Опубликован",
+      reviewRejected: "Нужны правки",
+      reviewArchived: "В архиве",
+      reviewDraft: "Черновик",
+      title: "Кабинет автора",
+      intro: "Отправьте на проверку один цельный текст. Читатели увидят его только после одобрения администратора boks.",
+      needAccount: "Авторам нужен аккаунт boks.",
+      needAccountWhy: "Так вы увидите, ждёт ли каждый текст проверки, одобрен он или отклонён - и почему.",
+      continueEmail: "Продолжить с email",
+      suspended: "Этот аккаунт заблокирован и не может публиковать.",
+      contactAdmin: "Подробности - у администратора boks.",
+      publishingAs: "Публикация от имени",
+      publishingAsWhy: "Это имя стоит на каждом вашем тексте, чтобы читатели всегда могли найти другие ваши работы.",
+      readerHandle: "reader",
+      authorName: "Имя автора (необязательно)",
+      authorNameKept:
+        "Имя, которое печатается над вашим @никнеймом. Оставлено как в прошлый раз; сотрите, чтобы публиковаться только под @никнеймом.",
+      authorNameEmpty:
+        "Оставьте пустым, чтобы публиковаться под @никнеймом. Заполните, если хотите, чтобы над ним стояло имя.",
+      optional: "Необязательно",
+      revising: "Правка",
+      revisingWhy: "При отправке этот же текст вернётся на проверку.",
+      startNew: "Начать новый текст",
+      titleLabel: "Название (необязательно)",
+      titleHintEmpty: "Если оставить пустым, названием станет первая строка текста.",
+      titleHintFromLine: (title: string) => `Если оставить пустым, название будет «${title}».`,
+      text: "Текст",
+      rights: "У меня есть права на публикацию этого текста.",
+      rightsWhy:
+        "Ваше собственное произведение или то, что вам можно публиковать: общественное достояние, открытая лицензия или полученное разрешение.",
+      rightsSource: "Откуда права (необязательно)",
+      rightsSourceHint:
+        "Это видят только администраторы boks. Достаточно строки: «Project Gutenberg #1342, общественное достояние», «мой перевод», «разрешение наследников».",
+      submit: "Отправить на проверку",
+      daily: "Отправки за день",
+      usedToday: (used: number, limit: number) => `Сегодня использовано ${used} из ${limit}`,
+      dailyWhy: "Лимит помогает справляться с очередью проверки. Он обнуляется в полночь по UTC.",
+      fifteen: "Пятнадцать минут",
+      minutes: "Минуты",
+      words: "Слова",
+      characters: (used: string, max: string) => `${used} из ${max} символов`,
+      overLength: (over: string) => `Это на ${over} символов больше обещанного. Разделите текст на эпизоды.`,
+      fits: "Бок - это один перерыв. Помещается.",
+      status: "Статус",
+      published: "Опубликовано",
+      inReview: "На проверке",
+      needsWork: "Нужны правки",
+      yourBoks: "Ваши тексты",
+      min: "мин",
+      liked: (n: number) =>
+        `${n} ${plural("ru", n, { one: "лайк", few: "лайка", many: "лайков", other: "лайка" })}`,
+      replied: (n: number) =>
+        `${n} ${plural("ru", n, { one: "ответ", few: "ответа", many: "ответов", other: "ответа" })}`,
+      revise: "Исправить",
+      nothingYet: "Пока ничего не отправлено. Здесь появится ваш первый текст - с лайками и ответами.",
+      afterSignIn: "Отправленные тексты появятся здесь, когда вы войдёте.",
+    },
+  }
+);
+
+type Words = (typeof messages)["en"];
+
+/** A status line is kept as words to look up, so it follows a change of language. */
+type StatusLine = (words: Words, language: UiLanguage) => string;
 
 const authorDraftKey = "boks-author-draft";
 
@@ -57,12 +205,12 @@ function writeAuthorDraft(draft: AuthorDraft | null) {
   }
 }
 
-function reviewStatusLabel(status: BokReviewStatus) {
-  if (status === "pending_review") return "Waiting for review";
-  if (status === "published") return "Published";
-  if (status === "rejected") return "Needs changes";
-  if (status === "archived") return "Archived";
-  return "Draft";
+function reviewStatusLabel(status: BokReviewStatus, words: Words) {
+  if (status === "pending_review") return words.reviewWaiting;
+  if (status === "published") return words.reviewPublished;
+  if (status === "rejected") return words.reviewRejected;
+  if (status === "archived") return words.reviewArchived;
+  return words.reviewDraft;
 }
 
 function ReviewStatusIcon({ status }: { status: BokReviewStatus }) {
@@ -72,10 +220,15 @@ function ReviewStatusIcon({ status }: { status: BokReviewStatus }) {
 }
 
 export function AuthorConsole() {
-  const [status, setStatus] = useState("Sign in to submit a bok.");
+  const words = useMessages(messages);
+  const uiLanguage = useUiLanguage();
+  const [statusLine, setStatus] = useState<StatusLine | null>(() => (w: Words) => w.statusSignIn);
+  const status = statusLine ? statusLine(words, uiLanguage) : "";
+
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [submissions, setSubmissions] = useState<AuthorBokSubmission[]>([]);
   const [quota, setQuota] = useState<AuthorBokQuota>(() => describeBokSubmissionQuota(0));
+  const quotaMessage = bokSubmissionQuotaMessage(quota, uiLanguage);
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
   const [authorForm, setAuthorForm] = useState({
     title: "",
@@ -133,7 +286,7 @@ export function AuthorConsole() {
   useEffect(() => {
     visitorId.current = getBrowserId("boks-author");
     sessionId.current = `${Date.now()}-${randomBoksId()}`;
-    refreshAuthor().catch((error) => setStatus(readableBoksError(error, "Could not load author cabinet.")));
+    refreshAuthor().catch((error) => setStatus(() => (w: Words) => readableBoksError(error, w.loadFailed)));
   }, []);
 
   async function refreshAuthor() {
@@ -152,12 +305,12 @@ export function AuthorConsole() {
       // Prefilled rather than merely hinted, so publishing again is one less
       // decision. An author who wants a different byline overwrites it.
       setAuthorForm((current) => ({ ...current, authorName: current.authorName || byline }));
-      setStatus(rows.length ? "Your boks review history is below." : "Write a bok and submit it for review.");
+      setStatus(() => (w: Words) => (rows.length ? w.statusHistory : w.statusWrite));
     } else {
       setSubmissions([]);
       setQuota(describeBokSubmissionQuota(0));
       setDefaultAuthorName("");
-      setStatus("Sign up or sign in to submit a bok.");
+      setStatus(() => (w: Words) => w.statusSignUp);
     }
 
     return context;
@@ -181,7 +334,7 @@ export function AuthorConsole() {
       rightsNote: "",
     }));
     setRevising({ id: submission.id, title: submission.title });
-    setStatus("Refused bok loaded into the editor. Confirm the rights again and submit.");
+    setStatus(() => (w: Words) => w.statusRevising);
     // Revise sits under the history, far below the form it fills.
     formSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -193,17 +346,19 @@ export function AuthorConsole() {
     }
 
     if (signedInAuthor.bannedAt) {
-      setStatus(signedInAuthor.banReason || "This account is suspended and cannot submit boks.");
+      const reason = signedInAuthor.banReason;
+      setStatus(() => (w: Words) => reason || w.statusSuspended);
       return;
     }
 
     if (quota.exhausted) {
-      setStatus(quota.message);
+      const exhausted = quota;
+      setStatus(() => (_w: Words, language: UiLanguage) => bokSubmissionQuotaMessage(exhausted, language));
       return;
     }
 
     setSubmitting(true);
-    setStatus("");
+    setStatus(null);
     try {
       await submitBokForReview({
         ...authorForm,
@@ -224,9 +379,9 @@ export function AuthorConsole() {
         rightsNote: "",
       }));
       await refreshAuthor();
-      setStatus("Submitted for review. An admin will approve it before readers see it.");
+      setStatus(() => (w: Words) => w.statusSubmitted);
     } catch (error) {
-      setStatus(readableBoksError(error, "Could not submit this bok."));
+      setStatus(() => (w: Words) => readableBoksError(error, w.submitFailed));
     } finally {
       setSubmitting(false);
     }
@@ -237,53 +392,49 @@ export function AuthorConsole() {
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section ref={formSection} className="panel p-5 sm:p-7">
           <a href="/" className="brand-word">boks</a>
-          <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Author cabinet</h1>
+          <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">{words.title}</h1>
           <p className="mt-3 max-w-2xl text-[var(--muted-foreground)]">
-            Submit one focused bok for review. Readers will see it only after boks admin approval.
+            {words.intro}
           </p>
           {!signedInAuthor && (
             <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-4">
-              <p className="text-sm font-semibold">Authors need a boks account.</p>
+              <p className="text-sm font-semibold">{words.needAccount}</p>
               <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                This lets you track whether each bok is waiting, approved, or refused with a reason.
+                {words.needAccountWhy}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {/* One button: signing in and signing up are the same act -
                     an address, and an account if there is not one yet. */}
-                <Button onClick={() => openAuth()}>Continue with email</Button>
+                <Button onClick={() => openAuth()}>{words.continueEmail}</Button>
               </div>
             </div>
           )}
           <div className="mt-7 grid gap-4">
             {signedInAuthor?.bannedAt && (
               <div className="rounded-lg border border-[var(--destructive)]/35 bg-[var(--destructive)]/5 p-4 text-sm leading-6">
-                This account is suspended and cannot publish. {signedInAuthor.banReason || "Contact a boks administrator for details."}
+                {words.suspended} {signedInAuthor.banReason || words.contactAdmin}
               </div>
             )}
             {signedInAuthor && (
               <p className="byline-note">
-                Publishing as <strong>@{signedInAuthor.handle || "reader"}</strong>. Every bok you
-                publish carries that, so readers can always find your other work.
+                {words.publishingAs} <strong>@{signedInAuthor.handle || words.readerHandle}</strong>.{" "}
+                {words.publishingAsWhy}
               </p>
             )}
             <Field
-              label="Author name (optional)"
-              hint={
-                defaultAuthorName
-                  ? "A name to print above your @nickname. Left as you had it last time; clear it to publish under the @nickname alone."
-                  : "Leave this empty to publish under your @nickname. Fill it in if you want a name printed above it."
-              }
+              label={words.authorName}
+              hint={defaultAuthorName ? words.authorNameKept : words.authorNameEmpty}
             >
               <Input
                 value={authorForm.authorName}
-                placeholder="Optional"
+                placeholder={words.optional}
                 onChange={(event) => setAuthorForm({ ...authorForm, authorName: event.target.value })}
               />
             </Field>
             {revising && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--reader)] p-3 text-sm">
                 <span>
-                  Revising <strong>&ldquo;{revising.title}&rdquo;</strong>. Submitting sends this same bok back for review.
+                  {words.revising} <strong>&ldquo;{revising.title}&rdquo;</strong>. {words.revisingWhy}
                 </span>
                 <Button
                   type="button"
@@ -292,28 +443,28 @@ export function AuthorConsole() {
                   onClick={() => {
                     setRevising(null);
                     setAuthorForm((current) => ({ ...current, title: "", body: "", rightsConfirmed: false, rightsNote: "" }));
-                    setStatus("Write a bok and submit it for review.");
+                    setStatus(() => (w: Words) => w.statusWrite);
                   }}
                 >
-                  Start a new bok instead
+                  {words.startNew}
                 </Button>
               </div>
             )}
             <Field
-              label="Title (optional)"
+              label={words.titleLabel}
               hint={
                 authorForm.title.trim() || !titleFromFirstLine
-                  ? "Leave it empty and the first line of the text becomes the title."
-                  : `Left empty, the title will be “${titleFromFirstLine}”.`
+                  ? words.titleHintEmpty
+                  : words.titleHintFromLine(titleFromFirstLine)
               }
             >
               <Input
                 value={authorForm.title}
-                placeholder={titleFromFirstLine || "Optional"}
+                placeholder={titleFromFirstLine || words.optional}
                 onChange={(event) => setAuthorForm({ ...authorForm, title: event.target.value })}
               />
             </Field>
-            <Field label="Text">
+            <Field label={words.text}>
               <Textarea className="min-h-[380px] text-base leading-7" value={authorForm.body} onChange={(event) => setAuthorForm({ ...authorForm, body: event.target.value })} />
             </Field>
 
@@ -326,23 +477,20 @@ export function AuthorConsole() {
                   onChange={(event) => setAuthorForm({ ...authorForm, rightsConfirmed: event.target.checked })}
                 />
                 <span>
-                  I hold the rights to publish this bok.
-                  <span className="mt-1 block font-normal text-[var(--muted-foreground)]">
-                    Your own work, or work you are allowed to publish - public domain, an open
-                    licence, or permission you have been given.
-                  </span>
+                  {words.rights}
+                  <span className="mt-1 block font-normal text-[var(--muted-foreground)]">{words.rightsWhy}</span>
                 </span>
               </label>
 
               <div className="mt-3">
                 <Field
-                  label="Where the rights come from (optional)"
-                  hint="Only boks admins see this. A line is enough: &ldquo;Project Gutenberg #1342, public domain&rdquo;, &ldquo;my translation&rdquo;, &ldquo;permission from the estate&rdquo;."
+                  label={words.rightsSource}
+                  hint={words.rightsSourceHint}
                 >
                   <Textarea
                     className="min-h-[72px]"
                     value={authorForm.rightsNote}
-                    placeholder="Optional"
+                    placeholder={words.optional}
                     onChange={(event) => setAuthorForm({ ...authorForm, rightsNote: event.target.value })}
                   />
                 </Field>
@@ -362,7 +510,7 @@ export function AuthorConsole() {
                 Boolean(signedInAuthor?.bannedAt)
               }
             >
-              <Send className="size-4" /> Submit for review
+              <Send className="size-4" /> {words.submit}
             </Button>
             {/* The result of the last action, next to the button that caused
                 it. On a phone the Status panel is below the whole form, so a
@@ -379,32 +527,32 @@ export function AuthorConsole() {
               is a rule nobody was about to break. */}
           {quota.usedToday >= quota.limit - 1 && (
             <div className="panel p-5">
-              <h2 className="text-lg font-semibold tracking-normal">Daily submissions</h2>
+              <h2 className="text-lg font-semibold tracking-normal">{words.daily}</h2>
               <div className={`author-quota mt-4 ${quota.exhausted ? "author-quota--exhausted" : ""}`}>
                 <p className="text-sm font-semibold">
-                  {quota.usedToday} of {quota.limit} used today
+                  {words.usedToday(quota.usedToday, quota.limit)}
                 </p>
                 <div className="quota-pips" aria-hidden="true">
                   {Array.from({ length: quota.limit }, (_, index) => (
                     <span key={index} className={`quota-pip ${index < quota.usedToday ? "quota-pip--spent" : ""}`} />
                   ))}
                 </div>
-                <p className="text-sm leading-6 text-[var(--muted-foreground)]">{quota.message}</p>
+                <p className="text-sm leading-6 text-[var(--muted-foreground)]">{quotaMessage}</p>
               </div>
               <p className="mt-3 text-xs leading-5 text-[var(--muted-foreground)]">
-                The limit keeps the review queue readable. It resets at midnight UTC.
+                {words.dailyWhy}
               </p>
             </div>
           )}
           <div className="panel p-5">
-            <h2 className="text-lg font-semibold tracking-normal">Fifteen minutes</h2>
+            <h2 className="text-lg font-semibold tracking-normal">{words.fifteen}</h2>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <MetricTile label="Minutes" value={authorMinutes} />
-              <MetricTile label="Words" value={authorWords} />
+              <MetricTile label={words.minutes} value={authorMinutes} />
+              <MetricTile label={words.words} value={authorWords} />
             </div>
             {/* Characters, because that is the limit the database enforces. */}
             <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-              {groupDigits(authorCharacters)} of {groupDigits(maxBokCharacters)} characters
+              {words.characters(groupDigits(authorCharacters), groupDigits(maxBokCharacters))}
             </p>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--muted)]">
               <div
@@ -417,23 +565,23 @@ export function AuthorConsole() {
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
               {overLength
-                ? `That is ${groupDigits(authorCharacters - maxBokCharacters)} characters past the promise. Split it into episodes.`
-                : "A bok is one break. Fits."}
+                ? words.overLength(groupDigits(authorCharacters - maxBokCharacters))
+                : words.fits}
             </p>
           </div>
           <div className="panel p-5">
-            <h2 className="text-lg font-semibold tracking-normal">Status</h2>
+            <h2 className="text-lg font-semibold tracking-normal">{words.status}</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{status}</p>
             {signedInAuthor && submissions.length > 0 && (
               <div className="mt-4 grid grid-cols-3 gap-2">
-                <MetricTile label="Published" value={publishedCount} />
-                <MetricTile label="In review" value={pendingCount} />
-                <MetricTile label="Needs work" value={rejectedCount} />
+                <MetricTile label={words.published} value={publishedCount} />
+                <MetricTile label={words.inReview} value={pendingCount} />
+                <MetricTile label={words.needsWork} value={rejectedCount} />
               </div>
             )}
           </div>
           <div className="panel p-5">
-            <h2 className="text-lg font-semibold tracking-normal">Your boks</h2>
+            <h2 className="text-lg font-semibold tracking-normal">{words.yourBoks}</h2>
             <div className="mt-4 grid gap-3">
               {submissions.length ? submissions.map((submission) => (
                 <article key={submission.id} className="submission-card">
@@ -441,16 +589,16 @@ export function AuthorConsole() {
                     <div className="min-w-0">
                       <p className="break-words text-sm font-semibold">{submission.title}</p>
                       <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                        {submission.minutes} min
+                        {submission.minutes} {words.min}
                         {submission.authorName ? ` · ${submission.authorName}` : ""}
                         {submission.status === "published"
-                          ? ` · ${submission.likes} liked · ${submission.comments} replied`
+                          ? ` · ${words.liked(submission.likes)} · ${words.replied(submission.comments)}`
                           : ""}
                       </p>
                     </div>
                     <span className={`review-badge review-badge--${submission.status}`}>
                       <ReviewStatusIcon status={submission.status} />
-                      {reviewStatusLabel(submission.status)}
+                      {reviewStatusLabel(submission.status, words)}
                     </span>
                   </div>
                   {submission.reviewNote && (
@@ -460,15 +608,15 @@ export function AuthorConsole() {
                   )}
                   {submission.status === "rejected" && (
                     <Button className="mt-3 w-full" variant="outline" onClick={() => editSubmission(submission)}>
-                      <Edit3 className="size-4" /> Revise
+                      <Edit3 className="size-4" /> {words.revise}
                     </Button>
                   )}
                 </article>
               )) : (
                 <p className="text-sm leading-6 text-[var(--muted-foreground)]">
                   {signedInAuthor
-                    ? "Nothing submitted yet. Your first bok will appear here with its likes and replies."
-                    : "Submitted boks will appear here after you sign in."}
+                    ? words.nothingYet
+                    : words.afterSignIn}
                 </p>
               )}
             </div>
@@ -487,7 +635,7 @@ export function AuthorConsole() {
           // Not closed here: the panel is where a nickname is saved, and
           // dismissing it on save hides the confirmation.
           setUser(nextUser);
-          refreshAuthor().catch((error) => setStatus(readableBoksError(error, "Could not load author cabinet.")));
+          refreshAuthor().catch((error) => setStatus(() => (w: Words) => readableBoksError(error, w.loadFailed)));
         }}
       />
     </main>

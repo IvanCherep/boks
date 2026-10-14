@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { describeBokSubmissionQuota, normalizeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
+import {
+  bokSubmissionQuotaMessage,
+  describeBokSubmissionQuota,
+  normalizeBokSubmissionQuota,
+} from "@/lib/boks/author/submission-quota";
 import { dailyBokSubmissionLimit } from "@/lib/boks/contracts";
 
 const now = new Date("2026-09-12T21:30:00.000Z");
@@ -50,5 +54,18 @@ describe("normalizeBokSubmissionQuota", () => {
     const closed = normalizeBokSubmissionQuota({ limit: 5, usedToday: 1, remaining: 0, exhausted: true }, now);
     expect(closed.exhausted).toBe(true);
     expect(closed.message).toContain("5 boks a day");
+  });
+});
+
+describe("bokSubmissionQuotaMessage", () => {
+  it("speaks Russian with Russian plurals", () => {
+    expect(bokSubmissionQuotaMessage(describeBokSubmissionQuota(2, now), "ru")).toBe("Осталась 1 отправка на сегодня.");
+    expect(bokSubmissionQuotaMessage(describeBokSubmissionQuota(0, now), "ru")).toBe("Осталось 3 отправки на сегодня.");
+    expect(bokSubmissionQuotaMessage({ limit: 5, remaining: 0, exhausted: true }, "ru")).toContain("5 текстов");
+  });
+
+  it("matches the quota's own English message", () => {
+    const quota = describeBokSubmissionQuota(1, now);
+    expect(bokSubmissionQuotaMessage(quota)).toBe(quota.message);
   });
 });

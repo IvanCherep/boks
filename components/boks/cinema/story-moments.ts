@@ -1,4 +1,5 @@
 import type { LoopProfile } from "@/lib/boks/interactions/sound";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * Places where a story stops and asks something of the reader.
@@ -32,6 +33,8 @@ export type StoryMoment = {
    */
   hint: string;
   how: string;
+  /** The same two lines in every other interface language; English above is the default. */
+  translations: Record<Exclude<UiLanguage, "en">, { hint: string; how: string }>;
   /** Where to point, as a fraction of the frame. The whole frame still works. */
   hotspot?: { x: number; y: number };
   /** What is heard while the story waits. */
@@ -61,6 +64,7 @@ const lionMoments: StoryMoment[] = [
     after: "/cinema/lion/moments/crowd/after.webp",
     hint: "Part the crowd",
     how: "Swipe to the right",
+    translations: { ru: { hint: "Раздвиньте толпу", how: "Проведите пальцем вправо" } },
     hotspot: { x: 0.5, y: 0.72 },
     loop: "crowd",
     distancePx: 170,
@@ -82,6 +86,7 @@ const lionMoments: StoryMoment[] = [
     after: "/cinema/lion/moments/heartbeat/after.webp",
     hint: "Listen to his heart",
     how: "Press and hold on the lion's chest",
+    translations: { ru: { hint: "Послушайте его сердце", how: "Нажмите и удерживайте палец на груди льва" } },
     // His chest, left of the sleeping puppy. Pressing anywhere works - the cue
     // points, it does not fence.
     hotspot: { x: 0.33, y: 0.6 },
@@ -89,6 +94,11 @@ const lionMoments: StoryMoment[] = [
     activationDelayMs: 280,
   },
 ];
+
+/** A moment's two lines in the interface language. */
+export function momentCue(moment: StoryMoment, language: UiLanguage): { hint: string; how: string } {
+  return language === "en" ? { hint: moment.hint, how: moment.how } : moment.translations[language];
+}
 
 const moments: Record<string, readonly StoryMoment[]> = {
   // Лев Толстой — Лев и собачка

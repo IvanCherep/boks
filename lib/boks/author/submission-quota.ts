@@ -1,4 +1,6 @@
 import { dailyBokSubmissionLimit } from "@/lib/boks/contracts";
+import { plural } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * The daily author limit in one place. The database is the authority - this
@@ -61,7 +63,27 @@ export function normalizeBokSubmissionQuota(raw: unknown, now: Date = new Date()
   };
 }
 
-function quotaMessage(remaining: number, limit: number) {
+/**
+ * The quota's sentence in an interface language. `message` on the quota is
+ * the English one; the cabinet asks for the reader's own with this.
+ */
+export function bokSubmissionQuotaMessage(
+  quota: Pick<BokSubmissionQuota, "remaining" | "exhausted" | "limit">,
+  language: UiLanguage = "en"
+) {
+  return quotaMessage(quota.exhausted ? 0 : quota.remaining, quota.limit, language);
+}
+
+function quotaMessage(remaining: number, limit: number, language: UiLanguage = "en") {
+  if (language === "ru") {
+    if (remaining === 0) {
+      const boks = plural("ru", limit, { one: "текст", few: "текста", many: "текстов", other: "текста" });
+      return `Дневной лимит исчерпан. В день можно отправить ${limit} ${boks}; следующая попытка откроется завтра.`;
+    }
+    const left = plural("ru", remaining, { one: "Осталась", few: "Осталось", many: "Осталось", other: "Осталось" });
+    const sends = plural("ru", remaining, { one: "отправка", few: "отправки", many: "отправок", other: "отправки" });
+    return `${left} ${remaining} ${sends} на сегодня.`;
+  }
   if (remaining === 0) return `Daily limit reached. You can submit ${limit} boks a day; the next slot opens tomorrow.`;
   if (remaining === 1) return "1 submission left today.";
   return `${remaining} submissions left today.`;

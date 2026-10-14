@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 import {
   affordanceFor,
   brushCells,
@@ -67,6 +69,23 @@ function createTween() {
 
 type Status = "loading" | "ready" | "failed";
 
+const messages = defineMessages(
+  {
+    loading: "Loading the scene…",
+    failed: "The pictures did not load - the interaction is off",
+    badge: "Something to do",
+    again: "Again",
+  },
+  {
+    ru: {
+      loading: "Загружаем сцену…",
+      failed: "Картинки не загрузились - взаимодействие отключено",
+      badge: "Ваш ход",
+      again: "Ещё раз",
+    },
+  }
+);
+
 export function InteractiveScene({
   scene,
   onCompleted,
@@ -84,6 +103,7 @@ export function InteractiveScene({
   const [status, setStatus] = useState<Status>("loading");
   const [engaged, setEngaged] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const words = useMessages(messages);
 
   const progress = useRef(initialProgressFor(scene));
   const tween = useRef(createTween());
@@ -457,9 +477,9 @@ export function InteractiveScene({
         </div>
       )}
 
-      {status === "loading" && <div className="iscene__state">Loading the scene…</div>}
+      {status === "loading" && <div className="iscene__state">{words.loading}</div>}
       {status === "failed" && (
-        <div className="iscene__state">The pictures did not load - the interaction is off</div>
+        <div className="iscene__state">{words.failed}</div>
       )}
 
       {status === "ready" && (
@@ -469,7 +489,7 @@ export function InteractiveScene({
               reader has done it: a label that stays is nagging. */}
           <span className="iscene__badge">
             <span className="iscene__badge-dot" aria-hidden="true" />
-            Something to do
+            {words.badge}
           </span>
           <span className="iscene__hint-text">{scene.hint}</span>
           <i aria-hidden="true" />
@@ -478,7 +498,7 @@ export function InteractiveScene({
 
       {completed && (
         <button type="button" className="iscene__reset" onClick={reset}>
-          Again
+          {words.again}
         </button>
       )}
     </div>

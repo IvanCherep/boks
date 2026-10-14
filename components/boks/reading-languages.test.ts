@@ -59,6 +59,26 @@ describe("describeEmptyLanguageFeed", () => {
   });
 });
 
+describe("describeEmptyLanguageFeed in Russian", () => {
+  it("names the languages in the prepositional case and offers what exists", () => {
+    const message = describeEmptyLanguageFeed(["ru"], { en: 457, ru: 0 }, "ru");
+    expect(message?.title).toBe("Пока нет текстов на русском");
+    expect(message?.body).toContain("Зато много на английском");
+    expect(message?.offer).toEqual(["en"]);
+  });
+
+  it("says so plainly when nothing exists at all", () => {
+    const message = describeEmptyLanguageFeed(["en", "ru"], {}, "ru");
+    expect(message?.title).toBe("Пока нет текстов на английском или русском");
+    expect(message?.body).toBe("boks пока нечего вам показать. Ваши языки: английский и русский.");
+  });
+
+  it("reaches the notice through emptyFeedNotice", () => {
+    const notice = emptyFeedNotice({ phase: "ready", message: "", languages: ["ru"], coverage: { en: 3 }, uiLanguage: "ru" });
+    expect(notice.kind === "language" && notice.title).toBe("Пока нет текстов на русском");
+  });
+});
+
 describe("emptyFeedNotice", () => {
   const coverage = { en: 457, ru: 0 };
 

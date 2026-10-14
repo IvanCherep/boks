@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { dragProgress, snapTarget } from "@/lib/boks/interactions/scenes";
 import { startInteractionLoop } from "@/lib/boks/interactions/sound";
-import type { StoryMoment } from "@/components/boks/cinema/story-moments";
+import { momentCue, type StoryMoment } from "@/components/boks/cinema/story-moments";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const messages = defineMessages(
+  { badge: "Something to do", skip: "Continue" },
+  { ru: { badge: "Ваш ход", skip: "Продолжить" } }
+);
 
 /**
  * A moment inside a story: the narration stops, something is heard, and it
@@ -62,6 +69,8 @@ export function StoryMomentScene({
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [canSkip, setCanSkip] = useState(false);
+  const words = useMessages(messages);
+  const cue = momentCue(moment, useUiLanguage());
 
   const paint = useCallback((value: number) => {
     frame.current?.style.setProperty("--p", value.toFixed(4));
@@ -246,16 +255,16 @@ export function StoryMomentScene({
       <div className="moment__cue">
         <span className="iscene__badge">
           <span className="iscene__badge-dot" aria-hidden="true" />
-          Something to do
+          {words.badge}
         </span>
-        <span className="moment__hint">{moment.hint}</span>
-        <span className="moment__how">{moment.how}</span>
+        <span className="moment__hint">{cue.hint}</span>
+        <span className="moment__how">{cue.how}</span>
         <i className="moment__rule" aria-hidden="true" />
       </div>
 
       {canSkip && !leaving && (
         <button type="button" className="moment__skip" onClick={() => finish(0)}>
-          Continue
+          {words.skip}
         </button>
       )}
     </div>

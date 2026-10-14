@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Heart, Lightbulb, MessageCircle, RotateCcw, Share2, Smile } from "lucide-react";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 import { markHomeScreenHintShown, shouldOfferHomeScreen } from "@/components/boks/home-screen-hint";
 
@@ -51,7 +53,7 @@ const aftertasteIcons: Record<AftertasteTag, typeof Smile> = {
   pondering: MessageCircle,
 };
 
-const words = {
+const messages = defineMessages({
   ended: "Where next?",
   aftertasteEyebrow: "Aftertaste",
   aftertasteTitle: "What stayed with you?",
@@ -70,7 +72,27 @@ const words = {
   share: "Share",
   // Safari's own Share, not the button above it: that one sends the poem.
   homeScreen: "To listen without the browser: Safari\u2019s Share menu, then \u201cAdd to Home Screen\u201d.",
-};
+}, {
+  ru: {
+    ended: "Что дальше?",
+    aftertasteEyebrow: "Послевкусие",
+    aftertasteTitle: "Что осталось с вами?",
+    aftertaste: {
+      smiled: "Улыбнуло",
+      moved: "Тронуло",
+      surprised: "Удивило",
+      pondering: "Хочу подумать",
+    },
+    onward: "Дальше",
+    skip: "Пропустить",
+    again: "Послушать снова",
+    like: "Нравится",
+    liked: "Нравится вам",
+    next: "Выбрать следующее",
+    share: "Поделиться",
+    homeScreen: "Чтобы слушать без браузера: меню «Поделиться» в Safari, затем «На экран „Домой“».",
+  },
+});
 
 /**
  * The ending itself. Mount it when the reading is over and unmount it when the
@@ -87,6 +109,7 @@ export function ReadingFinale({
   actions?: FinaleActions;
   onAgain: () => void;
 }) {
+  const words = useMessages(messages);
   const [step, setStep] = useState<"aftertaste" | "menu">("aftertaste");
   // Once per mount: the finale is mounted when a reading ends and unmounted
   // when it starts again, so a mount is an ending.

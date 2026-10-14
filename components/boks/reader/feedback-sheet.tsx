@@ -4,11 +4,36 @@ import { Button } from "@/components/ui/button";
 import { surfaceForMilestone } from "@/components/boks/feedback";
 import { FeedbackForm } from "@/components/boks/feedback-form";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 
-function milestoneTitle(milestone: number) {
-  if (milestone === 3) return "Three boks in - what do you think?";
-  if (milestone === 10) return "Ten boks in - how is it going?";
-  return "Thirty boks in - you know this place now";
+const messages = defineMessages(
+  {
+    label: "Tell us what you think",
+    three: "Three boks in - what do you think?",
+    ten: "Ten boks in - how is it going?",
+    thirty: "Thirty boks in - you know this place now",
+    thanks: "Thank you",
+    close: "Close",
+    notNow: "Not now",
+  },
+  {
+    ru: {
+      label: "Расскажите, что думаете",
+      three: "Три текста позади - как вам?",
+      ten: "Десять текстов позади - как идёт?",
+      thirty: "Тридцать текстов позади - вы здесь уже свой",
+      thanks: "Спасибо",
+      close: "Закрыть",
+      notNow: "Не сейчас",
+    },
+  }
+);
+
+function milestoneTitle(milestone: number, t: (typeof messages)["en"]) {
+  if (milestone === 3) return t.three;
+  if (milestone === 10) return t.ten;
+  return t.thirty;
 }
 
 /**
@@ -32,12 +57,13 @@ export function FeedbackSheet({
   onSent: () => void;
   onClose: () => void;
 }) {
+  const t = useMessages(messages);
   return (
-    <ReaderSheet label="Tell us what you think" onClose={onClose}>
+    <ReaderSheet label={t.label} onClose={onClose}>
       <ReaderSheetHeader
-        label="Tell us what you think"
+        label={t.label}
         onClose={onClose}
-        title={sent ? "Thank you" : milestoneTitle(milestone)}
+        title={sent ? t.thanks : milestoneTitle(milestone, t)}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
@@ -49,7 +75,7 @@ export function FeedbackSheet({
           autoFocus
         />
         <Button className="mt-4 w-full" variant="ghost" onClick={onClose}>
-          {sent ? "Close" : "Not now"}
+          {sent ? t.close : t.notNow}
         </Button>
       </div>
     </ReaderSheet>

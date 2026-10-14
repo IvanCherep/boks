@@ -101,14 +101,25 @@ export function isValidBoksHandle(handle: string) {
  * The messages match what `update_boks_user_profile` raises, so a reader is
  * told the same thing whichever side refuses first.
  */
-export function describeBoksHandleProblem(handle: string) {
-  if (!handle) return "Enter a nickname.";
-  if (handle.length < minHandleLength) return `A nickname needs at least ${minHandleLength} characters.`;
-  if (handle.length > maxHandleLength) return `A nickname can be at most ${maxHandleLength} characters.`;
+export function describeBoksHandleProblem(handle: string, language: string = "en") {
+  // A plain string, not `UiLanguage`: this file imports nothing.
+  const ru = language === "ru";
+  if (!handle) return ru ? "Введите никнейм." : "Enter a nickname.";
+  if (handle.length < minHandleLength)
+    return ru
+      ? `В никнейме должно быть не меньше ${minHandleLength} символов.`
+      : `A nickname needs at least ${minHandleLength} characters.`;
+  if (handle.length > maxHandleLength)
+    return ru
+      ? `В никнейме может быть не больше ${maxHandleLength} символов.`
+      : `A nickname can be at most ${maxHandleLength} characters.`;
   // Alphabet before position: someone who typed Cyrillic did start with a
   // letter, so naming the first character would point at the wrong mistake.
-  if (!/^[a-z0-9_]+$/.test(handle)) return "A nickname can only use English letters, numbers and underscores.";
-  if (!isValidBoksHandle(handle)) return "A nickname has to start with a letter.";
+  if (!/^[a-z0-9_]+$/.test(handle))
+    return ru
+      ? "В никнейме можно использовать только латинские буквы, цифры и подчёркивание."
+      : "A nickname can only use English letters, numbers and underscores.";
+  if (!isValidBoksHandle(handle)) return ru ? "Никнейм должен начинаться с буквы." : "A nickname has to start with a letter.";
   return null;
 }
 

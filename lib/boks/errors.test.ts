@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readableBoksError } from "@/lib/boks/errors";
+import { localizeBoksMessage, readableBoksError } from "@/lib/boks/errors";
 
 describe("readableBoksError", () => {
   it("passes through a message the database wrote for a person", () => {
@@ -44,5 +44,25 @@ describe("readableBoksError", () => {
     expect(readableBoksError({}, "Could not save settings.")).toBe("Could not save settings.");
     expect(readableBoksError(null, "Could not save settings.")).toBe("Could not save settings.");
     expect(readableBoksError({ message: "   " }, "Could not save settings.")).toBe("Could not save settings.");
+  });
+});
+
+describe("readableBoksError in Russian", () => {
+  it("translates a sentence the database wrote", () => {
+    expect(readableBoksError({ message: "That nickname is taken." }, "Не удалось", "ru")).toBe("Этот никнейм уже занят.");
+  });
+
+  it("translates a rule that carries a number", () => {
+    expect(localizeBoksMessage("A nickname needs at least 3 characters.", "ru")).toBe(
+      "В никнейме должно быть не меньше 3 символов."
+    );
+  });
+
+  it("keeps an unknown sentence as it is rather than guessing", () => {
+    expect(readableBoksError({ message: "Something new." }, "x", "ru")).toBe("Something new.");
+  });
+
+  it("still hides plumbing behind the fallback, already in Russian", () => {
+    expect(readableBoksError({ message: "duplicate key value" }, "Не удалось сохранить.", "ru")).toBe("Не удалось сохранить.");
   });
 });

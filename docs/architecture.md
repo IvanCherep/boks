@@ -39,13 +39,17 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `reading-music.ts`, `reading-fullscreen.ts`, `home-screen-hint.ts`: ambient music, fullscreen for formats on Android/iPad, the one-time iPhone home-screen hint.
 - `error-boundary.tsx`: the crash screen around every surface.
 
+### Interface language
+
+- `lib/i18n/ui-language.ts`: which interface language a device gets (Russian if its first language is Russian, else English, or the pinned choice) and the `<html lang>` boot script. `lib/i18n/messages.ts`: `defineMessages` tables and `plural`. `components/boks/ui-language.tsx`: `useMessages` / `useUiLanguage`, no provider. `lib/i18n/content-languages.ts`: names of the languages *texts* are in. See `docs/adr/0015-interface-language-follows-the-device.md`.
+
 ### Reading formats and the series shelf
 
 - `components/boks/cinema/`: cinema - narration track, scenes, story moments, voices.
 - `components/boks/poetry/`: immersive poems; manifests are built by `lib/boks/poetry/manifest.ts` from each poem's own recording.
 - `components/boks/interactions/` + `lib/boks/interactions/`: the story-moment scenes and their sound.
 - `components/boks/reading-finale.tsx`: the one ending every format shares.
-- `components/boks/series/`: the series shelf - `series-catalogue.ts` (the list, tested against both format registries), `series-view.tsx` (shelf and the feed/series tabs), `series-progress.ts` (heard marks in browser storage).
+- `components/boks/series/`: the series shelf - `series-catalogue.ts` (the list, tested against both format registries), `series-view.tsx` (shelf and the feed/series tabs), `series-progress.ts` (heard marks in browser storage). The shelf's language filter is in `series-catalogue.ts` too.
 - How a piece is produced and added: `docs/reading-formats.md`.
 
 ### Author and admin

@@ -3,6 +3,25 @@
 import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 import { Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const messages = defineMessages(
+  {
+    collapse: (label: string) => `Collapse ${label.toLowerCase()}`,
+    expand: (label: string) => `Expand ${label.toLowerCase()}`,
+    close: (label: string) => `Close ${label.toLowerCase()}`,
+    fullScreen: (label: string) => `Open ${label.toLowerCase()} full screen`,
+  },
+  {
+    ru: {
+      collapse: (label: string) => `Свернуть: ${label.toLowerCase()}`,
+      expand: (label: string) => `Развернуть: ${label.toLowerCase()}`,
+      close: (label: string) => `Закрыть: ${label.toLowerCase()}`,
+      fullScreen: (label: string) => `На весь экран: ${label.toLowerCase()}`,
+    },
+  }
+);
 
 /**
  * The panel the reader pulls up over a bok: responses, an author, the bok's
@@ -31,6 +50,7 @@ export function ReaderSheet({
   onExpandedChange?: (expanded: boolean) => void;
   className?: string;
 }) {
+  const t = useMessages(messages);
   const dragStartY = useRef<number | null>(null);
   const dragged = useRef(false);
   const closeRef = useRef(onClose);
@@ -100,7 +120,7 @@ export function ReaderSheet({
           if (expandable) onExpandedChange?.(!expanded);
           else onClose();
         }}
-        aria-label={expandable ? `${expanded ? "Collapse" : "Expand"} ${label.toLowerCase()}` : `Close ${label.toLowerCase()}`}
+        aria-label={expandable ? (expanded ? t.collapse(label) : t.expand(label)) : t.close(label)}
       />
       {children}
     </div>
@@ -121,6 +141,7 @@ export function ReaderSheetHeader({
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
 }) {
+  const t = useMessages(messages);
   return (
     <div className="reader-sheet-header px-4 pt-1 sm:pt-4">
       <h2 className="text-lg font-semibold tracking-normal">{title}</h2>
@@ -130,12 +151,12 @@ export function ReaderSheetHeader({
             variant="ghost"
             size="icon"
             onClick={() => onExpandedChange(!expanded)}
-            aria-label={expanded ? `Collapse ${label.toLowerCase()}` : `Open ${label.toLowerCase()} full screen`}
+            aria-label={expanded ? t.collapse(label) : t.fullScreen(label)}
           >
             {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
           </Button>
         )}
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label={`Close ${label.toLowerCase()}`}>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={t.close(label)}>
           <X className="size-4" />
         </Button>
       </div>

@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
+import { gestureHintIn } from "@/components/boks/poetry/gesture-hints";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 import {
   backdropAt,
   lineIndexAt,
@@ -58,6 +61,32 @@ type Status = "loading" | "ready" | "ended" | "error";
 
 const controlsIdleMs = 2600;
 
+/** Only the controls are translated; the poem keeps its own language. */
+const messages = defineMessages(
+  {
+    pause: "Pause",
+    listen: "Listen",
+    close: "Close",
+    position: "Position",
+    previousLine: "Previous line",
+    nextLine: "Next line",
+    loading: "Loading…",
+    failed: "The recording did not load",
+  },
+  {
+    ru: {
+      pause: "Пауза",
+      listen: "Слушать",
+      close: "Закрыть",
+      position: "Позиция",
+      previousLine: "Предыдущая строка",
+      nextLine: "Следующая строка",
+      loading: "Загрузка…",
+      failed: "Запись не загрузилась",
+    },
+  }
+);
+
 export function ImmersivePoem({
   manifest,
   finale,
@@ -74,6 +103,8 @@ export function ImmersivePoem({
   recording?: boolean;
   onClose: () => void;
 }) {
+  const words = useMessages(messages);
+  const uiLanguage = useUiLanguage();
   const audio = useRef<HTMLAudioElement | null>(null);
   const theme = useRef<HTMLAudioElement | null>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -566,7 +597,9 @@ export function ImmersivePoem({
   }
 
   const gestureHint =
-    scene?.gesture && !gestureFound[scene.id] && status !== "ended" && !recording ? scene.gesture.hint : null;
+    scene?.gesture && !gestureFound[scene.id] && status !== "ended" && !recording
+      ? gestureHintIn(scene.gesture.hint, uiLanguage)
+      : null;
 
   const preset = scene ? presetFor(scene) : "quiet-breath";
   const stanzas = useMemo(() => stanzasOf(manifest), [manifest]);
@@ -677,7 +710,7 @@ export function ImmersivePoem({
         onPointerCancel={(event) => releaseHand(event.pointerId)}
         // A long press is the gesture here, not a request for a menu.
         onContextMenu={(event) => event.preventDefault()}
-        aria-label={playing ? "Pause" : "Listen"}
+        aria-label={playing ? words.pause : words.listen}
       />
 
       {/*
@@ -809,7 +842,7 @@ export function ImmersivePoem({
         {manifest.title}. {manifest.author}. {manifest.lines.map((l) => l.tokens.map((t) => t.text).join(" ")).join(" ")}
       </p>
 
-      <button type="button" className="poem__close" onClick={onClose} aria-label="Close">
+      <button type="button" className="poem__close" onClick={onClose} aria-label={words.close}>
         <X className="size-5" />
       </button>
 
@@ -824,7 +857,7 @@ export function ImmersivePoem({
           className="poem__bar"
           role="slider"
           tabIndex={0}
-          aria-label="Position"
+          aria-label={words.position}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={0}
@@ -878,11 +911,11 @@ export function ImmersivePoem({
               event.stopPropagation();
               step(-1);
             }}
-            aria-label="Previous line"
+            aria-label={words.previousLine}
           >
             <ChevronLeft className="size-4" />
           </button>
-          <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? "Pause" : "Listen"}>
+          <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? words.pause : words.listen}>
             {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
           </button>
           <button
@@ -892,7 +925,7 @@ export function ImmersivePoem({
               event.stopPropagation();
               step(1);
             }}
-            aria-label="Next line"
+            aria-label={words.nextLine}
           >
             <ChevronRight className="size-4" />
           </button>
@@ -906,8 +939,8 @@ export function ImmersivePoem({
         </p>
       )}
 
-      {status === "loading" && <p className="poem__state">Loading…</p>}
-      {status === "error" && <p className="poem__state">The recording did not load</p>}
+      {status === "loading" && <p className="poem__state">{words.loading}</p>}
+      {status === "error" && <p className="poem__state">{words.failed}</p>}
 
       {/* The same ending as every other boks series piece - see
           reading-finale.tsx. The poem draws the reading, never its own end. */}

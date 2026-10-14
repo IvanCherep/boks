@@ -1,3 +1,5 @@
+import type { UiLanguage } from "@/lib/i18n/ui-language";
+
 export function wordCount(text: string) {
   return text.split(/\s+/).filter(Boolean).length;
 }
@@ -36,29 +38,35 @@ export function secondsLabel(value: unknown) {
  * when. Absolute timestamps are noise at this density; "3h" is what a reader
  * actually wants to know.
  */
-export function shortTimeAgo(value: string, now = Date.now()) {
+const timeUnits: Record<UiLanguage, Record<"now" | "m" | "h" | "d" | "w" | "mo" | "y", string>> = {
+  en: { now: "now", m: "m", h: "h", d: "d", w: "w", mo: "mo", y: "y" },
+  ru: { now: "сейчас", m: " мин", h: " ч", d: " д", w: " нед", mo: " мес", y: " г" },
+};
+
+export function shortTimeAgo(value: string, now = Date.now(), language: UiLanguage = "en") {
   const at = Date.parse(value);
   if (!Number.isFinite(at)) return "";
+  const unit = timeUnits[language];
 
   const seconds = Math.max(0, Math.round((now - at) / 1000));
-  if (seconds < 60) return "now";
+  if (seconds < 60) return unit.now;
 
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return `${minutes}${unit.m}`;
 
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return `${hours}${unit.h}`;
 
   const days = Math.round(hours / 24);
-  if (days < 7) return `${days}d`;
+  if (days < 7) return `${days}${unit.d}`;
 
   const weeks = Math.round(days / 7);
-  if (weeks < 5) return `${weeks}w`;
+  if (weeks < 5) return `${weeks}${unit.w}`;
 
   const months = Math.round(days / 30);
-  if (months < 12) return `${months}mo`;
+  if (months < 12) return `${months}${unit.mo}`;
 
-  return `${Math.round(days / 365)}y`;
+  return `${Math.round(days / 365)}${unit.y}`;
 }
 
 /**

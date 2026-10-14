@@ -3,10 +3,37 @@
 import { Button } from "@/components/ui/button";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import {
-  readingLanguageNames,
+  readingLanguageNamesIn,
   type EmptyFeedNotice,
   type ReadingLanguage,
 } from "@/components/boks/reading-languages";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const messages = defineMessages(
+  {
+    add: (names: string[]) => `Add ${names.join(" and ")}`,
+    change: "Change my languages",
+    unreachableTitle: "boks cannot reach its server from this network",
+    unreachableBody:
+      "The page loaded, so boks itself is running. What failed is the connection your browser makes next, and that is usually the network in between: another Wi-Fi, mobile data, or a VPN normally fixes it.",
+    retry: "Try again",
+    stillNothing: "Still nothing? Write to",
+    tellProvider: "- tell us your provider and we will move the address boks talks to.",
+  },
+  {
+    ru: {
+      add: (names: string[]) => `Добавить: ${names.join(" и ").toLowerCase()}`,
+      change: "Изменить мои языки",
+      unreachableTitle: "boks не может достучаться до своего сервера из этой сети",
+      unreachableBody:
+        "Страница загрузилась, значит, сам boks работает. Не прошло следующее соединение браузера, и обычно дело в сети между вами: другой Wi-Fi, мобильный интернет или VPN, как правило, помогают.",
+      retry: "Попробовать снова",
+      stillNothing: "Всё равно не работает? Напишите на",
+      tellProvider: "- укажите вашего провайдера, и мы сменим адрес, к которому обращается boks.",
+    },
+  }
+);
 
 /**
  * What the reader sees when there is no boks to show.
@@ -28,6 +55,8 @@ export function EmptyFeedScreen({
   onChangeLanguages: () => void;
   onRetry: () => void;
 }) {
+  const t = useMessages(messages);
+  const uiLanguage = useUiLanguage();
   return (
     <main className="reader-shell grid min-h-screen place-items-center px-6">
       <div className="max-w-md text-center">
@@ -38,11 +67,11 @@ export function EmptyFeedScreen({
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{notice.body}</p>
             {notice.offer.length > 0 && (
               <Button className="mt-4" onClick={() => onAddLanguages(notice.offer)}>
-                Add {notice.offer.map((language) => readingLanguageNames[language]).join(" and ")}
+                {t.add(notice.offer.map((language) => readingLanguageNamesIn[uiLanguage][language]))}
               </Button>
             )}
             <Button className="mt-2 w-full" variant="ghost" onClick={onChangeLanguages}>
-              Change my languages
+              {t.change}
             </Button>
           </>
         ) : notice.kind === "unreachable" ? (
@@ -52,22 +81,20 @@ export function EmptyFeedScreen({
                 network is stopping the call the app makes next - on some
                 providers that call is blocked while the site is not. */}
             <h1 className="mt-4 text-2xl font-semibold tracking-normal">
-              boks cannot reach its server from this network
+              {t.unreachableTitle}
             </h1>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-              The page loaded, so boks itself is running. What failed is the connection your browser
-              makes next, and that is usually the network in between: another Wi-Fi, mobile data, or a
-              VPN normally fixes it.
+              {t.unreachableBody}
             </p>
             <Button className="mt-4" onClick={onRetry}>
-              Try again
+              {t.retry}
             </Button>
             <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-              Still nothing? Write to{" "}
+              {t.stillNothing}{" "}
               <a className="auth-link" href={supportMailto}>
                 {supportEmail}
               </a>{" "}
-              - tell us your provider and we will move the address boks talks to.
+              {t.tellProvider}
             </p>
           </>
         ) : (

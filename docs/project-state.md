@@ -11,6 +11,21 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Russian interface, and a series shelf in every language (2026-10-14).** The
+interface is Russian when the device's first language is Russian and English
+otherwise; the account panel (and the guest's compact settings) has *Interface
+language*: System / English / Русский, kept on the device
+(`docs/adr/0015-interface-language-follows-the-device.md`). Every reader and
+author string lives in a `defineMessages` table (`lib/i18n/`), Russian plurals
+included; a missing translation is a type error. In Russian a bok is "текст".
+Left English on purpose: the admin console, `/privacy` and `/terms`, the
+server-rendered `/b/<id>` share page and metadata, and database messages not in
+`lib/boks/errors.ts`'s table. The series shelf no longer follows the reader's
+feed languages: it shows every language, with a language filter (icon next to
+"About") that offers exactly the languages its pieces carry - an Italian or
+Serbian piece brings its own option. Looked at in WebKit at iPhone 15 size in
+ru-RU and en-US against the built app.
+
 **Tests and the dev server no longer count as guests (2026-10-14).** Reader
 events and journey steps are not written from a local host or an automated
 browser (`navigator.webdriver`) - `lib/boks/analytics-gate.ts`. Checked in

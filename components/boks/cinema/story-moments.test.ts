@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import {
+  momentCue,
   momentDueAt,
   momentsToRearm,
   momentGraceSeconds,
@@ -35,16 +36,21 @@ describe("where a story stops to ask something", () => {
     }
   });
 
-  it("says what will happen and which fingers to move, in English", () => {
+  it("says what will happen and which fingers to move, in the interface's language", () => {
     // One clever imperative reads well and leaves the reader guessing, and a
-    // reader who is guessing has stopped being inside the story. The interface
-    // is English whatever the story is in.
+    // reader who is guessing has stopped being inside the story. The cue is
+    // in the interface's language whatever the story is in: English by
+    // default, Russian for a Russian interface.
     for (const moment of all) {
       expect(moment.hint.length, moment.id).toBeGreaterThan(0);
       expect(moment.how.length, moment.id).toBeGreaterThan(0);
       expect(`${moment.hint} ${moment.how}`, moment.id).not.toMatch(/[А-Яа-яЁё]/);
       // The instruction is the longer of the two: it names the gesture.
       expect(moment.how.length, moment.id).toBeGreaterThanOrEqual(moment.hint.length);
+      const ru = momentCue(moment, "ru");
+      expect(`${ru.hint} ${ru.how}`, moment.id).toMatch(/^[А-Яа-яЁё ,.'-]+$/);
+      expect(ru.how.length, moment.id).toBeGreaterThanOrEqual(ru.hint.length);
+      expect(momentCue(moment, "en")).toEqual({ hint: moment.hint, how: moment.how });
     }
   });
 

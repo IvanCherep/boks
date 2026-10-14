@@ -138,6 +138,8 @@ import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendatio
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
+import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
 import { atHandle, bareHandle } from "@/components/boks/reader/handles";
 import { BokMenuSheet, type BokReportKind, type BokReportOutcome } from "@/components/boks/reader/bok-menu-sheet";
 import { EmptyFeedScreen } from "@/components/boks/reader/empty-feed-screen";
@@ -152,10 +154,122 @@ function releaseFocus(event: React.MouseEvent<HTMLElement>) {
 }
 
 /** "Follow", or "Follow @boks" when the byline is a writer the account publishes. */
+const messages = defineMessages(
+  {
+    follow: "Follow",
+    following: "Following",
+    bokAuthor: "boks author",
+    noBackend: "The reader has no backend yet.",
+    couldNotRefresh: "Could not refresh feed.",
+    couldNotSignIn: "Could not finish sign in.",
+    hidden: (title: string) => `“${title}” is hidden from readers. Restore it in Admin → Content → Deleted.`,
+    suspendedReading: "This account is suspended. Reading remains available.",
+    suspended: "This account is suspended.",
+    couldNotLoad: "Could not load boks.",
+    unavailable: "This bok is no longer available.",
+    couldNotOpen: "Could not open this bok.",
+    poemFailed: "This poem could not be opened.",
+    findingMore: "Finding more boks for you…",
+    everything: "That is everything boks has for you right now.",
+    languagesFailed: "Could not change your languages.",
+    linkCopied: "Link copied",
+    reportFailed: "Could not send that report.",
+    likeFailed: "Could not update the like. Try again.",
+    followFailed: "Could not update following.",
+    noLongerOpen: "That bok is no longer open.",
+    joinConversation: "Create a free account to join the conversation.",
+    commentsUnavailable: "Comments are not available right now.",
+    feedLanguagesFailed: "Could not load the feed in those languages.",
+    openSettings: "Open settings",
+    signInOrCreate: "Sign in or create an account",
+    settings: "Settings",
+    signIn: "Sign in",
+    moreAboutBok: "More about this bok",
+    listenProduction: "listen to the production",
+    releaseNext: "release for next bok",
+    releasePrevious: "release for previous bok",
+    nextBok: "next bok",
+    previousBok: "previous bok",
+    listenAndRead: "Listen and read",
+    listenAndReadPrototype: "Listen and read (prototype, admins only)",
+    moveThroughFeed: "Move through the feed",
+    previousLabel: "Previous bok",
+    nextLabel: "Next bok",
+    previous: "previous",
+    moreWithoutAccount: (count: number) => `${count} more without an account`,
+    alwaysFree:
+      "Reading is always free. An account saves your history and helps recommendations learn what you enjoy.",
+    notNow: "Not now",
+    createAccount: "Create free account",
+    hintTouch: "Swipe left for the next bok. Tap the page for likes, comments and more.",
+    hintPointer: "Press → for the next bok. Click the page for likes, comments and more.",
+    dismiss: "Dismiss",
+  },
+  {
+    ru: {
+      follow: "Подписаться",
+      following: "Вы подписаны",
+      bokAuthor: "автор boks",
+      noBackend: "У читалки пока нет сервера.",
+      couldNotRefresh: "Не удалось обновить ленту.",
+      couldNotSignIn: "Не удалось завершить вход.",
+      hidden: (title: string) => `«${title}» скрыт от читателей. Вернуть можно в Admin → Content → Deleted.`,
+      suspendedReading: "Этот аккаунт заблокирован. Читать по-прежнему можно.",
+      suspended: "Этот аккаунт заблокирован.",
+      couldNotLoad: "Не удалось загрузить boks.",
+      unavailable: "Этот текст больше недоступен.",
+      couldNotOpen: "Не удалось открыть этот текст.",
+      poemFailed: "Не удалось открыть это стихотворение.",
+      findingMore: "Подбираем для вас ещё…",
+      everything: "Пока это всё, что boks может вам предложить.",
+      languagesFailed: "Не удалось сменить языки.",
+      linkCopied: "Ссылка скопирована",
+      reportFailed: "Не удалось отправить жалобу.",
+      likeFailed: "Не удалось обновить лайк. Попробуйте ещё раз.",
+      followFailed: "Не удалось обновить подписку.",
+      noLongerOpen: "Этот текст уже закрыт.",
+      joinConversation: "Создайте бесплатный аккаунт, чтобы участвовать в обсуждении.",
+      commentsUnavailable: "Комментарии сейчас недоступны.",
+      feedLanguagesFailed: "Не удалось загрузить ленту на этих языках.",
+      openSettings: "Открыть настройки",
+      signInOrCreate: "Войти или создать аккаунт",
+      settings: "Настройки",
+      signIn: "Войти",
+      moreAboutBok: "Подробнее об этом тексте",
+      listenProduction: "слушать постановку",
+      releaseNext: "отпустите - следующий текст",
+      releasePrevious: "отпустите - предыдущий текст",
+      nextBok: "следующий текст",
+      previousBok: "предыдущий текст",
+      listenAndRead: "Слушать и читать",
+      listenAndReadPrototype: "Слушать и читать (прототип, только для админов)",
+      moveThroughFeed: "Перемещение по ленте",
+      previousLabel: "Предыдущий текст",
+      nextLabel: "Следующий текст",
+      previous: "назад",
+      moreWithoutAccount: (count: number) =>
+        `Ещё ${count} ${plural("ru", count, { one: "текст", few: "текста", many: "текстов", other: "текста" })} без аккаунта`,
+      alwaysFree:
+        "Читать всегда бесплатно. Аккаунт сохранит вашу историю и поможет рекомендациям понять, что вам нравится.",
+      notNow: "Не сейчас",
+      createAccount: "Создать бесплатный аккаунт",
+      hintTouch: "Свайп влево - следующий текст. Нажмите на страницу - лайки, комментарии и не только.",
+      hintPointer: "Нажмите → для следующего текста. Кликните по странице - лайки, комментарии и не только.",
+      dismiss: "Закрыть",
+    },
+  }
+);
+
+/** The words for a callback or a helper, read in the language of the moment it runs. */
+function wordsNow() {
+  return messages[currentUiLanguage()];
+}
+
 function followLabel(following: boolean, authorName: string | undefined, authorHandle: string) {
   const handle = bareHandle(authorHandle);
   const underByline = Boolean(authorName && handle && authorName.toLowerCase() !== handle.toLowerCase());
-  const verb = following ? "Following" : "Follow";
+  const t = wordsNow();
+  const verb = following ? t.following : t.follow;
   return underByline ? `${verb} @${handle}` : verb;
 }
 
@@ -243,6 +357,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     phase,
     load,
   } = useBoksData();
+  const t = useMessages(messages);
+  const uiLanguage = useUiLanguage();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
@@ -773,7 +889,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   useEffect(() => {
     const queue = createReaderEventQueue({
       transport: async (events, delivery) => {
-        if (!isSupabaseReaderRef.current) throw new Error("The reader has no backend yet.");
+        if (!isSupabaseReaderRef.current) throw new Error(wordsNow().noBackend);
         await recordSupabaseReaderEvents(events, delivery);
       },
     });
@@ -849,10 +965,10 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             setSeriesContext(seriesContextFor(accountLanguages));
           }
           (languagesChanged ? reloadFeedReleasing() : loadFeed()).catch((error) =>
-            notify(error instanceof Error ? error.message : "Could not refresh feed.")
+            notify(error instanceof Error ? error.message : wordsNow().couldNotRefresh)
           );
         })
-        .catch((error) => notify(error instanceof Error ? error.message : "Could not finish sign in."));
+        .catch((error) => notify(error instanceof Error ? error.message : wordsNow().couldNotSignIn));
     });
 
     return () => result.data.subscription.unsubscribe();
@@ -988,7 +1104,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           (currentCommentDelta && currentCommentDelta.base === currentStory.commentsCount ? currentCommentDelta.added : 0)
       )
     : 0;
-  const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || "boks author");
+  const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || t.bokAuthor);
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
 
   // Ask for the next slate a few boks before the end, so it is there in time.
@@ -1166,11 +1282,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   function afterHideBok({ bok }: BokLifecycleTarget) {
     setHideTarget(null);
     setHiddenStoryIds((current) => new Set(current).add(bok.id));
-    setReaderFlash(`“${bok.title}” is hidden from readers. Restore it in Admin → Content → Deleted.`);
+    setReaderFlash(wordsNow().hidden(bok.title));
   }
 
   function showSuspension() {
-    notify(user?.banReason || "This account is suspended. Reading remains available.");
+    notify(user?.banReason || wordsNow().suspendedReading);
     openAccount("manual");
   }
 
@@ -1505,7 +1621,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       await loadFeed();
       if (!user) await adoptIdentity();
     } catch (error) {
-      notify(readableBoksError(error, "Could not load boks."));
+      notify(readableBoksError(error, wordsNow().couldNotLoad));
     }
   }
 
@@ -1551,7 +1667,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     try {
       const loaded = await loadSupabaseStory(storyId);
       if (!loaded) {
-        notify("This bok is no longer available.");
+        notify(wordsNow().unavailable);
         return false;
       }
 
@@ -1562,7 +1678,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       setPendingLibraryStoryId(story.id);
       return true;
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Could not open this bok.");
+      notify(error instanceof Error ? error.message : wordsNow().couldNotOpen);
       return false;
     }
   }
@@ -1604,7 +1720,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     if (manifestUrl) {
       loadPoemManifest(manifestUrl)
         .then(setPoem, () => {
-          notify("This poem could not be opened.");
+          notify(wordsNow().poemFailed);
           closedFormat();
         })
         .finally(() => setSeriesOpening(null));
@@ -1787,10 +1903,10 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     if (selectedIndex >= rankedStories.length - 1) {
       revealReaderChrome(2400);
       if (isSupabaseReader && !feedExhausted.current) {
-        notify("Finding more boks for you…");
+        notify(wordsNow().findingMore);
         void loadMoreFeed();
       } else {
-        notify("That is everything boks has for you right now.");
+        notify(wordsNow().everything);
       }
       return;
     }
@@ -1820,7 +1936,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       }
       await reloadFeedReleasing();
     } catch (error) {
-      notify(readableBoksError(error, "Could not change your languages."));
+      notify(readableBoksError(error, wordsNow().languagesFailed));
     }
   }
 
@@ -1841,7 +1957,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     const url = `${window.location.origin}/b/${currentStory.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      notify("Link copied");
+      notify(wordsNow().linkCopied);
     } catch {
       notify(url);
     }
@@ -1859,7 +1975,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       const result = await reportBok({ reelId: currentStory.id, reason, kind });
       return result.status;
     } catch (error) {
-      notify(readableBoksError(error, "Could not send that report."));
+      notify(readableBoksError(error, wordsNow().reportFailed));
       return null;
     }
   }
@@ -1895,7 +2011,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       // back when the feed reload after it failed too, which showed a saved
       // like as not liked for the rest of the visit.
       setLiked((state) => ({ ...state, [story.id]: !nextLiked }));
-      notify(readableBoksError(error, "Could not update the like. Try again."));
+      notify(readableBoksError(error, wordsNow().likeFailed));
       return;
     } finally {
       likesInFlight.current.delete(story.id);
@@ -1952,7 +2068,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       setFollowedAuthorIds((current) =>
         next ? current.filter((id) => id !== authorUserId) : [...current, authorUserId]
       );
-      notify(error instanceof Error ? error.message : "Could not update following.");
+      notify(error instanceof Error ? error.message : wordsNow().followFailed);
     } finally {
       setFollowBusy(false);
     }
@@ -1991,7 +2107,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         await navigator.share({ title: story.title, url });
       } else {
         await navigator.clipboard.writeText(url);
-        notify("Link copied");
+        notify(wordsNow().linkCopied);
       }
     } catch (error) {
       // Closing the share sheet is not a failure.
@@ -2014,17 +2130,17 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }
 
   async function submitComment(body: string, parentCommentId: number | null): Promise<Comment> {
-    if (!currentStory) throw new Error("That bok is no longer open.");
+    if (!currentStory) throw new Error(wordsNow().noLongerOpen);
     if (accountSuspended) {
       showSuspension();
-      throw new Error(user?.banReason || "This account is suspended.");
+      throw new Error(user?.banReason || wordsNow().suspended);
     }
     if (!hasSignedInAccount) {
       openAccount("manual", "comment");
-      throw new Error("Create a free account to join the conversation.");
+      throw new Error(wordsNow().joinConversation);
     }
 
-    if (!isSupabaseReader) throw new Error("Comments are not available right now.");
+    if (!isSupabaseReader) throw new Error(wordsNow().commentsUnavailable);
     const created = await submitSupabaseComment(currentStory.id, body, parentCommentId);
 
     recordReaderEvent("comment", currentStory);
@@ -2077,7 +2193,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       }
 
       reloadFeedReleasing().catch((error) =>
-        notify(readableBoksError(error, "Could not load the feed in those languages."))
+        notify(readableBoksError(error, wordsNow().feedLanguagesFailed))
       );
     },
     [notify, reloadFeedReleasing]
@@ -2457,6 +2573,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           message: status,
           languages: readingLanguagesRef.current,
           coverage: user?.languageCoverage,
+          uiLanguage,
         })}
         onAddLanguages={(offer) => void applyReadingLanguages([...readingLanguagesRef.current, ...offer])}
         onChangeLanguages={() => openAccount("manual")}
@@ -2499,12 +2616,12 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             <button
               className="reader-account-trigger reader-ui"
               onClick={() => openAccount("manual")}
-              aria-label={hasSignedInAccount ? "Open settings" : "Sign in or create an account"}
-              title={hasSignedInAccount ? "Settings" : "Sign in"}
+              aria-label={hasSignedInAccount ? t.openSettings : t.signInOrCreate}
+              title={hasSignedInAccount ? t.settings : t.signIn}
             >
               <UserRound className="size-5" />
             </button>
-            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label="More about this bok">
+            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t.moreAboutBok}>
               <MoreHorizontal className="size-5" />
             </button>
           </header>
@@ -2548,7 +2665,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                         onClick={() => openAuthor(currentStory.authorHandle)}
                         disabled={!currentStory.authorHandle}
                       >
-                        {atHandle(currentStory.authorHandle) || "boks author"}
+                        {atHandle(currentStory.authorHandle) || t.bokAuthor}
                       </button>
                     </span>
                   ) : (
@@ -2600,7 +2717,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                   <Sparkles className="size-3.5" aria-hidden="true" />
                   <span className="reader-series-chip__mark">boks series</span>
                   <span aria-hidden="true">·</span>
-                  <span>listen to the production</span>
+                  <span>{t.listenProduction}</span>
                 </button>
               )}
               <h1 className="reader-title max-w-[680px] break-words text-[var(--foreground)]">
@@ -2653,11 +2770,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
               <span>
                 {boundaryPull.progress >= 1
                   ? boundaryPull.direction === "next"
-                    ? "release for next bok"
-                    : "release for previous bok"
+                    ? t.releaseNext
+                    : t.releasePrevious
                   : boundaryPull.direction === "next"
-                    ? "next bok"
-                    : "previous bok"}
+                    ? t.nextBok
+                    : t.previousBok}
               </span>
             </div>
           )}
@@ -2690,8 +2807,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
               !cinemaOffered
                 ? null
                 : cinemaIsFinished || poemManifestUrl
-                  ? "Listen and read"
-                  : "Listen and read (prototype, admins only)"
+                  ? t.listenAndRead
+                  : t.listenAndReadPrototype
             }
             musicOn={musicOn}
             canHide={isAdminReader}
@@ -2710,16 +2827,16 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             onHide={openHideBok}
           />
 
-          <nav className="reader-footer reader-ui" aria-label="Move through the feed">
+          <nav className="reader-footer reader-ui" aria-label={t.moveThroughFeed}>
             {selectedIndex > 0 && (
-              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); previousStory("button"); }} aria-label="Previous bok">
+              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); previousStory("button"); }} aria-label={t.previousLabel}>
                 <ChevronLeft className="size-4" />
-                <span>previous</span>
+                <span>{t.previous}</span>
               </button>
             )}
             {selectedIndex < rankedStories.length - 1 && (
-              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); nextStory("button"); }} aria-label="Next bok">
-                <span>next bok</span>
+              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); nextStory("button"); }} aria-label={t.nextLabel}>
+                <span>{t.nextBok}</span>
                 <ChevronRight className="size-4" />
               </button>
             )}
@@ -2752,17 +2869,17 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             <div className="guest-notice__copy">
               <p className="text-sm font-semibold">
                 {guestNoticeStep === "first"
-                  ? `${anonymousReadLimits.requiredSignup - anonymousReadLimits.firstNotice} more without an account`
-                  : `${anonymousReadLimits.requiredSignup - anonymousReadLimits.secondNotice} more without an account`}
+                  ? t.moreWithoutAccount(anonymousReadLimits.requiredSignup - anonymousReadLimits.firstNotice)
+                  : t.moreWithoutAccount(anonymousReadLimits.requiredSignup - anonymousReadLimits.secondNotice)}
               </p>
               <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                Reading is always free. An account saves your history and helps recommendations learn what you enjoy.
+                {t.alwaysFree}
               </p>
             </div>
-            <button className="guest-notice__dismiss" type="button" onClick={() => setGuestNoticeStep(null)} aria-label="Not now">
+            <button className="guest-notice__dismiss" type="button" onClick={() => setGuestNoticeStep(null)} aria-label={t.notNow}>
               <X className="size-4" />
             </button>
-            <Button className="guest-notice__action" onClick={() => openAccount("notice")}>Create free account</Button>
+            <Button className="guest-notice__action" onClick={() => openAccount("notice")}>{t.createAccount}</Button>
           </div>
         )}
 
@@ -2856,14 +2973,14 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         {firstVisitHint && !seriesOpen && (
           <p className="reader-hint" role="status">
             {firstVisitHint === "touch"
-              ? "Swipe left for the next bok. Tap the page for likes, comments and more."
-              : "Press → for the next bok. Click the page for likes, comments and more."}
+              ? t.hintTouch
+              : t.hintPointer}
           </p>
         )}
         {readerFlash && (
           <div className="reader-flash" role="status" aria-live="polite">
             <span>{readerFlash}</span>
-            <button type="button" onClick={() => setReaderFlash("")} aria-label="Dismiss">
+            <button type="button" onClick={() => setReaderFlash("")} aria-label={t.dismiss}>
               <X className="size-4" />
             </button>
           </div>

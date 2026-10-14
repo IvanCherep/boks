@@ -7,6 +7,73 @@ import { ReaderSheet } from "@/components/boks/reader-sheet";
 import type { AuthorProfile } from "@/components/boks/client-types";
 import { loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
+
+/** Names and titles keep their own language; only the sheet is translated. */
+const messages = defineMessages(
+  {
+    loading: "Loading",
+    unavailable: "This author is not available.",
+    openFailed: "Could not open this author.",
+    followFailed: "Could not update following.",
+    boks: (n: number) => `${n} ${n === 1 ? "bok" : "boks"}`,
+    writers: (n: number) => `${n} ${n === 1 ? "writer" : "writers"}`,
+    followers: (n: number) => `${n} ${n === 1 ? "follower" : "followers"}`,
+    sheetLabel: (name: string) => `${name}, author`,
+    author: "Author",
+    publishedBy: "published by",
+    close: "Close author",
+    followExplainer: (handle: string, byline: string) =>
+      `Following @${handle} brings you everything they publish, not only ${byline}. Another account publishing ${byline} is followed separately.`,
+    followingHandle: (handle: string) => `Following @${handle}`,
+    followHandle: (handle: string) => `Follow @${handle}`,
+    following: "Following",
+    follow: "Follow",
+    openingCatalog: "From the opening catalog. There is no account behind this byline yet.",
+    nothingYet: "Nothing published yet.",
+    writersHeading: "Writers",
+    newest: "Newest",
+    readingNow: "reading now",
+    showingNewest: (shown: number, total: number) => `Showing the newest ${shown} of ${total}.`,
+  },
+  {
+    ru: {
+      loading: "Загрузка",
+      unavailable: "Этот автор недоступен.",
+      openFailed: "Не удалось открыть автора.",
+      followFailed: "Не удалось обновить подписку.",
+      boks: (n: number) =>
+        `${n} ${plural("ru", n, { one: "текст", few: "текста", many: "текстов", other: "текста" })}`,
+      writers: (n: number) => `${n} ${plural("ru", n, { one: "автор", few: "автора", many: "авторов", other: "автора" })}`,
+      followers: (n: number) =>
+        `${n} ${plural("ru", n, { one: "подписчик", few: "подписчика", many: "подписчиков", other: "подписчика" })}`,
+      sheetLabel: (name: string) => `${name}, автор`,
+      author: "Автор",
+      publishedBy: "публикует",
+      close: "Закрыть автора",
+      followExplainer: (handle: string, byline: string) =>
+        `Подписка на @${handle} - это всё, что публикует этот аккаунт, а не только ${byline}. Другой аккаунт, публикующий ${byline}, - отдельная подписка.`,
+      followingHandle: (handle: string) => `Вы подписаны на @${handle}`,
+      followHandle: (handle: string) => `Подписаться на @${handle}`,
+      following: "Вы подписаны",
+      follow: "Подписаться",
+      openingCatalog: "Из стартового каталога. За этой подписью пока нет аккаунта.",
+      nothingYet: "Пока ничего не опубликовано.",
+      writersHeading: "Авторы",
+      newest: "Новое",
+      readingNow: "читаете сейчас",
+      showingNewest: (shown: number, total: number) => `Показаны ${shown} новейших из ${total}.`,
+    },
+  }
+);
+
+type SheetStatus =
+  | { kind: "none" }
+  | { kind: "loading" }
+  | { kind: "unavailable" }
+  | { kind: "openFailed"; message?: string }
+  | { kind: "followFailed"; message?: string };
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -58,7 +125,8 @@ export function AuthorSheet({
   onOpenAccount,
 }: AuthorSheetProps) {
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
-  const [status, setStatus] = useState("Loading");
+  const words = useMessages(messages);
+  const [sheetStatus, setStatus] = useState<SheetStatus>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
 
   // Keyed by handle in the parent, so a different author mounts a fresh sheet
@@ -70,11 +138,11 @@ export function AuthorSheet({
       .then((profile) => {
         if (cancelled) return;
         setAuthor(profile);
-        setStatus(profile ? "" : "This author is not available.");
+        setStatus(profile ? { kind: "none" } : { kind: "unavailable" });
       })
       .catch((error) => {
         if (cancelled) return;
-        setStatus(error instanceof Error ? error.message : "Could not open this author.");
+        setStatus({ kind: "openFailed", message: error instanceof Error ? error.message : undefined });
       });
 
     return () => {
@@ -110,23 +178,30 @@ export function AuthorSheet({
           ? { ...current, following: !next, followers: Math.max(0, current.followers + (next ? -1 : 1)) }
           : current
       );
-      setStatus(error instanceof Error ? error.message : "Could not update following.");
+      setStatus({ kind: "followFailed", message: error instanceof Error ? error.message : undefined });
     } finally {
       setBusy(false);
     }
   }
 
+  const status =
+    sheetStatus.kind === "none"
+      ? ""
+      : sheetStatus.kind === "openFailed" || sheetStatus.kind === "followFailed"
+        ? (sheetStatus.message ?? words[sheetStatus.kind])
+        : words[sheetStatus.kind];
+
   const meta = [
-    author ? countLabel(author.totalBoks, "bok") : null,
-    author?.writers.length ? countLabel(author.writers.length, "writer") : null,
-    author?.authorUserId && !author.byline ? countLabel(author.followers, "follower") : null,
+    author ? words.boks(author.totalBoks) : null,
+    author?.writers.length ? words.writers(author.writers.length) : null,
+    author?.authorUserId && !author.byline ? words.followers(author.followers) : null,
   ]
     .filter(Boolean)
     .join(" · ");
 
   return (
     <ReaderSheet
-      label={author ? `${author.authorName || "@" + author.authorHandle}, author` : "Author"}
+      label={author ? words.sheetLabel(author.authorName || "@" + author.authorHandle) : words.author}
       onClose={onClose}
     >
       <div className="flex items-start justify-between gap-3 px-4 pt-1 sm:pt-4">
@@ -145,7 +220,7 @@ export function AuthorSheet({
                     back rather than a caption: this writer is one of the many
                     that account publishes, and the account is what a reader
                     follows. */}
-                published by{" "}
+                {words.publishedBy}{" "}
                 {onOpenAccount ? (
                   <button type="button" className="author-account-link" onClick={onOpenAccount}>
                     @{author.authorHandle}
@@ -160,15 +235,14 @@ export function AuthorSheet({
             )}
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close author">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={words.close}>
           <X className="size-4" />
         </Button>
       </div>
 
       {author?.byline && author.authorUserId && (
         <p className="px-4 pt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-          Following @{author.authorHandle} brings you everything they publish, not only{" "}
-          {author.byline}. Another account publishing {author.byline} is followed separately.
+          {words.followExplainer(author.authorHandle, author.byline)}
         </p>
       )}
 
@@ -186,17 +260,17 @@ export function AuthorSheet({
                 as following Chekhov, which is not what it does. */}
             {author.byline
               ? author.following
-                ? `Following @${author.authorHandle}`
-                : `Follow @${author.authorHandle}`
+                ? words.followingHandle(author.authorHandle)
+                : words.followHandle(author.authorHandle)
               : author.following
-                ? "Following"
-                : "Follow"}
+                ? words.following
+                : words.follow}
           </Button>
         </div>
       ) : (
         author && (
           <p className="px-4 pt-2 text-sm text-[var(--muted-foreground)]">
-            From the opening catalog. There is no account behind this byline yet.
+            {words.openingCatalog}
           </p>
         )
       )}
@@ -204,25 +278,25 @@ export function AuthorSheet({
       <div className="comment-list min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {status && <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{status}</p>}
         {author && !author.boks.length && !status && (
-          <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">Nothing published yet.</p>
+          <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{words.nothingYet}</p>
         )}
 
         {/* A publisher's catalogue is indexed by its writers. A flat list of
             457 titles is not something anyone reads; "24 writers" is. */}
         {author && author.writers.length > 1 && (
           <div className="mb-3">
-            <h3 className="text-sm font-semibold">Writers</h3>
+            <h3 className="text-sm font-semibold">{words.writersHeading}</h3>
             <ul className="mt-2 grid gap-1">
               {author.writers.map((writer) => (
                 <li key={writer.name}>
                   <button type="button" className="author-writer" onClick={() => onOpenWriter?.(writer.name)}>
                     <span className="font-medium">{writer.name}</span>
-                    <span className="text-sm text-[var(--muted-foreground)]">{countLabel(writer.boks, "bok")}</span>
+                    <span className="text-sm text-[var(--muted-foreground)]">{words.boks(writer.boks)}</span>
                   </button>
                 </li>
               ))}
             </ul>
-            <h3 className="mt-4 text-sm font-semibold">Newest</h3>
+            <h3 className="mt-4 text-sm font-semibold">{words.newest}</h3>
           </div>
         )}
 
@@ -241,7 +315,7 @@ export function AuthorSheet({
                   {!author.byline && bok.authorName && (
                     <span className="mt-0.5 text-sm text-[var(--muted-foreground)]">{bok.authorName}</span>
                   )}
-                  {bok.id === currentStoryId && <span className="author-bok-now">reading now</span>}
+                  {bok.id === currentStoryId && <span className="author-bok-now">{words.readingNow}</span>}
                 </button>
               </li>
             ))}
@@ -249,7 +323,7 @@ export function AuthorSheet({
         )}
         {author && author.boks.length > 0 && author.boks.length < author.totalBoks && (
           <p className="pt-3 text-center text-sm text-[var(--muted-foreground)]">
-            Showing the newest {author.boks.length} of {author.totalBoks}.
+            {words.showingNewest(author.boks.length, author.totalBoks)}
           </p>
         )}
       </div>
@@ -257,6 +331,3 @@ export function AuthorSheet({
   );
 }
 
-function countLabel(value: number, noun: string) {
-  return `${value} ${noun}${value === 1 ? "" : "s"}`;
-}

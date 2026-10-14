@@ -110,6 +110,10 @@ _Avoid_: rating, reaction, mood
 The languages a reader has chosen to be offered; an undetermined language is not a yes.
 _Avoid_: locale, language filter
 
+**Interface language**:
+The language of buttons and notices - Russian on a Russian device, English otherwise, or the reader's pinned choice. Never the language of a text.
+_Avoid_: locale, reading language
+
 ### Recommendation and experiments
 
 **Algorithm**:

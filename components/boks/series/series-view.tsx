@@ -112,7 +112,7 @@ const messages = defineMessages(
       account: "Аккаунт",
       feed: "лента",
       seriesTab: "series",
-      newBadge: "new",
+      newBadge: "новое",
       tabs: "Разделы",
       languages: "Языки",
       languagesTitle: "Показывать постановки на",
@@ -153,12 +153,11 @@ export function SeriesView({
   const [catalogue, setCatalogue] = useState<CatalogueAnswer>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [languagesOpen, setLanguagesOpen] = useState(false);
-  const [filter, setFilter] = useState<string[]>([]);
+  // Kept on the device. The shelf is drawn only on the client, after the
+  // feed has settled, so there is no server markup to disagree with.
+  const [filter, setFilter] = useState<string[]>(storedSeriesFilter);
   const words = useMessages(messages);
   const uiLanguage = useUiLanguage();
-
-  // Stored on the device; read after mount so the server's markup matches.
-  useEffect(() => setFilter(storedSeriesFilter()), []);
 
   useEffect(() => {
     let live = true;
@@ -186,9 +185,9 @@ export function SeriesView({
   }, [catalogue]);
 
   const available = useMemo(() => seriesLanguages(shelf), [shelf]);
-  const availableCodes = available.map((entry) => entry.language);
-  const activeFilter = effectiveSeriesFilter(filter, availableCodes);
-  const ordered = useMemo(() => orderSeries(shelf, activeFilter, heard), [shelf, activeFilter.join(), heard]);
+  const availableCodes = useMemo(() => available.map((entry) => entry.language), [available]);
+  const activeFilter = useMemo(() => effectiveSeriesFilter(filter, availableCodes), [filter, availableCodes]);
+  const ordered = useMemo(() => orderSeries(shelf, activeFilter, heard), [shelf, activeFilter, heard]);
 
   function chooseFilter(next: string[]) {
     const kept = effectiveSeriesFilter(next, availableCodes);

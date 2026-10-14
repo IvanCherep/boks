@@ -14,7 +14,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 ## Reader rules
 
 - The feed (`/`) is one algorithmic, swipe-first stream. No picker, categories or reader-chosen algorithm. The series shelf (`/series`) is the single exception and lists only series pieces (`docs/adr/0009-series-shelf-is-the-one-shelf.md`).
-- The bok owns the screen while a person reads; controls appear on story change, tap, hover or pause. Reader copy stays minimal; the interface is English, texts keep their own language.
+- The bok owns the screen while a person reads; controls appear on story change, tap, hover or pause. Reader copy stays minimal; the interface is Russian on a Russian device and English on every other, switchable in the account panel; texts keep their own language (`docs/adr/0015-interface-language-follows-the-device.md`). Every new reader-visible string goes into a `defineMessages` table with all interface languages.
 - There is no "finished" button. Read, skip and drop-off are inferred from foreground time, scroll progress and swipe timing.
 - Guests see no sign-up controls at first, get gentle notices after 5 and 10 boks, and must sign up after 15. Guests may read comments; liking, commenting and following need an account.
 - Sign-in is passwordless: Supabase email OTP - a magic link or the 6-digit code from the same email (`docs/adr/0006-passwordless-email-sign-in.md`). Never add password fields, reset or change-password UI.
