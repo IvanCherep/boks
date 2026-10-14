@@ -2732,6 +2732,39 @@ begin
     'the referrer of a visit reaches the sources table'
   );
 
+  -- One day opened up (migration 20261014150000): the device, where it came
+  -- from, and the bok it finished; and the day row counts what hands did.
+  perform public.boks_assert(
+    (v_funnel -> 'daily' -> 0) ? 'touched' and (v_funnel -> 'daily' -> 0) ? 'countries',
+    'each day says how many guests touched a bok and where they were'
+  );
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  v_funnel := public.get_guest_day((now() at time zone 'UTC')::date);
+  reset role;
+  perform public.boks_test_logout();
+  perform public.boks_assert(
+    exists (
+      select 1 from jsonb_array_elements(v_funnel -> 'devices') d
+      where d ->> 'device' = right('device-journey-1', 6)
+        and d -> 'visits' -> 0 ->> 'referrer' = 't.me'
+        and (d -> 'boks' -> 0 ->> 'finished')::boolean
+        and (d ->> 'guest')::boolean and (d ->> 'account')::boolean
+        and d -> 'prompts' ->> 0 = 'limit'
+    ),
+    'a day opened up shows the device, its referrer, its prompt and the bok it finished'
+  );
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  begin
+    perform public.get_guest_day((now() at time zone 'UTC')::date);
+    perform public.boks_assert(false, 'a reader cannot open a day');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot open a day');
+  end;
+  reset role;
+  perform public.boks_test_logout();
+
   delete from public.boks_journey_events where visitor_id = 'device-journey-1';
   delete from public.recommendation_events where visitor_id = 'device-journey-1';
 end $$;

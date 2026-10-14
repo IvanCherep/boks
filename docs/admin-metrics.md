@@ -61,7 +61,8 @@ The trajectory. Everything plotted weekly is a count or a total.
 
 ## Guests
 
-Source: `get_guest_funnel` (latest in `20261014120000`). The unit is the guest
+Source: `get_guest_funnel` (latest in `20261014150000`) and, for one day,
+`get_guest_day`. The unit is the guest
 **device**; the team and hidden countries are left out as described on the tab.
 
 ### Did they touch it
@@ -84,6 +85,23 @@ pointer, key and text-scroll listeners (`components/boks/reader-feed.tsx`), with
 the kind of the first touch; taps and scrolls start on 2026-10-14. Swipes come
 from outcomes and reach back over the whole window. A press the browser takes
 over (`pointercancel`) is counted as a swipe unless the text scrolled.
+
+### Day by day, and one day opened
+
+| Column | Computed from | Decision it supports |
+|---|---|---|
+| Guest devices · new | anonymous devices with reader events that day; devices first seen that day in either table | Volume. "New" can exceed guest devices: it includes arrivals that left before any bok loaded. |
+| Shown a bok · touched · moved on | as in *Did they touch it*, per day | Which day's visitors tried at all - a day of untouched boks is a different day from a day of swipes. |
+| Finished a bok | devices with a `complete` | The outcome. |
+| Median time | per device, the sum over its boks of the largest `active_seconds`, middle device | Glance vs. read. |
+| Where | the country each device was last seen from; *no country* is a device the Worker never saw - the local dev server | Strangers vs. ourselves. |
+
+Clicking a day calls `get_guest_day(day, include_team, hide_countries)`: every
+device seen that day (at most 300), with its visits (landing, the landed bok,
+referrer, tracked link label, utm), sign-up prompts, and each bok it was shown
+per session (at most 60) - time, seconds, the first touch, finished or how it
+was left, like, share. Each device is summed up as one of: no bok shown,
+looked and never touched, touched and did not finish, finished.
 
 ## Links
 

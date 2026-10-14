@@ -11,6 +11,16 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Guests, day by day and one day opened (2026-10-14).** The day table said
+"17 guest devices, 0 finished" and nothing else. Each day now also has shown a
+bok, touched, moved on, median reading time and countries; clicking a day
+opens `get_guest_day` - every device that day, where it arrived from (landing,
+referrer, tracked link, utm) and each bok it was shown with time, first touch
+and how it ended (`components/boks/admin/guest-day.tsx`). It made one thing
+plain at once: most "guests" on 13-14 October were the dev server and the
+team's test runs - devices with no country. Migration `20261014150000`;
+pushed. See `docs/admin-metrics.md` § Guests.
+
 **Did guests touch a bok (2026-10-14).** The Guests tab's funnel went from
 "arrived" to "finished" with only `start` - a 2.6-second timer - between, so a
 day of visitors who finished nothing could not say whether anyone had even

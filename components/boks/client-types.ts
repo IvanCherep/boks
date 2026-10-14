@@ -666,11 +666,62 @@ export type GuestFunnel = {
     day: string;
     guests: number;
     newGuests: number;
+    /** Guest devices shown a bok, touching one, moving on to another. Absent before 20261014150000. */
+    shown?: number;
+    touched?: number;
+    swiped?: number;
     readers: number;
+    /** Reading time of the middle guest device that day. */
+    medianSeconds?: number | null;
+    /** Guest devices by country; "none" is a device the Worker never saw - the local dev server. */
+    countries?: { country: string; devices: number }[];
     prompts: number;
     requests: number;
     newAccounts: number;
   }[];
+};
+
+/** One day opened up, device by device. See `get_guest_day`. */
+export type GuestDay = {
+  day: string;
+  devices: GuestDayDevice[];
+};
+
+export type GuestDayDevice = {
+  /** The last six characters of the device id: enough to tell rows apart. */
+  device: string;
+  country: string | null;
+  guest: boolean;
+  account: boolean;
+  returning: boolean;
+  firstAt: string;
+  lastAt: string;
+  visits: {
+    at: string;
+    landing: string;
+    referrer: string | null;
+    campaign: string | null;
+    /** The tracked link's label, or its code. */
+    link: string | null;
+    /** The bok a shared link landed on. */
+    bok: string | null;
+  }[];
+  prompts: string[];
+  requested: boolean;
+  boks: GuestDayBok[];
+};
+
+export type GuestDayBok = {
+  title: string;
+  at: string;
+  seconds: number;
+  /** The first touch on it: tap, scroll, swipe or key. */
+  touch: string | null;
+  finished: boolean;
+  /** How it was left: swipe, button, keyboard, exit. */
+  leftBy: string | null;
+  liked: boolean;
+  shared: boolean;
 };
 
 /** What one tracked link, or one landed bok, brought - counted by arriving device. See `get_link_attribution`. */

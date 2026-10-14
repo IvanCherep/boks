@@ -4,6 +4,7 @@ import { initialMetrics } from "@/components/boks/constants";
 import type { FeedbackSurface } from "@/components/boks/feedback";
 import type {
   BoksFeedbackPage,
+  GuestDay,
   GuestFunnel,
   LinkAttribution,
   AdminBokDetail,
@@ -1231,6 +1232,22 @@ export async function loadGuestFunnel(
   });
   if (result.error) throw result.error;
   return result.data as GuestFunnel;
+}
+
+/** One day of visitors, device by device. Admin-only on the server. */
+export async function loadGuestDay(
+  day: string,
+  options: { includeTeam?: boolean; hideCountries?: string[] } = {}
+) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const result = await supabase.rpc("get_guest_day", {
+    p_day: day,
+    p_include_team: options.includeTeam ?? false,
+    p_hide_countries: options.hideCountries?.length ? options.hideCountries : null,
+  });
+  if (result.error) throw result.error;
+  return result.data as GuestDay;
 }
 
 /** What each tracked link and each landed bok brought. Admin-only on the server. */

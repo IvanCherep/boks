@@ -8,6 +8,8 @@ import { loadGuestFunnel, markTeamDevice, unmarkTeamDevice } from "@/components/
 import { countryLabel } from "@/components/boks/admin/country-label";
 import { getBrowserId } from "@/components/boks/reader-behavior";
 import { biggestDrop, funnelSteps, percent } from "@/components/boks/admin/guest-funnel-steps";
+import { dayCountries, duration } from "@/components/boks/admin/guest-day-format";
+import { GuestDayPanel } from "@/components/boks/admin/guest-day";
 
 const windows = [7, 14, 30] as const;
 
@@ -75,6 +77,7 @@ export function GuestFunnelPanel() {
   const [status, setStatus] = useState("Loading…");
   const [busy, setBusy] = useState(false);
   const [teamNote, setTeamNote] = useState("");
+  const [openDay, setOpenDay] = useState<string | null>(null);
 
   const refresh = useCallback(async (window: number, team: boolean, hidden: string[]) => {
     setBusy(true);
@@ -363,14 +366,28 @@ export function GuestFunnelPanel() {
 
           <div>
             <h3 className="text-sm font-semibold">Day by day</h3>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Guest devices each day: shown a bok, touched one (tap, scroll, swipe), moved on to another, finished
+              one. Click a day to see every device, where it came from and what it did.
+            </p>
             <div className="overflow-x-auto">
-              <table className="mt-2 w-full min-w-[640px] text-sm">
+              <table className="mt-2 w-full min-w-[980px] text-sm">
                 <thead>
                   <tr className="text-left text-[var(--muted-foreground)]">
                     <th className="py-1 font-medium">Day (UTC)</th>
                     <th className="py-1 text-right font-medium">Guest devices</th>
-                    <th className="py-1 text-right font-medium">New</th>
+                    <th
+                      className="py-1 text-right font-medium"
+                      title="First seen that day - including devices that arrived and left before any bok loaded, so it can be more than the guest devices that read"
+                    >
+                      New
+                    </th>
+                    <th className="py-1 text-right font-medium">Shown a bok</th>
+                    <th className="py-1 text-right font-medium">Touched</th>
+                    <th className="py-1 text-right font-medium">Moved on</th>
                     <th className="py-1 text-right font-medium">Finished a bok</th>
+                    <th className="py-1 text-right font-medium">Median time</th>
+                    <th className="py-1 pl-4 font-medium">Where</th>
                     <th className="py-1 text-right font-medium">Saw sign-up</th>
                     <th className="py-1 text-right font-medium">Asked for a link</th>
                     <th className="py-1 text-right font-medium">New accounts</th>
@@ -378,11 +395,28 @@ export function GuestFunnelPanel() {
                 </thead>
                 <tbody>
                   {data.daily.map((row) => (
-                    <tr key={row.day} className="border-t border-[var(--border)]">
-                      <td className="py-2">{row.day}</td>
+                    <tr
+                      key={row.day}
+                      className={`border-t border-[var(--border)]${openDay === row.day ? " bg-[var(--muted)]" : ""}`}
+                    >
+                      <td className="py-2">
+                        <button
+                          type="button"
+                          className="author-account-link"
+                          aria-expanded={openDay === row.day}
+                          onClick={() => setOpenDay(openDay === row.day ? null : row.day)}
+                        >
+                          {row.day}
+                        </button>
+                      </td>
                       <td className="py-2 text-right tabular-nums">{row.guests}</td>
                       <td className="py-2 text-right tabular-nums">{row.newGuests}</td>
+                      <td className="py-2 text-right tabular-nums">{row.shown ?? "-"}</td>
+                      <td className="py-2 text-right tabular-nums">{row.touched ?? "-"}</td>
+                      <td className="py-2 text-right tabular-nums">{row.swiped ?? "-"}</td>
                       <td className="py-2 text-right tabular-nums">{row.readers}</td>
+                      <td className="py-2 text-right tabular-nums">{row.medianSeconds == null ? "-" : duration(row.medianSeconds)}</td>
+                      <td className="py-2 pl-4">{row.countries?.length ? dayCountries(row.countries) : "-"}</td>
                       <td className="py-2 text-right tabular-nums">{row.prompts}</td>
                       <td className="py-2 text-right tabular-nums">{row.requests}</td>
                       <td className="py-2 text-right tabular-nums">{row.newAccounts}</td>
@@ -391,6 +425,17 @@ export function GuestFunnelPanel() {
                 </tbody>
               </table>
             </div>
+            {openDay && (
+              <div className="mt-3">
+                <GuestDayPanel day={openDay} includeTeam={includeTeam} hiddenCountries={hiddenCountries} />
+              </div>
+            )}
+            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+              &ldquo;Touched&rdquo; counts taps and scrolls from{" "}
+              {data.hands?.since ? new Date(data.hands.since).toLocaleDateString() : "today"}; moving on to another bok
+              counts on every day. &ldquo;No country&rdquo; is a device the Worker never saw - in practice the local dev
+              server, which writes to the same tables.
+            </p>
           </div>
 
           <p className="text-sm leading-6 text-[var(--muted-foreground)]">
