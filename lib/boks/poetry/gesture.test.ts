@@ -175,5 +175,8 @@ describe("needsLayer and isWarpGesture", () => {
     expect(needsLayer({ ambience: { effect: "rain", intensity: 0.5, wind: 0.3 } })).toBe(true);
     expect(needsLayer({})).toBe(false);
     expect(isWarpGesture({ kind: "fling", effect: "arrow", hint: "", origin: { x: 0, y: 0 } })).toBe(false);
+    expect(
+      isWarpGesture({ kind: "hold", effect: "recall-glory", hint: "", vision: { x: 0.4, y: 0.1 }, radius: { x: 0.5, y: 0.1 } })
+    ).toBe(true);
   });
 });

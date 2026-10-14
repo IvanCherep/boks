@@ -1,4 +1,4 @@
-import { coverTransform, type WaterHold, type DragGesture } from "@/lib/boks/poetry/gesture";
+import { coverTransform, type WarpGesture } from "@/lib/boks/poetry/gesture";
 
 /**
  * The picture of a gesture scene, redrawn by the GPU as the hand moves it.
@@ -54,7 +54,7 @@ void main() {
 }`;
 
 /*
- * Both effects in one program, picked by `u_kind`, so a poem never compiles
+ * Every effect in one program, picked by `u_kind`, so a poem never compiles
  * anything at the moment its gesture scene arrives.
  *
  * Water (kind 0): below the waterline the picture is a reflection. At rest it
@@ -65,6 +65,11 @@ void main() {
  * Lean (kind 1): the camera pushes in towards one side's focus and the light
  * follows it - the side leaned into is lifted, the other falls into shade.
  * Leaning left warms the picture; leaning right drains it towards smoke.
+ *
+ * Glory (kind 2): inside a soft ellipse of sky the picture is a memory. At
+ * rest it is drained to a cold storm grey and dimmed, breathing faintly as
+ * cloud does; held, its own colour returns, warmer than painted, it draws a
+ * little nearer, and everything outside it falls into shade.
  */
 const fragmentSource = `
 precision mediump float;
@@ -78,14 +83,23 @@ uniform float u_lean;
 uniform vec4 u_water;
 uniform vec4 u_focus;
 uniform float u_zoom;
+uniform vec4 u_glory;
 
 void main() {
   vec2 uv = v_screen * u_cover.xy + u_cover.zw;
   vec3 tint = vec3(1.0);
   float light = 1.0;
   float drain = 0.0;
+  float memory = 0.0;
 
-  if (u_kind == 0) {
+  if (u_kind == 2) {
+    memory = 1.0 - smoothstep(0.55, 1.0, length((uv - u_glory.xy) / u_glory.zw));
+    uv = mix(uv, u_glory.xy, 0.025 * u_hold * memory);
+    float faded = memory * (1.0 - u_hold);
+    drain = 0.85 * faded;
+    light = mix(1.0, 0.68 + 0.04 * sin(u_time * 0.7), faded) * mix(1.0, 0.82, u_hold * (1.0 - memory));
+    tint = mix(mix(vec3(1.0), vec3(0.86, 0.9, 1.0), faded), vec3(1.14, 1.02, 0.8), u_hold * memory);
+  } else if (u_kind == 0) {
     float waterline = u_water.x;
     float depth = smoothstep(waterline, waterline + 0.12, uv.y);
     float x = uv.x;
@@ -116,7 +130,10 @@ void main() {
   vec3 colour = texture2D(u_image, clamp(uv, 0.0, 1.0)).rgb;
   float grey = dot(colour, vec3(0.299, 0.587, 0.114));
   colour = mix(colour, vec3(grey), drain);
-  gl_FragColor = vec4(colour * tint * light, 1.0);
+  colour = colour * tint * light;
+  // The remembered gold glows a little past its own paint.
+  colour += u_hold * memory * vec3(0.09, 0.05, 0.0) * smoothstep(0.35, 0.9, grey);
+  gl_FragColor = vec4(colour, 1.0);
 }`;
 
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
@@ -134,7 +151,7 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
 export function createGestureLayer(
   canvas: HTMLCanvasElement,
   image: HTMLImageElement,
-  gesture: WaterHold | DragGesture,
+  gesture: WarpGesture,
   focal: { x: number; y: number }
 ): GestureLayer | null {
   const gl = canvas.getContext("webgl", { alpha: true, antialias: false, premultipliedAlpha: true });
@@ -174,6 +191,9 @@ export function createGestureLayer(
   if (gesture.effect === "converge-reflections") {
     gl.uniform1i(at("u_kind"), 0);
     gl.uniform4f(at("u_water"), gesture.waterline, gesture.pull, gesture.ripple, 0);
+  } else if (gesture.effect === "recall-glory") {
+    gl.uniform1i(at("u_kind"), 2);
+    gl.uniform4f(at("u_glory"), gesture.vision.x, gesture.vision.y, gesture.radius.x, gesture.radius.y);
   } else {
     gl.uniform1i(at("u_kind"), 1);
     gl.uniform4f(

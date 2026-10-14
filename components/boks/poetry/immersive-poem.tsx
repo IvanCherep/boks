@@ -27,8 +27,6 @@ import {
   isWarpGesture,
   needsLayer,
   swipeStep,
-  type DragGesture,
-  type WaterHold,
 } from "@/lib/boks/poetry/gesture";
 import {
   createGestureLayer,
@@ -247,7 +245,7 @@ export function ImmersivePoem({
         if (layers[index] || !image.naturalWidth) return;
         // A warp redraws the picture in WebGL; everything else is drawn over it.
         layers[index] = isWarpGesture(gesture)
-          ? createGestureLayer(canvas, image, gesture as WaterHold | DragGesture, poemScene.focalPoint)
+          ? createGestureLayer(canvas, image, gesture, poemScene.focalPoint)
           : createOverlayLayer(canvas, image, poemScene, index);
       };
       if (image.complete) build();

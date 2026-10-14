@@ -409,6 +409,7 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *The Arrow and the Song*, Longfellow | `45035e98-5bbf-4f3f-bb1b-f88f2bc02ac2` | Jerry B. | 4, cinematic - draw back and let go: an arrow in the first, a song in the second, the song coming home in the last | 4, 4, 2, 2 |
 | *A Noiseless Patient Spider*, Whitman | `011660ae-2795-4b28-bd77-0404a4a2a8ba` | Jerry B. | 4 - threads to the lights in the second and third; three that hold make a bridge | 2, 3, 3, 2 |
 | *There is no Frigate like a Book*, Dickinson (1896 text) | `7cf8f28a-3d1a-49df-a4bb-b10a274e5347` | Sha | 4, page-turn transitions - a swipe turns the page | 1, 1, 2, 4 |
+| *Napoleon's Farewell*, Byron | `abbf65a4-b64b-4d8d-aa92-2f3aee583b5a` | Julian (British) | 4, cinematic - a hold brings back the coronation in the clouds of the first and the eagle over Saint Helena in the last | 8, 4, 4, 8 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
@@ -503,10 +504,11 @@ drawn by one WebGL shader over the scene's own picture
 | `hold` / `shelter-flame` | press and hold | a flame drawn over the painted one leans in gusting wind; held, it stands upright; released, it bends and never goes out | `flame`, `size` |
 | `fling` / `arrow`, `song` | draw back and let go | aimed like a bow from `origin`, opposite to the pull: an arrow that shrinks into the distance, or the same gesture as a golden wave | `origin` |
 | `threads` / `filaments` | drag to a light | a thread from `anchor` follows the finger; let go on a light it holds, anywhere else it springs back. Once `bridgeAfter` hold, counted over the whole poem, the lights join into a luminous bridge | `anchor`, `lights`, `bridgeAfter` |
+| `hold` / `recall-glory` | press and hold | a vision painted into the sky - at rest drained to storm grey and dimmed; held, its gold returns warmer than painted and the rest of the picture falls into shade; released, it sinks back into the cloud | `vision`, `radius` (half-width and half-height of a soft ellipse) |
 | `swipe` / `turn-page` | swipe sideways | turns to the next picture (or back), seeking the voice to its first line; no canvas | - |
 
-The first two are warps of the picture in WebGL
-(`components/boks/poetry/gesture-layer.ts`); the rest are drawn over it on a
+`converge-reflections`, `lean-between` and `recall-glory` redraw the picture
+itself in WebGL (`components/boks/poetry/gesture-layer.ts`); the rest are drawn over it on a
 2D canvas (`components/boks/poetry/gesture-overlay.ts`), and so is a scene's
 `ambience` - something the picture does without a hand: `rain` (`intensity`,
 `wind`; Invictus thins it 1 → 0.6 → 0.25 → none so the storm passes) and

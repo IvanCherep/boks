@@ -16,7 +16,7 @@
 /** A place in the picture, as fractions of the image's width and height. */
 export type ImagePoint = { x: number; y: number };
 
-export type HoldGesture = WaterHold | FlameHold;
+export type HoldGesture = WaterHold | FlameHold | GloryHold;
 
 export type WaterHold = {
   kind: "hold";
@@ -41,6 +41,21 @@ export type FlameHold = {
   flame: ImagePoint;
   /** Its height, in image heights. */
   size: number;
+};
+
+/**
+ * A memory painted into the clouds. At rest it is storm - drained to the grey
+ * of the sky around it; held, its gold comes back and the rest of the picture
+ * dims a little; released, it sinks into the cloud again.
+ */
+export type GloryHold = {
+  kind: "hold";
+  effect: "recall-glory";
+  hint: string;
+  /** The middle of the painted vision. */
+  vision: ImagePoint;
+  /** Its half-width and half-height, in image fractions; the edge is soft. */
+  radius: { x: number; y: number };
 };
 
 /**
@@ -98,9 +113,15 @@ export type DragGesture = {
 
 export type PoemGesture = HoldGesture | DragGesture | FlingGesture | ThreadGesture | SwipeGesture;
 
-/** The two gestures drawn by warping the picture itself, in WebGL. */
-export function isWarpGesture(gesture?: PoemGesture) {
-  return gesture?.effect === "converge-reflections" || gesture?.effect === "lean-between";
+/** The gestures drawn by redrawing the picture itself, in WebGL. */
+export type WarpGesture = WaterHold | GloryHold | DragGesture;
+
+export function isWarpGesture(gesture?: PoemGesture): gesture is WarpGesture {
+  return (
+    gesture?.effect === "converge-reflections" ||
+    gesture?.effect === "recall-glory" ||
+    gesture?.effect === "lean-between"
+  );
 }
 
 /** Whether a scene needs a canvas over its picture at all. A swipe draws nothing. */

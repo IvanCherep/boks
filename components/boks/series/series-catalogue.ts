@@ -57,6 +57,19 @@ export type SeriesPiece = {
  */
 export const seriesPieces: readonly SeriesPiece[] = [
   {
+    storyId: "abbf65a4-b64b-4d8d-aa92-2f3aee583b5a",
+    format: "poem",
+    language: "en",
+    title: "Napoleon's Farewell",
+    author: "Lord Byron",
+    cover: "/series/napoleons-farewell.webp",
+    coverFocus: "30% 45%",
+    durationSeconds: 95,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-14",
+  },
+  {
     storyId: "45035e98-5bbf-4f3f-bb1b-f88f2bc02ac2",
     format: "poem",
     language: "en",

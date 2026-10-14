@@ -1,0 +1,1716 @@
+{
+ "id": "napoleons-farewell-immersive-v1",
+ "title": "Napoleon's Farewell",
+ "author": "Lord Byron",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/napoleons-farewell/narration.mp3",
+ "theme": {
+  "src": "/poetry/napoleons-farewell/theme.mp3",
+  "gain": 0.108
+ },
+ "durationMs": 95100,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F6EFE3",
+  "active": "#FFD48C",
+  "shadow": "rgba(6, 8, 14, 0.72)"
+ },
+ "textScale": 0.84,
+ "veil": 1.5,
+ "transitionStyle": "cinematic",
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 750,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "waterloo",
+   "image": "/poetry/napoleons-farewell/scenes/01_waterloo_and_memory_of_glory.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.32,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1150,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.63,
+     "width": 0.8,
+     "height": 0.2
+    }
+   ],
+   "gesture": {
+    "kind": "hold",
+    "effect": "recall-glory",
+    "hint": "Hold to remember",
+    "vision": {
+     "x": 0.42,
+     "y": 0.1
+    },
+    "radius": {
+     "x": 0.56,
+     "y": 0.14
+    }
+   },
+   "line": "Farewell to the Land, where the gloom of my Glory … The last single Captive to millions in war.",
+   "startMs": 0
+  },
+  {
+   "id": "farewell-to-france",
+   "image": "/poetry/napoleons-farewell/scenes/02_farewell_to_france.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.42,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.12,
+     "y": 0.08,
+     "width": 0.76,
+     "height": 0.16
+    }
+   ],
+   "line": "Farewell to thee, France! when thy diadem crowned me, … Decayed in thy glory, and sunk in thy worth.",
+   "startMs": 32820
+  },
+  {
+   "id": "old-guard",
+   "image": "/poetry/napoleons-farewell/scenes/03_old_guard_and_fallen_eagle.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.1,
+     "y": 0.63,
+     "width": 0.8,
+     "height": 0.2
+    }
+   ],
+   "line": "Oh! for the veteran hearts that were wasted … Had still soared with eyes fixed on Victory's sun!",
+   "startMs": 49880
+  },
+  {
+   "id": "saint-helena",
+   "image": "/poetry/napoleons-farewell/scenes/04_saint_helena_and_violet.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.06,
+     "y": 0.07,
+     "width": 0.56,
+     "height": 0.24
+    }
+   ],
+   "gesture": {
+    "kind": "hold",
+    "effect": "recall-glory",
+    "hint": "Hold to remember",
+    "vision": {
+     "x": 0.74,
+     "y": 0.15
+    },
+    "radius": {
+     "x": 0.34,
+     "y": 0.15
+    }
+   },
+   "line": "Farewell to thee, France!—but when Liberty rallies … Then turn thee and call on the Chief of thy choice!",
+   "startMs": 66220
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "waterloo",
+   "startMs": 0,
+   "endMs": 3280,
+   "tokens": [
+    {
+     "text": "Farewell",
+     "atMs": 0,
+     "endMs": 560,
+     "phrase": 0
+    },
+    {
+     "text": "to",
+     "atMs": 640,
+     "endMs": 720,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 800,
+     "endMs": 840,
+     "phrase": 0
+    },
+    {
+     "text": "Land,",
+     "atMs": 880,
+     "endMs": 1520,
+     "phrase": 0,
+     "emphasis": "lead"
+    },
+    {
+     "text": "where",
+     "atMs": 1680,
+     "endMs": 1760,
+     "phrase": 1
+    },
+    {
+     "text": "the",
+     "atMs": 1840,
+     "endMs": 1880,
+     "phrase": 1
+    },
+    {
+     "text": "gloom",
+     "atMs": 1920,
+     "endMs": 2320,
+     "phrase": 1
+    },
+    {
+     "text": "of",
+     "atMs": 2400,
+     "endMs": 2480,
+     "phrase": 1
+    },
+    {
+     "text": "my",
+     "atMs": 2560,
+     "endMs": 2640,
+     "phrase": 1
+    },
+    {
+     "text": "Glory",
+     "atMs": 2800,
+     "endMs": 3200,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 3280,
+   "endMs": 7040,
+   "tokens": [
+    {
+     "text": "Arose",
+     "atMs": 3280,
+     "endMs": 3840,
+     "phrase": 2
+    },
+    {
+     "text": "and",
+     "atMs": 4080,
+     "endMs": 4240,
+     "phrase": 2
+    },
+    {
+     "text": "o'ershadowed",
+     "atMs": 4280,
+     "endMs": 4960,
+     "phrase": 2
+    },
+    {
+     "text": "the",
+     "atMs": 5000,
+     "endMs": 5040,
+     "phrase": 2
+    },
+    {
+     "text": "earth",
+     "atMs": 5120,
+     "endMs": 5440,
+     "phrase": 2
+    },
+    {
+     "text": "with",
+     "atMs": 5520,
+     "endMs": 5600,
+     "phrase": 2
+    },
+    {
+     "text": "her",
+     "atMs": 5680,
+     "endMs": 5760,
+     "phrase": 2
+    },
+    {
+     "text": "name—",
+     "atMs": 5840,
+     "endMs": 6960,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 7040,
+   "endMs": 10600,
+   "tokens": [
+    {
+     "text": "She",
+     "atMs": 7040,
+     "endMs": 7120,
+     "phrase": 3
+    },
+    {
+     "text": "abandons",
+     "atMs": 7200,
+     "endMs": 7760,
+     "phrase": 3
+    },
+    {
+     "text": "me",
+     "atMs": 7840,
+     "endMs": 7920,
+     "phrase": 3
+    },
+    {
+     "text": "now—but",
+     "atMs": 8080,
+     "endMs": 8960,
+     "phrase": 3
+    },
+    {
+     "text": "the",
+     "atMs": 9000,
+     "endMs": 9040,
+     "phrase": 3
+    },
+    {
+     "text": "page",
+     "atMs": 9120,
+     "endMs": 9440,
+     "phrase": 3
+    },
+    {
+     "text": "of",
+     "atMs": 9480,
+     "endMs": 9520,
+     "phrase": 3
+    },
+    {
+     "text": "her",
+     "atMs": 9600,
+     "endMs": 9680,
+     "phrase": 3
+    },
+    {
+     "text": "story,",
+     "atMs": 9760,
+     "endMs": 10560,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 10600,
+   "endMs": 15920,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 10600,
+     "endMs": 10640,
+     "phrase": 4
+    },
+    {
+     "text": "brightest",
+     "atMs": 10720,
+     "endMs": 11360,
+     "phrase": 4
+    },
+    {
+     "text": "or",
+     "atMs": 11440,
+     "endMs": 11520,
+     "phrase": 4
+    },
+    {
+     "text": "blackest,",
+     "atMs": 11600,
+     "endMs": 12480,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "is",
+     "atMs": 12560,
+     "endMs": 12640,
+     "phrase": 5
+    },
+    {
+     "text": "filled",
+     "atMs": 12720,
+     "endMs": 13040,
+     "phrase": 5
+    },
+    {
+     "text": "with",
+     "atMs": 13120,
+     "endMs": 13200,
+     "phrase": 5
+    },
+    {
+     "text": "my",
+     "atMs": 13280,
+     "endMs": 13440,
+     "phrase": 5
+    },
+    {
+     "text": "fame.",
+     "atMs": 13520,
+     "endMs": 14000,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 15920,
+   "endMs": 19120,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 15920,
+     "endMs": 16000,
+     "phrase": 6
+    },
+    {
+     "text": "have",
+     "atMs": 16080,
+     "endMs": 16240,
+     "phrase": 6
+    },
+    {
+     "text": "warred",
+     "atMs": 16360,
+     "endMs": 16560,
+     "phrase": 6
+    },
+    {
+     "text": "with",
+     "atMs": 16640,
+     "endMs": 16720,
+     "phrase": 6
+    },
+    {
+     "text": "a",
+     "atMs": 16800,
+     "endMs": 16880,
+     "phrase": 6
+    },
+    {
+     "text": "World",
+     "atMs": 16960,
+     "endMs": 17280,
+     "phrase": 6
+    },
+    {
+     "text": "which",
+     "atMs": 17360,
+     "endMs": 17520,
+     "phrase": 6
+    },
+    {
+     "text": "vanquished",
+     "atMs": 17600,
+     "endMs": 18080,
+     "phrase": 6
+    },
+    {
+     "text": "me",
+     "atMs": 18160,
+     "endMs": 18240,
+     "phrase": 6
+    },
+    {
+     "text": "only",
+     "atMs": 18320,
+     "endMs": 18720,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 19120,
+   "endMs": 22640,
+   "tokens": [
+    {
+     "text": "When",
+     "atMs": 19120,
+     "endMs": 19200,
+     "phrase": 7
+    },
+    {
+     "text": "the",
+     "atMs": 19280,
+     "endMs": 19320,
+     "phrase": 7
+    },
+    {
+     "text": "meteor",
+     "atMs": 19360,
+     "endMs": 19760,
+     "phrase": 7
+    },
+    {
+     "text": "of",
+     "atMs": 19840,
+     "endMs": 19920,
+     "phrase": 7
+    },
+    {
+     "text": "conquest",
+     "atMs": 20000,
+     "endMs": 20560,
+     "phrase": 7
+    },
+    {
+     "text": "allured",
+     "atMs": 20680,
+     "endMs": 20960,
+     "phrase": 7
+    },
+    {
+     "text": "me",
+     "atMs": 21040,
+     "endMs": 21200,
+     "phrase": 7
+    },
+    {
+     "text": "too",
+     "atMs": 21280,
+     "endMs": 21360,
+     "phrase": 7
+    },
+    {
+     "text": "far;",
+     "atMs": 21520,
+     "endMs": 22560,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 22640,
+   "endMs": 26440,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 22640,
+     "endMs": 22720,
+     "phrase": 8
+    },
+    {
+     "text": "have",
+     "atMs": 22800,
+     "endMs": 22880,
+     "phrase": 8
+    },
+    {
+     "text": "coped",
+     "atMs": 22960,
+     "endMs": 23280,
+     "phrase": 8
+    },
+    {
+     "text": "with",
+     "atMs": 23320,
+     "endMs": 23360,
+     "phrase": 8
+    },
+    {
+     "text": "the",
+     "atMs": 23440,
+     "endMs": 23520,
+     "phrase": 8
+    },
+    {
+     "text": "nations",
+     "atMs": 23600,
+     "endMs": 24080,
+     "phrase": 8
+    },
+    {
+     "text": "which",
+     "atMs": 24320,
+     "endMs": 24480,
+     "phrase": 8
+    },
+    {
+     "text": "dread",
+     "atMs": 24640,
+     "endMs": 24880,
+     "phrase": 8
+    },
+    {
+     "text": "me",
+     "atMs": 24960,
+     "endMs": 25040,
+     "phrase": 8
+    },
+    {
+     "text": "thus",
+     "atMs": 25120,
+     "endMs": 25360,
+     "phrase": 8
+    },
+    {
+     "text": "lonely,",
+     "atMs": 25440,
+     "endMs": 26400,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "waterloo",
+   "startMs": 26440,
+   "endMs": 32820,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 26440,
+     "endMs": 26480,
+     "phrase": 9
+    },
+    {
+     "text": "last",
+     "atMs": 26560,
+     "endMs": 26960,
+     "phrase": 9
+    },
+    {
+     "text": "single",
+     "atMs": 27120,
+     "endMs": 27440,
+     "phrase": 9
+    },
+    {
+     "text": "Captive",
+     "atMs": 27520,
+     "endMs": 28000,
+     "phrase": 9
+    },
+    {
+     "text": "to",
+     "atMs": 28240,
+     "endMs": 28400,
+     "phrase": 9
+    },
+    {
+     "text": "millions",
+     "atMs": 28480,
+     "endMs": 28960,
+     "phrase": 9
+    },
+    {
+     "text": "in",
+     "atMs": 29040,
+     "endMs": 29120,
+     "phrase": 9
+    },
+    {
+     "text": "war.",
+     "atMs": 29200,
+     "endMs": 29600,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-to-france",
+   "startMs": 32820,
+   "endMs": 36820,
+   "tokens": [
+    {
+     "text": "Farewell",
+     "atMs": 32820,
+     "endMs": 33300,
+     "phrase": 10
+    },
+    {
+     "text": "to",
+     "atMs": 33380,
+     "endMs": 33460,
+     "phrase": 10
+    },
+    {
+     "text": "thee,",
+     "atMs": 33540,
+     "endMs": 33780,
+     "phrase": 10,
+     "emphasis": "lead"
+    },
+    {
+     "text": "France!",
+     "atMs": 33860,
+     "endMs": 34420,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "when",
+     "atMs": 34820,
+     "endMs": 34900,
+     "phrase": 12
+    },
+    {
+     "text": "thy",
+     "atMs": 34980,
+     "endMs": 35140,
+     "phrase": 12
+    },
+    {
+     "text": "diadem",
+     "atMs": 35220,
+     "endMs": 35700,
+     "phrase": 12
+    },
+    {
+     "text": "crowned",
+     "atMs": 35780,
+     "endMs": 36180,
+     "phrase": 12
+    },
+    {
+     "text": "me,",
+     "atMs": 36260,
+     "endMs": 36740,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-to-france",
+   "startMs": 36820,
+   "endMs": 40020,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 36820,
+     "endMs": 36900,
+     "phrase": 13
+    },
+    {
+     "text": "made",
+     "atMs": 36980,
+     "endMs": 37220,
+     "phrase": 13
+    },
+    {
+     "text": "thee",
+     "atMs": 37260,
+     "endMs": 37380,
+     "phrase": 13
+    },
+    {
+     "text": "the",
+     "atMs": 37460,
+     "endMs": 37540,
+     "phrase": 13
+    },
+    {
+     "text": "gem",
+     "atMs": 37620,
+     "endMs": 38020,
+     "phrase": 13
+    },
+    {
+     "text": "and",
+     "atMs": 38100,
+     "endMs": 38180,
+     "phrase": 13
+    },
+    {
+     "text": "the",
+     "atMs": 38260,
+     "endMs": 38340,
+     "phrase": 13
+    },
+    {
+     "text": "wonder",
+     "atMs": 38420,
+     "endMs": 38740,
+     "phrase": 13
+    },
+    {
+     "text": "of",
+     "atMs": 38820,
+     "endMs": 38900,
+     "phrase": 13
+    },
+    {
+     "text": "earth,—",
+     "atMs": 38980,
+     "endMs": 39940,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-to-france",
+   "startMs": 40020,
+   "endMs": 43780,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 40020,
+     "endMs": 40100,
+     "phrase": 14
+    },
+    {
+     "text": "thy",
+     "atMs": 40180,
+     "endMs": 40260,
+     "phrase": 14
+    },
+    {
+     "text": "weakness",
+     "atMs": 40340,
+     "endMs": 40740,
+     "phrase": 14
+    },
+    {
+     "text": "decrees",
+     "atMs": 40820,
+     "endMs": 41300,
+     "phrase": 14
+    },
+    {
+     "text": "I",
+     "atMs": 41620,
+     "endMs": 41700,
+     "phrase": 14
+    },
+    {
+     "text": "should",
+     "atMs": 41780,
+     "endMs": 41940,
+     "phrase": 14
+    },
+    {
+     "text": "leave",
+     "atMs": 42020,
+     "endMs": 42260,
+     "phrase": 14
+    },
+    {
+     "text": "as",
+     "atMs": 42340,
+     "endMs": 42420,
+     "phrase": 14
+    },
+    {
+     "text": "I",
+     "atMs": 42500,
+     "endMs": 42580,
+     "phrase": 14
+    },
+    {
+     "text": "found",
+     "atMs": 42740,
+     "endMs": 42900,
+     "phrase": 14
+    },
+    {
+     "text": "thee,",
+     "atMs": 42980,
+     "endMs": 43620,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "farewell-to-france",
+   "startMs": 43780,
+   "endMs": 49880,
+   "tokens": [
+    {
+     "text": "Decayed",
+     "atMs": 43780,
+     "endMs": 44180,
+     "phrase": 15
+    },
+    {
+     "text": "in",
+     "atMs": 44260,
+     "endMs": 44340,
+     "phrase": 15
+    },
+    {
+     "text": "thy",
+     "atMs": 44420,
+     "endMs": 44500,
+     "phrase": 15
+    },
+    {
+     "text": "glory,",
+     "atMs": 44580,
+     "endMs": 45300,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 45380,
+     "endMs": 45540,
+     "phrase": 16
+    },
+    {
+     "text": "sunk",
+     "atMs": 45620,
+     "endMs": 45940,
+     "phrase": 16
+    },
+    {
+     "text": "in",
+     "atMs": 45980,
+     "endMs": 46020,
+     "phrase": 16
+    },
+    {
+     "text": "thy",
+     "atMs": 46100,
+     "endMs": 46260,
+     "phrase": 16
+    },
+    {
+     "text": "worth.",
+     "atMs": 46340,
+     "endMs": 46820,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "old-guard",
+   "startMs": 49880,
+   "endMs": 52520,
+   "tokens": [
+    {
+     "text": "Oh!",
+     "atMs": 49880,
+     "endMs": 50280,
+     "phrase": 17,
+     "emphasis": "lead"
+    },
+    {
+     "text": "for",
+     "atMs": 50360,
+     "endMs": 50440,
+     "phrase": 18
+    },
+    {
+     "text": "the",
+     "atMs": 50480,
+     "endMs": 50520,
+     "phrase": 18
+    },
+    {
+     "text": "veteran",
+     "atMs": 50680,
+     "endMs": 51080,
+     "phrase": 18
+    },
+    {
+     "text": "hearts",
+     "atMs": 51160,
+     "endMs": 51560,
+     "phrase": 18
+    },
+    {
+     "text": "that",
+     "atMs": 51640,
+     "endMs": 51720,
+     "phrase": 18
+    },
+    {
+     "text": "were",
+     "atMs": 51800,
+     "endMs": 51880,
+     "phrase": 18
+    },
+    {
+     "text": "wasted",
+     "atMs": 51960,
+     "endMs": 52440,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "old-guard",
+   "startMs": 52520,
+   "endMs": 56280,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 52520,
+     "endMs": 52600,
+     "phrase": 19
+    },
+    {
+     "text": "strife",
+     "atMs": 52760,
+     "endMs": 53160,
+     "phrase": 19
+    },
+    {
+     "text": "with",
+     "atMs": 53240,
+     "endMs": 53320,
+     "phrase": 19
+    },
+    {
+     "text": "the",
+     "atMs": 53360,
+     "endMs": 53400,
+     "phrase": 19
+    },
+    {
+     "text": "storm,",
+     "atMs": 53480,
+     "endMs": 54200,
+     "phrase": 19,
+     "emphasis": "lead"
+    },
+    {
+     "text": "when",
+     "atMs": 54280,
+     "endMs": 54360,
+     "phrase": 20
+    },
+    {
+     "text": "their",
+     "atMs": 54440,
+     "endMs": 54520,
+     "phrase": 20
+    },
+    {
+     "text": "battles",
+     "atMs": 54600,
+     "endMs": 55000,
+     "phrase": 20
+    },
+    {
+     "text": "were",
+     "atMs": 55080,
+     "endMs": 55160,
+     "phrase": 20
+    },
+    {
+     "text": "won—",
+     "atMs": 55240,
+     "endMs": 56200,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "old-guard",
+   "startMs": 56280,
+   "endMs": 59640,
+   "tokens": [
+    {
+     "text": "Then",
+     "atMs": 56280,
+     "endMs": 56440,
+     "phrase": 21
+    },
+    {
+     "text": "the",
+     "atMs": 56520,
+     "endMs": 56600,
+     "phrase": 21
+    },
+    {
+     "text": "Eagle,",
+     "atMs": 56680,
+     "endMs": 57240,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "whose",
+     "atMs": 57320,
+     "endMs": 57480,
+     "phrase": 22
+    },
+    {
+     "text": "gaze",
+     "atMs": 57560,
+     "endMs": 57880,
+     "phrase": 22
+    },
+    {
+     "text": "in",
+     "atMs": 57920,
+     "endMs": 57960,
+     "phrase": 22
+    },
+    {
+     "text": "that",
+     "atMs": 58040,
+     "endMs": 58200,
+     "phrase": 22
+    },
+    {
+     "text": "moment",
+     "atMs": 58280,
+     "endMs": 58600,
+     "phrase": 22
+    },
+    {
+     "text": "was",
+     "atMs": 58680,
+     "endMs": 58760,
+     "phrase": 22
+    },
+    {
+     "text": "blasted",
+     "atMs": 58840,
+     "endMs": 59400,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "old-guard",
+   "startMs": 59640,
+   "endMs": 66220,
+   "tokens": [
+    {
+     "text": "Had",
+     "atMs": 59640,
+     "endMs": 59800,
+     "phrase": 23
+    },
+    {
+     "text": "still",
+     "atMs": 59880,
+     "endMs": 60120,
+     "phrase": 23
+    },
+    {
+     "text": "soared",
+     "atMs": 60360,
+     "endMs": 60680,
+     "phrase": 23
+    },
+    {
+     "text": "with",
+     "atMs": 60760,
+     "endMs": 60920,
+     "phrase": 23
+    },
+    {
+     "text": "eyes",
+     "atMs": 61000,
+     "endMs": 61320,
+     "phrase": 23
+    },
+    {
+     "text": "fixed",
+     "atMs": 61480,
+     "endMs": 61800,
+     "phrase": 23
+    },
+    {
+     "text": "on",
+     "atMs": 61880,
+     "endMs": 61960,
+     "phrase": 23
+    },
+    {
+     "text": "Victory's",
+     "atMs": 62040,
+     "endMs": 62600,
+     "phrase": 23
+    },
+    {
+     "text": "sun!",
+     "atMs": 62680,
+     "endMs": 63080,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 66220,
+   "endMs": 69580,
+   "tokens": [
+    {
+     "text": "Farewell",
+     "atMs": 66220,
+     "endMs": 66700,
+     "phrase": 24
+    },
+    {
+     "text": "to",
+     "atMs": 66780,
+     "endMs": 66860,
+     "phrase": 24
+    },
+    {
+     "text": "thee,",
+     "atMs": 66940,
+     "endMs": 67180,
+     "phrase": 24,
+     "emphasis": "lead"
+    },
+    {
+     "text": "France!—but",
+     "atMs": 67260,
+     "endMs": 68300,
+     "phrase": 25
+    },
+    {
+     "text": "when",
+     "atMs": 68380,
+     "endMs": 68540,
+     "phrase": 25
+    },
+    {
+     "text": "Liberty",
+     "atMs": 68620,
+     "endMs": 68940,
+     "phrase": 25
+    },
+    {
+     "text": "rallies",
+     "atMs": 69020,
+     "endMs": 69500,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 69580,
+   "endMs": 73020,
+   "tokens": [
+    {
+     "text": "Once",
+     "atMs": 69580,
+     "endMs": 69820,
+     "phrase": 26
+    },
+    {
+     "text": "more",
+     "atMs": 69900,
+     "endMs": 70140,
+     "phrase": 26
+    },
+    {
+     "text": "in",
+     "atMs": 70180,
+     "endMs": 70220,
+     "phrase": 26
+    },
+    {
+     "text": "thy",
+     "atMs": 70300,
+     "endMs": 70380,
+     "phrase": 26
+    },
+    {
+     "text": "regions,",
+     "atMs": 70460,
+     "endMs": 71260,
+     "phrase": 26,
+     "emphasis": "lead"
+    },
+    {
+     "text": "remember",
+     "atMs": 71340,
+     "endMs": 71740,
+     "phrase": 27
+    },
+    {
+     "text": "me",
+     "atMs": 71820,
+     "endMs": 71980,
+     "phrase": 27
+    },
+    {
+     "text": "then,—",
+     "atMs": 72140,
+     "endMs": 72940,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 73020,
+   "endMs": 76460,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 73020,
+     "endMs": 73100,
+     "phrase": 28
+    },
+    {
+     "text": "Violet",
+     "atMs": 73180,
+     "endMs": 73580,
+     "phrase": 28
+    },
+    {
+     "text": "still",
+     "atMs": 73660,
+     "endMs": 73900,
+     "phrase": 28
+    },
+    {
+     "text": "grows",
+     "atMs": 73980,
+     "endMs": 74380,
+     "phrase": 28
+    },
+    {
+     "text": "in",
+     "atMs": 74460,
+     "endMs": 74540,
+     "phrase": 28
+    },
+    {
+     "text": "the",
+     "atMs": 74580,
+     "endMs": 74620,
+     "phrase": 28
+    },
+    {
+     "text": "depth",
+     "atMs": 74700,
+     "endMs": 74940,
+     "phrase": 28
+    },
+    {
+     "text": "of",
+     "atMs": 75020,
+     "endMs": 75100,
+     "phrase": 28
+    },
+    {
+     "text": "thy",
+     "atMs": 75180,
+     "endMs": 75260,
+     "phrase": 28
+    },
+    {
+     "text": "valleys;",
+     "atMs": 75340,
+     "endMs": 76380,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 76460,
+   "endMs": 81020,
+   "tokens": [
+    {
+     "text": "Though",
+     "atMs": 76460,
+     "endMs": 76620,
+     "phrase": 29
+    },
+    {
+     "text": "withered,",
+     "atMs": 76660,
+     "endMs": 77340,
+     "phrase": 29,
+     "emphasis": "lead"
+    },
+    {
+     "text": "thy",
+     "atMs": 77420,
+     "endMs": 77580,
+     "phrase": 30
+    },
+    {
+     "text": "tear",
+     "atMs": 77660,
+     "endMs": 77980,
+     "phrase": 30
+    },
+    {
+     "text": "will",
+     "atMs": 78060,
+     "endMs": 78140,
+     "phrase": 30
+    },
+    {
+     "text": "unfold",
+     "atMs": 78220,
+     "endMs": 78620,
+     "phrase": 30
+    },
+    {
+     "text": "it",
+     "atMs": 78700,
+     "endMs": 78780,
+     "phrase": 30
+    },
+    {
+     "text": "again—",
+     "atMs": 78860,
+     "endMs": 80940,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 81020,
+   "endMs": 85180,
+   "tokens": [
+    {
+     "text": "Yet,",
+     "atMs": 81020,
+     "endMs": 81740,
+     "phrase": 31,
+     "emphasis": "lead"
+    },
+    {
+     "text": "yet,",
+     "atMs": 81820,
+     "endMs": 82340,
+     "phrase": 32,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I",
+     "atMs": 82540,
+     "endMs": 82620,
+     "phrase": 33
+    },
+    {
+     "text": "may",
+     "atMs": 82700,
+     "endMs": 82860,
+     "phrase": 33
+    },
+    {
+     "text": "baffle",
+     "atMs": 82940,
+     "endMs": 83260,
+     "phrase": 33
+    },
+    {
+     "text": "the",
+     "atMs": 83340,
+     "endMs": 83420,
+     "phrase": 33
+    },
+    {
+     "text": "hosts",
+     "atMs": 83620,
+     "endMs": 83820,
+     "phrase": 33
+    },
+    {
+     "text": "that",
+     "atMs": 83900,
+     "endMs": 84060,
+     "phrase": 33
+    },
+    {
+     "text": "surround",
+     "atMs": 84140,
+     "endMs": 84460,
+     "phrase": 33
+    },
+    {
+     "text": "us,",
+     "atMs": 84540,
+     "endMs": 85100,
+     "phrase": 33,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 85180,
+   "endMs": 88460,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 85180,
+     "endMs": 85260,
+     "phrase": 34
+    },
+    {
+     "text": "yet",
+     "atMs": 85340,
+     "endMs": 85500,
+     "phrase": 34
+    },
+    {
+     "text": "may",
+     "atMs": 85580,
+     "endMs": 85660,
+     "phrase": 34
+    },
+    {
+     "text": "thy",
+     "atMs": 85740,
+     "endMs": 85900,
+     "phrase": 34
+    },
+    {
+     "text": "heart",
+     "atMs": 85980,
+     "endMs": 86220,
+     "phrase": 34
+    },
+    {
+     "text": "leap",
+     "atMs": 86380,
+     "endMs": 86540,
+     "phrase": 34
+    },
+    {
+     "text": "awake",
+     "atMs": 86620,
+     "endMs": 86940,
+     "phrase": 34
+    },
+    {
+     "text": "to",
+     "atMs": 87020,
+     "endMs": 87100,
+     "phrase": 34
+    },
+    {
+     "text": "my",
+     "atMs": 87180,
+     "endMs": 87260,
+     "phrase": 34
+    },
+    {
+     "text": "voice—",
+     "atMs": 87340,
+     "endMs": 88380,
+     "phrase": 34,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 88460,
+   "endMs": 91940,
+   "tokens": [
+    {
+     "text": "There",
+     "atMs": 88460,
+     "endMs": 88540,
+     "phrase": 35
+    },
+    {
+     "text": "are",
+     "atMs": 88620,
+     "endMs": 88700,
+     "phrase": 35
+    },
+    {
+     "text": "links",
+     "atMs": 88780,
+     "endMs": 89100,
+     "phrase": 35
+    },
+    {
+     "text": "which",
+     "atMs": 89180,
+     "endMs": 89260,
+     "phrase": 35
+    },
+    {
+     "text": "must",
+     "atMs": 89340,
+     "endMs": 89580,
+     "phrase": 35
+    },
+    {
+     "text": "break",
+     "atMs": 89740,
+     "endMs": 89900,
+     "phrase": 35
+    },
+    {
+     "text": "in",
+     "atMs": 89940,
+     "endMs": 89980,
+     "phrase": 35
+    },
+    {
+     "text": "the",
+     "atMs": 90060,
+     "endMs": 90140,
+     "phrase": 35
+    },
+    {
+     "text": "chain",
+     "atMs": 90220,
+     "endMs": 90460,
+     "phrase": 35
+    },
+    {
+     "text": "that",
+     "atMs": 90540,
+     "endMs": 90620,
+     "phrase": 35
+    },
+    {
+     "text": "has",
+     "atMs": 90700,
+     "endMs": 90780,
+     "phrase": 35
+    },
+    {
+     "text": "bound",
+     "atMs": 90940,
+     "endMs": 91100,
+     "phrase": 35
+    },
+    {
+     "text": "us,",
+     "atMs": 91220,
+     "endMs": 91820,
+     "phrase": 35,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "saint-helena",
+   "startMs": 91940,
+   "endMs": 95100,
+   "tokens": [
+    {
+     "text": "Then",
+     "atMs": 91940,
+     "endMs": 92060,
+     "phrase": 36
+    },
+    {
+     "text": "turn",
+     "atMs": 92220,
+     "endMs": 92380,
+     "phrase": 36
+    },
+    {
+     "text": "thee",
+     "atMs": 92420,
+     "endMs": 92860,
+     "phrase": 36
+    },
+    {
+     "text": "and",
+     "atMs": 92940,
+     "endMs": 93020,
+     "phrase": 36
+    },
+    {
+     "text": "call",
+     "atMs": 93100,
+     "endMs": 93340,
+     "phrase": 36
+    },
+    {
+     "text": "on",
+     "atMs": 93420,
+     "endMs": 93500,
+     "phrase": 36
+    },
+    {
+     "text": "the",
+     "atMs": 93540,
+     "endMs": 93580,
+     "phrase": 36
+    },
+    {
+     "text": "Chief",
+     "atMs": 93660,
+     "endMs": 93900,
+     "phrase": 36
+    },
+    {
+     "text": "of",
+     "atMs": 93980,
+     "endMs": 94020,
+     "phrase": 36
+    },
+    {
+     "text": "thy",
+     "atMs": 94060,
+     "endMs": 94220,
+     "phrase": 36
+    },
+    {
+     "text": "choice!",
+     "atMs": 94300,
+     "endMs": 95100,
+     "phrase": 36,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

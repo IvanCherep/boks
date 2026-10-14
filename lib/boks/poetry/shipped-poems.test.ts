@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { backdropAt, textPresets, wordReachedAt, type PoemManifest } from "@/lib/boks/poetry/manifest";
 import { poemManifestFor, sandboxPoems } from "@/components/boks/poetry/poems";
+import { isWarpGesture } from "@/lib/boks/poetry/gesture";
 
 /*
  * The standard every poem is held to, whichever poem it is.
@@ -135,7 +136,7 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
       if (!gesture) continue;
       expect(gesture.hint.length, scene.id).toBeGreaterThan(0);
       // A warp redraws the picture, so it cannot share it with an overlay.
-      if (gesture.effect === "converge-reflections" || gesture.effect === "lean-between") {
+      if (isWarpGesture(gesture)) {
         expect(scene.ambience, scene.id).toBeUndefined();
       }
       // A gesture needs noticing, then trying: shorter and the picture is gone
@@ -156,6 +157,12 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
           inside(gesture.rightFocus, scene.id);
           expect(gesture.leftFocus.x, scene.id).toBeLessThan(gesture.rightFocus.x);
           expect(gesture.zoom, scene.id).toBeLessThanOrEqual(0.4);
+          break;
+        case "recall-glory":
+          inside(gesture.vision, scene.id);
+          // A vision in the sky, not the whole picture: something has to stay storm.
+          expect(gesture.radius.x * gesture.radius.y, scene.id).toBeLessThan(0.25);
+          expect(gesture.radius.y, scene.id).toBeGreaterThan(0);
           break;
         case "shelter-flame":
           inside(gesture.flame, scene.id);

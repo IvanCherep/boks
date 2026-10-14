@@ -64,6 +64,8 @@ const poems: Record<string, string> = {
   "011660ae-2795-4b28-bd77-0404a4a2a8ba": "/poetry/noiseless-spider/manifest.json",
   // Emily Dickinson — There is no Frigate like a Book
   "7cf8f28a-3d1a-49df-a4bb-b10a274e5347": "/poetry/no-frigate/manifest.json",
+  // Lord Byron — Napoleon's Farewell
+  "abbf65a4-b64b-4d8d-aa92-2f3aee583b5a": "/poetry/napoleons-farewell/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

@@ -11,6 +11,19 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Byron's *Napoleon's Farewell* (2026-10-14).** From
+`byron_napoleons_farewell_boks.zip`, pictures in numerical order, brief in
+`docs/poetry/napoleons-farewell/brief.md`. Added to the catalogue (bok
+`abbf65a4-b64b-4d8d-aa92-2f3aee583b5a`, `work/catalogue-2026-10-14b/`, the
+1904 Coleridge/Prothero text) and embedded. Julian reads it; both takes were
+word-perfect by STT, the first ships, with pauses between stanzas and at each
+change of picture, at −22.57 LUFS; theme 13 dB under (gain 0.108), zero
+words. A new hold, `recall-glory`: the vision painted into the clouds - the
+coronation in the first picture, the eagle over Saint Helena in the last -
+is storm grey at rest and comes back in gold while held. Looked at in WebKit
+at iPhone 15 size against the built app; the checker now stubs the analytics
+calls, since local runs write to the production tables.
+
 **Four poems with gestures for the investor set (2026-10-14).** From
 `boks_investor_poems.zip`, pictures in numerical order, briefs in
 `docs/poetry/<slug>/brief.md`. Longfellow's *The Arrow and the Song* (bok
