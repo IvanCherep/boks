@@ -62,7 +62,12 @@ The trajectory. Everything plotted weekly is a count or a total.
 ## Guests
 
 Source: `get_guest_funnel` (latest in `20261014150000`) and, for one day,
-`get_guest_day`. The unit is the guest
+`get_guest_day`.
+
+Not recorded at all, since 2026-10-14: the local dev server (any local host) and
+automated browsers (`navigator.webdriver`) - both used to show up here as
+guests. `lib/boks/analytics-gate.ts`; a local build can opt in with
+`localStorage["boks-record-analytics"] = "1"`. The unit is the guest
 **device**; the team and hidden countries are left out as described on the tab.
 
 ### Did they touch it

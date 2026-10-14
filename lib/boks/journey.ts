@@ -12,6 +12,7 @@
  */
 
 import { supabase } from "@/lib/boks/supabase-client";
+import { analyticsAllowed } from "@/lib/boks/analytics-gate";
 import { bokIdFrom, linkCodeFrom } from "@/lib/boks/tracked-links";
 
 export type JourneyLanding = "home" | "shared_bok" | "series";
@@ -133,7 +134,8 @@ export async function fetchVisitorCountry(timeoutMs = 2500): Promise<string | nu
 
 /** Sends one step. Never throws, never waits on the caller. */
 export function recordJourneyEvent(step: JourneyEvent, context: { visitorId?: string; sessionId?: string }) {
-  if (!supabase) return;
+  // Not from the dev server or a test browser: see `analytics-gate.ts`.
+  if (!supabase || !analyticsAllowed()) return;
   const attribution = step.event === "visit" ? step.attribution : null;
   void supabase
     .rpc("record_boks_journey_event", {

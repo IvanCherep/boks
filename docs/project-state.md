@@ -11,6 +11,12 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**Tests and the dev server no longer count as guests (2026-10-14).** Reader
+events and journey steps are not written from a local host or an automated
+browser (`navigator.webdriver`) - `lib/boks/analytics-gate.ts`. Checked in
+WebKit: local and automated runs send nothing, a normal browser on the site
+sends as before. A local build opts in with `boks-record-analytics` = "1".
+
 **Guests, day by day and one day opened (2026-10-14).** The day table said
 "17 guest devices, 0 finished" and nothing else. Each day now also has shown a
 bok, touched, moved on, median reading time and countries; clicking a day

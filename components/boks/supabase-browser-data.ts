@@ -1,6 +1,7 @@
 "use client";
 
 import { initialMetrics } from "@/components/boks/constants";
+import { analyticsAllowed } from "@/lib/boks/analytics-gate";
 import type { FeedbackSurface } from "@/components/boks/feedback";
 import type {
   BoksFeedbackPage,
@@ -586,7 +587,8 @@ export async function recordSupabaseReaderEvents(
   events: ReaderEvent[],
   delivery: { keepalive: boolean } = { keepalive: false }
 ) {
-  if (!supabase || !events.length) return;
+  // Not from the dev server or a test browser: see `analytics-gate.ts`.
+  if (!supabase || !events.length || !analyticsAllowed()) return;
 
   // Keepalive needs the reader's token up front: the RPC refuses a call
   // without a user, so sending the publishable key in its place could never
