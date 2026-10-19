@@ -264,3 +264,5 @@ html:has(.poem, .cinema, .isandbox__overlay), body:has(.poem, .cinema, .isandbox
 .series-collection__author { font: 500 10px/1.3 var(--font-sans); letter-spacing: .6px; text-transform: uppercase; color: #f0dcc0cc; }
 .series-collection + .series-hero { margin-top: 0; }
 @media (prefers-reduced-motion: no-preference) { .series-collection__row { scroll-behavior: smooth; } }
+/* The pumpkin sits after "Series", on its lowered baseline. */
+.series__mark .boks-logo__season { right: -32px; bottom: -8px; }
