@@ -693,9 +693,10 @@ A **seasonal collection** (`seriesCollections` in the same file) puts a few
 pieces first on the shelf, in a set order, between two days of the reader's
 own calendar: Halloween is Poe, Dickinson, Hardy, 17 October to 2 November.
 `arrangeSeriesShelf` draws it before the hero and takes its pieces out of the
-rest, and its visible order is the Series next order. Its name and line are in
+rest, and its visible order is the Series next order. Its name is in
 `collectionMessages` in `series-view.tsx`, under the collection's `id`; a new
-collection adds an id there and an entry here.
+collection adds an id there and an entry here. No line under the name: the
+numbered cards already say the order.
 
 The hero and every preview display the recording duration from this registry,
 using the interface language. Under one minute it is shown in seconds; longer

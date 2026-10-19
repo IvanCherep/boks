@@ -246,7 +246,6 @@ html:has(.poem, .cinema, .isandbox__overlay), body:has(.poem, .cinema, .isandbox
 .series-collection--halloween { background: radial-gradient(120% 70% at 85% 0%, #5a2410 0%, #1d110b 48%, #0e0a08 100%); }
 .series-collection__head { padding: 0 22px; }
 .series-collection__title { margin: 0; font: italic 400 34px/1 var(--font-serif); letter-spacing: -1px; color: #f3a35b; }
-.series-collection__note { margin: 6px 0 0; font: 400 12px/1.4 var(--font-sans); color: #e9d9c2b8; }
 .series-collection__row { display: flex; gap: 12px; margin: 18px 0 0; padding: 0 22px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 22px; scrollbar-width: none; overscroll-behavior-x: contain; }
 .series-collection__row::-webkit-scrollbar { display: none; }
 .series-collection__row > li { flex: 0 0 min(62%, 260px); scroll-snap-align: start; }

@@ -45,14 +45,12 @@ const seriesMessages = defineMessages({
 } });
 function useSeriesWords() { return useMessages(seriesMessages); }
 
-/** A seasonal collection's name and line, by its id in `seriesCollections`. */
+/** A seasonal collection's name, by its id in `seriesCollections`. The numbered cards say the rest. */
 const collectionMessages = defineMessages({
   halloween: "Halloween",
-  halloweenNote: "Three ghost poems, to be heard in this order",
   position: "of",
 }, { ru: {
   halloween: "Хэллоуин",
-  halloweenNote: "Три стихотворения о призраках - слушать по порядку",
   position: "из",
 } });
 
@@ -295,7 +293,6 @@ function SeriesCollectionRow({
     <section className={`series-collection series-collection--${id}`} aria-label={title}>
       <header className="series-collection__head">
         <h2 className="series-collection__title">{title}</h2>
-        <p className="series-collection__note">{collectionWords.halloweenNote}</p>
       </header>
       <ol className="series-collection__row">
         {pieces.map((piece, index) => {
