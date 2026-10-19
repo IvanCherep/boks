@@ -13,6 +13,8 @@ import { defineMessages } from "@/lib/i18n/messages";
 import { useMessages } from "@/components/boks/ui-language";
 import {
   effectiveSeriesFilter, rememberSeriesFilter, seriesLanguages, storedSeriesFilter,
+  activeCollection,
+  arrangeSeriesShelf,
   publishedSeriesShelf,
   seriesPieces,
   seriesDurationLabel,
@@ -42,6 +44,17 @@ const seriesMessages = defineMessages({
   account: "Аккаунт", feed: "Лента", seriesTab: "Серии", newBadge: "new", tabs: "Разделы", duration: "Длительность",
 } });
 function useSeriesWords() { return useMessages(seriesMessages); }
+
+/** A seasonal collection's name and line, by its id in `seriesCollections`. */
+const collectionMessages = defineMessages({
+  halloween: "Halloween",
+  halloweenNote: "Three ghost poems, to be heard in this order",
+  position: "of",
+}, { ru: {
+  halloween: "Хэллоуин",
+  halloweenNote: "Три стихотворения о призраках - слушать по порядку",
+  position: "из",
+} });
 
 type CatalogueAnswer = Map<string, { title: string; authorName: string }> | null;
 
@@ -104,10 +117,13 @@ export function SeriesView({
   const shelf = useMemo(() => {
     return publishedSeriesShelf(currentStatus === "ready" ? catalogue?.answer ?? null : null, activeFilter, heard);
   }, [catalogue, currentStatus, heard, activeFilter]);
+  // Read once: a shelf left open over midnight keeps the collection it opened with.
+  const [today] = useState(() => new Date());
+  const arranged = useMemo(() => arrangeSeriesShelf(shelf, activeCollection(today)), [shelf, today]);
   function changeFilter(next: string[]) { const value = effectiveSeriesFilter(next, languages.map(item => item.language)); rememberSeriesFilter(value); setLanguageFilter(value); }
-  useEffect(() => { onPiecesChanged?.(shelf); }, [onPiecesChanged, shelf]);
+  useEffect(() => { onPiecesChanged?.(arranged.order); }, [onPiecesChanged, arranged]);
 
-  const [lead, ...rest] = shelf;
+  const { lead, rest, collection } = arranged;
 
   return (
     <div
@@ -142,6 +158,15 @@ export function SeriesView({
       </header>
 
       <div className="series__scroll">
+
+        {collection && (
+          <SeriesCollectionRow
+            id={collection.id}
+            pieces={collection.pieces}
+            openingStoryId={openingStoryId}
+            onOpenPiece={onOpenPiece}
+          />
+        )}
 
         {lead && (
           <SeriesHero
@@ -248,6 +273,64 @@ function SeriesHero({
         </span>
       </span>
     </button>
+  );
+}
+
+function SeriesCollectionRow({
+  id,
+  pieces,
+  openingStoryId,
+  onOpenPiece,
+}: {
+  id: "halloween";
+  pieces: readonly SeriesPiece[];
+  openingStoryId: string | null;
+  onOpenPiece: (piece: SeriesPiece) => void;
+}) {
+  const words = useSeriesWords();
+  const collectionWords = useMessages(collectionMessages);
+  const { preferences } = useReaderPreferences();
+  const title = collectionWords[id];
+  return (
+    <section className={`series-collection series-collection--${id}`} aria-label={title}>
+      <header className="series-collection__head">
+        <h2 className="series-collection__title">{title}</h2>
+        <p className="series-collection__note">{collectionWords.halloweenNote}</p>
+      </header>
+      <ol className="series-collection__row">
+        {pieces.map((piece, index) => {
+          const opening = openingStoryId === piece.storyId;
+          return (
+            <li key={piece.storyId}>
+              <button
+                type="button"
+                className={`series-collection__card${opening ? " is-opening" : ""}`}
+                onClick={() => onOpenPiece(piece)}
+                disabled={Boolean(openingStoryId)}
+                aria-label={`${index + 1} ${collectionWords.position} ${pieces.length}. ${piece.title}, ${piece.author}. ${words.duration}: ${seriesDurationLabel(piece.durationSeconds, preferences.locale)}. ${opening ? words.opening : words.start}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="series-collection__art"
+                  src={piece.cover}
+                  alt=""
+                  decoding="async"
+                  style={{ objectPosition: piece.coverFocus }}
+                />
+                <span className="series-collection__veil" aria-hidden="true" />
+                <span className="series-collection__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                {opening && <Loader2 className="series-collection__spinner size-4 animate-spin" aria-hidden="true" />}
+                <SeriesDuration seconds={piece.durationSeconds} />
+                <span className="series-collection__body">
+                  <span className="series-collection__card-title">{piece.title}</span>
+                  <span className="series-collection__author">{piece.author}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 

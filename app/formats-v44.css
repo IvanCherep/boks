@@ -240,3 +240,27 @@ html:has(.poem, .cinema, .isandbox__overlay), body:has(.poem, .cinema, .isandbox
 .series-language-filter__choices button[aria-pressed="true"] { background: color-mix(in srgb, var(--background) 86%, #899279); border-color: #929b77; }
 .series-language-filter__choices button span { color: var(--muted-foreground); font-size: 13px; }
 .series-language-filter .you-wide-button { min-height: 48px; margin-top: 22px; border-radius: 8px; background: var(--foreground); color: var(--background); }
+
+/* A seasonal collection: a dark band first on the shelf, its pieces in order. */
+.series-collection { margin: 0; padding: 22px 0 26px; background: #120d0a; color: #f6ecdc; }
+.series-collection--halloween { background: radial-gradient(120% 70% at 85% 0%, #5a2410 0%, #1d110b 48%, #0e0a08 100%); }
+.series-collection__head { padding: 0 22px; }
+.series-collection__title { margin: 0; font: italic 400 34px/1 var(--font-serif); letter-spacing: -1px; color: #f3a35b; }
+.series-collection__note { margin: 6px 0 0; font: 400 12px/1.4 var(--font-sans); color: #e9d9c2b8; }
+.series-collection__row { display: flex; gap: 12px; margin: 18px 0 0; padding: 0 22px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 22px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.series-collection__row::-webkit-scrollbar { display: none; }
+.series-collection__row > li { flex: 0 0 min(62%, 260px); scroll-snap-align: start; }
+.series-collection__card { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4.4; padding: 0; overflow: hidden; border: 0; border-radius: 4px; background: #000; color: #fff8ec; text-align: left; cursor: pointer; }
+.series-collection__card:focus-visible { outline: 2px solid #f3a35b; outline-offset: 3px; }
+.series-collection__card:disabled { cursor: default; }
+.series-collection__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.series-collection__veil { position: absolute; inset: 0; background: linear-gradient(#0000 45%, #0d0806d9 82%, #0d0806f2); }
+.series-collection__number { position: absolute; top: 10px; left: 12px; font: italic 400 30px/1 var(--font-serif); color: #f3a35b; text-shadow: 0 1px 8px #000c; }
+.series-collection__spinner { position: absolute; top: 14px; right: 12px; color: #fff8ec; }
+.series-collection__card .series-duration { top: 10px; right: 10px; }
+.series-collection__card.is-opening .series-duration { display: none; }
+.series-collection__body { position: absolute; inset: auto 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+.series-collection__card-title { font: 400 21px/1.08 var(--font-serif); overflow-wrap: anywhere; }
+.series-collection__author { font: 500 10px/1.3 var(--font-sans); letter-spacing: .6px; text-transform: uppercase; color: #f0dcc0cc; }
+.series-collection + .series-hero { margin-top: 0; }
+@media (prefers-reduced-motion: no-preference) { .series-collection__row { scroll-behavior: smooth; } }

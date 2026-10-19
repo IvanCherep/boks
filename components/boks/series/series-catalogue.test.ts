@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import {
+  activeCollection,
+  arrangeSeriesShelf,
   isPremiere,
+  seriesCollections,
   effectiveSeriesFilter,
   orderSeries,
   seriesLanguages,
@@ -194,5 +197,49 @@ describe("the words on a card", () => {
     const opened = piece({ premieredOn: "2026-10-01" });
     expect(isPremiere(opened, new Date("2026-10-03T12:00:00Z"))).toBe(true);
     expect(isPremiere(opened, new Date("2026-10-20T12:00:00Z"))).toBe(false);
+  });
+});
+
+describe("seasonal collections", () => {
+  const halloween = seriesCollections.find((collection) => collection.id === "halloween")!;
+  const shelf = orderSeries(seriesPieces, [], new Set());
+
+  it("names only pieces on the shelf, each once", () => {
+    for (const collection of seriesCollections) {
+      expect(new Set(collection.storyIds).size).toBe(collection.storyIds.length);
+      for (const storyId of collection.storyIds) expect(seriesPieceFor(storyId), storyId).not.toBeNull();
+      expect(collection.from < collection.until).toBe(true);
+    }
+  });
+
+  it("is up from its first day until the day it ends, in the reader's own calendar", () => {
+    expect(activeCollection(new Date(2026, 9, 16, 23, 59))).toBeNull();
+    expect(activeCollection(new Date(2026, 9, 17, 0, 1))?.id).toBe("halloween");
+    expect(activeCollection(new Date(2026, 9, 31, 22))?.id).toBe("halloween");
+    expect(activeCollection(new Date(2026, 10, 3, 0, 1))).toBeNull();
+  });
+
+  it("comes first, in its own order, and its pieces appear nowhere else", () => {
+    const heardPoe = new Set([halloween.storyIds[0]]);
+    const arranged = arrangeSeriesShelf(orderSeries(seriesPieces, [], heardPoe), halloween);
+    expect(arranged.collection?.pieces.map((piece) => piece.storyId)).toEqual(halloween.storyIds);
+    expect(arranged.order.slice(0, 3).map((piece) => piece.storyId)).toEqual(halloween.storyIds);
+    expect(new Set(arranged.order.map((piece) => piece.storyId)).size).toBe(arranged.order.length);
+    expect(arranged.order).toHaveLength(seriesPieces.length);
+    expect(halloween.storyIds).not.toContain(arranged.lead?.storyId);
+  });
+
+  it("leaves the shelf as it was when no collection is up", () => {
+    const arranged = arrangeSeriesShelf(shelf, null);
+    expect(arranged.collection).toBeNull();
+    expect(arranged.order).toEqual(shelf);
+    expect(arranged.lead).toBe(shelf[0]);
+  });
+
+  it("is not a collection with fewer than two of its pieces in the reader's languages", () => {
+    const russian = orderSeries(seriesPieces, ["ru"], new Set());
+    const arranged = arrangeSeriesShelf(russian, halloween);
+    expect(arranged.collection).toBeNull();
+    expect(arranged.order).toEqual(russian);
   });
 });

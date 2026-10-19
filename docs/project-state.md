@@ -110,6 +110,14 @@ replaces `get_guest_funnel`; pushed. On the 14 days before it: 103 guest
 devices shown a bok, 3 had swiped to another. See `docs/admin-metrics.md` §
 Guests.
 
+**A Halloween collection on the series shelf (2026-10-19).** The shelf opens
+with a dark band, *Halloween* / *Хэллоуин*: Poe, Dickinson and Hardy as
+numbered cards, in that order, from 17 October to 2 November in the reader's
+own calendar. While it is up the three are not repeated in the hero or All
+series, so Byron leads the hero; Series next walks the band first. A collection
+is data - `seriesCollections` in `series-catalogue.ts` - and needs two of its
+pieces in the reader's languages to show.
+
 **Three poems for Halloween (2026-10-19).** From
 `boks_halloween_assets.zip`, pictures in numerical order, briefs in
 `docs/poetry/<slug>/brief.md`. Added to the catalogue through the curated route

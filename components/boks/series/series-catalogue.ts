@@ -502,6 +502,75 @@ export function seriesFormatOf(storyId: string): SeriesFormat | null {
   return null;
 }
 
+/**
+ * A seasonal collection: a few pieces meant to be heard together, in a set
+ * order, shown first on the shelf for a while and then gone.
+ *
+ * Its name and line live in `series-view.tsx`'s message table under `id`, so
+ * they come in every interface language. While it is up, its pieces appear in
+ * it and nowhere else on the shelf; the visible order - collection first - is
+ * also the order Series next walks.
+ */
+export type SeriesCollection = {
+  id: "halloween";
+  /** In the order they are meant to be heard. */
+  storyIds: readonly string[];
+  /** First day shown, and the first day it is no longer shown, `YYYY-MM-DD`, in the reader's own calendar. */
+  from: string;
+  until: string;
+};
+
+export const seriesCollections: readonly SeriesCollection[] = [
+  {
+    // Poe for the eye, Dickinson for the hand, Hardy to end on something human.
+    id: "halloween",
+    storyIds: [
+      "0b94e076-f41d-4f81-a2d2-c1e1efe2d9e7",
+      "8ec69ff8-473d-4fb9-a05d-92ae8567317a",
+      "89cf5983-6c4b-466a-b0e8-79ea30a7d418",
+    ],
+    from: "2026-10-17",
+    until: "2026-11-03",
+  },
+];
+
+/** The reader's own calendar day, `YYYY-MM-DD`. Halloween is local. */
+export function localDay(today: Date) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+}
+
+/** The collection up today, if any. */
+export function activeCollection(
+  today: Date,
+  collections: readonly SeriesCollection[] = seriesCollections
+): SeriesCollection | null {
+  const day = localDay(today);
+  return collections.find((collection) => collection.from <= day && day < collection.until) ?? null;
+}
+
+/**
+ * The shelf as drawn: the collection, the piece that leads, the rest.
+ *
+ * The collection keeps its own order whatever has been heard, and only shows
+ * what is published and in the reader's languages. Fewer than two of its
+ * pieces left is not a collection, and they go back to the ordinary shelf.
+ * `order` is everything in the order it appears.
+ */
+export function arrangeSeriesShelf(shelf: readonly SeriesPiece[], collection: SeriesCollection | null) {
+  const byId = new Map(shelf.map((piece) => [piece.storyId, piece]));
+  const gathered = (collection?.storyIds ?? []).flatMap((storyId) => byId.get(storyId) ?? []);
+  const together = gathered.length >= 2 ? gathered : [];
+  const inside = new Set(together.map((piece) => piece.storyId));
+  const [lead = null, ...rest] = shelf.filter((piece) => !inside.has(piece.storyId));
+  return {
+    collection: together.length ? { id: collection!.id, pieces: together } : null,
+    lead,
+    rest,
+    order: [...together, ...(lead ? [lead] : []), ...rest],
+  };
+}
+
 /** How many days a piece is a premiere for. */
 export const premiereDays = 14;
 
