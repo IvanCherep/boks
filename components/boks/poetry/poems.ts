@@ -66,6 +66,12 @@ const poems: Record<string, string> = {
   "7cf8f28a-3d1a-49df-a4bb-b10a274e5347": "/poetry/no-frigate/manifest.json",
   // Lord Byron — Napoleon's Farewell
   "abbf65a4-b64b-4d8d-aa92-2f3aee583b5a": "/poetry/napoleons-farewell/manifest.json",
+  // Edgar Allan Poe — Spirits of the Dead
+  "0b94e076-f41d-4f81-a2d2-c1e1efe2d9e7": "/poetry/spirits-of-the-dead/manifest.json",
+  // Emily Dickinson — One Need Not Be a Chamber to Be Haunted (1891 text)
+  "8ec69ff8-473d-4fb9-a05d-92ae8567317a": "/poetry/one-need-not-be-a-chamber/manifest.json",
+  // Thomas Hardy — The Shadow on the Stone
+  "89cf5983-6c4b-466a-b0e8-79ea30a7d418": "/poetry/shadow-on-the-stone/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

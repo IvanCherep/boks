@@ -9,9 +9,14 @@ import {
   imageToScreen,
   isGestureNotTap,
   isWarpGesture,
+  layersOf,
   lightNear,
   needsLayer,
+  screenToImage,
   swipeStep,
+  turnAmount,
+  turnDone,
+  wipeStamps,
   type PoemGesture,
 } from "@/lib/boks/poetry/gesture";
 
@@ -178,5 +183,60 @@ describe("needsLayer and isWarpGesture", () => {
     expect(
       isWarpGesture({ kind: "hold", effect: "recall-glory", hint: "", vision: { x: 0.4, y: 0.1 }, radius: { x: 0.5, y: 0.1 } })
     ).toBe(true);
+  });
+});
+
+describe("layersOf", () => {
+  it("gives a warp under the hand and leaves over it a canvas each", () => {
+    expect(
+      layersOf({
+        gesture: { kind: "drag-x", effect: "turn-away", hint: "", apparition: { x: 0.3, y: 0.5 }, radius: { x: 0.1, y: 0.2 } },
+        ambience: { effect: "falling-leaves", count: 12 },
+      })
+    ).toEqual({ warp: true, overlay: true });
+  });
+
+  it("warps for a shadow that emerges, with no hand at all", () => {
+    expect(
+      layersOf({ ambience: { effect: "emerge-shadow", shadow: { x: 0.7, y: 0.3 }, radius: { x: 0.1, y: 0.1 }, afterMs: 800 } })
+    ).toEqual({ warp: true, overlay: false });
+  });
+
+  it("draws a candle's light over the picture, not into it", () => {
+    expect(layersOf({ ambience: { effect: "candle-glow", at: { x: 0.1, y: 0.4 }, radius: 0.2 } })).toEqual({
+      warp: false,
+      overlay: true,
+    });
+  });
+});
+
+describe("turnAmount", () => {
+  it("turns the same whichever way the hand goes, and completes only at the end", () => {
+    expect(turnAmount(-0.5)).toBe(0.5);
+    expect(turnAmount(0.5)).toBe(0.5);
+    expect(turnAmount(2)).toBe(1);
+    expect(turnAmount(0.9)).toBeLessThan(turnDone);
+  });
+});
+
+describe("wipeStamps", () => {
+  it("leaves a line, not a row of dots, however fast the finger goes", () => {
+    const stamps = wipeStamps({ x: 0, y: 0 }, { x: 10, y: 0 }, 2);
+    expect(stamps).toHaveLength(5);
+    expect(stamps.at(-1)).toEqual({ x: 10, y: 0 });
+    for (let i = 1; i < stamps.length; i += 1) expect(stamps[i].x - stamps[i - 1].x).toBeLessThanOrEqual(2);
+  });
+
+  it("stamps once where a stroke begins", () => {
+    expect(wipeStamps(null, { x: 3, y: 4 }, 2)).toEqual([{ x: 3, y: 4 }]);
+  });
+});
+
+describe("screenToImage", () => {
+  it("is the inverse of imageToScreen", () => {
+    const t = coverTransform({ width: 390, height: 844 }, { width: 941, height: 1672 }, { x: 0.4, y: 0.5 });
+    const back = screenToImage(imageToScreen({ x: 0.62, y: 0.3 }, t), t);
+    expect(back.x).toBeCloseTo(0.62, 6);
+    expect(back.y).toBeCloseTo(0.3, 6);
   });
 });

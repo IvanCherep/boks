@@ -1,0 +1,149 @@
+{
+ "version": 1,
+ "title": "The Shadow on the Stone",
+ "author": "Thomas Hardy",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7F0E4",
+  "active": "#F4C987",
+  "shadow": "rgba(10, 7, 4, 0.74)"
+ },
+ "themeGain": 0.158,
+ "textScale": 0.88,
+ "veil": 1.35,
+ "transitionStyle": "cinematic",
+ "scenes": [
+  {
+   "id": "druid-stone",
+   "image": "01_the_druid_stone.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1400,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.7,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "ambience": {
+    "effect": "falling-leaves",
+    "count": 14,
+    "sun": {
+     "x": 0.12,
+     "y": 0.2
+    }
+   },
+   "line": "I went by the Druid stone … That at some moments fall thereon"
+  },
+  {
+   "id": "her-shadow",
+   "image": "02_her_shadow.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.7,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "ambience": {
+    "effect": "emerge-shadow",
+    "shadow": {
+     "x": 0.755,
+     "y": 0.32
+    },
+    "radius": {
+     "x": 0.11,
+     "y": 0.1
+    },
+    "afterMs": 2200
+   },
+   "line": "From the tree hard by with a rhythmic swing, … Threw there when she was gardening."
+  },
+  {
+   "id": "behind-his-back",
+   "image": "03_behind_his_back.png",
+   "lines": 12,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.73,
+     "width": 0.84,
+     "height": 0.14
+    }
+   ],
+   "gesture": {
+    "kind": "drag-x",
+    "effect": "turn-away",
+    "hint": "Drag sideways to turn around",
+    "apparition": {
+     "x": 0.28,
+     "y": 0.45
+    },
+    "radius": {
+     "x": 0.13,
+     "y": 0.21
+    }
+   },
+   "ambience": {
+    "effect": "falling-leaves",
+    "count": 10
+   },
+   "line": "I thought her behind my back, … A shape which, somehow, there may be.\""
+  },
+  {
+   "id": "leaving",
+   "image": "04_leaving_the_glade.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1700,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.72,
+     "width": 0.84,
+     "height": 0.15
+    }
+   ],
+   "ambience": {
+    "effect": "falling-leaves",
+    "count": 12,
+    "sun": {
+     "x": 0.15,
+     "y": 0.12
+    }
+   },
+   "line": "So I went on softly from the glade, … My head unturned lest my dream should fade."
+  }
+ ]
+}

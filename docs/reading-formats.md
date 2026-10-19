@@ -427,6 +427,9 @@ scripts/build-poem-manifest.mjs    builds a manifest from a recording
 | *A Noiseless Patient Spider*, Whitman | `011660ae-2795-4b28-bd77-0404a4a2a8ba` | Jerry B. | 4 - threads to the lights in the second and third; three that hold make a bridge | 2, 3, 3, 2 |
 | *There is no Frigate like a Book*, Dickinson (1896 text) | `7cf8f28a-3d1a-49df-a4bb-b10a274e5347` | Sha | 4, page-turn transitions - a swipe turns the page | 1, 1, 2, 4 |
 | *Napoleon's Farewell*, Byron | `abbf65a4-b64b-4d8d-aa92-2f3aee583b5a` | Julian (British) | 4, cinematic - a hold brings back the coronation in the clouds of the first and the eagle over Saint Helena in the last | 8, 4, 4, 8 |
+| *Spirits of the Dead*, Poe (1829 text) | `0b94e076-f41d-4f81-a2d2-c1e1efe2d9e7` | Jerry B. | 4, cinematic - holding the candle in the second steadies it and draws the spirits out of the fog | 4, 6, 12, 6 |
+| *One need not be a chamber to be haunted*, Dickinson (1891 text) | `8ec69ff8-473d-4fb9-a05d-92ae8567317a` | Sha | 4 - candles flicker; in the mirror a finger wipes the condensation off a reflection that stays | 4, 8, 4, 4 |
+| *The Shadow on the Stone*, Hardy | `89cf5983-6c4b-466a-b0e8-79ea30a7d418` | Julian (British) | 4, cinematic - leaves fall; her shadow comes out of the branches in the second; dragging sideways in the third starts him turning and she fades | 4, 4, 12, 4 |
 
 The last two were not in the catalogue and were added for this, through the
 curated route in `docs/catalogue-import.md` §4b (`work/catalogue-2026-10-04/`,
@@ -523,6 +526,9 @@ drawn by one WebGL shader over the scene's own picture
 | `threads` / `filaments` | drag to a light | a thread from `anchor` follows the finger; let go on a light it holds, anywhere else it springs back. Once `bridgeAfter` hold, counted over the whole poem, the lights join into a luminous bridge | `anchor`, `lights`, `bridgeAfter` |
 | `hold` / `recall-glory` | press and hold | a vision painted into the sky - at rest drained to storm grey and dimmed; held, its gold returns warmer than painted and the rest of the picture falls into shade; released, it sinks back into the cloud | `vision`, `radius` (half-width and half-height of a soft ellipse) |
 | `swipe` / `turn-page` | swipe sideways | turns to the next picture (or back), seeking the voice to its first line; no canvas | - |
+| `hold` / `summon-spirits` | press and hold | at rest a drifting fog veils everything but `figure` and the candle's light trembles; held, the flame steadies, the fog thins and moves away from `candle`, and the painted spirits come forward over about a second and a half; released, the fog closes again | `candle`, `figure`, `radius` |
+| `wipe` / `clear-condensation` | rub with a finger | the `glass` rectangle is misted - blurred and greyed, with a bead texture; the finger's path is cleared and stays cleared for the session. The more is cleared, the further back the reflection settles | `glass` (x, y, width, height), `brush` (fraction of the glass's width) |
+| `drag-x` / `turn-away` | move sideways, either way | the view swings towards `apparition` and she fades into light in proportion; released short of the end she returns, carried all the way (0.55 of the width) she stays gone | `apparition`, `radius` |
 
 `converge-reflections`, `lean-between` and `recall-glory` redraw the picture
 itself in WebGL (`components/boks/poetry/gesture-layer.ts`); the rest are drawn over it on a
@@ -530,7 +536,15 @@ itself in WebGL (`components/boks/poetry/gesture-layer.ts`); the rest are drawn 
 `ambience` - something the picture does without a hand: `rain` (`intensity`,
 `wind`; Invictus thins it 1 → 0.6 → 0.25 → none so the storm passes) and
 `returning-song` (`from`, `to`; brighter when the reader sent a song away
-earlier). A warp and an ambience cannot share a scene; the test says so.
+earlier), `falling-leaves` (`count`, optional `sun`: a low light that drifts)
+and `candle-glow` (`at`, `radius`). One ambience is itself a warp,
+`emerge-shadow` (`shadow`, `radius`, `afterMs`): branch shadows sway, and
+inside `shadow` the painted figure starts filled in by the sun - relit to the
+stone around it, so the grain stays - and gives way over five seconds from
+`afterMs` into the scene, by the recording's clock. Start it after the
+dissolve (crossfade offset plus `transitionMs`). A warp gesture and a 2D
+ambience may share a scene - the scene then has two canvases (Hardy's leaves
+fall while the reader turns him round); two warps cannot, and the test says so.
 
 All of them need **one** picture, not a before/after pair - the effect is a warp and a
 grade of the frame itself. A quick tap still plays and pauses; a press longer

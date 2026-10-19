@@ -1,0 +1,1358 @@
+{
+ "id": "spirits-of-the-dead-immersive-v1",
+ "title": "Spirits of the Dead",
+ "author": "Edgar Allan Poe",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/spirits-of-the-dead/narration.mp3",
+ "theme": {
+  "src": "/poetry/spirits-of-the-dead/theme.mp3",
+  "gain": 0.182
+ },
+ "durationMs": 81740,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F1ECE6",
+  "active": "#F2C38E",
+  "shadow": "rgba(4, 5, 10, 0.78)"
+ },
+ "textScale": 0.9,
+ "veil": 1.45,
+ "transitionStyle": "cinematic",
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1420,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "alone",
+   "image": "/poetry/spirits-of-the-dead/scenes/01_alone_by_the_tombstone.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.42,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1330,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.66,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "Thy soul shall find itself alone … Into thine hour of secrecy:",
+   "startMs": 0
+  },
+  {
+   "id": "spirits",
+   "image": "/poetry/spirits-of-the-dead/scenes/02_spirits_around_the_candle.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "gesture": {
+    "kind": "hold",
+    "effect": "summon-spirits",
+    "hint": "Hold the candle",
+    "candle": {
+     "x": 0.532,
+     "y": 0.413
+    },
+    "figure": {
+     "x": 0.5,
+     "y": 0.52
+    },
+    "radius": {
+     "x": 0.16,
+     "y": 0.24
+    }
+   },
+   "line": "Be silent in that solitude … Shall then overshadow thee: be still.",
+   "startMs": 13240
+  },
+  {
+   "id": "red-orbs",
+   "image": "/poetry/spirits-of-the-dead/scenes/03_red_orbs.webp",
+   "lines": 12,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1330,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "The night—tho' clear—shall frown— … No more—like dew-drop from the grass:",
+   "startMs": 32000
+  },
+  {
+   "id": "mist",
+   "image": "/poetry/spirits-of-the-dead/scenes/04_mist_upon_the_hill.webp",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "The breeze—the breath of God—is still— … A mystery of mysteries!",
+   "startMs": 65740
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "alone",
+   "startMs": 0,
+   "endMs": 2880,
+   "tokens": [
+    {
+     "text": "Thy",
+     "atMs": 0,
+     "endMs": 240,
+     "phrase": 0
+    },
+    {
+     "text": "soul",
+     "atMs": 400,
+     "endMs": 720,
+     "phrase": 0
+    },
+    {
+     "text": "shall",
+     "atMs": 880,
+     "endMs": 1040,
+     "phrase": 0
+    },
+    {
+     "text": "find",
+     "atMs": 1200,
+     "endMs": 1440,
+     "phrase": 0
+    },
+    {
+     "text": "itself",
+     "atMs": 1560,
+     "endMs": 1920,
+     "phrase": 0
+    },
+    {
+     "text": "alone",
+     "atMs": 2000,
+     "endMs": 2480,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "alone",
+   "startMs": 2880,
+   "endMs": 6540,
+   "tokens": [
+    {
+     "text": "'Mid",
+     "atMs": 2880,
+     "endMs": 3120,
+     "phrase": 1
+    },
+    {
+     "text": "dark",
+     "atMs": 3200,
+     "endMs": 3520,
+     "phrase": 1
+    },
+    {
+     "text": "thoughts",
+     "atMs": 3680,
+     "endMs": 4080,
+     "phrase": 1
+    },
+    {
+     "text": "of",
+     "atMs": 4160,
+     "endMs": 4240,
+     "phrase": 1
+    },
+    {
+     "text": "the",
+     "atMs": 4320,
+     "endMs": 4400,
+     "phrase": 1
+    },
+    {
+     "text": "grey",
+     "atMs": 4480,
+     "endMs": 4800,
+     "phrase": 1
+    },
+    {
+     "text": "tomb-stone—",
+     "atMs": 4880,
+     "endMs": 6240,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "alone",
+   "startMs": 6540,
+   "endMs": 9360,
+   "tokens": [
+    {
+     "text": "Not",
+     "atMs": 6540,
+     "endMs": 6660,
+     "phrase": 2
+    },
+    {
+     "text": "one,",
+     "atMs": 6820,
+     "endMs": 7220,
+     "phrase": 2,
+     "emphasis": "lead"
+    },
+    {
+     "text": "of",
+     "atMs": 7300,
+     "endMs": 7380,
+     "phrase": 3
+    },
+    {
+     "text": "all",
+     "atMs": 7540,
+     "endMs": 7700,
+     "phrase": 3
+    },
+    {
+     "text": "the",
+     "atMs": 7780,
+     "endMs": 7860,
+     "phrase": 3
+    },
+    {
+     "text": "crowd,",
+     "atMs": 7940,
+     "endMs": 8420,
+     "phrase": 3,
+     "emphasis": "lead"
+    },
+    {
+     "text": "to",
+     "atMs": 8460,
+     "endMs": 8500,
+     "phrase": 4
+    },
+    {
+     "text": "pry",
+     "atMs": 8580,
+     "endMs": 9060,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "alone",
+   "startMs": 9360,
+   "endMs": 13240,
+   "tokens": [
+    {
+     "text": "Into",
+     "atMs": 9360,
+     "endMs": 9600,
+     "phrase": 5
+    },
+    {
+     "text": "thine",
+     "atMs": 9680,
+     "endMs": 9920,
+     "phrase": 5
+    },
+    {
+     "text": "hour",
+     "atMs": 10000,
+     "endMs": 10320,
+     "phrase": 5
+    },
+    {
+     "text": "of",
+     "atMs": 10400,
+     "endMs": 10480,
+     "phrase": 5
+    },
+    {
+     "text": "secrecy:",
+     "atMs": 10640,
+     "endMs": 11760,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "spirits",
+   "startMs": 13240,
+   "endMs": 15480,
+   "tokens": [
+    {
+     "text": "Be",
+     "atMs": 13240,
+     "endMs": 13400,
+     "phrase": 6
+    },
+    {
+     "text": "silent",
+     "atMs": 13560,
+     "endMs": 14040,
+     "phrase": 6
+    },
+    {
+     "text": "in",
+     "atMs": 14120,
+     "endMs": 14200,
+     "phrase": 6
+    },
+    {
+     "text": "that",
+     "atMs": 14280,
+     "endMs": 14440,
+     "phrase": 6
+    },
+    {
+     "text": "solitude",
+     "atMs": 14520,
+     "endMs": 15160,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "spirits",
+   "startMs": 15480,
+   "endMs": 18180,
+   "tokens": [
+    {
+     "text": "Which",
+     "atMs": 15480,
+     "endMs": 15640,
+     "phrase": 7
+    },
+    {
+     "text": "is",
+     "atMs": 15720,
+     "endMs": 15800,
+     "phrase": 7
+    },
+    {
+     "text": "not",
+     "atMs": 15880,
+     "endMs": 16120,
+     "phrase": 7
+    },
+    {
+     "text": "loneliness—for",
+     "atMs": 16200,
+     "endMs": 17480,
+     "phrase": 7
+    },
+    {
+     "text": "then",
+     "atMs": 17680,
+     "endMs": 17880,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "spirits",
+   "startMs": 18180,
+   "endMs": 20400,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 18180,
+     "endMs": 18260,
+     "phrase": 8
+    },
+    {
+     "text": "spirits",
+     "atMs": 18420,
+     "endMs": 18820,
+     "phrase": 8
+    },
+    {
+     "text": "of",
+     "atMs": 18900,
+     "endMs": 18980,
+     "phrase": 8
+    },
+    {
+     "text": "the",
+     "atMs": 19060,
+     "endMs": 19140,
+     "phrase": 8
+    },
+    {
+     "text": "dead",
+     "atMs": 19220,
+     "endMs": 19540,
+     "phrase": 8
+    },
+    {
+     "text": "who",
+     "atMs": 19620,
+     "endMs": 19700,
+     "phrase": 8
+    },
+    {
+     "text": "stood",
+     "atMs": 19860,
+     "endMs": 20100,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "spirits",
+   "startMs": 20400,
+   "endMs": 22780,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 20400,
+     "endMs": 20480,
+     "phrase": 9
+    },
+    {
+     "text": "life",
+     "atMs": 20560,
+     "endMs": 20800,
+     "phrase": 9
+    },
+    {
+     "text": "before",
+     "atMs": 20880,
+     "endMs": 21280,
+     "phrase": 9
+    },
+    {
+     "text": "thee",
+     "atMs": 21360,
+     "endMs": 21600,
+     "phrase": 9
+    },
+    {
+     "text": "are",
+     "atMs": 21840,
+     "endMs": 22000,
+     "phrase": 9
+    },
+    {
+     "text": "again",
+     "atMs": 22240,
+     "endMs": 22480,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "spirits",
+   "startMs": 22780,
+   "endMs": 25560,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 22780,
+     "endMs": 22860,
+     "phrase": 10
+    },
+    {
+     "text": "death",
+     "atMs": 23020,
+     "endMs": 23340,
+     "phrase": 10
+    },
+    {
+     "text": "around",
+     "atMs": 23540,
+     "endMs": 23740,
+     "phrase": 10
+    },
+    {
+     "text": "thee—and",
+     "atMs": 23820,
+     "endMs": 24540,
+     "phrase": 10
+    },
+    {
+     "text": "their",
+     "atMs": 24620,
+     "endMs": 24780,
+     "phrase": 10
+    },
+    {
+     "text": "will",
+     "atMs": 24940,
+     "endMs": 25260,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "spirits",
+   "startMs": 25560,
+   "endMs": 32000,
+   "tokens": [
+    {
+     "text": "Shall",
+     "atMs": 25560,
+     "endMs": 25720,
+     "phrase": 11
+    },
+    {
+     "text": "then",
+     "atMs": 25880,
+     "endMs": 26120,
+     "phrase": 11
+    },
+    {
+     "text": "overshadow",
+     "atMs": 26280,
+     "endMs": 26920,
+     "phrase": 11
+    },
+    {
+     "text": "thee:",
+     "atMs": 27000,
+     "endMs": 27800,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "be",
+     "atMs": 27880,
+     "endMs": 27960,
+     "phrase": 12
+    },
+    {
+     "text": "still.",
+     "atMs": 28040,
+     "endMs": 28520,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 32000,
+   "endMs": 35100,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 32000,
+     "endMs": 32080,
+     "phrase": 13
+    },
+    {
+     "text": "night—tho'",
+     "atMs": 32160,
+     "endMs": 32960,
+     "phrase": 13
+    },
+    {
+     "text": "clear—shall",
+     "atMs": 33040,
+     "endMs": 33840,
+     "phrase": 13
+    },
+    {
+     "text": "frown—",
+     "atMs": 34000,
+     "endMs": 34800,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 35100,
+   "endMs": 37640,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 35100,
+     "endMs": 35140,
+     "phrase": 14
+    },
+    {
+     "text": "the",
+     "atMs": 35220,
+     "endMs": 35300,
+     "phrase": 14
+    },
+    {
+     "text": "stars",
+     "atMs": 35380,
+     "endMs": 35940,
+     "phrase": 14
+    },
+    {
+     "text": "shall",
+     "atMs": 36060,
+     "endMs": 36180,
+     "phrase": 14
+    },
+    {
+     "text": "look",
+     "atMs": 36260,
+     "endMs": 36420,
+     "phrase": 14
+    },
+    {
+     "text": "not",
+     "atMs": 36500,
+     "endMs": 36740,
+     "phrase": 14
+    },
+    {
+     "text": "down,",
+     "atMs": 36820,
+     "endMs": 37340,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 37640,
+   "endMs": 40020,
+   "tokens": [
+    {
+     "text": "From",
+     "atMs": 37640,
+     "endMs": 37800,
+     "phrase": 15
+    },
+    {
+     "text": "their",
+     "atMs": 37880,
+     "endMs": 37960,
+     "phrase": 15
+    },
+    {
+     "text": "high",
+     "atMs": 38040,
+     "endMs": 38280,
+     "phrase": 15
+    },
+    {
+     "text": "thrones",
+     "atMs": 38440,
+     "endMs": 38840,
+     "phrase": 15
+    },
+    {
+     "text": "in",
+     "atMs": 38920,
+     "endMs": 39000,
+     "phrase": 15
+    },
+    {
+     "text": "the",
+     "atMs": 39040,
+     "endMs": 39080,
+     "phrase": 15
+    },
+    {
+     "text": "Heaven,",
+     "atMs": 39160,
+     "endMs": 39720,
+     "phrase": 15,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 40020,
+   "endMs": 43040,
+   "tokens": [
+    {
+     "text": "With",
+     "atMs": 40020,
+     "endMs": 40100,
+     "phrase": 16
+    },
+    {
+     "text": "light",
+     "atMs": 40260,
+     "endMs": 40500,
+     "phrase": 16
+    },
+    {
+     "text": "like",
+     "atMs": 40580,
+     "endMs": 40820,
+     "phrase": 16
+    },
+    {
+     "text": "Hope",
+     "atMs": 40900,
+     "endMs": 41220,
+     "phrase": 16
+    },
+    {
+     "text": "to",
+     "atMs": 41300,
+     "endMs": 41380,
+     "phrase": 16
+    },
+    {
+     "text": "mortals",
+     "atMs": 41460,
+     "endMs": 41860,
+     "phrase": 16
+    },
+    {
+     "text": "given—",
+     "atMs": 41940,
+     "endMs": 42740,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 43040,
+   "endMs": 45740,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 43040,
+     "endMs": 43120,
+     "phrase": 17
+    },
+    {
+     "text": "their",
+     "atMs": 43200,
+     "endMs": 43360,
+     "phrase": 17
+    },
+    {
+     "text": "red",
+     "atMs": 43440,
+     "endMs": 43680,
+     "phrase": 17
+    },
+    {
+     "text": "orbs,",
+     "atMs": 43760,
+     "endMs": 44320,
+     "phrase": 17,
+     "emphasis": "lead"
+    },
+    {
+     "text": "without",
+     "atMs": 44400,
+     "endMs": 44720,
+     "phrase": 18
+    },
+    {
+     "text": "beam,",
+     "atMs": 44800,
+     "endMs": 45440,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 45740,
+   "endMs": 47760,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 45740,
+     "endMs": 45780,
+     "phrase": 19
+    },
+    {
+     "text": "thy",
+     "atMs": 45860,
+     "endMs": 46100,
+     "phrase": 19
+    },
+    {
+     "text": "weariness",
+     "atMs": 46260,
+     "endMs": 46740,
+     "phrase": 19
+    },
+    {
+     "text": "shall",
+     "atMs": 46820,
+     "endMs": 46980,
+     "phrase": 19
+    },
+    {
+     "text": "seem",
+     "atMs": 47140,
+     "endMs": 47460,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 47760,
+   "endMs": 49820,
+   "tokens": [
+    {
+     "text": "As",
+     "atMs": 47760,
+     "endMs": 47920,
+     "phrase": 20
+    },
+    {
+     "text": "a",
+     "atMs": 47960,
+     "endMs": 48000,
+     "phrase": 20
+    },
+    {
+     "text": "burning",
+     "atMs": 48160,
+     "endMs": 48720,
+     "phrase": 20
+    },
+    {
+     "text": "and",
+     "atMs": 48800,
+     "endMs": 48880,
+     "phrase": 20
+    },
+    {
+     "text": "a",
+     "atMs": 48920,
+     "endMs": 48960,
+     "phrase": 20
+    },
+    {
+     "text": "fever",
+     "atMs": 49120,
+     "endMs": 49520,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 49820,
+   "endMs": 53200,
+   "tokens": [
+    {
+     "text": "Which",
+     "atMs": 49820,
+     "endMs": 49980,
+     "phrase": 21
+    },
+    {
+     "text": "would",
+     "atMs": 50100,
+     "endMs": 50220,
+     "phrase": 21
+    },
+    {
+     "text": "cling",
+     "atMs": 50300,
+     "endMs": 50620,
+     "phrase": 21
+    },
+    {
+     "text": "to",
+     "atMs": 50660,
+     "endMs": 50700,
+     "phrase": 21
+    },
+    {
+     "text": "thee",
+     "atMs": 50780,
+     "endMs": 50940,
+     "phrase": 21
+    },
+    {
+     "text": "for",
+     "atMs": 51100,
+     "endMs": 51260,
+     "phrase": 21
+    },
+    {
+     "text": "ever:",
+     "atMs": 51420,
+     "endMs": 52220,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 53200,
+   "endMs": 56220,
+   "tokens": [
+    {
+     "text": "Now",
+     "atMs": 53200,
+     "endMs": 53520,
+     "phrase": 22
+    },
+    {
+     "text": "are",
+     "atMs": 53600,
+     "endMs": 53760,
+     "phrase": 22
+    },
+    {
+     "text": "thoughts",
+     "atMs": 53840,
+     "endMs": 54240,
+     "phrase": 22
+    },
+    {
+     "text": "thou",
+     "atMs": 54280,
+     "endMs": 54400,
+     "phrase": 22
+    },
+    {
+     "text": "shalt",
+     "atMs": 54560,
+     "endMs": 54800,
+     "phrase": 22
+    },
+    {
+     "text": "not",
+     "atMs": 54880,
+     "endMs": 55040,
+     "phrase": 22
+    },
+    {
+     "text": "banish—",
+     "atMs": 55120,
+     "endMs": 55920,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 56220,
+   "endMs": 59080,
+   "tokens": [
+    {
+     "text": "Now",
+     "atMs": 56220,
+     "endMs": 56540,
+     "phrase": 23
+    },
+    {
+     "text": "are",
+     "atMs": 56620,
+     "endMs": 56780,
+     "phrase": 23
+    },
+    {
+     "text": "visions",
+     "atMs": 56860,
+     "endMs": 57340,
+     "phrase": 23
+    },
+    {
+     "text": "ne'er",
+     "atMs": 57500,
+     "endMs": 57740,
+     "phrase": 23
+    },
+    {
+     "text": "to",
+     "atMs": 57820,
+     "endMs": 57900,
+     "phrase": 23
+    },
+    {
+     "text": "vanish—",
+     "atMs": 57980,
+     "endMs": 58780,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 59080,
+   "endMs": 61220,
+   "tokens": [
+    {
+     "text": "From",
+     "atMs": 59080,
+     "endMs": 59240,
+     "phrase": 24
+    },
+    {
+     "text": "thy",
+     "atMs": 59360,
+     "endMs": 59480,
+     "phrase": 24
+    },
+    {
+     "text": "spirit",
+     "atMs": 59640,
+     "endMs": 60040,
+     "phrase": 24
+    },
+    {
+     "text": "shall",
+     "atMs": 60120,
+     "endMs": 60280,
+     "phrase": 24
+    },
+    {
+     "text": "they",
+     "atMs": 60360,
+     "endMs": 60440,
+     "phrase": 24
+    },
+    {
+     "text": "pass",
+     "atMs": 60520,
+     "endMs": 60920,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "red-orbs",
+   "startMs": 61220,
+   "endMs": 65740,
+   "tokens": [
+    {
+     "text": "No",
+     "atMs": 61220,
+     "endMs": 61380,
+     "phrase": 25
+    },
+    {
+     "text": "more—like",
+     "atMs": 61460,
+     "endMs": 62260,
+     "phrase": 25
+    },
+    {
+     "text": "dew-drop",
+     "atMs": 62340,
+     "endMs": 62900,
+     "phrase": 25
+    },
+    {
+     "text": "from",
+     "atMs": 62980,
+     "endMs": 63060,
+     "phrase": 25
+    },
+    {
+     "text": "the",
+     "atMs": 63140,
+     "endMs": 63180,
+     "phrase": 25
+    },
+    {
+     "text": "grass:",
+     "atMs": 63220,
+     "endMs": 64260,
+     "phrase": 25,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mist",
+   "startMs": 65740,
+   "endMs": 69320,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 65740,
+     "endMs": 65820,
+     "phrase": 26
+    },
+    {
+     "text": "breeze—the",
+     "atMs": 65900,
+     "endMs": 66860,
+     "phrase": 26
+    },
+    {
+     "text": "breath",
+     "atMs": 66940,
+     "endMs": 67180,
+     "phrase": 26
+    },
+    {
+     "text": "of",
+     "atMs": 67260,
+     "endMs": 67340,
+     "phrase": 26
+    },
+    {
+     "text": "God—is",
+     "atMs": 67500,
+     "endMs": 68140,
+     "phrase": 26
+    },
+    {
+     "text": "still—",
+     "atMs": 68220,
+     "endMs": 69020,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mist",
+   "startMs": 69320,
+   "endMs": 71320,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 69320,
+     "endMs": 69400,
+     "phrase": 27
+    },
+    {
+     "text": "the",
+     "atMs": 69440,
+     "endMs": 69480,
+     "phrase": 27
+    },
+    {
+     "text": "mist",
+     "atMs": 69640,
+     "endMs": 69960,
+     "phrase": 27
+    },
+    {
+     "text": "upon",
+     "atMs": 70120,
+     "endMs": 70280,
+     "phrase": 27
+    },
+    {
+     "text": "the",
+     "atMs": 70360,
+     "endMs": 70440,
+     "phrase": 27
+    },
+    {
+     "text": "hill",
+     "atMs": 70520,
+     "endMs": 70840,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mist",
+   "startMs": 71320,
+   "endMs": 74660,
+   "tokens": [
+    {
+     "text": "Shadowy—shadowy—yet",
+     "atMs": 71320,
+     "endMs": 73320,
+     "phrase": 28
+    },
+    {
+     "text": "unbroken,",
+     "atMs": 73400,
+     "endMs": 74360,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mist",
+   "startMs": 74660,
+   "endMs": 77120,
+   "tokens": [
+    {
+     "text": "Is",
+     "atMs": 74660,
+     "endMs": 74740,
+     "phrase": 29
+    },
+    {
+     "text": "a",
+     "atMs": 74780,
+     "endMs": 74820,
+     "phrase": 29
+    },
+    {
+     "text": "symbol",
+     "atMs": 74980,
+     "endMs": 75460,
+     "phrase": 29
+    },
+    {
+     "text": "and",
+     "atMs": 75620,
+     "endMs": 75700,
+     "phrase": 29
+    },
+    {
+     "text": "a",
+     "atMs": 75780,
+     "endMs": 75820,
+     "phrase": 29
+    },
+    {
+     "text": "token—",
+     "atMs": 75860,
+     "endMs": 76820,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mist",
+   "startMs": 77120,
+   "endMs": 79580,
+   "tokens": [
+    {
+     "text": "How",
+     "atMs": 77120,
+     "endMs": 77280,
+     "phrase": 30
+    },
+    {
+     "text": "it",
+     "atMs": 77360,
+     "endMs": 77440,
+     "phrase": 30
+    },
+    {
+     "text": "hangs",
+     "atMs": 77520,
+     "endMs": 77920,
+     "phrase": 30
+    },
+    {
+     "text": "upon",
+     "atMs": 78080,
+     "endMs": 78240,
+     "phrase": 30
+    },
+    {
+     "text": "the",
+     "atMs": 78280,
+     "endMs": 78320,
+     "phrase": 30
+    },
+    {
+     "text": "trees,",
+     "atMs": 78480,
+     "endMs": 79280,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mist",
+   "startMs": 79580,
+   "endMs": 81740,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 79580,
+     "endMs": 79660,
+     "phrase": 31
+    },
+    {
+     "text": "mystery",
+     "atMs": 79820,
+     "endMs": 80380,
+     "phrase": 31
+    },
+    {
+     "text": "of",
+     "atMs": 80540,
+     "endMs": 80700,
+     "phrase": 31
+    },
+    {
+     "text": "mysteries!",
+     "atMs": 80780,
+     "endMs": 81740,
+     "phrase": 31,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

@@ -66,6 +66,47 @@ export type SeriesPiece = {
  * The test names what is missing if any of it is not done.
  */
 export const seriesPieces: readonly SeriesPiece[] = [
+  // The Halloween three, in the order they are meant to be heard: Poe for the
+  // eye, Dickinson for the hand, Hardy to end on something human.
+  {
+    storyId: "0b94e076-f41d-4f81-a2d2-c1e1efe2d9e7",
+    format: "poem",
+    language: "en",
+    title: "Spirits of the Dead",
+    author: "Edgar Allan Poe",
+    cover: "/series/spirits-of-the-dead.webp",
+    coverFocus: "35% 40%",
+    durationSeconds: 82,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-19",
+  },
+  {
+    storyId: "8ec69ff8-473d-4fb9-a05d-92ae8567317a",
+    format: "poem",
+    language: "en",
+    title: "One Need Not Be a Chamber to Be Haunted",
+    author: "Emily Dickinson",
+    cover: "/series/one-need-not-be-a-chamber.webp",
+    coverFocus: "55% 35%",
+    durationSeconds: 52,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-19",
+  },
+  {
+    storyId: "89cf5983-6c4b-466a-b0e8-79ea30a7d418",
+    format: "poem",
+    language: "en",
+    title: "The Shadow on the Stone",
+    author: "Thomas Hardy",
+    cover: "/series/shadow-on-the-stone.webp",
+    coverFocus: "60% 40%",
+    durationSeconds: 73,
+    scenes: 4,
+    moments: 0,
+    premieredOn: "2026-10-19",
+  },
   {
     storyId: "abbf65a4-b64b-4d8d-aa92-2f3aee583b5a",
     format: "poem",

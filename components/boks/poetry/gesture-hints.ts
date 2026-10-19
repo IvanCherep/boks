@@ -18,6 +18,9 @@ export const gestureHintTranslations: Record<Exclude<UiLanguage, "en">, Record<s
     "Hold to remember": "Удерживайте, чтобы вспомнить",
     "Swipe to turn the page": "Проведите, чтобы перевернуть страницу",
     "Hold the screen": "Удерживайте экран",
+    "Hold the candle": "Удерживайте свечу",
+    "Wipe the glass": "Протрите стекло",
+    "Drag sideways to turn around": "Проведите в сторону, чтобы обернуться",
   },
 };
 

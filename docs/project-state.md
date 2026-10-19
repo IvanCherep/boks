@@ -110,6 +110,24 @@ replaces `get_guest_funnel`; pushed. On the 14 days before it: 103 guest
 devices shown a bok, 3 had swiped to another. See `docs/admin-metrics.md` §
 Guests.
 
+**Three poems for Halloween (2026-10-19).** From
+`boks_halloween_assets.zip`, pictures in numerical order, briefs in
+`docs/poetry/<slug>/brief.md`. Added to the catalogue through the curated route
+(`work/catalogue-2026-10-19/`): Poe's *Spirits of the Dead* (1829 text, bok
+`0b94e076-…`), Dickinson's *One need not be a chamber to be haunted* (1891
+text, `8ec69ff8-…`), Hardy's *The Shadow on the Stone* (`89cf5983-…`). Jerry
+B., Sha and Julian read them; the chosen takes were word-perfect by STT,
+silence inserted between lines, at stanzas and where a gesture needs room, all
+at −22.5 LUFS; themes 13 dB under, zero words, Hardy's with a 6 dB dip at
+1.9 kHz for the strings. On the shelf in that order, premiered the same day.
+Three new WebGL gestures - `summon-spirits`, `clear-condensation`,
+`turn-away` - and a warp ambience, `emerge-shadow`; two 2D ambiences,
+`falling-leaves` and `candle-glow`; a warp gesture and a 2D ambience can now
+share a scene. Looked at in WebKit at iPhone 15 size against the built app,
+with every non-GET request blocked. Not done: the publication dates were not
+re-spread after the insert (the bulk update was not run); the three are
+embedded. Spatial audio in the Dickinson brief is not implemented.
+
 **Byron's *Napoleon's Farewell* (2026-10-14).** From
 `byron_napoleons_farewell_boks.zip`, pictures in numerical order, brief in
 `docs/poetry/napoleons-farewell/brief.md`. Added to the catalogue (bok

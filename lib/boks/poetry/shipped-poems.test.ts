@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { backdropAt, textPresets, wordReachedAt, type PoemManifest } from "@/lib/boks/poetry/manifest";
 import { poemManifestFor, sandboxPoems } from "@/components/boks/poetry/poems";
-import { isWarpGesture } from "@/lib/boks/poetry/gesture";
+import { isWarpAmbience, isWarpGesture } from "@/lib/boks/poetry/gesture";
 
 /*
  * The standard every poem is held to, whichever poem it is.
@@ -127,17 +127,32 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
     for (let index = 0; index < manifest.scenes.length; index += 1) {
       const scene = manifest.scenes[index];
       const gesture = scene.gesture;
-      if (scene.ambience?.effect === "rain") {
-        expect(scene.ambience.intensity, scene.id).toBeLessThanOrEqual(1);
-      } else if (scene.ambience) {
-        inside(scene.ambience.from, scene.id);
-        inside(scene.ambience.to, scene.id);
+      const ambience = scene.ambience;
+      if (ambience?.effect === "rain") {
+        expect(ambience.intensity, scene.id).toBeLessThanOrEqual(1);
+      } else if (ambience?.effect === "returning-song") {
+        inside(ambience.from, scene.id);
+        inside(ambience.to, scene.id);
+      } else if (ambience?.effect === "falling-leaves") {
+        // Leaves, not a storm of them: the picture has to stay the picture.
+        expect(ambience.count, scene.id).toBeGreaterThan(0);
+        expect(ambience.count, scene.id).toBeLessThanOrEqual(40);
+        if (ambience.sun) inside(ambience.sun, scene.id);
+      } else if (ambience?.effect === "candle-glow") {
+        inside(ambience.at, scene.id);
+        expect(ambience.radius, scene.id).toBeLessThanOrEqual(0.5);
+      } else if (ambience?.effect === "emerge-shadow") {
+        inside(ambience.shadow, scene.id);
+        expect(ambience.radius.x * ambience.radius.y, scene.id).toBeLessThan(0.1);
+        // Found while the picture is still up, not after it has gone.
+        const until = manifest.scenes[index + 1]?.startMs ?? manifest.durationMs;
+        expect(scene.startMs + ambience.afterMs + 5000, scene.id).toBeLessThan(until);
       }
       if (!gesture) continue;
       expect(gesture.hint.length, scene.id).toBeGreaterThan(0);
-      // A warp redraws the picture, so it cannot share it with an overlay.
+      // A picture can be warped by one thing only.
       if (isWarpGesture(gesture)) {
-        expect(scene.ambience, scene.id).toBeUndefined();
+        expect(isWarpAmbience(scene.ambience), scene.id).toBe(false);
       }
       // A gesture needs noticing, then trying: shorter and the picture is gone
       // before the hand has done anything. A swipe is only a page turn.
@@ -163,6 +178,21 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
           // A vision in the sky, not the whole picture: something has to stay storm.
           expect(gesture.radius.x * gesture.radius.y, scene.id).toBeLessThan(0.25);
           expect(gesture.radius.y, scene.id).toBeGreaterThan(0);
+          break;
+        case "summon-spirits":
+          inside(gesture.candle, scene.id);
+          inside(gesture.figure, scene.id);
+          expect(gesture.radius.x * gesture.radius.y, scene.id).toBeLessThan(0.1);
+          break;
+        case "clear-condensation":
+          inside(gesture.glass, scene.id);
+          inside({ x: gesture.glass.x + gesture.glass.width, y: gesture.glass.y + gesture.glass.height }, scene.id);
+          expect(gesture.brush, scene.id).toBeGreaterThan(0.03);
+          expect(gesture.brush, scene.id).toBeLessThanOrEqual(0.25);
+          break;
+        case "turn-away":
+          inside(gesture.apparition, scene.id);
+          expect(gesture.radius.x * gesture.radius.y, scene.id).toBeLessThan(0.1);
           break;
         case "shelter-flame":
           inside(gesture.flame, scene.id);

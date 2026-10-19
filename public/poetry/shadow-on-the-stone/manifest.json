@@ -1,0 +1,1501 @@
+{
+ "id": "shadow-on-the-stone-immersive-v1",
+ "title": "The Shadow on the Stone",
+ "author": "Thomas Hardy",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/shadow-on-the-stone/narration.mp3",
+ "theme": {
+  "src": "/poetry/shadow-on-the-stone/theme.mp3",
+  "gain": 0.158
+ },
+ "durationMs": 72500,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F7F0E4",
+  "active": "#F4C987",
+  "shadow": "rgba(10, 7, 4, 0.74)"
+ },
+ "textScale": 0.88,
+ "veil": 1.35,
+ "transitionStyle": "cinematic",
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 750,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "druid-stone",
+   "image": "/poetry/shadow-on-the-stone/scenes/01_the_druid_stone.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 1240,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.7,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "ambience": {
+    "effect": "falling-leaves",
+    "count": 14,
+    "sun": {
+     "x": 0.12,
+     "y": 0.2
+    }
+   },
+   "line": "I went by the Druid stone … That at some moments fall thereon",
+   "startMs": 0
+  },
+  {
+   "id": "her-shadow",
+   "image": "/poetry/shadow-on-the-stone/scenes/02_her_shadow.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.7,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "ambience": {
+    "effect": "emerge-shadow",
+    "shadow": {
+     "x": 0.755,
+     "y": 0.32
+    },
+    "radius": {
+     "x": 0.11,
+     "y": 0.1
+    },
+    "afterMs": 2200
+   },
+   "line": "From the tree hard by with a rhythmic swing, … Threw there when she was gardening.",
+   "startMs": 12000
+  },
+  {
+   "id": "behind-his-back",
+   "image": "/poetry/shadow-on-the-stone/scenes/03_behind_his_back.webp",
+   "lines": 12,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1320,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.73,
+     "width": 0.84,
+     "height": 0.14
+    }
+   ],
+   "gesture": {
+    "kind": "drag-x",
+    "effect": "turn-away",
+    "hint": "Drag sideways to turn around",
+    "apparition": {
+     "x": 0.28,
+     "y": 0.45
+    },
+    "radius": {
+     "x": 0.13,
+     "y": 0.21
+    }
+   },
+   "ambience": {
+    "effect": "falling-leaves",
+    "count": 10
+   },
+   "line": "I thought her behind my back, … A shape which, somehow, there may be.\"",
+   "startMs": 24040
+  },
+  {
+   "id": "leaving",
+   "image": "/poetry/shadow-on-the-stone/scenes/04_leaving_the_glade.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.72,
+     "width": 0.84,
+     "height": 0.15
+    }
+   ],
+   "ambience": {
+    "effect": "falling-leaves",
+    "count": 12,
+    "sun": {
+     "x": 0.15,
+     "y": 0.12
+    }
+   },
+   "line": "So I went on softly from the glade, … My head unturned lest my dream should fade.",
+   "startMs": 60800
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "druid-stone",
+   "startMs": 0,
+   "endMs": 2080,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 0,
+     "endMs": 160,
+     "phrase": 0
+    },
+    {
+     "text": "went",
+     "atMs": 280,
+     "endMs": 400,
+     "phrase": 0
+    },
+    {
+     "text": "by",
+     "atMs": 480,
+     "endMs": 640,
+     "phrase": 0
+    },
+    {
+     "text": "the",
+     "atMs": 680,
+     "endMs": 720,
+     "phrase": 0
+    },
+    {
+     "text": "Druid",
+     "atMs": 800,
+     "endMs": 1200,
+     "phrase": 0
+    },
+    {
+     "text": "stone",
+     "atMs": 1280,
+     "endMs": 1680,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "druid-stone",
+   "startMs": 2080,
+   "endMs": 5200,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 2080,
+     "endMs": 2240,
+     "phrase": 1
+    },
+    {
+     "text": "broods",
+     "atMs": 2320,
+     "endMs": 2720,
+     "phrase": 1
+    },
+    {
+     "text": "in",
+     "atMs": 2760,
+     "endMs": 2800,
+     "phrase": 1
+    },
+    {
+     "text": "the",
+     "atMs": 2880,
+     "endMs": 2960,
+     "phrase": 1
+    },
+    {
+     "text": "garden",
+     "atMs": 3040,
+     "endMs": 3440,
+     "phrase": 1
+    },
+    {
+     "text": "white",
+     "atMs": 3600,
+     "endMs": 3920,
+     "phrase": 1
+    },
+    {
+     "text": "and",
+     "atMs": 4000,
+     "endMs": 4080,
+     "phrase": 1
+    },
+    {
+     "text": "lone,",
+     "atMs": 4160,
+     "endMs": 4560,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "druid-stone",
+   "startMs": 5200,
+   "endMs": 8560,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 5200,
+     "endMs": 5280,
+     "phrase": 2
+    },
+    {
+     "text": "I",
+     "atMs": 5360,
+     "endMs": 5440,
+     "phrase": 2
+    },
+    {
+     "text": "stopped",
+     "atMs": 5520,
+     "endMs": 5920,
+     "phrase": 2
+    },
+    {
+     "text": "and",
+     "atMs": 6240,
+     "endMs": 6400,
+     "phrase": 2
+    },
+    {
+     "text": "looked",
+     "atMs": 6480,
+     "endMs": 6720,
+     "phrase": 2
+    },
+    {
+     "text": "at",
+     "atMs": 6800,
+     "endMs": 6880,
+     "phrase": 2
+    },
+    {
+     "text": "the",
+     "atMs": 6920,
+     "endMs": 6960,
+     "phrase": 2
+    },
+    {
+     "text": "shifting",
+     "atMs": 7040,
+     "endMs": 7440,
+     "phrase": 2
+    },
+    {
+     "text": "shadows",
+     "atMs": 7520,
+     "endMs": 8080,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "druid-stone",
+   "startMs": 8560,
+   "endMs": 12000,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 8560,
+     "endMs": 8640,
+     "phrase": 3
+    },
+    {
+     "text": "at",
+     "atMs": 8720,
+     "endMs": 8800,
+     "phrase": 3
+    },
+    {
+     "text": "some",
+     "atMs": 8880,
+     "endMs": 9040,
+     "phrase": 3
+    },
+    {
+     "text": "moments",
+     "atMs": 9120,
+     "endMs": 9520,
+     "phrase": 3
+    },
+    {
+     "text": "fall",
+     "atMs": 9600,
+     "endMs": 9840,
+     "phrase": 3
+    },
+    {
+     "text": "thereon",
+     "atMs": 10000,
+     "endMs": 10320,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "her-shadow",
+   "startMs": 12000,
+   "endMs": 15440,
+   "tokens": [
+    {
+     "text": "From",
+     "atMs": 12000,
+     "endMs": 12160,
+     "phrase": 4
+    },
+    {
+     "text": "the",
+     "atMs": 12200,
+     "endMs": 12240,
+     "phrase": 4
+    },
+    {
+     "text": "tree",
+     "atMs": 12400,
+     "endMs": 12640,
+     "phrase": 4
+    },
+    {
+     "text": "hard",
+     "atMs": 12720,
+     "endMs": 12960,
+     "phrase": 4
+    },
+    {
+     "text": "by",
+     "atMs": 13040,
+     "endMs": 13360,
+     "phrase": 4
+    },
+    {
+     "text": "with",
+     "atMs": 13440,
+     "endMs": 13600,
+     "phrase": 4
+    },
+    {
+     "text": "a",
+     "atMs": 13640,
+     "endMs": 13680,
+     "phrase": 4
+    },
+    {
+     "text": "rhythmic",
+     "atMs": 13760,
+     "endMs": 14160,
+     "phrase": 4
+    },
+    {
+     "text": "swing,",
+     "atMs": 14240,
+     "endMs": 14720,
+     "phrase": 4,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "her-shadow",
+   "startMs": 15440,
+   "endMs": 17360,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 15440,
+     "endMs": 15520,
+     "phrase": 5
+    },
+    {
+     "text": "they",
+     "atMs": 15600,
+     "endMs": 15680,
+     "phrase": 5
+    },
+    {
+     "text": "shaped",
+     "atMs": 15840,
+     "endMs": 16080,
+     "phrase": 5
+    },
+    {
+     "text": "in",
+     "atMs": 16160,
+     "endMs": 16240,
+     "phrase": 5
+    },
+    {
+     "text": "my",
+     "atMs": 16320,
+     "endMs": 16400,
+     "phrase": 5
+    },
+    {
+     "text": "imagining",
+     "atMs": 16560,
+     "endMs": 17040,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "her-shadow",
+   "startMs": 17360,
+   "endMs": 20240,
+   "tokens": [
+    {
+     "text": "To",
+     "atMs": 17360,
+     "endMs": 17440,
+     "phrase": 6
+    },
+    {
+     "text": "the",
+     "atMs": 17520,
+     "endMs": 17600,
+     "phrase": 6
+    },
+    {
+     "text": "shade",
+     "atMs": 17680,
+     "endMs": 18080,
+     "phrase": 6
+    },
+    {
+     "text": "that",
+     "atMs": 18160,
+     "endMs": 18240,
+     "phrase": 6
+    },
+    {
+     "text": "a",
+     "atMs": 18320,
+     "endMs": 18400,
+     "phrase": 6
+    },
+    {
+     "text": "well-known",
+     "atMs": 18520,
+     "endMs": 18960,
+     "phrase": 6
+    },
+    {
+     "text": "head",
+     "atMs": 19040,
+     "endMs": 19200,
+     "phrase": 6
+    },
+    {
+     "text": "and",
+     "atMs": 19280,
+     "endMs": 19360,
+     "phrase": 6
+    },
+    {
+     "text": "shoulders",
+     "atMs": 19440,
+     "endMs": 19920,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "her-shadow",
+   "startMs": 20240,
+   "endMs": 24040,
+   "tokens": [
+    {
+     "text": "Threw",
+     "atMs": 20240,
+     "endMs": 20480,
+     "phrase": 7
+    },
+    {
+     "text": "there",
+     "atMs": 20560,
+     "endMs": 20800,
+     "phrase": 7
+    },
+    {
+     "text": "when",
+     "atMs": 20880,
+     "endMs": 21040,
+     "phrase": 7
+    },
+    {
+     "text": "she",
+     "atMs": 21120,
+     "endMs": 21200,
+     "phrase": 7
+    },
+    {
+     "text": "was",
+     "atMs": 21280,
+     "endMs": 21360,
+     "phrase": 7
+    },
+    {
+     "text": "gardening.",
+     "atMs": 21440,
+     "endMs": 22000,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 24040,
+   "endMs": 26420,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 24040,
+     "endMs": 24120,
+     "phrase": 8
+    },
+    {
+     "text": "thought",
+     "atMs": 24200,
+     "endMs": 24440,
+     "phrase": 8
+    },
+    {
+     "text": "her",
+     "atMs": 24520,
+     "endMs": 24600,
+     "phrase": 8
+    },
+    {
+     "text": "behind",
+     "atMs": 24680,
+     "endMs": 24920,
+     "phrase": 8
+    },
+    {
+     "text": "my",
+     "atMs": 25000,
+     "endMs": 25160,
+     "phrase": 8
+    },
+    {
+     "text": "back,",
+     "atMs": 25240,
+     "endMs": 26120,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 26420,
+   "endMs": 29840,
+   "tokens": [
+    {
+     "text": "Yea,",
+     "atMs": 26420,
+     "endMs": 27060,
+     "phrase": 9,
+     "emphasis": "lead"
+    },
+    {
+     "text": "her",
+     "atMs": 27140,
+     "endMs": 27380,
+     "phrase": 10
+    },
+    {
+     "text": "I",
+     "atMs": 27460,
+     "endMs": 27540,
+     "phrase": 10
+    },
+    {
+     "text": "long",
+     "atMs": 27700,
+     "endMs": 27940,
+     "phrase": 10
+    },
+    {
+     "text": "had",
+     "atMs": 28020,
+     "endMs": 28180,
+     "phrase": 10
+    },
+    {
+     "text": "learned",
+     "atMs": 28260,
+     "endMs": 28500,
+     "phrase": 10
+    },
+    {
+     "text": "to",
+     "atMs": 28580,
+     "endMs": 28660,
+     "phrase": 10
+    },
+    {
+     "text": "lack,",
+     "atMs": 28700,
+     "endMs": 29540,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 29840,
+   "endMs": 33740,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 29840,
+     "endMs": 29920,
+     "phrase": 11
+    },
+    {
+     "text": "I",
+     "atMs": 30000,
+     "endMs": 30080,
+     "phrase": 11
+    },
+    {
+     "text": "said:",
+     "atMs": 30200,
+     "endMs": 30400,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "\"I",
+     "atMs": 30960,
+     "endMs": 31040,
+     "phrase": 12
+    },
+    {
+     "text": "am",
+     "atMs": 31120,
+     "endMs": 31200,
+     "phrase": 12
+    },
+    {
+     "text": "sure",
+     "atMs": 31360,
+     "endMs": 31600,
+     "phrase": 12
+    },
+    {
+     "text": "you",
+     "atMs": 31680,
+     "endMs": 31760,
+     "phrase": 12
+    },
+    {
+     "text": "are",
+     "atMs": 31800,
+     "endMs": 31840,
+     "phrase": 12
+    },
+    {
+     "text": "standing",
+     "atMs": 31920,
+     "endMs": 32240,
+     "phrase": 12
+    },
+    {
+     "text": "behind",
+     "atMs": 32320,
+     "endMs": 32720,
+     "phrase": 12
+    },
+    {
+     "text": "me,",
+     "atMs": 32800,
+     "endMs": 33440,
+     "phrase": 12,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 33740,
+   "endMs": 36640,
+   "tokens": [
+    {
+     "text": "Though",
+     "atMs": 33740,
+     "endMs": 33860,
+     "phrase": 13
+    },
+    {
+     "text": "how",
+     "atMs": 33940,
+     "endMs": 34020,
+     "phrase": 13
+    },
+    {
+     "text": "do",
+     "atMs": 34100,
+     "endMs": 34140,
+     "phrase": 13
+    },
+    {
+     "text": "you",
+     "atMs": 34180,
+     "endMs": 34260,
+     "phrase": 13
+    },
+    {
+     "text": "get",
+     "atMs": 34340,
+     "endMs": 34420,
+     "phrase": 13
+    },
+    {
+     "text": "into",
+     "atMs": 34500,
+     "endMs": 34740,
+     "phrase": 13
+    },
+    {
+     "text": "this",
+     "atMs": 34820,
+     "endMs": 34980,
+     "phrase": 13
+    },
+    {
+     "text": "old",
+     "atMs": 35060,
+     "endMs": 35220,
+     "phrase": 13
+    },
+    {
+     "text": "track?\"",
+     "atMs": 35300,
+     "endMs": 36340,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 36640,
+   "endMs": 39380,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 36640,
+     "endMs": 36680,
+     "phrase": 14
+    },
+    {
+     "text": "there",
+     "atMs": 36760,
+     "endMs": 36840,
+     "phrase": 14
+    },
+    {
+     "text": "was",
+     "atMs": 36920,
+     "endMs": 37000,
+     "phrase": 14
+    },
+    {
+     "text": "no",
+     "atMs": 37080,
+     "endMs": 37160,
+     "phrase": 14
+    },
+    {
+     "text": "sound",
+     "atMs": 37320,
+     "endMs": 37720,
+     "phrase": 14
+    },
+    {
+     "text": "but",
+     "atMs": 37800,
+     "endMs": 37960,
+     "phrase": 14
+    },
+    {
+     "text": "the",
+     "atMs": 38000,
+     "endMs": 38040,
+     "phrase": 14
+    },
+    {
+     "text": "fall",
+     "atMs": 38200,
+     "endMs": 38440,
+     "phrase": 14
+    },
+    {
+     "text": "of",
+     "atMs": 38480,
+     "endMs": 38520,
+     "phrase": 14
+    },
+    {
+     "text": "a",
+     "atMs": 38600,
+     "endMs": 38640,
+     "phrase": 14
+    },
+    {
+     "text": "leaf",
+     "atMs": 38680,
+     "endMs": 39080,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 39380,
+   "endMs": 42660,
+   "tokens": [
+    {
+     "text": "As",
+     "atMs": 39380,
+     "endMs": 39460,
+     "phrase": 15
+    },
+    {
+     "text": "a",
+     "atMs": 39540,
+     "endMs": 39620,
+     "phrase": 15
+    },
+    {
+     "text": "sad",
+     "atMs": 39780,
+     "endMs": 39940,
+     "phrase": 15
+    },
+    {
+     "text": "response;",
+     "atMs": 40260,
+     "endMs": 41140,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "and",
+     "atMs": 41220,
+     "endMs": 41300,
+     "phrase": 16
+    },
+    {
+     "text": "to",
+     "atMs": 41340,
+     "endMs": 41380,
+     "phrase": 16
+    },
+    {
+     "text": "keep",
+     "atMs": 41460,
+     "endMs": 41620,
+     "phrase": 16
+    },
+    {
+     "text": "down",
+     "atMs": 41700,
+     "endMs": 41940,
+     "phrase": 16
+    },
+    {
+     "text": "grief",
+     "atMs": 42020,
+     "endMs": 42340,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 42660,
+   "endMs": 44900,
+   "tokens": [
+    {
+     "text": "I",
+     "atMs": 42660,
+     "endMs": 42740,
+     "phrase": 17
+    },
+    {
+     "text": "would",
+     "atMs": 42820,
+     "endMs": 42900,
+     "phrase": 17
+    },
+    {
+     "text": "not",
+     "atMs": 42980,
+     "endMs": 43140,
+     "phrase": 17
+    },
+    {
+     "text": "turn",
+     "atMs": 43220,
+     "endMs": 43380,
+     "phrase": 17
+    },
+    {
+     "text": "my",
+     "atMs": 43460,
+     "endMs": 43620,
+     "phrase": 17
+    },
+    {
+     "text": "head",
+     "atMs": 43740,
+     "endMs": 43860,
+     "phrase": 17
+    },
+    {
+     "text": "to",
+     "atMs": 43940,
+     "endMs": 44020,
+     "phrase": 17
+    },
+    {
+     "text": "discover",
+     "atMs": 44300,
+     "endMs": 44580,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 44900,
+   "endMs": 48220,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 44900,
+     "endMs": 44980,
+     "phrase": 18
+    },
+    {
+     "text": "there",
+     "atMs": 45060,
+     "endMs": 45140,
+     "phrase": 18
+    },
+    {
+     "text": "was",
+     "atMs": 45220,
+     "endMs": 45300,
+     "phrase": 18
+    },
+    {
+     "text": "nothing",
+     "atMs": 45460,
+     "endMs": 45780,
+     "phrase": 18
+    },
+    {
+     "text": "in",
+     "atMs": 45860,
+     "endMs": 45940,
+     "phrase": 18
+    },
+    {
+     "text": "my",
+     "atMs": 46020,
+     "endMs": 46100,
+     "phrase": 18
+    },
+    {
+     "text": "belief.",
+     "atMs": 46340,
+     "endMs": 46900,
+     "phrase": 18,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 48220,
+   "endMs": 50060,
+   "tokens": [
+    {
+     "text": "Yet",
+     "atMs": 48220,
+     "endMs": 48300,
+     "phrase": 19
+    },
+    {
+     "text": "I",
+     "atMs": 48460,
+     "endMs": 48540,
+     "phrase": 19
+    },
+    {
+     "text": "wanted",
+     "atMs": 48700,
+     "endMs": 48860,
+     "phrase": 19
+    },
+    {
+     "text": "to",
+     "atMs": 48940,
+     "endMs": 49020,
+     "phrase": 19
+    },
+    {
+     "text": "look",
+     "atMs": 49100,
+     "endMs": 49180,
+     "phrase": 19
+    },
+    {
+     "text": "and",
+     "atMs": 49300,
+     "endMs": 49420,
+     "phrase": 19
+    },
+    {
+     "text": "see",
+     "atMs": 49580,
+     "endMs": 49740,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 50060,
+   "endMs": 52760,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 50060,
+     "endMs": 50220,
+     "phrase": 20
+    },
+    {
+     "text": "nobody",
+     "atMs": 50300,
+     "endMs": 50700,
+     "phrase": 20
+    },
+    {
+     "text": "stood",
+     "atMs": 50780,
+     "endMs": 51020,
+     "phrase": 20
+    },
+    {
+     "text": "at",
+     "atMs": 51060,
+     "endMs": 51100,
+     "phrase": 20
+    },
+    {
+     "text": "the",
+     "atMs": 51180,
+     "endMs": 51260,
+     "phrase": 20
+    },
+    {
+     "text": "back",
+     "atMs": 51380,
+     "endMs": 51500,
+     "phrase": 20
+    },
+    {
+     "text": "of",
+     "atMs": 51540,
+     "endMs": 51580,
+     "phrase": 20
+    },
+    {
+     "text": "me;",
+     "atMs": 51660,
+     "endMs": 52460,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 52760,
+   "endMs": 56680,
+   "tokens": [
+    {
+     "text": "But",
+     "atMs": 52760,
+     "endMs": 52840,
+     "phrase": 21
+    },
+    {
+     "text": "I",
+     "atMs": 52920,
+     "endMs": 52960,
+     "phrase": 21
+    },
+    {
+     "text": "thought",
+     "atMs": 53000,
+     "endMs": 53160,
+     "phrase": 21
+    },
+    {
+     "text": "once",
+     "atMs": 53240,
+     "endMs": 53480,
+     "phrase": 21
+    },
+    {
+     "text": "more:",
+     "atMs": 53560,
+     "endMs": 54440,
+     "phrase": 21,
+     "emphasis": "lead"
+    },
+    {
+     "text": "\"Nay,",
+     "atMs": 54520,
+     "endMs": 55240,
+     "phrase": 22,
+     "emphasis": "lead"
+    },
+    {
+     "text": "I'll",
+     "atMs": 55320,
+     "endMs": 55560,
+     "phrase": 23
+    },
+    {
+     "text": "not",
+     "atMs": 55640,
+     "endMs": 55720,
+     "phrase": 23
+    },
+    {
+     "text": "unvision",
+     "atMs": 55800,
+     "endMs": 56360,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "behind-his-back",
+   "startMs": 56680,
+   "endMs": 60800,
+   "tokens": [
+    {
+     "text": "A",
+     "atMs": 56680,
+     "endMs": 56840,
+     "phrase": 24
+    },
+    {
+     "text": "shape",
+     "atMs": 57000,
+     "endMs": 57160,
+     "phrase": 24
+    },
+    {
+     "text": "which,",
+     "atMs": 57280,
+     "endMs": 57560,
+     "phrase": 24,
+     "emphasis": "lead"
+    },
+    {
+     "text": "somehow,",
+     "atMs": 57680,
+     "endMs": 58120,
+     "phrase": 25,
+     "emphasis": "lead"
+    },
+    {
+     "text": "there",
+     "atMs": 58200,
+     "endMs": 58280,
+     "phrase": 26
+    },
+    {
+     "text": "may",
+     "atMs": 58360,
+     "endMs": 58520,
+     "phrase": 26
+    },
+    {
+     "text": "be.\"",
+     "atMs": 58600,
+     "endMs": 59320,
+     "phrase": 26,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "leaving",
+   "startMs": 60800,
+   "endMs": 63500,
+   "tokens": [
+    {
+     "text": "So",
+     "atMs": 60800,
+     "endMs": 60880,
+     "phrase": 27
+    },
+    {
+     "text": "I",
+     "atMs": 61040,
+     "endMs": 61120,
+     "phrase": 27
+    },
+    {
+     "text": "went",
+     "atMs": 61200,
+     "endMs": 61280,
+     "phrase": 27
+    },
+    {
+     "text": "on",
+     "atMs": 61400,
+     "endMs": 61520,
+     "phrase": 27
+    },
+    {
+     "text": "softly",
+     "atMs": 61600,
+     "endMs": 62000,
+     "phrase": 27
+    },
+    {
+     "text": "from",
+     "atMs": 62080,
+     "endMs": 62240,
+     "phrase": 27
+    },
+    {
+     "text": "the",
+     "atMs": 62267,
+     "endMs": 62293,
+     "phrase": 27
+    },
+    {
+     "text": "glade,",
+     "atMs": 62320,
+     "endMs": 63200,
+     "phrase": 27,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "leaving",
+   "startMs": 63500,
+   "endMs": 66520,
+   "tokens": [
+    {
+     "text": "And",
+     "atMs": 63500,
+     "endMs": 63580,
+     "phrase": 28
+    },
+    {
+     "text": "left",
+     "atMs": 63660,
+     "endMs": 63820,
+     "phrase": 28
+    },
+    {
+     "text": "her",
+     "atMs": 63900,
+     "endMs": 63980,
+     "phrase": 28
+    },
+    {
+     "text": "behind",
+     "atMs": 64060,
+     "endMs": 64380,
+     "phrase": 28
+    },
+    {
+     "text": "me",
+     "atMs": 64460,
+     "endMs": 64700,
+     "phrase": 28
+    },
+    {
+     "text": "throwing",
+     "atMs": 64820,
+     "endMs": 65100,
+     "phrase": 28
+    },
+    {
+     "text": "her",
+     "atMs": 65140,
+     "endMs": 65180,
+     "phrase": 28
+    },
+    {
+     "text": "shade,",
+     "atMs": 65340,
+     "endMs": 66220,
+     "phrase": 28,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "leaving",
+   "startMs": 66520,
+   "endMs": 69300,
+   "tokens": [
+    {
+     "text": "As",
+     "atMs": 66520,
+     "endMs": 66600,
+     "phrase": 29
+    },
+    {
+     "text": "she",
+     "atMs": 66680,
+     "endMs": 66760,
+     "phrase": 29
+    },
+    {
+     "text": "were",
+     "atMs": 66840,
+     "endMs": 67000,
+     "phrase": 29
+    },
+    {
+     "text": "indeed",
+     "atMs": 67080,
+     "endMs": 67560,
+     "phrase": 29
+    },
+    {
+     "text": "an",
+     "atMs": 67600,
+     "endMs": 67640,
+     "phrase": 29
+    },
+    {
+     "text": "apparition—",
+     "atMs": 67720,
+     "endMs": 69000,
+     "phrase": 29,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "leaving",
+   "startMs": 69300,
+   "endMs": 72500,
+   "tokens": [
+    {
+     "text": "My",
+     "atMs": 69300,
+     "endMs": 69460,
+     "phrase": 30
+    },
+    {
+     "text": "head",
+     "atMs": 69580,
+     "endMs": 69700,
+     "phrase": 30
+    },
+    {
+     "text": "unturned",
+     "atMs": 69820,
+     "endMs": 70340,
+     "phrase": 30
+    },
+    {
+     "text": "lest",
+     "atMs": 70660,
+     "endMs": 70900,
+     "phrase": 30
+    },
+    {
+     "text": "my",
+     "atMs": 70980,
+     "endMs": 71140,
+     "phrase": 30
+    },
+    {
+     "text": "dream",
+     "atMs": 71340,
+     "endMs": 71540,
+     "phrase": 30
+    },
+    {
+     "text": "should",
+     "atMs": 71620,
+     "endMs": 71780,
+     "phrase": 30
+    },
+    {
+     "text": "fade.",
+     "atMs": 71860,
+     "endMs": 72500,
+     "phrase": 30,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}

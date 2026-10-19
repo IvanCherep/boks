@@ -3,6 +3,7 @@ import {
   flameLean,
   flingFrom,
   imageToScreen,
+  isWarpGesture,
   lightNear,
   type ImagePoint,
   type PoemGesture,
@@ -13,7 +14,7 @@ import type { GestureFrame, GestureInput, GestureLayer } from "@/components/boks
 /**
  * The gestures drawn over a picture rather than into it: an arrow and a song
  * let fly, threads to the lights and the bridge they make, a flame in the
- * wind, rain, the song coming home.
+ * wind, rain, the song coming home, falling leaves, a candle's light.
  *
  * A transparent 2D canvas over the scene's `<img>`, cleared and drawn whole
  * every frame the scene is on screen. Everything is placed by the picture's
@@ -43,7 +44,8 @@ export function createOverlayLayer(
 ): GestureLayer | null {
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  const gesture = scene.gesture;
+  // A warp gesture is drawn into the picture by the WebGL layer, not here.
+  const gesture = isWarpGesture(scene.gesture) ? undefined : scene.gesture;
   const ambience = scene.ambience;
 
   let width = 0;
@@ -126,6 +128,50 @@ export function createOverlayLayer(
       ctx!.lineWidth = bucket ? 0.8 : 1.1;
       ctx!.stroke();
     }
+  }
+
+  // -------------------------------------------------------------- leaves
+  const leafColours = ["176, 92, 34", "201, 128, 46", "142, 70, 32", "214, 160, 72"];
+  function leaves(seconds: number, count: number, sun?: ImagePoint) {
+    // A low sun that shifts, under the leaves: warm, wide and never still.
+    if (sun) {
+      const s = at(sun);
+      const breath = 0.5 + 0.5 * Math.sin(seconds * 0.21);
+      glowDot(s.x + Math.sin(seconds * 0.07) * width * 0.03, s.y, Math.max(width, height) * 0.55, gold, 0.07 + 0.06 * breath);
+    }
+    const fall = height * 1.2;
+    for (let i = 0; i < count; i += 1) {
+      // Each leaf its own speed, sway and turn; the same leaf on every frame.
+      const speed = height * (0.05 + hash(i * 3) * 0.05);
+      const y = ((hash(i * 5) * fall + seconds * speed) % fall) - height * 0.1;
+      const sway = Math.sin(seconds * (0.6 + hash(i * 11) * 0.7) + i) * width * (0.03 + hash(i * 13) * 0.04);
+      const x = hash(i) * width + sway + seconds * width * 0.006;
+      const wrapped = ((x % width) + width) % width;
+      const size = 3.5 + hash(i * 7) * 5;
+      const turn = seconds * (0.8 + hash(i * 17) * 1.6) + i;
+      ctx!.save();
+      ctx!.translate(wrapped, y);
+      ctx!.rotate(turn);
+      // A leaf turning in the air shows its edge, then its face.
+      ctx!.scale(1, 0.25 + 0.75 * Math.abs(Math.sin(turn * 0.7)));
+      ctx!.fillStyle = `rgba(${leafColours[i % leafColours.length]}, ${(0.55 + 0.35 * hash(i * 19)).toFixed(3)})`;
+      ctx!.beginPath();
+      ctx!.ellipse(0, 0, size, size * 0.45, 0, 0, Math.PI * 2);
+      ctx!.fill();
+      ctx!.restore();
+    }
+  }
+
+  // -------------------------------------------------------------- candle
+  function candleGlow(seconds: number, point: ImagePoint, radius: number) {
+    const c = at(point);
+    const flicker = 0.07 * Math.sin(seconds * 9.7) + 0.05 * Math.sin(seconds * 17.3 + 1.1) + 0.04 * Math.sin(seconds * 3.1);
+    const reach = (radius * width) / transform.scaleX;
+    ctx!.save();
+    ctx!.globalCompositeOperation = "lighter";
+    glowDot(c.x + flicker * 4, c.y, reach * (1 + flicker), gold, 0.16 + flicker);
+    glowDot(c.x, c.y, reach * 0.18, gold, 0.35 + flicker * 2);
+    ctx!.restore();
   }
 
   // --------------------------------------------------------------- flame
@@ -352,6 +398,8 @@ export function createOverlayLayer(
 
     if (ambience?.effect === "rain" && !frame.still) rain(frame.time, ambience.intensity, ambience.wind);
     if (ambience?.effect === "returning-song" && !frame.still) returningSong(now, ambience.from, ambience.to, input);
+    if (ambience?.effect === "falling-leaves" && !frame.still) leaves(frame.time, ambience.count, ambience.sun);
+    if (ambience?.effect === "candle-glow") candleGlow(frame.time, ambience.at, ambience.radius);
 
     if (gesture?.kind === "hold" && gesture.effect === "shelter-flame") {
       flame(frame.time, frame.hold, frame.still, gesture.flame, gesture.size);

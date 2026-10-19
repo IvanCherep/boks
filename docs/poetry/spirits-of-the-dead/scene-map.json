@@ -1,0 +1,121 @@
+{
+ "version": 1,
+ "title": "Spirits of the Dead",
+ "author": "Edgar Allan Poe",
+ "language": "en",
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F1ECE6",
+  "active": "#F2C38E",
+  "shadow": "rgba(4, 5, 10, 0.78)"
+ },
+ "themeGain": 0.182,
+ "textScale": 0.9,
+ "veil": 1.45,
+ "transitionStyle": "cinematic",
+ "scenes": [
+  {
+   "id": "alone",
+   "image": "01_alone_by_the_tombstone.png",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.42,
+    "y": 0.5
+   },
+   "textPreset": "farewell-drift",
+   "transitionMs": 800,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.66,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "Thy soul shall find itself alone … Into thine hour of secrecy:"
+  },
+  {
+   "id": "spirits",
+   "image": "02_spirits_around_the_candle.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 900,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "gesture": {
+    "kind": "hold",
+    "effect": "summon-spirits",
+    "hint": "Hold the candle",
+    "candle": {
+     "x": 0.532,
+     "y": 0.413
+    },
+    "figure": {
+     "x": 0.5,
+     "y": 0.52
+    },
+    "radius": {
+     "x": 0.16,
+     "y": 0.24
+    }
+   },
+   "line": "Be silent in that solitude … Shall then overshadow thee: be still."
+  },
+  {
+   "id": "red-orbs",
+   "image": "03_red_orbs.png",
+   "lines": 12,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 800,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "The night—tho' clear—shall frown— … No more—like dew-drop from the grass:"
+  },
+  {
+   "id": "mist",
+   "image": "04_mist_upon_the_hill.png",
+   "lines": 6,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 900,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "line": "The breeze—the breath of God—is still— … A mystery of mysteries!"
+  }
+ ]
+}

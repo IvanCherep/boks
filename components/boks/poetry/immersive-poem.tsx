@@ -28,7 +28,9 @@ import {
   dragLean,
   gestureSceneAt,
   isGestureNotTap,
+  isWarpAmbience,
   isWarpGesture,
+  layersOf,
   needsLayer,
   swipeStep,
 } from "@/lib/boks/poetry/gesture";
@@ -152,6 +154,8 @@ export function ImmersivePoem({
    */
   const gestureImages = useRef<(HTMLImageElement | null)[]>([]);
   const gestureCanvases = useRef<(HTMLCanvasElement | null)[]>([]);
+  /** The second canvas of a scene that warps its picture and draws over it as well. */
+  const overlayCanvases = useRef<(HTMLCanvasElement | null)[]>([]);
   const gestureLayers = useRef<(GestureLayer | null)[]>([]);
   /*
    * Where the hand is and where the picture is, outside React: both change
@@ -333,10 +337,36 @@ export function ImmersivePoem({
       if (!needsLayer(poemScene) || !image || !canvas) return;
       const build = () => {
         if (layers[index] || !image.naturalWidth) return;
-        // A warp redraws the picture in WebGL; everything else is drawn over it.
-        layers[index] = isWarpGesture(gesture)
-          ? createGestureLayer(canvas, image, gesture, poemScene.focalPoint)
-          : createOverlayLayer(canvas, image, poemScene, index);
+        // A warp redraws the picture in WebGL; everything else is drawn over
+        // it, on a second canvas when the scene does both.
+        const { warp, overlay } = layersOf(poemScene);
+        const warped = warp
+          ? createGestureLayer(
+              canvas,
+              image,
+              {
+                ...poemScene,
+                gesture: isWarpGesture(gesture) ? gesture : undefined,
+                ambience: isWarpAmbience(poemScene.ambience) ? poemScene.ambience : undefined,
+              },
+              index
+            )
+          : null;
+        const overCanvas = warp ? overlayCanvases.current[index] : canvas;
+        const drawn = overlay && overCanvas ? createOverlayLayer(overCanvas, image, poemScene, index) : null;
+        layers[index] =
+          warped && drawn
+            ? {
+                paint: (frame, hand) => {
+                  warped.paint(frame, hand);
+                  drawn.paint(frame, hand);
+                },
+                dispose: () => {
+                  warped.dispose();
+                  drawn.dispose();
+                },
+              }
+            : (warped ?? drawn);
       };
       if (image.complete) build();
       else {
@@ -453,7 +483,14 @@ export function ImmersivePoem({
       gestureLayers.current.forEach((layer, index) => {
         if (!layer || (index !== shown.from && index !== shown.to && index !== next)) return;
         layer.paint(
-          { time: stillRef.current ? 0 : now / 1000, now, still: stillRef.current, hold: state.hold, lean: state.lean },
+          {
+            time: stillRef.current ? 0 : now / 1000,
+            now,
+            still: stillRef.current,
+            hold: state.hold,
+            lean: state.lean,
+            ms: (audio.current?.currentTime ?? 0) * 1000,
+          },
           input.current
         );
       });
@@ -778,7 +815,7 @@ export function ImmersivePoem({
           if (!gesture) return;
           hand.current.swallowClick = false;
           const box = event.currentTarget.getBoundingClientRect();
-          if (gesture.kind === "fling" || gesture.kind === "threads") {
+          if (gesture.kind === "fling" || gesture.kind === "threads" || gesture.kind === "wipe") {
             const x = event.clientX - box.left;
             const y = event.clientY - box.top;
             input.current.drag = { scene: index, x0: x, y0: y, x, y };
@@ -799,9 +836,12 @@ export function ImmersivePoem({
           if (!pointer || pointer.id !== event.pointerId) return;
           const dx = event.clientX - pointer.x;
           pointer.moved = Math.max(pointer.moved, Math.hypot(dx, event.clientY - pointer.y));
-          const kind = manifest.scenes[pointer.scene]?.gesture?.kind;
-          if (kind === "drag-x") {
+          const effect = manifest.scenes[pointer.scene]?.gesture?.effect;
+          if (effect === "lean-between") {
             hand.current.leanTarget = dragLean(dx, event.currentTarget.clientWidth);
+          } else if (effect === "turn-away") {
+            // Turning all the way round takes more than leaning does.
+            hand.current.leanTarget = dragLean(dx, event.currentTarget.clientWidth, 0.55);
           }
           const drag = input.current.drag;
           if (drag) {
@@ -837,6 +877,9 @@ export function ImmersivePoem({
             }}
             canvasRef={(element) => {
               gestureCanvases.current[index] = element;
+            }}
+            overlayRef={(element) => {
+              overlayCanvases.current[index] = element;
             }}
           />
         ))}
@@ -1100,11 +1143,13 @@ function Backdrop({
   ref,
   imageRef,
   canvasRef,
+  overlayRef,
 }: {
   scene: PoemScene;
   ref: React.Ref<HTMLElement>;
   imageRef: React.Ref<HTMLImageElement>;
   canvasRef: React.Ref<HTMLCanvasElement>;
+  overlayRef: React.Ref<HTMLCanvasElement>;
 }) {
   const objectPosition = `${scene.focalPoint.x * 100}% ${scene.focalPoint.y * 100}%`;
   /*
@@ -1127,6 +1172,9 @@ function Backdrop({
           style={{ objectPosition }}
         />
         <canvas ref={canvasRef} className="poem__gesture" aria-hidden="true" />
+        {layersOf(scene).warp && layersOf(scene).overlay && (
+          <canvas ref={overlayRef} className="poem__gesture" aria-hidden="true" />
+        )}
       </div>
     );
   }

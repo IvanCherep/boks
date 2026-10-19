@@ -1,0 +1,833 @@
+{
+ "id": "one-need-not-be-a-chamber-immersive-v1",
+ "title": "One Need Not Be a Chamber to Be Haunted",
+ "author": "Emily Dickinson",
+ "language": "en",
+ "timingMode": "forced-alignment",
+ "audio": "/poetry/one-need-not-be-a-chamber/narration.mp3",
+ "theme": {
+  "src": "/poetry/one-need-not-be-a-chamber/theme.mp3",
+  "gain": 0.185
+ },
+ "durationMs": 52340,
+ "canvas": {
+  "width": 941,
+  "height": 1672,
+  "aspectRatio": "9:16",
+  "fit": "cover",
+  "controlsReservedBottom": 0.12
+ },
+ "palette": {
+  "text": "#F3EEE6",
+  "active": "#EBCB9C",
+  "shadow": "rgba(6, 5, 4, 0.78)"
+ },
+ "textScale": 0.92,
+ "veil": 1.4,
+ "playback": {
+  "tokenLeadMs": 220,
+  "crossfadeOffsetMs": 380,
+  "defaultCrossfadeMs": 1280,
+  "backgroundScaleFrom": 1,
+  "backgroundScaleTo": 1.035
+ },
+ "scenes": [
+  {
+   "id": "chamber",
+   "image": "/poetry/one-need-not-be-a-chamber/scenes/01_the_chamber.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.45,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1350,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.68,
+     "width": 0.84,
+     "height": 0.18
+    }
+   ],
+   "ambience": {
+    "effect": "candle-glow",
+    "at": {
+     "x": 0.117,
+     "y": 0.355
+    },
+    "radius": 0.14
+   },
+   "line": "One need not be a chamber to be haunted, … Material place.",
+   "startMs": 0
+  },
+  {
+   "id": "corridors",
+   "image": "/poetry/one-need-not-be-a-chamber/scenes/02_corridors_of_the_mind.webp",
+   "lines": 8,
+   "focalPoint": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.09,
+     "width": 0.84,
+     "height": 0.17
+    }
+   ],
+   "line": "Far safer, of a midnight meeting … In lonesome place.",
+   "startMs": 11340
+  },
+  {
+   "id": "mirror",
+   "image": "/poetry/one-need-not-be-a-chamber/scenes/03_the_mirror.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.6,
+    "y": 0.5
+   },
+   "textPreset": "quiet-breath",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.74,
+     "width": 0.84,
+     "height": 0.13
+    }
+   ],
+   "gesture": {
+    "kind": "wipe",
+    "effect": "clear-condensation",
+    "hint": "Wipe the glass",
+    "glass": {
+     "x": 0.55,
+     "y": 0.05,
+     "width": 0.37,
+     "height": 0.67
+    },
+    "brush": 0.18
+   },
+   "ambience": {
+    "effect": "candle-glow",
+    "at": {
+     "x": 0.05,
+     "y": 0.49
+    },
+    "radius": 0.12
+   },
+   "line": "Ourself, behind ourself concealed, … Be horror's least.",
+   "startMs": 31700
+  },
+  {
+   "id": "bolted-door",
+   "image": "/poetry/one-need-not-be-a-chamber/scenes/04_the_bolted_door.webp",
+   "lines": 4,
+   "focalPoint": {
+    "x": 0.55,
+    "y": 0.5
+   },
+   "textPreset": "echo-fade",
+   "transitionMs": 1500,
+   "safeZones": [
+    {
+     "x": 0.08,
+     "y": 0.74,
+     "width": 0.84,
+     "height": 0.13
+    }
+   ],
+   "ambience": {
+    "effect": "candle-glow",
+    "at": {
+     "x": 0.787,
+     "y": 0.35
+    },
+    "radius": 0.16
+   },
+   "line": "The prudent carries a revolver, … More near.",
+   "startMs": 44920
+  }
+ ],
+ "lines": [
+  {
+   "sceneId": "chamber",
+   "startMs": 0,
+   "endMs": 3420,
+   "tokens": [
+    {
+     "text": "One",
+     "atMs": 0,
+     "endMs": 267,
+     "phrase": 0
+    },
+    {
+     "text": "need",
+     "atMs": 320,
+     "endMs": 520,
+     "phrase": 0
+    },
+    {
+     "text": "not",
+     "atMs": 560,
+     "endMs": 880,
+     "phrase": 0
+    },
+    {
+     "text": "be",
+     "atMs": 960,
+     "endMs": 1080,
+     "phrase": 0
+    },
+    {
+     "text": "a",
+     "atMs": 1120,
+     "endMs": 1200,
+     "phrase": 0
+    },
+    {
+     "text": "chamber",
+     "atMs": 1360,
+     "endMs": 1760,
+     "phrase": 0
+    },
+    {
+     "text": "to",
+     "atMs": 1840,
+     "endMs": 1920,
+     "phrase": 0
+    },
+    {
+     "text": "be",
+     "atMs": 2000,
+     "endMs": 2080,
+     "phrase": 0
+    },
+    {
+     "text": "haunted,",
+     "atMs": 2160,
+     "endMs": 3120,
+     "phrase": 0,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "chamber",
+   "startMs": 3420,
+   "endMs": 5880,
+   "tokens": [
+    {
+     "text": "One",
+     "atMs": 3420,
+     "endMs": 3580,
+     "phrase": 1
+    },
+    {
+     "text": "need",
+     "atMs": 3660,
+     "endMs": 3820,
+     "phrase": 1
+    },
+    {
+     "text": "not",
+     "atMs": 3980,
+     "endMs": 4140,
+     "phrase": 1
+    },
+    {
+     "text": "be",
+     "atMs": 4220,
+     "endMs": 4300,
+     "phrase": 1
+    },
+    {
+     "text": "a",
+     "atMs": 4380,
+     "endMs": 4460,
+     "phrase": 1
+    },
+    {
+     "text": "house;",
+     "atMs": 4540,
+     "endMs": 5580,
+     "phrase": 1,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "chamber",
+   "startMs": 5880,
+   "endMs": 8580,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 5880,
+     "endMs": 5960,
+     "phrase": 2
+    },
+    {
+     "text": "brain",
+     "atMs": 6040,
+     "endMs": 6440,
+     "phrase": 2
+    },
+    {
+     "text": "has",
+     "atMs": 6520,
+     "endMs": 6680,
+     "phrase": 2
+    },
+    {
+     "text": "corridors",
+     "atMs": 6840,
+     "endMs": 7480,
+     "phrase": 2
+    },
+    {
+     "text": "surpassing",
+     "atMs": 7560,
+     "endMs": 8280,
+     "phrase": 2,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "chamber",
+   "startMs": 8580,
+   "endMs": 11340,
+   "tokens": [
+    {
+     "text": "Material",
+     "atMs": 8580,
+     "endMs": 8860,
+     "phrase": 3
+    },
+    {
+     "text": "place.",
+     "atMs": 8940,
+     "endMs": 9500,
+     "phrase": 3,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 11340,
+   "endMs": 13960,
+   "tokens": [
+    {
+     "text": "Far",
+     "atMs": 11340,
+     "endMs": 11580,
+     "phrase": 4
+    },
+    {
+     "text": "safer,",
+     "atMs": 11740,
+     "endMs": 12460,
+     "phrase": 4,
+     "emphasis": "lead"
+    },
+    {
+     "text": "of",
+     "atMs": 12500,
+     "endMs": 12540,
+     "phrase": 5
+    },
+    {
+     "text": "a",
+     "atMs": 12620,
+     "endMs": 12700,
+     "phrase": 5
+    },
+    {
+     "text": "midnight",
+     "atMs": 12780,
+     "endMs": 13180,
+     "phrase": 5
+    },
+    {
+     "text": "meeting",
+     "atMs": 13260,
+     "endMs": 13660,
+     "phrase": 5,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 13960,
+   "endMs": 15700,
+   "tokens": [
+    {
+     "text": "External",
+     "atMs": 13960,
+     "endMs": 14520,
+     "phrase": 6
+    },
+    {
+     "text": "ghost,",
+     "atMs": 14600,
+     "endMs": 15400,
+     "phrase": 6,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 15700,
+   "endMs": 17760,
+   "tokens": [
+    {
+     "text": "Than",
+     "atMs": 15700,
+     "endMs": 15780,
+     "phrase": 7
+    },
+    {
+     "text": "an",
+     "atMs": 15860,
+     "endMs": 15940,
+     "phrase": 7
+    },
+    {
+     "text": "interior",
+     "atMs": 16180,
+     "endMs": 16660,
+     "phrase": 7
+    },
+    {
+     "text": "confronting",
+     "atMs": 16740,
+     "endMs": 17460,
+     "phrase": 7,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 17760,
+   "endMs": 20500,
+   "tokens": [
+    {
+     "text": "That",
+     "atMs": 17760,
+     "endMs": 17920,
+     "phrase": 8
+    },
+    {
+     "text": "whiter",
+     "atMs": 18080,
+     "endMs": 18400,
+     "phrase": 8
+    },
+    {
+     "text": "host.",
+     "atMs": 18480,
+     "endMs": 19280,
+     "phrase": 8,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 20500,
+   "endMs": 23120,
+   "tokens": [
+    {
+     "text": "Far",
+     "atMs": 20500,
+     "endMs": 20740,
+     "phrase": 9
+    },
+    {
+     "text": "safer",
+     "atMs": 20900,
+     "endMs": 21300,
+     "phrase": 9
+    },
+    {
+     "text": "through",
+     "atMs": 21380,
+     "endMs": 21540,
+     "phrase": 9
+    },
+    {
+     "text": "an",
+     "atMs": 21660,
+     "endMs": 21780,
+     "phrase": 9
+    },
+    {
+     "text": "Abbey",
+     "atMs": 21860,
+     "endMs": 22100,
+     "phrase": 9
+    },
+    {
+     "text": "gallop,",
+     "atMs": 22180,
+     "endMs": 22820,
+     "phrase": 9,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 23120,
+   "endMs": 25060,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 23120,
+     "endMs": 23160,
+     "phrase": 10
+    },
+    {
+     "text": "stones",
+     "atMs": 23240,
+     "endMs": 23720,
+     "phrase": 10
+    },
+    {
+     "text": "achase,",
+     "atMs": 23840,
+     "endMs": 24760,
+     "phrase": 10,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 25060,
+   "endMs": 28480,
+   "tokens": [
+    {
+     "text": "Than,",
+     "atMs": 25060,
+     "endMs": 25540,
+     "phrase": 11,
+     "emphasis": "lead"
+    },
+    {
+     "text": "moonless,",
+     "atMs": 25620,
+     "endMs": 26420,
+     "phrase": 12,
+     "emphasis": "lead"
+    },
+    {
+     "text": "one's",
+     "atMs": 26500,
+     "endMs": 26820,
+     "phrase": 13
+    },
+    {
+     "text": "own",
+     "atMs": 26900,
+     "endMs": 27060,
+     "phrase": 13
+    },
+    {
+     "text": "self",
+     "atMs": 27220,
+     "endMs": 27460,
+     "phrase": 13
+    },
+    {
+     "text": "encounter",
+     "atMs": 27580,
+     "endMs": 28180,
+     "phrase": 13,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "corridors",
+   "startMs": 28480,
+   "endMs": 31700,
+   "tokens": [
+    {
+     "text": "In",
+     "atMs": 28480,
+     "endMs": 28560,
+     "phrase": 14
+    },
+    {
+     "text": "lonesome",
+     "atMs": 28720,
+     "endMs": 29120,
+     "phrase": 14
+    },
+    {
+     "text": "place.",
+     "atMs": 29200,
+     "endMs": 30240,
+     "phrase": 14,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mirror",
+   "startMs": 31700,
+   "endMs": 34560,
+   "tokens": [
+    {
+     "text": "Ourself,",
+     "atMs": 31700,
+     "endMs": 32500,
+     "phrase": 15,
+     "emphasis": "lead"
+    },
+    {
+     "text": "behind",
+     "atMs": 32620,
+     "endMs": 32980,
+     "phrase": 16
+    },
+    {
+     "text": "ourself",
+     "atMs": 33060,
+     "endMs": 33460,
+     "phrase": 16
+    },
+    {
+     "text": "concealed,",
+     "atMs": 33620,
+     "endMs": 34260,
+     "phrase": 16,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mirror",
+   "startMs": 34560,
+   "endMs": 36540,
+   "tokens": [
+    {
+     "text": "Should",
+     "atMs": 34560,
+     "endMs": 34800,
+     "phrase": 17
+    },
+    {
+     "text": "startle",
+     "atMs": 34960,
+     "endMs": 35280,
+     "phrase": 17
+    },
+    {
+     "text": "most;",
+     "atMs": 35520,
+     "endMs": 36240,
+     "phrase": 17,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mirror",
+   "startMs": 36540,
+   "endMs": 39080,
+   "tokens": [
+    {
+     "text": "Assassin,",
+     "atMs": 36540,
+     "endMs": 37340,
+     "phrase": 18,
+     "emphasis": "lead"
+    },
+    {
+     "text": "hid",
+     "atMs": 37460,
+     "endMs": 37580,
+     "phrase": 19
+    },
+    {
+     "text": "in",
+     "atMs": 37660,
+     "endMs": 37740,
+     "phrase": 19
+    },
+    {
+     "text": "our",
+     "atMs": 37820,
+     "endMs": 37900,
+     "phrase": 19
+    },
+    {
+     "text": "apartment,",
+     "atMs": 37980,
+     "endMs": 38780,
+     "phrase": 19,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "mirror",
+   "startMs": 39080,
+   "endMs": 44920,
+   "tokens": [
+    {
+     "text": "Be",
+     "atMs": 39080,
+     "endMs": 39160,
+     "phrase": 20
+    },
+    {
+     "text": "horror's",
+     "atMs": 39320,
+     "endMs": 39800,
+     "phrase": 20
+    },
+    {
+     "text": "least.",
+     "atMs": 39880,
+     "endMs": 40840,
+     "phrase": 20,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "bolted-door",
+   "startMs": 44920,
+   "endMs": 47220,
+   "tokens": [
+    {
+     "text": "The",
+     "atMs": 44920,
+     "endMs": 45000,
+     "phrase": 21
+    },
+    {
+     "text": "prudent",
+     "atMs": 45080,
+     "endMs": 45480,
+     "phrase": 21
+    },
+    {
+     "text": "carries",
+     "atMs": 45600,
+     "endMs": 45960,
+     "phrase": 21
+    },
+    {
+     "text": "a",
+     "atMs": 46000,
+     "endMs": 46040,
+     "phrase": 21
+    },
+    {
+     "text": "revolver,",
+     "atMs": 46120,
+     "endMs": 46920,
+     "phrase": 21,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "bolted-door",
+   "startMs": 47220,
+   "endMs": 49040,
+   "tokens": [
+    {
+     "text": "He",
+     "atMs": 47220,
+     "endMs": 47380,
+     "phrase": 22
+    },
+    {
+     "text": "bolts",
+     "atMs": 47460,
+     "endMs": 47780,
+     "phrase": 22
+    },
+    {
+     "text": "the",
+     "atMs": 47860,
+     "endMs": 47940,
+     "phrase": 22
+    },
+    {
+     "text": "door,",
+     "atMs": 48100,
+     "endMs": 48740,
+     "phrase": 22,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "bolted-door",
+   "startMs": 49040,
+   "endMs": 51500,
+   "tokens": [
+    {
+     "text": "O'erlooking",
+     "atMs": 49040,
+     "endMs": 49680,
+     "phrase": 23
+    },
+    {
+     "text": "a",
+     "atMs": 49720,
+     "endMs": 49760,
+     "phrase": 23
+    },
+    {
+     "text": "superior",
+     "atMs": 49840,
+     "endMs": 50480,
+     "phrase": 23
+    },
+    {
+     "text": "spectre",
+     "atMs": 50560,
+     "endMs": 51200,
+     "phrase": 23,
+     "emphasis": "lead"
+    }
+   ]
+  },
+  {
+   "sceneId": "bolted-door",
+   "startMs": 51500,
+   "endMs": 52340,
+   "tokens": [
+    {
+     "text": "More",
+     "atMs": 51500,
+     "endMs": 51620,
+     "phrase": 24
+    },
+    {
+     "text": "near.",
+     "atMs": 51700,
+     "endMs": 52340,
+     "phrase": 24,
+     "emphasis": "lead"
+    }
+   ]
+  }
+ ]
+}
