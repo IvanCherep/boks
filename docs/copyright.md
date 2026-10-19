@@ -51,16 +51,19 @@ has a rights record"*.
 
 ## 2. Any reader can report a bok
 
-Every bok has a **⋯** button in the action rail. It opens the bok's own sheet:
-copy its link, or report a problem — **Copyright** or **Something else** — with
-a reason.
+Every bok has a **⋯** button in the reading controls. Its menu opens Share
+or a separate report page — **Copyright** or **Something else** — with a reason.
+The report page keeps the draft on failure and confirms a real RPC receipt.
 
 - The reason is required and has to be a sentence or two. A report an admin
   cannot act on wastes the one person who reads it, so both the button and the
   RPC refuse anything under ten characters.
 - **Guests can report.** The person whose work was taken does not necessarily
   have a boks account, and asking them to make one before they can complain is
-  the wrong order.
+  the wrong order. The browser uses an anonymous Supabase session; bare unauthenticated
+  requests cannot execute the RPC. `20261017200000_boks_guest_reports.sql`
+  restores this exception beneath the shared Terms write trigger; suspended
+  accounts still cannot report.
 - One open report per person per bok. Pressing it again says *"you have already
   reported this bok"* rather than piling up rows.
 - Reporters cannot read the reports, not even their own. Asserted under a real
@@ -141,10 +144,11 @@ See `docs/catalogue-import.md` for the rest of the format.
 |---|---|
 | Tables, RPCs, the backfill | `supabase/migrations/20260916140000_boks_rights_and_reports.sql` |
 | The attestation on the form | `components/boks/author-console.tsx` |
-| The bok's menu and report sheet | `components/boks/reader-feed.tsx`, `components/boks/reader-sheet.tsx` |
+| The bok's menu and report page | `components/boks/reader/bok-menu-sheet.tsx` |
 | The admin panel | `components/boks/admin/rights-review.tsx` |
 | Batch attestation | `components/boks/admin/catalogue-import.tsx` |
 | Behaviour asserted | `scripts/local-supabase/checks.sql`, `lib/boks/supabase-flow.test.ts` |
 
-RPCs: `report_bok` (any signed-in reader), and `get_boks_rights_review`,
+RPCs: `report_bok` (any non-blocked Supabase session, including guests), and
+`get_boks_rights_review_page` / bounded `get_boks_rights_review`,
 `review_bok_report`, `set_bok_rights` (admin only).

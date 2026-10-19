@@ -2,14 +2,15 @@
 
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, CheckCircle2, Heart, LogOut, Mail, MessageCircle, PenLine, Search, Shield, UserRound, X } from "lucide-react";
+import { ChevronRight, Mail, MessageCircle, Pause, Search } from "lucide-react";
+import { ReaderBackIcon as ArrowLeft, ReaderSettingsIcon as Settings2 } from "./reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
   effectiveReadingLanguages,
   normalizeReadingLanguages,
+  readingLanguageNames,
   rememberReadingLanguages,
-  supportedReadingLanguages,
 } from "@/components/boks/reading-languages";
 import {
   formatCooldown,
@@ -20,16 +21,10 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   describeBoksHandleProblem,
-  isValidBoksHandle,
   maxHandleLength,
-  minHandleLength,
 } from "@/lib/boks/contracts";
 import { anonymousReadLimits } from "@/components/boks/reader-behavior";
-import { ThemeSetting } from "@/components/boks/theme-setting";
-import { UiLanguageSetting } from "@/components/boks/ui-language-setting";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
-import { FeedbackForm } from "@/components/boks/feedback-form";
-import { readFeedbackState } from "@/components/boks/feedback";
 import { getBrowserId } from "@/components/boks/reader-behavior";
 import { recordJourneyEvent, signupReason } from "@/lib/boks/journey";
 import type { BoksUserContext, ReaderLibraryItem } from "@/components/boks/client-types";
@@ -46,6 +41,7 @@ import {
 import { clearLocalReaderState } from "@/components/boks/reader-behavior";
 import {
   readerLibraryActivityAt,
+  readerLibraryActivityTime,
   selectReaderLibraryItems,
   type ReaderLibraryView,
 } from "@/components/boks/reader-library";
@@ -59,258 +55,22 @@ import {
   requestBoksMagicLink,
   signOutBoksUser,
 } from "@/lib/boks/supabase-client";
-import { atHandle, bareHandle } from "@/components/boks/reader/handles";
-import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
-import { localizeBoksMessage } from "@/lib/boks/errors";
-import { defineMessages, plural } from "@/lib/i18n/messages";
+import { atHandle } from "@/components/boks/reader/handles";
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { ReaderTabs } from "@/components/boks/series/series-view";
+import { YouSettings } from "@/components/boks/you-settings";
+import { bokCoverPalette } from "@/components/boks/reader/bok-cover-palette";
+import { defineMessages } from "@/lib/i18n/messages";
+import { useMessages } from "./ui-language";
 
-const readingLanguageLabels = defineMessages<Record<string, string>>(
-  { en: "English", ru: "Russian" },
-  { ru: { en: "Английский", ru: "Русский" } }
-);
-
-/** The interface's words. Titles, names and comments keep their own language. */
-const messages = defineMessages(
-  {
-    sendFeedback: "Send feedback",
-    loadFailed: "Could not load account.",
-    enterEmail: "Enter your email.",
-    oneLinkAMinute: (seconds: number) => `One link a minute per address. ${seconds} seconds to go.`,
-    readingIn: (names: string[]) => `Reading in ${names.join(" and ")}.`,
-    languagesFailed: "Could not change your languages.",
-    settingsSaved: "Settings saved.",
-    settingsFailed: "Could not save settings.",
-    deleteFailed: "Could not delete the account.",
-    signOutFailed: "Could not sign out.",
-    noticeRequiredAuthor: "Your email, to submit boks for review and follow the decisions.",
-    noticeRequired:
-      "You have read 15 boks without an account. Reading stays free - your email keeps it going, with your history and recommendations saved from here on.",
-    noticeRemaining: (count: number) =>
-      `You can read ${count} more boks without an account. Reading stays free; an account saves your history and helps personalize your feed.`,
-    noticeLike: "Likes tune your recommendations and stay connected to you. boks is free.",
-    noticeComment: "Comments carry your @nickname, and they tell boks which pieces work for you. boks is free.",
-    noticeFollow:
-      "Following brings an author’s new boks to you and tells the feed whose work you want more of. boks is free.",
-    noticeAuthor: "Your email, to submit boks for review.",
-    noticeGeneral: "One address. If you have been here before it signs you in; if not, it makes your account.",
-    settings: "Settings",
-    yourEmail: "Your email",
-    dialog: "boks account",
-    accountIntro: "Your account, reading history, and boks preferences.",
-    close: "Close account panel",
-    checking: "Checking account...",
-    suspended: "This account is suspended",
-    suspendedBody: "You can keep reading, but reactions, comments, follows, reports, and publishing are unavailable.",
-    reason: (reason: string) => ` Reason: ${reason}`,
-    signedInAs: "Signed in on this device as",
-    readerFallback: "reader",
-    stats: (read: number, liked: number) => `${read} read boks · ${liked} liked`,
-    signOut: "Sign out of this device",
-    writeBok: "Write a bok",
-    admin: "Admin",
-    languagesYouRead: "Languages you read",
-    languagesHint:
-      "boks only recommends what you can read. Started from your browser’s languages; change it whenever you like. Keep at least one.",
-    keepOne: "Keep at least one language",
-    nothingIn: (names: string[]) =>
-      `There is nothing in ${names.join(" or ")} yet, so your feed will be empty until there is. We would rather say so than quietly show you another language.`,
-    nickname: "Unique @nickname",
-    nicknameHint: "English letters, numbers and underscores. Starts with a letter.",
-    saveHandle: (handle: string) => `Save @${handle || "…"}`,
-    savedAs: (handle: string) => `Saved as @${handle}`,
-    following: "Following",
-    authorBoks: (count: number) => ` · ${count} bok${count === 1 ? "" : "s"}`,
-    unfollow: "Unfollow",
-    followingEmpty: "Authors you follow will appear here. Their new boks reach you sooner.",
-    yourBoks: "Your boks",
-    yourBoksHint: "Open one here, then keep reading from your recommendations.",
-    tabRead: "Read",
-    tabLiked: "Liked",
-    tabComments: "Comments",
-    search: { read: "Search read boks", liked: "Search liked boks", commented: "Search commented boks" },
-    noMatch: {
-      read: "No read boks match this search.",
-      liked: "No liked boks match this search.",
-      commented: "No commented boks match this search.",
-    },
-    emptyRead: "Boks you read will appear here.",
-    emptyLiked: "Boks you like will appear here.",
-    emptyCommented: "Boks you comment on will appear here.",
-    authorFallback: "boks author",
-    minutes: (minutes: number) => `${minutes} min`,
-    deleteAccount: "Delete account",
-    deleteMyAccountStart: "Delete my account…",
-    deleteBody:
-      "This deletes your account, email, likes, comments, follows and reading history. Boks you published are hidden and no longer carry your name. It cannot be undone.",
-    typeToConfirm: (handle: string) => `Type @${handle} to confirm`,
-    deleteMyAccount: "Delete my account",
-    cancel: "Cancel",
-    about: "About",
-    aboutLine: "boks is a focused feed for short literature.",
-    brokenQuestion: "Something broken, or a question? Write to",
-    licenses: "Open source licenses",
-    fontLicense: "Copyright Google Inc. Licensed under the SIL Open Font License 1.1.",
-    readLicense: "Read the complete license",
-    software: "Software",
-    softwareBody:
-      "boks is built on open-source software - React, Supabase, Radix, Lucide and others - under the MIT, ISC, BSD and Apache 2.0 licenses.",
-    everyPackage: "Every package and its license",
-    texts: "Texts",
-    textsBody: "The catalogue is literature in the public domain, transcribed by the volunteers of Wikisource.",
-    whereTexts: "Where the texts come from",
-    enterCode: "Enter the code",
-    weSentCode: (digits: number) => `We sent a ${digits}-digit code to`,
-    codeLabel: (digits: number) => `The ${digits}-digit code from the email`,
-    signingIn: "Signing in…",
-    continue: "Continue",
-    linkToo: "The same email has a link as well - opening it here works too.",
-    anotherEmail: "Use another email",
-    sendAgainIn: (time: string) => `Send again in ${time}`,
-    sendAgain: "Send again",
-    continueReading: "Continue reading",
-    nothingArrived: "Nothing after a few minutes? Check spam, then write to",
-    email: "Email",
-    weEmailCode: (digits: number) => `We email you a ${digits}-digit code to type back here.`,
-    sending: "Sending…",
-    acceptStart: "By continuing you accept the",
-    terms: "Terms",
-    acceptMiddle: ", including the author content licence, and the",
-    privacy: "Privacy",
-    acceptEnd: "page.",
-    justSent: "A code was just sent to this address. One a minute, so a second request cannot invalidate the first.",
-    ratherEmail: "Would rather write an email, or need a reply?",
-  },
-  {
-    ru: {
-      sendFeedback: "Написать отзыв",
-      loadFailed: "Не удалось загрузить аккаунт.",
-      enterEmail: "Введите email.",
-      oneLinkAMinute: (seconds: number) =>
-        `Не больше одной ссылки в минуту на адрес. Осталось ${seconds} ${plural("ru", seconds, {
-          one: "секунда",
-          few: "секунды",
-          many: "секунд",
-          other: "секунды",
-        })}.`,
-      readingIn: (names: string[]) => `Читаете на языках: ${names.join(" и ").toLowerCase()}.`,
-      languagesFailed: "Не удалось изменить языки.",
-      settingsSaved: "Настройки сохранены.",
-      settingsFailed: "Не удалось сохранить настройки.",
-      deleteFailed: "Не удалось удалить аккаунт.",
-      signOutFailed: "Не удалось выйти.",
-      noticeRequiredAuthor: "Ваш email - чтобы отправлять тексты на проверку и следить за решениями.",
-      noticeRequired:
-        "Вы прочитали 15 текстов без аккаунта. Чтение остаётся бесплатным - с email оно продолжится, а история и рекомендации будут сохраняться.",
-      noticeRemaining: (count: number) =>
-        `Без аккаунта можно прочитать ещё ${count} ${plural("ru", count, {
-          one: "текст",
-          few: "текста",
-          many: "текстов",
-          other: "текста",
-        })}. Чтение бесплатное; аккаунт сохраняет историю и помогает подбирать ленту под вас.`,
-      noticeLike: "Лайки настраивают рекомендации и остаются за вами. boks бесплатный.",
-      noticeComment:
-        "Комментарии подписаны вашим @никнеймом и подсказывают boks, что вам по душе. boks бесплатный.",
-      noticeFollow:
-        "Подписка приносит вам новые тексты автора и подсказывает ленте, кого вы хотите читать больше. boks бесплатный.",
-      noticeAuthor: "Ваш email - чтобы отправлять тексты на проверку.",
-      noticeGeneral: "Один адрес. Если вы уже были здесь, он вас впустит; если нет - создаст аккаунт.",
-      settings: "Настройки",
-      yourEmail: "Ваш email",
-      dialog: "Аккаунт boks",
-      accountIntro: "Ваш аккаунт, история чтения и настройки boks.",
-      close: "Закрыть панель аккаунта",
-      checking: "Проверяем аккаунт...",
-      suspended: "Аккаунт заблокирован",
-      suspendedBody:
-        "Читать можно и дальше, но реакции, комментарии, подписки, жалобы и публикация недоступны.",
-      reason: (reason: string) => ` Причина: ${reason}`,
-      signedInAs: "На этом устройстве вы вошли как",
-      readerFallback: "reader",
-      stats: (read: number, liked: number) => `Прочитано: ${read} · Понравилось: ${liked}`,
-      signOut: "Выйти на этом устройстве",
-      writeBok: "Написать текст",
-      admin: "Админка",
-      languagesYouRead: "Языки, на которых вы читаете",
-      languagesHint:
-        "boks рекомендует только то, что вы можете прочитать. Сначала берём языки браузера; меняйте когда угодно. Оставьте хотя бы один.",
-      keepOne: "Оставьте хотя бы один язык",
-      nothingIn: (names: string[]) =>
-        `На выбранных языках (${names.join(", ").toLowerCase()}) пока ничего нет, поэтому лента будет пустой, пока что-то не появится. Лучше сказать об этом прямо, чем тихо показать вам другой язык.`,
-      nickname: "Уникальный @никнейм",
-      nicknameHint: "Латинские буквы, цифры и подчёркивания. Начинается с буквы.",
-      saveHandle: (handle: string) => `Сохранить @${handle || "…"}`,
-      savedAs: (handle: string) => `Сохранено: @${handle}`,
-      following: "Подписки",
-      authorBoks: (count: number) =>
-        ` · ${count} ${plural("ru", count, { one: "текст", few: "текста", many: "текстов", other: "текста" })}`,
-      unfollow: "Отписаться",
-      followingEmpty: "Здесь появятся авторы, на которых вы подписаны. Их новые тексты будут доходить до вас быстрее.",
-      yourBoks: "Ваши тексты",
-      yourBoksHint: "Откройте любой здесь, а потом продолжайте читать по рекомендациям.",
-      tabRead: "Прочитанные",
-      tabLiked: "Понравились",
-      tabComments: "Комментарии",
-      search: {
-        read: "Искать среди прочитанных",
-        liked: "Искать среди понравившихся",
-        commented: "Искать среди прокомментированных",
-      },
-      noMatch: {
-        read: "Среди прочитанных ничего не нашлось.",
-        liked: "Среди понравившихся ничего не нашлось.",
-        commented: "Среди прокомментированных ничего не нашлось.",
-      },
-      emptyRead: "Здесь появятся тексты, которые вы прочитали.",
-      emptyLiked: "Здесь появятся тексты, которые вам понравились.",
-      emptyCommented: "Здесь появятся тексты, которые вы прокомментировали.",
-      authorFallback: "автор boks",
-      minutes: (minutes: number) => `${minutes} мин`,
-      deleteAccount: "Удаление аккаунта",
-      deleteMyAccountStart: "Удалить мой аккаунт…",
-      deleteBody:
-        "Будут удалены аккаунт, email, лайки, комментарии, подписки и история чтения. Опубликованные вами тексты скрываются и больше не подписаны вашим именем. Отменить это нельзя.",
-      typeToConfirm: (handle: string) => `Для подтверждения введите @${handle}`,
-      deleteMyAccount: "Удалить мой аккаунт",
-      cancel: "Отмена",
-      about: "О boks",
-      aboutLine: "boks - сосредоточенная лента короткой литературы.",
-      brokenQuestion: "Что-то сломалось или есть вопрос? Пишите на",
-      licenses: "Лицензии открытого ПО",
-      fontLicense: "Copyright Google Inc. Распространяется по лицензии SIL Open Font License 1.1.",
-      readLicense: "Полный текст лицензии",
-      software: "Программы",
-      softwareBody:
-        "boks построен на открытом ПО - React, Supabase, Radix, Lucide и других - под лицензиями MIT, ISC, BSD и Apache 2.0.",
-      everyPackage: "Все пакеты и их лицензии",
-      texts: "Тексты",
-      textsBody: "Каталог - литература в общественном достоянии, набранная волонтёрами Викитеки.",
-      whereTexts: "Откуда берутся тексты",
-      enterCode: "Введите код",
-      weSentCode: (digits: number) => `Мы отправили ${digits}-значный код на`,
-      codeLabel: (digits: number) => `${digits}-значный код из письма`,
-      signingIn: "Входим…",
-      continue: "Продолжить",
-      linkToo: "В том же письме есть и ссылка - если открыть её здесь, это тоже сработает.",
-      anotherEmail: "Другой email",
-      sendAgainIn: (time: string) => `Отправить ещё раз через ${time}`,
-      sendAgain: "Отправить ещё раз",
-      continueReading: "Продолжить чтение",
-      nothingArrived: "Письма нет уже несколько минут? Проверьте спам, а потом напишите на",
-      email: "Email",
-      weEmailCode: (digits: number) => `Мы пришлём на почту ${digits}-значный код - введите его здесь.`,
-      sending: "Отправляем…",
-      acceptStart: "Продолжая, вы принимаете",
-      terms: "Условия",
-      acceptMiddle: ", включая лицензию на авторский контент, и",
-      privacy: "Политику конфиденциальности",
-      acceptEnd: ".",
-      justSent:
-        "Код на этот адрес только что отправлен. Не чаще раза в минуту, чтобы новый запрос не отменил предыдущий.",
-      ratherEmail: "Хотите написать письмо или нужен ответ?",
-    },
-  }
-);
+const activityMessages = defineMessages({
+  likedAt: (time: string) => `Liked at ${time}`,
+  readAt: (time: string) => `Read at ${time}`,
+}, { ru: {
+  likedAt: (time: string) => `Понравилось в ${time}`,
+  readAt: (time: string) => `Прочитано в ${time}`,
+} });
 
 // boks routes are separate surfaces with separate data loads, so they are
 // linked with plain anchors. vinext's `next/link` client navigation throws
@@ -364,33 +124,16 @@ type UserAuthPanelProps = {
   guestReadCount: number;
   currentUser: BoksUserContext | null;
   onClose: () => void;
-  onOpenReadBoks: (storyId: string) => void;
+  onOpenReadBoks: (storyId: string, openComments?: boolean) => void;
   onUserChanged: (user: BoksUserContext | null) => void;
   /** Saved reading languages, for the reader to rebuild its feed with. */
   onReadingLanguagesChanged?: (languages: readonly string[]) => void;
   /** So the Follow control in the reader stays in step with this list. */
   onFollowsChanged?: (authorUserIds: string[]) => void;
+  onOpenFeed?: () => void;
+  onOpenSeries?: () => void;
+  initialSection?: "home" | "typography" | "languages" | "feedback";
 };
-
-/**
- * The way in to the feedback box from Settings.
- *
- * A disclosure rather than a separate screen: the box is two sentences and a
- * text field, and a reader who came here to say something should not have to
- * navigate to say it. Drawn for guests as well - the server accepts a note
- * without an account on purpose.
- */
-function FeedbackDisclosure() {
-  const t = useMessages(messages);
-  return (
-    <details className="settings-disclosure">
-      <summary>{t.sendFeedback}</summary>
-      <div className="settings-disclosure__body">
-        <FeedbackForm surface="settings" boksRead={readFeedbackState().reads} visitorId={getBrowserId("boks-reader")} />
-      </div>
-    </details>
-  );
-}
 
 export function UserAuthPanel({
   open,
@@ -405,10 +148,16 @@ export function UserAuthPanel({
   onUserChanged,
   onReadingLanguagesChanged,
   onFollowsChanged,
+  onOpenFeed,
+  onOpenSeries,
+  initialSection,
 }: UserAuthPanelProps) {
-  const t = useMessages(messages);
-  const language = useUiLanguage();
-  const languageLabels = readingLanguageLabels[language];
+  const { preferences, t } = useReaderPreferences();
+  const activityWords = useMessages(activityMessages);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<"feedback" | undefined>();
+  const panelRef = useRef<HTMLElement>(null);
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [library, setLibrary] = useState<ReaderLibraryItem[]>([]);
   const [follows, setFollows] = useState<FollowedAuthor[]>([]);
@@ -421,7 +170,7 @@ export function UserAuthPanel({
    * reopening shows what is actually saved rather than an abandoned edit.
    */
   const seededHandleFor = useRef<string | null>(null);
-  const [readingLanguages, setReadingLanguages] = useState<string[]>([]);
+  const [readingLanguages, setReadingLanguages] = useState<string[]>(() => effectiveReadingLanguages(undefined));
 
   /**
    * Fills the settings fields from an account, once per account.
@@ -445,6 +194,8 @@ export function UserAuthPanel({
   const [emailCode, setEmailCode] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeError, setCodeError] = useState("");
+  const [codeRecovery, setCodeRecovery] = useState(false);
+  const [authRequestFailed, setAuthRequestFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
   const visibleLibrary = useMemo(() => {
@@ -485,7 +236,7 @@ export function UserAuthPanel({
     seedSettingsFor(context);
 
     if (context && !context.isAnonymous) {
-      const [items, followed] = await Promise.all([loadReaderLibrary(), loadFollowedAuthors()]);
+      const [items, followed] = await Promise.all([loadReaderLibrary(120, context.userId), loadFollowedAuthors()]);
       setLibrary(items);
       setFollows(followed);
     } else {
@@ -505,9 +256,14 @@ export function UserAuthPanel({
     const handle = window.setTimeout(() => {
       setStatus("");
       setSentMagicLink(null);
+      setAuthRequestFailed(false);
+      setCodeRecovery(false);
+      setSettingsSection(undefined);
+      setShowAuth(reason !== "manual" || intent !== "general" || surface === "author");
+      setShowSettings(Boolean(initialSection));
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [open]);
+  }, [open, reason, intent, surface, initialSection]);
 
   useEffect(() => {
     if (!open || !notice) return;
@@ -538,19 +294,22 @@ export function UserAuthPanel({
     const handle = window.setTimeout(() => {
       setAccountLoading(true);
       refreshUser()
-        .catch((error) => setStatus(readableBoksError(error, t.loadFailed, language)))
+        .catch((error) => setStatus(readableBoksError(error, "Could not load account.")))
         .finally(() => setAccountLoading(false));
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [open, refreshUser, language, t.loadFailed]);
+  }, [open, refreshUser]);
 
   function friendlyAuthError(error: unknown) {
-    return localizeBoksMessage(explainBoksMagicLinkError(error, { flow: "signup" }), language);
+    if (error instanceof Error && /failed to fetch|network|load failed/i.test(error.message)) {
+      return t("Check your connection, then try again.", "Проверьте соединение и попробуйте ещё раз.");
+    }
+    return explainBoksMagicLinkError(error, { flow: "signup" });
   }
 
   async function sendMagicLink() {
     if (!email.trim()) {
-      setStatus(t.enterEmail);
+      setStatus(t("Enter your email.", "Введите email."));
       return;
     }
 
@@ -558,12 +317,13 @@ export function UserAuthPanel({
     if (remaining > 0) {
       // The button is disabled while waiting, so reaching here means a second
       // tab or a stale render. Say the number rather than fail silently.
-      setStatus(t.oneLinkAMinute(Math.ceil(remaining / 1000)));
+      setStatus(`One link a minute per address. ${Math.ceil(remaining / 1000)} seconds to go.`);
       return;
     }
 
     setBusy(true);
     setStatus("");
+    setAuthRequestFailed(false);
     try {
       const cleanEmail = email.trim().toLowerCase();
       await requestBoksMagicLink({
@@ -588,9 +348,11 @@ export function UserAuthPanel({
       );
       setEmail(cleanEmail);
       setSentMagicLink({ email: cleanEmail });
+      setCodeRecovery(false);
       setStatus("");
     } catch (error) {
       setStatus(friendlyAuthError(error));
+      setAuthRequestFailed(true);
     } finally {
       setBusy(false);
     }
@@ -603,6 +365,8 @@ export function UserAuthPanel({
 
   function editEmail() {
     setSentMagicLink(null);
+    setCodeRecovery(false);
+    setAuthRequestFailed(false);
     setStatus("");
     setEmailCode("");
     setCodeError("");
@@ -630,7 +394,7 @@ export function UserAuthPanel({
       setSentMagicLink(null);
       setEmailCode("");
     } catch (error) {
-      setCodeError(localizeBoksMessage(explainBoksEmailCodeError(error), language));
+      setCodeError(explainBoksEmailCodeError(error));
     } finally {
       setCodeBusy(false);
     }
@@ -650,6 +414,11 @@ export function UserAuthPanel({
     const previous = readingLanguages;
     setReadingLanguages(cleaned);
     rememberReadingLanguages(cleaned);
+    if (!user || user.isAnonymous) {
+      onReadingLanguagesChanged?.(cleaned);
+      setStatus(t("Reading languages saved on this device.", "Языки чтения сохранены на этом устройстве."));
+      return;
+    }
     setBusy(true);
     setStatus("");
     try {
@@ -658,12 +427,12 @@ export function UserAuthPanel({
       setUser(refreshed);
       onUserChanged(refreshed);
       onReadingLanguagesChanged?.(cleaned);
-      setStatus(t.readingIn(cleaned.map((l) => languageLabels[l] ?? l)));
+      setStatus(t(`Reading in ${cleaned.map((l) => readingLanguageNames[l as "en" | "ru"]).join(" and ")}.`, "Языки чтения сохранены."));
     } catch (error) {
       // A failed save must not leave the pill showing a choice that was not kept.
       setReadingLanguages(previous);
       rememberReadingLanguages(previous);
-      setStatus(readableBoksError(error, t.languagesFailed, language));
+      setStatus(readableBoksError(error, "Could not change your languages."));
     } finally {
       setBusy(false);
     }
@@ -673,7 +442,7 @@ export function UserAuthPanel({
     // Refused here as well as in the database, so the reader is told what is
     // wrong without waiting for a round trip - with the same sentence either
     // way, so the two cannot appear to disagree.
-    const problem = describeBoksHandleProblem(handle, language);
+    const problem = describeBoksHandleProblem(handle);
     if (problem) {
       setStatus(problem);
       return;
@@ -685,20 +454,19 @@ export function UserAuthPanel({
       const next = await updateBoksProfile({ handle });
       setUser(next);
       onUserChanged(next);
-      setStatus(t.settingsSaved);
+      setStatus(t("Settings saved.", "Настройки сохранены."));
     } catch (error) {
-      setStatus(readableBoksError(error, t.settingsFailed, language));
+      setStatus(readableBoksError(error, "Could not save settings."));
     } finally {
       setBusy(false);
     }
   }
 
-  function openReadBoks(storyId: string) {
-    onOpenReadBoks(storyId);
+  function openReadBoks(storyId: string, openComments = false) {
+    onOpenReadBoks(storyId, openComments);
     onClose();
   }
 
-  const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
@@ -712,7 +480,7 @@ export function UserAuthPanel({
       clearLocalReaderState();
       window.location.reload();
     } catch (error) {
-      setDeleteError(readableBoksError(error, t.deleteFailed, language));
+      setDeleteError(readableBoksError(error, "Could not delete the account."));
       setBusy(false);
     }
   }
@@ -729,7 +497,7 @@ export function UserAuthPanel({
       // to this device and ranked the next feed with it.
       window.location.reload();
     } catch (error) {
-      setStatus(readableBoksError(error, t.signOutFailed, language));
+      setStatus(readableBoksError(error, "Could not sign out."));
     } finally {
       setBusy(false);
     }
@@ -756,6 +524,13 @@ export function UserAuthPanel({
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [open, reason, user, onClose]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const timer = window.setTimeout(() => panelRef.current?.querySelector<HTMLElement>(showAuth ? "input" : "button, input")?.focus(), 0);
+    return () => { window.clearTimeout(timer); previous?.focus(); };
+  }, [open, showAuth, showSettings]);
+
   // Ticks down for the address being asked about, and survives a reload,
   // because the server's limit does too.
   const cooldownSeconds = useMagicLinkCooldown(sentMagicLink?.email ?? email);
@@ -766,554 +541,127 @@ export function UserAuthPanel({
   const accountUser = user && !user.isAnonymous ? user : null;
   // Save is offered only when there is something to save, so the button never
   // asks for a round trip that would change nothing.
-  const handleChanged = handle !== (accountUser?.handle ?? "");
   // How much the catalogue holds per language, so a filter that would empty the
   // feed says so before the reader taps it rather than after.
-  const languageCoverage = user?.languageCoverage ?? {};
   const signedIn = Boolean(accountUser);
   const required = reason === "required";
   const showingAccount = Boolean(accountUser);
   const remainingGuestBoks = Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount);
   const noticeText = required
-    ? surface === "author"
-      ? t.noticeRequiredAuthor
-      : t.noticeRequired
-    : reason === "notice"
-      ? t.noticeRemaining(remainingGuestBoks)
-      : intent === "like"
-        ? t.noticeLike
-        : intent === "comment"
-          ? t.noticeComment
-        : intent === "follow"
-          ? t.noticeFollow
-      : surface === "author"
-        ? t.noticeAuthor
-        : t.noticeGeneral;
-  const title = showingAccount ? t.settings : t.yourEmail;
+    ? surface === "author" ? t("Your email, to submit boks for review.", "Войдите, чтобы отправлять боки на проверку.")
+      : t("You have read 15 boks without an account. Sign in to keep reading for free.", "Вы прочитали 15 боков без аккаунта. Войдите, чтобы продолжить читать бесплатно.")
+    : reason === "notice" ? t(`You can read ${remainingGuestBoks} more boks without an account. An account keeps your reading history.`, `Можно прочитать ещё ${remainingGuestBoks} боков без аккаунта. Аккаунт сохраняет историю чтения.`)
+    : intent === "like" ? t("Sign in to like this bok.", "Войдите, чтобы поставить лайк.")
+    : intent === "comment" ? t("Sign in to comment with your @handle.", "Войдите, чтобы комментировать под своим @именем.")
+    : intent === "follow" ? t("Sign in to follow this account.", "Войдите, чтобы подписаться.")
+    : t("Sign in to keep your reading history, like boks and comment.", "Войдите, чтобы сохранять историю чтения, ставить лайки и общаться.");
+  const authVisible = showAuth || reason !== "manual" || intent !== "general" || surface === "author";
+  const title = libraryView === "liked" ? t("Liked boks.", "Понравившиеся боки.") : libraryView === "commented" ? t("My comments.", "Мои комментарии.") : t("Your activity.", "Ваша активность.");
   const emailInputId = "boks-email";
   const emailCodeInputId = "boks-email-code";
+  const settingsVisible = !showingAccount && !authVisible && !accountLoading || showingAccount && showSettings;
+  const gate = required && surface === "reader" && !showingAccount && !sentMagicLink;
+  const dateLabel = (value: string | null) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) return t("Today", "Сегодня");
+    today.setDate(today.getDate() - 1);
+    if (date.toDateString() === today.toDateString()) return t("Yesterday", "Вчера");
+    return date.toLocaleDateString(preferences.locale, { day: "numeric", month: "short" });
+  };
+  const terms = <p className="auth-terms-line">{t("By continuing you accept the", "Продолжая, вы принимаете")} <a href="/terms" target="_blank" rel="noreferrer">{t("Terms", "Условия")}</a>{t(", including the author content licence, and the", ", включая лицензию на авторские тексты, и")} <a href="/privacy" target="_blank" rel="noreferrer">{t("Privacy policy", "Политику конфиденциальности")}</a>.</p>;
 
   return (
-    <div
-      className="auth-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.dialog}
-      onKeyDown={(event) => event.stopPropagation()}
-      onPointerDown={(event) => event.stopPropagation()}
-      onPointerUp={(event) => event.stopPropagation()}
-      onTouchStart={(event) => event.stopPropagation()}
-      onTouchEnd={(event) => event.stopPropagation()}
-    >
-      <section className="auth-panel">
-        <header className="flex items-start justify-between gap-3">
-          <div>
-            <p className="brand-word">boks</p>
-            <h1 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--foreground)]">{title}</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-              {showingAccount ? t.accountIntro : noticeText}
-            </p>
-          </div>
-          {(!required || signedIn) && (
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label={t.close}>
-              <X className="size-4" />
-            </Button>
-          )}
-        </header>
-
-        {accountLoading && !user ? (
-          <div className="mt-6 rounded-lg bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">
-            {t.checking}
-          </div>
-        ) : showingAccount ? (
-          <div className="mt-6 grid gap-5">
-            {accountUser?.bannedAt && (
-              <div className="rounded-lg border border-[var(--destructive)]/35 bg-[var(--destructive)]/5 p-4" role="status">
-                <p className="text-sm font-semibold">{t.suspended}</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                  {t.suspendedBody}
-                  {accountUser.banReason ? t.reason(accountUser.banReason) : ""}
-                </p>
+    <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("boks account", "Аккаунт boks")}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+        if (event.key !== "Tab") return;
+        const elements = panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea, a[href], summary, select');
+        const visible = Array.from(elements ?? []).filter((element) => element.getClientRects().length > 0);
+        const first = visible[0], last = visible[visible.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }}
+      onPointerDown={(event) => event.stopPropagation()} onPointerUp={(event) => event.stopPropagation()}
+      onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
+      <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
+        {settingsVisible ? <>
+          <YouSettings initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={() => setShowSettings(false)} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} />
+          {status && <p className="social-status" role="status">{status}</p>}
+        </> : <>
+          {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">
+            {(!required || signedIn) ? <button className="social-icon" type="button" onClick={() => sentMagicLink ? editEmail() : showAuth && reason === "manual" && intent === "general" ? setShowAuth(false) : onClose()} aria-label={t("Back", "Назад")}><ArrowLeft /></button> : <span />}
+            <span>{showingAccount && !accountUser?.bannedAt ? t("Your activity", "Ваша активность") : sentMagicLink ? t("Check your email", "Проверьте почту") : t("Your account", "Ваш аккаунт")}</span>
+            {showingAccount ? <button className="social-icon" type="button" onClick={() => { setSettingsSection(undefined); setShowSettings(true); }} aria-label={t("Settings", "Настройки")}><Settings2 /></button> : <span />}
+          </header>}
+          {accountLoading && !user ? <p className="social-status" role="status">{t("Checking account…", "Проверяем аккаунт…")}</p> : showingAccount && accountUser?.bannedAt ? <>
+            <div className="you-suspension-icon" aria-hidden="true"><Pause /></div>
+            <h1 className="social-display">{t("Account", "Аккаунт")}<br />{t("restricted.", "ограничен.")}</h1>
+            <p className="social-muted">{t("Likes, comments, follows, reports and publishing are temporarily unavailable. You can continue reading.", "Лайки, комментарии, подписки, жалобы и публикация временно недоступны. Вы можете продолжать читать.")}</p>
+            {accountUser.banReason && <div className="you-deletion-note"><strong>{t("Reason from the boks team", "Причина от команды boks")}</strong><p>{accountUser.banReason}</p></div>}
+            <Button className="you-wide-button" onClick={onClose}>{t("Back to my bok", "Вернуться к боку")}</Button>
+            <Button className="you-wide-button" variant="outline" onClick={() => { setSettingsSection("feedback"); setShowSettings(true); }}>{t("Ask about this decision", "Узнать об этом решении")}</Button>
+            <p className="social-note">{t("Only you and admins see this notice. Your reading place is kept.", "Это уведомление видите только вы и администраторы. Место чтения сохранено.")}</p>
+          </> : showingAccount ? <>
+            <span className="social-eyebrow" translate="no">@{accountUser?.handle}</span>
+            <h1 className="social-display">{title}</h1>
+            <div className="you-activity">
+              <label className="relative block" htmlFor="boks-library-search"><span className="sr-only">{t("Search your boks", "Поиск среди ваших боков")}</span><Search className="pointer-events-none absolute top-1/2 -translate-y-1/2" /><Input id="boks-library-search" name="search-read-boks" type="search" autoComplete="off" placeholder={t("A title, an author", "Название или автор")} value={libraryQuery} onChange={event => setLibraryQuery(event.target.value)} /></label>
+              <div className="library-tabs" role="tablist" aria-label={t("Your activity", "Ваша активность")}>
+                {([["read", t("Read", "Прочитано")], ["liked", t("Liked", "Нравится")], ["commented", t("Comments", "Комментарии")]] as const).map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={libraryView === value} aria-controls="boks-library-results" className={`library-tab${libraryView === value ? " is-active" : ""}`} onClick={() => setLibraryView(value)}>{label}<span className="sr-only"> · {libraryCounts[value]}</span></button>)}
               </div>
-            )}
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--reader)] p-4">
-              <p className="text-sm text-[var(--muted-foreground)]">{t.signedInAs}</p>
-              <p className="mt-1 truncate text-lg font-semibold">@{accountUser?.handle || t.readerFallback}</p>
-              <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">{accountUser?.email}</p>
-              <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                {t.stats(accountUser?.views ?? 0, accountUser?.likes ?? 0)}
-              </p>
-
-              {/* Reachable without scrolling past settings and two lists: on a
-                  borrowed phone, leaving is the whole reason the panel is open. */}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Button variant="outline" onClick={signOut} disabled={busy}>
-                  <LogOut className="size-4" /> {t.signOut}
-                </Button>
-                {!accountUser?.bannedAt && (
-                  <a className="surface-link" href="/author">
-                    <PenLine className="size-4" /> {t.writeBok}
-                  </a>
-                )}
-                {accountUser?.role === "admin" && (
-                  <a className="surface-link" href="/admin">
-                    <Shield className="size-4" /> {t.admin}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <p className="text-sm font-medium">{t.languagesYouRead}</p>
-              <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                {t.languagesHint}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {supportedReadingLanguages.map((language) => {
-                  const on = readingLanguages.includes(language);
-                  const held = languageCoverage[language] ?? 0;
-                  return (
-                    <button
-                      key={language}
-                      type="button"
-                      className={`report-kind${on ? " report-kind--on" : ""}`}
-                      aria-pressed={on}
-                      disabled={busy || (on && readingLanguages.length === 1)}
-                      title={on && readingLanguages.length === 1 ? t.keepOne : undefined}
-                      onClick={() =>
-                        void saveLanguages(
-                          on
-                            ? readingLanguages.filter((entry) => entry !== language)
-                            : [...readingLanguages, language]
-                        )
-                      }
-                    >
-                      {languageLabels[language] ?? language}
-                      <span className="ml-1 opacity-70">{held}</span>
+              <div id="boks-library-results" role="tabpanel" className="activity-list">
+                {visibleLibrary.length ? visibleLibrary.map((item, index) => {
+                  const artwork = getBokArtwork({ id: item.storyId, title: item.title, authorName: item.authorName });
+                  const palette = bokCoverPalette(item.storyId);
+                  const activityDate = dateLabel(readerLibraryActivityAt(item, libraryView));
+                  const previousDate = index > 0 ? dateLabel(readerLibraryActivityAt(visibleLibrary[index - 1], libraryView)) : "";
+                  const activityTime = readerLibraryActivityTime(readerLibraryActivityAt(item, libraryView), preferences.locale);
+                  if (libraryView === "commented") return <button key={item.storyId} type="button" className="activity-comment" onClick={() => openReadBoks(item.storyId, true)}>
+                    <span className="activity-date">{activityDate} · <span translate="no">{item.title}</span></span>
+                    {item.commentPreview && <blockquote translate="no">“{item.commentPreview}”</blockquote>}
+                    <span className="activity-comment-foot"><MessageCircle />{t("Your comment", "Ваш комментарий")}<span>{t("Open conversation →", "Открыть обсуждение →")}</span></span>
+                  </button>;
+                  return <div key={`${item.storyId}-${readerLibraryActivityAt(item, libraryView)}`}>
+                    {activityDate !== previousDate && <p className="activity-date">{activityDate}</p>}
+                    <button type="button" className="library-item activity-bok" onClick={() => openReadBoks(item.storyId)}>
+                      <span className="activity-art" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{artwork ? <img src={artwork} alt="" /> : <i>b.</i>}</span>
+                      <span className="activity-bok-copy"><strong translate="no">{item.title}</strong><small translate="no">{item.authorName || atHandle(item.authorHandle)}</small><em>{libraryView === "liked" ? activityTime ? activityWords.likedAt(activityTime) : t("Liked", "Нравится") : activityTime ? activityWords.readAt(activityTime) : t("Read", "Прочитано")}</em></span><ChevronRight />
                     </button>
-                  );
-                })}
+                  </div>;
+                }) : <p className="social-note">{libraryQuery.trim() ? t("No matching boks.", "Ничего не найдено.") : libraryView === "read" ? t("Boks you read will appear here.", "Здесь появятся прочитанные боки.") : libraryView === "liked" ? t("Boks you like will appear here.", "Здесь появятся понравившиеся боки.") : t("Boks you comment on will appear here.", "Здесь появятся боки с вашими комментариями.")}</p>}
               </div>
-              {readingLanguages.length > 0 &&
-                readingLanguages.every((language) => (languageCoverage[language] ?? 0) === 0) && (
-                  <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                    {t.nothingIn(readingLanguages.map((l) => languageLabels[l] ?? l))}
-                  </p>
-                )}
+              <p className="social-note">{t("Your latest 120 boks. Search titles and bylines in this list.", "Последние 120 боков. Поиск по названиям и авторам в этом списке.")}</p>
             </div>
-
-            <ThemeSetting />
-
-            <UiLanguageSetting />
-
-            <div className="grid gap-3">
-              <label className="grid gap-1 text-sm font-medium" htmlFor="boks-handle">
-                {t.nickname}
-                <span className="text-sm font-normal text-[var(--muted-foreground)]">
-                  {t.nicknameHint}
-                </span>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]">
-                    @
-                  </span>
-                  {/*
-                    Not `name="username"` with `autoComplete="username"`, which
-                    is what this was. That is an invitation to the password
-                    manager, and it filled the saved sign-in address in:
-                    `normalizeHandleInput` then stripped the @ and the dot, so
-                    `ivanystal@gmail.com` became the plausible-looking
-                    `ivanystalgmailcom`, Save lit up, and one tap would have
-                    renamed the account that publishes every boks in the
-                    catalogue. A nickname is not a credential and must not be
-                    autofilled like one.
-                  */}
-                  <Input
-                    id="boks-handle"
-                    name="boks-nickname"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    className="pl-7"
-                    minLength={minHandleLength}
-                    maxLength={maxHandleLength}
-                    value={handle}
-                    aria-invalid={handle.length > 0 && !isValidBoksHandle(handle)}
-                    onChange={(event) => setHandle(normalizeHandleInput(event.target.value))}
-                  />
-                </div>
-              </label>
-              {/*
-                The button names the nickname it will save. A rename is not
-                reversible in any way a reader can see - it is the byline on
-                everything they have published and the link other people
-                share - so the destination belongs on the control, where a
-                value the reader did not type cannot be saved without being
-                read first.
-              */}
-              <Button onClick={saveSettings} disabled={busy || !handleChanged}>
-                <UserRound className="size-4" />{" "}
-                {handleChanged ? t.saveHandle(handle) : t.savedAs(handle)}
-              </Button>
-            </div>
-
-            <div>
-              <h2 className="text-base font-semibold tracking-normal">
-                {t.following}{follows.length ? ` · ${follows.length}` : ""}
-              </h2>
-              <div className="mt-3 grid max-h-[210px] gap-2 overflow-y-auto pr-1">
-                {follows.length ? (
-                  follows.map((author) => (
-                    <div key={author.authorUserId} className="follow-row">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{author.authorName || `@${author.authorHandle}`}</p>
-                        <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-                          @{author.authorHandle}
-                          {author.published ? t.authorBoks(author.published) : ""}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => unfollowAuthor(author.authorUserId)}
-                        disabled={unfollowing === author.authorUserId}
-                      >
-                        {unfollowing === author.authorUserId ? "…" : t.unfollow}
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    {t.followingEmpty}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-base font-semibold tracking-normal">{t.yourBoks}</h2>
-              <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                {t.yourBoksHint}
-              </p>
-              <div className="library-tabs mt-3" role="tablist" aria-label={t.yourBoks}>
-                {(
-                  [
-                    ["read", t.tabRead, BookOpen],
-                    ["liked", t.tabLiked, Heart],
-                    ["commented", t.tabComments, MessageCircle],
-                  ] as const
-                ).map(([value, label, Icon]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="tab"
-                    aria-selected={libraryView === value}
-                    aria-controls="boks-library-results"
-                    className={`library-tab${libraryView === value ? " is-active" : ""}`}
-                    onClick={() => setLibraryView(value)}
-                  >
-                    <Icon className="size-4" aria-hidden="true" />
-                    <span>{label}</span>
-                    <span className="library-tab__count">{libraryCounts[value]}</span>
-                  </button>
-                ))}
-              </div>
-              <label className="relative mt-3 block" htmlFor="boks-library-search">
-                <span className="sr-only">{t.search[libraryView]}</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
-                <Input
-                  id="boks-library-search"
-                  name="search-read-boks"
-                  type="search"
-                  autoComplete="off"
-                  placeholder={t.search[libraryView]}
-                  className="pl-9"
-                  value={libraryQuery}
-                  onChange={(event) => setLibraryQuery(event.target.value)}
-                />
-              </label>
-              <div
-                id="boks-library-results"
-                role="tabpanel"
-                className="mt-3 grid max-h-[280px] gap-2 overflow-y-auto pr-1"
-              >
-                {visibleLibrary.length ? visibleLibrary.map((item) => (
-                  <button
-                    key={`${item.storyId}-${readerLibraryActivityAt(item, libraryView)}`}
-                    type="button"
-                    className="library-item"
-                    onClick={() => openReadBoks(item.storyId)}
-                  >
-                    <span className="font-medium">{item.title}</span>
-                    <span className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      {item.authorName || atHandle(item.authorHandle) || t.authorFallback} · {t.minutes(item.minutes)}
-                    </span>
-                  </button>
-                )) : (
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    {libraryQuery.trim()
-                      ? t.noMatch[libraryView]
-                      : libraryView === "read"
-                        ? t.emptyRead
-                        : libraryView === "liked"
-                          ? t.emptyLiked
-                          : t.emptyCommented}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {accountUser?.role !== "admin" && (
-              <div className="grid gap-2">
-                <h2 className="text-base font-semibold tracking-normal">{t.deleteAccount}</h2>
-                {!deletingAccount ? (
-                  <div>
-                    <Button variant="outline" onClick={() => setDeletingAccount(true)} disabled={busy}>
-                      {t.deleteMyAccountStart}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid gap-2 rounded-lg border border-[var(--destructive)]/35 p-3">
-                    <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                      {t.deleteBody}
-                    </p>
-                    <label className="grid gap-1 text-sm font-medium" htmlFor="boks-delete-confirm">
-                      {t.typeToConfirm(accountUser?.handle ?? "")}
-                      <Input
-                        id="boks-delete-confirm"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={deleteConfirmation}
-                        onChange={(event) => setDeleteConfirmation(event.target.value)}
-                      />
-                    </label>
-                    {deleteError && (
-                      <p className="text-sm text-[var(--destructive)]" role="alert">
-                        {deleteError}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="destructive"
-                        onClick={() => void deleteAccount()}
-                        disabled={
-                          busy ||
-                          bareHandle(deleteConfirmation.trim()).toLowerCase() !==
-                            (accountUser?.handle ?? "").toLowerCase()
-                        }
-                      >
-                        {t.deleteMyAccount}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setDeletingAccount(false);
-                          setDeleteConfirmation("");
-                          setDeleteError("");
-                        }}
-                        disabled={busy}
-                      >
-                        {t.cancel}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <FeedbackDisclosure />
-
-            <details className="settings-disclosure">
-              <summary>{t.about}</summary>
-              <div className="settings-disclosure__body">
-                <p>{t.aboutLine}</p>
-                <p>
-                  {t.brokenQuestion}{" "}
-                  <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
-                </p>
-                <details className="settings-disclosure settings-disclosure--nested">
-                  <summary>{t.licenses}</summary>
-                  <div className="settings-disclosure__body">
-                    <p><strong>Source Serif 4</strong></p>
-                    <p>
-                      {t.fontLicense}
-                    </p>
-                    <a href="/licenses/source-serif-4-OFL.txt" target="_blank" rel="noreferrer">
-                      {t.readLicense}
-                    </a>
-                    <p className="mt-3"><strong>{t.software}</strong></p>
-                    <p>
-                      {t.softwareBody}
-                    </p>
-                    <a href="/licenses/third-party-notices.txt" target="_blank" rel="noreferrer">
-                      {t.everyPackage}
-                    </a>
-                    <p className="mt-3"><strong>{t.texts}</strong></p>
-                    <p>
-                      {t.textsBody}
-                    </p>
-                    <a href="/terms#catalogue" target="_blank" rel="noreferrer">
-                      {t.whereTexts}
-                    </a>
-                  </div>
-                </details>
-              </div>
-            </details>
-
-          </div>
-        ) : sentMagicLink ? (
-          /* The code first. It is the path that works everywhere - a link
-             opened by a mail app lands in a browser this sign-in was never
-             started in, and in an installed app it cannot land at all. The
-             link is still in the same email and still works; it is just no
-             longer the thing being asked for. */
-          <div className="auth-sent mt-6">
-            <div className="auth-sent-icon" aria-hidden="true">
-              <CheckCircle2 className="size-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold tracking-normal">{t.enterCode}</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                {t.weSentCode(boksEmailCodeLength)} <strong>{sentMagicLink.email}</strong>.
-              </p>
-            </div>
-
-            <form className="mt-5 grid gap-2" onSubmit={submitEmailCode}>
-              <Input
-                id={emailCodeInputId}
-                value={emailCode}
-                onChange={(event) => {
-                  setEmailCode(normalizeBoksEmailCode(event.target.value));
-                  setCodeError("");
-                }}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={boksEmailCodeLength}
-                placeholder={"0".repeat(boksEmailCodeLength)}
-                aria-label={t.codeLabel(boksEmailCodeLength)}
-                autoFocus
-              />
-              {codeError && (
-                <p className="text-sm leading-6 text-[var(--destructive)]" role="alert">
-                  {codeError}
-                </p>
-              )}
-              <Button type="submit" disabled={codeBusy || emailCode.length < boksEmailCodeLength}>
-                {codeBusy ? t.signingIn : t.continue}
-              </Button>
+          </> : sentMagicLink ? <>
+            {codeRecovery ? <div className="auth-recovery-art" aria-hidden="true">↶</div> : <div className="auth-mail-art" aria-hidden="true"><Mail /><span>6</span></div>}
+            <h1 className="social-display">{codeRecovery ? t("New code.", "Новый код.") : t("Enter code.", "Введите код.")}</h1>
+            <p className="social-muted">{codeRecovery ? t("Request a new one. We’ll bring you back to the same bok.", "Запросите новый код. Вы вернётесь к тому же боку.") : t("Enter the code sent to", "Введите код, отправленный на")}<br /><strong>{sentMagicLink.email}</strong></p>
+            {codeRecovery ? <Button className="you-wide-button" onClick={() => void sendMagicLink()} disabled={busy || waiting}>{waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : busy ? t("Sending…", "Отправляем…") : t("Send new code", "Новый код")}</Button> : <form onSubmit={submitEmailCode}>
+              <label className="auth-code-field"><span className="sr-only">{t("Six-digit email code", "Шестизначный код")}</span><input id={emailCodeInputId} value={emailCode} onChange={event => { setEmailCode(normalizeBoksEmailCode(event.target.value)); setCodeError(""); }} inputMode="numeric" autoComplete="one-time-code" maxLength={boksEmailCodeLength} placeholder="– – – – – –" aria-label={t("Six-digit email code", "Шестизначный код")} autoFocus /></label>
+              {codeError && <p className="auth-error-message" role="alert">{codeError}</p>}
+              <Button className="you-wide-button" type="submit" disabled={codeBusy || emailCode.length < boksEmailCodeLength}>{codeBusy ? t("Signing in…", "Входим…") : t("Sign in", "Войти")}</Button>
+            </form>}
+            <div className="auth-links"><button type="button" onClick={editEmail}>{t("Use another email", "Другой email")}</button><button type="button" onClick={() => { setCodeRecovery(!codeRecovery); setCodeError(""); }}>{codeRecovery ? t("Enter code", "Ввести код") : t("Code expired?", "Код истёк?")}</button></div>
+            {!codeRecovery && <button className="auth-resend" type="button" onClick={() => void sendMagicLink()} disabled={busy || waiting}>{waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : t("Send again", "Отправить ещё раз")}</button>}
+            <p className="social-note">{t("The email also has a sign-in link. Check spam if it hasn’t arrived.", "В письме также есть ссылка для входа. Если письмо не пришло, проверьте спам.")}</p>
+          </> : <>
+            {gate ? <div className="auth-fifteen" aria-hidden="true">15<span>{t("boks read.", "боков прочитано.")}</span></div> : authRequestFailed ? <div className="auth-offline-art" aria-hidden="true"><span>·</span><i>—</i><span>·</span></div> : <div className="auth-signin-art" aria-hidden="true"><span>b</span><i>↗</i></div>}
+            <h1 className="social-display">{authRequestFailed ? t("Couldn’t send the code.", "Не удалось отправить код.") : gate ? t("Sign in to continue.", "Войдите, чтобы продолжить.") : t("Sign in.", "Войти.")}</h1>
+            <p className="social-muted">{gate || intent !== "general" || surface === "author" ? noticeText : authRequestFailed ? t("We couldn’t connect to send it. Your email is still here.", "Не удалось подключиться. Ваш email сохранён здесь.") : t("Enter your email to sign in or create an account. We’ll send you a code.", "Введите email для входа или создания аккаунта. Мы отправим код.")}</p>
+            <form className="auth-email-form" autoComplete="on" onSubmit={submitAuth}>
+              <label className="you-field" htmlFor={emailInputId}>Email<Input id={emailInputId} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required placeholder="you@example.com" value={email} onChange={event => { setEmail(event.target.value); setStatus(""); }} /></label>
+              {authRequestFailed && status && <p className="auth-error-message" role="alert">{status}</p>}
+              <Button className="you-wide-button" type="submit" disabled={busy || waiting}>{busy ? t("Sending…", "Отправляем…") : waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : authRequestFailed ? t("Try again", "Попробовать ещё раз") : t("Continue", "Продолжить")}</Button>
+              {terms}
             </form>
-
-            <div className="mt-5 grid gap-2">
-              <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                {t.linkToo}
-              </p>
-              <Button type="button" variant="outline" onClick={editEmail}>
-                {t.anotherEmail}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void sendMagicLink()} disabled={busy || waiting}>
-                <Mail className="size-4" />
-                {waiting ? t.sendAgainIn(formatCooldown(cooldownSeconds)) : t.sendAgain}
-              </Button>
-              {!required && (
-                <Button type="button" variant="ghost" onClick={onClose}>
-                  {t.continueReading}
-                </Button>
-              )}
-              {/* Whoever never gets the email cannot reach anyone from inside
-                  the app, which is the one place they are stuck. */}
-              <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                {t.nothingArrived}{" "}
-                <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <form className="mt-6 grid gap-4" autoComplete="on" onSubmit={submitAuth}>
-            <label className="grid gap-1 text-sm font-medium" htmlFor={emailInputId}>
-              {t.email}
-              <Input
-                id={emailInputId}
-                name="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                required
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  setStatus("");
-                }}
-              />
-            </label>
-
-            <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-              {t.weEmailCode(boksEmailCodeLength)}
-            </p>
-
-            <Button type="submit" disabled={busy || waiting}>
-              <Mail className="size-4" />
-              {busy ? t.sending : waiting ? t.sendAgainIn(formatCooldown(cooldownSeconds)) : t.continue}
-            </Button>
-
-            {/* No checkbox, because there is no longer a step that is only for
-                new accounts to put one in. The sentence is the acceptance, and
-                the version the reader was shown is what gets recorded. */}
-            <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-              {t.acceptStart}{" "}
-              <a className="auth-link" href="/terms" target="_blank" rel="noreferrer">
-                {t.terms}
-              </a>
-              {t.acceptMiddle}{" "}
-              <a className="auth-link" href="/privacy" target="_blank" rel="noreferrer">
-                {t.privacy}
-              </a>
-              {language === "ru" ? t.acceptEnd : ` ${t.acceptEnd}`}
-            </p>
-
-            {waiting && (
-              <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">
-                {t.justSent}
-              </p>
-            )}
-
-            {!required && (
-              <Button type="button" variant="ghost" onClick={onClose}>
-                {t.continueReading}
-              </Button>
-            )}
-          </form>
-        )}
-
-        {/* A guest has no settings page, and should not need an account to
-            read in the dark. */}
-        {!showingAccount && !sentMagicLink && !(accountLoading && !user) && (
-          <>
-            <ThemeSetting compact />
-            <UiLanguageSetting compact />
-          </>
-        )}
-
-        {/* A guest has no settings panel, so the box lives here too - and a
-            guest's note is the one this product can least afford to lose. */}
-        {!showingAccount && !sentMagicLink && <FeedbackDisclosure />}
-
-        {/* The address stays reachable - some people want a reply, and whoever
-            cannot sign in has nowhere else to turn - but it is deliberately
-            quieter than the box above it. Opening a mail client is work, and
-            work is how feedback stops arriving. */}
-        {!showingAccount && (
-          <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-            {t.ratherEmail}{" "}
-            <a className="auth-link" href={supportMailto}>{supportEmail}</a>.
-          </p>
-        )}
-
-        {status && (
-          <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]" role="status" aria-live="polite">
-            {status}
-          </p>
-        )}
+          </>}
+          {!showingAccount && <>{!required && <button className="auth-back" type="button" onClick={onClose}>{t("Back to reading", "Вернуться к чтению")}</button>}<p className="social-note auth-support"><a href={supportMailto}>{t("Contact support", "Связаться с поддержкой")}</a> · {supportEmail}</p></>}
+          {status && !authRequestFailed && <p className="social-status" role="status" aria-live="polite">{status}</p>}
+          {surface === "reader" && showingAccount && !accountUser?.bannedAt && onOpenFeed && onOpenSeries && <ReaderTabs className="reader-tabs--pinned you-tabs" active="you" seriesIsNew={false} onFeed={onOpenFeed} onSeries={onOpenSeries} onYou={() => panelRef.current?.scrollTo({ top: 0, behavior: "smooth" })} />}
+        </>}
       </section>
     </div>
   );

@@ -33,10 +33,18 @@ export const themeColor: Record<ResolvedTheme, string> = {
  */
 export const playerChromeColor = "#05070d";
 
-/** Paints the browser chrome a player's colour, or back to the theme's with `null`. */
+/** Native bars and overscroll use the same surface; null restores the theme. */
 export function paintBrowserChrome(color: string | null) {
   if (typeof document === "undefined") return;
-  const theme: ResolvedTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  const root = document.documentElement;
+  if (color) {
+    root.dataset.browserChrome = color;
+    root.style.setProperty("--browser-chrome", color);
+  } else {
+    delete root.dataset.browserChrome;
+    root.style.removeProperty("--browser-chrome");
+  }
+  const theme: ResolvedTheme = root.dataset.theme === "dark" ? "dark" : "light";
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color ?? themeColor[theme]);
 }
 
@@ -90,7 +98,7 @@ export function applyTheme(preference: ThemePreference, prefersDark = systemPref
   const root = document.documentElement;
   root.dataset.theme = resolved;
   root.style.colorScheme = resolved;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColor[resolved]);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", root.dataset.browserChrome ?? themeColor[resolved]);
   return resolved;
 }
 
@@ -118,7 +126,7 @@ export const themeBootScript = `(function () {
     root.dataset.theme = theme;
     root.style.colorScheme = theme;
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", colors[theme]);
+    if (meta) meta.setAttribute("content", root.dataset.browserChrome || colors[theme]);
   }
   apply();
   if (media) {

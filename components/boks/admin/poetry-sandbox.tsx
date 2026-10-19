@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Play } from "lucide-react";
+import { Camera, Play, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
-import { loadPoemManifest, sandboxPoems } from "@/components/boks/poetry/poems";
+import { loadPoemManifest, poemManifestFor, sandboxPoems } from "@/components/boks/poetry/poems";
+import { seriesPieces } from "@/components/boks/series/series-catalogue";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 
 /**
@@ -17,37 +18,32 @@ import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 export function PoetrySandbox() {
   const [manifests, setManifests] = useState<PoemManifest[]>([]);
   const [open, setOpen] = useState<PoemManifest | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      Promise.all(sandboxPoems.map(loadPoemManifest)).then(setManifests, (reason: Error) =>
+      Promise.all(sandboxPoems.map(loadPoemManifest)).then((items) => { setManifests(items); setError(""); }, (reason: Error) =>
         setError(reason.message)
       );
     }, 0);
     return () => window.clearTimeout(handle);
-  }, []);
+  }, [attempt]);
 
   const close = useCallback(() => setOpen(null), []);
+  const selected = manifests.find((manifest) => manifest.id === selectedId) ?? manifests.find((manifest) => manifest.id.startsWith("hope-feathers")) ?? manifests[0];
 
   return (
     <section className="space-y-4">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold">Immersive poems</h2>
-        <p className="text-sm text-muted-foreground">
-          A renderer of its own for verse: the voice sets the pace, the picture changes with the
-          sense, and each word arrives in the frame as it is spoken. Everything comes from the
-          manifest; no poem needs a component of its own.
-        </p>
-      </header>
+      {error && <div role="alert"><p className="text-sm text-destructive">The manifest did not load: {error}</p><Button variant="outline" onClick={() => setAttempt((value) => value + 1)}><RefreshCw /> Retry manifests</Button></div>}
 
-      {error && <p className="text-sm text-destructive">The manifest did not load: {error}</p>}
-
-      {manifests.map((manifest) => (
-        <div key={manifest.id} className="space-y-3 rounded-lg border p-4">
-          <div>
-            <p className="font-semibold">{manifest.title}</p>
-            <p className="text-sm text-muted-foreground">{manifest.author}</p>
+      {selected && [selected].map((manifest) => (
+        <div key={manifest.id} className="studio-poem-card space-y-3 border p-4">
+          <div className="studio-poem-preview">
+            <span className="studio-poem-mark" aria-hidden="true">✺</span>
+            <div><span className="studio-eyebrow">Immersive poem</span><h3>{manifest.title}</h3><p>{manifest.author}</p></div>
           </div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
             <div>
@@ -63,13 +59,14 @@ export function PoetrySandbox() {
               <dd>{(manifest.durationMs / 1000).toFixed(1)} s</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Timings</dt>
-              <dd>{manifest.timingMode === "forced-alignment" ? "from the recording" : "draft"}</dd>
+              <dt className="text-muted-foreground">{manifest.timingMode === "forced-alignment" ? "from the recording" : "timings"}</dt>
+              <dd>{manifest.timingMode === "forced-alignment" ? "Aligned" : "Draft"}</dd>
             </div>
           </dl>
-          <Button onClick={() => setOpen(manifest)}>
-            <Play className="size-4" /> Open
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => { setRecording(false); setOpen(manifest); }}><Play className="size-4" /> Open poem</Button>
+            <Button variant="outline" onClick={() => { setRecording(true); setOpen(manifest); }}><Camera className="size-4" /> Recording view</Button>
+          </div>
           {/*
             A textological note the editors asked for: no autograph survives,
             the text exists in variants, and the attribution has been argued
@@ -84,7 +81,8 @@ export function PoetrySandbox() {
         </div>
       ))}
 
-      {open && <ImmersivePoem manifest={open} onClose={close} />}
+      <section className="studio-editorial-section"><h2>In the workshop</h2><div className="studio-link-rows">{manifests.filter(manifest => manifest.id !== selected?.id).map(manifest => <button type="button" key={manifest.id} onClick={() => { setSelectedId(manifest.id); window.scrollTo({ top: 0 }); }}><span><strong>{manifest.title}</strong><small>{manifest.author} · {manifest.timingMode === "forced-alignment" ? "Aligned timings" : "Draft timings"}{manifest.id.startsWith("farewell-russia") ? " · not in the public catalogue" : ""}</small></span><span>↗</span></button>)}</div></section>
+      {open && <ImmersivePoem manifest={open} coverArtwork={seriesPieces.find(piece => poemManifestFor(piece.storyId) === open.audio.replace(/[^/]+$/, "manifest.json"))?.cover} onClose={close} recording={recording} />}
     </section>
   );
 }

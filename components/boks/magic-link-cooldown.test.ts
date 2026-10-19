@@ -96,7 +96,8 @@ describe("magic link cooldown", () => {
   });
 
   it("reads as a clock, not a number to interpret", () => {
-    expect(formatCooldown(60)).toBe("0:60");
+    expect(formatCooldown(61)).toBe("1:01");
+    expect(formatCooldown(60)).toBe("1:00");
     expect(formatCooldown(9)).toBe("0:09");
     expect(formatCooldown(0)).toBe("0:00");
     expect(formatCooldown(-5)).toBe("0:00");

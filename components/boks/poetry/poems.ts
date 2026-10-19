@@ -85,7 +85,13 @@ export const sandboxPoems: readonly string[] = [
 ];
 
 export async function loadPoemManifest(url: string): Promise<PoemManifest> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Poem manifest ${url}: ${response.status}`);
-  return (await response.json()) as PoemManifest;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`Poem manifest ${url}: ${response.status}`);
+    return (await response.json()) as PoemManifest;
+  } finally {
+    clearTimeout(timeout);
+  }
 }

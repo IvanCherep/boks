@@ -1,39 +1,14 @@
 "use client";
 
+import { useReaderPreferences } from "../reader-preferences";
+import { BoksFlower } from "./boks-flower";
 import { Button } from "@/components/ui/button";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import {
-  readingLanguageNamesIn,
+  readingLanguageNames,
   type EmptyFeedNotice,
   type ReadingLanguage,
 } from "@/components/boks/reading-languages";
-import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
-
-const messages = defineMessages(
-  {
-    add: (names: string[]) => `Add ${names.join(" and ")}`,
-    change: "Change my languages",
-    unreachableTitle: "boks cannot reach its server from this network",
-    unreachableBody:
-      "The page loaded, so boks itself is running. What failed is the connection your browser makes next, and that is usually the network in between: another Wi-Fi, mobile data, or a VPN normally fixes it.",
-    retry: "Try again",
-    stillNothing: "Still nothing? Write to",
-    tellProvider: "- tell us your provider and we will move the address boks talks to.",
-  },
-  {
-    ru: {
-      add: (names: string[]) => `Добавить: ${names.join(" и ").toLowerCase()}`,
-      change: "Изменить мои языки",
-      unreachableTitle: "boks не может достучаться до своего сервера из этой сети",
-      unreachableBody:
-        "Страница загрузилась, значит, сам boks работает. Не прошло следующее соединение браузера, и обычно дело в сети между вами: другой Wi-Fi, мобильный интернет или VPN, как правило, помогают.",
-      retry: "Попробовать снова",
-      stillNothing: "Всё равно не работает? Напишите на",
-      tellProvider: "- укажите вашего провайдера, и мы сменим адрес, к которому обращается boks.",
-    },
-  }
-);
 
 /**
  * What the reader sees when there is no boks to show.
@@ -46,59 +21,67 @@ const messages = defineMessages(
  */
 export function EmptyFeedScreen({
   notice,
+  loading = false,
   onAddLanguages,
   onChangeLanguages,
   onRetry,
 }: {
   notice: EmptyFeedNotice;
+  loading?: boolean;
   onAddLanguages: (languages: ReadingLanguage[]) => void;
   onChangeLanguages: () => void;
   onRetry: () => void;
 }) {
-  const t = useMessages(messages);
-  const uiLanguage = useUiLanguage();
+  const { t } = useReaderPreferences();
   return (
-    <main className="reader-shell grid min-h-screen place-items-center px-6">
-      <div className="max-w-md text-center">
-        <p className="brand-word">boks</p>
+    <main className={`reader-system-page${loading ? " reader-system-page--loading" : ""}`}>
+      <div className="reader-system-page__body">
+        <header className="reader-system-page__header"><span>boks</span></header>
         {notice.kind === "language" ? (
           <>
-            <h1 className="mt-4 text-2xl font-semibold tracking-normal">{notice.title}</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{notice.body}</p>
+            <div className="reader-system-art reader-system-art--languages" aria-hidden="true">Аа<span>…</span></div>
+            <h1 className="reader-system-title">{t(notice.title, "Пока нет boks на выбранных языках")}</h1>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{t(notice.body, "Ваш выбор языков сохранён. Вы можете изменить его или вернуться позже.")}</p>
             {notice.offer.length > 0 && (
               <Button className="mt-4" onClick={() => onAddLanguages(notice.offer)}>
-                {t.add(notice.offer.map((language) => readingLanguageNamesIn[uiLanguage][language]))}
+                {t("Add", "Добавить")} {notice.offer.map((language) => readingLanguageNames[language]).join(t(" and ", " и "))}
               </Button>
             )}
             <Button className="mt-2 w-full" variant="ghost" onClick={onChangeLanguages}>
-              {t.change}
+              {t("Change my languages", "Изменить языки чтения")}
             </Button>
           </>
         ) : notice.kind === "unreachable" ? (
           <>
+            <div className="reader-system-art reader-system-art--offline" aria-hidden="true">·<i>—</i>·</div>
             {/* The reader can act on this one, so it says what to try. The
                 page itself arrived, which means our server is up and the
                 network is stopping the call the app makes next - on some
                 providers that call is blocked while the site is not. */}
-            <h1 className="mt-4 text-2xl font-semibold tracking-normal">
-              {t.unreachableTitle}
+            <h1 className="reader-system-title">
+              {t("Couldn’t load the bok.", "Не удалось загрузить bok.")}
             </h1>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-              {t.unreachableBody}
+              {t("The page loaded, but the connection to the reading service failed. Try another Wi-Fi, mobile data, or a VPN.", "Страница загрузилась, но соединиться с сервисом чтения не удалось. Попробуйте другую сеть Wi-Fi, мобильный интернет или VPN.")}
             </p>
             <Button className="mt-4" onClick={onRetry}>
-              {t.retry}
+              {t("Try again", "Попробовать снова")}
             </Button>
             <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-              {t.stillNothing}{" "}
+              {t("Still nothing? Write to", "Не помогло? Напишите на")}{" "}
               <a className="auth-link" href={supportMailto}>
                 {supportEmail}
               </a>{" "}
-              {t.tellProvider}
+              {t("— tell us your provider.", "— укажите вашего провайдера.")}
             </p>
           </>
         ) : (
-          <p className="mt-3 text-[var(--muted-foreground)]">{notice.message}</p>
+          <>{loading ? <>
+            <div className="reader-system-art reader-system-art--loading" aria-hidden="true"><span>b</span><BoksFlower /></div>
+            <h1 className="reader-system-title">{t("Loading bok…", "Загружаем bok…")}</h1>
+            <div className="reader-loading-skeleton" aria-hidden="true"><span /><span /><span /><span /><span /></div>
+            <p role="status" className="reader-system-status">{t("Loading…", "Загрузка…")}</p>
+          </> : <><div className="reader-system-art reader-system-art--languages" aria-hidden="true">b.</div><h1 className="reader-system-title">{t("No boks yet.", "Здесь пока нет boks.")}</h1><p>{notice.message}</p><Button className="mt-4" onClick={onRetry}>{t("Try again", "Попробовать снова")}</Button></>}</>
         )}
       </div>
     </main>

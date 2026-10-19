@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
+import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AdminInspectorContext, type AdminInspector } from "@/components/boks/admin/inspector-context";
@@ -18,8 +19,10 @@ type InspectorTarget = { kind: "bok"; id: string } | { kind: "person"; id: strin
 export function AdminInspectorProvider({
   children,
   onChange,
+  currentUserId,
 }: {
   children: ReactNode;
+  currentUserId: string | null;
   /** A boks was hidden, restored or erased from inside the inspector. */
   onChange?: () => void;
 }) {
@@ -56,11 +59,8 @@ export function AdminInspectorProvider({
       <Sheet open={Boolean(current)} onOpenChange={(isOpen) => !isOpen && setStack([])}>
         <SheetContent side="right" className="admin-inspector">
           <SheetHeader className="admin-inspector__header">
-            {stack.length > 1 && (
-              <Button size="sm" variant="ghost" onClick={back} className="w-fit">
-                <ArrowLeft /> Back
-              </Button>
-            )}
+            <Button size="icon" variant="ghost" aria-label="Back" onClick={back}><ArrowLeft /></Button>
+            <a href="/" className="studio-brand" aria-label="boks — back to reading"><BoksLogo /></a>
             <SheetTitle className="sr-only">{current?.kind === "person" ? "Account" : "Boks"}</SheetTitle>
             <SheetDescription className="sr-only">
               {current?.kind === "person"
@@ -82,7 +82,7 @@ export function AdminInspectorProvider({
                 }}
               />
             )}
-            {current?.kind === "person" && <PersonInspector key={`person:${current.id}`} userId={current.id} />}
+            {current?.kind === "person" && <PersonInspector key={`person:${current.id}`} userId={current.id} currentUserId={currentUserId} onChanged={changed} />}
           </div>
         </SheetContent>
       </Sheet>

@@ -92,7 +92,7 @@ export function ContentOperations() {
       kind === "archive"
         ? `“${bok.title}” moved to Deleted.`
         : kind === "restore"
-          ? `“${bok.title}” restored to the reader feed.`
+          ? `“${bok.title}” restored to its previous state.`
           : `“${bok.title}” permanently deleted.`
     );
     await refresh(query, sort, page, scope);
@@ -102,127 +102,53 @@ export function ContentOperations() {
   const pageEnd = Math.min((page + 1) * pageSize, total);
 
   return (
-    <section className="panel overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-normal">Content</h2>
-          <p className="text-sm text-[var(--muted-foreground)]">
-            {pageStart}-{pageEnd} of {total} {scope === "published" ? "published" : "deleted"} boks
-          </p>
-          {coverage && (
-            <p className="text-sm text-[var(--muted-foreground)]">
-              {coverage.publishedMissing === 0
-                ? `All ${coverage.publishedEmbedded} published boks are embedded (${coverage.model}).`
-                : `${coverage.publishedEmbedded} of ${coverage.publishedTotal} embedded — ${coverage.publishedMissing} waiting. Run scripts/embed-catalogue.mjs.`}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="admin-segmented" aria-label="Content status">
-            <button type="button" aria-pressed={scope === "published"} onClick={() => changeScope("published")}>Published</button>
-            <button type="button" aria-pressed={scope === "archived"} onClick={() => changeScope("archived")}>Deleted</button>
-          </div>
-          <label className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
-            <Input
-              className="w-[220px] pl-9"
-              placeholder={`Search ${scope === "published" ? "boks" : "deleted boks"}`}
-              value={query}
-              onChange={(event) => { setQuery(event.target.value); setPage(0); }}
-            />
-          </label>
-          <select
-            className="field-control w-[180px]"
-            value={sort}
-            onChange={(event) => { setSort(event.target.value); setPage(0); }}
-          >
-            <option value="minutes">Reading time</option>
-            <option value="readers">Readers</option>
-            <option value="finish">Finish rate</option>
-            <option value="newest">Newest</option>
-            <option value="title">Title</option>
-          </select>
-          <Button variant="outline" onClick={() => refresh(query, sort, page, scope)} disabled={busy}>
-            <RefreshCw className="size-4" /> Refresh
-          </Button>
-        </div>
+    <section className="studio-content-list">
+      <div className="admin-segmented studio-tabs" aria-label="Content status">
+        <button type="button" aria-pressed={scope === "published"} onClick={() => changeScope("published")}>Published</button>
+        <button type="button" aria-pressed={scope === "archived"} onClick={() => changeScope("archived")}>Deleted</button>
       </div>
-
-      {(status || notice) && (
-        <p className="border-b border-[var(--border)] p-4 text-sm text-[var(--muted-foreground)]" aria-live="polite">
-          {status || notice}
-        </p>
-      )}
-
-      <div className="content-table">
-        <div className="content-row content-head">
-          <span>Boks</span><span>Minutes</span><span>Readers</span><span>Finished</span>
-          <span>Length</span><span>{scope === "archived" ? "Removed" : "Likes"}</span><span>Actions</span>
-        </div>
+      <label className="studio-search">
+        <span>Search title or author</span>
+        <span><Search aria-hidden="true" /><Input placeholder="Start typing…" value={query}
+          onChange={(event) => { setQuery(event.target.value); setPage(0); }} /></span>
+      </label>
+      <div className="studio-filter-line">
+        <p>{total > pageSize ? `${pageStart}–${pageEnd} of ` : ""}{total} {scope === "published" ? "published" : "deleted"} boks</p>
+        <select aria-label="Sort boks" className="field-control" value={sort} onChange={(event) => { setSort(event.target.value); setPage(0); }}>
+          <option value="minutes">Reading time</option><option value="readers">Readers</option><option value="finish">Finish rate</option><option value="newest">Newest</option><option value="title">Title</option>
+        </select>
+      </div>
+      {(status || notice) && <p className="studio-notice" aria-live="polite">{status || notice}</p>}
+      <div className="studio-catalogue-list">
         {rows.map((row) => (
-          <div key={row.id} className="content-row">
-            <span>
-              <button
-                type="button"
-                className="inspector-link inspector-link--title"
-                onClick={() => openBok(row.id)}
-                title="Open this bok"
-              >
-                {row.title}
-              </button>
-              <small>
-                {row.authorHandle ? `@${row.authorHandle.replace(/^@+/, "")}` : row.authorName} · {row.genre} · {row.mood}
-              </small>
-            </span>
-            <span>{row.minutes}</span>
-            <span>{row.readers}</span>
-            <span>
-              {row.starts >= 10 && row.finishRate !== null ? `${row.finishRate}%` : <>{row.completes}<small>of {row.starts} starts</small></>}
-            </span>
-            <span>{row.estimatedMinutes} min<small>{row.wordCount} words</small></span>
-            <span>
-              {scope === "archived" ? (
-                <>{row.archivedAt ? new Date(row.archivedAt).toLocaleDateString() : "Unknown"}<small title={row.archiveReason ?? undefined}>{row.archiveReason || "No reason recorded"}</small></>
-              ) : row.likes}
-            </span>
-            <span className="admin-row-actions">
-              {scope === "published" ? (
-                <Button size="sm" variant="outline" onClick={() => openAction("archive", row)} disabled={busy}>
-                  <Archive /> Hide
-                </Button>
-              ) : (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => openAction("restore", row)} disabled={busy}>
-                    <RotateCcw /> Restore
-                  </Button>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => openAction("delete", row)}
-                    disabled={busy}
-                    title="Delete permanently"
-                    aria-label={`Permanently delete ${row.title}`}
-                  >
-                    <Trash2 />
-                  </Button>
-                </>
-              )}
-            </span>
-          </div>
+          <article key={row.id} className="studio-catalogue-row">
+            <button type="button" className="studio-catalogue-open" onClick={() => openBok(row.id)}>
+              <h2>{row.title}</h2>
+              <p>{row.authorName}{row.authorHandle ? ` · @${row.authorHandle.replace(/^@+/, "")}` : ""} · {row.genre}</p>
+              <span className="studio-book-metrics"><span><strong>{row.minutes}</strong> min</span><span><strong>{row.readers}</strong> readers</span><span><strong>{row.starts >= 10 && row.finishRate !== null ? `${row.finishRate}%` : `${row.completes}/${row.starts}`}</strong> {row.starts >= 10 && row.finishRate !== null ? "finished" : "read / started"}</span></span>
+            </button>
+            <details className="studio-row-details"><summary>Manage bok</summary><div>
+              <p className="studio-meta">{row.estimatedMinutes} min long · {row.wordCount} words · {row.likes} likes · {row.mood}</p>
+              {scope === "archived" && <p className="studio-meta">Removed {row.archivedAt ? new Date(row.archivedAt).toLocaleDateString() : "on an unknown date"} · {row.archiveReason || "No reason recorded"}</p>}
+              <div className="studio-inline">
+                {scope === "published" ? <Button variant="outline" onClick={() => openAction("archive", row)} disabled={busy}><Archive /> Hide bok</Button> : <>
+                  <Button variant="outline" onClick={() => openAction("restore", row)} disabled={busy}><RotateCcw /> Restore bok</Button>
+                  <Button variant="ghost" onClick={() => openAction("delete", row)} disabled={busy}><Trash2 /> Delete permanently</Button>
+                </>}
+              </div>
+            </div></details>
+          </article>
         ))}
       </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] p-4">
-        <p className="text-sm text-[var(--muted-foreground)]">
-          {scope === "published"
-            ? "Hide moves a bok out of the reader feed without erasing anything. Hidden boks are listed under Deleted."
-            : "Restore puts a bok back where it was before it was hidden. Only this view offers permanent deletion."}
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>Previous</Button>
-          <Button variant="outline" disabled={pageEnd >= total} onClick={() => setPage(page + 1)}>Next</Button>
-        </div>
+      {total > pageSize && <div className="studio-pagination"><span>{pageStart}–{pageEnd} of {total}</span><div>
+        <Button variant="outline" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>Previous</Button>
+        <Button variant="outline" disabled={pageEnd >= total} onClick={() => setPage(page + 1)}>Next</Button>
+      </div></div>}
+      <div className="studio-list-footer">
+        <Button variant="ghost" onClick={() => refresh(query, sort, page, scope)} disabled={busy}><RefreshCw className="size-4" /> Refresh</Button>
+        <p className="studio-meta">{scope === "published" ? "Hide keeps the bok and its history in Deleted." : "Restore returns a bok to its previous state. Permanent deletion cannot be undone."}</p>
       </div>
+      {coverage && <details className="studio-details"><summary>Embedding coverage <span aria-hidden="true">+</span></summary><p className="studio-meta">{coverage.publishedEmbedded} of {coverage.publishedTotal} embedded · {coverage.publishedMissing} waiting · {coverage.model}</p></details>}
 
       <BokLifecycleDialog target={pending} onClose={() => setPending(null)} onDone={afterAction} />
     </section>

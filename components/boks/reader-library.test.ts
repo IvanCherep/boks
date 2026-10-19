@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReaderLibraryItem } from "@/components/boks/client-types";
-import { selectReaderLibraryItems } from "@/components/boks/reader-library";
+import { readerLibraryActivityTime, selectReaderLibraryItems } from "@/components/boks/reader-library";
 
 const item = (overrides: Partial<ReaderLibraryItem>): ReaderLibraryItem => ({
   storyId: "story",
@@ -13,6 +13,18 @@ const item = (overrides: Partial<ReaderLibraryItem>): ReaderLibraryItem => ({
   liked: false,
   commented: false,
   ...overrides,
+});
+
+describe("readerLibraryActivityTime", () => {
+  it("uses the recorded instant in the reader's time zone, including midnight", () => {
+    expect(readerLibraryActivityTime("2026-10-18T12:30:00Z", "en", "Europe/Belgrade")).toBe("14:30");
+    expect(readerLibraryActivityTime("2026-10-17T22:00:00Z", "ru", "Europe/Belgrade")).toBe("00:00");
+  });
+  it("does not invent a time for missing, invalid or date-only records", () => {
+    for (const value of [null, undefined, "", "2026-10-18", "invalid", "2026-99-99T12:30:00Z"]) {
+      expect(readerLibraryActivityTime(value, "en")).toBeNull();
+    }
+  });
 });
 
 describe("selectReaderLibraryItems", () => {

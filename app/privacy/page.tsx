@@ -1,3 +1,4 @@
+import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
 import type { Metadata } from "next";
 
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
@@ -16,11 +17,9 @@ const effectiveDate = "September 22, 2026";
  */
 export default function PrivacyPage() {
   return (
-    <main className="legal-page">
+    <main className="legal-page legal-v44">
       <article className="legal-document">
-        <a href="/" className="brand-word brand-button">
-          boks
-        </a>
+        <header className="social-page-header"><a className="social-icon" href="/" aria-label="Back to reading"><ReaderBackIcon /></a><span>Privacy</span><span /></header>
         <p className="mt-8 text-sm font-semibold text-[var(--muted-foreground)]">Effective {effectiveDate}</p>
         <h1>Privacy</h1>
         <p>

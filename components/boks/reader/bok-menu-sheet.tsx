@@ -1,57 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Flag, Link as LinkIcon } from "lucide-react";
+import { ChevronRight, Clapperboard, Flag, Link as LinkIcon, Music, Trash2, UserRound, X } from "lucide-react";
+import { ReaderBackIcon, ReaderShareIcon as Share2 } from "./reader-icons";
+import { readableBoksError } from "@/lib/boks/errors";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type { Story } from "@/components/boks/client-types";
-import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
+import { ReaderSheet } from "@/components/boks/reader-sheet";
 import { atHandle } from "@/components/boks/reader/handles";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
 
-const messages = defineMessages(
-  {
-    thisBok: "This bok",
-    copyLink: "Copy link to this bok",
-    sent: "Report sent",
-    already: "You have already reported this bok",
-    sentBody: "A boks admin reads every report. If the piece has to come down, its author is told why.",
-    alreadyBody: "It is already with an admin. There is nothing more to do.",
-    back: "Back to reading",
-    report: "Report a problem",
-    reportBody: "Only boks admins see this. Tell us what is wrong and, if it is your work, how we can tell.",
-    copyright: "Copyright",
-    other: "Something else",
-    copyrightPlaceholder: "This is my translation, first published in 1998. I never gave permission.",
-    otherPlaceholder: "What is wrong with this bok?",
-    sending: "Sending…",
-    send: "Send report",
-    tooShort: "A sentence or two, so an admin can act on it.",
-  },
-  {
-    ru: {
-      thisBok: "Этот текст",
-      copyLink: "Скопировать ссылку на текст",
-      sent: "Жалоба отправлена",
-      already: "Вы уже пожаловались на этот текст",
-      sentBody:
-        "Администратор boks читает каждую жалобу. Если текст придётся снять, автору объяснят почему.",
-      alreadyBody: "Жалоба уже у администратора. Больше ничего делать не нужно.",
-      back: "Вернуться к чтению",
-      report: "Сообщить о проблеме",
-      reportBody:
-        "Это увидят только администраторы boks. Расскажите, что не так, и, если это ваша работа, как мы можем это проверить.",
-      copyright: "Авторские права",
-      other: "Другое",
-      copyrightPlaceholder: "Это мой перевод, впервые опубликован в 1998 году. Я не давал разрешения.",
-      otherPlaceholder: "Что не так с этим текстом?",
-      sending: "Отправляем…",
-      send: "Отправить жалобу",
-      tooShort: "Пару предложений, чтобы администратор мог разобраться.",
-    },
-  }
-);
+import { bokCoverPalette } from "./bok-cover-palette";
+import { getBokArtwork } from "./bok-artwork";
+import { useReaderPreferences } from "../reader-preferences";
 
 export type BokReportKind = "copyright" | "other";
 export type BokReportOutcome = "received" | "already";
@@ -67,106 +27,101 @@ export function BokMenuSheet({
   onClose,
   onCopyLink,
   onReport,
+  onShare, onSettings, onAuthor,
+  onOpenFormat, formatLabel, onToggleMusic, musicOn, onHide,
 }: {
   story: Story;
   onClose: () => void;
   onCopyLink: () => void;
+  onShare: () => void;
+  onSettings: () => void;
+  onAuthor: () => void;
+  onOpenFormat?: () => void;
+  formatLabel?: string | null;
+  onToggleMusic?: () => void;
+  musicOn?: boolean;
+  onHide?: () => void;
   /** Resolves to what the server made of the report, or null when it was not sent. */
   onReport: (kind: BokReportKind, reason: string) => Promise<BokReportOutcome | null>;
 }) {
+  const { t } = useReaderPreferences();
+  const [reportOpen, setReportOpen] = useState(false);
+  const artwork = getBokArtwork(story);
+  const palette = bokCoverPalette(story.id);
   const [reportKind, setReportKind] = useState<BokReportKind>("copyright");
   const [reportReason, setReportReason] = useState("");
   const [reportSending, setReportSending] = useState(false);
+  const [reportEmail, setReportEmail] = useState("");
+  const [reportError, setReportError] = useState("");
   const [reportDone, setReportDone] = useState<BokReportOutcome | null>(null);
   const reasonLength = reportReason.trim().length;
-  const t = useMessages(messages);
 
   async function sendReport() {
     setReportSending(true);
+    setReportError("");
     try {
-      const outcome = await onReport(reportKind, reportReason);
+      const reason = reportEmail.trim() ? `${reportReason.trim()}\n\nContact email: ${reportEmail.trim()}` : reportReason.trim();
+      const outcome = await onReport(reportKind, reason);
       if (outcome) {
         setReportDone(outcome);
         setReportReason("");
       }
+    } catch (error) {
+      const message = readableBoksError(error, t("Could not send that report. Try again.", "Не удалось отправить сообщение. Попробуйте ещё раз."));
+      setReportError(/failed to fetch|networkerror|load failed/i.test(message) ? t("Check your connection, then try again.", "Проверьте соединение и попробуйте ещё раз.") : message);
     } finally {
       setReportSending(false);
     }
   }
 
+  if (reportOpen || reportDone) {
+    const heading = reportDone ? t("Report received", "Сообщение получено") : t("Report a concern", "Сообщить о проблеме");
+    const back = reportDone ? onClose : () => setReportOpen(false);
+    return <ReaderSheet label={heading} onClose={back} className="report-v44 social-page">
+      <header className="social-page-header"><button className="social-icon" type="button" onClick={back} aria-label={t("Back", "Назад")}><ReaderBackIcon /></button><span>{heading}</span><span /></header>
+      {reportDone ? <div className="report-sent-page">
+        <div className="report-endmark" aria-hidden="true">b.</div>
+        <h1 className="social-display">{heading}</h1>
+        <p>{reportDone === "received" ? t("We’ll review this bok and the details you shared.", "Мы рассмотрим этот бок и ваше сообщение.") : t("Your report is already with an admin. We’ll review this bok and the details you shared.", "Ваше сообщение уже у администратора. Мы рассмотрим этот бок и его подробности.")}</p>
+        <Button onClick={onClose}>{t("Back to reading", "Вернуться к чтению")}</Button>
+      </div> : <form className="report-form" onSubmit={(event) => { event.preventDefault(); void sendReport(); }}>
+        <span className="social-eyebrow" translate="no">{story.title}</span>
+        <h1 className="social-display">{t("Report this bok", "Сообщить об этом боке")}</h1>
+        <label>{t("What is it about?", "В чём проблема?")}<select value={reportKind} onChange={(event) => setReportKind(event.target.value as BokReportKind)} disabled={reportSending}>
+          <option value="copyright">{t("Copyright or permission", "Авторские права или разрешение")}</option>
+          <option value="other">{t("Something else", "Другая проблема")}</option>
+        </select></label>
+        <label>{t("Tell us more", "Расскажите подробнее")}<textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder={t("What should we look into?", "На что нам обратить внимание?")} maxLength={1700} required minLength={10} disabled={reportSending} /></label>
+        <label>{t("Your email (optional)", "Ваш email (необязательно)")}<input type="email" autoComplete="email" value={reportEmail} onChange={(event) => setReportEmail(event.target.value)} maxLength={254} disabled={reportSending} /></label>
+        <p className="social-note">{t("Only the moderation team can read this report.", "Это сообщение увидят только модераторы.")}</p>
+        {reportError && <p className="report-error" role="alert">{reportError}</p>}
+        <Button type="submit" disabled={reportSending || reasonLength < 10}>{reportSending ? t("Sending…", "Отправляем…") : reportError ? t("Try again", "Попробовать ещё раз") : t("Send report", "Отправить сообщение")}</Button>
+      </form>}
+    </ReaderSheet>;
+  }
+
   return (
-    <ReaderSheet label={t.thisBok} onClose={onClose}>
-      <ReaderSheetHeader label={t.thisBok} onClose={onClose} title={t.thisBok} />
+    <ReaderSheet label={t("This bok", "Этот bok")} onClose={onClose} className="bok-menu-v44">
+      <header className="bok-menu-heading">
+        {artwork ? <img src={artwork} alt="" /> : <span className="bok-menu-heading__type" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{story.title.charAt(0)}</span>}
+        <span className="bok-menu-heading-copy"><span className="bok-menu-kicker">{t("Reading now", "Сейчас читаете")}</span><strong translate="no">{story.title}</strong><small translate="no">{story.authorName || atHandle(story.authorHandle)}</small></span>
+        <button className="bok-menu-close" type="button" onClick={onClose} aria-label={t("Close menu", "Закрыть меню")}><X /></button>
+      </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        <p className="truncate text-sm font-medium">{story.title}</p>
-        <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-          {story.authorName ? `${story.authorName} · ${atHandle(story.authorHandle)}` : atHandle(story.authorHandle)}
-        </p>
+      <div className="bok-menu-body">
+        <div className="bok-menu-tiles">
+          <button type="button" onClick={onShare}><Share2 size={29} /><span>{t("Share", "Поделиться")}<ChevronRight /></span></button>
+          <button type="button" onClick={onSettings}><i>Aa</i><span>{t("Text settings", "Настройки текста")}<ChevronRight /></span></button>
+        </div>
+        <div className="bok-menu-links">
+        {story.authorHandle && <button className="bok-menu-link" type="button" onClick={onAuthor}><UserRound /><span>{story.authorName || atHandle(story.authorHandle)}</span><ChevronRight /></button>}
+        <button className="bok-menu-link" type="button" onClick={onCopyLink}><LinkIcon /><span>{t("Copy link to this bok", "Ссылка на этот бок")}</span><ChevronRight /></button>
+        {onOpenFormat && formatLabel && <button className="bok-menu-link" type="button" onClick={onOpenFormat}><Clapperboard /><span>{formatLabel}</span><ChevronRight /></button>}
+        {onToggleMusic && <button className="bok-menu-link" type="button" onClick={onToggleMusic} aria-pressed={musicOn}><Music /><span>{musicOn ? t("Turn music off", "Выключить музыку") : t("Read with music", "Читать под музыку")}</span><ChevronRight /></button>}
+        {onHide && <button className="bok-menu-link bok-menu-link--quiet" type="button" onClick={onHide}><Trash2 /><span>{t("Hide this bok (admin)", "Скрыть бок (администратор)")}</span><ChevronRight /></button>}
 
-        <Button className="mt-4 w-full justify-start" variant="outline" onClick={onCopyLink}>
-          <LinkIcon className="size-4" /> {t.copyLink}
-        </Button>
-
-        {reportDone ? (
-          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-4">
-            <p className="text-sm font-semibold">
-              {reportDone === "received" ? t.sent : t.already}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-              {reportDone === "received" ? t.sentBody : t.alreadyBody}
-            </p>
-            <Button className="mt-3 w-full" variant="ghost" onClick={onClose}>
-              {t.back}
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold">{t.report}</h3>
-            <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-              {t.reportBody}
-            </p>
-
-            <div className="mt-3 flex gap-2">
-              {(
-                [
-                  ["copyright", t.copyright],
-                  ["other", t.other],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`report-kind${reportKind === value ? " report-kind--on" : ""}`}
-                  aria-pressed={reportKind === value}
-                  onClick={() => setReportKind(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <Textarea
-              className="mt-3 min-h-[96px]"
-              value={reportReason}
-              placeholder={
-                reportKind === "copyright"
-                  ? t.copyrightPlaceholder
-                  : t.otherPlaceholder
-              }
-              onChange={(event) => setReportReason(event.target.value)}
-            />
-
-            <Button className="mt-3 w-full" onClick={sendReport} disabled={reportSending || reasonLength < 10}>
-              <Flag className="size-4" /> {reportSending ? t.sending : t.send}
-            </Button>
-            {reasonLength > 0 && reasonLength < 10 && (
-              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                {t.tooShort}
-              </p>
-            )}
-          </div>
-        )}
+        <button className="bok-menu-link bok-menu-link--quiet" type="button" onClick={() => setReportOpen(true)}><Flag /><span>{t("Report a concern", "Сообщить о проблеме")}</span><ChevronRight /></button>
+        </div>
       </div>
     </ReaderSheet>
   );

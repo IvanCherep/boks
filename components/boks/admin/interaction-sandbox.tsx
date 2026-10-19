@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Check, Gauge, Volume2, VolumeX, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Volume2, VolumeX } from "lucide-react";
+import { BoksLogo } from "@/components/boks/reader/boks-logo";
+import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { InteractiveScene } from "@/components/boks/interactions/interactive-scene";
 import { interactionScenes, type InteractionScene } from "@/lib/boks/interactions/scenes";
-import { setInteractionSoundMuted } from "@/lib/boks/interactions/sound";
+import { interactionSoundMuted, setInteractionSoundMuted } from "@/lib/boks/interactions/sound";
 
 /**
  * Twelve mechanics, one at a time, with a frame counter running.
@@ -98,7 +100,14 @@ function SceneOverlay({
   onClose: () => void;
 }) {
   const { fps, worstMs } = useFrameMeter(true);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(interactionSoundMuted);
+  const dialog = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    dialog.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => previous?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -107,12 +116,16 @@ function SceneOverlay({
   }, [onClose]);
 
   return (
-    <div className="isandbox__overlay" role="dialog" aria-modal="true" aria-label={scene.title}>
+    <div ref={dialog} className="isandbox__overlay" role="dialog" aria-modal="true" aria-label={scene.title} onKeyDown={(event) => {
+      if (event.key !== "Tab") return;
+      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"]')];
+      const first = controls[0]; const last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }}>
       <div className="isandbox__bar">
-        <div>
-          <strong>{scene.title}</strong>
-          <span className="isandbox__primitive">{scene.primitive}</span>
-        </div>
+        <button type="button" className="isandbox__back" onClick={onClose} aria-label="Back"><ReaderBackIcon /></button>
+        <BoksLogo />
         <div className="isandbox__bar-actions">
           <button
             type="button"
@@ -126,9 +139,7 @@ function SceneOverlay({
           >
             {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
           </button>
-          <button type="button" onClick={onClose} aria-label="Close">
-            <X className="size-5" />
-          </button>
+
         </div>
       </div>
 
@@ -138,12 +149,12 @@ function SceneOverlay({
 
       <div className="isandbox__foot">
         <div className={`isandbox__meter ${worstMs > 50 ? "is-bad" : ""}`}>
-          <Gauge className="size-4" />
           <span>{fps} FPS</span>
           <span className="isandbox__worst">worst frame {worstMs} ms</span>
         </div>
         <div className="isandbox__verdict">
           <Button
+            aria-pressed={verdict === "keep"}
             variant={verdict === "keep" ? "default" : "outline"}
             size="sm"
             onClick={() => onVerdict("keep")}
@@ -151,6 +162,7 @@ function SceneOverlay({
             <Check className="size-4" /> Keep
           </Button>
           <Button
+            aria-pressed={verdict === "shelve"}
             variant={verdict === "shelve" ? "default" : "outline"}
             size="sm"
             onClick={() => onVerdict("shelve")}
@@ -191,19 +203,8 @@ export function InteractionSandbox() {
 
   return (
     <section className="space-y-4">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold">Interactions</h2>
-        <p className="text-sm text-muted-foreground">
-          Twelve scenes on five mechanics. Open each on a phone, keep a finger on it and watch the
-          counter: the average FPS lies, the worst frame does not. Verdicts are kept in this
-          browser.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Keep: <strong>{kept}</strong> · Shelved: <strong>{shelved}</strong> · Not
-          looked at: <strong>{interactionScenes.length - kept - shelved}</strong>
-        </p>
-      </header>
-
+      <div className="studio-filter-line"><span>{interactionScenes.length} scenes · {new Set(interactionScenes.map(scene => scene.primitive)).size} mechanics</span><span>{kept} keep · {shelved} shelved</span></div>
+      <p className="studio-meta">Select a mechanic</p>
       <ul className="isandbox__grid">
         {interactionScenes.map((scene) => (
           <li key={scene.id}>
@@ -226,6 +227,7 @@ export function InteractionSandbox() {
         ))}
       </ul>
 
+      <p className="studio-hint">Test on a phone. Watch the worst frame as well as average FPS. Keep and Shelve are saved in this browser and can be undone.</p>
       {open && (
         <SceneOverlay
           scene={open}

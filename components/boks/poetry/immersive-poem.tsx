@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
+import { createMediaLevel } from "@/components/boks/cinema/media-level";
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { ReaderBackIcon as ArrowLeft } from "@/components/boks/reader/reader-icons";
+import { FormatControls, FormatStatus, type FormatPlaybackState } from "@/components/boks/cinema/format-controls";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { gestureHintIn } from "@/components/boks/poetry/gesture-hints";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
@@ -9,9 +12,7 @@ import { defineMessages } from "@/lib/i18n/messages";
 import {
   backdropAt,
   lineIndexAt,
-  nextLineStart,
   playedFraction,
-  previousLineStart,
   presetFor,
   sceneFor,
   wordReachedAt,
@@ -60,6 +61,9 @@ import { createOverlayLayer } from "@/components/boks/poetry/gesture-overlay";
 type Status = "loading" | "ready" | "ended" | "error";
 
 const controlsIdleMs = 2600;
+// Actual media positions for a format/text round trip in this page session.
+// Never inferred from recommendation telemetry, never sent as a read outcome.
+const poemPositions = new Map<string, number>();
 
 /** Only the controls are translated; the poem keeps its own language. */
 const messages = defineMessages(
@@ -89,11 +93,18 @@ const messages = defineMessages(
 
 export function ImmersivePoem({
   manifest,
+  coverArtwork,
   finale,
   recording = false,
+  autoPlay = false,
+  suspended = false,
+  onReadText,
+  onComments,
+  onPlaybackChange,
   onClose,
 }: {
   manifest: PoemManifest;
+  coverArtwork?: string;
   /**
    * What the ending's buttons do - the same object every format is given.
    * Absent only in the admin sandbox, where the poem has no boks yet.
@@ -101,15 +112,31 @@ export function ImmersivePoem({
   finale?: FinaleActions;
   /** Filming the piece: no close button and no controls - see `recording-mode.ts`. */
   recording?: boolean;
+  autoPlay?: boolean;
+  suspended?: boolean;
+  onReadText?: () => void;
+  onComments?: () => void;
+  onPlaybackChange?: (state: FormatPlaybackState) => void;
   onClose: () => void;
 }) {
   const words = useMessages(messages);
   const uiLanguage = useUiLanguage();
+  const { t } = useReaderPreferences();
   const audio = useRef<HTMLAudioElement | null>(null);
   const theme = useRef<HTMLAudioElement | null>(null);
+  const voiceLevel = useRef<ReturnType<typeof createMediaLevel> | null>(null);
+  const musicLevel = useRef<ReturnType<typeof createMediaLevel> | null>(null);
   const stage = useRef<HTMLDivElement>(null);
   const idleTimer = useRef(0);
-  const bar = useRef<HTMLDivElement>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [voice, setVoice] = useState(1);
+  const [music, setMusic] = useState(1);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [hasBegun, setHasBegun] = useState(autoPlay || recording);
+  const [textPreview, setTextPreview] = useState(false);
+  const autoStarted = useRef(false);
+  const rememberTextPosition = useRef(false);
+  const lastElapsed = useRef(-1);
   /*
    * The elements the frame loop writes to: one picture per scene, and the
    * control bar.
@@ -143,7 +170,6 @@ export function ImmersivePoem({
   /** The hand as the overlay gestures read it - see `GestureInput`. */
   const input = useRef<GestureInput>({ drag: null, releases: [], flown: 0, connections: 0 });
   const stillRef = useRef(false);
-  const controls = useRef<HTMLDivElement>(null);
   /** The last values written to the DOM, so an unchanged frame writes nothing. */
   const painted = useRef({ from: -1, to: -1, fade: -1, played: -1, ms: -1 });
 
@@ -189,38 +215,65 @@ export function ImmersivePoem({
     element.preload = "auto";
     element.playbackRate = 1;
     audio.current = element;
+    voiceLevel.current = createMediaLevel(element);
     // Only ever out of loading. The browser fires this again after every
     // seek, and a seek onto the end lands after `ended` - which turned the
     // finale back off and left the player paused on the last frame.
+    const restore = () => {
+      const saved = poemPositions.get(manifest.audio) ?? 0;
+      poemPositions.delete(manifest.audio);
+      if (saved > 0 && saved < manifest.durationMs / 1000 - 0.5) {
+        element.currentTime = saved;
+        if (theme.current) theme.current.currentTime = saved;
+      }
+    };
+    element.addEventListener("loadedmetadata", restore, { once: true });
     const ready = () => setStatus((current) => (current === "loading" ? "ready" : current));
-    const failed = () => setStatus("error");
+    const failed = () => { element.pause(); theme.current?.pause(); setPlaying(false); setStatus("error"); };
+    const paused = () => setPlaying(false);
+    const started = () => setPlaying(true);
     const done = () => {
       setStatus("ended");
       setPlaying(false);
       theme.current?.pause();
     };
-    element.addEventListener("canplaythrough", ready);
+    element.addEventListener("canplay", ready);
     element.addEventListener("error", failed);
+    element.addEventListener("boks-mixer-error", failed);
     element.addEventListener("ended", done);
     const release = inMemoryCopy(manifest.audio, (src) => {
       element.src = src;
       element.load();
     });
+    element.addEventListener("pause", paused);
+    element.addEventListener("waiting", paused);
+    element.addEventListener("playing", started);
     return () => {
       release();
+      const seconds = element.currentTime;
+      if (rememberTextPosition.current) poemPositions.set(manifest.audio, element.ended ? 0 : seconds);
+      else poemPositions.delete(manifest.audio);
+      if (poemPositions.size > 32) poemPositions.delete(poemPositions.keys().next().value!);
       element.pause();
       element.src = "";
-      element.removeEventListener("canplaythrough", ready);
+      element.removeEventListener("loadedmetadata", restore);
+      element.removeEventListener("canplay", ready);
       element.removeEventListener("error", failed);
+      element.removeEventListener("boks-mixer-error", failed);
       element.removeEventListener("ended", done);
+      element.removeEventListener("pause", paused);
+      element.removeEventListener("waiting", paused);
+      element.removeEventListener("playing", started);
+      voiceLevel.current?.dispose();
+      voiceLevel.current = null;
       audio.current = null;
     };
-  }, [manifest.audio]);
+  }, [manifest.audio, manifest.durationMs]);
 
   /*
    * The theme, which is part of the reading rather than music behind it.
    *
-   * No switch and no separate transport: it is created with the voice, and
+   * Its own level and the same transport: it is created with the voice, and
    * every play, pause and seek below drives both. Its level was measured
    * against this recording - ten decibels under, present but clear of the
    * words - and the element is muted-by-volume rather than gated, so a missing
@@ -249,10 +302,16 @@ export function ImmersivePoem({
         { once: true }
       );
     });
+    musicLevel.current = createMediaLevel(element);
+    const failed = () => { audio.current?.pause(); setStatus("error"); };
+    element.addEventListener("boks-mixer-error", failed);
     return () => {
       release();
       element.pause();
       element.src = "";
+      element.removeEventListener("boks-mixer-error", failed);
+      musicLevel.current?.dispose();
+      musicLevel.current = null;
       theme.current = null;
     };
   }, [manifest.theme]);
@@ -436,12 +495,13 @@ export function ImmersivePoem({
         const played = Math.round(playedFraction(ms, manifest.durationMs) * 400) / 400;
         if (played !== painted.current.played) {
           painted.current.played = played;
-          controls.current?.style.setProperty("--played", String(played));
+
         }
 
         // Written onto the element rather than through state: a screen reader
         // needs the real position, and the position changes constantly.
-        bar.current?.setAttribute("aria-valuenow", String(Math.round(played * 100)));
+        const seconds = Math.floor(ms / 250) / 4;
+        if (seconds !== lastElapsed.current) { lastElapsed.current = seconds; setElapsed(seconds); }
       }
       raf = requestAnimationFrame(tick);
     };
@@ -466,23 +526,32 @@ export function ImmersivePoem({
   const toggle = useCallback(() => {
     const element = audio.current;
     if (!element) return;
+    autoStarted.current = true;
+    setHasBegun(true);
     revealChrome();
     // Still downloading: a play now would fail on an element with no source
     // and put up "did not load". "Loading…" is on screen; the next tap plays.
     if (!element.src) return;
     if (element.paused) {
       if (status === "ended") element.currentTime = 0;
+      voiceLevel.current?.resume();
+      musicLevel.current?.resume();
+      // Ask for both tracks in the same gesture, before either play promise
+      // resolves. Waiting for the voice first can lose mobile activation.
+      const score = theme.current;
+      if (score) {
+        score.currentTime = element.currentTime;
+        void score.play().catch(() => {});
+      }
       void element.play().then(
         () => {
-          setPlaying(true);
-          setStatus("ready");
-          const score = theme.current;
-          if (score) {
-            score.currentTime = element.currentTime;
-            void score.play().catch(() => {});
-          }
+          if (audio.current !== element || document.hidden) { element.pause(); score?.pause(); return; }
+          if (!element.paused) { setPlaying(true); setStatus("ready"); }
         },
-        () => setStatus("error")
+        (reason: unknown) => {
+          if (element.paused && reason instanceof Error && reason.name === "AbortError") return;
+          if (audio.current === element) { score?.pause(); setPlaying(false); setStatus("error"); }
+        }
       );
       return;
     }
@@ -515,49 +584,74 @@ export function ImmersivePoem({
     [manifest.durationMs, seekMs]
   );
 
-  /*
-   * Stepping is by line, not by seconds.
-   *
-   * Fifteen seconds is the whole poem and two is most of a line, so neither is
-   * a unit anybody could aim with. A line is what a reader would ask for -
-   * "again, from «Страна рабов»" - and everything is a function of the
-   * timecode, so landing on one restores the scene, the phrase and the lit
-   * word in a single frame.
-   */
-  const step = useCallback(
-    (direction: -1 | 1) => {
-      const element = audio.current;
-      if (!element) return;
-      const ms = element.currentTime * 1000;
-      seekMs(
-        direction < 0
-          ? previousLineStart(manifest.lines, ms)
-          : nextLineStart(manifest.lines, ms, manifest.durationMs)
-      );
-    },
-    [manifest.durationMs, manifest.lines, seekMs]
-  );
+  // The format keeps its authored timeline; the transport moves by five seconds.
+  const step = useCallback((direction: -1 | 1) => {
+    seekMs((audio.current?.currentTime ?? 0) * 1000 + direction * 5000);
+  }, [seekMs]);
 
-  function scrub(event: React.PointerEvent<HTMLDivElement>) {
-    const box = event.currentTarget.getBoundingClientRect();
-    if (box.width > 0) seekTo((event.clientX - box.left) / box.width);
+  useEffect(() => {
+    if (!autoPlay || autoStarted.current || suspended || document.hidden || status !== "ready") return;
+    autoStarted.current = true;
+    toggle();
+  }, [autoPlay, status, suspended, toggle]);
+
+  useEffect(() => {
+    if (!suspended && !menuOpen) return;
+    audio.current?.pause();
+    theme.current?.pause();
+  }, [suspended, menuOpen]);
+
+  useEffect(() => {
+    const pauseWhenHidden = () => {
+      if (!document.hidden) return;
+      audio.current?.pause(); theme.current?.pause(); setPlaying(false);
+    };
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    return () => document.removeEventListener("visibilitychange", pauseWhenHidden);
+  }, []);
+
+  useEffect(() => { voiceLevel.current?.set(voice); }, [voice]);
+  useEffect(() => { musicLevel.current?.set((manifest.theme?.gain ?? 0) * music); }, [music, manifest.theme]);
+  useEffect(() => {
+    onPlaybackChange?.({ playing: playing && !suspended && !menuOpen, progress: Math.min(1, elapsed * 1000 / manifest.durationMs), ended: status === "ended" });
+  }, [playing, suspended, menuOpen, elapsed, manifest.durationMs, status, onPlaybackChange]);
+
+  function readText() {
+    rememberTextPosition.current = true;
+    audio.current?.pause(); theme.current?.pause();
+    if (onReadText) onReadText();
+    else { setMenuOpen(false); setTextPreview(true); }
   }
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      if (suspended || menuOpen || event.defaultPrevented) return;
       if (event.key === "Escape") {
         event.stopPropagation();
-        onClose();
+        if (textPreview) setTextPreview(false);
+        else onClose();
       } else if (recording && event.key === " ") {
         // Nothing on screen to press while filming; Space is the play button.
         event.preventDefault();
         event.stopPropagation();
         toggle();
+      } else if (recording && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault(); event.stopPropagation(); step(event.key === "ArrowLeft" ? -1 : 1);
       }
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose, recording, toggle]);
+  }, [onClose, recording, toggle, step, suspended, menuOpen, textPreview]);
+
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    return () => previous?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (recording || stage.current?.querySelector(".format-menu-layer")) return;
+    stage.current?.querySelector<HTMLButtonElement>(textPreview ? ".poem-text-preview button" : status === "ended" ? ".poem__close" : ".format-top__back")?.focus();
+  }, [recording, status, textPreview]);
 
   /*
    * The hand lifts: the water ripples again and the landscape goes back to its
@@ -640,7 +734,7 @@ export function ImmersivePoem({
   return (
     <div
       ref={stage}
-      className={`poem poem--${preset} ${reduced ? "is-still" : ""} ${chromeVisible ? "" : "is-quiet"} ${recording ? "is-recording" : ""}`}
+      className={`poem poem--${preset} ${reduced ? "is-still" : ""} ${chromeVisible || !playing ? "" : "is-quiet"} ${menuOpen ? "has-playback-menu" : ""} ${recording ? "is-recording" : ""} ${!hasBegun ? "is-cover" : ""} ${textPreview ? "has-text-preview" : ""}`}
       style={
         {
           "--poem-text": manifest.palette.text,
@@ -653,6 +747,15 @@ export function ImmersivePoem({
       role="dialog"
       aria-modal="true"
       aria-label={`${manifest.title} — ${manifest.author}`}
+      onFocusCapture={revealChrome}
+      onKeyDown={(event) => {
+        if (recording || menuOpen || event.key !== "Tab") return;
+        const root = textPreview ? event.currentTarget.querySelector(".poem-text-preview") : event.currentTarget;
+        const controls = [...(root?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex="0"]') ?? [])];
+        const first = controls[0]; const last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }}
     >
       {/* A tap anywhere that is not a control plays or pauses. */}
       {/* A press or a sideways movement on a gesture scene works the picture;
@@ -660,6 +763,7 @@ export function ImmersivePoem({
       <button
         type="button"
         className="poem__surface"
+        disabled={suspended || status === "ended" || textPreview}
         onClick={() => {
           if (hand.current.swallowClick) {
             hand.current.swallowClick = false;
@@ -738,7 +842,15 @@ export function ImmersivePoem({
         ))}
       </div>
 
+      {(!hasBegun || ((status === "loading" || status === "error") && elapsed === 0)) && coverArtwork && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="format-status__cover" src={coverArtwork} alt="" />
+      )}
+
       <div className="poem__veil" aria-hidden="true" />
+      {!hasBegun && status === "ready" && !textPreview && <div className="poem__cover" lang={manifest.language}>
+        <p>{manifest.author}</p><h1>{manifest.title}</h1>
+      </div>}
 
       {/*
         Every line is rendered, all the time; only their state changes.
@@ -842,96 +954,33 @@ export function ImmersivePoem({
         {manifest.title}. {manifest.author}. {manifest.lines.map((l) => l.tokens.map((t) => t.text).join(" ")).join(" ")}
       </p>
 
-      <button type="button" className="poem__close" onClick={onClose} aria-label={words.close}>
-        <X className="size-5" />
-      </button>
+      {status === "ended" && <button type="button" className="poem__close" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
 
-      <div
-        ref={controls}
-        className={`poem__controls ${status === "ended" ? "is-over" : ""}`}
-        style={{ "--played": 0 } as React.CSSProperties}>
-        {/* Its own pointer handling, and it must not reach the surface
-            underneath - dragging the bar would otherwise also pause. */}
-        <div
-          ref={bar}
-          className="poem__bar"
-          role="slider"
-          tabIndex={0}
-          aria-label={words.position}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={0}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-            event.currentTarget.setPointerCapture(event.pointerId);
-            scrub(event);
-          }}
-          onPointerMove={(event) => {
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) scrub(event);
-          }}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowLeft") step(-1);
-            else if (event.key === "ArrowRight") step(1);
-            else return;
-            event.preventDefault();
-          }}
-        >
-          <span className="poem__bar-track" />
-          <span className="poem__bar-fill" />
-          {/* Where each line begins, so the bar shows the poem's shape and a
-              drag has something to aim at rather than being a blind scrub. */}
-          {manifest.lines.map((poemLine) => (
-            <span
-              key={poemLine.startMs}
-              className="poem__bar-line"
-              style={{ left: `${(poemLine.startMs / manifest.durationMs) * 100}%` }}
-              aria-hidden="true"
-            />
-          ))}
-          {/*
-            A waveform, drawn twice: once dim across the whole width, once warm
-            and clipped to how much has been heard. Two copies rather than a bar
-            per state, so the whole thing moves on one CSS variable and nothing
-            is recomputed as it plays.
-          */}
-          <span className="poem__wave" aria-hidden="true">
-            <WaveBars />
-          </span>
-          <span className="poem__wave poem__wave--played" aria-hidden="true">
-            <WaveBars />
-          </span>
-        </div>
+      {status !== "ended" && !recording && !textPreview && <FormatControls
+        title={manifest.title} byline={manifest.author} artwork={coverArtwork ?? manifest.scenes[0]?.image} start={!hasBegun}
+        elapsed={elapsed} total={manifest.durationMs / 1000} playing={playing} stepSeconds={5}
+        status={status === "loading" || status === "error" ? status : null}
+        hidden={!chromeVisible && playing} onToggle={toggle} onSeek={(seconds) => seekMs(seconds * 1000)}
+        onRestart={() => { seekTo(0); if (audio.current?.paused) toggle(); }}
+        onReadText={readText} onClose={onClose} voice={voice} onVoiceChange={(value) => { voiceLevel.current?.set(value, true); setVoice(value); }}
+        music={manifest.theme ? music : undefined} onMusicChange={manifest.theme ? (value) => { musicLevel.current?.set((manifest.theme?.gain ?? 0) * value, true); setMusic(value); } : undefined}
+        onMenuChange={setMenuOpen}
+      />}
+      {!textPreview && (status === "loading" || status === "error") && <FormatStatus error={status === "error"} onReadText={readText} onRetry={() => {
+          const element = audio.current;
+          if (element?.error) {
+            const at = element.currentTime;
+            element.addEventListener("loadedmetadata", () => { element.currentTime = at; }, { once: true });
+            element.load();
+          }
+          setStatus("loading");
+          toggle();
+        }} />}
 
-        <div className="poem__transport">
-          <button
-            type="button"
-            className="poem__step"
-            onClick={(event) => {
-              event.stopPropagation();
-              step(-1);
-            }}
-            aria-label={words.previousLine}
-          >
-            <ChevronLeft className="size-4" />
-          </button>
-          <button type="button" className="poem__play" onClick={toggle} aria-label={playing ? words.pause : words.listen}>
-            {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-          </button>
-          <button
-            type="button"
-            className="poem__step"
-            onClick={(event) => {
-              event.stopPropagation();
-              step(1);
-            }}
-            aria-label={words.nextLine}
-          >
-            <ChevronRight className="size-4" />
-          </button>
-        </div>
-      </div>
-
+      {textPreview && <div className="poem-text-preview">
+        <header><button type="button" onClick={() => setTextPreview(false)}><ArrowLeft /><span>{t("Back to audio", "К аудио")}</span></button></header>
+        <article lang={manifest.language}><h1>{manifest.title}</h1><div className="poem-text-preview__verse">{manifest.lines.map((verse, index) => <p key={index}>{verse.tokens.map(token => token.text).join(" ")}</p>)}</div><div className="poem-text-preview__end" aria-hidden="true">b.</div></article>
+      </div>}
       {/* Keyed by scene so it fades in afresh on its own picture. */}
       {gestureHint && (
         <p key={scene?.id} className="poem__hint" aria-hidden="true">
@@ -939,14 +988,15 @@ export function ImmersivePoem({
         </p>
       )}
 
-      {status === "loading" && <p className="poem__state">{words.loading}</p>}
-      {status === "error" && <p className="poem__state">{words.failed}</p>}
 
       {/* The same ending as every other boks series piece - see
           reading-finale.tsx. The poem draws the reading, never its own end. */}
       {status === "ended" && (
         <ReadingFinale
-          actions={finale}
+          actions={finale ? { ...finale, onComments: onComments ?? finale.onComments } : undefined}
+          title={manifest.title}
+          byline={manifest.author}
+          artwork={manifest.scenes.at(-1)?.image}
           onAgain={() => {
             seekTo(0);
             toggle();
@@ -993,25 +1043,6 @@ function inMemoryCopy(url: string, use: (src: string) => void) {
     cancelled = true;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
   };
-}
-
-/**
- * The little waveform beside the controls.
- *
- * Decoration, and deliberately fixed: a real analysis of the audio would move
- * with the reading and pull the eye down to the bottom of the screen, which is
- * the one place this format does not want it.
- */
-const waveHeights = [0.38, 0.94, 0.53, 0.4, 0.84, 0.43, 0.85, 0.5, 0.4, 0.94, 0.44, 0.74, 0.52, 0.44, 0.99, 0.4, 0.64, 0.6, 0.49, 0.98, 0.34, 0.59, 0.72, 0.5, 0.92, 0.31, 0.6, 0.84, 0.45, 0.82, 0.34, 0.64, 0.91, 0.36];
-
-function WaveBars() {
-  return (
-    <>
-      {waveHeights.map((height, index) => (
-        <i key={index} style={{ "--h": height } as React.CSSProperties} />
-      ))}
-    </>
-  );
 }
 
 /**

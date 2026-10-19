@@ -36,6 +36,8 @@ wrong one has already shipped to production once.
 | `.env.local` | production Supabase | `build`, `start`, `deploy`, `verify:supabase` |
 | `.env.development.local` | local stack | `dev` **only** |
 
+**Before `npm run dev`, verify that `.env.development.local` actually exists and names the local stack.** It is ignored by Git and absent in a fresh checkout; without it, dev can fall back to the production values in `.env.local`. Create the development file from the running local stack without printing credentials, and verify the served page's service origin before exercising writes.
+
 Vite picks env files by mode. `.env.development.local` applies only in dev, so
 it can never reach a production bundle. That is the whole reason it has that
 name.
@@ -177,6 +179,16 @@ open the link from the mailbox on the same browser.
 **Request the link from the UI, never by calling `/auth/v1/otp` yourself.** The
 browser client uses PKCE and stores the verifier in that browser's storage; a
 link minted outside it cannot be completed.
+
+The same email also carries a **6-digit code**, for entering in the requesting
+app or home-screen installation. `supabase/config.toml` sets `otp_length = 6`
+and loads both `supabase/templates/magic-link.html` and
+`supabase/templates/confirmation.html`; first sign-ins use the confirmation
+template. An older running Auth container may still send eight digits or only
+a link. Recreate the local stack with the current config (preserving the local
+SMTP choice in §2), then request a fresh email through the UI. Editing the file
+alone does not change the running service. Never widen the reader's input or
+verify a longer code through an API to work around a mismatched local config.
 
 Three things that look like bugs and are not:
 

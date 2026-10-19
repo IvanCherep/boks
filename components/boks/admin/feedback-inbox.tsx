@@ -57,10 +57,9 @@ export function FeedbackInbox() {
   }, [refresh]);
 
   return (
-    <section className="panel overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
+    <section className="studio-feedback">
+      <div className="studio-filter-line">
         <div>
-          <h2 className="text-xl font-semibold tracking-normal">Feedback</h2>
           <p className="text-sm text-[var(--muted-foreground)]">
             {page
               ? `${page.total} note${page.total === 1 ? "" : "s"}, ${page.newToday} in the last 24 hours`
@@ -79,11 +78,11 @@ export function FeedbackInbox() {
         </Button>
       </div>
 
-      <div className="grid gap-3 p-4">
+      <div className="studio-feedback-list">
         {status && <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">{status}</p>}
 
         {rows.map((row) => (
-          <article key={row.id} className="rounded-xl border border-[var(--border)] bg-[var(--muted)] p-4">
+          <article key={row.id} className="studio-feedback-note">
             <p className="whitespace-pre-wrap text-sm leading-6">{row.message}</p>
             <p className="mt-3 text-sm text-[var(--muted-foreground)]">
               {[

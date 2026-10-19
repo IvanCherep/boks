@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, RefreshCw, Shield } from "lucide-react";
+import { ArrowLeft, Download, LockKeyhole, Menu, RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   formatCooldown,
@@ -9,6 +9,9 @@ import {
   recordMagicLinkSent,
   useMagicLinkCooldown,
 } from "@/components/boks/magic-link-cooldown";
+import "@/app/admin-v44.css";
+import { BoksLogo } from "@/components/boks/reader/boks-logo";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import type { AdminModerationItem, BoksUserContext } from "@/components/boks/client-types";
 import { numberValue } from "@/components/boks/client-format";
@@ -23,7 +26,6 @@ import { TrackedLinksPanel } from "@/components/boks/admin/tracked-links";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
 import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
-import { MetricTile } from "@/components/boks/shared-ui";
 import {
   loadBoksUserContext,
   reviewBokSubmission,
@@ -36,25 +38,27 @@ import {
   consumeBoksMagicLinkRedirectNotice,
   explainBoksMagicLinkError,
   requestBoksMagicLink,
+  verifyBoksEmailCode,
+  signOutBoksUser,
 } from "@/lib/boks/supabase-client";
 
-const adminTabs = [
-  { id: "overview", label: "This week" },
-  { id: "guests", label: "Guests" },
-  { id: "links", label: "Links" },
-  { id: "growth", label: "Growth" },
-  { id: "moderation", label: "Moderation" },
-  { id: "rights", label: "Rights" },
-  { id: "content", label: "Content" },
-  { id: "catalogue", label: "Catalogue" },
-  { id: "people", label: "People" },
-  { id: "feedback", label: "Feedback" },
-  { id: "experiments", label: "Experiments" },
-  { id: "interactions", label: "Interactions" },
-  { id: "poetry", label: "Poetry" },
+export const adminTabs = [
+  { id: "overview", label: "This week", heading: "Overview", group: "Pulse" },
+  { id: "guests", label: "Guests", heading: "Guest funnel", group: "Pulse" },
+  { id: "links", label: "Links", heading: "Tracked links", group: "Pulse" },
+  { id: "growth", label: "Growth", heading: "Growth & retention", group: "Pulse" },
+  { id: "moderation", label: "Moderation", heading: "Review queue", group: "Editorial" },
+  { id: "rights", label: "Rights", heading: "Rights & reports", group: "Editorial" },
+  { id: "content", label: "Content", heading: "Content", group: "Editorial" },
+  { id: "catalogue", label: "Catalogue", heading: "Catalogue", group: "Editorial" },
+  { id: "people", label: "People", heading: "Accounts", group: "People" },
+  { id: "feedback", label: "Feedback", heading: "Reader feedback", group: "People" },
+  { id: "experiments", label: "Experiments", heading: "Experiments", group: "Research" },
+  { id: "interactions", label: "Interactions", heading: "Interactions", group: "Research" },
+  { id: "poetry", label: "Poetry", heading: "Immersive poems", group: "Research" },
 ] as const;
 
-type AdminTab = (typeof adminTabs)[number]["id"];
+export type AdminTab = (typeof adminTabs)[number]["id"];
 
 /**
  * The moderation queue is the last thing still served by the old admin
@@ -66,8 +70,12 @@ const snapshotTabs = new Set<AdminTab>(["moderation"]);
 const pageSize = 100;
 
 export function AdminDashboard() {
-  const { metrics, status, setStatus, load } = useBoksData();
+  const { metrics, status, setStatus, phase, load } = useBoksData();
   const [tab, setTab] = useState<AdminTab>("overview");
+  const [sectionsOpen, setSectionsOpen] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [sentEmail, setSentEmail] = useState("");
+  const activeTab = adminTabs.find((entry) => entry.id === tab)!;
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -138,6 +146,7 @@ export function AdminDashboard() {
         shouldCreateUser: false,
       });
       recordMagicLinkSent(email);
+      setSentEmail(email.trim());
       setAuthStatus("Check your email. Open the boks admin link on this device to sign in.");
     } catch (error) {
       setAuthStatus(friendlyAdminAuthError(error));
@@ -145,6 +154,44 @@ export function AdminDashboard() {
       setBusy(false);
     }
   }
+
+  async function submitEmailCode() {
+    setBusy(true);
+    setAuthStatus("");
+    try {
+      await verifyBoksEmailCode({ email: sentEmail, code: emailCode });
+      await refreshAccess();
+    } catch (error) {
+      setAuthStatus(friendlyAdminAuthError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function navigate(next: AdminTab) {
+    setTab(next);
+    setSectionsOpen(false);
+    window.scrollTo({ top: 0 });
+  }
+
+  const sectionNavigation = (
+    <nav className="studio-navigation" aria-label="Studio sections">
+      {["Pulse", "Editorial", "People", "Research"].map((group) => (
+        <div key={group} className="studio-navigation__group">
+          <p>{group}</p>
+          {adminTabs.filter((entry) => entry.group === group).map((entry) => (
+            <button key={entry.id} type="button" aria-current={tab === entry.id ? "page" : undefined}
+              onClick={() => navigate(entry.id)}>
+              <span>{entry.id === "people" ? "Accounts" : entry.label}</span>
+              {entry.id === "moderation" && numberValue(funnel.pendingReview) > 0 && (
+                <span className="studio-navigation__count">{numberValue(funnel.pendingReview)}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      ))}
+    </nav>
+  );
 
   /** True when the decision went through, so the queue keeps a typed reason otherwise. */
   async function moderateBok(item: AdminModerationItem, decision: "approve" | "reject", reason: string) {
@@ -184,7 +231,7 @@ export function AdminDashboard() {
 
   if (!authChecked) {
     return (
-      <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
+      <main className="studio-access min-h-screen px-4 py-5 sm:px-8">
         <div className="mx-auto grid min-h-[70svh] max-w-xl place-items-center">
           <p className="text-[var(--muted-foreground)]">Checking admin access...</p>
         </div>
@@ -194,9 +241,9 @@ export function AdminDashboard() {
 
   if (!user || user.isAnonymous) {
     return (
-      <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
+      <main className="studio-access min-h-screen px-4 py-5 sm:px-8">
         <section className="auth-panel mx-auto mt-12">
-          <a href="/" className="brand-word">boks</a>
+          <a href="/" className="studio-brand" aria-label="boks — back to reading"><BoksLogo /></a>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal">Admin sign in</h1>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Enter an admin email. boks will send a one-time sign-in link; there is no password to remember.
@@ -231,6 +278,14 @@ export function AdminDashboard() {
                   : "Send admin link"}
             </Button>
           </form>
+          {sentEmail && (
+            <form className="mt-5 grid gap-3" onSubmit={(event) => { event.preventDefault(); void submitEmailCode(); }}>
+              <label htmlFor="admin-email-code">Or enter the six-digit code from the same email</label>
+              <Input id="admin-email-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6}
+                value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, ""))} required />
+              <Button type="submit" disabled={busy || emailCode.length !== 6}>Sign in with code</Button>
+            </form>
+          )}
           {authStatus && <p className="mt-4 text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
         </section>
       </main>
@@ -238,18 +293,7 @@ export function AdminDashboard() {
   }
 
   if (user.role !== "admin") {
-    return (
-      <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
-        <section className="auth-panel mx-auto mt-12">
-          <a href="/" className="brand-word">boks</a>
-          <h1 className="mt-6 text-3xl font-semibold tracking-normal">Admin access</h1>
-          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            This account is signed in as a reader. Ask an existing admin to grant access from this panel.
-          </p>
-          {authStatus && <p className="mt-4 text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
-        </section>
-      </main>
-    );
+    return <main className="studio-access studio-access-page"><header className="studio-access-header"><a href="/" aria-label="Back to reading"><ArrowLeft /></a><a href="/" className="studio-brand" aria-label="boks — back to reading"><BoksLogo /></a></header><section className="studio-access-body"><p className="studio-eyebrow">Studio</p><h1>Admin access required</h1><LockKeyhole className="studio-access-lock" /><h2>You are signed in<br />as @{user.handle || "reader"}.</h2><p>This account does not have admin access. An existing admin can give it access to the studio.</p><p className="studio-hint">Admin access is part of your account, not a setting on this device.</p><div className="studio-link-rows"><button type="button" onClick={() => { void signOutBoksUser().then(() => setUser(null)).catch((error) => setAuthStatus(error instanceof Error ? error.message : "Could not switch accounts.")); }}><span><strong>Continue with another email</strong><small>A one-time link or a six-digit code</small></span><span>↗</span></button></div><Button asChild><a href="/">Back to reading</a></Button>{authStatus && <p role="status">{authStatus}</p>}</section></main>;
   }
 
   return (
@@ -258,62 +302,51 @@ export function AdminDashboard() {
     // change made there reloads the snapshot whichever tab is open, because the
     // Moderation badge reads from it and hiding a boks from Content or People
     // changes the count too.
-    <AdminInspectorProvider onChange={() => loadSnapshot().catch((error) => setStatus(error.message))}>
-    <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
-      <div className="mx-auto grid max-w-7xl gap-5">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <a href="/" className="brand-word">boks</a>
-            <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">Business console</h1>
-            <p className="mt-3 max-w-3xl text-[var(--muted-foreground)]">
-              Reader behaviour, content supply, moderation and the running experiment.
-            </p>
-          </div>
-          {needsSnapshot && (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => loadSnapshot().catch((error) => setStatus(error.message))}>
-                <RefreshCw className="size-4" /> Refresh
-              </Button>
-              <Button onClick={downloadMetrics}>
-                <Download className="size-4" /> Export
-              </Button>
-            </div>
-          )}
+    <AdminInspectorProvider currentUserId={user.userId} onChange={() => loadSnapshot().catch((error) => setStatus(error.message))}>
+    <main className="studio-shell">
+      <aside className="studio-sidebar">
+        <a href="/" className="studio-brand" aria-label="boks — back to reading"><BoksLogo /></a>
+        {sectionNavigation}
+        <a href="/" className="studio-back"><ArrowLeft aria-hidden="true" /> Back to reading</a>
+      </aside>
+      <div className="studio-main">
+        <header className="studio-topbar">
+          <button type="button" className="studio-mobile-back" aria-label={tab === "overview" ? "Back to reading" : "Back to overview"} onClick={() => { if (tab === "overview") window.location.assign("/"); else navigate("overview"); }}><ArrowLeft /></button>
+          <a href="/" className="studio-brand studio-mobile-brand" aria-label="boks — back to reading"><BoksLogo /></a>
+          <span className="studio-breadcrumb">{activeTab.group} / {activeTab.label}</span>
+          <span className="studio-account">@{user.handle || "admin"}</span>
+          <Button variant="ghost" size="icon" className="studio-menu-button" aria-label="Studio sections"
+            aria-expanded={sectionsOpen} onClick={() => setSectionsOpen(true)}><Menu /></Button>
         </header>
-
-        <nav className="admin-tabs" aria-label="Console sections">
-          {adminTabs.map((entry) => (
-            <button
-              key={entry.id}
-              className={`admin-tab ${tab === entry.id ? "is-active" : ""}`}
-              aria-current={tab === entry.id ? "page" : undefined}
-              onClick={() => setTab(entry.id)}
-            >
-              {entry.label}
-              {entry.id === "moderation" && numberValue(funnel.pendingReview) > 0 && (
-                <span className="admin-tab__count">{numberValue(funnel.pendingReview)}</span>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        {tab === "overview" && <AdminOverview />}
+        <div className="studio-content">
+          <div className="studio-heading">
+            <div><p className="studio-eyebrow">{tab === "overview" ? "Studio" : `${activeTab.group} / ${tab === "people" ? "Accounts" : activeTab.label}`}</p><h1>{activeTab.heading}</h1></div>
+            {needsSnapshot && (
+              <div className="studio-heading__actions">
+                <Button variant="outline" onClick={() => loadSnapshot().catch((error) => setStatus(error.message))}>
+                  <RefreshCw className="size-4" /> Refresh
+                </Button>
+                <Button variant="outline" onClick={downloadMetrics}><Download className="size-4" /> Export</Button>
+              </div>
+            )}
+          </div>
+        {tab === "overview" && <AdminOverview onNavigate={navigate} />}
 
         {tab === "moderation" && (
           <>
-            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricTile label="Published boks" value={numberValue(funnel.totalStories)} />
-              <MetricTile label="Waiting for review" value={numberValue(funnel.pendingReview)} />
-              <MetricTile label="Refused" value={numberValue(funnel.rejectedBoks)} />
-              <MetricTile label="Approved from authors" value={numberValue(funnel.approvedAuthorBoks)} />
-            </section>
+            {metrics.moderationQueue !== undefined && <section className="studio-editorial-tally">
+              <strong>{numberValue(funnel.pendingReview)}</strong><span>waiting for review</span>
+              <details><summary>Publication totals</summary><p>{numberValue(funnel.totalStories)} published · {numberValue(funnel.rejectedBoks)} refused · {numberValue(funnel.approvedAuthorBoks)} approved from authors</p></details>
+            </section>}
             {/* The result of the last decision. It was set and never shown. */}
             {status && status !== "Loading" && status !== "Ready" && (
               <p className="text-sm text-[var(--muted-foreground)]" role="status" aria-live="polite">
                 {status}
               </p>
             )}
-            <ModerationQueue items={metrics.moderationQueue ?? []} busy={busy} onReview={moderateBok} />
+            {metrics.moderationQueue === undefined ? (
+              <p role="status">{phase === "failed" ? "The review queue could not be loaded. Use Refresh to try again." : "Loading the review queue…"}</p>
+            ) : <ModerationQueue items={metrics.moderationQueue} busy={busy} onReview={moderateBok} onRefresh={() => loadSnapshot().catch((error) => setStatus(error.message))} />}
           </>
         )}
 
@@ -329,13 +362,21 @@ export function AdminDashboard() {
 
         {tab === "content" && <ContentOperations />}
 
-        {tab === "catalogue" && <CatalogueImport />}
+        {tab === "catalogue" && <CatalogueImport onOpenContent={(published) => navigate(published ? "content" : "moderation")} />}
 
         {tab === "people" && <AdminPeople currentUserId={user.userId} />}
         {tab === "feedback" && <FeedbackInbox />}
 
         {authStatus && <p className="text-sm text-[var(--muted-foreground)]">{authStatus}</p>}
+        </div>
       </div>
+      <Sheet open={sectionsOpen} onOpenChange={setSectionsOpen}>
+        <SheetContent side="left" className="studio-section-sheet">
+          <SheetHeader><SheetTitle>Studio</SheetTitle><SheetDescription>Choose a section.</SheetDescription></SheetHeader>
+          {sectionNavigation}
+          <a href="/" className="studio-back"><ArrowLeft aria-hidden="true" /> Back to reading</a>
+        </SheetContent>
+      </Sheet>
     </main>
     </AdminInspectorProvider>
   );

@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, FolderOpen, RefreshCw, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, Check, Download, FolderOpen, RefreshCw, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { originalImportIndices, pendingImportRows } from "@/components/boks/admin/import-progress";
 import { MetricTile } from "@/components/boks/shared-ui";
-import { MetricNote } from "@/components/boks/admin/metric-note";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
   parseCatalogueFiles,
@@ -35,7 +35,9 @@ function estimateMinutes(text: string) {
   return Math.max(1, Math.min(15, Math.ceil(words / 238)));
 }
 
-export function CatalogueImport() {
+export function CatalogueImport({ onOpenContent }: { onOpenContent: (published: boolean) => void }) {
+  const [view, setView] = useState<"catalogue" | "preview" | "errors" | "importing" | "done" | "cleanup">("catalogue");
+  const [preview, setPreview] = useState<string | null>(null);
   const [publishers, setPublishers] = useState<BoksPublisher[]>([]);
   const [publisher, setPublisher] = useState("");
   const [newPublisher, setNewPublisher] = useState("");
@@ -50,6 +52,9 @@ export function CatalogueImport() {
   const [rightsNote, setRightsNote] = useState("");
   const [purgePrefix, setPurgePrefix] = useState("");
   const [purgeMatched, setPurgeMatched] = useState<number | null>(null);
+  const [purgeAcknowledged, setPurgeAcknowledged] = useState(false);
+  const [seedAcknowledged, setSeedAcknowledged] = useState(false);
+  const [purgeReviewed, setPurgeReviewed] = useState("");
   const [seedCount, setSeedCount] = useState<{ seeds: number; authored: number } | null>(null);
   const [languages, setLanguages] = useState<LanguageDemandRow[]>([]);
   const filePicker = useRef<HTMLInputElement>(null);
@@ -85,6 +90,7 @@ export function CatalogueImport() {
 
     setStatus("");
     setResults([]);
+    setProgress(null);
     const files = await Promise.all(
       Array.from(fileList)
         .filter((file) => /\.(md|markdown|txt|jsonl)$/i.test(file.name))
@@ -102,61 +108,52 @@ export function CatalogueImport() {
     const parsed = parseCatalogueFiles(files);
     setRows(parsed.rows);
     setProblems(parsed.problems);
+    setView(parsed.rows.length ? "preview" : "errors");
+    window.scrollTo({ top: 0 });
     setStatus(
       `Read ${files.length} file${files.length === 1 ? "" : "s"}: ${parsed.rows.length} ready` +
         (parsed.problems.length ? `, ${parsed.problems.length} to fix` : "")
     );
   }
 
-  async function runImport() {
-    if (!publisher) {
-      setStatus("Choose the account these boks publish under.");
-      return;
-    }
+  async function runImport(retryUnresolved = false) {
+    if (!publisher) { setStatus("Choose the account these boks publish under."); return; }
     if (!rows.length) return;
-    if (!rightsConfirmed) {
-      setStatus("Confirm the rights for this batch before importing it.");
-      return;
-    }
-
+    if (!rightsConfirmed) { setStatus("Confirm the rights for this batch before importing it."); return; }
+    const { settled, pending: pendingRows } = pendingImportRows(rows, retryUnresolved ? results : []);
+    if (!pendingRows.length) return;
+    const collected = [...settled];
     setBusy(true);
     setStatus("");
-    setResults([]);
-    setProgress({ done: 0, total: rows.length });
-
-    const collected: BoksImportRowResult[] = [];
+    setResults(collected);
+    setProgress({ done: settled.length, total: rows.length });
+    setView("importing");
+    window.scrollTo({ top: 0 });
     try {
-      for (let start = 0; start < rows.length; start += batchSize) {
-        const batch = rows.slice(start, start + batchSize);
-        const report = await importBoksBatch({
-          publisherHandle: publisher,
-          rows: batch,
-          publish: publishNow,
-          rightsConfirmed,
-          rightsNote,
-        });
-        // The database numbers rows within its own batch; shift them so the
-        // operator can find a rejected row in the list they dropped in.
-        collected.push(...report.results.map((row) => ({ ...row, index: row.index + start })));
+      for (let start = 0; start < pendingRows.length; start += batchSize) {
+        const batch = pendingRows.slice(start, start + batchSize);
+        const report = await importBoksBatch({ publisherHandle: publisher, rows: batch.map(({ row }) => row), publish: publishNow, rightsConfirmed, rightsNote });
+        collected.push(...originalImportIndices(report.results, batch));
         setResults([...collected]);
-        setProgress({ done: Math.min(start + batch.length, rows.length), total: rows.length });
+        setProgress({ done: collected.length, total: rows.length });
       }
-
       const imported = collected.filter((row) => row.status === "imported").length;
       const skipped = collected.filter((row) => row.status === "skipped").length;
       const rejected = collected.filter((row) => row.status === "rejected").length;
-      setStatus(
-        `${imported} imported into @${publisher}` +
-          (skipped ? `, ${skipped} already there` : "") +
-          (rejected ? `, ${rejected} refused` : "") +
-          (publishNow ? "." : ". They are waiting in the review queue.")
-      );
+      setStatus(`${imported} imported into @${publisher}` + (skipped ? `, ${skipped} already there` : "") +
+        (rejected ? `, ${rejected} refused` : "") + (publishNow ? "." : ". They are waiting in the review queue."));
       await refresh();
     } catch (error) {
-      setStatus(readableBoksError(error, "The import stopped. Nothing after the last batch was written."));
-    } finally {
-      setBusy(false);
-    }
+      setStatus(readableBoksError(error, "The import stopped. Completed batches are kept. Retry unresolved boks; stable IDs prevent duplicates if the last batch was saved."));
+    } finally { setBusy(false); setView("done"); }
+  }
+
+  function downloadReceipt() {
+    const recordedKeys = new Set(results.map((row) => row.importKey));
+    const receipt = { exportedAt: new Date().toISOString(), publisher, results,
+      unresolved: rows.filter((row) => !recordedKeys.has(row.importKey)).map((row) => row.importKey) };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(receipt, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a"); link.href = url; link.download = "boks-import-receipt.json"; link.click(); URL.revokeObjectURL(url);
   }
 
   async function addPublisher() {
@@ -170,6 +167,9 @@ export function CatalogueImport() {
       setStatus(`@${handle} can now receive imports.`);
       await refresh();
       setPublisher(handle);
+      setResults([]);
+      setProgress(null);
+      setPurgeMatched(null);
     } catch (error) {
       setStatus(readableBoksError(error, "Could not mark that account as a publisher."));
     } finally {
@@ -184,10 +184,13 @@ export function CatalogueImport() {
       return;
     }
 
+    if (confirm && (!purgeAcknowledged || purgeReviewed !== `${publisher}:${prefix}`)) return;
     setBusy(true);
     try {
       const report = await deleteBoksImport({ publisherHandle: publisher, prefix, confirm });
       setPurgeMatched(report.matched);
+      setPurgeReviewed(`${publisher}:${prefix}`);
+      setPurgeAcknowledged(false);
       setStatus(
         confirm
           ? `Removed ${report.deleted} boks from @${publisher}, and everything readers did with them.`
@@ -206,6 +209,8 @@ export function CatalogueImport() {
   }
 
   async function clearDemoCatalogue(confirm: boolean) {
+    if (confirm && !seedAcknowledged) return;
+    setSeedAcknowledged(false);
     setBusy(true);
     try {
       const report = await deleteSeedBoks(confirm);
@@ -226,346 +231,76 @@ export function CatalogueImport() {
 
   const rejected = results.filter((row) => row.status === "rejected");
 
+  const imported = results.filter((row) => row.status === "imported").length;
+  const skipped = results.filter((row) => row.status === "skipped").length;
+  const unresolved = Math.max(0, rows.length - results.length) + rejected.length;
+  const previewRow = rows.find((row) => row.importKey === preview);
+  function go(next: typeof view) { setView(next); setPreview(null); window.scrollTo({ top: 0 }); }
+  const heading = { catalogue: "Catalogue", preview: "Import preview", errors: "Files to fix", importing: "Importing boks", done: unresolved ? "Import needs attention" : "Import complete", cleanup: "Remove test content" }[view];
   return (
-    <section className="grid gap-4">
-      <div className="panel p-5">
-        <h2 className="text-xl font-semibold tracking-normal">What to acquire next</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
-          boks only recommends what a reader can read, so a language with readers and no boks is an
-          empty app for those readers. Neither column means much alone.
-        </p>
-        <MetricNote
-          label="Language supply and demand"
-          is={<>Published boks per language, beside the readers who accept that language.</>}
-          how={
-            <>
-              A boks&apos; language is derived from its text, not asked of the author: Cyrillic
-              against Latin settles Russian from English, then English function words separate
-              English from other Latin-script languages. Anything it cannot place is
-              <code> und</code>, and a reader who narrowed their languages is <em>not</em> offered
-              it - unknown is not a yes. So the <code>und</code> row is a work queue: those boks
-              reach only readers who left their languages alone, until an admin labels them.
-              A reader&apos;s languages start from their browser and are theirs to change.{" "}
-              <strong>Only</strong> counts readers who accept nothing else - if that language has no
-              boks, those readers see an empty feed.
-            </>
-          }
-          not={
-            <>
-              Not a measure of interest. It counts readers who said they can read a language, not
-              readers who want more of it - that question needs boks in that language first.
-            </>
-          }
-        />
-        <div className="mt-4 overflow-x-auto">
-          <table className="stat-table">
-            <thead>
-              <tr>
-                <th>Language</th>
-                <th>Published</th>
-                <th>Readers</th>
-                <th>Only this one</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {languages.map((row) => (
-                <tr key={row.language}>
-                  <td>{row.language === "und" ? "undetermined" : row.language}</td>
-                  <td>{row.published}</td>
-                  <td>{row.readers}</td>
-                  <td>{row.readersOnly}</td>
-                  <td className="text-[var(--muted-foreground)]">
-                    {row.readersOnly > 0 && row.published === 0
-                      ? `${row.readersOnly} reader${row.readersOnly === 1 ? "" : "s"} with an empty feed`
-                      : row.language === "und" && row.published > 0
-                        ? "hidden from every reader who set a language - label these"
-                        : ""}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <section className="studio-catalogue" data-studio-detail={view !== "catalogue" ? "true" : undefined}>
+      {view !== "catalogue" && <header className="studio-subview-heading"><button type="button" className="studio-text-link" disabled={busy} onClick={() => go(view === "errors" && rows.length ? "preview" : "catalogue")}>← {view === "errors" && rows.length ? "Import preview" : "Catalogue"}</button><p className="studio-eyebrow">Editorial / catalogue{view === "done" ? " / complete" : ""}</p>{view !== "done" && <h1>{heading}</h1>}</header>}
+      <input ref={filePicker} type="file" multiple accept=".md,.markdown,.txt,.jsonl" className="hidden" onChange={(event) => void readFiles(event.target.files)} />
+      <input ref={folderPicker} type="file" {...{ webkitdirectory: "true", directory: "true" }} multiple className="hidden" onChange={(event) => void readFiles(event.target.files)} />
 
-      <div className="panel p-5">
-        <h2 className="text-xl font-semibold tracking-normal">Publish into an account</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
-          A boks is attributed to an account, and carries its own byline on top. So one account can
-          publish a whole catalogue with a different writer credited on every piece. Readers follow
-          the account; each piece still says who wrote it.
-        </p>
-
-        {publishers.length ? (
-          <div className="mt-4 grid gap-2">
-            {publishers.map((entry) => (
-              <label
-                key={entry.handle}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 ${
-                  publisher === entry.handle
-                    ? "border-[var(--foreground)] bg-[var(--muted)]"
-                    : "border-[var(--border)]"
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="boks-publisher"
-                    checked={publisher === entry.handle}
-                    onChange={() => setPublisher(entry.handle)}
-                  />
-                  <span className="font-semibold">@{entry.handle}</span>
-                </span>
-                <span className="text-sm text-[var(--muted-foreground)]">
-                  {entry.published} published · {entry.imported} imported · {entry.followers} following
-                </span>
-              </label>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-4 text-sm leading-6">
-            No publisher accounts yet. Create the account the ordinary way — sign up with its email
-            and set its nickname — then name it here. Nothing can be imported into an account that
-            has not been marked, so a mistyped handle cannot pour a catalogue into a reader&apos;s
-            account.
-          </p>
-        )}
-
-        <div className="mt-4 flex flex-wrap items-end gap-2">
-          <label className="grid gap-1 text-sm font-medium">
-            Mark an account as a publisher
-            <Input
-              value={newPublisher}
-              placeholder="boks"
-              onChange={(event) => setNewPublisher(event.target.value)}
-            />
-          </label>
-          <Button variant="outline" onClick={addPublisher} disabled={busy || !newPublisher.trim()}>
-            <Check className="size-4" /> Mark
-          </Button>
-          <Button variant="outline" onClick={() => void refresh()} disabled={busy}>
-            <RefreshCw className="size-4" /> Refresh
-          </Button>
-        </div>
-      </div>
-
-      <div className="panel p-5">
-        <h2 className="text-xl font-semibold tracking-normal">Load a catalogue</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
-          One file per bok — <code>.md</code> or <code>.txt</code> with a front-matter block — or a
-          single <code>.jsonl</code> export. Every piece keeps a stable id, so running the same load
-          twice imports nothing the second time instead of doubling the catalogue.
-        </p>
-
-        <pre className="mt-3 overflow-x-auto rounded-xl bg-[var(--muted)] p-3 text-xs leading-5">{`---
-title: The Lamplighter's Last Round   # optional: else the text's first line
-author: Abel Mensah        # optional: the byline for this piece
-id: lamp-001               # optional: defaults to the file name
-date: 1998-04-02           # optional: keeps the catalogue's own date
+      {view === "catalogue" && <>
+        <section className="studio-editorial-section"><h2>What to acquire next</h2><div className="studio-supply"><div><span>Language</span><span>Boks</span><span>Readers</span></div>{languages.map((row) => <div key={row.language} className={row.readers > 0 && row.published === 0 ? "is-gap" : undefined}><span>{row.language === "en" ? "English" : row.language === "ru" ? "Russian" : row.language === "und" ? "Undetermined" : row.language}</span><strong>{row.published}</strong><strong>{row.readers}</strong></div>)}</div><p className="studio-meta">Published supply · readers who accept each language</p></section>
+        <label className="studio-field">Publisher account<select value={publisher} disabled={busy || !publishers.length} onChange={(event) => { setPublisher(event.target.value); setPurgeMatched(null); setPurgeAcknowledged(false); }}><option value="" disabled>Choose an account</option>{publishers.map((entry) => <option key={entry.handle} value={entry.handle}>@{entry.handle} · {entry.published} published</option>)}</select></label>
+        {!publishers.length && <p className="studio-hint">No publisher accounts yet. Create an account through normal sign-in, then add its handle here.</p>}
+        <details className="studio-details"><summary>Add a publisher account <span>＋</span></summary><div className="studio-details-body"><label className="studio-field">Existing account handle<Input value={newPublisher} onChange={(event) => setNewPublisher(event.target.value)} placeholder="boks" /></label><Button variant="outline" disabled={busy || !newPublisher.trim()} onClick={addPublisher}>Mark as publisher</Button></div></details>
+        <button type="button" className="studio-dropzone" onClick={() => filePicker.current?.click()} disabled={busy}><Upload aria-hidden="true" /><h2>Import boks</h2><p>Choose files<br />.md · .txt · .jsonl</p></button>
+        <div className="studio-inline"><Button variant="ghost" onClick={() => folderPicker.current?.click()} disabled={busy}><FolderOpen /> Choose a folder</Button><Button variant="ghost" onClick={() => void refresh()} disabled={busy}><RefreshCw /> Refresh</Button></div>
+        {rows.length > 0 && <button type="button" className="studio-author-link" onClick={() => go(progress ? "done" : "preview")}>Return to {progress ? "import receipt" : "import preview"}<span>↗</span></button>}
+        <details className="studio-details"><summary>File format & stable IDs <span>＋</span></summary><div className="studio-details-body"><p className="studio-meta">One bok per Markdown or text file with front matter, or a JSONL export. Stable IDs make repeat imports safe.</p><pre className="studio-import-format">{`---
+title: The Lamplighter's Last Round
+author: Abel Mensah
+id: lamp-001
+rights: Original work, used with permission
 ---
-The story text goes here.`}</pre>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <input
-            ref={filePicker}
-            type="file"
-            multiple
-            accept=".md,.markdown,.txt,.jsonl"
-            className="hidden"
-            onChange={(event) => void readFiles(event.target.files)}
-          />
-          <input
-            ref={folderPicker}
-            type="file"
-            /* @ts-expect-error - a directory picker is not in the React DOM types */
-            webkitdirectory="true"
-            directory="true"
-            multiple
-            className="hidden"
-            onChange={(event) => void readFiles(event.target.files)}
-          />
-          <Button variant="outline" onClick={() => filePicker.current?.click()} disabled={busy}>
-            <Upload className="size-4" /> Choose files
-          </Button>
-          <Button variant="outline" onClick={() => folderPicker.current?.click()} disabled={busy}>
-            <FolderOpen className="size-4" /> Choose a folder
-          </Button>
-        </div>
-
-        {rows.length > 0 && (
-          <>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricTile label="Ready to import" value={rows.length} />
-              <MetricTile label="Named writers" value={totals.bylines} />
-              <MetricTile label="Reading minutes" value={totals.minutes} />
-              <MetricTile label="To fix" value={problems.length} />
-            </div>
-
-            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-4">
-              <label className="flex cursor-pointer items-start gap-3 text-sm font-medium leading-6">
-                <input
-                  type="checkbox"
-                  className="mt-1 size-4 shrink-0"
-                  checked={rightsConfirmed}
-                  onChange={(event) => setRightsConfirmed(event.target.checked)}
-                />
-                <span>
-                  These {rows.length} boks may be published here.
-                  <span className="mt-1 block font-normal text-[var(--muted-foreground)]">
-                    Asked once for the batch, because a public-domain load is hundreds of files with
-                    the same answer. It is recorded against every piece, under your account.
-                  </span>
-                </span>
-              </label>
-
-              <label className="mt-3 grid gap-1 text-sm font-medium">
-                Where the rights come from
-                <span className="text-sm font-normal text-[var(--muted-foreground)]">
-                  Admins only. Applies to the whole batch; a file with its own <code>rights:</code>{" "}
-                  line keeps that instead.
-                </span>
-                <Input
-                  value={rightsNote}
-                  placeholder="Project Gutenberg, public domain in the US"
-                  onChange={(event) => setRightsNote(event.target.value)}
-                />
-              </label>
-            </div>
-
-            <label className="mt-4 flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={publishNow}
-                onChange={(event) => setPublishNow(event.target.checked)}
-              />
-              Publish straight away. Unchecked, they land in the review queue instead.
-            </label>
-
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button onClick={runImport} disabled={busy || !publisher || !rightsConfirmed}>
-                <Upload className="size-4" />
-                {busy ? "Importing…" : `Import ${rows.length} boks into @${publisher || "…"}`}
-              </Button>
-              {progress && (
-                <span className="text-sm text-[var(--muted-foreground)]">
-                  {progress.done} of {progress.total}
-                </span>
-              )}
-            </div>
-
-            <div className="mt-4 max-h-[280px] overflow-y-auto rounded-xl border border-[var(--border)]">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[var(--muted)] text-xs uppercase tracking-wide text-[var(--muted-foreground)]">
-                  <tr>
-                    <th className="p-2">Id</th>
-                    <th className="p-2">Title</th>
-                    <th className="p-2">Byline</th>
-                    <th className="p-2">Min</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.slice(0, 200).map((row) => (
-                    <tr key={row.importKey} className="border-t border-[var(--border)]">
-                      <td className="p-2 font-mono text-xs">{row.importKey}</td>
-                      <td className="p-2">{row.title}</td>
-                      <td className="p-2 text-[var(--muted-foreground)]">{row.authorName || "—"}</td>
-                      <td className="p-2">{estimateMinutes(row.text)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {rows.length > 200 && (
-                <p className="p-2 text-xs text-[var(--muted-foreground)]">
-                  and {rows.length - 200} more, all of which will be imported
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {problems.length > 0 && (
-          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-3">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <AlertTriangle className="size-4" /> {problems.length} file
-              {problems.length === 1 ? "" : "s"} to fix — the rest will still import
-            </p>
-            <ul className="mt-2 grid gap-1 text-sm text-[var(--muted-foreground)]">
-              {problems.slice(0, 40).map((problem) => (
-                <li key={`${problem.source}-${problem.problem}`}>
-                  <span className="font-mono text-xs">{problem.source}</span> — {problem.problem}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {rejected.length > 0 && (
-          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--reader)] p-3">
-            <p className="text-sm font-semibold">{rejected.length} refused by the database</p>
-            <ul className="mt-2 grid gap-1 text-sm text-[var(--muted-foreground)]">
-              {rejected.slice(0, 40).map((row) => (
-                <li key={`${row.index}-${row.importKey}`}>
-                  <span className="font-mono text-xs">{row.importKey}</span> — {row.reason}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {status && <p className="mt-4 text-sm leading-6" role="status" aria-live="polite">{status}</p>}
-      </div>
-
-      <div className="panel p-5">
-        <h2 className="text-xl font-semibold tracking-normal">Remove a test batch</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
-          Matches on the start of the import id, so a load given ids like{" "}
-          <code>fixture-0001</code> comes out again with the prefix <code>fixture-</code>. Removing a
-          boks also removes the reads, likes and comments attached to it, and cannot be undone — this
-          is for test data, not for taking a published piece down.
-        </p>
-
-        <div className="mt-4 rounded-xl border border-[var(--border)] p-3">
-          <p className="text-sm font-semibold">The seeded demo catalogue</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-            The boks that came with the platform, written to have something to rank. Marked as
-            seeds, so this can only ever remove those — work an author published is out of its
-            reach.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => void clearDemoCatalogue(false)} disabled={busy}>
-              Count the demo boks
-            </Button>
-            {seedCount !== null && seedCount.seeds > 0 && (
-              <Button variant="outline" onClick={() => void clearDemoCatalogue(true)} disabled={busy}>
-                <Trash2 className="size-4" /> Remove all {seedCount.seeds} for good
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-end gap-2">
-          <label className="grid gap-1 text-sm font-medium">
-            Import-key prefix
-            <Input
-              value={purgePrefix}
-              placeholder="fixture-"
-              onChange={(event) => {
-                setPurgePrefix(event.target.value);
-                setPurgeMatched(null);
-              }}
-            />
-          </label>
-          <Button variant="outline" onClick={() => void purge(false)} disabled={busy || !purgePrefix.trim()}>
-            Count them
-          </Button>
-          {purgeMatched !== null && purgeMatched > 0 && (
-            <Button variant="outline" onClick={() => void purge(true)} disabled={busy}>
-              <Trash2 className="size-4" /> Remove {purgeMatched} for good
-            </Button>
-          )}
-        </div>
-      </div>
+The story text goes here.`}</pre></div></details>
+        <button type="button" className="studio-author-link" onClick={() => go("cleanup")}>Review a test-batch cleanup <span>↗</span></button>
+      </>}
+      {view === "preview" && <>
+        <div className="studio-metric-pair"><MetricTile label="ready to import" value={rows.length} /><MetricTile label="bylines" value={totals.bylines} /></div>
+        <div className="studio-link-rows">{rows.slice(0,200).map((row) => <button key={row.importKey} type="button" onClick={() => setPreview(preview === row.importKey ? null : row.importKey)}><span><strong>{row.title}</strong><small>{row.importKey} · {row.authorName || "No byline"} · {estimateMinutes(row.text)} min</small></span><span>↗</span></button>)}</div>
+        <p className="studio-meta">Showing {Math.min(rows.length,200)} of {rows.length} · stable file IDs prevent duplicates.</p>
+        {previewRow && <article className="studio-import-preview-text"><h2>{previewRow.title}</h2><p className="studio-meta">{previewRow.authorName} · {previewRow.importKey}</p><div>{previewRow.text}</div><Button variant="ghost" onClick={() => setPreview(null)}>Close text preview</Button></article>}
+        <label className="studio-check"><input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} /><span><strong>These boks may be published here.</strong><small>This attestation is recorded for each bok.</small></span></label>
+        <label className="studio-field">Rights source<Input value={rightsNote} onChange={(event) => setRightsNote(event.target.value)} placeholder="Source or permission for this batch" /><small>A file’s own rights source takes precedence.</small></label>
+        <label className="studio-check"><input type="checkbox" checked={publishNow} onChange={(event) => setPublishNow(event.target.checked)} /><span>Publish immediately. Otherwise send to review.</span></label>
+        {problems.length > 0 && <button type="button" className="studio-author-link" onClick={() => go("errors")}><span>{problems.length} files to fix</span><AlertTriangle /></button>}
+        <footer className="studio-flow-footer"><Button onClick={() => void runImport()} disabled={busy || !publisher || !rightsConfirmed}>Import {rows.length} into @{publisher || "…"}</Button></footer>
+      </>}
+      {view === "errors" && <>
+        <div className="studio-metric-pair"><MetricTile label="ready to import" value={rows.length} /><MetricTile label="need attention" value={problems.length} /></div>
+        <p className="studio-meta">Ready boks are kept. Fix these files and choose the corrected batch again.</p>
+        {problems.slice(0,100).map((problem) => <article className="studio-file-error" key={`${problem.source}-${problem.problem}`}><strong>{problem.source}</strong><p>{problem.problem}</p></article>)}
+        <div className="studio-inline"><Button variant="outline" onClick={() => filePicker.current?.click()}>Choose corrected files</Button>{rows.length > 0 && <Button onClick={() => go("preview")}>Review {rows.length} ready boks</Button>}</div>
+      </>}
+      {view === "importing" && <>
+        <div className="studio-import-progress" role="status"><strong>{progress?.done || 0}<span> / {rows.length}</span></strong><p>boks processed</p><progress value={progress?.done || 0} max={rows.length} /></div>
+        <div className="studio-import-lines">{results.slice(-5).map((result) => <p key={result.index}><span>{result.status === "rejected" ? "!" : "✓"}</span>{rows[result.index]?.title || result.importKey}</p>)}</div>
+        <p className="studio-hint">Keep this page open. Stable IDs prevent duplicate boks when you retry a batch.</p>
+      </>}
+      {view === "done" && <>
+        <div className={`studio-import-success ${unresolved ? "has-errors" : ""}`} aria-hidden="true">{unresolved ? <AlertTriangle /> : <Check />}</div>
+        <h1 className="studio-import-done-title">{heading}</h1>
+        <div className="studio-metric-pair"><MetricTile label={publishNow ? "imported & published" : "imported for review"} value={imported} /><MetricTile label="already existed" value={skipped} /></div>
+        <p className="studio-hint">Saved under @{publisher}. Each bok keeps its own byline and rights source.</p>
+        {unresolved > 0 && <><p className="studio-notice">{unresolved} boks need attention. Completed batches are kept.</p>{rejected.slice(0,40).map((row) => <article className="studio-file-error" key={row.index}><strong>{row.importKey}</strong><p>{row.reason}</p></article>)}<Button onClick={() => void runImport(true)} disabled={busy || !publisher || !rightsConfirmed}>Retry unresolved boks</Button></>}
+        <Button variant="outline" onClick={downloadReceipt}><Download /> Download import receipt</Button>
+        <footer className="studio-flow-footer"><Button onClick={() => onOpenContent(publishNow)}>{publishNow ? "Open published content" : "Open review queue"}</Button></footer>
+      </>}
+      {view === "cleanup" && <>
+        <label className="studio-field">Publisher account<select value={publisher} disabled={busy} onChange={(event) => { setPublisher(event.target.value); setPurgeMatched(null); setPurgeAcknowledged(false); }}>{publishers.map((entry) => <option key={entry.handle} value={entry.handle}>@{entry.handle}</option>)}</select></label>
+        <label className="studio-field">Import ID prefix<Input value={purgePrefix} placeholder="fixture-" onChange={(event) => { setPurgePrefix(event.target.value); setPurgeMatched(null); setPurgeAcknowledged(false); }} /></label>
+        <Button variant="outline" onClick={() => void purge(false)} disabled={busy || !publisher || !purgePrefix.trim()}>Preview matching count</Button>
+        {purgeMatched !== null && <div className="studio-paper-slip"><span className="studio-eyebrow">Preview only · nothing removed</span><h2>{purgeMatched} matching boks</h2><p className="studio-meta">All belong to @{publisher} and begin with {purgePrefix}. This preview reports the server count.</p></div>}
+        <p className="studio-hint">Deleting this batch also removes its reactions, comments and reading metrics. This cannot be undone.</p>
+        {purgeMatched !== null && purgeMatched > 0 && <><label className="studio-check"><input type="checkbox" checked={purgeAcknowledged} onChange={(event) => setPurgeAcknowledged(event.target.checked)} /><span>I reviewed the publisher, prefix and {purgeMatched} matching boks.</span></label><Button variant="destructive" disabled={busy || !purgeAcknowledged || purgeReviewed !== `${publisher}:${purgePrefix.trim()}`} onClick={() => void purge(true)}><Trash2 /> Remove these {purgeMatched}</Button></>}
+        <details className="studio-details"><summary>Seeded demo catalogue <span>＋</span></summary><div className="studio-details-body"><p className="studio-meta">Only boks marked as seeds can be removed here. Author submissions are kept.</p><Button variant="outline" disabled={busy} onClick={() => void clearDemoCatalogue(false)}>Count demo boks</Button>{seedCount && <><p>{seedCount.seeds} seed boks · {seedCount.authored} authored boks kept</p>{seedCount.seeds > 0 && <><label className="studio-check"><input type="checkbox" checked={seedAcknowledged} onChange={(event) => setSeedAcknowledged(event.target.checked)} /><span>I understand the seed boks and their history will be permanently erased.</span></label><Button variant="destructive" disabled={busy || !seedAcknowledged} onClick={() => void clearDemoCatalogue(true)}>Remove {seedCount.seeds} seed boks</Button></>}</>}</div></details>
+      </>}
+      {status && <p className="studio-notice" role="status" aria-live="polite">{status}</p>}
     </section>
   );
 }

@@ -3,25 +3,7 @@
 import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 import { Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
-
-const messages = defineMessages(
-  {
-    collapse: (label: string) => `Collapse ${label.toLowerCase()}`,
-    expand: (label: string) => `Expand ${label.toLowerCase()}`,
-    close: (label: string) => `Close ${label.toLowerCase()}`,
-    fullScreen: (label: string) => `Open ${label.toLowerCase()} full screen`,
-  },
-  {
-    ru: {
-      collapse: (label: string) => `Свернуть: ${label.toLowerCase()}`,
-      expand: (label: string) => `Развернуть: ${label.toLowerCase()}`,
-      close: (label: string) => `Закрыть: ${label.toLowerCase()}`,
-      fullScreen: (label: string) => `На весь экран: ${label.toLowerCase()}`,
-    },
-  }
-);
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
 
 /**
  * The panel the reader pulls up over a bok: responses, an author, the bok's
@@ -50,10 +32,17 @@ export function ReaderSheet({
   onExpandedChange?: (expanded: boolean) => void;
   className?: string;
 }) {
-  const t = useMessages(messages);
+  const { t } = useReaderPreferences();
   const dragStartY = useRef<number | null>(null);
   const dragged = useRef(false);
   const closeRef = useRef(onClose);
+  const panel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    panel.current?.focus({ preventScroll: true });
+    return () => { if (previous?.isConnected) previous.focus({ preventScroll: true }); };
+  }, []);
 
   useEffect(() => {
     closeRef.current = onClose;
@@ -86,7 +75,8 @@ export function ReaderSheet({
     const distance = event.clientY - dragStartY.current;
     dragStartY.current = null;
     dragged.current = Math.abs(distance) > 16;
-    if (!expandable || Math.abs(distance) < 32) return;
+    if (!expandable) { if (distance > 72) onClose(); return; }
+    if (Math.abs(distance) < 32) return;
     if (distance < 0) onExpandedChange?.(true);
     else if (expanded) onExpandedChange?.(false);
     else if (distance > 72) onClose();
@@ -94,12 +84,21 @@ export function ReaderSheet({
 
   return (
     <div
+      ref={panel}
+      tabIndex={-1}
       className={`reader-sheet${expanded ? " reader-sheet--expanded" : ""} ${className} absolute inset-x-2 bottom-2 z-30 flex flex-col rounded-[24px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_70px_rgb(var(--shadow-rgb)/18%)] sm:inset-x-auto sm:bottom-6 sm:right-24 sm:w-[380px]`}
       role="dialog"
       aria-modal="true"
       aria-label={label}
       onKeyDown={(event) => {
         event.stopPropagation();
+        if (event.key === "Tab") {
+          const nodes = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]')).filter(node => node.getClientRects().length > 0);
+          const first = nodes[0]; const last = nodes[nodes.length - 1];
+          if (!first) { event.preventDefault(); return; }
+          if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panel.current)) { event.preventDefault(); first.focus(); }
+        }
         if (event.key === "Escape") onClose();
       }}
       onPointerDown={(event) => event.stopPropagation()}
@@ -120,7 +119,7 @@ export function ReaderSheet({
           if (expandable) onExpandedChange?.(!expanded);
           else onClose();
         }}
-        aria-label={expandable ? (expanded ? t.collapse(label) : t.expand(label)) : t.close(label)}
+        aria-label={expandable ? `${expanded ? t("Collapse", "Свернуть") : t("Expand", "Развернуть")} ${label.toLowerCase()}` : `${t("Close", "Закрыть")} ${label.toLowerCase()}`}
       />
       {children}
     </div>
@@ -141,7 +140,7 @@ export function ReaderSheetHeader({
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
 }) {
-  const t = useMessages(messages);
+  const { t } = useReaderPreferences();
   return (
     <div className="reader-sheet-header px-4 pt-1 sm:pt-4">
       <h2 className="text-lg font-semibold tracking-normal">{title}</h2>
@@ -151,12 +150,12 @@ export function ReaderSheetHeader({
             variant="ghost"
             size="icon"
             onClick={() => onExpandedChange(!expanded)}
-            aria-label={expanded ? t.collapse(label) : t.fullScreen(label)}
+            aria-label={expanded ? `${t("Collapse", "Свернуть")} ${label.toLowerCase()}` : t(`Open ${label.toLowerCase()} full screen`, `Открыть ${label.toLowerCase()} на весь экран`)}
           >
             {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
           </Button>
         )}
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label={t.close(label)}>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={`${t("Close", "Закрыть")} ${label.toLowerCase()}`}>
           <X className="size-4" />
         </Button>
       </div>

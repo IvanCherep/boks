@@ -84,6 +84,7 @@ export function ExperimentEditor({
 
   return (
     <div className="grid gap-4">
+      <div className="studio-traffic-bar" aria-label="Proposed traffic shares">{strategies.filter(strategy => (weights[strategy.id] ?? 0) > 0).map(strategy => <span key={strategy.id} style={{ flex: weights[strategy.id] }}><strong>{strategy.name}</strong> {Math.round((weights[strategy.id] ?? 0) / totalWeight * 100)}%</span>)}</div>
       <div className="strategy-list">
         {strategies.map((strategy) => {
           const weight = Math.max(0, weights[strategy.id] ?? 0);
@@ -97,8 +98,7 @@ export function ExperimentEditor({
                   <span className="strategy-tag">{strategy.family}</span>
                   {strategy.id === control && <span className="strategy-tag strategy-tag--control">control</span>}
                 </div>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">{strategy.description}</p>
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">{strategy.id}</p>
+                <details className="studio-row-details"><summary>{strategy.id}</summary><p className="studio-meta">{strategy.description}</p></details>
               </div>
               <div className="grid content-start gap-2">
                 <label className="grid gap-1 text-xs font-medium text-[var(--muted-foreground)]">

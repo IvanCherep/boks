@@ -1,0 +1,254 @@
+/* v44: paper, ink and one warm accent. Scoped so the author cabinet keeps its UI. */
+.reader-v44, .studio-shell {
+  --font-serif:"Boks Literary",Georgia,serif;
+  --reader: #f6f1e8; --background: #f6f1e8; --foreground: #222621;
+  --soft-foreground: #3c4036; --muted-foreground: #62675b;
+  --primary: #e84b31; --primary-rgb: 232 75 49; --primary-foreground: #fff9ed;
+  --card: #f7f4ed; --border: #d8d5cb; --glass-rgb: 244 241 233;
+  --glass-warm-rgb: 242 235 221; --ring: #b34c34;
+}
+:root[data-theme="dark"] .reader-v44, :root[data-theme="dark"] .studio-shell {
+  --reader: #202721; --background: #202721; --foreground: #edeade;
+  --soft-foreground: #ded7c8; --muted-foreground: #b5b7a7;
+  --primary: #ed9474; --primary-rgb: 237 148 116; --primary-foreground: #241c17;
+  --card: #292e27; --border: #44493d; --glass-rgb: 38 43 35;
+  --glass-warm-rgb: 44 47 38; --ring: #ed9474;
+}
+.boks-logo { position:relative; display:inline-flex; align-items:baseline; gap:6px; font:italic 400 36px/.9 "Boks Literary",serif; letter-spacing:-2.5px; white-space:nowrap; }
+.boks-logo__series { color:#a28751; font-size:18px; font-weight:400; letter-spacing:-.5px; }
+.boks-logo__season { position:absolute; right:-25px; bottom:-6px; width:28px; height:28px; object-fit:contain; transform:rotate(-6deg); pointer-events:none; }
+.reader-v44 { background:var(--reader); }
+/* The cover and dock share the initial containing block, not svh vs fixed.
+   Keep the shell absolute: Safari caches the first colour sampled from a
+   viewport-sized fixed element, even when its background changes. The root
+   cannot scroll, so absolute still anchors the reader to the viewport. */
+.reader-viewport { position:absolute; inset:0; container:reader-viewport / size; --reader-dock-bottom:max(18px,env(safe-area-inset-bottom)); --reader-dock-height:58px; --reader-dock-clearance:23px; }
+.reader-viewport .reader-tabs { position:absolute; bottom:var(--reader-dock-bottom); height:var(--reader-dock-height); }
+.reader-v44 .reader-tabs { translate:none; }
+.reader-viewport .series { position:absolute; }
+.reader-viewport.reader-phase--cover, .reader-viewport.reader-phase--cover .reader-card { background:var(--bok-cover); }
+.reader-viewport.reader-phase--cover:has(.reader-cover__art), .reader-viewport.reader-phase--cover:has(.reader-cover__art) .reader-card { background:var(--bok-art-chrome,#000); }
+html:has(.reader-viewport), body:has(.reader-viewport) { overflow:hidden; overscroll-behavior:none; }
+html, body { background-color:var(--browser-chrome,var(--background)); }
+.reader-v44 > section { max-width:1440px; }
+.reader-v44 .reader-card { display:block; border:0; }
+.reader-v44 .story-scroll { height:100%; padding:0; mask-image:none; -webkit-mask-image:none; }
+.reader-v44 .reader-topbar { position:absolute; inset:0 0 auto; height:72px; padding:max(13px,env(safe-area-inset-top)) 16px; color:var(--foreground); pointer-events:none; background:none; }
+.reader-v44 .reader-topbar button { pointer-events:auto; color:inherit; background:transparent; border-radius:8px; border-color:transparent; }
+.reader-v44 .reader-topbar__mark { position:absolute; left:50%; transform:translateX(-50%); }
+.reader-v44.reader-shell--focus.reader-phase--cover .reader-topbar { opacity:1; }
+.reader-v44 .reader-topbar .boks-logo { transition:opacity .2s; }
+.reader-v44.reader-phase--cover .reader-topbar { color:var(--bok-ink,#241d18); }
+.reader-v44:has(.reader-cover__art).reader-phase--cover .reader-topbar { color:var(--bok-art-ink,#fff8eb); }
+.reader-v44.reader-shell--focus:not(.reader-phase--cover) .reader-topbar .boks-logo { opacity:0; }
+.reader-v44.reader-shell--focus:not(.reader-phase--cover) .reader-topbar { opacity:0; }
+.reader-v44.reader-phase--cover .reader-topbar .reader-ui { opacity:1; visibility:visible; pointer-events:auto; transform:none; }
+.reader-v44.reader-phase--cover .reader-tabs { opacity:1; visibility:visible; pointer-events:auto; transform:translateX(-50%); }
+.reader-cover { position:relative; isolation:isolate; min-height:100%; color:var(--bok-ink,#241d18); background:var(--bok-cover,#e65534); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; padding:107px 26px calc(var(--reader-dock-bottom) + var(--reader-dock-height) + var(--reader-dock-clearance)); user-select:none; }
+.reader-cover:has(.reader-cover__art) { color:#fff8eb; background:var(--bok-art-chrome,#000); padding-top:94px; }
+.reader-cover__art { position:absolute; z-index:-2; inset:0; width:100%; height:100%; object-fit:cover; }
+.reader-cover:has(.reader-cover__art)::after { content:""; position:absolute; z-index:-1; inset:0; background:linear-gradient(#091a2233,transparent 44%,#091a2299); }
+/* The atlas positions a wide Cyrillic Л at x=0. Anchor the visible right edge
+   instead so narrower initials keep that composition. The 0.052em inset
+   allows for the italic overhang; tracking must not shrink a single glyph. */
+.reader-cover__letter { position:absolute; z-index:-1; top:140px; right:.052em; color:var(--bok-letter,#f2b67d); font:italic 400 480px/1 "Boks Cover Initial",Georgia,"Boks Literary",serif; letter-spacing:0; pointer-events:none; }
+.reader-cover__heading { width:100%; max-width:680px; margin:0 0 48px; }
+.reader-cover__heading h1 { max-width:100%; font:400 62px/.98 "Boks Literary",serif; letter-spacing:-1.9px; text-wrap:balance; overflow-wrap:break-word; margin:0 0 20px; }
+.reader-cover:has(.reader-cover__art) h1 { max-width:310px; font-size:48px; }
+.reader-cover__byline { display:flex; align-items:center; gap:6px; font:400 12px/1.4 system-ui,sans-serif; letter-spacing:.1px; text-align:left; overflow-wrap:anywhere; min-height:44px; margin-top:-12px; }
+.reader-cover__caption { width:100%; margin:0 auto; display:grid; gap:5px; }
+.reader-cover__buttons { display:flex; gap:9px; }
+.reader-read-button, .reader-play-button { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:50px; padding:13px 20px; border-radius:4px 14px 4px 4px; font:500 13px/1.35 system-ui,sans-serif; letter-spacing:.01em; background:#f6f1e8; color:#222621; }
+.reader-read-button { flex:1; }
+.reader-play-button { background:#ffffff11; border:1px solid #ffffff55; color:inherit; justify-content:center; }
+.feed-swipe-hint { display:flex; flex-direction:column; align-items:center; gap:3px; font:500 12px/1.35 system-ui,sans-serif; min-height:44px; padding:2px; color:inherit; }
+.feed-swipe-gesture { position:relative; display:block; width:160px; height:14px; overflow:hidden; mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent); }
+.feed-swipe-gesture i { position:absolute; inset:0 25px; border-radius:50%; opacity:0; background:linear-gradient(90deg,transparent 1%,currentColor 20%,currentColor 45%,transparent); mask-image:radial-gradient(ellipse 60% 55% at 50% 50%,#000 25%,#0009 55%,transparent 90%); animation:boks-smear-left 2.4s ease-in-out 2 .6s; }
+.feed-swipe-gesture i+i { display:none; }
+.feed-swipe-gesture--both i { animation-duration:4s; }
+.feed-swipe-gesture--both i+i { display:block; animation:boks-smear-right 4s ease-in-out 2 .6s; }
+@keyframes boks-smear-left { 0%,55%,100%{opacity:0;transform:translateX(35px) rotate(-3deg) scaleX(.6)} 25%{opacity:.5;transform:translateX(-20px) rotate(-3deg) scaleX(1)} 50%{opacity:0;transform:translateX(-50px) rotate(-3deg)} }
+@keyframes boks-smear-right { 0%,50%,100%{opacity:0;transform:translateX(-35px) scaleX(-.6)} 75%{opacity:.45;transform:translateX(20px) scaleX(-1)} 95%{opacity:0;transform:translateX(50px) scaleX(-1)} }
+.reader-v44 .reader-content { min-height:0; display:block; max-width:720px; padding:95px 24px 90px; margin:0 auto; background:var(--reader); }
+.reader-text-heading { margin-bottom:25px; }
+.reader-text-heading > span { font:12px system-ui,sans-serif; text-transform:uppercase; letter-spacing:2px; color:var(--muted-foreground); }
+.reader-text-heading h2 { font:400 39px/1.06 "Boks Literary",serif; letter-spacing:-1.4px; margin:15px 0 22px; text-wrap:balance; overflow-wrap:anywhere; }
+.reader-text-heading button { font-size:13px; color:var(--muted-foreground); min-height:44px; text-align:left; }
+.reader-v44 .story-copy { font-weight:400; font-variation-settings:normal; max-width:none; margin:0; font-size:calc(20px * var(--reader-text-scale,1)); line-height:var(--reader-line-height,1.65); letter-spacing:-.15px; }
+.reader-v44 .story-copy p { margin:0 0 20px; }
+.reader-v44 .story-copy .story-verse { margin-bottom:25px; }
+.reader-v44 .story-copy--prose > p:first-child::first-letter { float:left; font-size:3.4em; line-height:.8; padding:8px 9px 0 0; color:var(--primary); }
+.reader-v44 .story-copy p:last-child { margin-bottom:0; }
+.reader-v44 .story-copy .story-verse { overflow-wrap:break-word; }
+.bok-endmark { display:block; text-align:center; font:italic 400 46px/1.2 "Boks Literary",serif; color:var(--primary); margin:38px auto; }
+.reader-progress-ray { position:absolute; left:0; bottom:0; height:2px; max-width:100%; background:var(--primary); box-shadow:0 -5px 18px 3px rgb(var(--primary-rgb)/20%); pointer-events:none; transition:width .15s; z-index:12; }
+.reader-v44 .reader-actions { position:absolute; bottom:0; left:0; right:0; z-index:20; display:flex; align-items:center; gap:6px; padding:9px 18px max(9px,env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:var(--reader); }
+.reader-v44 .reader-actions > button { width:44px; height:44px; flex:none; display:grid; place-items:center; border-radius:8px; }
+.reader-v44 .reader-actions > .reader-previous { display:none; }
+.reader-v44 .reader-actions > .reader-next-arrow { width:auto; min-width:104px; margin-left:auto; clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%); background:var(--foreground); color:var(--reader); border:0; border-radius:4px; padding:10px 28px 10px 16px; font:500 12px/1.35 system-ui,sans-serif; }
+.reader-v44.reader-phase--cover .reader-actions, .reader-v44.reader-phase--finale .reader-actions { display:none; }
+.reader-v44:not(.reader-phase--cover) .reader-tabs:not(.reader-tabs--pinned) { display:none; }
+.reader-v44:not(.reader-phase--cover) .reader-topbar { height:65px; background:var(--reader); }
+.reader-v44:not(.reader-phase--cover) .reader-topbar .boks-logo { font-size:27px; letter-spacing:-1px; }
+.reader-edge-pull { position:absolute; z-index:11; left:calc(50% - 48px); width:96px; height:3px; pointer-events:none; }
+.reader-edge-pull--previous { top:0; }.reader-edge-pull--next { bottom:0; }
+.reader-edge-pull span { display:block; height:100%; background:var(--primary); transform-origin:center; transition:transform .12s; }
+.bok-finale { width:100%; position:relative; isolation:isolate; color:var(--foreground); }
+.bok-finale__content { width:100%; max-width:420px; margin:0 auto; }
+.bok-finale h3 { font:400 22px/1.2 "Boks Literary",serif; text-align:center; letter-spacing:-.4px; margin:0 0 16px; }
+.aftertaste-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.aftertaste-choice { position:relative; display:flex; align-items:center; gap:10px; min-height:76px; min-width:0; width:100%; padding:14px 12px; border:1px solid color-mix(in srgb,var(--foreground) 13%,transparent); border-radius:14px; background:color-mix(in srgb,var(--reader) 94%,var(--foreground)); color:inherit; font:500 13px/1.3 system-ui,sans-serif; text-align:left; transition:background .16s,border-color .16s; }
+.aftertaste-choice img { width:48px; height:48px; flex:none; object-fit:contain; }
+.aftertaste-choice span { max-width:100px; overflow-wrap:break-word; }
+.aftertaste-choice[aria-pressed=true] { color:var(--reader); background:var(--foreground); border-color:var(--foreground); }
+.aftertaste-check { position:absolute; top:6px; right:6px; }
+.bok-finale__actions { display:flex; align-items:center; gap:12px; margin:18px 0; }
+.bok-finale__actions button { display:grid; place-items:center; width:44px; height:44px; border-radius:8px; }
+.reader-v44 .reader-actions > .reader-counted-action, .bok-finale__actions .reader-counted-action { display:flex; align-items:center; justify-content:center; gap:6px; width:auto; min-width:44px; padding-inline:6px; }
+.reader-counted-action > svg { flex:none; }
+.reader-action-count { font:500 13px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.reader-v44 .reader-actions > .reader-next-arrow { flex:0 1 auto; min-width:0; overflow-wrap:anywhere; }
+.bok-next-preview { border-top:1px solid var(--border); padding-top:18px; display:flex; align-items:center; width:100%; gap:14px; text-align:left; }
+.bok-next-preview > img,.bok-next-preview__type { width:64px; height:64px; flex:none; object-fit:cover; border-radius:0; }
+.bok-next-preview__type { display:grid; place-items:center; font:italic 36px "Boks Literary",serif; background:var(--bok-cover); color:var(--bok-ink); }
+.bok-next-preview__copy { flex:1; min-width:0; display:grid; gap:3px; }
+.bok-next-preview__copy small { font-size:9px; letter-spacing:1.6px; line-height:1.4; text-transform:uppercase; }
+.bok-next-preview__copy strong { font:400 18px/1.15 "Boks Literary",serif; overflow-wrap:anywhere; }
+.bok-next-preview__copy > span { font-size:12px; opacity:.75; overflow-wrap:anywhere; }
+.bok-next-preview__arrow { width:44px; height:44px; display:grid; place-items:center; flex:none; background:var(--foreground); color:var(--reader); }
+.bok-finale--immersive { --reader:#202a2a; --foreground:#fff6e7; --border:#fff6e72e; --primary:#ffd3b8; padding:36px 24px max(26px,env(safe-area-inset-bottom)); position:absolute; inset:0; z-index:6; min-height:0; overflow-y:auto; overscroll-behavior:contain; background:#1b2529; }
+.bok-finale__backdrop { position:absolute; z-index:-2; inset:-35px; width:calc(100% + 70px); height:calc(100% + 70px); max-width:none; object-fit:cover; filter:blur(26px); }
+.bok-finale--immersive::before { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(#101d2852,#151d28a6); }
+.bok-finale__heading { text-align:center; margin:15px auto 28px; }
+.bok-finale__heading h2 { max-width:260px; margin:0 auto 14px; font:italic 400 32px/1.12 "Boks Literary",serif; text-wrap:balance; overflow-wrap:anywhere; }
+.bok-finale__heading p { font-size:12px; margin:0; opacity:.8; }
+.bok-finale__heading .bok-endmark { margin:22px auto 0; }
+.bok-finale--immersive .aftertaste-choice { background:#17212666; backdrop-filter:blur(16px); border-color:#fff6e726; }
+.bok-finale--immersive .aftertaste-choice[aria-pressed=true] { background:#f6f1e8; border-color:#f6f1e8; color:#222621; }
+.reader-v44 .reader-sheet { position:fixed; inset:auto 6px 0; max-width:520px; margin-inline:auto; z-index:240; border:0; border-radius:28px 28px 0 0; background:var(--card); padding-bottom:max(18px,calc(12px + env(safe-area-inset-bottom))); box-shadow:0 20px 70px #10170f33; }
+.reader-v44 .reader-sheet::before { content:""; position:absolute; top:0; left:24px; right:24px; height:1px; background:linear-gradient(90deg,transparent,#fffdf2b3,transparent); pointer-events:none; }
+.reader-v44 .sheet-grip { position:relative; flex-shrink:0; width:44px; min-height:28px; height:28px; padding:0; background:transparent; border:0; }
+.reader-v44 .sheet-grip::after { content:""; position:absolute; top:6px; left:6px; width:32px; height:3px; border-radius:2px; background:var(--muted-foreground); opacity:.4; }
+.reader-v44 .reader-sheet:focus { outline:none; }
+.reader-v44 .sheet-grip:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.reader-v44 .reader-sheet-header { padding-top:0; }
+.reader-v44 .reader-sheet--expanded { top:max(6px,env(safe-area-inset-top)); }
+@supports (backdrop-filter:blur(1px)) { .reader-v44 .reader-sheet { background:linear-gradient(155deg,rgb(var(--glass-warm-rgb)/94%),rgb(var(--glass-rgb)/91%)); backdrop-filter:blur(22px) saturate(125%); } }
+.bok-menu-heading { display:flex; gap:12px; align-items:center; }
+.bok-menu-heading img,.bok-menu-heading__type { width:52px; height:52px; object-fit:cover; flex:none; }
+.bok-menu-heading__type { display:grid; place-items:center; background:var(--secondary); font:italic 30px "Boks Literary",serif; }
+.bok-menu-heading strong { display:block; font:400 18px/1.05 "Boks Literary",serif; overflow-wrap:anywhere; }
+.bok-menu-heading small { display:block; font:11px/1.3 system-ui,sans-serif; color:var(--muted-foreground); margin-top:4px; }
+.bok-menu-tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:20px 0; }
+.bok-menu-tiles button { display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; gap:20px; min-height:100px; padding:15px; border:1px solid var(--border); border-radius:14px; font-size:13px; }
+.format-loading { position:fixed; inset:0; isolation:isolate; z-index:230; background:#18262c; color:#fff6e4; }
+.format-loading::after { content:""; position:absolute; z-index:1; inset:0; background:linear-gradient(#101b2933,transparent 35%,#101b29cc); pointer-events:none; }
+.reader-v44 :is(button,a,input,textarea,select):focus-visible { outline:2px solid var(--ring); outline-offset:3px; }
+@media(min-width:1024px) {
+  .reader-v44 .reader-cover { position:sticky; top:0; width:39%; min-height:100%; height:100%; float:left; padding:107px 26px 99px; }
+  .reader-v44 .reader-content { margin-left:39%; max-width:none; padding:95px clamp(30px,5vw,70px) 95px; min-height:100svh; }
+  .reader-v44 .reader-cover__heading h1 { font-size:62px; }
+  .reader-v44 .reader-cover:has(.reader-cover__art) h1 { font-size:48px; }
+  .reader-v44 .reader-topbar { width:39%; }
+  .reader-v44 .reader-actions { left:39%; }
+  .reader-v44 > section > .reader-tabs:not(.reader-tabs--pinned) { left:19.5%; }
+  .reader-v44:not(.reader-phase--cover) > section > .reader-tabs:not(.reader-tabs--pinned) { display:grid; }
+  /* The text already occupies the right pane; only mobile needs Read to reveal it. */
+  .reader-v44 .reader-read-button { display:none; }
+  .reader-v44 .reader-play-button { flex:1; justify-content:center; }
+  .reader-v44:not(.reader-phase--cover) .reader-topbar { width:61%; left:39%; }
+  .reader-v44.reader-shell--focus .reader-tabs { opacity:1; visibility:visible; pointer-events:auto; transform:translateX(-50%); }
+  .reader-v44.reader-shell--focus .reader-tabs * { pointer-events:auto; }
+}
+@media(max-width:360px) {
+  .reader-cover { padding-inline:24px; padding-top:98px; }
+  .reader-cover__heading h1 { font-size:50px; }
+  .reader-cover:has(.reader-cover__art) h1 { font-size:41px; }
+  .reader-v44 .reader-content { padding-inline:24px; }
+  .aftertaste-choice { gap:8px; padding:12px 9px; min-height:72px; font-size:12px; }
+  .aftertaste-choice img { width:42px; height:42px; }
+  .bok-next-preview { gap:10px; }
+}
+@media(prefers-reduced-motion:reduce) { .feed-swipe-gesture i { animation:none; } .reader-progress-ray,.aftertaste-choice { transition:none; } }
+
+.aftertaste-saved { font-size:11px; text-align:center; opacity:.75; margin:10px 0 0; }
+:root[data-theme="dark"] .reader-v44 .reader-tabs { background:#373d32eb; color:#edeade; border-color:#697060; }
+:root[data-theme="dark"] .reader-v44 .reader-tabs__tab { color:#d1d3c6; }
+:root[data-theme="dark"] .reader-v44 .reader-tabs__tab.is-active { color:#f6a084; background:#202721; }
+
+/* A loading state represents pending data, never fictional content. */
+.reader-loading-skeleton { width:min(280px,75vw); display:grid; gap:14px; margin:44px auto 28px; }
+.reader-loading-skeleton span { height:10px; border-radius:6px; background:var(--border); }
+.reader-loading-skeleton span:first-child { height:30px; width:75%; margin:auto auto 16px; }
+.reader-loading-skeleton span:last-child { width:65%; }
+
+.reader-v44 .guest-notice { z-index:110; }
+
+@container reader-viewport (max-height:680px) and (max-width:1023px) { .reader-cover { padding-top:90px; } .reader-cover__heading h1 { font-size:42px; } }
+@container reader-viewport (max-height:520px) and (max-width:1023px) {
+  .reader-cover, .reader-cover:has(.reader-cover__art) { padding-top:76px; }
+  .reader-cover__heading { margin-bottom:12px; }
+  .reader-cover__heading h1, .reader-cover:has(.reader-cover__art) h1 { font-size:36px; max-width:none; }
+  .reader-cover__byline { min-height:32px; }
+  .feed-swipe-hint { min-height:20px; }
+  .feed-swipe-gesture { display:none; }
+}
+
+/* System pages retain the same editorial geometry as account pages. */
+.reader-system-page { min-height:100svh; color:var(--foreground); background:var(--reader); padding:0 28px 104px; }
+.reader-system-page__body { width:min(100%,524px); margin:auto; }
+.reader-system-diagnostics { margin-top:28px; border-top:1px solid var(--border); padding-top:16px; font:400 13px/1.5 system-ui,sans-serif; }
+.reader-system-diagnostics summary { cursor:pointer; }
+.reader-system-diagnostics p { overflow-wrap:anywhere; font:400 12px/1.6 ui-monospace,monospace; margin-top:16px; }
+.reader-system-page__header { height:74px; display:flex; align-items:center; justify-content:space-between; gap:8px; font:500 13px/1.4 system-ui,sans-serif; margin:0 -12px 25px; }
+.reader-system-page__header > :only-child { margin:auto; }
+.reader-system-page__header button { display:grid; place-items:center; width:44px; height:44px; }
+.reader-system-title { font:400 46px/.99 "Boks Literary",serif; letter-spacing:-1.6px; margin:0 0 24px; overflow-wrap:break-word; }
+.reader-system-page p,.reader-system-actions p { font:400 14px/1.65 system-ui,sans-serif; color:var(--muted-foreground); }
+.reader-system-page [data-slot=button],.reader-system-actions [data-slot=button] { display:flex; width:100%; min-height:50px; border-radius:4px 14px 4px 4px; white-space:normal; font:500 14px/1.4 system-ui,sans-serif; }
+.reader-system-page [data-variant=default],.reader-system-actions [data-variant=default] { background:var(--foreground); color:var(--reader); }
+.reader-system-actions [data-variant=default] { margin-top:18px; }
+.reader-system-page--loading .reader-system-title { font-size:30px; line-height:1.1; letter-spacing:-.6px; }
+.reader-system-status { display:flex; align-items:center; gap:8px; font-size:12px !important; }
+.reader-system-status::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--primary); box-shadow:0 0 0 3px rgb(var(--primary-rgb)/10%); }
+.reader-system-art { position:relative; display:flex; align-items:center; justify-content:center; height:193px; margin:15px 0; color:#bdc4ab; font:130px/1 "Boks Literary",serif; }
+.reader-system-art i { font:74px/1 Georgia,serif; color:var(--primary); transform:rotate(-15deg); }
+.reader-system-art--offline { gap:22px; }
+.reader-system-art--languages { font-size:112px; gap:12px; }.reader-system-art--languages span { font-size:44px; color:var(--primary); }
+.reader-system-art--loading { height:153px; margin:12px 0 28px; gap:4px; font-size:165px; color:#c8cdb8; }
+.reader-system-art--loading svg { width:53px; height:53px; align-self:flex-start; color:var(--primary); }
+.reader-system-page .reader-loading-skeleton { width:100%; gap:18px; margin:36px 0 31px; }
+.reader-system-page .reader-loading-skeleton span { height:9px; background:#dedfcf; width:100%; margin:0; }
+.reader-system-page .reader-loading-skeleton span:nth-child(2n) { width:86%; }.reader-system-page .reader-loading-skeleton span:last-child { width:58%; }
+.reader-system-missing { height:174px; width:114px; border:1px solid #aeb59a; border-radius:2px; position:relative; margin:22px auto 40px; transform:rotate(-9deg); display:grid; place-items:center; }
+.reader-system-missing > span { font:75px "Boks Literary",serif; color:#b3bd9d; }.reader-system-missing i { position:absolute; left:12px; right:-21px; top:82px; height:25px; background:var(--reader); transform:rotate(12deg); }
+.reader-v44 .reader-sheet.reader-system-dialog { inset:0; width:100%; max-width:none; height:100dvh; max-height:none; padding:0 28px 36px; border-radius:0; box-shadow:none; background:var(--reader); backdrop-filter:none; overflow:auto; }
+.reader-system-dialog > .sheet-grip,.reader-system-dialog::before { display:none; }
+.reader-system-dialog .reader-system-page__body { margin:0 auto; }
+.reader-system-actions { display:grid; gap:12px; }
+@media(max-width:360px) { .reader-system-title { font-size:40px; }.reader-system-page { padding-inline:24px; } }
+.reader-guest-notice { position:fixed; bottom:0; left:0; right:0; z-index:110; width:min(100%,520px); margin:auto; padding:35px 28px max(35px,env(safe-area-inset-bottom)); border:1px solid var(--border); border-radius:26px 26px 0 0; background:var(--reader); color:var(--foreground); box-shadow:0 -25px 80px #595b4124; }
+.reader-guest-notice__close { position:absolute; top:16px; right:13px; width:44px; height:44px; display:grid; place-items:center; }
+.reader-guest-notice small { font:500 10px/1.4 system-ui,sans-serif; letter-spacing:1.6px; color:var(--muted-foreground); }
+.reader-guest-notice h2 { font:400 39px/1.04 "Boks Literary",serif; letter-spacing:-1px; margin:15px 0; max-width:320px; }
+.reader-guest-notice p { font:14px/1.7 system-ui,sans-serif; color:var(--muted-foreground); margin:0 0 14px; }
+.reader-guest-notice__action { width:100%; min-height:50px; border-radius:4px 14px 4px 4px; background:var(--foreground); color:var(--reader); font-size:14px; }
+.reader-guest-notice__keep { min-height:44px; display:block; margin:8px auto; font-size:13px; text-decoration:underline; text-underline-offset:4px; }
+.reader-guest-notice__marks { display:flex; gap:5px; margin-top:12px; }.reader-guest-notice__marks span { height:3px; flex:1; background:var(--border); }.reader-guest-notice__marks .is-read { background:var(--primary); }
+.reader-topbar__tools { margin-left:auto; display:flex; align-items:center; }
+.reader-topbar__tools > button { display:grid; place-items:center; width:44px; height:44px; }
+.reader-cover__desktop-bar,.reader-text-heading__desktop-tools { display:none; }
+@media(min-width:1024px) {
+  .reader-v44 .reader-topbar { display:none; }
+  .reader-cover__desktop-bar { display:flex; position:absolute; top:0; left:0; right:0; height:72px; padding:13px 16px; align-items:center; justify-content:space-between; }
+  .reader-cover__desktop-bar button { display:grid; place-items:center; width:44px; height:44px; }
+  .reader-v44 .reader-content { padding:55px 70px 80px; }
+  .reader-text-heading__desktop-tools { display:flex; align-items:center; gap:8px; }
+  .reader-text-heading__desktop-tools > span { flex:1; font:11px/1.5 system-ui,sans-serif; color:var(--muted-foreground); text-transform:uppercase; letter-spacing:1.6px; }
+  .reader-text-heading__desktop-tools button { width:44px; height:44px; display:grid; place-items:center; }
+  .reader-text-heading h2 { font-size:44px; }
+  .reader-text-heading > button,.reader-text-heading__eyebrow { display:none; }
+  .reader-v44 .reader-actions > .reader-previous { display:grid; }
+  .reader-v44 .reader-actions > .reader-previous:disabled { opacity:.3; }
+  .reader-v44 .story-copy { font-size:calc(21px * var(--reader-text-scale,1)); }
+}

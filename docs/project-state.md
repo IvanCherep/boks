@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-14.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-19.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,62 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live
+
+**boks v44 reader and Studio (2026-10-18).** Deployed to `https://tryboks.com`
+from source based on `62407cb`; the complete v44 source and assets are recorded
+in the v44 Git commit dated 2026-10-19. Current Worker
+version: `421e2062-ad1a-4603-9620-1bbaef731167`. Covers, text, shared finale,
+Feed/Series/You, playback controls, account/social/poster export and the grouped
+admin shell now use v44. Covers have a stable varied palette, corrected initial
+placement, the accepted pumpkin wordmark and translucent bok menu. The author
+cabinet keeps its own interface.
+
+The latest polish fixes shared links (a per-bok portrait PNG, including artwork
+and Cyrillic), the persistent desktop dock centred in the cover pane, the
+mobile Series indicator, and the loading ornament (SVG instead of emoji).
+Desktop omits Read because its text is already visible; mobile keeps it.
+Settings opens Settings directly. Liked activity uses uniform rows; Read/Liked
+display the existing action timestamp in local time, without a schema change.
+Like/comment totals are visible to the right of their icons in the reading
+toolbar and shared text/cinema/poem ending, including zero. Both use the same
+existing aggregate and optimistic updates; comment likes also sit on the right.
+Share images render at native 720px width, use a five-minute Worker cache and
+recheck publication on every request; CDN/browser caching is disabled. The
+Worker CPU cap is 3000ms to cover a cold image renderer (measured 607–818ms for
+illustrated posters in the final release; 28ms for a render-cache hit).
+
+The mobile follow-up uses one viewport for the cover and dock, including short
+landscape screens. The outer viewport is absolute (with document scrolling
+locked): Safari no longer caches the first cover tint of a fullscreen fixed
+container. Both native bars update across cover changes and return to paper on
+Read/Series/You. Home Screen uses the same cover surface, removing the pale
+edge glow from the former fixed paper override. Illustrated covers now choose
+pure white/black native bars opposite their authored dark/light wordmark;
+typographic covers retain their palette colour. The Series hero is larger,
+Play and language controls are aligned, and every preview shows its recording
+duration in the interface language. Verified in iOS26.3 Simulator and responsive
+Chromium; physical Arc/iPhone verification
+remains open. Arc owns the status-bar area outside its WebView: artwork behind
+the clock cannot be forced by the website (details in the v44 handover).
+
+Foreground reading excludes cover, ending, overlays and inactive playback;
+aftertaste is editable until its single attributed event is flushed. A Series
+finale opens the next available piece in the shelf order captured at entry.
+The shelf still defaults to all languages and has its own language filter;
+interface language still follows the device until explicitly selected, with a
+return-to-device option. The newer production poems, gestures, in-memory audio
+seek fix, tracked links, guest touch/day metrics and analytics suppression for
+dev/automated browsers were retained when integrating the design.
+
+Forward migrations `20261017120000_boks_rights_review_pagination.sql` and
+`20261017200000_boks_guest_reports.sql` are applied. Rights pages are bounded;
+guest reports retain their documented exception to the Terms gate. Hosted Auth
+config diff requires no changes, including OTP/templates; no config push was
+performed. `read.tryboks.workers.dev` is the same Worker and redirects to the
+canonical production domain, not a separate dev stand. Validation, the 110-state
+coverage map and remaining physical-device QA are recorded in
+`docs/handover/2026-10-17-design-v44-implementation.md`. The build-only dependency
+audit exception is recorded in `docs/security.md`.
 
 **Russian interface, and a series shelf in every language (2026-10-14).** The
 interface is Russian when the device's first language is Russian and English
@@ -294,9 +350,9 @@ things to know about it:
   belongs behind a zone-level redirect rule to the apex. Production backend is the Supabase project
 `vcmrvnihbptostnzaean` (eu-west-2).
 
-Every migration in `supabase/migrations/` is applied to production (check with
-`npx supabase migration list --linked`). The production database is on the
-current schema, which means **older client code will not work against it** —
+Migrations predating the two local v44 migrations listed above are applied to
+production (check with `npx supabase migration list --linked` before release).
+The production database includes the prior schema changes, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.
 

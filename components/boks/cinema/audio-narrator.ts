@@ -1,5 +1,6 @@
 "use client";
 
+import { createMediaLevel } from "@/components/boks/cinema/media-level";
 import { lineAtTime } from "@/components/boks/cinema/narration-track";
 import type { Narrator, NarratorState } from "@/components/boks/cinema/narrator";
 
@@ -43,8 +44,13 @@ export function createAudioNarrator(input: {
     audio.preload = "auto";
   }
 
+  const level = audio ? createMediaLevel(audio) : null;
   let frame: number | null = null;
   let done = false;
+  let error = false;
+  let audible = false;
+  let volume = 1;
+  let disposed = false;
   let fellBack = false;
 
   const state = (): NarratorState => {
@@ -56,8 +62,9 @@ export function createAudioNarrator(input: {
       line: lineAtTime(input.lineStarts, seconds),
       elapsedSeconds: Math.min(total, seconds),
       totalSeconds: total,
-      speaking: Boolean(audio && !audio.paused && !audio.ended),
+      speaking: Boolean(audible && !error && audio && !audio.paused && !audio.ended),
       done,
+      error,
     };
   };
 
@@ -72,6 +79,9 @@ export function createAudioNarrator(input: {
   };
 
   const startTicking = () => {
+    if (disposed || (typeof document !== "undefined" && document.hidden)) { audio?.pause(); return; }
+    audible = Boolean(audio && !audio.paused && !audio.ended);
+    if (!audible) return;
     if (frame === null) frame = requestAnimationFrame(tick);
   };
 
@@ -80,17 +90,33 @@ export function createAudioNarrator(input: {
     frame = null;
   };
 
+  const rejectedPlay = (reason: unknown) => {
+    // Pausing while a play request is still loading rejects that request with
+    // AbortError. The reader chose a pause, not a broken recording.
+    if (disposed || (audio?.paused && reason instanceof Error && reason.name === "AbortError")) return;
+    error = true;
+    audible = false;
+    stopTicking();
+    emit();
+  };
+
   audio?.addEventListener("ended", () => {
+    audible = false;
     done = true;
     stopTicking();
     emit();
   });
+  // A requested play can spend seconds waiting for bytes. Only actual playback
+  // contributes foreground reading time; a pause or buffer wait holds it.
+  audio?.addEventListener("playing", () => { startTicking(); emit(); });
+  audio?.addEventListener("waiting", () => { audible = false; stopTicking(); emit(); });
+  audio?.addEventListener("pause", () => { audible = false; stopTicking(); emit(); });
 
   // The copy would not decode. Go back to the address it came from, at the
   // same moment, still playing if it was.
   audio?.addEventListener("error", () => {
     const stream = input.streamUrl;
-    if (!audio || fellBack || !stream || audio.src.endsWith(stream)) return;
+    if (!audio || fellBack || !stream || audio.src.endsWith(stream)) { error = true; emit(); return; }
     fellBack = true;
     const at = audio.currentTime;
     const wasPlaying = !audio.paused && !audio.ended;
@@ -99,27 +125,31 @@ export function createAudioNarrator(input: {
     audio.addEventListener(
       "loadedmetadata",
       () => {
+        if (disposed) return;
         audio.currentTime = at;
-        if (wasPlaying) void audio.play().then(startTicking, () => emit());
+        if (wasPlaying) void audio.play().then(() => { error = false; startTicking(); emit(); }, rejectedPlay);
         emit();
       },
       { once: true }
     );
   });
+  audio?.addEventListener("boks-mixer-error", () => { error = true; stopTicking(); emit(); });
   // Without this the clock reads the estimate until the first frame plays.
   audio?.addEventListener("loadedmetadata", emit);
 
   function start(from: number) {
-    if (!audio) return;
+    if (!audio || disposed) return;
+    audible = false;
+    clearFade();
+    level?.set(volume);
+    level?.resume();
     done = false;
+    error = false;
     audio.currentTime = from;
     // Blocked autoplay is the one failure worth surviving: the reader pressed a
     // button, so it should not happen, and if it does the screen must not sit
     // there pretending to play.
-    void audio.play().then(startTicking, () => {
-      stopTicking();
-      emit();
-    });
+    void audio.play().then(() => { error = false; startTicking(); emit(); }, rejectedPlay);
     emit();
   }
 
@@ -131,17 +161,30 @@ export function createAudioNarrator(input: {
 
   return {
     supported: Boolean(audio),
+    setVolume(value, activate = false) {
+      volume = Math.max(0, Math.min(1, value));
+      if (audio && !fadeTimer) level?.set(volume, activate);
+    },
     play() {
       start(0);
     },
     pause() {
+      clearFade();
       audio?.pause();
       stopTicking();
       emit();
     },
     resume() {
-      if (!audio) return;
-      void audio.play().then(startTicking, () => emit());
+      if (!audio || disposed) return;
+      if (audio.error) {
+        const at = audio.currentTime;
+        audio.addEventListener("loadedmetadata", () => { audio.currentTime = at; }, { once: true });
+        audio.load();
+      }
+      clearFade();
+      level?.set(volume);
+      level?.resume();
+      void audio.play().then(() => { error = false; startTicking(); emit(); }, rejectedPlay);
       emit();
     },
     /**
@@ -156,11 +199,11 @@ export function createAudioNarrator(input: {
       if (!audio) return;
       const element = audio;
       clearFade();
-      const from = element.volume;
+      const from = volume;
       const started = performance.now();
       fadeTimer = window.setInterval(() => {
         const t = Math.min(1, (performance.now() - started) / Math.max(1, ms));
-        element.volume = Math.max(0, from * (1 - t));
+        level?.set(Math.max(0, from * (1 - t)));
         if (t < 1) return;
         clearFade();
         element.pause();
@@ -169,20 +212,22 @@ export function createAudioNarrator(input: {
       }, 40);
     },
     fadeInAndResume(ms: number) {
-      if (!audio) return;
+      if (!audio || disposed) return;
       const element = audio;
       clearFade();
-      element.volume = 0;
-      void element.play().then(startTicking, () => emit());
+      level?.set(0);
+      level?.resume();
+      void element.play().then(() => { error = false; startTicking(); emit(); }, rejectedPlay);
       emit();
       const started = performance.now();
       fadeTimer = window.setInterval(() => {
         const t = Math.min(1, (performance.now() - started) / Math.max(1, ms));
-        element.volume = Math.min(1, t);
+        level?.set(Math.min(volume, t * volume));
         if (t >= 1) clearFade();
       }, 40);
     },
     stop() {
+      disposed = true;
       clearFade();
       stopTicking();
       if (audio) {
@@ -191,6 +236,7 @@ export function createAudioNarrator(input: {
         // leave nothing running.
         audio.src = "";
       }
+      level?.dispose();
       listeners.clear();
     },
     restart() {
@@ -208,8 +254,9 @@ export function createAudioNarrator(input: {
       audio.src = url;
       audio.load();
       const resume = () => {
+        if (disposed) return;
         audio.currentTime = at;
-        if (wasPlaying) void audio.play().then(startTicking, () => emit());
+        if (wasPlaying) void audio.play().then(() => { error = false; startTicking(); emit(); }, rejectedPlay);
         emit();
       };
       if (audio.readyState >= 1) resume();

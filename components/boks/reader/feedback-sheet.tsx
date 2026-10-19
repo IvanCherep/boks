@@ -3,53 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { surfaceForMilestone } from "@/components/boks/feedback";
 import { FeedbackForm } from "@/components/boks/feedback-form";
-import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
+import { ReaderSheet } from "@/components/boks/reader-sheet";
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { ReaderBackIcon } from "./reader-icons";
 
-const messages = defineMessages(
-  {
-    label: "Tell us what you think",
-    three: "Three boks in - what do you think?",
-    ten: "Ten boks in - how is it going?",
-    thirty: "Thirty boks in - you know this place now",
-    thanks: "Thank you",
-    close: "Close",
-    notNow: "Not now",
-  },
-  {
-    ru: {
-      label: "Расскажите, что думаете",
-      three: "Три текста позади - как вам?",
-      ten: "Десять текстов позади - как идёт?",
-      thirty: "Тридцать текстов позади - вы здесь уже свой",
-      thanks: "Спасибо",
-      close: "Закрыть",
-      notNow: "Не сейчас",
-    },
-  }
-);
-
-function milestoneTitle(milestone: number, t: (typeof messages)["en"]) {
-  if (milestone === 3) return t.three;
-  if (milestone === 10) return t.ten;
-  return t.thirty;
-}
-
-/**
- * Asked mid-story, so it asks for one thing and then gets out of the way. Once
- * the note is sent the sheet has nothing left to ask: the heading thanks, and
- * the button that used to say "Not now" - still offering to decline something
- * already done - says Close.
- */
-export function FeedbackSheet({
-  milestone,
-  sent,
-  boksRead,
-  visitorId,
-  onSent,
-  onClose,
-}: {
+/** The real reading milestone uses the same letter and sent views as Settings. */
+export function FeedbackSheet({ milestone, sent, boksRead, visitorId, onSent, onClose }: {
   milestone: number;
   sent: boolean;
   boksRead: number;
@@ -57,27 +16,20 @@ export function FeedbackSheet({
   onSent: () => void;
   onClose: () => void;
 }) {
-  const t = useMessages(messages);
-  return (
-    <ReaderSheet label={t.label} onClose={onClose}>
-      <ReaderSheetHeader
-        label={t.label}
-        onClose={onClose}
-        title={sent ? t.thanks : milestoneTitle(milestone, t)}
-      />
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        <FeedbackForm
-          surface={surfaceForMilestone(milestone)}
-          boksRead={boksRead}
-          visitorId={visitorId}
-          onSent={onSent}
-          autoFocus
-        />
-        <Button className="mt-4 w-full" variant="ghost" onClick={onClose}>
-          {sent ? t.close : t.notNow}
-        </Button>
-      </div>
-    </ReaderSheet>
-  );
+  const { t } = useReaderPreferences();
+  return <ReaderSheet label={t("Feedback", "Обратная связь")} onClose={onClose} className="feedback-v44 social-page">
+    <header className="social-page-header"><button className="social-icon" type="button" onClick={onClose} aria-label={t("Back", "Назад")}><ReaderBackIcon /></button><span>{t("Feedback", "Обратная связь")}</span><span /></header>
+    {sent ? <>
+      <div className="you-sent-art" aria-hidden="true"><span>✓</span><i>↗</i></div>
+      <h1 className="social-display">{t("Feedback sent.", "Отзыв отправлен.")}</h1>
+      <p className="social-muted">{t("Thank you. Your feedback has been received.", "Спасибо. Ваш отзыв получен.")}</p>
+      <Button className="you-wide-button" onClick={onClose}>{t("Back to reading", "Вернуться к чтению")}</Button>
+    </> : <>
+      <div className="you-postmark" aria-hidden="true">boks<span>FEEDBACK</span></div>
+      <h1 className="social-display">{t("Send feedback.", "Обратная связь.")}</h1>
+      <p className="social-muted">{t(`You’ve read ${milestone} boks. Tell us about a problem or suggest an improvement.`, `Вы прочитали ${milestone} боков. Расскажите о проблеме или предложите улучшение.`)}</p>
+      <FeedbackForm presentation="letter" surface={surfaceForMilestone(milestone)} boksRead={boksRead} visitorId={visitorId} onSent={onSent} />
+      <Button className="you-wide-button" variant="ghost" onClick={onClose}>{t("Not now", "Не сейчас")}</Button>
+    </>}
+  </ReaderSheet>;
 }

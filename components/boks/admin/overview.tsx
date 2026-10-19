@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BoksOverview } from "@/components/boks/client-types";
 import { loadBoksOverview } from "@/components/boks/supabase-browser-data";
 import { MetricBars, type MetricBarRow } from "@/components/boks/admin/metric-bars";
+import type { AdminTab } from "@/components/boks/admin-dashboard";
 import { MetricNote } from "@/components/boks/admin/metric-note";
 
 /**
@@ -15,7 +16,7 @@ import { MetricNote } from "@/components/boks/admin/metric-note";
  * denominator is a guess, and no algorithm comparison - that lives in
  * Experiments, and at a small catalog it has nothing to say.
  */
-export function AdminOverview() {
+export function AdminOverview({ onNavigate }: { onNavigate: (tab: AdminTab) => void }) {
   const [overview, setOverview] = useState<BoksOverview | null>(null);
   const [days, setDays] = useState(7);
   const [status, setStatus] = useState("Loading...");
@@ -69,28 +70,37 @@ export function AdminOverview() {
   }));
 
   return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
-          Everything here is measured from attributed reader events. Reading time counts only the
-          seconds a boks was actually on screen.
-        </p>
-        <div className="flex gap-2">
-          <select className="field-control w-[150px]" value={days} onChange={(event) => setDays(Number(event.target.value))}>
-            <option value={7}>Last 7 days</option>
-            <option value={14}>Last 14 days</option>
-            <option value={30}>Last 30 days</option>
-          </select>
-          <Button variant="outline" onClick={() => refresh(days)} disabled={busy}>
-            <RefreshCw className="size-4" /> Refresh
-          </Button>
-        </div>
-      </div>
-
+    <div className="studio-overview">
       {status && <p className="panel p-4 text-sm text-[var(--muted-foreground)]">{status}</p>}
 
       {overview && (
         <>
+          <section className="studio-pulse" aria-label={`Reading in the last ${days} days`}>
+            <span className="studio-eyebrow">Last {days} days</span>
+            <strong>{minutesPerReader} <i>min</i></strong>
+            <p>of foreground reading per reader</p>
+            <div><span>{readers?.active ?? 0} active readers</span><span>{readers?.returning ?? 0} of {readers?.previousActive ?? 0} returned</span></div>
+          </section>
+          <div className="studio-overview-shortcuts">
+            <select aria-label="Overview period" className="field-control" value={days} onChange={(event) => setDays(Number(event.target.value))}>
+              <option value={7}>7 days</option><option value={14}>14 days</option><option value={30}>30 days</option>
+            </select>
+            <Button variant="outline" onClick={() => onNavigate("guests")}>Guests</Button>
+            <Button variant="outline" onClick={() => onNavigate("growth")}>Growth</Button>
+          </div>
+          <section className="studio-overview-links" aria-label="Studio work">
+            <h2>Needs review</h2>
+            <button type="button" onClick={() => onNavigate("moderation")}><span><strong>Review queue</strong><small>{supply?.pending ?? 0} boks waiting · median review {supply?.medianReviewHours ?? 0} h</small></span><ArrowRight /></button>
+            <button type="button" onClick={() => onNavigate("rights")}><span><strong>Rights & reports</strong><small>Reader reports and rights to confirm</small></span><ArrowRight /></button>
+            <h2>Sections</h2>
+            <button type="button" onClick={() => onNavigate("content")}><span><strong>Editorial</strong><small>Content, catalogue and publication</small></span><ArrowRight /></button>
+            <button type="button" onClick={() => onNavigate("people")}><span><strong>People</strong><small>Accounts and reader feedback</small></span><ArrowRight /></button>
+            <button type="button" onClick={() => onNavigate("experiments")}><span><strong>Research lab</strong><small>Experiments and reading formats</small></span><ArrowRight /></button>
+          </section>
+          <details className="studio-details">
+            <summary>Reading & measurement details <span aria-hidden="true">+</span></summary>
+            <div className="studio-details-body">
+            <Button variant="outline" onClick={() => refresh(days)} disabled={busy}><RefreshCw className="size-4" /> Refresh measurements</Button>
           <section className="panel p-5">
             <h3 className="text-lg font-semibold tracking-normal">Do readers come back?</h3>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
@@ -227,6 +237,8 @@ export function AdminOverview() {
               </div>
             </section>
           </div>
+            </div>
+          </details>
         </>
       )}
     </div>

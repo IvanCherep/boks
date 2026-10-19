@@ -19,7 +19,7 @@ import { RetentionTriangle } from "@/components/boks/admin/retention-triangle";
  */
 export function AdminGrowth() {
   const [growth, setGrowth] = useState<BoksGrowth | null>(null);
-  const [weeks, setWeeks] = useState(12);
+  const [weeks, setWeeks] = useState(8);
   const [status, setStatus] = useState("Loading...");
   const [busy, setBusy] = useState(false);
 
@@ -56,103 +56,20 @@ export function AdminGrowth() {
   const totals = growth?.totals;
   const stickinessRatio = stickiness?.monthly ? Math.round((stickiness.daily / stickiness.monthly) * 100) : 0;
 
-  return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
-          Weekly counts from attributed reader events. Only totals are plotted over time - a rate
-          drawn weekly off a handful of readers would show trends that are not there.
-        </p>
-        <div className="flex gap-2">
-          <select className="field-control w-[150px]" value={weeks} onChange={(event) => setWeeks(Number(event.target.value))}>
-            <option value={8}>Last 8 weeks</option>
-            <option value={12}>Last 12 weeks</option>
-            <option value={26}>Last 26 weeks</option>
-          </select>
-          <Button variant="outline" onClick={() => refresh(weeks)} disabled={busy}>
-            <RefreshCw className="size-4" /> Refresh
-          </Button>
-        </div>
-      </div>
-
-      {status && <p className="panel p-4 text-sm text-[var(--muted-foreground)]">{status}</p>}
-
-      {growth && (
-        <>
-          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <Tile label="Readers all time" value={totals?.readers ?? 0} note={`${totals?.accounts ?? 0} with accounts`} />
-            <Tile label="Minutes read all time" value={totals?.minutes ?? 0} note={`${totals?.boksFinished ?? 0} boks finished`} />
-            <Tile label="Readers today" value={stickiness?.daily ?? 0} note={`${stickiness?.weekly ?? 0} this week`} />
-            <Tile label="Readers this month" value={stickiness?.monthly ?? 0} note={`${stickinessRatio}% of them read today`} />
-            <Tile label="Published boks" value={totals?.publishedBoks ?? 0} note="the catalog readers draw from" />
-          </section>
-
-          <section className="panel p-5">
-            <h3 className="text-lg font-semibold tracking-normal">Are readers arriving?</h3>
-            <div className="mt-4 grid gap-6 lg:grid-cols-2">
-              <TimeSeriesBars points={points("newReaders")} caption="New readers per week" />
-              <TimeSeriesBars points={points("signups")} caption="Accounts created per week" />
-            </div>
-          </section>
-
-          <section className="panel p-5">
-            <h3 className="text-lg font-semibold tracking-normal">Are they reading?</h3>
-            <div className="mt-4 grid gap-6 lg:grid-cols-2">
-              <TimeSeriesBars points={points("minutes")} caption="Minutes read per week" unit="m" />
-              <TimeSeriesBars points={points("activeReaders")} caption="Active readers per week" />
-              <TimeSeriesBars points={points("sessions")} caption="Reading sessions per week" />
-              <TimeSeriesBars points={points("boksFinished")} caption="Boks finished per week" />
-            </div>
-          </section>
-
-          <section className="panel p-5">
-            <h3 className="text-lg font-semibold tracking-normal">Do they come back?</h3>
-            <p className="mt-1 mb-4 text-sm leading-6 text-[var(--muted-foreground)]">
-              Each row is the readers who arrived in that week, and how many were still reading in
-              the weeks after. Cohort size is printed beside every row: a percentage off four
-              readers is one person changing their mind, and that should be visible.
-            </p>
-            <RetentionTriangle cohorts={growth.cohorts} />
-          </section>
-
-          <section className="panel p-5">
-            <h3 className="text-lg font-semibold tracking-normal">Does a new reader get anywhere?</h3>
-            <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-              Of the {activation?.newReaders ?? 0} readers who arrived in the last 30 days. A reader
-              who never finishes a boks has not experienced the product at all.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Tile label="Arrived" value={activation?.newReaders ?? 0} note="last 30 days" />
-              <Tile
-                label="Finished at least one"
-                value={activation?.finishedOne ?? 0}
-                note={share(activation?.finishedOne, activation?.newReaders)}
-              />
-              <Tile
-                label="Finished three or more"
-                value={activation?.finishedThree ?? 0}
-                note={share(activation?.finishedThree, activation?.newReaders)}
-              />
-              <Tile
-                label="Created an account"
-                value={activation?.signedUp ?? 0}
-                note={share(activation?.signedUp, activation?.newReaders)}
-              />
-            </div>
-          </section>
-
-          <section className="panel p-5">
-            <h3 className="text-lg font-semibold tracking-normal">Is supply keeping up?</h3>
-            <p className="mt-1 mb-4 text-sm leading-6 text-[var(--muted-foreground)]">
-              A reading feed starves before it mis-ranks. If boks published per week sits below what
-              readers consume, the catalog runs out however good the algorithm is.
-            </p>
-            <TimeSeriesBars points={points("boksPublished")} caption="Boks published per week" />
-          </section>
-        </>
-      )}
-    </div>
-  );
+  return <div className="studio-growth">
+    {status && <p className="studio-notice" role="status">{status}</p>}
+    {growth && <>
+      <section className="studio-metric-pair"><Tile label="readers, all time" value={totals?.readers ?? 0} note="" /><Tile label="accounts, all time" value={totals?.accounts ?? 0} note="" /><Tile label="minutes read" value={totals?.minutes ?? 0} note="" /><Tile label="boks read" value={totals?.boksFinished ?? 0} note="" /></section>
+      <section className="studio-editorial-section"><h2>Are readers arriving?</h2><TimeSeriesBars points={points("newReaders")} caption={`New readers per week · last ${weeks} weeks`} /><div className="studio-filter-line"><select aria-label="Growth period" className="field-control" value={weeks} onChange={(event) => setWeeks(Number(event.target.value))}><option value={8}>Last 8 weeks</option><option value={12}>Last 12 weeks</option><option value={26}>Last 26 weeks</option></select><Button variant="ghost" onClick={() => refresh(weeks)} disabled={busy}><RefreshCw /> Refresh</Button></div></section>
+      <section className="studio-editorial-section"><h2>Do they come back?</h2>{growth.cohorts.length ? <table className="studio-retention"><thead><tr><th>Arrival week</th><th>Readers</th>{[1,2,3].map(offset=><th key={offset}>W{offset}</th>)}</tr></thead><tbody>{growth.cohorts.map(cohort=><tr key={cohort.week}><td>{shortWeek(cohort.week)}</td><td>{cohort.size}</td>{[1,2,3].map(offset=><td key={offset}>{cohort.retained.find(entry=>entry.offset===offset)?.readers ?? "—"}</td>)}</tr>)}</tbody></table> : <p className="studio-meta">No reader cohorts yet.</p>}<p className="studio-meta">Returning readers, with the arrival cohort beside them. Weeks that have not elapsed stay blank.</p></section>
+      <details className="studio-details"><summary>Reading, activation & supply <span>＋</span></summary><div className="studio-details-body">
+        <div className="studio-metric-pair"><Tile label="Readers today" value={stickiness?.daily ?? 0} note={`${stickiness?.weekly ?? 0} this week`} /><Tile label="Readers this month" value={stickiness?.monthly ?? 0} note={`${stickinessRatio}% of them read today`} /><Tile label="Published boks" value={totals?.publishedBoks ?? 0} note="The catalogue readers draw from" /></div>
+        <TimeSeriesBars points={points("signups")} caption="Accounts created per week" /><TimeSeriesBars points={points("minutes")} caption="Minutes read per week" unit="m" /><TimeSeriesBars points={points("activeReaders")} caption="Active readers per week" /><TimeSeriesBars points={points("sessions")} caption="Reading sessions per week" /><TimeSeriesBars points={points("boksFinished")} caption="Boks read per week" />
+        <h3>First 30 days</h3><div className="studio-metric-pair"><Tile label="Arrived" value={activation?.newReaders ?? 0} note="last 30 days" /><Tile label="Read at least one" value={activation?.finishedOne ?? 0} note={share(activation?.finishedOne,activation?.newReaders)} /><Tile label="Read three or more" value={activation?.finishedThree ?? 0} note={share(activation?.finishedThree,activation?.newReaders)} /><Tile label="Created an account" value={activation?.signedUp ?? 0} note={share(activation?.signedUp,activation?.newReaders)} /></div>
+        <TimeSeriesBars points={points("boksPublished")} caption="Boks published per week" /><h3>Full cohort rates</h3><RetentionTriangle cohorts={growth.cohorts} /><p className="studio-meta">Each rate uses its arrival cohort as the denominator. All reading time comes from foreground activity.</p>
+      </div></details>
+    </>}
+  </div>;
 }
 
 function Tile({ label, value, note }: { label: string; value: number; note: string }) {

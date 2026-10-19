@@ -242,8 +242,8 @@ enable_confirmations = true
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1m0s"
-# Number of characters used in the email OTP.
-otp_length = 8
+# ADR 0006 and the reader form use the same six-digit email code.
+otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
@@ -271,6 +271,15 @@ pass = "env(RESEND_API_KEY)"
 #     Yahoo treat a sender without one more harshly.
 admin_email = "hello@tryboks.com"
 sender_name = "boks"
+
+# Both sign-in paths must include the code and link from the same email.
+[auth.email.template.magic_link]
+subject = "Ваш код для входа в boks"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.confirmation]
+subject = "Ваш код для входа в boks"
+content_path = "./supabase/templates/confirmation.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

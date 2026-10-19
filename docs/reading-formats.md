@@ -34,12 +34,14 @@ Paths are from the repository root.
 | Path | What it is |
 |---|---|
 | `components/boks/reader-feed.tsx` | the ordinary feed, the button that opens either format, and the one `FinaleActions` both are given |
-| `components/boks/reading-finale.tsx` | the ending every format shares: aftertaste, then share / again / like / next |
+| `components/boks/reading-finale.tsx` | the single ending shared with HTML reading: optional aftertaste, like / comments / share / replay / next |
 | `components/boks/cinema/voices.ts` | who reads what: the cast rule, the model, the stability per reading |
 | `components/boks/cinema/voices.test.ts` | holds the cast and the one-credit-per-character rule |
 | `components/boks/reading-music.ts` | lo-fi under ordinary silent reading; nothing to do with either format |
 | `public/reading-music.mp3` | that track |
-| `app/globals.css` | all the CSS for both formats, at the end of the file |
+| `app/globals.css`, `app/formats-v44.css`, `app/reader-v44.css` | base format styling, v44 transport/shelf and shared ending |
+| `components/boks/cinema/format-controls.tsx` | real-position transport, menu and Sound controls shared by both players |
+| `components/boks/cinema/media-level.ts` | actual media gain, lazily activated from a volume gesture, with an HTML media fallback |
 
 ### Cinema
 
@@ -218,15 +220,23 @@ and that is the whole of what a format owns.
 
 ### What every format shares: the finale
 
-A format draws the reading. It never draws its own ending. Every boks series
-piece, whatever it was read in, ends on the same two screens from
-`components/boks/reading-finale.tsx`:
+A format draws the reading and mounts the shared `ReadingFinale` at its end.
+The ordinary HTML reader uses the same component inline. There is one surface:
+four optional illustrated tags (Made me smile, Moved me, Surprised me, Want to
+think), then like, comments, share, replay and the genuine next action. Several
+tags are allowed; none is required. There is no Onward/Skip step and no action
+that manually marks the bok complete.
 
-1. **Aftertaste** - "What stayed with you?", four tags (Made me smile, Moved
-   me, Surprised me, Want to think), several allowed, none required; "Onward"
-   once something is picked, "Skip" otherwise.
-2. **Where next** - "Where next?": Share (the accent), Listen again and Like
-   side by side, Choose the next one.
+Reader controls use the device's English/Russian preference, independent of the
+piece's language. Titles, bylines and text retain their original language.
+`reader-feed.tsx` supplies one `FinaleActions` and owns all product actions.
+Draft aftertaste stays editable until leaving the bok or hiding the page, when
+one attributed nonempty set is queued and flushed. The event contract remains
+one aftertaste per session/bok; returning to that reading shows the locked set.
+Feed next comes from the real served slate without wrapping. Series next uses
+the actual published, language-filtered shelf order captured on entry; heard
+marks may reorder the shelf but never the active chain. After the last piece,
+return to the shelf. Read text retains this Series origin. The admin sandbox omits actions that require a real bok.
 
 **The interface follows the interface language**, whatever language the piece
 is in: the finale, the players' controls, a moment's hint, the series shelf
@@ -235,17 +245,22 @@ pinned (`docs/adr/0015-interface-language-follows-the-device.md`). Titles,
 authors and the texts themselves keep their own language. It is never a guess
 from the piece.
 
-The format's side of it is two lines: mount `<ReadingFinale>` when the reading
-is over, with a way to start again, and hide its own
-controls underneath. What the buttons do is not the format's business -
-`reader-feed.tsx` builds one `FinaleActions` (like, share, next, record the
-aftertaste once per opening) and hands the same object to every format, so a
-like at the end of a poem is exactly the like at the end of a story. The admin
-sandbox passes none, and the finale leaves out what would need a boks.
+### Shared playback controls
 
-Do not give a format an ending of its own, a different set of buttons, or
-different words for the same buttons. If the finale needs to change, it
-changes for every piece at once.
+`format-controls.tsx` displays actual audio position with a decorative waveform
+(not a measured amplitude trace). Poems seek by five seconds, cinema by fifteen.
+Play attempts the real recording on entry; denied playback leaves an actionable
+Play/retry or Read text path. Sound changes real voice gain and the poem theme
+where one exists. A fresh cover Play starts at zero; Read text → Play can use the
+actual position held in bounded in-memory resume state. It is not inferred from
+telemetry and does not promise cross-device resume.
+
+Format callbacks report playing/progress/ended to the reader. Only actual
+foreground playback counts: covers, pauses, buffering, Sound menus, story
+moments, account/comment/share sheets and endings hold the reading clock.
+Hiding the page pauses playback; returning requires explicit Play. Scene and
+word timing still comes from the shipped alignment/manifests. The v44 design
+adds no Wild nights recording or fictional piece to the live shelf.
 
 ---
 
@@ -296,8 +311,8 @@ s+=c; if(/[.!?]/.test(c)){console.log(t.toFixed(1)+"s  "+s.trim()); s="";} });'
 Already handled, so do not rebuild it: rewinding past a moment arms it again; a
 hold runs a minimum four seconds whatever the finger does, so an accidental tap
 still shows what the mechanic is; the result stays up in silence before the
-voice returns; a quiet escape appears after nine seconds for a gesture that has
-failed.
+voice returns. The v44 moment explains the gesture and offers Continue from
+the start, so the reader can leave a gesture without waiting or completing it.
 
 ### The twelve effects
 
@@ -656,12 +671,21 @@ Finishing a piece therefore has one more step:
    `cwebp -q 80 -m 6 -sharp_yuv -resize 720 0 <frame>.png -o public/series/<name>.webp`.
 2. One entry in `components/boks/series/series-catalogue.ts`: format,
    language, cover and focus, duration, scene and moment counts, premiere date.
+   Set `coverLogoTone: "dark"` when the upper artwork needs dark controls;
+   the default is light. Reader native bars use the opposite neutral surface
+   (white for dark ink, black for light ink), available before the image loads.
+
+The hero and every preview display the recording duration from this registry,
+using the interface language. Under one minute it is shown in seconds; longer
+pieces use rounded minutes. This is the piece's playback length, not measured
+foreground reading time. The hero scales with the actual shelf viewport;
+its Play icon shares the byline row and the language button has a 44px target.
 
 `series-catalogue.test.ts` fails if a finished piece is missing from the
 shelf, if a shelf entry would open as plain text, if a cover is missing or too
 heavy, or if the duration or counts disagree with the shipped recording. The
 shelf shows every language by default. Its one control is a language filter
-(the icon next to "About"), kept on this device, which offers exactly the
+(the icon at the right of the Series wordmark), kept on this device, which offers exactly the
 languages the pieces carry - a piece with `language: "it"` brings Italian with
 it, named by `lib/i18n/content-languages.ts`. The feed's reading languages do
 not apply to the shelf. The newest

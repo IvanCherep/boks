@@ -1,79 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { ReaderBackIcon as ArrowLeft, ReaderShareIcon } from "./reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { ReaderSheet } from "@/components/boks/reader-sheet";
 import type { AuthorProfile } from "@/components/boks/client-types";
 import { loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages, plural } from "@/lib/i18n/messages";
-
-/** Names and titles keep their own language; only the sheet is translated. */
-const messages = defineMessages(
-  {
-    loading: "Loading",
-    unavailable: "This author is not available.",
-    openFailed: "Could not open this author.",
-    followFailed: "Could not update following.",
-    boks: (n: number) => `${n} ${n === 1 ? "bok" : "boks"}`,
-    writers: (n: number) => `${n} ${n === 1 ? "writer" : "writers"}`,
-    followers: (n: number) => `${n} ${n === 1 ? "follower" : "followers"}`,
-    sheetLabel: (name: string) => `${name}, author`,
-    author: "Author",
-    publishedBy: "published by",
-    close: "Close author",
-    followExplainer: (handle: string, byline: string) =>
-      `Following @${handle} brings you everything they publish, not only ${byline}. Another account publishing ${byline} is followed separately.`,
-    followingHandle: (handle: string) => `Following @${handle}`,
-    followHandle: (handle: string) => `Follow @${handle}`,
-    following: "Following",
-    follow: "Follow",
-    openingCatalog: "From the opening catalog. There is no account behind this byline yet.",
-    nothingYet: "Nothing published yet.",
-    writersHeading: "Writers",
-    newest: "Newest",
-    readingNow: "reading now",
-    showingNewest: (shown: number, total: number) => `Showing the newest ${shown} of ${total}.`,
-  },
-  {
-    ru: {
-      loading: "Загрузка",
-      unavailable: "Этот автор недоступен.",
-      openFailed: "Не удалось открыть автора.",
-      followFailed: "Не удалось обновить подписку.",
-      boks: (n: number) =>
-        `${n} ${plural("ru", n, { one: "текст", few: "текста", many: "текстов", other: "текста" })}`,
-      writers: (n: number) => `${n} ${plural("ru", n, { one: "автор", few: "автора", many: "авторов", other: "автора" })}`,
-      followers: (n: number) =>
-        `${n} ${plural("ru", n, { one: "подписчик", few: "подписчика", many: "подписчиков", other: "подписчика" })}`,
-      sheetLabel: (name: string) => `${name}, автор`,
-      author: "Автор",
-      publishedBy: "публикует",
-      close: "Закрыть автора",
-      followExplainer: (handle: string, byline: string) =>
-        `Подписка на @${handle} - это всё, что публикует этот аккаунт, а не только ${byline}. Другой аккаунт, публикующий ${byline}, - отдельная подписка.`,
-      followingHandle: (handle: string) => `Вы подписаны на @${handle}`,
-      followHandle: (handle: string) => `Подписаться на @${handle}`,
-      following: "Вы подписаны",
-      follow: "Подписаться",
-      openingCatalog: "Из стартового каталога. За этой подписью пока нет аккаунта.",
-      nothingYet: "Пока ничего не опубликовано.",
-      writersHeading: "Авторы",
-      newest: "Новое",
-      readingNow: "читаете сейчас",
-      showingNewest: (shown: number, total: number) => `Показаны ${shown} новейших из ${total}.`,
-    },
-  }
-);
-
-type SheetStatus =
-  | { kind: "none" }
-  | { kind: "loading" }
-  | { kind: "unavailable" }
-  | { kind: "openFailed"; message?: string }
-  | { kind: "followFailed"; message?: string };
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -124,10 +58,21 @@ export function AuthorSheet({
   onOpenWriter,
   onOpenAccount,
 }: AuthorSheetProps) {
+  const { t } = useReaderPreferences();
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
-  const words = useMessages(messages);
-  const [sheetStatus, setStatus] = useState<SheetStatus>({ kind: "loading" });
+  const [status, setStatus] = useState("Loading");
   const [busy, setBusy] = useState(false);
+  const [profileLinkFallback, setProfileLinkFallback] = useState(false);
+  const profileLink = typeof window === "undefined" ? "" : new URL(`/?author=${encodeURIComponent(handle.replace(/^@+/, ""))}`, window.location.origin).href;
+  async function copyProfileLink() {
+    try { await navigator.clipboard.writeText(profileLink); setStatus(t("Profile link copied.", "Ссылка на профиль скопирована.")); }
+    catch { setProfileLinkFallback(true); }
+  }
+  async function shareProfile() {
+    if (!navigator.share) return copyProfileLink();
+    try { await navigator.share({ title: `@${handle.replace(/^@+/, "")}`, url: profileLink }); }
+    catch (error) { if (!(error instanceof Error && error.name === "AbortError")) setProfileLinkFallback(true); }
+  }
 
   // Keyed by handle in the parent, so a different author mounts a fresh sheet
   // rather than resetting this one's state on the way in.
@@ -138,11 +83,11 @@ export function AuthorSheet({
       .then((profile) => {
         if (cancelled) return;
         setAuthor(profile);
-        setStatus(profile ? { kind: "none" } : { kind: "unavailable" });
+        setStatus(profile ? "" : "This author is not available.");
       })
       .catch((error) => {
         if (cancelled) return;
-        setStatus({ kind: "openFailed", message: error instanceof Error ? error.message : undefined });
+        setStatus(error instanceof Error ? error.message : "Could not open this author.");
       });
 
     return () => {
@@ -178,38 +123,35 @@ export function AuthorSheet({
           ? { ...current, following: !next, followers: Math.max(0, current.followers + (next ? -1 : 1)) }
           : current
       );
-      setStatus({ kind: "followFailed", message: error instanceof Error ? error.message : undefined });
+      setStatus(error instanceof Error ? error.message : "Could not update following.");
     } finally {
       setBusy(false);
     }
   }
 
-  const status =
-    sheetStatus.kind === "none"
-      ? ""
-      : sheetStatus.kind === "openFailed" || sheetStatus.kind === "followFailed"
-        ? (sheetStatus.message ?? words[sheetStatus.kind])
-        : words[sheetStatus.kind];
-
   const meta = [
-    author ? words.boks(author.totalBoks) : null,
-    author?.writers.length ? words.writers(author.writers.length) : null,
-    author?.authorUserId && !author.byline ? words.followers(author.followers) : null,
+    author ? t(countLabel(author.totalBoks, "bok"), `Боков: ${author.totalBoks}`) : null,
+    author?.writers.length ? t(countLabel(author.writers.length, "byline"), `Авторов боков: ${author.writers.length}`) : null,
+    author?.authorUserId && !author.byline ? t(countLabel(author.followers, "follower"), `Подписчиков: ${author.followers}`) : null,
   ]
     .filter(Boolean)
     .join(" · ");
 
   return (
     <ReaderSheet
-      label={author ? words.sheetLabel(author.authorName || "@" + author.authorHandle) : words.author}
+      label={author ? `${author.byline || "@" + author.authorHandle}` : t("Author", "Автор")}
       onClose={onClose}
+      className="author-v44 social-page"
     >
-      <div className="flex items-start justify-between gap-3 px-4 pt-1 sm:pt-4">
+      <header className="social-page-header"><button className="social-icon" type="button" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button><span>{author?.byline ? t("Writer", "Писатель") : t("Author", "Автор")}</span><button type="button" className="social-icon" onClick={() => void shareProfile()} aria-label={t("Share profile", "Поделиться профилем")}><ReaderShareIcon /></button></header>
+      <div className="author-profile-head flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold tracking-normal">
+          <span className={`author-monogram${author?.byline ? " author-monogram--writer" : ""}`} aria-hidden="true">{author?.byline ? "“" : (author?.authorHandle || handle).replace(/^@+/, "")[0]?.toUpperCase()}<i>{author?.byline ? "”" : "✳"}</i></span>
+          <span className="social-eyebrow">{author?.byline ? t("Writer", "Писатель") : t("Author", "Автор")}</span>
+          <h2 className="author-profile-title" translate="no">
             {/* A name when there is one, otherwise the @handle stands alone
                 rather than the sheet inventing a label. */}
-            {author?.authorName || `@${author?.authorHandle ?? handle.replace(/^@+/, "")}`}
+            {author?.byline || `@${author?.authorHandle ?? handle.replace(/^@+/, "")}`}
           </h2>
           {/* Built as a list and joined, so a missing name never leaves the
               line starting with a separator. */}
@@ -220,7 +162,7 @@ export function AuthorSheet({
                     back rather than a caption: this writer is one of the many
                     that account publishes, and the account is what a reader
                     follows. */}
-                {words.publishedBy}{" "}
+                {t("Published by", "Опубликовано")} {" "}
                 {onOpenAccount ? (
                   <button type="button" className="author-account-link" onClick={onOpenAccount}>
                     @{author.authorHandle}
@@ -231,23 +173,20 @@ export function AuthorSheet({
                 {meta && ` · ${meta}`}
               </>
             ) : (
-              [author?.authorName ? `@${author.authorHandle}` : null, meta].filter(Boolean).join(" · ")
+              meta
             )}
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label={words.close}>
-          <X className="size-4" />
-        </Button>
       </div>
 
       {author?.byline && author.authorUserId && (
         <p className="px-4 pt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-          {words.followExplainer(author.authorHandle, author.byline)}
+          {t(`Following @${author.authorHandle} brings you everything this account publishes, not only ${author.byline}.`, `Подписка на @${author.authorHandle} распространяется на все боки этого аккаунта, а не только на ${author.byline}.`)}
         </p>
       )}
 
       {author?.authorUserId ? (
-        <div className="px-4 pt-3">
+        <div className="author-profile-actions px-4 pt-3">
           <Button
             className="w-full"
             variant={author.following ? "outline" : "default"}
@@ -260,47 +199,51 @@ export function AuthorSheet({
                 as following Chekhov, which is not what it does. */}
             {author.byline
               ? author.following
-                ? words.followingHandle(author.authorHandle)
-                : words.followHandle(author.authorHandle)
+                ? t(`Following @${author.authorHandle}`, `Вы подписаны на @${author.authorHandle}`)
+                : t(`Follow @${author.authorHandle}`, `Подписаться на @${author.authorHandle}`)
               : author.following
-                ? words.following
-                : words.follow}
+                ? t("Following", "Вы подписаны")
+                : t("Follow", "Подписаться")}
           </Button>
+          {!author.byline && <Button variant="outline" onClick={() => void copyProfileLink()}>{t("Copy profile link", "Ссылка на профиль")}</Button>}
         </div>
       ) : (
         author && (
           <p className="px-4 pt-2 text-sm text-[var(--muted-foreground)]">
-            {words.openingCatalog}
+            {t("There is no account behind this byline yet.", "Эта подпись пока не связана с аккаунтом.")}
           </p>
         )
       )}
 
-      <div className="comment-list min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        {status && <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{status}</p>}
+      {profileLinkFallback && <input className="share-link-fallback" value={profileLink} readOnly aria-label={t("Profile link", "Ссылка на профиль")} onFocus={event => event.currentTarget.select()} />}
+      <div className="author-public-list">
+        {status && <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{status === "Loading" ? t("Loading…", "Загружаем…") : status === "This author is not available." ? t(status, "Этот автор недоступен.") : status}</p>}
         {author && !author.boks.length && !status && (
-          <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{words.nothingYet}</p>
+          <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{t("Nothing published yet.", "Публикаций пока нет.")}</p>
         )}
 
         {/* A publisher's catalogue is indexed by its writers. A flat list of
             457 titles is not something anyone reads; "24 writers" is. */}
         {author && author.writers.length > 1 && (
           <div className="mb-3">
-            <h3 className="text-sm font-semibold">{words.writersHeading}</h3>
+            <h3 className="text-sm font-semibold">{t("Bylines", "Авторы боков")}</h3>
             <ul className="mt-2 grid gap-1">
               {author.writers.map((writer) => (
                 <li key={writer.name}>
                   <button type="button" className="author-writer" onClick={() => onOpenWriter?.(writer.name)}>
                     <span className="font-medium">{writer.name}</span>
-                    <span className="text-sm text-[var(--muted-foreground)]">{words.boks(writer.boks)}</span>
+                    <span className="text-sm text-[var(--muted-foreground)]">{countLabel(writer.boks, "bok")}</span>
                   </button>
                 </li>
               ))}
             </ul>
-            <h3 className="mt-4 text-sm font-semibold">{words.newest}</h3>
+            <h3 className="mt-4 text-sm font-semibold">{t("Newest", "Новое")}</h3>
           </div>
         )}
 
         {author && author.boks.length > 0 && (
+          <>
+          <div className="author-list-label"><span>{t("Published boks", "Опубликованные боки")}</span><span>{author.totalBoks}</span></div>
           <ul className="grid gap-2">
             {author.boks.map((bok) => (
               <li key={bok.id}>
@@ -315,15 +258,16 @@ export function AuthorSheet({
                   {!author.byline && bok.authorName && (
                     <span className="mt-0.5 text-sm text-[var(--muted-foreground)]">{bok.authorName}</span>
                   )}
-                  {bok.id === currentStoryId && <span className="author-bok-now">{words.readingNow}</span>}
+                  {bok.id === currentStoryId && <span className="author-bok-now">{t("reading now", "читаете сейчас")}</span>}
                 </button>
               </li>
             ))}
           </ul>
+          </>
         )}
         {author && author.boks.length > 0 && author.boks.length < author.totalBoks && (
           <p className="pt-3 text-center text-sm text-[var(--muted-foreground)]">
-            {words.showingNewest(author.boks.length, author.totalBoks)}
+            {t(`Showing the newest ${author.boks.length} of ${author.totalBoks}.`, `Показаны последние ${author.boks.length} из ${author.totalBoks}.`)}
           </p>
         )}
       </div>
@@ -331,3 +275,6 @@ export function AuthorSheet({
   );
 }
 
+function countLabel(value: number, noun: string) {
+  return `${value} ${noun}${value === 1 ? "" : "s"}`;
+}

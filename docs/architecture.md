@@ -15,11 +15,12 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 - `app/page.tsx`, `app/series/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only. `app/boks-client.tsx` re-exports the three client surfaces.
 - `app/b/[id]/page.tsx`: a shared bok. Server-rendered so messengers get a title, description and cover (`lib/boks/share-preview.ts`); `open-shared-bok.tsx` then opens it in the reader.
+- `app/b/[id]/image/route.tsx` + `lib/boks/share-poster.tsx`: portrait PNG for a shared published bok, with the same artwork/palette, title and byline as Share bok. The Worker checks publication before its five-minute image cache, loads only owned static assets and uses `next/og`. Fonts and JPEG conversions of the registered Series covers live in `public/share/`; new share links carry the poster version from `lib/boks/share-link.ts`.
 - `app/a/[handle]/page.tsx`: an author's public page.
 - `app/api/feed/route.ts`: the canonical feed. Forwards the reader's Supabase JWT (the Worker holds no elevated credential), assigns the arm, ranks, records the served feed.
 - `app/api/geo/route.ts`: the two-letter country from Cloudflare's `CF-IPCountry`; the IP is never read.
 - `app/privacy/page.tsx`, `app/terms/page.tsx`: legal pages.
-- `app/layout.tsx`, `app/globals.css`: document shell, theme bootstrap, the whole visual system (tokens with light and dark values - use tokens, never literal colours).
+- `app/layout.tsx`, `app/globals.css`: document shell, theme bootstrap and base styles. `app/reader-v44.css`, `app/formats-v44.css`, `app/social-v44.css`, `app/admin-v44.css` scope the accepted v44 tokens and surfaces to reader and Studio, preserving the author cabinet.
 - `proxy.ts`: security headers (`lib/boks/security-headers.ts`) and the canonical-host redirect (`lib/boks/canonical-host.ts`).
 
 ### Reader (`components/boks/`)
@@ -27,14 +28,16 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `reader-feed.tsx`: the swipe-first reader - navigation, reading outcomes, reactions, guest gates, formats.
 - `reader-navigation.ts`: pure direction, edge-tap and text-boundary rules shared by touch, pointer, wheel and keyboard.
 - `reader-behavior.ts`: visitor id, local reader profile, word-count-based read/skip inference, slate size.
-- `reader-clock.ts`: the foreground-only reading clock.
+- `reader-clock.ts`: the foreground-only reading clock. `reader/text-reading-state.ts` measures HTML-body bounds as cover / reading / finale; `reader-feed.tsx` holds the clock for covers, endings, overlays and inactive playback.
 - `reader-events.ts`: the attributed reader-event queue - batching, retry, per-read dedupe, keepalive flush on exit.
 - `reader-place.ts`, `reader-library.ts`, `reader-text.ts`, `reader-haptics.ts`, `reader-sheet.tsx`: held place, the Read/Liked/Commented library, text shaping, haptics, the sheet primitive.
 - `comments-sheet.tsx` + `comment-threads.ts`: the lazy-loaded comment conversation with one-level replies and comment likes; pure root/reply ordering.
 - `user-auth-panel.tsx`: sign-up and sign-in (link or code), settings, the account library, admin shortcut. `magic-link-cooldown.ts` paces resends.
 - `author-sheet.tsx`: an author's boks inside the reader.
 - `feedback.ts`, `feedback-form.tsx`: the no-account feedback box and its milestone prompts.
-- `reading-languages.ts`: the reader's reading languages.
+- `reading-languages.ts`: the server-saved reading languages. `reader-preferences.ts` + `reader-preference-controls.tsx`: independent device locale and typography preferences.
+- `reader/boks-logo.tsx`, `reader/bok-artwork.ts`: shared wordmark and exact-ID series artwork resolution, with typography for ordinary boks. Seasonal decoration is an explicit option, not a guessed calendar.
+- `share-card.tsx` + `share-card-export.ts`: bok-link sharing and real canvas poster export, with native/copy/download fallbacks.
 - `theme.ts`, `theme-setting.tsx`: System/Light/Dark, applied before first paint.
 - `reading-music.ts`, `reading-fullscreen.ts`, `home-screen-hint.ts`: ambient music, fullscreen for formats on Android/iPad, the one-time iPhone home-screen hint.
 - `error-boundary.tsx`: the crash screen around every surface.
@@ -48,15 +51,16 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `components/boks/cinema/`: cinema - narration track, scenes, story moments, voices.
 - `components/boks/poetry/`: immersive poems; manifests are built by `lib/boks/poetry/manifest.ts` from each poem's own recording.
 - `components/boks/interactions/` + `lib/boks/interactions/`: the story-moment scenes and their sound.
-- `components/boks/reading-finale.tsx`: the one ending every format shares.
-- `components/boks/series/`: the series shelf - `series-catalogue.ts` (the list, tested against both format registries), `series-view.tsx` (shelf and the feed/series tabs), `series-progress.ts` (heard marks in browser storage). The shelf's language filter is in `series-catalogue.ts` too.
+- `components/boks/reading-finale.tsx`: the one ending HTML reading and both formats share; drafts/actions remain owned by the reader.
+- `components/boks/cinema/format-controls.tsx`, `media-level.ts`: shared real-position transport, Sound and media gain.
+- `components/boks/series/`: the series shelf - `series-catalogue.ts` (registry and published shelf projection, tested against both format registries), `series-view.tsx` (published shelf and Feed/Series/You tabs), `series-progress.ts` (heard marks in browser storage).
 - How a piece is produced and added: `docs/reading-formats.md`.
 
 ### Author and admin
 
 - `components/boks/author-console.tsx`: submission cabinet, review status, refusal reason, revision, the length guardrail. `lib/boks/author/submission-quota.ts` mirrors the daily limit for the UI; the database is the authority. `lib/boks/bok-title.ts` mirrors the title-from-first-line rule.
-- `components/boks/admin-dashboard.tsx`: admin auth, the tab shell, per-tab loading.
-- `components/boks/admin/`: one file per tab - `overview.tsx`, `moderation-queue.tsx`, `rights-review.tsx`, `content-operations.tsx`, `people.tsx`, `guest-funnel.tsx`, `tracked-links.tsx`, `growth.tsx`, `feedback-inbox.tsx`, `catalogue-import.tsx`, `recommendation-lab.tsx` (+ `experiment-editor.tsx`, `sample-size-panel.tsx`, `position-effects.tsx`, `metric-bars.tsx`), and the poetry/interaction sandboxes.
+- `components/boks/admin-dashboard.tsx`: admin auth, grouped Studio navigation and per-section loading.
+- `components/boks/admin/`: one file per tab - `overview.tsx`, `moderation-queue.tsx`, `rights-review.tsx`, `content-operations.tsx`, `people.tsx`, `guest-funnel.tsx`, `guest-day.tsx`, `tracked-links.tsx`, `growth.tsx`, `feedback-inbox.tsx`, `catalogue-import.tsx`, `recommendation-lab.tsx` (+ `experiment-editor.tsx`, `sample-size-panel.tsx`, `position-effects.tsx`, `metric-bars.tsx`), and the poetry/interaction sandboxes.
 - `components/boks/admin/admin-inspector.tsx` + `inspector-context.tsx`: the console's one detail surface. Every tab opens a bok or a person with `useAdminInspector().openBok(id)` / `openPerson(userId)`; never build a per-tab detail view. Views: `bok-inspector.tsx`, `person-inspector.tsx`.
 - `components/boks/admin/bok-lifecycle-dialog.tsx`: the only hide / restore / erase confirmation. Authority is the RPC's `is_boks_admin`, never this UI.
 
@@ -95,7 +99,8 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 2. The browser asks `/api/feed` for a slate, sending its JWT, its reading languages and a profile snapshot. The Worker loads the experiment config and candidates (`get_recommendation_candidates` - published boks in the reader's languages with behaviour counters and semantic similarity), resolves the reader's stored arm, ranks with `buildReaderFeed`, records `served_feed` + `served_feed_item`, and returns the slate with its `feedId`.
 3. If `/api/feed` fails or is slow, `worker-feed-breaker.ts` lets the browser rank the same way for a cool-down; those feeds are recorded with `serving_backend = 'browser'`.
 4. Every behaviour goes through `reader-events.ts` into `record_recommendation_events`, attributed with algorithm, experiment, segment, rank, feed id, foreground seconds and progress. The feed appends the next slate five boks before the end.
-5. Guest gates count distinct boks read on the device: notices at 5 and 10, sign-up at 15.
+5. A direct Series visit does not expose the background feed: only a bok actually shown in the reader/player emits impression, heartbeat or outcome. Series continuation captures the current published shelf order and keeps `entry: "series"`.
+6. Guest gates count distinct boks after actual foreground reading dwell on the device: notices at 5 and 10, sign-up at 15.
 
 ## Accounts and comments
 

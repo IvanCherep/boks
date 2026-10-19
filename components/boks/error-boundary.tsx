@@ -46,7 +46,7 @@ const messages = defineMessages(
  */
 type BoundaryState = { error: Error | null };
 
-export class BoksErrorBoundary extends Component<{ children: ReactNode }, BoundaryState> {
+export class BoksErrorBoundary extends Component<{ children: ReactNode; v44?: boolean }, BoundaryState> {
   state: BoundaryState = { error: null };
 
   static getDerivedStateFromError(error: Error): BoundaryState {
@@ -64,6 +64,24 @@ export class BoksErrorBoundary extends Component<{ children: ReactNode }, Bounda
     if (!error) return this.props.children;
     // A class component has no hooks; the language is read once, as it fails.
     const t = messages[currentUiLanguage()];
+
+    if (this.props.v44) return (
+      <main className="reader-v44 reader-system-page">
+        <div className="reader-system-page__body">
+          <header className="reader-system-page__header"><span>boks</span></header>
+          <div className="reader-system-art reader-system-art--offline" aria-hidden="true">·<i>—</i>·</div>
+          <h1 className="reader-system-title">Couldn’t open boks.</h1>
+          <p className="mt-5">The app stopped while opening. Reload to try again.</p>
+          <button type="button" data-slot="button" data-variant="default" className="mt-5 items-center justify-center" onClick={() => window.location.reload()}>Reload boks</button>
+          <p className="mt-5">If it keeps happening, send the details below to <a className="auth-link" href={supportMailto}>{supportEmail}</a>.</p>
+          <details className="reader-system-diagnostics">
+            <summary>What went wrong</summary>
+            <p>{error.name}: {error.message}</p>
+            <p>{typeof navigator === "undefined" ? "" : navigator.userAgent}</p>
+          </details>
+        </div>
+      </main>
+    );
 
     return (
       <main className="reader-shell grid min-h-screen place-items-center px-6">

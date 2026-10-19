@@ -45,6 +45,8 @@ export type SeriesPiece = {
   cover: string;
   /** Where the subject of the cover sits, as CSS `object-position`. */
   coverFocus: string;
+  /** Dark wordmark for a bright upper image; otherwise the cover uses light ink. */
+  coverLogoTone?: "dark" | "light";
   /** Length of the recording, from its alignment or manifest. Tested. */
   durationSeconds: number;
   /** Pictures the piece moves through. Tested against the format's registry. */
@@ -188,6 +190,7 @@ export const seriesPieces: readonly SeriesPiece[] = [
     title: "Не жалею, не зову, не плачу…",
     author: "Сергей Есенин",
     cover: "/series/ne-zhaleyu.webp",
+    coverLogoTone: "dark",
     coverFocus: "55% 40%",
     durationSeconds: 49,
     scenes: 4,
@@ -201,6 +204,7 @@ export const seriesPieces: readonly SeriesPiece[] = [
     title: "Первый снег",
     author: "Валерий Брюсов",
     cover: "/series/perviy-sneg.webp",
+    coverLogoTone: "dark",
     coverFocus: "55% 55%",
     durationSeconds: 32,
     scenes: 4,
@@ -253,6 +257,7 @@ export const seriesPieces: readonly SeriesPiece[] = [
     title: "Мужичок с ноготок",
     author: "Николай Некрасов",
     cover: "/series/muzhichok.webp",
+    coverLogoTone: "dark",
     coverFocus: "60% 60%",
     durationSeconds: 55,
     scenes: 4,
@@ -382,8 +387,8 @@ export const seriesPieces: readonly SeriesPiece[] = [
     language: "en",
     title: "A Dream Within a Dream",
     author: "Edgar Allan Poe",
-    cover: "/series/dream-within-dream.webp",
-    coverFocus: "45% 35%",
+    cover: "/series/dream-v44.webp",
+    coverFocus: "50% 47%",
     durationSeconds: 55,
     scenes: 4,
     moments: 0,
@@ -526,6 +531,21 @@ export function rememberSeriesFilter(languages: readonly string[]) {
   } catch {
     // Private mode: the filter still holds for this visit.
   }
+}
+
+/** The same published, language-filtered order drives the shelf and its Next. */
+export function publishedSeriesShelf(
+  catalogue: ReadonlyMap<string, { title: string; authorName: string }> | null,
+  readerLanguages: readonly string[],
+  heard: ReadonlySet<string>,
+  registry: readonly SeriesPiece[] = seriesPieces,
+): SeriesPiece[] {
+  if (!catalogue) return [];
+  const published = registry.filter((piece) => catalogue.has(piece.storyId)).map((piece) => {
+    const row = catalogue.get(piece.storyId)!;
+    return { ...piece, title: row.title || piece.title, author: row.authorName || piece.author };
+  });
+  return orderSeries(published, readerLanguages, heard);
 }
 
 /** "2 min", "49 sec": a piece under a minute says so rather than rounding up. */

@@ -1,16 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { ReaderHeartIcon, ReaderNextIcon } from "@/components/boks/reader/reader-icons";
 import { dragProgress, snapTarget } from "@/lib/boks/interactions/scenes";
 import { startInteractionLoop } from "@/lib/boks/interactions/sound";
-import { momentCue, type StoryMoment } from "@/components/boks/cinema/story-moments";
-import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
-
-const messages = defineMessages(
-  { badge: "Something to do", skip: "Continue" },
-  { ru: { badge: "Ваш ход", skip: "Продолжить" } }
-);
+import type { StoryMoment } from "@/components/boks/cinema/story-moments";
 
 /**
  * A moment inside a story: the narration stops, something is heard, and it
@@ -18,8 +13,8 @@ const messages = defineMessages(
  *
  * This is not the sandbox component. The sandbox exists to judge mechanics side
  * by side and wears the chrome for it - a reset button, a verdict, a frame
- * counter. Here the mechanic has to disappear into the story: no way back, no
- * score, and the only way out is forward. What the two genuinely share is the
+ * counter. Here the mechanic has to disappear into the story: no score and a
+ * direct Continue escape. What the two share is the
  * part worth sharing - `dragProgress` and `snapTarget`, the pure gesture maths
  * - and the cue language, so a reader who met a swipe once meets the same swipe
  * again.
@@ -29,8 +24,6 @@ const messages = defineMessages(
  * every exit, including unmount, because a heartbeat still going under the next
  * paragraph would be a horrible thing to ship.
  */
-
-const escapeAfterMs = 9000;
 
 /**
  * Once a hold takes, it keeps going for this long whatever the finger does.
@@ -56,11 +49,14 @@ export function StoryMomentScene({
   moment: StoryMoment;
   onDone: () => void;
 }) {
+  const { t } = useReaderPreferences();
+  const hint = t(moment.hint, moment.hintRu ?? moment.translations.ru.hint);
   const frame = useRef<HTMLDivElement>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const stopLoop = useRef<(() => void) | null>(null);
   const holdTimer = useRef(0);
   const finished = useRef(false);
+  const finishTimers = useRef<number[]>([]);
 
   const activatedAt = useRef(0);
   const releaseTimer = useRef(0);
@@ -68,9 +64,6 @@ export function StoryMomentScene({
   /** Done it. Separate from `leaving`, which only starts after the dwell. */
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [canSkip, setCanSkip] = useState(false);
-  const words = useMessages(messages);
-  const cue = momentCue(moment, useUiLanguage());
 
   const paint = useCallback((value: number) => {
     frame.current?.style.setProperty("--p", value.toFixed(4));
@@ -81,23 +74,29 @@ export function StoryMomentScene({
     stopLoop.current = null;
   }, []);
 
-  // A reader who cannot make the gesture - a stiff hand, a dead touchscreen, a
-  // child with the phone upside down - must never be locked inside a story.
-  useEffect(() => {
-    const timer = window.setTimeout(() => setCanSkip(true), escapeAfterMs);
-    return () => window.clearTimeout(timer);
-  }, []);
-
   useEffect(() => {
     // The crowd is heard the moment the narration stops; the heart only when a
     // finger is on it, which is the whole gesture.
     if (moment.kind === "swipe") stopLoop.current = startInteractionLoop(moment.loop);
+    const timers = finishTimers.current;
     return () => {
       window.clearTimeout(holdTimer.current);
       window.clearTimeout(releaseTimer.current);
+      timers.forEach((timer) => window.clearTimeout(timer));
       silence();
     };
   }, [moment.kind, moment.loop, silence]);
+
+  useEffect(() => {
+    const visible = () => {
+      if (document.hidden) silence();
+      else if (!finished.current && !stopLoop.current && (moment.kind === "swipe" || active)) {
+        stopLoop.current = startInteractionLoop(moment.loop);
+      }
+    };
+    document.addEventListener("visibilitychange", visible);
+    return () => document.removeEventListener("visibilitychange", visible);
+  }, [moment.kind, moment.loop, active, silence]);
 
   /**
    * End the moment: sound away, result held, then back to the story.
@@ -118,10 +117,10 @@ export function StoryMomentScene({
       window.clearTimeout(releaseTimer.current);
       // The sound does not stop, it dies away: about four tenths of a second.
       silence();
-      window.setTimeout(() => {
+      finishTimers.current.push(window.setTimeout(() => {
         setLeaving(true);
-        window.setTimeout(onDone, 950);
-      }, dwellMs);
+        finishTimers.current.push(window.setTimeout(onDone, 950));
+      }, dwellMs));
     },
     [onDone, silence]
   );
@@ -215,58 +214,45 @@ export function StoryMomentScene({
       ref={frame}
       className={`moment moment--${moment.kind} ${active ? "is-active" : ""} ${succeeded ? "is-done" : ""} ${leaving ? "is-leaving" : ""}`}
       style={{ "--p": "0" } as React.CSSProperties}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
     >
+      <button
+        type="button"
+        className="moment__surface"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        aria-label={`${hint}. ${moment.kind === "hold" ? t("Press Space to hold", "Удерживайте пробел") : t("Press Enter to move", "Нажмите Enter")}`}
+        onKeyDown={(event) => {
+          if ((event.key !== " " && event.key !== "Enter") || event.repeat || finished.current) return;
+          event.preventDefault(); event.stopPropagation(); paint(1);
+          if (moment.kind === "swipe") finish(dwellAfterSwipeMs);
+          else {
+            setActive(true); activatedAt.current = performance.now();
+            if (!stopLoop.current) stopLoop.current = startInteractionLoop(moment.loop);
+          }
+        }}
+        onKeyUp={(event) => {
+          if ((event.key !== " " && event.key !== "Enter") || moment.kind !== "hold" || finished.current) return;
+          event.preventDefault(); event.stopPropagation();
+          const remaining = Math.max(0, minimumListenMs - (performance.now() - activatedAt.current));
+          releaseTimer.current = window.setTimeout(endHold, remaining);
+        }}
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="moment__layer moment__after" src={moment.after} alt="" draggable={false} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="moment__layer moment__before" src={moment.before} alt="" draggable={false} />
 
-      {/*
-        Shown where the gesture happens, not only written at the bottom. A
-        swipe gets a hand that keeps making the swipe; a hold gets a ring on
-        the chest that keeps closing. Words say what, the demonstration says
-        how, and between them nothing is left to work out.
-      */}
-      {moment.hotspot && (
-        <div
-          className="moment__gesture"
-          aria-hidden="true"
-          style={{ left: `${moment.hotspot.x * 100}%`, top: `${moment.hotspot.y * 100}%` }}
-        >
-          {moment.kind === "swipe" ? (
-            <>
-              <span className="moment__trail" />
-              <span className="moment__finger" />
-            </>
-          ) : (
-            <>
-              <span className="moment__press" />
-              <span className="moment__press" />
-              <span className="moment__finger moment__finger--still" />
-            </>
-          )}
-        </div>
-      )}
-
-      <div className="moment__cue">
-        <span className="iscene__badge">
-          <span className="iscene__badge-dot" aria-hidden="true" />
-          {words.badge}
-        </span>
-        <span className="moment__hint">{cue.hint}</span>
-        <span className="moment__how">{cue.how}</span>
-        <i className="moment__rule" aria-hidden="true" />
+      <div className="moment__cue" aria-hidden="true">
+        <span className="moment__hint">{moment.kind === "hold" ? t("Hold to continue", "Удерживайте, чтобы продолжить") : t("Swipe right to continue", "Проведите вправо, чтобы продолжить")}</span>
+        <span className="moment__orb">{moment.kind === "hold" ? <ReaderHeartIcon /> : <ReaderNextIcon />}</span>
+        <span className="moment__alternative">{t("Or tap Continue", "Или нажмите «Продолжить»")}</span>
       </div>
 
-      {canSkip && !leaving && (
-        <button type="button" className="moment__skip" onClick={() => finish(0)}>
-          {words.skip}
-        </button>
-      )}
+      {!succeeded && !leaving && <button type="button" className="moment__skip" onClick={() => finish(0)}>
+        {t("Continue", "Продолжить")}
+      </button>}
     </div>
   );
 }

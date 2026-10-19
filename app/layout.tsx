@@ -1,9 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/source-serif-4/standard.css";
+import "@fontsource-variable/source-serif-4/standard-italic.css";
 // A high-contrast display serif, used only where a word is part of a
 // picture rather than part of a paragraph. See `--font-display`.
 import "@fontsource-variable/playfair-display/wght.css";
 import "./globals.css";
+import "./v44-fonts.css";
+import "./reader-v44.css";
+import "./formats-v44.css";
+import "./social-v44.css";
+import "./admin-v44.css";
 import { themeBootScript, themeColor } from "@/components/boks/theme";
 import { uiLanguageBootScript } from "@/lib/i18n/ui-language";
 
@@ -33,8 +39,9 @@ export const metadata: Metadata = {
    * Opened from the home screen, boks is an app with no browser around it -
    * the only way an iPhone reader gets a poem without an address bar under
    * it, since iPhone Safari gives a page no fullscreen. `default` keeps the
-   * status bar opaque, so nothing has to be pushed down from under it; its
-   * colour follows `theme-color`, which a player repaints while it is open.
+   * status bar opaque, so nothing has to be pushed down from under it. The
+   * reader paints its outer surface as well as theme-color, including in
+   * standalone: a different status-bar surface creates a native edge glow.
    */
   appleWebApp: {
     capable: true,

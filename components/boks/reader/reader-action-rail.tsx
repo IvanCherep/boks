@@ -2,31 +2,7 @@
 
 import { Clapperboard, Heart, MessageCircle, Music, Share2, Trash2 } from "lucide-react";
 import { ActionButton } from "@/components/boks/shared-ui";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
-
-const messages = defineMessages(
-  {
-    unlike: "Remove like",
-    like: "Like",
-    comments: "Comments",
-    share: "Share",
-    musicOff: "Turn the music off",
-    musicOn: "Play music while you read",
-    hide: "Hide this bok from readers (admin)",
-  },
-  {
-    ru: {
-      unlike: "Убрать лайк",
-      like: "Нравится",
-      comments: "Комментарии",
-      share: "Поделиться",
-      musicOff: "Выключить музыку",
-      musicOn: "Включить музыку для чтения",
-      hide: "Скрыть текст от читателей (админ)",
-    },
-  }
-);
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
 
 /**
  * What the boks on screen can be done with: like, comments, share, its
@@ -70,18 +46,18 @@ export function ReaderActionRail({
   onToggleMusic: () => void;
   onHide: () => void;
 }) {
-  const t = useMessages(messages);
+  const { t } = useReaderPreferences();
   return (
     <aside className="action-rail reader-ui pointer-events-none" inert={inert ? true : undefined}>
-      <ActionButton label={liked ? t.unlike : t.like} value={likeCount} onClick={onLike} active={liked}>
+      <ActionButton label={liked ? t("Remove like", "Убрать отметку «Нравится»") : t("Like", "Нравится")} value={likeCount} onClick={onLike} active={liked}>
         {/* Filled when liked: the state has to read at a glance, not only
             through a tinted background. */}
         <Heart className="size-5" fill={liked ? "currentColor" : "none"} />
       </ActionButton>
-      <ActionButton label={t.comments} value={commentCount} onClick={onComments}>
+      <ActionButton label={t("Comments", "Комментарии")} value={commentCount} onClick={onComments}>
         <MessageCircle className="size-5" />
       </ActionButton>
-      <ActionButton label={t.share} onClick={onShare}>
+      <ActionButton label={t("Share", "Поделиться")} onClick={onShare}>
         <Share2 className="size-5" />
       </ActionButton>
       {formatLabel && (
@@ -91,14 +67,14 @@ export function ReaderActionRail({
       )}
       {/* Something to read to: one track for the whole catalogue, off until asked for. */}
       <ActionButton
-        label={musicOn ? t.musicOff : t.musicOn}
+        label={musicOn ? t("Turn the music off", "Выключить музыку") : t("Play music while you read", "Читать под музыку")}
         onClick={onToggleMusic}
         active={musicOn}
       >
         <Music className="size-5" />
       </ActionButton>
       {canHide && (
-        <ActionButton label={t.hide} onClick={onHide} tone="danger">
+        <ActionButton label={t("Hide this bok from readers (admin)", "Скрыть бок от читателей (администратор)")} onClick={onHide} tone="danger">
           <Trash2 className="size-5" />
         </ActionButton>
       )}

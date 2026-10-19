@@ -97,6 +97,7 @@ export function InteractiveScene({
 }) {
   const assets = sceneAssets(scene.id);
   const frame = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const beforeImage = useRef<HTMLImageElement | null>(null);
 
@@ -122,6 +123,8 @@ export function InteractiveScene({
   const paint = useCallback((value: number) => {
     progress.current = value;
     frame.current?.style.setProperty("--p", value.toFixed(4));
+    if (surface.current?.getAttribute("role") === "slider") surface.current.setAttribute("aria-valuenow", String(Math.round(value * 100)));
+    if (surface.current?.hasAttribute("aria-pressed")) surface.current.setAttribute("aria-pressed", String(value > 0.5));
   }, []);
 
   const markCompleted = useCallback(() => {
@@ -257,13 +260,15 @@ export function InteractiveScene({
   function onPointerDown(event: React.PointerEvent) {
     if (status !== "ready") return;
     event.currentTarget.setPointerCapture(event.pointerId);
+    engageAt(localPoint(event));
+  }
+
+  function engageAt(point: { x: number; y: number; width: number; height: number }) {
     // A browser will not give out an AudioContext that nobody asked for, and
     // sound that starts on its own is a bug. So it is unlocked here, inside a
     // real gesture, and never before one.
     unlockInteractionSound();
     setEngaged(true);
-    const point = localPoint(event);
-
     if (scene.primitive === "toggle") {
       const springs = (scene.holdMs ?? 0) > 0;
       if (springs) {
@@ -398,6 +403,35 @@ export function InteractiveScene({
     if (isMaskBrush) paintFrost();
   }
 
+  function onKeyDown(event: React.KeyboardEvent) {
+    if (status !== "ready" || event.repeat) return;
+    const range = scene.primitive === "drag" || scene.primitive === "slider";
+    if (range && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+      event.preventDefault(); event.stopPropagation(); unlockInteractionSound();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? 1 : Math.min(1, Math.max(0, progress.current + (["ArrowRight", "ArrowDown"].includes(event.key) ? .1 : -.1)));
+      tween.current.stop(); paint(next);
+      if (next >= 1) markCompleted();
+      playInteractionSound(scene.sound);
+      return;
+    }
+    if (range || (event.key !== " " && event.key !== "Enter")) return;
+    event.preventDefault(); event.stopPropagation();
+    if (isMaskBrush) {
+      // A keyboard activation clears the real canvas, the equivalent of wiping it.
+      unlockInteractionSound(); playInteractionSound(scene.sound);
+      const element = canvas.current;
+      if (element) element.getContext("2d")?.clearRect(0, 0, element.width, element.height);
+      paint(1); markCompleted();
+      return;
+    }
+    const rect = frame.current?.getBoundingClientRect();
+    if (rect) engageAt({ x: rect.width / 2, y: rect.height / 2, width: rect.width, height: rect.height });
+  }
+
+  // Semantic values follow the same progress as the artwork, including after
+  // React changes the engaged/completed state at a gesture boundary.
+  useEffect(() => { paint(progress.current); }, [status, engaged, completed, paint]);
+
   const affordance = affordanceFor(scene);
   const mode =
     scene.primitive === "slider"
@@ -427,11 +461,19 @@ export function InteractiveScene({
         } as React.CSSProperties
       }
       data-touch={capturesScroll ? "none" : "auto"}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
     >
+      <div ref={surface} className="iscene__surface" tabIndex={0}
+        role={scene.primitive === "drag" || scene.primitive === "slider" ? "slider" : "button"}
+        aria-label={scene.hint} aria-disabled={status !== "ready"}
+        aria-valuemin={scene.primitive === "drag" || scene.primitive === "slider" ? 0 : undefined}
+        aria-valuemax={scene.primitive === "drag" || scene.primitive === "slider" ? 100 : undefined}
+        aria-orientation={scene.primitive === "slider" ? "horizontal" : scene.primitive === "drag" && scene.direction === "down" ? "vertical" : undefined}
+        aria-pressed={scene.primitive === "toggle" ? false : undefined}
+        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+        onKeyDown={onKeyDown} onKeyUp={(event) => {
+          if (event.key !== " " && event.key !== "Enter") return;
+          event.preventDefault(); event.stopPropagation(); onPointerUp();
+        }} onBlur={onPointerUp} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="iscene__layer iscene__after" src={assets.after} alt="" draggable={false} />
       {!isMaskBrush && (

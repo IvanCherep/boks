@@ -7,33 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { readableBoksError } from "@/lib/boks/errors";
 import { sendBoksFeedback } from "@/components/boks/supabase-browser-data";
 import type { FeedbackSurface } from "@/components/boks/feedback";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
-
-const messages = defineMessages(
-  {
-    failed: "Could not send that. Try again in a moment.",
-    sent: "Sent. Every note is read.",
-    prompt: "What you liked, what annoyed you, what is missing. Nothing is too small.",
-    placeholder: "What would make boks better for you?",
-    label: "Your feedback",
-    sending: "Sending…",
-    send: "Send feedback",
-    noAccount: "No account or email needed. Your name is attached only if you are signed in.",
-  },
-  {
-    ru: {
-      failed: "Не получилось отправить. Попробуйте через минуту.",
-      sent: "Отправлено. Мы читаем каждое сообщение.",
-      prompt: "Что понравилось, что раздражало, чего не хватает. Мелочей не бывает.",
-      placeholder: "Что сделало бы boks лучше для вас?",
-      label: "Ваш отзыв",
-      sending: "Отправляем…",
-      send: "Отправить отзыв",
-      noAccount: "Аккаунт и email не нужны. Ваше имя прикрепится, только если вы вошли.",
-    },
-  }
-);
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
 
 /**
  * The feedback box, in one component because it appears in two places: inside
@@ -58,6 +32,7 @@ export function FeedbackForm({
   visitorId,
   onSent,
   autoFocus = false,
+  presentation = "default",
 }: {
   surface: FeedbackSurface;
   /** Boks read on this device, stored with the note so it can be read in context. */
@@ -65,12 +40,13 @@ export function FeedbackForm({
   visitorId?: string;
   onSent?: () => void;
   autoFocus?: boolean;
+  presentation?: "default" | "letter";
 }) {
+  const { t } = useReaderPreferences();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
-  const t = useMessages(messages);
 
   async function submit() {
     const text = message.trim();
@@ -83,7 +59,7 @@ export function FeedbackForm({
       setMessage("");
       onSent?.();
     } catch (caught) {
-      setError(readableBoksError(caught, t.failed));
+      setError(readableBoksError(caught, t("Could not send that. Try again in a moment.", "Не удалось отправить. Попробуйте ещё раз.")));
     } finally {
       setBusy(false);
     }
@@ -92,29 +68,29 @@ export function FeedbackForm({
   if (sent) {
     return (
       <p className="text-sm leading-6 text-[var(--muted-foreground)]" role="status">
-        {t.sent}
+        {t("Feedback sent. Thank you.", "Отзыв отправлен. Спасибо.")}
       </p>
     );
   }
 
   return (
     <form
-      className="grid gap-3"
+      className={`grid gap-3${presentation === "letter" ? " you-feedback-letter" : ""}`}
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        {t.prompt}
-      </p>
+      {presentation !== "letter" && <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+        {t("Tell us about a problem or suggest an improvement.", "Расскажите о проблеме или предложите улучшение.")}
+      </p>}
       <Textarea
         value={message}
         onChange={(event) => setMessage(event.target.value)}
         maxLength={4000}
         rows={5}
-        placeholder={t.placeholder}
-        aria-label={t.label}
+        placeholder={t("Your feedback…", "Ваш отзыв…")}
+        aria-label={t("Your feedback", "Ваш отзыв")}
         autoFocus={autoFocus}
       />
       {error && (
@@ -124,10 +100,10 @@ export function FeedbackForm({
       )}
       <Button type="submit" disabled={busy || message.trim().length < 2}>
         <Send className="size-4" />
-        {busy ? t.sending : t.send}
+        {busy ? t("Sending…", "Отправляем…") : t("Send feedback", "Отправить отзыв")}
       </Button>
       <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        {t.noAccount}
+        {t("No account or email needed. Your handle is attached only if you are signed in.", "Аккаунт и email не нужны. Ваше @имя добавится, только если вы вошли.")}
       </p>
     </form>
   );

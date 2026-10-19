@@ -1,227 +1,81 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Heart, Lightbulb, MessageCircle, RotateCcw, Share2, Smile } from "lucide-react";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
+import { Check, RotateCcw } from "lucide-react";
+import { ReaderNextIcon as ArrowRight, ReaderHeartIcon as Heart, ReaderCommentsIcon as MessageCircle, ReaderShareIcon as Share2 } from "./reader/reader-icons";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
-import { markHomeScreenHintShown, shouldOfferHomeScreen } from "@/components/boks/home-screen-hint";
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { bokCoverStyle } from "./reader/bok-cover-palette";
+import { formatCompactCount } from "./client-format";
 
-/**
- * How every boks series piece ends, whatever format it was read in.
- *
- * Two screens, always in this order: the aftertaste - what stayed - and then
- * where to go from here. A poem and a story are told very differently, but the
- * moment after the last word is the same moment, and a reader who has seen it
- * once should know where everything is the next time. A format draws the
- * reading; it never draws its own ending. A new format renders this and owes
- * it nothing but a way to start again.
- *
- * The words are English whatever the piece is in: the interface speaks one
- * language, the pieces keep their own.
- *
- * What the buttons do is the feed's business, not the format's: the feed
- * builds one `FinaleActions` and hands the same object to every format, so a
- * like or a share from the end of a poem is exactly the like or share from the
- * end of a story.
- */
 export type FinaleActions = {
   liked: boolean;
+  likeCount: number;
+  commentCount: number;
   onLike: () => void;
   onShare: () => void;
+  onComments?: () => void;
   onNext: () => void;
-  /** Called with whatever was picked. Never called with nothing. */
+  nextBok?: { id: string; title: string; authorName?: string; artwork?: string | null };
+  nextLabel?: string;
+  /** Editable until leaving the bok. The reader owns the one final event. */
+  aftertaste?: AftertasteTag[];
+  aftertasteSubmitted?: boolean;
   onAftertaste: (tags: AftertasteTag[]) => void;
-  /**
-   * The reading got to its end - the series shelf marks the piece heard. Called
-   * each time the finale appears, so it has to be safe to repeat.
-   */
   onReached?: () => void;
+  onInteract?: () => void;
 };
 
-/**
- * The four words, and the icon each wears.
- *
- * None of them is "good" or "bad" on purpose. A reader who wants to think
- * about a piece has not enjoyed it less than one who smiled, and a rating
- * would flatten exactly the difference worth keeping.
- */
-const aftertasteIcons: Record<AftertasteTag, typeof Smile> = {
-  smiled: Smile,
-  moved: Heart,
-  surprised: Lightbulb,
-  pondering: MessageCircle,
-};
-
-const messages = defineMessages({
-  ended: "Where next?",
-  aftertasteEyebrow: "Aftertaste",
-  aftertasteTitle: "What stayed with you?",
-  aftertaste: {
-    smiled: "Made me smile",
-    moved: "Moved me",
-    surprised: "Surprised me",
-    pondering: "Want to think",
-  },
-  onward: "Onward",
-  skip: "Skip",
-  again: "Listen again",
-  like: "Like",
-  liked: "Liked",
-  next: "Choose the next one",
-  share: "Share",
-  // Safari's own Share, not the button above it: that one sends the poem.
-  homeScreen: "To listen without the browser: Safari\u2019s Share menu, then \u201cAdd to Home Screen\u201d.",
-}, {
-  ru: {
-    ended: "Что дальше?",
-    aftertasteEyebrow: "Послевкусие",
-    aftertasteTitle: "Что осталось с вами?",
-    aftertaste: {
-      smiled: "Улыбнуло",
-      moved: "Тронуло",
-      surprised: "Удивило",
-      pondering: "Хочу подумать",
-    },
-    onward: "Дальше",
-    skip: "Пропустить",
-    again: "Послушать снова",
-    like: "Нравится",
-    liked: "Нравится вам",
-    next: "Выбрать следующее",
-    share: "Поделиться",
-    homeScreen: "Чтобы слушать без браузера: меню «Поделиться» в Safari, затем «На экран „Домой“».",
-  },
-});
-
-/**
- * The ending itself. Mount it when the reading is over and unmount it when the
- * reader starts again; it keeps nothing between two endings.
- *
- * Without `actions` - the admin sandbox, where a piece has no boks yet - it
- * still asks and still offers another listen, and leaves out what would need a
- * boks to act on.
- */
-export function ReadingFinale({
-  actions,
-  onAgain,
-}: {
+/** One ending for HTML text and both reading formats. No completion button. */
+export function ReadingFinale({ actions, onAgain, title, byline, artwork, inline = false }: {
   actions?: FinaleActions;
   onAgain: () => void;
+  title?: string;
+  byline?: string;
+  artwork?: string | null;
+  inline?: boolean;
 }) {
-  const words = useMessages(messages);
-  const [step, setStep] = useState<"aftertaste" | "menu">("aftertaste");
-  // Once per mount: the finale is mounted when a reading ends and unmounted
-  // when it starts again, so a mount is an ending.
-  const reached = useRef(actions?.onReached);
-  useEffect(() => {
-    reached.current?.();
-  }, []);
+  const { t } = useReaderPreferences();
   const [picked, setPicked] = useState<AftertasteTag[]>([]);
-  // Decided once per ending, remembered as said only when it is on screen.
-  const [homeScreenHint] = useState(() => shouldOfferHomeScreen());
-  const hintVisible = homeScreenHint && step === "menu";
-  useEffect(() => {
-    if (hintVisible) markHomeScreenHintShown();
-  }, [hintVisible]);
-
-  if (step === "aftertaste") {
-    return (
-      <div className="finale finale--aftertaste">
-        <span className="finale__eyebrow">{words.aftertasteEyebrow}</span>
-        <h2 className="finale__title">{words.aftertasteTitle}</h2>
-
-        {/*
-          Several may be picked and none is a complete answer, so these are
-          not radio buttons and there is no "submit". Moving on is the only
-          required act, which is why the button says "onward" rather than
-          "done": nothing here is owed.
-        */}
-        <div className="finale__grid">
-          {aftertasteTags.map((tag) => {
-            const Icon = aftertasteIcons[tag];
-            const on = picked.includes(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                className={`finale__chip ${on ? "is-on" : ""}`}
-                aria-pressed={on}
-                onClick={() =>
-                  setPicked((current) =>
-                    current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
-                  )
-                }
-              >
-                <Icon className="size-4" fill={on && tag === "moved" ? "currentColor" : "none"} />
-                {words.aftertaste[tag]}
-              </button>
-            );
-          })}
-        </div>
-
-        <button
-          type="button"
-          className={picked.length > 0 ? "finale__primary" : "finale__secondary"}
-          onClick={() => {
-            // An empty answer is allowed but not worth a row: how many
-            // declined is already the difference between this and the
-            // finishes the feed counts anyway.
-            if (picked.length > 0) actions?.onAftertaste(picked);
-            setStep("menu");
-          }}
-        >
-          {picked.length > 0 ? words.onward : words.skip}
-          <ArrowRight className="size-4" />
-        </button>
+  const selected = actions?.aftertaste ?? picked;
+  const reached = useRef(actions?.onReached);
+  // Inline endings are in the scroll document before they are reached.
+  useEffect(() => { if (!inline) reached.current?.(); }, [inline]);
+  const labels: Record<AftertasteTag, string> = {
+    smiled: t("Made me smile", "Улыбнуло"), moved: t("Moved me", "Тронуло"),
+    surprised: t("Surprised me", "Удивило"), pondering: t("Want to think", "Хочется подумать"),
+  };
+  return <section className={`bok-finale${inline ? " bok-finale--inline" : " bok-finale--immersive"}`} aria-label={t("After reading", "После чтения")} onPointerDown={actions?.onInteract} onFocus={actions?.onInteract}>
+    {!inline && artwork && <img className="bok-finale__backdrop" src={artwork} alt="" />}
+    {!inline && <div className="bok-finale__heading">
+      {title && <h2>{title}</h2>}{byline && <p>{byline}</p>}<span className="bok-endmark" aria-hidden="true">b.</span>
+    </div>}
+    <div className="bok-finale__content">
+      <h3>{t("What stayed with you?", "Что осталось с вами?")}</h3>
+      <div className="aftertaste-grid">
+        {aftertasteTags.map(tag => <button key={tag} type="button" className="aftertaste-choice" disabled={actions?.aftertasteSubmitted} aria-pressed={selected.includes(tag)} onClick={() => {
+          const next = selected.includes(tag) ? selected.filter(value => value !== tag) : [...selected, tag];
+          setPicked(next); actions?.onAftertaste(next);
+        }}>
+          <img src={`/design/reaction-${tag}-v44.png`} alt="" width="48" height="48" loading="lazy" />
+          <span>{labels[tag]}</span>{selected.includes(tag) && <Check className="aftertaste-check" size={14} />}
+        </button>)}
       </div>
-    );
-  }
-
-  return (
-    <div className="finale">
-      <h2 className="finale__title">{words.ended}</h2>
-      <div className="finale__actions">
-        {/*
-          Sending it on is the first thing offered here, and the only one
-          wearing the accent.
-
-          This is the one moment the reader has just been moved by something
-          and has not yet moved on - the piece is over, the picture is still
-          up, and there is nothing else asking for attention. Anywhere else in
-          the app a share button competes with reading; here it competes with
-          nothing.
-        */}
-        {actions && (
-          <button type="button" className="finale__primary" onClick={actions.onShare}>
-            <Share2 className="size-4" />
-            {words.share}
-          </button>
-        )}
-        <div className="finale__row">
-          <button type="button" className="finale__secondary" onClick={onAgain}>
-            <RotateCcw className="size-4" />
-            {words.again}
-          </button>
-          {/*
-            A like, the same `likeStory` the feed's heart calls, labelled the
-            way the feed labels it. One heart, filled when it is on.
-          */}
-          {actions && (
-            <button type="button" className="finale__secondary" onClick={actions.onLike}>
-              <Heart className="size-4" fill={actions.liked ? "currentColor" : "none"} />
-              {actions.liked ? words.liked : words.like}
-            </button>
-          )}
-        </div>
-        {actions && (
-          <button type="button" className="finale__secondary" onClick={actions.onNext}>
-            <ArrowRight className="size-4" />
-            {words.next}
-          </button>
-        )}
+      {actions?.aftertasteSubmitted && <p className="aftertaste-saved">{t("Selected for this reading", "Выбрано для этого чтения")}</p>}
+      <div className="bok-finale__actions">
+        {actions && <>
+          <button type="button" className="reader-counted-action" aria-label={`${t(actions.liked ? "Unlike bok" : "Like bok", actions.liked ? "Убрать отметку нравится" : "Нравится")}, ${actions.likeCount}`} aria-pressed={actions.liked} onClick={actions.onLike}><Heart size={21} fill={actions.liked ? "currentColor" : "none"} /><span className="reader-action-count" aria-hidden="true">{formatCompactCount(actions.likeCount)}</span></button>
+          {actions.onComments && <button type="button" className="reader-counted-action" aria-label={`${t("Comments", "Комментарии")}, ${actions.commentCount}`} onClick={actions.onComments}><MessageCircle size={21} /><span className="reader-action-count" aria-hidden="true">{formatCompactCount(actions.commentCount)}</span></button>}
+          <button type="button" aria-label={t("Share", "Поделиться")} onClick={actions.onShare}><Share2 size={21} /></button>
+        </>}
+        <button type="button" aria-label={t(inline ? "Read again" : "Play again", inline ? "Прочитать снова" : "Послушать снова")} onClick={onAgain}><RotateCcw size={21} /></button>
       </div>
-      {hintVisible && <p className="finale__hint">{words.homeScreen}</p>}
+      {actions && <button type="button" className="bok-next-preview" onClick={actions.onNext}>
+        {actions.nextBok?.artwork ? <img src={actions.nextBok.artwork} alt="" width="64" height="64" loading="lazy" /> : actions.nextBok && <span className="bok-next-preview__type" style={bokCoverStyle(actions.nextBok.id) as React.CSSProperties} aria-hidden="true">{actions.nextBok.title.charAt(0)}</span>}
+        <span className="bok-next-preview__copy"><small>{actions.nextBok ? t("UP NEXT", "ДАЛЬШЕ") : actions.nextLabel ?? t("Back to the feed", "Вернуться в ленту")}</small>
+          {actions.nextBok && <><strong>{actions.nextBok.title}</strong><span>{actions.nextBok.authorName}</span></>}
+        </span><span className="bok-next-preview__arrow"><ArrowRight size={22} /></span>
+      </button>}
     </div>
-  );
+  </section>;
 }

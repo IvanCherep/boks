@@ -5,7 +5,7 @@
  * The suite creates users, boks and events, so it must never point at a real
  * project. This wrapper reads the local credentials from `supabase status`,
  * refuses anything that is not a loopback URL, and resets the database first so
- * the first-admin claim is available.
+ * the product flow starts from a known dataset.
  *
  *   npx supabase start
  *   npm run test:supabase
@@ -34,7 +34,7 @@ if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(url ?? "")) {
 }
 
 if (!args.has("--no-reset")) {
-  console.log("Resetting the local database so the first-admin claim is available...");
+  console.log("Resetting the local database so the product flow starts from a known dataset...");
   const reset = supabase(["db", "reset"], { stdio: "inherit" });
   if (reset.status !== 0) throw new Error("`supabase db reset` failed.");
 }

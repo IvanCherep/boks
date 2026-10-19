@@ -96,8 +96,8 @@ Recommended export labels:
 Reader:
 
 - `/` opens directly into the reading feed.
-- There is no visible story picker, shelf, category browser, or manual algorithm picker.
-- A left-edge tap or movement to the left returns to the previous bok; the right edge/direction advances.
+- The Feed has no story picker, categories or algorithm selector; Series is the deliberate separate shelf exception.
+- A leftward swipe advances; a rightward swipe returns. Tapping/clicking the text only toggles controls. Desktop also has explicit previous/next controls.
 - Downward reading scrolls inside a long bok. A second gesture started at the bottom advances; the corresponding gesture started at the top returns.
 - Navigation stops at the first and last loaded bok instead of wrapping around.
 - Left/up and right/down keyboard arrows return and advance on desktop; Space advances only when focus is outside a control or text field.
@@ -108,6 +108,12 @@ Reader:
 - Signed-in readers can like and unlike each comment, reply to a root comment, reveal or hide replies, and cancel a reply before sending. Replies stay one level deep and use the account's `@handle`.
 - With the comment sheet or account form open, Arrow keys, Space, edge taps, wheel gestures, and swipes do not navigate the background feed.
 - There is no finished button.
+- For v44, leave a phone cover open, scroll quickly to the ending, then depart: cover/finale dwell must not create a completion. Read the actual text and confirm progress excludes both decorations. Check short poems that do not scroll.
+- Pause audio, open Sound/comments/You, hide the tab and return: foreground seconds stop; audio does not silently resume after hiding. Test blocked playback and buffering on a physical device.
+- Toggle multiple aftertaste faces and deselect one before departure. Inspect one attributed event containing the final set, with the original feed id/rank/entry/format; the UI must not claim a server acknowledgement merely because it queued an event.
+- Check real next preview, no wrapping, and Series → Read text → Back to Series. Opening settings/comments must cancel an already-armed trackpad release.
+- At 320–430 px and desktop, test light/dark, EN/RU, large typography, long titles/handles, keyboard focus and no hidden overflow in forms. Physical Safari/Android safe areas, keyboard and blur performance remain separate from desktop emulation.
+- Generate a real poster, inspect its pixels and dimensions, exercise download when native share is unavailable or hangs, and confirm opening Share alone emits no share event.
 - Text remains readable on small phones and desktop.
 - Source Serif 4 renders both Latin and Cyrillic story text without a network font request.
 - `Settings -> About -> Open Source Licenses / Лицензии` links to the complete Source Serif 4 SIL OFL 1.1 text.
@@ -339,3 +345,13 @@ A small batch is useful when it has:
 - A saved metrics export before any major content or algorithm change.
 
 Do not over-interpret likes alone. A good story or algorithm should improve completion or reaction without creating a large skip-rate increase.
+
+### Local OTP flow harness
+
+`npm run test:supabase -- --no-reset` uses the actual local email OTP link from
+Mailpit at port 54324. It creates isolated test identities, then bootstraps its
+admin through the fixed local Docker operator connection, never a reader RPC.
+The wrapper and suite both refuse non-loopback Supabase URLs. The default
+command still resets the local database; use `--no-reset` when preserving local
+browser QA data. Restore the tracked SMTP configuration after local setup as
+described in `docs/local-environment-runbook.md`.

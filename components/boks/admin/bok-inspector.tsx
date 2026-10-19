@@ -48,6 +48,7 @@ export function BokInspector({
   const [bok, setBok] = useState<AdminBokDetail | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [reading, setReading] = useState(false);
   const [action, setAction] = useState<BokLifecycleTarget | null>(null);
   const [confirmingComment, setConfirmingComment] = useState<number | null>(null);
   const [deletingComment, setDeletingComment] = useState<number | null>(null);
@@ -103,79 +104,19 @@ export function BokInspector({
 
   return (
     <div className="inspector-body">
-      <header className="grid gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <BokStatusBadge status={bok.status} />
-          {bok.language && <span className="inspector-chip">{bok.language}</span>}
-          <span className="inspector-chip">{bok.genre}</span>
-          <span className="inspector-chip">{bok.mood}</span>
-          {bok.imported && <span className="inspector-chip">imported</span>}
-          {bok.isSeed && <span className="inspector-chip">seed</span>}
-        </div>
-        <h2 className="text-2xl font-semibold tracking-normal">{bok.title}</h2>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          {bok.authorName}
-          {handle && (
-            <>
-              {" · "}
-              {bok.authorUserId ? (
-                <button type="button" className="inspector-link" onClick={() => openPerson(bok.authorUserId!)}>
-                  @{handle}
-                </button>
-              ) : (
-                <>@{handle}</>
-              )}
-            </>
-          )}
-          {bok.authorEmail ? ` · ${bok.authorEmail}` : ""}
-        </p>
-        <div className="flex flex-wrap gap-2 pt-1">
-          {bok.status === "published" && (
-            <Button asChild size="sm" variant="outline">
-              <a href={`/b/${bok.id}`} target="_blank" rel="noreferrer">
-                <ExternalLink /> Open in reader
-              </a>
-            </Button>
-          )}
-          {bok.status !== "archived" ? (
-            <Button size="sm" variant="outline" onClick={() => setAction({ kind: "archive", bok: target })}>
-              <Archive /> Hide
-            </Button>
-          ) : (
-            <>
-              <Button size="sm" variant="outline" onClick={() => setAction({ kind: "restore", bok: target })}>
-                <RotateCcw /> Restore
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setAction({ kind: "delete", bok: target })}>
-                <Trash2 /> Delete permanently
-              </Button>
-            </>
-          )}
-          <Button size="sm" variant="ghost" onClick={() => refresh()}>
-            <RefreshCw /> Refresh
-          </Button>
-        </div>
-        {(notice || error) && (
-          <p className="text-sm text-[var(--muted-foreground)]" aria-live="polite">
-            {error || notice}
-          </p>
-        )}
+      <header className="studio-inspector-heading">
+        <p className="studio-eyebrow">Bok / inspector</p><BokStatusBadge status={bok.status} />
+        <h2>{bok.title}</h2>
+        {bok.authorUserId ? <button className="studio-author-link" type="button" onClick={() => openPerson(bok.authorUserId!)}>{bok.authorName}{handle ? ` · @${handle}` : ""}<span>↗</span></button> : <p className="studio-meta">{bok.authorName}</p>}
       </header>
-
+      {(notice || error) && <p className="studio-meta" aria-live="polite">{error || notice}</p>}
       <section className="inspector-metrics" aria-label="Reading metrics">
-        <Metric label="Reading minutes" value={m.minutes} />
-        <Metric label="Readers" value={m.readers} />
-        <Metric label="Impressions" value={m.impressions} />
-        <Metric label="Finished" value={m.completes} detail={`of ${m.starts} starts${m.finishRate !== null ? ` · ${m.finishRate}%` : ""}`} />
-        <Metric label="Skips" value={m.skips} />
-        <Metric label="Likes" value={m.likes} />
-        <Metric label="Comments" value={m.comments} />
-        <Metric label="Shares" value={m.shares} />
-        <Metric label="Reports" value={m.reports} detail={m.openReports ? `${m.openReports} open` : undefined} />
+        <Metric label="reading minutes" value={m.minutes} /><Metric label="readers" value={m.readers} />
+        <Metric label="read / started" value={`${m.completes} / ${m.starts}`} detail={m.starts < 10 || m.finishRate === null ? undefined : `${m.finishRate}%`} />
+        <Metric label="comments" value={m.comments} />
       </section>
-      <p className="text-xs text-[var(--muted-foreground)]">Last read {formatAdminDate(m.lastReadAt)}</p>
-
-      <dl className="inspector-facts" aria-label="History">
+      <h3 className="inspector-heading">Record</h3>
+      <dl className="inspector-facts" aria-label="Current record">
         <Fact label="Length">{bok.estimatedMinutes} min · {bok.wordCount} words</Fact>
         <Fact label="Created">{formatAdminDate(bok.createdAt)}</Fact>
         {bok.submittedAt && <Fact label="Submitted">{formatAdminDate(bok.submittedAt)}</Fact>}
@@ -201,11 +142,7 @@ export function BokInspector({
 
       <section className="grid gap-2" aria-label="Text">
         <h3 className="inspector-heading">Text</h3>
-        <div className="inspector-text">
-          {bok.body.split("\n").map((paragraph, index) => (
-            <p key={index}>{paragraph || " "}</p>
-          ))}
-        </div>
+        {!reading ? <><p className="studio-inspector-quote">{bok.body.split("\n").find((paragraph) => paragraph.trim())}</p><button className="studio-author-link" type="button" onClick={() => setReading(true)}>Read the complete bok <span>↗</span></button></> : <><button type="button" className="studio-text-link" onClick={() => setReading(false)}>← Back to record</button><div className="inspector-text" lang={bok.language || undefined}>{bok.body.split("\n").map((paragraph, index) => <p key={index}>{paragraph || " "}</p>)}<div className="studio-endmark">b.</div></div></>}
       </section>
 
       <section className="grid gap-2" aria-label="Comments">
@@ -277,6 +214,36 @@ export function BokInspector({
         )}
       </section>
 
+        <div className="flex flex-wrap gap-2 pt-1">
+          {bok.status === "published" && (
+            <Button asChild size="sm" variant="outline">
+              <a href={`/b/${bok.id}`} target="_blank" rel="noreferrer">
+                <ExternalLink /> Open in reader
+              </a>
+            </Button>
+          )}
+          {bok.status !== "archived" ? (
+            <Button size="sm" variant="outline" onClick={() => setAction({ kind: "archive", bok: target })}>
+              <Archive /> Hide
+            </Button>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setAction({ kind: "restore", bok: target })}>
+                <RotateCcw /> Restore
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setAction({ kind: "delete", bok: target })}>
+                <Trash2 /> Delete permanently
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="ghost" onClick={() => refresh()}>
+            <RefreshCw /> Refresh
+          </Button>
+        </div>
+      <details className="studio-details"><summary>Measurement details <span>＋</span></summary><div className="studio-details-body">
+        <section className="inspector-metrics"><Metric label="impressions" value={m.impressions} /><Metric label="skips" value={m.skips} /><Metric label="likes" value={m.likes} /><Metric label="shares" value={m.shares} /><Metric label="reports" value={m.reports} detail={`${m.openReports} open`} /></section>
+        <p className="studio-meta">Last read {formatAdminDate(m.lastReadAt)} · {bok.language} · {bok.genre} · {bok.mood}{bok.imported ? " · imported" : ""}{bok.isSeed ? " · seed" : ""}</p>
+      </div></details>
       <BokLifecycleDialog target={action} onClose={() => setAction(null)} onDone={afterAction} />
     </div>
   );

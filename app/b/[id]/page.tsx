@@ -10,6 +10,8 @@ import {
 } from "@/lib/boks/share-preview";
 import { sharedBokRedirectScript } from "@/lib/boks/shared-bok-redirect";
 import { OpenSharedBok } from "./open-shared-bok";
+import { sharePosterVersion } from "@/lib/boks/share-link";
+import { sharePosterSize } from "@/lib/boks/share-poster";
 
 /**
  * A shareable link to one boks.
@@ -51,6 +53,7 @@ export async function generateMetadata({
 
   const title = shareTitle(bok);
   const description = shareDescription(bok.text);
+  const image = `${boksOrigin}/b/${id}/image?v=${sharePosterVersion}`;
 
   return {
     title,
@@ -62,13 +65,10 @@ export async function generateMetadata({
       url,
       title,
       description,
-      // The brand cover rather than a rendered card: a per-boks image would
-      // mean generating a PNG in the Worker on every crawl, and the words that
-      // sell a poem are already in the title and the description.
-      images: [{ url: "/og-cover.png", width: 1200, height: 630, alt: "boks" }],
+      images: [{ url: image, ...sharePosterSize, alt: title, type: "image/png" }],
       authors: bok.authorName ? [bok.authorName] : undefined,
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/og-cover.png"] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
@@ -103,8 +103,8 @@ export default async function SharedBokPage({
       {/* Before anything below is painted: a person goes straight to the
           reader, and a crawler, which runs no script, keeps the page. */}
       <script dangerouslySetInnerHTML={{ __html: sharedBokRedirectScript(id) }} />
-      <main className="legal-page shared-bok-page">
-        <article className="legal-document">
+      <main className="reader-v44 reader-system-page">
+        <article className="reader-system-page__body">
           <a href="/" className="brand-word brand-button">
             boks
           </a>

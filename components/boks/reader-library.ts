@@ -8,6 +8,14 @@ export function readerLibraryActivityAt(item: ReaderLibraryItem, view: ReaderLib
   return item.readAt;
 }
 
+/** Existing database timestamps, displayed in the reader's local time zone. */
+export function readerLibraryActivityTime(at: string | null | undefined, locale: string, timeZone?: string): string | null {
+  if (!at || !/T\d{2}:\d{2}/u.test(at)) return null;
+  const date = new Date(at);
+  if (!Number.isFinite(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone }).format(date);
+}
+
 /** Selects one account-library view without changing the RPC's source array. */
 export function selectReaderLibraryItems(
   items: readonly ReaderLibraryItem[],

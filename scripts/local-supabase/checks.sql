@@ -3271,3 +3271,161 @@ end $$;
 reset role;
 
 drop table public.boks_trigger_probe;
+
+-- Rights pages are bounded before aggregation, independently offset, and do
+-- not expose admin evidence to readers. All fixtures live in the throwaway DB.
+do $$
+declare
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_ids uuid[];
+  v_first jsonb;
+  v_second jsonb;
+  v_page jsonb;
+begin
+  perform public.boks_test_login(v_admin);
+  with inserted as (
+    insert into public.reels (title, text, status, author_user_id, created_at)
+    select 'Rights pagination probe ' || n, 'A complete little test bok.', 'published', v_admin, now() + interval '1 day'
+    from generate_series(1, 205) n
+    returning id
+  ) select array_agg(id) into v_ids from inserted;
+
+  insert into public.bok_rights (reel_id, confirmed)
+  select unnest(v_ids), false
+  on conflict (reel_id) do update set confirmed = false;
+  insert into public.bok_reports (reel_id, reporter_user_id, kind, reason, created_at)
+  select unnest(v_ids), v_reader, 'copyright', 'Rights pagination regression evidence.', now() + interval '1 day';
+
+  v_first := public.get_boks_rights_review_page('open', 2, 0, 0);
+  v_second := public.get_boks_rights_review_page('open', 2, 2, 2);
+  perform public.boks_assert(jsonb_array_length(v_first->'reports') = 2 and jsonb_array_length(v_first->'unattestedBoks') = 2,
+    'Rights limits both arrays before JSON aggregation');
+  perform public.boks_assert(not exists (
+    select 1 from jsonb_array_elements(v_first->'reports') a, jsonb_array_elements(v_second->'reports') b
+    where a->>'id' = b->>'id'
+  ), 'Rights report pages are disjoint with tied timestamps');
+  perform public.boks_assert(not exists (
+    select 1 from jsonb_array_elements(v_first->'unattestedBoks') a, jsonb_array_elements(v_second->'unattestedBoks') b
+    where a->>'reelId' = b->>'reelId'
+  ), 'Rights unattested pages are disjoint with tied timestamps');
+  v_page := public.get_boks_rights_review_page('open', 2, 2, 0);
+  perform public.boks_assert(v_page->'unattestedBoks' = v_first->'unattestedBoks' and v_page->'reports' = v_second->'reports',
+    'Rights reports and unattested boks have independent offsets');
+  perform public.boks_assert((v_page->>'reportsTotal')::integer >= 205 and (v_page->>'unattested')::integer >= 205,
+    'Rights counts describe the full filtered result, not the page');
+  v_page := public.get_boks_rights_review_page('all', 10000, -10, -20);
+  perform public.boks_assert(jsonb_array_length(v_page->'reports') = 200 and jsonb_array_length(v_page->'unattestedBoks') = 200
+    and (v_page->>'reportsOffset')::integer = 0 and (v_page->>'unattestedOffset')::integer = 0,
+    'Rights clamps oversized limits and negative offsets');
+  v_page := public.get_boks_rights_review('all', 1);
+  perform public.boks_assert(jsonb_array_length(v_page->'reports') = 1 and jsonb_array_length(v_page->'unattestedBoks') = 1,
+    'The legacy Rights RPC is bounded too');
+  v_page := public.get_boks_rights_review_page('all', 2, 100000, 100000);
+  perform public.boks_assert(v_page->'reports' = '[]'::jsonb and v_page->'unattestedBoks' = '[]'::jsonb,
+    'Rights out-of-range pages return empty arrays');
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.get_boks_rights_review_page('all', 2, 0, 0);
+    raise exception 'CHECK FAILED: a reader accessed Rights';
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'A reader cannot call the paginated Rights RPC');
+  end;
+  perform public.boks_assert(
+    has_function_privilege('authenticated', 'public.get_boks_rights_review_page(text,integer,integer,integer)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.get_boks_rights_review_page(text,integer,integer,integer)', 'EXECUTE'),
+    'Rights grants reach authenticated sessions only, with the admin role checked inside');
+  perform public.boks_test_login(v_admin);
+  delete from public.reels where id = any(v_ids);
+end $$;
+
+-- A complaint is a guest right, not a social write. Exercise the same
+-- authenticated role and is_anonymous JWT claim as a Supabase guest session,
+-- with no profile or terms acceptance; owner-only fixtures roll back below.
+begin;
+select public.boks_test_logout();
+insert into auth.users (id, is_anonymous)
+values ('ac170000-0000-4000-8000-000000000001', true);
+insert into public.reels (id, title, text, author_name, status) values
+  ('ac170000-0000-4000-8000-000000000002', 'Guest report probe', 'A complete little test bok.', 'Schema probe', 'published'),
+  ('ac170000-0000-4000-8000-000000000003', 'Suspended report probe', 'Another complete little test bok.', 'Schema probe', 'published');
+select public.boks_test_login('ac170000-0000-4000-8000-000000000001', true);
+set local role authenticated;
+do $$
+declare
+  v_guest uuid := 'ac170000-0000-4000-8000-000000000001';
+  v_bok uuid := 'ac170000-0000-4000-8000-000000000002';
+  v_first jsonb;
+  v_second jsonb;
+begin
+  perform public.boks_assert(
+    current_user = 'authenticated' and (auth.jwt()->>'is_anonymous')::boolean
+      and not exists (select 1 from public.user_profiles where user_id = v_guest),
+    'guest report checks use an anonymous session without a profile or terms acceptance');
+  v_first := public.report_bok(v_bok, 'This translation was published without permission.');
+  perform public.boks_assert(v_first->>'status' = 'received' and v_first->>'id' is not null,
+    'an anonymous session can submit a copyright report without accepting terms');
+  v_second := public.report_bok(v_bok, 'Another reason does not duplicate the open report.', 'other');
+  perform public.boks_assert(v_second->>'status' = 'already' and v_second->>'id' = v_first->>'id',
+    'a repeated guest report returns the same open report instead of inserting another');
+  perform public.boks_assert((select count(*) from public.bok_reports) = 0,
+    'RLS hides every report from a guest, including their own accepted report');
+
+  begin
+    insert into public.bok_reports (reel_id, reporter_user_id, kind, reason)
+    values (v_bok, v_guest, 'other', 'A direct insert must never bypass the report RPC.');
+    raise exception 'CHECK FAILED: a guest inserted a raw report';
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a guest cannot insert reports directly');
+  end;
+  begin
+    insert into public.likes (user_id, reel_id) values (v_guest, v_bok);
+    raise exception 'CHECK FAILED: a guest liked a bok after the report exception';
+  exception when insufficient_privilege then
+    perform public.boks_assert(sqlerrm = 'Accept the boks terms before using this feature.',
+      'the write trigger still rejects anonymous likes after exempting reports');
+  end;
+  begin
+    perform public.create_bok_comment(v_bok, 'A guest report must not unlock comments.');
+    raise exception 'CHECK FAILED: a guest commented after the report exception';
+  exception when insufficient_privilege then
+    perform public.boks_assert(sqlerrm = 'Create a free account to join the conversation.',
+      'anonymous comments still require a permanent account');
+  end;
+end $$;
+reset role;
+
+-- Count the stored rows as owner: an empty reader SELECT alone cannot prove
+-- that the RPC actually wrote once. Then suspend the same guest and try a
+-- different bok so the duplicate shortcut cannot mask the suspension check.
+select public.boks_test_logout();
+select public.boks_assert(
+  (select count(*) from public.bok_reports where reporter_user_id = 'ac170000-0000-4000-8000-000000000001') = 1,
+  'the guest report and retry stored exactly one private row');
+insert into public.user_profiles (user_id, handle, banned_at, ban_reason)
+values ('ac170000-0000-4000-8000-000000000001', 'reportguestprobe', now(), 'Suspension regression check.');
+select public.boks_test_login('ac170000-0000-4000-8000-000000000001', true);
+set local role authenticated;
+do $$
+begin
+  begin
+    perform public.report_bok('ac170000-0000-4000-8000-000000000003', 'A suspended guest must not submit another report.');
+    raise exception 'CHECK FAILED: a suspended guest submitted a report';
+  exception when insufficient_privilege then
+    perform public.boks_assert(sqlerrm = 'This boks account is suspended.',
+      'suspension still blocks a guest report independently of terms acceptance');
+  end;
+end $$;
+reset role;
+set local role anon;
+do $$
+begin
+  begin
+    perform public.report_bok('ac170000-0000-4000-8000-000000000003', 'A bare publishable key is not a guest session.');
+    raise exception 'CHECK FAILED: bare anon called the report RPC';
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'bare anon still cannot execute the report RPC');
+  end;
+end $$;
+reset role;
+rollback;

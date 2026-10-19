@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Heart, Send, UserRound, X } from "lucide-react";
+import { ArrowUp, Heart, MessageCircle, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { buildCommentThreads } from "@/components/boks/comment-threads";
 import type { Comment } from "@/components/boks/client-types";
-import { shortTimeAgo } from "@/components/boks/client-format";
+import { formatCompactCount, shortTimeAgo } from "@/components/boks/client-format";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import {
   deleteSupabaseComment,
@@ -15,89 +15,7 @@ import {
 } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
 import { bareHandle } from "@/components/boks/reader/handles";
-import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
-import { localizeBoksMessage } from "@/lib/boks/errors";
-import { defineMessages, plural } from "@/lib/i18n/messages";
-
-/** Comments themselves are the readers' words and are never translated. */
-const messages = defineMessages(
-  {
-    sendFailed: "Could not send comment.",
-    likesNeedSupabase: "Comment likes need the Supabase reader.",
-    likeFailed: "Could not update that like.",
-    deletedWithReplies: "Comment and its replies deleted.",
-    deleted: "Comment deleted.",
-    deleteFailed: "Could not delete the comment.",
-    author: "author",
-    confirmDeleteGroup: "Confirm deleting this comment",
-    confirmDelete: (replies: number) =>
-      replies ? `Delete this comment and its ${replies === 1 ? "reply" : `${replies} replies`}?` : "Delete this comment?",
-    deleting: "Deleting…",
-    delete: "Delete",
-    cancel: "Cancel",
-    reply: "Reply",
-    likeLabel: (liked: boolean, handle: string) => `${liked ? "Unlike" : "Like"} comment by @${handle}`,
-    comments: "Comments",
-    loading: "Loading comments…",
-    viewReplies: (count: number) => `View ${count} ${count === 1 ? "reply" : "replies"}`,
-    hideReplies: "Hide replies",
-    loadFailed: "Could not load the comments",
-    tryAgain: "Try again",
-    empty: "No comments yet",
-    emptyHint: "Start the conversation about this bok.",
-    replyingTo: (handle: string) => `Replying to @${handle}`,
-    cancelReply: "Cancel reply",
-    replyTo: (handle: string) => `Reply to @${handle}`,
-    addComment: "Add a comment",
-    sendReply: "Send reply",
-    sendComment: "Send comment",
-    join: "Join the conversation",
-    joinHint: "Free account required to comment or like",
-  },
-  {
-    ru: {
-      sendFailed: "Не удалось отправить комментарий.",
-      likesNeedSupabase: "Лайки комментариев работают только в Supabase-ридере.",
-      likeFailed: "Не удалось обновить лайк.",
-      deletedWithReplies: "Комментарий и ответы на него удалены.",
-      deleted: "Комментарий удалён.",
-      deleteFailed: "Не удалось удалить комментарий.",
-      author: "автор",
-      confirmDeleteGroup: "Подтвердите удаление комментария",
-      confirmDelete: (replies: number) =>
-        replies
-          ? `Удалить комментарий и ${
-              replies === 1
-                ? "ответ на него"
-                : `${replies} ${plural("ru", replies, { one: "ответ", few: "ответа", many: "ответов", other: "ответа" })}`
-            }?`
-          : "Удалить комментарий?",
-      deleting: "Удаляем…",
-      delete: "Удалить",
-      cancel: "Отмена",
-      reply: "Ответить",
-      likeLabel: (liked: boolean, handle: string) =>
-        `${liked ? "Убрать лайк с комментария" : "Лайкнуть комментарий"} @${handle}`,
-      comments: "Комментарии",
-      loading: "Загружаем комментарии…",
-      viewReplies: (count: number) =>
-        `Показать ${count} ${plural("ru", count, { one: "ответ", few: "ответа", many: "ответов", other: "ответа" })}`,
-      hideReplies: "Скрыть ответы",
-      loadFailed: "Не удалось загрузить комментарии",
-      tryAgain: "Попробовать ещё раз",
-      empty: "Комментариев пока нет",
-      emptyHint: "Начните обсуждение этого текста.",
-      replyingTo: (handle: string) => `Ответ @${handle}`,
-      cancelReply: "Отменить ответ",
-      replyTo: (handle: string) => `Ответить @${handle}`,
-      addComment: "Добавить комментарий",
-      sendReply: "Отправить ответ",
-      sendComment: "Отправить комментарий",
-      join: "Присоединяйтесь к обсуждению",
-      joinHint: "Чтобы комментировать и лайкать, нужен бесплатный аккаунт",
-    },
-  }
-);
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
 
 type ReplyTarget = {
   rootId: number;
@@ -133,6 +51,7 @@ export function CommentsSheet({
   /** How many comments went, the comment and its replies, for the rail's count. */
   onDeleted?: (removed: number) => void;
 }) {
+  const { t } = useReaderPreferences();
   const [comments, setComments] = useState(() =>
     initialComments.filter((comment) => comment.storyId === storyId)
   );
@@ -145,15 +64,12 @@ export function CommentsSheet({
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [sendError, setSendError] = useState("");
   const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
   const [confirmingDelete, setConfirmingDelete] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const normalizedViewerHandle = bareHandle(viewerHandle).toLowerCase();
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
-  const t = useMessages(messages);
-  const language = useUiLanguage();
-  const errorText = (error: unknown, fallback: string) =>
-    error instanceof Error ? localizeBoksMessage(error.message, language) : fallback;
 
   useEffect(() => {
     let active = true;
@@ -204,6 +120,7 @@ export function CommentsSheet({
     }
 
     setSubmitting(true);
+    setSendError("");
     try {
       const created = await onSubmit(body, replyTarget?.rootId ?? null);
       setComments((current) => [...current, created]);
@@ -214,7 +131,8 @@ export function CommentsSheet({
       setReplyTarget(null);
       haptic("confirm");
     } catch (error) {
-      onStatus(errorText(error, t.sendFailed));
+      const message = error instanceof Error ? error.message : t("Could not send comment.", "Не удалось отправить комментарий.");
+      setSendError(message);
     } finally {
       setSubmitting(false);
     }
@@ -227,7 +145,7 @@ export function CommentsSheet({
     }
     if (likingIds.has(comment.id)) return;
     if (!isSupabaseReader) {
-      onStatus(t.likesNeedSupabase);
+      onStatus("Comment likes need the Supabase reader.");
       return;
     }
 
@@ -259,7 +177,7 @@ export function CommentsSheet({
       setComments((current) =>
         current.map((item) => (item.id === comment.id ? comment : item))
       );
-      onStatus(errorText(error, t.likeFailed));
+      onStatus(error instanceof Error ? error.message : "Could not update that like.");
     } finally {
       setLikingIds((current) => {
         const next = new Set(current);
@@ -276,9 +194,9 @@ export function CommentsSheet({
       setComments((current) => current.filter((entry) => entry.id !== comment.id && entry.parentCommentId !== comment.id));
       setConfirmingDelete(null);
       onDeleted?.(1 + (result.repliesRemoved ?? 0));
-      onStatus(result.repliesRemoved ? t.deletedWithReplies : t.deleted);
+      onStatus(result.repliesRemoved ? "Comment and its replies deleted." : "Comment deleted.");
     } catch (error) {
-      onStatus(errorText(error, t.deleteFailed));
+      onStatus(error instanceof Error ? error.message : "Could not delete the comment.");
     } finally {
       setDeletingId(null);
     }
@@ -299,14 +217,16 @@ export function CommentsSheet({
         <div className="comment-row__body">
           <div className="comment-meta">
             <span className="comment-handle">@{handle}</span>
-            {isAuthor && <span className="comment-author-tag">{t.author}</span>}
-            <time dateTime={comment.createdAt}>{shortTimeAgo(comment.createdAt, undefined, language)}</time>
+            {isAuthor && <span className="comment-author-tag">{t("author", "автор")}</span>}
+            <time dateTime={comment.createdAt}>{shortTimeAgo(comment.createdAt)}</time>
           </div>
           <p className="comment-copy">{comment.body}</p>
           {confirmingDelete === comment.id ? (
-            <div className="comment-confirm" role="group" aria-label={t.confirmDeleteGroup}>
+            <div className="comment-confirm" role="group" aria-label="Confirm deleting this comment">
               <span>
-                {t.confirmDelete(replyCount)}
+                {replyCount
+                  ? t(`Delete this comment and its ${replyCount === 1 ? "reply" : `${replyCount} replies`}?`, `Удалить комментарий и ответы (${replyCount})?`)
+                  : t("Delete this comment?", "Удалить комментарий?")}
               </span>
               <button
                 type="button"
@@ -314,20 +234,20 @@ export function CommentsSheet({
                 onClick={() => void deleteComment(comment)}
                 disabled={deletingId === comment.id}
               >
-                {deletingId === comment.id ? t.deleting : t.delete}
+                {deletingId === comment.id ? t("Deleting…", "Удаляем…") : t("Delete", "Удалить")}
               </button>
               <button type="button" className="comment-reply" onClick={() => setConfirmingDelete(null)}>
-                {t.cancel}
+                {t("Cancel", "Отмена")}
               </button>
             </div>
           ) : (
             <div className="comment-actions">
               <button type="button" className="comment-reply" onClick={() => beginReply(comment)}>
-                {t.reply}
+                {t("Reply", "Ответить")}
               </button>
               {canDelete && (
                 <button type="button" className="comment-reply" onClick={() => setConfirmingDelete(comment.id)}>
-                  {t.delete}
+                  {t("Delete", "Удалить")}
                 </button>
               )}
             </div>
@@ -338,11 +258,11 @@ export function CommentsSheet({
           className={`comment-like${comment.likedByMe ? " comment-like--active" : ""}`}
           onClick={() => void toggleLike(comment)}
           disabled={likingIds.has(comment.id)}
-          aria-label={t.likeLabel(comment.likedByMe, handle)}
+          aria-label={`${comment.likedByMe ? t(`Unlike comment by @${handle}`, `Убрать лайк комментария @${handle}`) : t(`Like comment by @${handle}`, `Лайк комментарию @${handle}`)}, ${comment.likesCount}`}
           aria-pressed={comment.likedByMe}
         >
           <Heart className="size-5" fill={comment.likedByMe ? "currentColor" : "none"} />
-          {comment.likesCount > 0 && <span>{comment.likesCount}</span>}
+          <span aria-hidden="true">{formatCompactCount(comment.likesCount)}</span>
         </button>
       </article>
     );
@@ -350,7 +270,7 @@ export function CommentsSheet({
 
   return (
     <ReaderSheet
-      label={t.comments}
+      label={t("Comments", "Комментарии")}
       onClose={onClose}
       expandable
       expanded={expanded}
@@ -358,16 +278,14 @@ export function CommentsSheet({
       className="comments-sheet"
     >
       <ReaderSheetHeader
-        label={t.comments}
+        label={t("Comments", "Комментарии")}
         onClose={onClose}
-        title={`${t.comments}${comments.length ? ` · ${comments.length}` : ""}`}
-        expanded={expanded}
-        onExpandedChange={setExpanded}
+        title={<>{t("Comments", "Комментарии")} <small>{comments.length}</small></>}
       />
 
       <div className="comment-list" aria-busy={loading}>
         {loading ? (
-          <div className="comment-empty" role="status">{t.loading}</div>
+          <div className="comment-empty" role="status">{t("Loading comments…", "Загружаем комментарии…")}</div>
         ) : threads.length ? (
           <ol className="comment-threads">
             {threads.map(({ root, replies }) => {
@@ -382,7 +300,7 @@ export function CommentsSheet({
                       onClick={() => setExpandedThreads((current) => new Set(current).add(root.id))}
                     >
                       <span aria-hidden="true" />
-                      {t.viewReplies(replies.length)}
+                      {t(`View ${replies.length} ${replies.length === 1 ? "reply" : "replies"}`, `Показать ответы · ${replies.length}`)}
                     </button>
                   )}
                   {showReplies && replies.map((reply) => <div key={reply.id}>{renderComment(reply, true)}</div>)}
@@ -396,7 +314,7 @@ export function CommentsSheet({
                         return next;
                       })}
                     >
-                      <span aria-hidden="true" /> {t.hideReplies}
+                      <span aria-hidden="true" /> {t("Hide replies", "Скрыть ответы")}
                     </button>
                   )}
                 </li>
@@ -405,7 +323,7 @@ export function CommentsSheet({
           </ol>
         ) : loadFailed ? (
           <div className="comment-empty" role="status">
-            <p>{t.loadFailed}</p>
+            <p>{t("Could not load the comments", "Не удалось загрузить комментарии")}</p>
             <Button
               variant="outline"
               size="sm"
@@ -416,22 +334,24 @@ export function CommentsSheet({
                 setLoadAttempt((attempt) => attempt + 1);
               }}
             >
-              {t.tryAgain}
+              {t("Try again", "Попробовать снова")}
             </Button>
           </div>
         ) : (
           <div className="comment-empty">
-            <p>{t.empty}</p>
-            <span>{t.emptyHint}</span>
+            <MessageCircle aria-hidden="true" />
+            <p>{t("No comments yet", "Комментариев пока нет")}</p>
+            <span>{t("Be the first to comment.", "Оставьте первый комментарий.")}</span>
           </div>
         )}
       </div>
 
       <div className="comment-composer-shell">
+        {sendError && <div className="comment-send-error" role="alert"><p>{sendError}</p><button type="button" onClick={() => void submit()} disabled={submitting}>{t("Retry", "Повторить")}</button></div>}
         {replyTarget && hasSignedInAccount && (
           <div className="comment-replying">
-            <span>{t.replyingTo(replyTarget.handle)}</span>
-            <button type="button" onClick={() => setReplyTarget(null)} aria-label={t.cancelReply}>
+            <span>{t(`Replying to @${replyTarget.handle}`, `Ответ для @${replyTarget.handle}`)}</span>
+            <button type="button" onClick={() => setReplyTarget(null)} aria-label={t("Cancel reply", "Отменить ответ")}>
               <X className="size-4" />
             </button>
           </div>
@@ -443,8 +363,8 @@ export function CommentsSheet({
             </div>
             <Textarea
               ref={composerRef}
-              aria-label={replyTarget ? t.replyTo(replyTarget.handle) : t.addComment}
-              placeholder={`${replyTarget ? t.replyTo(replyTarget.handle) : t.addComment}…`}
+              aria-label={replyTarget ? t(`Reply to @${replyTarget.handle}`, `Ответ для @${replyTarget.handle}`) : t("Add a comment", "Добавить комментарий")}
+              placeholder={replyTarget ? t(`Reply to @${replyTarget.handle}…`, `Ответ для @${replyTarget.handle}…`) : t("Add a comment…", "Добавить комментарий…")}
               rows={1}
               maxLength={1200}
               value={commentText}
@@ -460,15 +380,16 @@ export function CommentsSheet({
               size="icon"
               onClick={() => void submit()}
               disabled={submitting || !commentText.trim()}
-              aria-label={replyTarget ? t.sendReply : t.sendComment}
+              aria-label={replyTarget ? t("Send reply", "Отправить ответ") : t("Send comment", "Отправить комментарий")}
             >
-              <Send className="size-4" />
+              <ArrowUp className="size-4" />
             </Button>
           </div>
         ) : (
           <button type="button" className="comment-signup" onClick={onRequestAccount}>
             <span className="comment-avatar" aria-hidden="true"><UserRound className="size-4" /></span>
-            <span><strong>{t.join}</strong><small>{t.joinHint}</small></span>
+            <span>{t("Sign in to comment…", "Войдите, чтобы комментировать…")}</span>
+            <i className="comment-guest-send" aria-hidden="true"><ArrowUp /></i>
           </button>
         )}
       </div>

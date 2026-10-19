@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function SeriesPage() {
   return (
-    <BoksErrorBoundary>
+    <BoksErrorBoundary v44>
       <ReaderFeed initialView="series" />
     </BoksErrorBoundary>
   );

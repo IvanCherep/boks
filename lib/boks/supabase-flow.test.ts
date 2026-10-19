@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, it } from "vitest";
 import { normalizeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
@@ -13,12 +14,11 @@ import {
  * argument names and payload shapes, plus the ranking and lab math running on
  * real rows.
  *
- * Runs only against a local stack, because it creates users and content, and
- * it needs a database with no admin yet so the first-admin claim is available:
+ * Runs only against a local stack. Email links come from its Mailpit inbox;
+ * admin bootstrap is an explicit local operator step, never a reader RPC:
  *
  *   npx supabase start
- *   npx supabase db reset          # required before a rerun
- *   npm run test:supabase
+ *   npm run test:supabase -- --no-reset
  *
  * Without `SUPABASE_LOCAL_URL` and `SUPABASE_LOCAL_PUBLISHABLE_KEY` the suite is
  * skipped, so `npm test` stays offline.
@@ -34,26 +34,69 @@ function browserClient() {
   });
 }
 
-async function signUp(client: SupabaseClient, email: string, displayName: string) {
-  const result = await client.auth.signUp({ email, password: "boks-local-password" });
-  if (result.error) throw result.error;
-  const profile = await client.rpc("ensure_boks_user_profile", { p_display_name: displayName });
-  if (profile.error) throw profile.error;
-  return result.data.user;
+type MailSummary = { ID: string; To: { Address: string }[] };
+
+/** Follow the local email's actual OTP link, without printing credentials. */
+async function verifyLocalEmail(client: SupabaseClient, email: string) {
+  const mailbox = "http://127.0.0.1:54324";
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const inbox = await fetch(`${mailbox}/api/v1/messages?limit=100`).then((response) => response.json()) as { messages: MailSummary[] };
+    const entry = inbox.messages.find((message) => message.To.some((recipient) => recipient.Address.toLowerCase() === email.toLowerCase()));
+    if (entry) {
+      const mail = await fetch(`${mailbox}/api/v1/message/${entry.ID}`).then((response) => response.json()) as { HTML: string; Text: string };
+      const match = `${mail.HTML} ${mail.Text}`.replace(/&amp;/g, "&").match(/https?:\/\/[^\s"<>]+\/auth\/v1\/verify\?[^\s"<>]+/);
+      if (!match) throw new Error("Local sign-in email has no verification link.");
+      const link = new URL(match[0]);
+      if (!["127.0.0.1", "localhost"].includes(link.hostname)) throw new Error("Refusing a non-local email verification link.");
+      const tokenHash = link.searchParams.get("token");
+      if (!tokenHash) throw new Error("Local email has no verification token.");
+      const type = link.searchParams.get("type") as "signup" | "magiclink" | "email_change";
+      const result = await client.auth.verifyOtp({ token_hash: tokenHash, type });
+      if (result.error) throw result.error;
+      return result.data.user;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  throw new Error("Local sign-in email did not reach Mailpit.");
 }
 
-/** The reader path: a guest starts anonymous and upgrades in place. */
+async function finishLocalProfile(client: SupabaseClient, displayName: string) {
+  const profile = await client.rpc("ensure_boks_user_profile", { p_display_name: displayName });
+  if (profile.error) throw profile.error;
+  const terms = await client.rpc("accept_boks_terms", { p_terms_version: "v1" });
+  if (terms.error) throw terms.error;
+  return terms;
+}
+
+async function signUp(client: SupabaseClient, email: string, displayName: string) {
+  const sent = await client.auth.signInWithOtp({ email });
+  if (sent.error) throw sent.error;
+  const user = await verifyLocalEmail(client, email);
+  await finishLocalProfile(client, displayName);
+  return user;
+}
+
+/** The same guest identity can verify its email without ever choosing a password. */
 async function upgradeAnonymousReader(client: SupabaseClient, email: string, displayName: string) {
   const guest = await client.auth.signInAnonymously();
   if (guest.error) throw guest.error;
-
-  const upgrade = await client.auth.updateUser({ email, password: "boks-local-password" });
+  const upgrade = await client.auth.updateUser({ email });
   if (upgrade.error) throw upgrade.error;
-
-  const refreshed = await client.auth.refreshSession();
-  if (refreshed.error) throw refreshed.error;
-
+  await verifyLocalEmail(client, email);
+  await finishLocalProfile(client, displayName);
   return client.rpc("update_boks_user_profile", { p_display_name: displayName, p_handle: "" });
+}
+
+async function bootstrapLocalAdmin(client: SupabaseClient) {
+  const user = (await client.auth.getUser()).data.user;
+  if (!user || !/^[0-9a-f-]{36}$/.test(user.id)) throw new Error("Missing local admin identity.");
+  // The local stack's operator connection bypasses RLS only for bootstrap.
+  // Its target is fixed to the repository's local Docker container.
+  execFileSync("docker", ["exec", "supabase_db_fd", "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
+    `update public.user_profiles set role = 'admin' where user_id = '${user.id}'::uuid;`], { stdio: "pipe" });
+  const context = await client.rpc("get_boks_user_context");
+  expect(context.error).toBeNull();
+  expect(context.data.role).toBe("admin");
 }
 
 async function submitBok(
@@ -83,6 +126,7 @@ describe.skipIf(!canRun)("Supabase product flow", () => {
   let stamp: string;
 
   beforeAll(async () => {
+    if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(url ?? "")) throw new Error("Product flow tests require a local Supabase URL.");
     stamp = `${Date.now()}`;
     author = browserClient();
     admin = browserClient();
@@ -231,12 +275,8 @@ describe.skipIf(!canRun)("Supabase product flow", () => {
 
   it("publishes a bok once an admin approves it, and refuses one with a reason", async () => {
     const claim = await admin.rpc("claim_initial_boks_admin");
-    if (claim.error) {
-      throw new Error(
-        `Could not claim the first admin (${claim.error.message}). This suite needs a database with no admin yet - run \`npx supabase db reset\` and try again.`
-      );
-    }
-    expect(claim.data.role).toBe("admin");
+    expect(claim.error).not.toBeNull();
+    await bootstrapLocalAdmin(admin);
 
     const snapshot = await admin.rpc("get_boks_admin_snapshot", {
       p_limit: 50,
@@ -377,8 +417,30 @@ describe.skipIf(!canRun)("Supabase product flow", () => {
     expect(bokRow.error).toBeNull();
     expect(Object.keys(bokRow.data ?? {})).not.toContain("rights_note");
 
-    // A guest reports it - the person whose work it is need not have an account.
-    const report = await reader.rpc("report_bok", {
+    // A guest can report without verifying an email or accepting terms: the
+    // person whose work was taken need not first create a permanent account.
+    expect((await reader.auth.getUser()).data.user?.is_anonymous).toBe(true);
+    const guestReport = await reader.rpc("report_bok", {
+      p_reel_id: reelId,
+      p_reason: "This is my translation, published in 1998 without permission.",
+      p_kind: "copyright",
+    });
+    expect(guestReport.error).toBeNull();
+    expect(guestReport.data.status).toBe("received");
+    const guestAgain = await reader.rpc("report_bok", {
+      p_reel_id: reelId,
+      p_reason: "A second explanation must not create a second open report.",
+      p_kind: "other",
+    });
+    expect(guestAgain.error).toBeNull();
+    expect(guestAgain.data).toEqual({ status: "already", id: guestReport.data.id });
+    const guestReports = await reader.from("bok_reports").select("reason");
+    expect(guestReports.error).toBeNull();
+    expect(guestReports.data).toEqual([]);
+
+    const reporter = browserClient();
+    await signUp(reporter, `rights.reader.${stamp}@boks.test`, "");
+    const report = await reporter.rpc("report_bok", {
       p_reel_id: reelId,
       p_reason: "This is my translation, published in 1998 without permission.",
       p_kind: "copyright",
@@ -386,21 +448,26 @@ describe.skipIf(!canRun)("Supabase product flow", () => {
     expect(report.error).toBeNull();
     expect(report.data.status).toBe("received");
 
-    const twice = await reader.rpc("report_bok", {
+    const twice = await reporter.rpc("report_bok", {
       p_reel_id: reelId,
       p_reason: "This is my translation, published in 1998 without permission.",
       p_kind: "copyright",
     });
-    expect(twice.data.status).toBe("already");
+    expect(twice.error).toBeNull();
+    expect(twice.data).toEqual({ status: "already", id: report.data.id });
 
     // A reader cannot read the complaints, not even their own.
-    const readerReports = await reader.from("bok_reports").select("reason");
-    expect(readerReports.data ?? []).toEqual([]);
+    const readerReports = await reporter.from("bok_reports").select("reason");
+    expect(readerReports.error).toBeNull();
+    expect(readerReports.data).toEqual([]);
 
     // The admin sees the complaint next to what the author claimed.
     const review = await admin.rpc("get_boks_rights_review", { p_status: "open", p_limit: 50 });
     expect(review.error).toBeNull();
-    const mine = (review.data.reports as Array<Record<string, unknown>>).find((row) => row.reelId === reelId);
+    const bokReports = (review.data.reports as Array<Record<string, unknown>>).filter((row) => row.reelId === reelId);
+    expect(bokReports).toHaveLength(2);
+    expect(bokReports.map((row) => row.id)).toEqual(expect.arrayContaining([guestReport.data.id, report.data.id]));
+    const mine = bokReports.find((row) => row.id === guestReport.data.id);
     expect(mine?.reason).toMatch(/my translation/);
     expect(mine?.rightsNote).toBe("Project Gutenberg #1342, public domain.");
     expect(mine?.rightsConfirmed).toBe(true);
@@ -425,7 +492,7 @@ describe.skipIf(!canRun)("Supabase product flow", () => {
     );
     expect(withdrawn?.reviewNote).toMatch(/translator/);
 
-    await rightsAuthor.auth.signOut();
+    await Promise.all([rightsAuthor.auth.signOut(), reporter.auth.signOut()]);
   });
 
   it("ranks a real candidate set and records attributed events", async () => {

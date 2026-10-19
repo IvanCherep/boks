@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   parseThemePreference,
   readThemePreference,
@@ -7,7 +7,45 @@ import {
   themeColor,
   themeStorageKey,
   writeThemePreference,
+  paintBrowserChrome,
+  applyTheme,
 } from "@/components/boks/theme";
+
+describe("visible surface behind mobile browser chrome", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function page() {
+    const properties = new Map<string, string>();
+    const root = { dataset: { theme: "light" } as Record<string, string>, style: {
+      colorScheme: "light",
+      setProperty: (key: string, value: string) => properties.set(key, value),
+      removeProperty: (key: string) => properties.delete(key),
+    } };
+    const meta = { content: "", setAttribute: (_: string, value: string) => { meta.content = value; } };
+    vi.stubGlobal("document", { documentElement: root, querySelector: () => meta });
+    return { root, meta, properties };
+  }
+
+  it("keeps the cover behind native bars when the theme changes, then restores the new theme", () => {
+    const { root, meta, properties } = page();
+    paintBrowserChrome("#9ba98a");
+    applyTheme("dark", false);
+    expect(meta.content).toBe("#9ba98a");
+    expect(properties.get("--browser-chrome")).toBe("#9ba98a");
+    paintBrowserChrome(null);
+    expect(meta.content).toBe(themeColor.dark);
+    expect(properties.has("--browser-chrome")).toBe(false);
+    expect(root.dataset.browserChrome).toBeUndefined();
+  });
+
+  it("replaces player chrome with the next visible cover without retaining the old tint", () => {
+    const { meta, properties } = page();
+    paintBrowserChrome("#05070d");
+    paintBrowserChrome("#8ca6b2");
+    expect(meta.content).toBe("#8ca6b2");
+    expect(properties.get("--browser-chrome")).toBe("#8ca6b2");
+  });
+});
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial));

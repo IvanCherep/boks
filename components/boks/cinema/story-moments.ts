@@ -35,6 +35,8 @@ export type StoryMoment = {
   how: string;
   /** The same two lines in every other interface language; English above is the default. */
   translations: Record<Exclude<UiLanguage, "en">, { hint: string; how: string }>;
+  hintRu?: string;
+  howRu?: string;
   /** Where to point, as a fraction of the frame. The whole frame still works. */
   hotspot?: { x: number; y: number };
   /** What is heard while the story waits. */
@@ -63,6 +65,8 @@ const lionMoments: StoryMoment[] = [
     before: "/cinema/lion/moments/crowd/before.webp",
     after: "/cinema/lion/moments/crowd/after.webp",
     hint: "Part the crowd",
+    hintRu: "Раздвиньте толпу",
+    howRu: "Проведите вправо",
     how: "Swipe to the right",
     translations: { ru: { hint: "Раздвиньте толпу", how: "Проведите пальцем вправо" } },
     hotspot: { x: 0.5, y: 0.72 },
@@ -85,6 +89,8 @@ const lionMoments: StoryMoment[] = [
     before: "/cinema/lion/moments/heartbeat/before.webp",
     after: "/cinema/lion/moments/heartbeat/after.webp",
     hint: "Listen to his heart",
+    hintRu: "Послушайте его сердце",
+    howRu: "Нажмите и удерживайте на груди льва",
     how: "Press and hold on the lion's chest",
     translations: { ru: { hint: "Послушайте его сердце", how: "Нажмите и удерживайте палец на груди льва" } },
     // His chest, left of the sleeping puppy. Pressing anywhere works - the cue

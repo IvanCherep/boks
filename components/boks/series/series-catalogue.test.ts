@@ -5,6 +5,7 @@ import {
   effectiveSeriesFilter,
   orderSeries,
   seriesLanguages,
+  publishedSeriesShelf,
   seriesDurationLabel,
   seriesFeatures,
   seriesFormatOf,
@@ -121,6 +122,22 @@ describe("the order of the shelf", () => {
 
   it("moves what was already heard behind what was not", () => {
     expect(orderSeries([ru1, ru2], ["ru"], new Set(["ru-new"])).map((p) => p.storyId)).toEqual(["ru-old", "ru-new"]);
+  });
+
+  it("shares only published rows in the visible shelf order, with current catalogue names", () => {
+    const catalogue = new Map([
+      [ru1.storyId, { title: "Published title", authorName: "Published byline" }],
+      [ru2.storyId, { title: "Second title", authorName: "Second byline" }],
+    ]);
+    const shelf = publishedSeriesShelf(catalogue, ["en", "ru"], new Set([ru2.storyId]), [en1, ru2, ru1]);
+    expect(shelf.map(({ storyId }) => storyId)).toEqual([ru1.storyId, ru2.storyId]);
+    expect(shelf[0]).toMatchObject({ title: "Published title", author: "Published byline" });
+    expect(publishedSeriesShelf(catalogue, ["en"], new Set(), [en1, ru2, ru1])).toEqual([]);
+  });
+
+  it("offers no registry ghosts before a published answer is available", () => {
+    expect(publishedSeriesShelf(null, ["ru"], new Set(), [ru1, ru2])).toEqual([]);
+    expect(publishedSeriesShelf(new Map(), ["ru"], new Set(), [ru1, ru2])).toEqual([]);
   });
 });
 

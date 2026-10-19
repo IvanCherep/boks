@@ -106,6 +106,13 @@ wrangler deploy --config wrangler.jsonc --keep-vars
 
 `--keep-vars` matters because Cloudflare dashboard variables must not be deleted by a deploy that only includes source config.
 
+The Worker CPU cap is 3000ms. Ordinary feed/page requests remain below it;
+`/b/[id]/image` also renders a portrait PNG on cache miss. The image uses the
+Series cover's native 720px width and a five-minute Worker cache. Outgoing
+responses are private/no-store so CDN hits cannot skip publication checks.
+The original 1000ms cap caused `exceededCpu` on cold 1080px renders in production;
+local Wrangler rendering alone did not expose this limit.
+
 ## Verify Production
 
 Run:
@@ -178,7 +185,7 @@ If Cloudflare dashboard shows the Worker URL enabled and public DNS eventually r
 
 ## Rollback
 
-Prefer rollback by redeploying a known good commit or Cloudflare Worker version.
+Repair forward from current source, with a focused revert if needed. Never roll the Worker back alone: production schema has moved on and older code can break against it.
 
 Do not change the account `workers.dev` subdomain again unless the URL strategy changes. It affects every Worker under the account.
 
@@ -187,8 +194,8 @@ If `tryboks.com` fails after a deploy:
 1. Check `wrangler deployments list --config wrangler.jsonc`.
 2. Check `Workers & Pages -> read -> Deployments`.
 3. Check `Workers & Pages -> read -> Domains`.
-4. Re-run `npm run deploy` from the last known good source.
-5. If needed, rollback the active Worker version in Cloudflare dashboard.
+4. Correct the current source and run its validation gates.
+5. Re-run `npm run deploy` with code compatible with the current production schema; keep `--keep-vars`.
 
 ## The Supabase Pro Plan, and What It Must Not Cost
 
@@ -320,8 +327,10 @@ code exists for. The script sets both; by hand it is **Authentication ->
 Emails -> Confirm signup**, the same block with its own wording.
 
 Set the OTP length to 6 on the same screen if it is anything else; six digits is
-Supabase's default and what `boksEmailCodeLength` expects. (`otp_length = 8` in
-`supabase/config.toml` applies to a local stack only.)
+the product contract and what `boksEmailCodeLength` expects. The local
+`supabase/config.toml` also sets six digits and both email templates, so local
+sign-in exercises the same code path. Editing the local file does not update
+the already running Auth container or hosted Auth.
 
 Until that paste, the code field on the "check your email" screen has nothing to
 accept, and the screen tells the reader to use a code that is not in their

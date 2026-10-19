@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useMessages } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
+import { BoksFlower } from "@/components/boks/reader/boks-flower";
 
 const messages = defineMessages({ opening: "Opening this author…" }, { ru: { opening: "Открываем автора…" } });
 
@@ -20,12 +21,12 @@ export default function SharedAuthorPage() {
   }, []);
 
   return (
-    <main className="legal-page">
-      <article className="legal-document">
-        <a href="/" className="brand-word brand-button">
-          boks
-        </a>
-        <p className="mt-8 text-sm text-[var(--muted-foreground)]">{words.opening}</p>
+    <main className="reader-v44 reader-system-page reader-system-page--loading">
+      <article className="reader-system-page__body">
+        <header className="reader-system-page__header"><a href="/">boks</a></header>
+        <div className="reader-system-art reader-system-art--loading" aria-hidden="true"><span>b</span><BoksFlower /></div>
+        <h1 className="reader-system-title">{words.opening}</h1>
+        <p className="reader-system-status" role="status">Loading…</p>
       </article>
     </main>
   );

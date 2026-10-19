@@ -42,6 +42,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 
 - The backlog is GitHub Issues (`docs/agents/issue-tracker.md`).
 - `docs/handover/` holds per-session logs: what one session did, verified and deliberately left. Read the newest one when continuing in-flight work.
+- Reader and admin redesign: [v44 implementation handover](handover/2026-10-17-design-v44-implementation.md) fixes the design baseline, accepted decisions, data gaps and implementation order. The prototype is local and not shipped.
 - `docs/project-state.md` is the standing summary - update it when something ships.
 
 ## Production

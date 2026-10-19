@@ -94,5 +94,5 @@ export function useMagicLinkCooldown(email: string) {
 /** `0:47`, so the wait reads as a clock rather than a number to interpret. */
 export function formatCooldown(seconds: number) {
   const safe = Math.max(0, Math.round(seconds));
-  return `0:${String(safe).padStart(2, "0")}`;
+  return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 }

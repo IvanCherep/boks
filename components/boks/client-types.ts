@@ -435,6 +435,8 @@ export type ReaderLibraryItem = {
   commentedAt: string | null;
   liked: boolean;
   commented: boolean;
+  /** Latest real comment by this reader, for the activity quote card. */
+  commentPreview?: string;
 };
 
 export type BokReviewStatus = "draft" | "pending_review" | "published" | "rejected" | "archived";
@@ -563,6 +565,10 @@ export type BoksUnattested = {
 
 export type BoksRightsReview = {
   openReports: number;
+  reportsTotal: number;
+  limit: number;
+  reportsOffset: number;
+  unattestedOffset: number;
   unattested: number;
   reports: BoksReport[];
   unattestedBoks: BoksUnattested[];

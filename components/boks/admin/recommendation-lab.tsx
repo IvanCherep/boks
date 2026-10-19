@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, FlaskConical, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   RecommendationDataQuality,
@@ -45,19 +45,19 @@ import {
 const labMetricOptions: { id: ReaderMetricId; help: string }[] = [
   {
     id: "active_seconds",
-    help: "Foreground reading seconds per reader over the window. The north star, and the only metric a ranker can move without moving a rate somewhere else.",
+    help: "Foreground reading seconds per reader in this period.",
   },
   {
     id: "boks_opened",
-    help: "Distinct boks each reader opened. Answers whether ranking earns a second read, which is the whole product thesis.",
+    help: "Distinct boks each reader opened in this period.",
   },
   {
     id: "completion_rate",
-    help: "Completions over starts, per reader. Readers with fewer than five starts are excluded: a rate over two starts is noise wearing a percentage sign.",
+    help: "Completions over starts, per reader. Includes readers with at least five starts.",
   },
   {
     id: "skip_rate",
-    help: "Skips over everything that reached a verdict (starts plus skips), per reader. Most skips happen before a start is recorded, so skips over starts alone could pass 100%. Lower is better.",
+    help: "Skips divided by starts plus skips, per reader. Lower is better.",
   },
 ];
 
@@ -81,10 +81,13 @@ const emptyLab: RecommendationLabPayload = {
  * detected if it were real.
  */
 export function RecommendationLab() {
+  const [view, setView] = useState<"overview" | "comparison" | "traffic" | "quality">("overview");
+  const [loaded, setLoaded] = useState(false);
   const [experimentNotice, setExperimentNotice] = useState("");
   const [lab, setLab] = useState<RecommendationLabPayload>(emptyLab);
   const [metric, setMetric] = useState<ReaderMetricId>("active_seconds");
   const [days, setDays] = useState(30);
+  const [challenger, setChallenger] = useState("");
   const [status, setStatus] = useState("Loading recommendation results...");
   const [busy, setBusy] = useState(false);
   const [positions, setPositions] = useState<SlatePositionRow[]>([]);
@@ -110,6 +113,7 @@ export function RecommendationLab() {
       if (!isCurrent()) return;
       setPositions(nextPositions);
       setLab(payload);
+      setLoaded(true);
 
       // Before reading any comparison, check the algorithms are even producing
       // different feeds on the catalog as it stands today.
@@ -153,6 +157,7 @@ export function RecommendationLab() {
   const definition = readerMetric(metric);
   const selectedHelp = labMetricOptions.find((option) => option.id === metric)?.help ?? "";
   const variantArms = report.arms.filter((arm) => !arm.isControl);
+  const selectedArm = variantArms.find((arm) => arm.algorithmId === challenger) ?? variantArms[0];
 
   // Readiness is per metric: a rate leaves out readers with fewer than five
   // starts, so an arm can hold enough readers for reading time and still too
@@ -237,36 +242,28 @@ export function RecommendationLab() {
     await refresh(days);
   }
 
+  const liveArms = lab.experiment.arms.filter(arm => arm.weight > 0);
+  const weightTotal = liveArms.reduce((sum, arm) => sum + arm.weight, 0);
+  const names = describeRecommendationStrategies();
+  const navigate = (next: typeof view) => { setView(next); window.scrollTo({ top: 0, behavior: "instant" }); };
+
   return (
-    <section className="panel overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--border)] p-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-semibold tracking-normal">
-            <FlaskConical className="size-5 text-[var(--primary)]" /> Recommendation lab
-          </h2>
-          <p className="mt-1 max-w-3xl text-sm text-[var(--muted-foreground)]">
-            Experiment <strong>{lab.experiment.key}</strong> · control{" "}
-            <strong>{report.controlAlgorithmId}</strong> · one reader is one sample, and an arm is
-            compared once it holds {report.minimumReadersPerArm} of them.
-          </p>
+    <section className="studio-lab" data-studio-detail={view !== "overview" ? "true" : undefined}>
+      {view !== "overview" && <header className="studio-subview-heading"><button type="button" className="studio-text-link" onClick={() => navigate("overview")}><ArrowLeft size={17} /> Experiments</button><p className="studio-eyebrow">Research / {view === "traffic" ? "traffic split" : view === "quality" ? "data quality" : "comparison"}</p><h1>{view === "comparison" ? "Comparison" : view === "traffic" ? "Traffic split" : "Data quality"}</h1></header>}
+      {view === "overview" && loaded && <>
+        <div className="studio-live-verdict">
+          <p className="studio-eyebrow">Live now</p>
+          <h2>{liveArms.length === 1 ? "One active algorithm" : `${liveArms.length} active algorithms`}</h2>
+          <p>{liveArms.map(arm => `${names.find(strategy => strategy.id === arm.algorithmId)?.name ?? arm.algorithmId} · ${weightTotal ? Math.round(arm.weight / weightTotal * 100) : 0}%`).join(" / ")}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <select className="field-control w-[150px]" value={days} onChange={(event) => setDays(Number(event.target.value))}>
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
-          <Button variant="outline" onClick={() => refresh(days)} disabled={busy}>
-            <RefreshCw className="size-4" /> Refresh
-          </Button>
-          <Button variant="outline" onClick={exportLab}>
-            <Download className="size-4" /> Export comparison
-          </Button>
-          <Button variant="outline" onClick={exportOutcomes} disabled={!lab.outcomes.length}>
-            <Download className="size-4" /> Export reader rows
-          </Button>
-        </div>
-      </div>
+        <div className="studio-metric-pair"><MetricTile label="readers measured" value={report.totals.readers} /><MetricTile label="sessions" value={report.totals.sessions} /></div>
+      </>}
+      {view !== "traffic" && <div className="studio-filter-line">
+        <select aria-label="Experiment period" className="field-control" value={days} onChange={(event) => setDays(Number(event.target.value))}>
+          <option value={7}>Last 7 days</option><option value={30}>Last 30 days</option><option value={90}>Last 90 days</option>
+        </select>
+        <Button variant="ghost" onClick={() => refresh(days)} disabled={busy}><RefreshCw className="size-4" /> Refresh</Button>
+      </div>}
 
       {status && (
         <p className={`px-4 pt-4 text-sm ${lab.available ? "text-[var(--muted-foreground)]" : "text-[var(--destructive)]"}`}>
@@ -274,15 +271,15 @@ export function RecommendationLab() {
         </p>
       )}
 
-      <div className="grid gap-5 p-4">
-        {divergence && (
+      <div className="grid gap-5">
+        {divergence && view === "overview" && (
           <div className={`divergence divergence--${divergence.verdict}`}>
             <p className="text-sm font-semibold">
               {divergence.verdict === "indistinguishable"
                 ? "These algorithms are not distinguishable yet"
                 : divergence.verdict === "weak"
                   ? "These algorithms only partly differ"
-                  : "These algorithms produce genuinely different feeds"}
+                  : "These algorithms produce different feeds"}
             </p>
             {divergenceScope === "registered" && (
               <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
@@ -300,6 +297,51 @@ export function RecommendationLab() {
           </div>
         )}
 
+        {view === "overview" && <nav className="studio-link-rows" aria-label="Experiment workspace">
+          <button type="button" onClick={() => navigate("traffic")}><span><strong>Traffic split</strong><small>Configure the active algorithms</small></span><ArrowRight /></button>
+          <button type="button" onClick={() => navigate("comparison")}><span><strong>Comparison</strong><small>Measured reading and sample readiness</small></span><ArrowRight /></button>
+          <button type="button" onClick={() => navigate("quality")}><span><strong>Data quality</strong><small>Attribution and clock diagnostics</small></span><ArrowRight /></button>
+        </nav>}
+        {view === "comparison" && <>
+        <div className="grid gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="grid gap-1 text-sm font-medium">
+              Compare on
+              <select
+                className="field-control w-[240px]"
+                value={metric}
+                onChange={(event) => setMetric(event.target.value as ReaderMetricId)}
+              >
+                {labMetricOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {readerMetric(option.id).label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="max-w-md text-sm text-[var(--muted-foreground)]">{selectedHelp}</p>
+          </div>
+
+          {variantArms.length > 1 && <label className="studio-field">Challenger<select value={selectedArm?.algorithmId ?? ""} onChange={(event) => setChallenger(event.target.value)}>{variantArms.map((arm) => <option value={arm.algorithmId} key={arm.algorithmId}>{arm.algorithmName}</option>)}</select></label>}
+          {selectedArm && <ComparisonReadout comparison={findComparison(report, selectedArm.algorithmId, metric)} report={report} arm={selectedArm} />}
+          <MetricBars
+            rows={barRows.filter((row) => row.id === controlArm?.algorithmId || row.id === selectedArm?.algorithmId)}
+            lowerIsBetter={definition.lowerIsBetter}
+            caption={barCaption}
+          />
+        </div>
+
+        {variantArms.length > 0 && !controlArm && (
+          <p className="text-sm leading-6 text-[var(--destructive)]">
+            The control, {report.controlAlgorithmId}, has no readers in this window, so no arm can
+            be compared. Give the control a weight in the traffic split, or pick a live control.
+          </p>
+        )}
+
+        <p className="studio-hint">One reader is one observation. Each arm needs {report.minimumReadersPerArm} eligible readers before an estimate is shown.</p>
+        <div className="studio-inline"><Button variant="outline" onClick={() => navigate("traffic")}>Traffic split</Button><Button variant="outline" onClick={() => navigate("quality")}>Quality</Button></div>
+        <Button variant="ghost" onClick={exportOutcomes} disabled={!lab.outcomes.length}><Download className="size-4" /> Export reader rows · CSV</Button>
+        <details className="studio-details"><summary>Measurement details & sample size <span>＋</span></summary><div className="studio-details-body">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <MetricTile label="Readers measured" value={report.totals.readers} />
           <MetricTile label="Sessions" value={report.totals.sessions} />
@@ -337,48 +379,6 @@ export function RecommendationLab() {
             </>
           }
         />
-
-        <div className="grid gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="grid gap-1 text-sm font-medium">
-              Compare on
-              <select
-                className="field-control w-[240px]"
-                value={metric}
-                onChange={(event) => setMetric(event.target.value as ReaderMetricId)}
-              >
-                {labMetricOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {readerMetric(option.id).label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="max-w-md text-sm text-[var(--muted-foreground)]">{selectedHelp}</p>
-          </div>
-
-          <MetricBars
-            rows={barRows}
-            lowerIsBetter={definition.lowerIsBetter}
-            caption={barCaption}
-          />
-        </div>
-
-        {variantArms.length > 0 && !controlArm && (
-          <p className="text-sm leading-6 text-[var(--destructive)]">
-            The control, {report.controlAlgorithmId}, has no readers in this window, so no arm can
-            be compared. Give the control a weight in the traffic split, or pick a live control.
-          </p>
-        )}
-
-        {variantArms.map((arm) => (
-          <ComparisonReadout
-            key={arm.algorithmId}
-            comparison={findComparison(report, arm.algorithmId, metric)}
-            report={report}
-            arm={arm}
-          />
-        ))}
 
         <div className="experiment-table">
           <div className="experiment-row experiment-head">
@@ -429,12 +429,16 @@ export function RecommendationLab() {
         />
 
         <PositionEffects rows={positions} />
+        <p className="studio-meta">Experiment {lab.experiment.key} · control {report.controlAlgorithmId}.</p>
+        <Button variant="outline" onClick={exportLab}><Download className="size-4" /> Export comparison</Button>
+        </div></details>
 
-        <DataQualityPanel quality={lab.dataQuality} />
+        </>}
 
-        <div className="grid gap-3 border-t border-[var(--border)] pt-4">
+        {view === "quality" && <><DataQualityPanel quality={lab.dataQuality} /><Button variant="outline" onClick={exportLab}><Download /> Export diagnostics</Button></>}
+
+        {view === "traffic" && <div className="grid gap-3">
           <div>
-            <h3 className="text-lg font-semibold tracking-normal">Traffic split</h3>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
               Readers never choose an algorithm. This decides how they are assigned, and the assignment stays stable for
               each reader so one tester never bounces between variants.
@@ -447,7 +451,7 @@ export function RecommendationLab() {
             onSave={saveExperiment}
             notice={experimentNotice}
           />
-        </div>
+        </div>}
       </div>
     </section>
   );
@@ -473,55 +477,19 @@ function ComparisonReadout({
 
   const shortfall = report.minimumReadersPerArm - Math.min(comparison.controlReaders, comparison.variantReaders);
 
-  return (
-    <div className="grid gap-2 rounded-[var(--radius)] border border-[var(--border)] p-4">
-      <p className="text-sm font-semibold">
-        {arm.algorithmName} vs {report.controlAlgorithmId} · {comparison.metric}
-      </p>
-
-      {comparison.status === "insufficient_data" ? (
-        <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-          {comparison.controlReaders} readers on control and {comparison.variantReaders} on this arm.
-          Below {report.minimumReadersPerArm} per arm nothing is estimated — {shortfall} more
-          reader{shortfall === 1 ? "" : "s"} in the smaller arm before this line says anything.
-        </p>
-      ) : (
-        <>
-          <p className="text-sm leading-6">
-            <strong>{formatReaderDifference(comparison.metricId, comparison.effect)}</strong> difference
-            in means, 95% interval{" "}
-            <strong>
-              [{formatReaderDifference(comparison.metricId, comparison.ci[0])},{" "}
-              {formatReaderDifference(comparison.metricId, comparison.ci[1])}]
-            </strong>
-            {typeof comparison.pValue === "number" ? ` · permutation p = ${comparison.pValue}` : ""}
-          </p>
-          <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-            {comparison.status === "inconclusive"
-              ? "The interval spans zero. That is not evidence the arms are the same — it is an absence of evidence either way."
-              : comparison.status === "positive"
-                ? "The interval excludes zero in the better direction."
-                : "The interval excludes zero in the worse direction."}{" "}
-            {comparison.controlReaders} vs {comparison.variantReaders} readers
-            {comparison.crossedReaders
-              ? `, after excluding ${comparison.crossedReaders} who appeared in both arms`
-              : ""}
-            .
-          </p>
-          {comparison.power && <PowerLine comparison={comparison} />}
-          {comparison.perReaderValues && (
-            <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-              Control:{" "}
-              {comparison.perReaderValues.control.map((value) => formatReaderValue(comparison.metricId, value)).join(", ")}
-              <br />
-              Variant:{" "}
-              {comparison.perReaderValues.variant.map((value) => formatReaderValue(comparison.metricId, value)).join(", ")}
-            </p>
-          )}
-        </>
-      )}
-    </div>
-  );
+  if (comparison.status === "insufficient_data") return <section className="studio-comparison-result"><p className="studio-eyebrow">Difference in reader means</p><h2>More readers needed</h2><span className="studio-status">Insufficient data</span><p>{comparison.controlReaders} readers in control · {comparison.variantReaders} in {arm.algorithmName}.</p><p className="studio-meta">At least {report.minimumReadersPerArm} per arm. The smaller arm needs {shortfall} more {shortfall === 1 ? "reader" : "readers"} before a difference or interval can be estimated.</p></section>;
+  const lower = Math.min(comparison.ci[0], 0);
+  const upper = Math.max(comparison.ci[1], 0);
+  const span = upper - lower || 1;
+  const position = (value: number) => 8 + (value - lower) / span * 84;
+  return <section className="studio-comparison-result">
+    <div className="studio-interval" aria-label={`95% interval: ${formatReaderDifference(comparison.metricId, comparison.ci[0])} to ${formatReaderDifference(comparison.metricId, comparison.ci[1])}`}><span className="studio-interval-zero" style={{ left: `${position(0)}%` }}>0</span><i style={{ left: `${position(comparison.ci[0])}%`, width: `${(comparison.ci[1] - comparison.ci[0]) / span * 84}%` }} /><b style={{ left: `${position(comparison.effect)}%` }} /><span className="studio-interval-left">{formatReaderDifference(comparison.metricId, comparison.ci[0])}</span><span className="studio-interval-right">{formatReaderDifference(comparison.metricId, comparison.ci[1])}</span></div>
+    <p className="studio-eyebrow">Difference in reader means</p><h2>{formatReaderDifference(comparison.metricId, comparison.effect)}</h2><span className="studio-status">{comparison.status === "inconclusive" ? "Inconclusive" : comparison.status === "positive" ? "Better than control" : "Worse than control"}</span>
+    <p>{comparison.status === "inconclusive" ? "95% interval crosses zero." : "95% interval excludes zero."}<br />{comparison.controlReaders} readers in control · {comparison.variantReaders} in {arm.algorithmName}.</p>
+    {comparison.crossedReaders > 0 && <p className="studio-meta">{comparison.crossedReaders} readers who appeared in both arms are excluded.</p>}
+    {comparison.power && <PowerLine comparison={comparison} />}
+    <details className="studio-details"><summary>Statistical detail <span>＋</span></summary><div className="studio-details-body">{typeof comparison.pValue === "number" && <p>Permutation p = {comparison.pValue}</p>}{comparison.perReaderValues && <p className="studio-meta">Control: {comparison.perReaderValues.control.map((value) => formatReaderValue(comparison.metricId, value)).join(", ")}<br />Challenger: {comparison.perReaderValues.variant.map((value) => formatReaderValue(comparison.metricId, value)).join(", ")}</p>}</div></details>
+  </section>;
 }
 
 /** What this sample could have detected, phrased as a refusal where it must be. */
@@ -568,7 +536,7 @@ function DataQualityPanel({ quality }: { quality: RecommendationDataQuality | nu
     { label: "Degraded feeds", value: quality.degradedFeeds, help: "Ranked without behaviour, or outside the Worker." },
     { label: "Empty feeds", value: quality.emptyFeeds, help: "A serve with nothing in it." },
     { label: "Algorithm mismatch", value: quality.algorithmMismatch, help: "Event and feed disagree on the arm." },
-    { label: "Reel not in its feed", value: quality.rankNotInFeed, help: "A read of something never served." },
+    { label: "Bok outside its feed", value: quality.rankNotInFeed, help: "A read of something never served." },
     { label: "Events before their feed", value: quality.eventsBeforeFeed, help: "Clock or attribution fault." },
     { label: "Duplicate outcomes", value: quality.duplicateOutcomes, help: "Two verdicts for one read." },
     { label: "Clamped reading time", value: quality.clampedReadingTime, help: "Hit the 24-hour ceiling." },
@@ -577,24 +545,17 @@ function DataQualityPanel({ quality }: { quality: RecommendationDataQuality | nu
   ];
 
   return (
-    <div className="grid gap-3 border-t border-[var(--border)] pt-4">
+    <div className="studio-quality">
+      <div className="studio-quality-heading"><span className={`studio-status ${checks.some((check) => check.value > 0) ? "is-alert" : ""}`}>{checks.filter((check) => check.value > 0).length} checks need attention</span><p>Resolve attribution gaps before comparing arms.</p></div>
       <div>
-        <h3 className="text-lg font-semibold tracking-normal">Data quality</h3>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           {quality.events} reader events and {quality.feeds} served feeds in the last{" "}
           {quality.windowDays} days. Anything above zero below is a reason to distrust a comparison,
           not a number to optimise.
         </p>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {checks.map((check) => (
-          <div key={check.label} className="rounded-[var(--radius)] border border-[var(--border)] p-3">
-            <p className="text-sm font-medium">
-              {check.label}: <strong>{check.value}</strong>
-            </p>
-            <p className="text-sm text-[var(--muted-foreground)]">{check.help}</p>
-          </div>
-        ))}
+      <div>
+        {checks.map((check) => <div key={check.label} className="studio-quality-row"><span>{check.label}<small>{check.help}</small></span><strong className={check.value > 0 ? "is-alert" : ""}>{check.value}</strong></div>)}
       </div>
       <p className="text-sm text-[var(--muted-foreground)]">
         Feeds by backend:{" "}

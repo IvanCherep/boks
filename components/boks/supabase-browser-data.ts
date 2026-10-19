@@ -1011,17 +1011,22 @@ export async function reportBok(input: { reelId: string; reason: string; kind?: 
   return result.data as { status: "received" | "already"; id: string };
 }
 
-export async function loadBoksRightsReview(status: "open" | "all" = "open", limit = 50) {
+export async function loadBoksRightsReview(
+  status: "open" | "all" = "open",
+  limit = 25,
+  reportsOffset = 0,
+  unattestedOffset = 0,
+) {
   if (!supabase) throw new Error("Supabase is not configured.");
 
-  const result = await supabase.rpc("get_boks_rights_review", { p_status: status, p_limit: limit });
-  if (result.error) {
-    if (isMissingDatabaseObject(result.error)) {
-      return { openReports: 0, unattested: 0, reports: [], unattestedBoks: [] } as BoksRightsReview;
-    }
-    throw result.error;
-  }
-
+  const result = await supabase.rpc("get_boks_rights_review_page", {
+    p_status: status,
+    p_limit: limit,
+    p_reports_offset: reportsOffset,
+    p_unattested_offset: unattestedOffset,
+  });
+  // Missing schema is an unavailable review, never an empty queue.
+  if (result.error) throw result.error;
   return result.data as BoksRightsReview;
 }
 
@@ -1071,7 +1076,7 @@ export async function setBokRights(input: { reelId: string; confirmed: boolean; 
   return result.data as { reelId: string; confirmed: boolean };
 }
 
-export async function loadReaderLibrary(limit = 120): Promise<ReaderLibraryItem[]> {
+export async function loadReaderLibrary(limit = 120, userId?: string | null): Promise<ReaderLibraryItem[]> {
   if (!supabase) return [];
 
   const result = await supabase.rpc("get_my_reader_library", { p_limit: limit });
@@ -1080,7 +1085,23 @@ export async function loadReaderLibrary(limit = 120): Promise<ReaderLibraryItem[
     throw result.error;
   }
 
-  return (result.data ?? []) as ReaderLibraryItem[];
+  const items = (result.data ?? []) as ReaderLibraryItem[];
+  const commentedIds = items.filter(item => item.commented).slice(0, Math.min(limit, 120)).map(item => item.storyId);
+  if (!userId || !commentedIds.length) return items;
+  // Read only this account's latest comments on its already bounded activity
+  // list. RLS still determines which published boks are visible.
+  const comments = await supabase.from("comments")
+    .select("reel_id,body")
+    .eq("user_id", userId)
+    .in("reel_id", commentedIds)
+    .order("created_at", { ascending: false })
+    .limit(120);
+  if (comments.error) throw comments.error;
+  const latestByBok = new Map<string, string>();
+  for (const comment of comments.data ?? []) {
+    if (!latestByBok.has(comment.reel_id)) latestByBok.set(comment.reel_id, comment.body);
+  }
+  return items.map(item => ({ ...item, commentPreview: latestByBok.get(item.storyId) }));
 }
 
 /**

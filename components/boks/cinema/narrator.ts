@@ -24,6 +24,7 @@ export type NarratorState = {
   totalSeconds: number;
   speaking: boolean;
   done: boolean;
+  error?: boolean;
 };
 
 export type Narrator = {
@@ -31,6 +32,7 @@ export type Narrator = {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  setVolume: (volume: number, activate?: boolean) => void;
   restart: () => void;
   /**
    * Move to a moment. A recording goes exactly there; the browser voice can
@@ -89,6 +91,8 @@ export function createNarrator(input: {
   let line = 0;
   let speaking = false;
   let done = false;
+  let volume = 1;
+  let currentUtterance: SpeechSynthesisUtterance | null = null;
   let lineStartedAt = 0;
   let frame: number | null = null;
   // Set while we stop the voice on purpose, so the `end` event that follows is
@@ -188,6 +192,8 @@ export function createNarrator(input: {
     // is to be read to, not to be briefed.
     utterance.rate = 0.96;
     utterance.pitch = 1;
+    utterance.volume = volume;
+    currentUtterance = utterance;
 
     const mine = generation;
     let started = false;
@@ -233,6 +239,10 @@ export function createNarrator(input: {
 
   return {
     supported: speechSupported(),
+    setVolume(value) {
+      volume = Math.max(0, Math.min(1, value));
+      if (currentUtterance) currentUtterance.volume = volume;
+    },
     play() {
       hardStop();
       done = false;

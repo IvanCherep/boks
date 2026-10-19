@@ -133,38 +133,26 @@ export function GuestFunnelPanel() {
   const drop = biggestDrop(steps);
 
   return (
-    <section className="panel overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-normal">Guests</h2>
-          <p className="text-sm text-[var(--muted-foreground)]">
-            Visitors without an account, counted by device, over the last {days} days.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={includeTeam} onChange={(event) => setIncludeTeam(event.target.checked)} />
-            Include the team{data ? ` (${data.team.devices} devices)` : ""}
-          </label>
-          <div className="admin-segmented" aria-label="Window">
-            {windows.map((window) => (
-              <button key={window} type="button" aria-pressed={days === window} onClick={() => setDays(window)}>
-                {window} days
-              </button>
-            ))}
-          </div>
-          <Button variant="outline" onClick={() => void refresh(days, includeTeam, hiddenCountries)} disabled={busy}>
-            <RefreshCw className="size-4" /> Refresh
-          </Button>
-        </div>
+    <section className="studio-guests">
+      <div className="studio-filter-line">
+        <select className="field-control" aria-label="Guest measurement period" value={days} onChange={(event) => setDays(Number(event.target.value) as typeof days)}>
+          {windows.map(window => <option key={window} value={window}>Last {window} days</option>)}
+        </select>
+        <label className="studio-team-filter"><input type="checkbox" checked={includeTeam} onChange={(event) => setIncludeTeam(event.target.checked)} /> Include team</label>
       </div>
-
+      <Button variant="ghost" onClick={() => void refresh(days, includeTeam, hiddenCountries)} disabled={busy}><RefreshCw className="size-4" /> Refresh</Button>
       {status && <p className="p-6 text-center text-sm text-[var(--muted-foreground)]">{status}</p>}
 
       {data && (
-        <div className="grid gap-6 p-4">
+        <div className="grid gap-6">
+          <div className="studio-funnel" aria-label="Guest devices from arrival to account">
+            {steps.map((step) => <div key={step.key}>
+              <i aria-hidden="true" style={{ width: `${Math.min(100, (step.ofAll ?? 0) * 100)}%` }} />
+              <span>{step.label}</span><strong>{step.count}</strong>
+            </div>)}
+          </div>
           {drop && (
-            <p className="rounded-xl border border-[var(--border)] bg-[var(--muted)] p-4 text-sm leading-6">
+            <p className="studio-hint">
               <strong>Where guests are lost most:</strong> between &ldquo;{drop.from.label.toLowerCase()}&rdquo; and
               &ldquo;{drop.to.label.toLowerCase()}&rdquo; - {percent(drop.to.ofPrevious)} make it ({drop.to.count} of{" "}
               {drop.from.count}).
@@ -173,52 +161,17 @@ export function GuestFunnelPanel() {
 
           <div>
             <h3 className="text-sm font-semibold">Where they are</h3>
-            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-              By the country each device was last seen from. Click a country to hide it from every number on this
-              page - for a developer&apos;s private window, which nothing else can tell apart from a stranger.
-            </p>
-            <table className="mt-2 w-full text-sm">
-              <thead>
-                <tr className="text-left text-[var(--muted-foreground)]">
-                  <th className="py-1 font-medium">Country</th>
-                  <th className="py-1 text-right font-medium">Devices</th>
-                  <th className="py-1 text-right font-medium">Share</th>
-                  <th className="py-1 text-right font-medium">Guests</th>
-                  <th className="py-1 text-right font-medium">Finished a bok</th>
-                  <th className="py-1 text-right font-medium">With an account</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.countries.map((row) => {
-                  const total = data.countries.reduce((sum, entry) => sum + entry.devices, 0);
-                  return (
-                    <tr key={row.country} className="border-t border-[var(--border)]">
-                      <td className="py-2">
-                        {row.country === "unknown" ? (
-                          <span className="text-[var(--muted-foreground)]">
-                            Unknown - seen before countries were recorded
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="author-account-link"
-                            onClick={() => toggleCountry(row.country)}
-                            title="Hide this country from the numbers"
-                          >
-                            {countryLabel(row.country)}
-                          </button>
-                        )}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">{row.devices}</td>
-                      <td className="py-2 text-right tabular-nums">{percent(total ? row.devices / total : null)}</td>
-                      <td className="py-2 text-right tabular-nums">{row.guests}</td>
-                      <td className="py-2 text-right tabular-nums">{row.readers}</td>
-                      <td className="py-2 text-right tabular-nums">{row.accounts}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <p className="studio-meta">By device’s last location. Select a country to exclude it from all measurements.</p>
+            <div className="studio-countries">
+              {data.countries.map((row) => {
+                const total = data.countries.reduce((sum, entry) => sum + entry.devices, 0);
+                return <div className="studio-country-row" key={row.country}>
+                  {row.country === "unknown" ? <strong>Unknown</strong> : <button type="button" onClick={() => toggleCountry(row.country)} title="Hide this country from every measurement">{countryLabel(row.country)}</button>}
+                  <strong>{row.devices} devices</strong>
+                  <p>{row.country === "unknown" ? "Country unavailable · " : ""}{percent(total ? row.devices / total : null)} of devices · {row.guests} guests · {row.readers} read a bok · {row.accounts} with an account</p>
+                </div>;
+              })}
+            </div>
             {hiddenCountries.length > 0 && (
               <p className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-[var(--muted-foreground)]">Hidden:</span>
@@ -231,7 +184,7 @@ export function GuestFunnelPanel() {
             )}
           </div>
 
-          <div className="rounded-xl border border-[var(--border)] p-4 text-sm leading-6">
+          <details className="studio-details"><summary>Team devices & measurement filters <span aria-hidden="true">+</span></summary><div className="studio-details-body">
             <p>
               <strong>Telling the team from visitors.</strong> A device ever used by an admin account is the
               team&apos;s and is left out automatically ({data.team.devices} so far, {data.team.marked} marked by hand).
@@ -247,7 +200,7 @@ export function GuestFunnelPanel() {
               </Button>
             </div>
             {teamNote && <p className="mt-2 text-[var(--muted-foreground)]">{teamNote}</p>}
-          </div>
+          </div></details>
 
           <div>
             <h3 className="text-sm font-semibold">From arriving to an account</h3>

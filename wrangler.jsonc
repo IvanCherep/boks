@@ -18,12 +18,11 @@
   "observability": {
     "enabled": true
   },
-  // Workers Paid allows 30 s of CPU per request. Nothing here needs a tenth of
-  // that - a served feed costs 66-97 ms, page renders 30 ms at P50 - and CPU
-  // time is what the plan bills, so a runaway loop should fail loudly on one
-  // request instead of quietly becoming an invoice.
+  // Keep a bounded budget below the plan's 30 s. Feed/page requests stay cheap;
+  // the on-demand share poster also needs room for a cold font/Wasm renderer.
+  // Render at the cover's native 720px and cache the result for five minutes.
   "limits": {
-    "cpu_ms": 1000
+    "cpu_ms": 3000
   },
   // The apex only, on purpose. Attaching `www` as a second custom domain would
   // serve the app from two origins, and an origin is a separate browser storage

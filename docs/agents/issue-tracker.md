@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues and specs for boks live in GitHub Issues on **`IvanCherep/boks`** - the `github` git remote. The `origin` remote is a Codex mirror with no tracker, so `gh` cannot infer the repo from it: always pass `-R IvanCherep/boks`.
+Issues and specs for boks live in GitHub Issues on **`IvanCherep/boks`**. Always pass `-R IvanCherep/boks` to `gh`: remote names vary by checkout. Check `git remote -v` before Git operations; the current local checkout uses `origin` directly for GitHub, while older checkouts used a separate `github` remote and a mirror as `origin`.
 
 ## Conventions
 

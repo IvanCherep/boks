@@ -4,16 +4,9 @@ import { randomBoksId } from "@/lib/boks/browser-id";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  MoreHorizontal,
-  Sparkles,
-  UserRound,
   X,
 } from "lucide-react";
+import { ReaderHeartIcon, ReaderCommentsIcon, ReaderShareIcon, ReaderMoreIcon, ReaderSettingsIcon, ReaderDownIcon, ReaderBackIcon, ReaderPlayIcon, ReaderTypeIcon } from "@/components/boks/reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { initialMetrics, initialProfile } from "@/components/boks/constants";
 import type {
@@ -65,9 +58,10 @@ import {
   stopReadingMusic,
 } from "@/components/boks/reading-music";
 import { CinemaMode } from "@/components/boks/cinema/cinema-mode";
+import { FormatStatus } from "@/components/boks/cinema/format-controls";
 import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
 import { recordingRequested } from "@/components/boks/recording-mode";
-import type { FinaleActions } from "@/components/boks/reading-finale";
+import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { giveScreenBack, takeScreen } from "@/components/boks/reading-fullscreen";
 import { paintBrowserChrome, playerChromeColor } from "@/components/boks/theme";
 import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
@@ -109,11 +103,12 @@ import {
   readingLanguageChangeKeepsFeed,
   rememberReadingLanguages,
 } from "@/components/boks/reading-languages";
-import { displayedLikeCount } from "@/components/boks/client-format";
+import { displayedLikeCount, formatCompactCount } from "@/components/boks/client-format";
 import { attachReaderClock, createReaderClock, type ReaderClock } from "@/components/boks/reader-clock";
 import { formatReaderBody } from "@/components/boks/reader-text";
 import { haptic } from "@/components/boks/reader-haptics";
 import { AuthorSheet } from "@/components/boks/author-sheet";
+import { ReaderSheet } from "@/components/boks/reader-sheet";
 import { CommentsSheet } from "@/components/boks/comments-sheet";
 import { BokLifecycleDialog, type BokLifecycleTarget } from "@/components/boks/admin/bok-lifecycle-dialog";
 import {
@@ -123,9 +118,7 @@ import {
 } from "@/components/boks/reader-events";
 import {
   loadBoksUserContext,
-  loadFollowedAuthors,
   loadSupabaseStory,
-  setAuthorFollow,
   recordSupabaseReaderEvents,
   recordSupabaseView,
   reportBok,
@@ -133,20 +126,25 @@ import {
   setSupabaseLike,
   submitSupabaseComment,
 } from "@/components/boks/supabase-browser-data";
-import type { ReaderEvent, ReaderEventType, TouchKind } from "@/lib/boks/contracts";
+import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
-import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { currentUiLanguage, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { atHandle, bareHandle } from "@/components/boks/reader/handles";
 import { BokMenuSheet, type BokReportKind, type BokReportOutcome } from "@/components/boks/reader/bok-menu-sheet";
 import { EmptyFeedScreen } from "@/components/boks/reader/empty-feed-screen";
 import { FeedbackSheet } from "@/components/boks/reader/feedback-sheet";
-import { ReaderActionRail } from "@/components/boks/reader/reader-action-rail";
 
-const firstVisitHintKey = "boks-first-visit-hint-seen";
+import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
+import { BoksLogo } from "@/components/boks/reader/boks-logo";
+import { bokArtworkStyle, getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { textReadingState, type TextReadingPhase } from "@/components/boks/reader/text-reading-state";
+import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { ShareCard } from "@/components/boks/share-card";
+
 
 /** Drops focus after a mouse click so the reader's Space cannot press the button again. */
 function releaseFocus(event: React.MouseEvent<HTMLElement>) {
@@ -265,14 +263,6 @@ function wordsNow() {
   return messages[currentUiLanguage()];
 }
 
-function followLabel(following: boolean, authorName: string | undefined, authorHandle: string) {
-  const handle = bareHandle(authorHandle);
-  const underByline = Boolean(authorName && handle && authorName.toLowerCase() !== handle.toLowerCase());
-  const t = wordsNow();
-  const verb = following ? t.following : t.follow;
-  return underByline ? `${verb} @${handle}` : verb;
-}
-
 type AuthIntent = "general" | "like" | "comment" | "follow";
 
 /** How a reader reached a boks no ranker chose for them. See `entryRef`. */
@@ -357,8 +347,25 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     phase,
     load,
   } = useBoksData();
-  const t = useMessages(messages);
   const uiLanguage = useUiLanguage();
+  const { t } = useReaderPreferences();
+  const [readingPhase, setReadingPhase] = useState<TextReadingPhase>("cover");
+  const [textProgress, setTextProgress] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [formatPlaying, setFormatPlaying] = useState(false);
+  const [formatEnded, setFormatEnded] = useState(false);
+  const [formatLoading, setFormatLoading] = useState(false);
+  const formatRequest = useRef(0);
+  const storyOpenRequest = useRef(0);
+  const exposedStories = useRef(new Set<string>());
+  const [publishedSeriesPieces, setPublishedSeriesPieces] = useState<SeriesPiece[]>([]);
+  const [seriesSequence, setSeriesSequence] = useState<SeriesPiece[]>([]);
+  const [openIssue, setOpenIssue] = useState<({ kind: "unavailable" | "story"; storyId: string; entry: ReaderEntry } | { kind: "audio"; storyId: string }) | null>(null);
+  const [aftertastes, setAftertastes] = useState<Record<string, AftertasteTag[]>>({});
+  const aftertasteDrafts = useRef<Record<string, AftertasteTag[]>>({});
+  const sentAftertastes = useRef(new Set<string>());
+  const flushAftertasteRef = useRef<(exit?: boolean) => void>(() => undefined);
+  const textRegion = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
@@ -393,7 +400,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [identitySettled, setIdentitySettled] = useState(false);
   const [authReason, setAuthReason] = useState<"manual" | "notice" | "required">("manual");
   const [authIntent, setAuthIntent] = useState<AuthIntent>("general");
+  const [authInitialSection, setAuthInitialSection] = useState<"home" | "typography" | "languages" | "feedback" | undefined>();
   const [authNotice, setAuthNotice] = useState("");
+  const [pendingCommentStoryId, setPendingCommentStoryId] = useState<string | null>(null);
   const [guestReadCount, setGuestReadCount] = useState(0);
   const [guestNoticeStep, setGuestNoticeStep] = useState<"first" | "second" | null>(null);
   // A boks opened from account history is a one-item entry into the current
@@ -425,7 +434,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [poem, setPoem] = useState<PoemManifest | null>(null);
   const likesInFlight = useRef<Set<string>>(new Set());
   // The one-time "how this works" line - see the effect near the render.
-  const [firstVisitHint, setFirstVisitHint] = useState<"touch" | "pointer" | null>(null);
   /*
    * A reader who had it on last time gets it back - but only after they touch
    * something, because no browser will start audio before that and silently
@@ -458,8 +466,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     },
     [setStatus]
   );
-  const [followedAuthorIds, setFollowedAuthorIds] = useState<string[]>([]);
-  const [followBusy, setFollowBusy] = useState(false);
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
   /** Where this visit came from; sent once the reader's identity is known. */
   const visitAttribution = useRef<JourneyAttribution | null>(null);
@@ -726,11 +732,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       context = null;
     }
     setUser(context);
-    if (context && !context.isAnonymous) {
-      loadFollowedAuthors()
-        .then((authors) => setFollowedAuthorIds(authors.map((author) => author.authorUserId)))
-        .catch(() => undefined);
-    }
     return context;
   }, []);
 
@@ -855,6 +856,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   useEffect(() => {
     const onHidden = () => {
       if (document.visibilityState !== "hidden") return;
+      flushAftertasteRef.current(true);
       const story = currentStoryRef.current;
       if (story) recordHeartbeatRef.current(story);
     };
@@ -863,7 +865,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // not an ending, and the verdict stays open.
     const onTeardown = (event?: PageTransitionEvent) => {
       if (event?.persisted) onHidden();
-      else recordOutcomeRef.current("exit");
+      else { flushAftertasteRef.current(true); recordOutcomeRef.current("exit"); }
     };
 
     document.addEventListener("visibilitychange", onHidden);
@@ -987,6 +989,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    */
   const recordReaderEvent = useCallback(
     (eventType: ReaderEventType, story: Story, value = 1, metadata: Record<string, unknown> = {}) => {
+      if (!exposedStories.current.has(story.id)) return;
       const experimentContext = experimentRef.current;
       const activeSeconds = readingClock.current.activeSeconds();
       const placement = servedPlacement.current.get(story.id);
@@ -1104,7 +1107,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           (currentCommentDelta && currentCommentDelta.base === currentStory.commentsCount ? currentCommentDelta.added : 0)
       )
     : 0;
-  const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || t.bokAuthor);
+  const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || wordsNow().bokAuthor);
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
 
   // Ask for the next slate a few boks before the end, so it is there in time.
@@ -1114,6 +1117,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     void loadMoreFeed();
   }, [isSupabaseReader, loadMoreFeed, rankedStories, selectedIndex]);
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
+  const currentLikeCount = currentStory
+    ? displayedLikeCount(currentStory.likes, persistedLikedStoryIds.has(currentStory.id), isCurrentStoryLiked)
+    : 0;
   // Nobody is a guest before the account lookup has answered.
   const isGuestReader = identitySettled && isSupabaseReader && (!user || user.isAnonymous);
 
@@ -1163,7 +1169,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
   /** The screen and the browser's colour go back together, however a format closed. */
   function closedFormat() {
-    paintBrowserChrome(null);
     // The music the format silenced comes back with the feed. Closing is a
     // tap, which is what a browser needs before it will play.
     if (musicPausedForFormat.current) {
@@ -1181,91 +1186,95 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }
 
   useEffect(() => {
-    if (formatOnScreen) paintBrowserChrome(playerChromeColor);
-    else closedFormat();
+    if (!formatOnScreen) closedFormat();
   }, [formatOnScreen]);
-  /**
-   * Answered once per opening, however many times it is replayed.
-   *
-   * Listening again and landing on the question a second time is not a second
-   * opinion - it is the same reader on the same evening - and the recommender
-   * would count it twice. Reset when a format is opened.
-   */
-  const finaleAnswered = useRef(false);
-  /**
-   * What the end of a boks series piece does, built once and handed to every
-   * format, so the end of a poem and the end of a story are the same buttons
-   * doing the same things. A new format takes this object and nothing else.
-   */
+  // Safari also samples the document background for its native bars. Keep it
+  // with the visible surface, including cover swipes and closing a player.
+  const coverChrome = currentStory && !seriesOpen && !authPanelOpen && !commentOpen && !authorSheet && !shareOpen && readingPhase === "cover"
+    ? getBokArtwork(currentStory) ? bokArtworkStyle(currentStory.id)["--bok-art-chrome"] : bokCoverStyle(currentStory.id)["--bok-cover"]
+    : null;
+  useEffect(() => {
+    paintBrowserChrome(formatOnScreen ? playerChromeColor : coverChrome);
+    return () => paintBrowserChrome(null);
+  }, [formatOnScreen, coverChrome]);
+  const seriesIndex = seriesSequence.findIndex(piece => piece.storyId === currentStoryId);
+  const nextSeriesPiece = seriesIndex >= 0 ? seriesSequence[seriesIndex + 1] : undefined;
+  const nextBok = formatFromSeries.current
+    ? nextSeriesPiece ? { id: nextSeriesPiece.storyId, title: nextSeriesPiece.title, authorName: nextSeriesPiece.author } : undefined
+    : rankedStories[selectedIndex + 1];
+  function flushAftertaste(exit = false) {
+    if (!currentStory || sentAftertastes.current.has(currentStory.id)) return;
+    const tags = aftertasteDrafts.current[currentStory.id] ?? [];
+    if (!tags.length) return;
+    sentAftertastes.current.add(currentStory.id);
+    setAftertastes(current => ({ ...current }));
+    recordReaderEvent("aftertaste", currentStory, tags.length, { tags });
+    void eventQueue.current?.flush({ keepalive: exit });
+  }
+  useEffect(() => { flushAftertasteRef.current = flushAftertaste; });
   const finale: FinaleActions = {
     liked: isCurrentStoryLiked,
+    likeCount: currentLikeCount,
+    commentCount: currentCommentCount,
     onLike: () => void likeStory(),
-    onShare: () => void shareStory(),
+    onShare: () => setShareOpen(true),
+    onComments: () => setCommentOpen(true),
+    onInteract: () => { readingClock.current.hold(); setReadingPhase("finale"); },
+    nextBok: nextBok ? { id: nextBok.id, title: nextBok.title, authorName: nextBok.authorName, artwork: getBokArtwork(nextBok) } : undefined,
+    nextLabel: formatFromSeries.current ? t("Back to Series", "Вернуться в Series") : t("Find more boks", "Найти ещё boks"),
     onNext: () => {
-      setCinemaOpen(false);
-      setPoem(null);
-      // From the shelf, "choose the next one" means the shelf: it is where
-      // the next one is chosen, and the feed under it was never left.
-      if (formatFromSeries.current) return;
+      flushAftertaste();
+      setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
+      if (formatFromSeries.current) {
+        if (nextSeriesPiece) void openSeriesPiece(nextSeriesPiece, true);
+        else { recordReadingOutcome("button"); openSeries(); }
+        return;
+      }
       void nextStory("button");
     },
     onReached: () => {
+      readingClock.current.hold(); setFormatPlaying(false);
       if (currentStory && seriesPieceFor(currentStory.id)) setSeriesHeard(rememberHeardSeries(currentStory.id));
     },
+    aftertaste: currentStory ? aftertastes[currentStory.id] ?? [] : [],
+    aftertasteSubmitted: currentStory ? sentAftertastes.current.has(currentStory.id) : false,
     onAftertaste: (tags) => {
-      // The one thing a format records. Reading outcomes stay out of it
-      // deliberately, but this is a reader telling us something no clock can.
-      if (!currentStory || finaleAnswered.current) return;
-      finaleAnswered.current = true;
-      recordReaderEvent("aftertaste", currentStory, tags.length, { tags });
+      if (!currentStory || sentAftertastes.current.has(currentStory.id)) return;
+      readingClock.current.hold(); setReadingPhase("finale");
+      aftertasteDrafts.current[currentStory.id] = tags;
+      setAftertastes(current => ({ ...current, [currentStory.id]: tags }));
     },
   };
+  const readerOverlayOpen = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null);
   const readerInteractionBlocked = Boolean(
-    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || hideTarget || cinemaOpen || poem || seriesOpen
+    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null
   );
 
-  /**
-   * A first visit gets one line of how-to. With the controls hidden a new
-   * reader sees only the text, and on a phone the next/previous buttons are
-   * not there at all - moving on is a swipe nobody has been told about. Shown
-   * once per device, a moment after the first boks appears, and gone at the
-   * first swipe, tap or keypress, or after ten seconds.
-   */
+  const guestNoticeVisible = Boolean(guestNoticeStep && isGuestReader && !readerOverlayOpen && (formatOnScreen ? formatEnded : !seriesOpen && readingPhase !== "reading"));
   useEffect(() => {
-    if (!currentStoryId) return;
-    let seen = true;
-    try {
-      seen = window.localStorage.getItem(firstVisitHintKey) === "1";
-    } catch {
-      seen = true;
-    }
-    if (seen) return;
-    const show = window.setTimeout(() => {
-      try {
-        window.localStorage.setItem(firstVisitHintKey, "1");
-      } catch {
-        // Shown this once anyway.
-      }
-      setFirstVisitHint(window.matchMedia("(pointer: coarse)").matches ? "touch" : "pointer");
-    }, 1200);
-    return () => window.clearTimeout(show);
-    // Once, for the first boks only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Boolean(currentStoryId)]);
+    if (!guestNoticeVisible || !guestNoticeStep) return;
+    saveAnonymousNoticeState({ ...readAnonymousNoticeState(), [guestNoticeStep]: true });
+  }, [guestNoticeVisible, guestNoticeStep]);
 
   useEffect(() => {
-    if (!firstVisitHint) return;
-    const hide = window.setTimeout(() => setFirstVisitHint(null), 10000);
-    return () => window.clearTimeout(hide);
-  }, [firstVisitHint]);
-
-  useEffect(() => {
-    if (!firstVisitHint) return;
-    const hide = window.setTimeout(() => setFirstVisitHint(null), 0);
-    return () => window.clearTimeout(hide);
-    // A swipe, a tap that opens the controls, or a key: the reader has it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, readerChromeVisible]);
+    if (!readerInteractionBlocked) return;
+    // A delayed trackpad release belongs to the surface where it began.
+    // Opening a sheet or player cancels it before it can turn the bok behind it.
+    if (wheelReleaseTimer.current !== null) window.clearTimeout(wheelReleaseTimer.current);
+    if (wheelIdleTimer.current !== null) window.clearTimeout(wheelIdleTimer.current);
+    if (boundaryPullResetTimer.current !== null) window.clearTimeout(boundaryPullResetTimer.current);
+    wheelReleaseTimer.current = null;
+    wheelIdleTimer.current = null;
+    boundaryPullResetTimer.current = null;
+    wheelArmedAt.current = null;
+    wheelBoundaryArmed.current = { previous: false, next: false };
+    wheelTravel.current = { x: 0, y: 0, lastAt: 0, atTop: false, atBottom: false, allowPrevious: false, allowNext: false };
+    touchStart.current = null;
+    pointerStart.current = null;
+    pullArmed.current = false;
+    const frame = window.requestAnimationFrame(() => setBoundaryPull(null));
+    return () => window.cancelAnimationFrame(frame);
+  }, [readerInteractionBlocked]);
 
   useEffect(() => {
     if (!readerFlash) return;
@@ -1311,6 +1320,17 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     return () => window.clearTimeout(handle);
   }, [pendingLibraryStoryId, rankedStories, hideReaderChrome]);
 
+  // Activity opens a conversation only after the selected bok has arrived.
+  // Opening the sheet at fetch completion would briefly show the old bok.
+  useEffect(() => {
+    if (!pendingCommentStoryId || pendingLibraryStoryId || currentStoryId !== pendingCommentStoryId) return;
+    const handle = window.setTimeout(() => {
+      setPendingCommentStoryId(null);
+      setCommentOpen(true);
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, [currentStoryId, pendingCommentStoryId, pendingLibraryStoryId]);
+
   /**
    * A piece opened from the shelf: once the feed has landed on it, open it in
    * its format. Waits for the feed rather than opening on a boks that is not
@@ -1337,6 +1357,14 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   /** The browser's back and forward move between the feed and the shelf. */
   useEffect(() => {
     const onPopState = () => {
+      formatRequest.current += 1;
+      storyOpenRequest.current += 1;
+      pendingSeriesFormat.current = null;
+      setPendingCommentStoryId(null);
+      setFormatLoading(false); setSeriesOpening(null); setOpenIssue(null);
+      flushAftertasteRef.current();
+      setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
+      setCommentOpen(false); setShareOpen(false); setBokMenuOpen(false);
       const onShelf = window.location.pathname === "/series";
       setSeriesOpen(onShelf);
       if (onShelf) refreshSeriesContext();
@@ -1345,19 +1373,28 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  /**
-   * Nothing is being read while the shelf is up, so the feed's clock stops -
-   * time on the shelf is not time on the boks under it. A format opened from
-   * the shelf is reading, and runs the clock as it does from the feed.
-   */
+  // Visibility may resume a clock only when its reading surface is eligible.
+  // Settings, decorative covers, final actions and paused audio are all holds.
   useEffect(() => {
-    if (seriesOpen && !cinemaOpen && !poem) {
-      readingClock.current.hold();
-      return;
+    const overlay = authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
+    const reading = formatOnScreen ? formatPlaying : !seriesOpen && readingPhase === "reading";
+    if (overlay || !reading) readingClock.current.hold();
+    else {
+      readingClock.current.release();
+      if (document.visibilityState === "visible") readingClock.current.resume();
     }
-    readingClock.current.release();
-    if (document.visibilityState === "visible") readingClock.current.resume();
-  }, [seriesOpen, cinemaOpen, poem]);
+  }, [authPanelOpen, commentOpen, authorSheet, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
+
+  // Start is measured in foreground reading seconds, never cover dwell.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const story = currentStoryRef.current;
+      if (story && readingClock.current.isRunning() && readingClock.current.activeSeconds() >= 3) {
+        recordReaderEvent("start", story, 1, { genre: story.genre, mood: story.mood });
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [recordReaderEvent]);
 
   // The latest values the arrival effect needs, without making them reasons
   // to run it. See below.
@@ -1378,9 +1415,13 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * impression was logged for a boks already on screen.
    */
   useEffect(() => {
-    const { currentStory: story, recordReaderEvent: record } = arrivalContext.current;
+    const { currentStory: story } = arrivalContext.current;
     if (!story || !currentStoryId) return;
+    readingClock.current.hold();
     readingClock.current.restart();
+    setReadingPhase("cover");
+    setTextProgress(0);
+    setFormatPlaying(false);
     if (storyScroll.current) storyScroll.current.scrollTop = 0;
     if (wheelIdleTimer.current !== null) {
       window.clearTimeout(wheelIdleTimer.current);
@@ -1408,24 +1449,22 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // a rail the reader had deliberately opened, one boks after another, which
     // is what https://github.com/IvanCherep/boks/issues/1 reports. The reader
     // decides, and their decision carries across the whole feed.
-    record("impression", story, 1, {
-      genre: story.genre,
-      mood: story.mood,
-      // How much was there to choose from, and how much of it was new. A feed
-      // ranked over three unread boks is not a ranking.
-      ...catalogContextRef.current,
-    });
 
-    const startTimer = window.setTimeout(() => {
-      record("start", story, 1, { genre: story.genre, mood: story.mood });
-    }, 2600);
 
     return () => {
       window.clearTimeout(overflowTimer);
       window.clearTimeout(wheelArmTimer);
-      window.clearTimeout(startTimer);
     };
   }, [currentStoryId]);
+
+  // Loading a feed under a directly opened Series shelf is not a view.
+  // Expose only the bok actually drawn in the reader or its real player.
+  useEffect(() => {
+    const { currentStory: story, recordReaderEvent: record } = arrivalContext.current;
+    if (!story || (seriesOpen && !formatOnScreen) || exposedStories.current.has(story.id)) return;
+    exposedStories.current.add(story.id);
+    record("impression", story, 1, { genre: story.genre, mood: story.mood, ...catalogContextRef.current });
+  }, [currentStoryId, seriesOpen, formatOnScreen]);
 
   /**
    * A guest's read count. Separate from arrival because it has a second
@@ -1449,21 +1488,23 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
     // Counted once it has actually been read a while - see `guestReadDwellMs`.
     const storyId = currentStoryId;
-    const handle = window.setTimeout(() => {
+    const handle = window.setInterval(() => {
+      if (!readingClock.current.isRunning() || readingClock.current.activeSeconds() * 1000 < guestReadDwellMs) return;
+      window.clearInterval(handle);
       countedAnonymousStories.current.add(storyId);
       const nextCount = recordAnonymousBoksRead(storyId);
       setGuestReadCount(nextCount);
 
       const notices = readAnonymousNoticeState();
-      if (nextCount === anonymousReadLimits.firstNotice && !notices.first) {
-        setGuestNoticeStep("first");
-        saveAnonymousNoticeState({ ...notices, first: true });
-      } else if (nextCount === anonymousReadLimits.secondNotice && !notices.second) {
+      // Prepare the notice after real dwell, but show it only at a reading
+      // break (ending or next cover). Persist it only once actually visible.
+      if (nextCount >= anonymousReadLimits.secondNotice && !notices.second) {
         setGuestNoticeStep("second");
-        saveAnonymousNoticeState({ ...notices, second: true });
+      } else if (nextCount >= anonymousReadLimits.firstNotice && !notices.first && nextCount < anonymousReadLimits.secondNotice) {
+        setGuestNoticeStep("first");
       }
-    }, guestReadDwellMs);
-    return () => window.clearTimeout(handle);
+    }, 500);
+    return () => window.clearInterval(handle);
   }, [currentStoryId, isGuestReader]);
 
   useEffect(() => {
@@ -1589,6 +1630,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }
 
   function move(delta: number, axis: StoryTransitionAxis = "horizontal") {
+    formatFromSeries.current = false;
     return transitionToStory(selectedIndex + delta, axis);
   }
 
@@ -1625,7 +1667,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     }
   }
 
-  function openAccount(reason: "manual" | "notice" | "required" = "manual", intent: AuthIntent = "general") {
+  function openAccount(reason: "manual" | "notice" | "required" = "manual", intent: AuthIntent = "general", section?: "home" | "typography" | "languages" | "feedback") {
     // The moment a guest meets the sign-up, and why - the limit, a like, a
     // follow, a comment, the notice, or their own tap on the account button.
     // An account holder opening Settings is not a sign-up prompt.
@@ -1636,6 +1678,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       );
     }
     setAuthReason(reason);
+    setAuthInitialSection(section);
     setAuthIntent(intent);
     setAuthNotice("");
     setAuthPanelOpen(true);
@@ -1649,7 +1692,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * it already has its impression for this session.
    */
   async function openReadBoks(storyId: string, entry: ReaderEntry): Promise<boolean> {
+    const request = ++storyOpenRequest.current;
+    setOpenIssue(null);
     if (currentStoryId === storyId) {
+      formatFromSeries.current = entry === "series";
+      entryRef.current = { storyId, entry, arrived: true };
       if (storyScroll.current) storyScroll.current.scrollTop = 0;
       setAuthPanelOpen(false);
       hideReaderChrome();
@@ -1666,19 +1713,25 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
     try {
       const loaded = await loadSupabaseStory(storyId);
+      if (request !== storyOpenRequest.current) return false;
       if (!loaded) {
-        notify(wordsNow().unavailable);
+        setAuthPanelOpen(false);
+        setOpenIssue({ kind: "unavailable", storyId, entry });
         return false;
       }
 
       const { story, likedByMe } = loaded;
+      if (currentStoryRef.current && currentStoryRef.current.id !== story.id) recordOutcomeRef.current("button");
+      formatFromSeries.current = entry === "series";
       entryRef.current = { storyId: story.id, entry, arrived: false };
       setLiked((state) => ({ ...state, [story.id]: likedByMe }));
       setLibraryEntry({ story, index: selectedIndex });
       setPendingLibraryStoryId(story.id);
       return true;
-    } catch (error) {
-      notify(error instanceof Error ? error.message : wordsNow().couldNotOpen);
+    } catch {
+      if (request !== storyOpenRequest.current) return false;
+      setAuthPanelOpen(false);
+      setOpenIssue({ kind: "story", storyId, entry });
       return false;
     }
   }
@@ -1694,6 +1747,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
    * reader - the same rule the rail button has always followed.
    */
   function openReadingFormat(storyId: string) {
+    setOpenIssue(null);
+    setFormatEnded(false);
+    const request = ++formatRequest.current;
     // A format is reading too, so a guest who has used up their free boks
     // meets the same gate here as in the feed - it used to play over it.
     if (
@@ -1711,7 +1767,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     if (musicOn) musicPausedForFormat.current = true;
     stopReadingMusic(false);
     setMusicOn(false);
-    finaleAnswered.current = false;
+    setFormatPlaying(false);
+    setFormatLoading(true);
     // Now, before the manifest loads: the tap that opened the format is what
     // lets a browser hand over the whole screen.
     if (takeScreen()) formatTookScreen.current = true;
@@ -1719,18 +1776,21 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     formatUsed.current = { storyId, format: manifestUrl ? "poem" : "cinema" };
     if (manifestUrl) {
       loadPoemManifest(manifestUrl)
-        .then(setPoem, () => {
-          notify(wordsNow().poemFailed);
+        .then((manifest) => { if (request === formatRequest.current) setPoem(manifest); }, () => {
+          if (request !== formatRequest.current) return;
+          setOpenIssue({ kind: "audio", storyId });
           closedFormat();
         })
-        .finally(() => setSeriesOpening(null));
+        .finally(() => { if (request === formatRequest.current) { setSeriesOpening(null); setFormatLoading(false); } });
       return;
     }
     setCinemaOpen(true);
+    setFormatLoading(false);
     setSeriesOpening(null);
   }
 
   function openSeries() {
+    flushAftertaste();
     refreshSeriesContext();
     rememberSeenSeries(seriesStoryIds);
     setSeriesIsNew(false);
@@ -1743,20 +1803,33 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     }
   }
 
-  function openFeed() {
+  function openFeed(clearSeriesOrigin = true) {
+    if (clearSeriesOrigin) {
+      formatFromSeries.current = false;
+      formatRequest.current += 1; storyOpenRequest.current += 1;
+      pendingSeriesFormat.current = null;
+      setFormatLoading(false); setSeriesOpening(null); setOpenIssue(null);
+    }
     setSeriesOpen(false);
     if (window.location.pathname === "/series") {
       // Back to where the shelf was opened from, when it was opened here;
       // a page that landed on /series has nothing behind it to go back to.
-      if (window.history.state?.boksView === "series") window.history.back();
+      // Read text stays in this reader instance. Traversing history lets the
+      // app router remount it, discarding the chosen bok and its audio place.
+      if (!clearSeriesOrigin) window.history.replaceState(null, "", "/");
+      else if (window.history.state?.boksView === "series") window.history.back();
       else window.history.replaceState(null, "", "/");
     }
   }
 
-  async function openSeriesPiece(piece: SeriesPiece) {
+  async function openSeriesPiece(piece: SeriesPiece, continueSequence = false) {
     if (seriesOpening) return;
+    // Heard marks may reorder the live shelf at an ending. Keep the actual
+    // order chosen when this Series reading started, without wrapping.
+    if (!continueSequence) setSeriesSequence(publishedSeriesPieces);
     formatFromSeries.current = true;
     if (currentStoryId === piece.storyId) {
+      entryRef.current = { storyId: piece.storyId, entry: "series", arrived: true };
       openReadingFormat(piece.storyId);
       return;
     }
@@ -1774,22 +1847,57 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }
 
 
-  /** Whether the text on screen has anywhere to scroll to. */
-  function isStoryScrollable() {
-    const node = storyScroll.current;
-    if (!node) return false;
-    return node.scrollHeight > node.clientHeight + 4;
+  function measureText() {
+    const viewport = storyScroll.current;
+    const body = textRegion.current;
+    if (!viewport || !body) return { phase: "cover" as const, progress: 0, scrollable: false };
+    return textReadingState({ top: body.getBoundingClientRect().top - viewport.getBoundingClientRect().top, height: body.offsetHeight, viewport: viewport.clientHeight });
   }
-
+  function isStoryScrollable() {
+    // Listening uses real playback progress and the same time threshold.
+    return formatUsed.current?.storyId === currentStory?.id || measureText().scrollable;
+  }
   function updateStoryProgress() {
-    if (!currentStory || !storyScroll.current) return 0;
-    const node = storyScroll.current;
-    const distance = Math.max(1, node.scrollHeight - node.clientHeight);
-    const progress = node.scrollHeight <= node.clientHeight + 4 ? 0 : Math.min(1, Math.max(0, node.scrollTop / distance));
+    if (!currentStory) return 0;
+    if (formatOnScreen) return storyProgress.current[currentStory.id] ?? 0;
+    const measured = measureText();
     const existing = storyProgress.current[currentStory.id] ?? 0;
-    storyProgress.current[currentStory.id] = Math.max(existing, progress);
+    storyProgress.current[currentStory.id] = Math.max(existing, measured.progress);
     return storyProgress.current[currentStory.id];
   }
+  function readText(fromStart = false) {
+    formatRequest.current += 1;
+    setFormatLoading(false); setSeriesOpening(null); setOpenIssue(null);
+    closedFormat();
+    setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
+    if (seriesOpen) openFeed(false);
+    requestAnimationFrame(() => {
+      const viewport = storyScroll.current;
+      const body = textRegion.current;
+      if (viewport && body && (fromStart || body.getBoundingClientRect().top >= viewport.getBoundingClientRect().bottom || body.getBoundingClientRect().bottom <= viewport.getBoundingClientRect().top + 80)) viewport.scrollTo({ top: viewport.scrollTop + (body.closest(".reader-content") ?? body).getBoundingClientRect().top - viewport.getBoundingClientRect().top, behavior: "instant" });
+      setReadingPhase("reading");
+    });
+  }
+  function onFormatPlayback(state: { playing: boolean; progress: number; ended: boolean }) {
+    if (currentStory) storyProgress.current[currentStory.id] = Math.max(storyProgress.current[currentStory.id] ?? 0, state.progress);
+    setFormatPlaying(state.playing && !state.ended);
+    setFormatEnded(state.ended);
+  }
+
+  useEffect(() => {
+    const viewport = storyScroll.current;
+    const body = textRegion.current;
+    if (!viewport || !body) return;
+    const measure = () => {
+      if (formatOnScreen) return;
+      const reading = textReadingState({ top: body.getBoundingClientRect().top - viewport.getBoundingClientRect().top, height: body.offsetHeight, viewport: viewport.clientHeight });
+      setReadingPhase(reading.phase); setTextProgress(reading.progress);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport); observer.observe(body);
+    const frame = requestAnimationFrame(measure);
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [currentStoryId, formatOnScreen]);
 
   // Keep the exit and heartbeat handlers pointing at the current closures
   // without re-binding listeners, which must survive the reading session.
@@ -1860,7 +1968,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   }, []);
 
   function recordReadingOutcome(reason: ReadOutcomeReason) {
-    if (!currentStory) return;
+    flushAftertaste(reason === "exit");
+    if (!currentStory || !exposedStories.current.has(currentStory.id)) return;
     const key = `${sessionId.current}:${currentStory.id}`;
     if (trackedOutcomes.current.has(key)) return;
 
@@ -1971,13 +2080,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     }
 
     setStatus("");
-    try {
-      const result = await reportBok({ reelId: currentStory.id, reason, kind });
-      return result.status;
-    } catch (error) {
-      notify(readableBoksError(error, wordsNow().reportFailed));
-      return null;
-    }
+    const result = await reportBok({ reelId: currentStory.id, reason, kind });
+    return result.status;
   }
 
   async function likeStory() {
@@ -2026,54 +2130,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // the Worker's CPU and the database's load; the next feed ranks with it.
   }
 
-  const isFollowingCurrentAuthor = Boolean(
-    currentStory?.authorUserId && followedAuthorIds.includes(currentStory.authorUserId)
-  );
-
-  /**
-   * Following is a durable relationship, so it needs a durable identity. A
-   * guest is asked to create an account rather than silently failing.
-   */
-  async function toggleFollow() {
-    const authorUserId = currentStory?.authorUserId;
-    if (!authorUserId) return;
-
-    if (accountSuspended) {
-      showSuspension();
-      return;
-    }
-
-    if (!hasSignedInAccount) {
-      openAccount("manual", "follow");
-      return;
-    }
-
-    const next = !isFollowingCurrentAuthor;
-    if (next) haptic("confirm");
-    setFollowBusy(true);
-    // Optimistic: the button is the only feedback, and a round trip on every
-    // tap makes it feel broken.
-    setFollowedAuthorIds((current) =>
-      next ? [...current, authorUserId] : current.filter((id) => id !== authorUserId)
-    );
-
-    try {
-      const saved = await setAuthorFollow(authorUserId, next);
-      setFollowedAuthorIds((current) =>
-        saved.following
-          ? [...new Set([...current, authorUserId])]
-          : current.filter((id) => id !== authorUserId)
-      );
-    } catch (error) {
-      setFollowedAuthorIds((current) =>
-        next ? current.filter((id) => id !== authorUserId) : [...current, authorUserId]
-      );
-      notify(error instanceof Error ? error.message : wordsNow().followFailed);
-    } finally {
-      setFollowBusy(false);
-    }
-  }
-
   /**
    * Opening an author closes whatever else was covering the reading.
    *
@@ -2091,34 +2147,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     revealReaderChrome(0);
   }
 
-  async function shareStory() {
-    if (!currentStory) return;
-    const story = currentStory;
-    // The feed URL would open a different bok for whoever received it.
-    const url = `${window.location.origin}/b/${story.id}`;
-    try {
-      if (navigator.share) {
-        // The link alone. Given a text as well, Telegram joins the two with no
-        // space - `…/b/<id>Read "Конкурс" on boks` - and then links everything up
-        // to the first space, so the id is damaged and the preview is empty.
-        // Nothing is lost by sending less: the preview itself now carries the
-        // title, the writer and the opening lines. `title` stays, because
-        // targets use it as a subject rather than joining it to the link.
-        await navigator.share({ title: story.title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        notify(wordsNow().linkCopied);
-      }
-    } catch (error) {
-      // Closing the share sheet is not a failure.
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      // No clipboard (some in-app browsers) or it was refused: show the link
-      // so it can be copied by hand.
-      notify(url);
-      return;
-    }
-    recordReaderEvent("share", story);
-  }
+  function shareStory() { setShareOpen(true); }
 
   function adjustCommentCount(story: Story, change: number) {
     setCommentCountDeltas((current) => {
@@ -2221,6 +2250,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       window.clearTimeout(boundaryPullResetTimer.current);
       boundaryPullResetTimer.current = null;
     }
+    if (next.direction === "previous" && selectedIndex === 0) { clearBoundaryPull(true); return; }
     // One tick at the moment letting go would change bok, so the commitment is
     // felt as well as seen - and one tick only, not one per touchmove.
     const armed = next.progress >= 1;
@@ -2521,6 +2551,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     updateStoryProgress();
     // A bok arrives at the top, so only a reader moves it this far.
     if (element && element.scrollTop > 24) recordTouchRef.current("scroll");
+    const measured = measureText();
+    setReadingPhase(measured.phase);
+    setTextProgress(measured.progress);
     // Scrolling is reading. It puts the controls away and never brings them up.
     hideReaderChrome();
     updateStoryOverflow();
@@ -2542,58 +2575,135 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     setStoryHasMore(remaining > 12);
   }
 
+  const issueTitle = openIssue?.kind === "unavailable" ? t("Bok unavailable.", "Bok недоступен.") : openIssue?.kind === "audio" ? t("Audio unavailable", "Аудио недоступно") : t("Couldn’t load the bok.", "Не удалось загрузить bok.");
+  const openIssuePanel = openIssue && <ReaderSheet label={issueTitle} onClose={() => setOpenIssue(null)} className="reader-system-dialog">
+    <div className="reader-system-page__body">
+      <header className="reader-system-page__header"><button type="button" aria-label={t("Back", "Назад")} onClick={() => setOpenIssue(null)}><ReaderBackIcon size={21} /></button><span>{openIssue.kind === "unavailable" ? t("Shared bok", "Ссылка на bok") : t("Connection error", "Ошибка соединения")}</span><span /></header>
+      {openIssue.kind === "unavailable" ? <div className="reader-system-missing" aria-hidden="true"><span>b.</span><i /></div> : <div className="reader-system-art reader-system-art--offline" aria-hidden="true">·<i>—</i>·</div>}
+      <h1 className="reader-system-title">{openIssue.kind === "unavailable" ? <>Bok<br />{t("unavailable.", "недоступен.")}</> : issueTitle}</h1>
+    <div className="reader-system-actions">
+      <p className="text-sm text-[var(--muted-foreground)]">{openIssue.kind === "unavailable" ? t("It may have been removed or is no longer published. You can keep reading from your feed.", "Возможно, его удалили или сняли с публикации. Вы можете продолжить чтение в ленте.") : t("Check your connection and try again.", "Проверьте соединение и попробуйте снова.")}</p>
+      {openIssue.kind !== "unavailable" && <Button className="w-full" onClick={() => {
+        const issue = openIssue;
+        if (issue.kind === "audio") openReadingFormat(issue.storyId);
+        else if (issue.entry === "series" && seriesPieceFor(issue.storyId)) void openSeriesPiece(seriesPieceFor(issue.storyId)!);
+        else void openReadBoks(issue.storyId, issue.entry);
+      }}>{t("Try again", "Попробовать снова")}</Button>}
+      {openIssue.kind === "audio" && <Button className="w-full" variant="secondary" onClick={() => readText()}>{t("Read text", "Читать текст")}</Button>}
+      <Button className="w-full" variant={openIssue.kind === "unavailable" ? "default" : "ghost"} onClick={() => { setOpenIssue(null); openFeed(); }}>{openIssue.kind === "unavailable" ? t("Open another bok", "Открыть другой bok") : t("Back to the feed", "Вернуться в ленту")}</Button>
+      {openIssue.kind === "unavailable" && <Button variant="ghost" onClick={() => { setOpenIssue(null); openAccount("manual", "general", "feedback"); }}>{t("Report a broken link", "Сообщить о нерабочей ссылке")}</Button>}
+    </div>
+    </div>
+  </ReaderSheet>;
+
+  const accountPanel = (
+        <UserAuthPanel
+          open={authPanelOpen}
+          intent={authIntent}
+          initialSection={authInitialSection}
+          reason={authReason}
+          notice={authNotice}
+          guestReadCount={guestReadCount}
+          currentUser={user}
+          onClose={() => setAuthPanelOpen(false)}
+          onOpenReadBoks={async (storyId, openComments) => {
+            // A boks from the library is read in the feed, so the shelf steps aside.
+            if (seriesOpen) openFeed();
+            const opened = await openReadBoks(storyId, "library");
+            if (opened && openComments) setPendingCommentStoryId(storyId);
+          }}
+          onUserChanged={handleUserChanged}
+          onReadingLanguagesChanged={adoptReadingLanguages}
+          onOpenFeed={() => { setAuthPanelOpen(false); openFeed(); }}
+          onOpenSeries={() => { setAuthPanelOpen(false); openSeries(); }}
+        />
+  );
+
+  const authorPanel = authorSheet && (
+    <AuthorSheet
+      key={`${authorSheet.handle}|${authorSheet.authorName ?? ""}`}
+      handle={authorSheet.handle}
+      authorName={authorSheet.authorName}
+      currentStoryId={currentStoryId}
+      canFollow={hasSignedInAccount}
+      onClose={() => setAuthorSheet(null)}
+      onOpenWriter={(writer) => openAuthor(authorSheet.handle, writer)}
+      onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
+      onOpenBok={(storyId) => {
+        setAuthorSheet(null);
+        void openReadBoks(storyId, "author");
+      }}
+      onRequestAccount={() => {
+        setAuthorSheet(null);
+        openAccount("manual", "follow");
+      }}
+    />
+  );
+
   if (!currentStory && seriesOpen && seriesContext) {
     // The shelf does not wait for the feed: a reader who landed on /series
     // sees it while the feed is still on its way, or if it never arrives.
     return (
-      <main className="reader-shell reader-shell--focus h-[100svh] overflow-hidden text-[var(--foreground)]">
-        <SeriesView
+      <main className="reader-shell reader-v44 reader-viewport reader-shell--focus overflow-hidden text-[var(--foreground)]">
+        <div style={{ display: "contents" }} inert={readerOverlayOpen || formatOnScreen}><SeriesView
+          readerLanguages={seriesContext.readerLanguages}
+          onPiecesChanged={setPublishedSeriesPieces}
           heard={seriesHeard}
           openingStoryId={seriesOpening}
           signedIn={hasSignedInAccount}
           onOpenPiece={(piece) => void openSeriesPiece(piece)}
-          onOpenAccount={() => openAccount("manual")}
-        />
-        <ReaderTabs
+          onOpenAccount={() => openAccount("manual", "general", "home")}
+          onOpenLanguages={() => openAccount("manual", "general", "languages")}
+        /></div>
+        {!readerOverlayOpen && <ReaderTabs
           className="reader-tabs--pinned"
           active="series"
           seriesIsNew={false}
           onFeed={openFeed}
           onSeries={openSeries}
-        />
+          onYou={() => openAccount("manual")}
+        />}
+        {authorPanel}
+        {accountPanel}
+        {openIssuePanel}
       </main>
     );
   }
 
   if (!currentStory) {
     return (
-      <EmptyFeedScreen
-        notice={emptyFeedNotice({
-          phase,
-          message: status,
-          languages: readingLanguagesRef.current,
-          coverage: user?.languageCoverage,
-          uiLanguage,
-        })}
-        onAddLanguages={(offer) => void applyReadingLanguages([...readingLanguagesRef.current, ...offer])}
-        onChangeLanguages={() => openAccount("manual")}
-        onRetry={() => void retryFeed()}
-      />
+      <div className="reader-v44">
+        <div style={{ display: "contents" }} inert={readerOverlayOpen}>
+          <EmptyFeedScreen
+            loading={phase === "loading"}
+            notice={emptyFeedNotice({
+              phase,
+              message: status,
+              languages: readingLanguagesRef.current,
+              coverage: user?.languageCoverage,
+              uiLanguage,
+            })}
+            onAddLanguages={(offer) => void applyReadingLanguages([...readingLanguagesRef.current, ...offer])}
+            onChangeLanguages={() => openAccount("manual", "general", "languages")}
+            onRetry={() => void retryFeed()}
+          />
+        </div>
+        {!readerOverlayOpen && <ReaderTabs className="reader-tabs--pinned" active="feed" seriesIsNew={seriesIsNew} onFeed={openFeed} onSeries={openSeries} onYou={() => openAccount("manual")} />}
+        {authorPanel}
+        {accountPanel}
+        {openIssuePanel}
+      </div>
     );
   }
 
   return (
     <main
-      className={`reader-shell h-[100svh] overflow-hidden text-[var(--foreground)] ${
+      style={{ ...bokCoverStyle(currentStory.id), ...bokArtworkStyle(currentStory.id) } as React.CSSProperties}
+      className={`reader-shell reader-v44 reader-viewport reader-phase--${readingPhase} overflow-hidden text-[var(--foreground)] ${
         readerChromeVisible || commentOpen ? "reader-shell--chrome" : "reader-shell--focus"
-      } ${guestNoticeStep ? "reader-shell--notice" : ""}`}
+      } ${guestNoticeVisible ? "reader-shell--notice" : ""}`}
     >
       <section
-        // One column, always. A second column for the controls took 116px off
-        // the right of a 1120px page, so the text was centred in what was left
-        // and sat left of the middle of the screen with an empty band beside
-        // it - https://github.com/IvanCherep/boks/issues/2. The controls float
-        // over the page now, and the reading column is centred on the screen.
         className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -2608,22 +2718,21 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           className="reader-card relative grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[var(--reader)]"
           inert={readerInteractionBlocked ? true : undefined}
         >
-          {/* Account and the bok menu, one in each corner. On a wide screen
-              they lift out of the flow (see `.reader-topbar` at 1024px) so the
-              row they used to hold goes back to the text; the reading column
-              is narrow and centred, so nothing ever scrolls under them. */}
           <header className="reader-topbar z-10 flex items-center justify-between px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
             <button
               className="reader-account-trigger reader-ui"
-              onClick={() => openAccount("manual")}
-              aria-label={hasSignedInAccount ? t.openSettings : t.signInOrCreate}
-              title={hasSignedInAccount ? t.settings : t.signIn}
+              onClick={() => readingPhase === "cover" ? openAccount("manual", "general", "home") : storyScroll.current?.scrollTo({ top: 0, behavior: "smooth" })}
+              aria-label={readingPhase === "cover" ? t("Settings", "Настройки") : t("Back to cover", "К обложке")}
             >
-              <UserRound className="size-5" />
+              {readingPhase === "cover" ? <ReaderSettingsIcon className="size-5" /> : <ReaderBackIcon className="size-5" />}
             </button>
-            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t.moreAboutBok}>
-              <MoreHorizontal className="size-5" />
+            <span className="reader-topbar__mark"><BoksLogo seasonal={readingPhase === "cover"} /></span>
+            <div className="reader-topbar__tools reader-ui">
+              {readingPhase !== "cover" && <button type="button" aria-label={t("Text settings", "Настройки текста")} onClick={() => openAccount("manual", "general", "typography")}><ReaderTypeIcon size={23} /></button>}
+            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом bok")}>
+              <ReaderMoreIcon className="size-5" />
             </button>
+            </div>
           </header>
 
           <div
@@ -2639,91 +2748,31 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             onScroll={onStoryScroll}
             onWheel={onStoryWheel}
           >
-            {/* At 1024px the top bar floats, so the column takes its own room
-                above the byline - enough to clear the two corner buttons -
-                and gives back what the bar and the old footer row were
-                holding. */}
-            <div className="reader-content mx-auto flex min-h-full max-w-[720px] flex-col justify-start pb-16 pt-5 sm:pb-20 sm:pt-10 lg:pb-10 lg:pt-[4.5rem]">
-              <div className="reader-author reader-author-intro">
-                <span className="reader-author-avatar" aria-hidden="true">
-                  {currentAuthorLabel.replace(/^@/, "").slice(0, 1).toUpperCase()}
-                </span>
-                <div className="min-w-0">
-                  {currentStory.authorName ? (
-                    <span className="reader-byline">
-                      <button
-                        type="button"
-                        className="reader-byline-name"
-                        onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)}
-                        disabled={!currentStory.authorHandle}
-                      >
-                        {currentStory.authorName}
-                      </button>
-                      <button
-                        type="button"
-                        className="reader-byline-handle"
-                        onClick={() => openAuthor(currentStory.authorHandle)}
-                        disabled={!currentStory.authorHandle}
-                      >
-                        {atHandle(currentStory.authorHandle) || t.bokAuthor}
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="reader-byline-name"
-                      onClick={() => openAuthor(currentStory.authorHandle)}
-                      disabled={!currentStory.authorHandle}
-                    >
-                      {currentAuthorLabel}
-                    </button>
-                  )}
-                </div>
-                {currentStory.authorUserId && currentStory.authorUserId !== supabaseUserId && (
-                  <button
-                    type="button"
-                    className={`follow-button${isFollowingCurrentAuthor ? " follow-button--following" : ""}`}
-                    onClick={(event) => {
-                      releaseFocus(event);
-                      void toggleFollow();
-                    }}
-                    disabled={followBusy}
-                    aria-pressed={isFollowingCurrentAuthor}
-                  >
-                    {/* Following is per account. Under a byline - "Anton Chekhov,
-                        @boks" - a bare "Follow" read as following Chekhov and
-                        followed the whole publisher; say whose account it is,
-                        as the author sheet does. */}
-                    {isFollowingCurrentAuthor ? <Check className="size-3.5" /> : null}
-                    {followLabel(isFollowingCurrentAuthor, currentStory.authorName, currentStory.authorHandle)}
-                  </button>
-                )}
+            <div className="reader-cover">
+              <header className="reader-cover__desktop-bar">
+                <button type="button" onClick={() => openAccount("manual", "general", "home")} aria-label={t("Settings", "Настройки")}><ReaderSettingsIcon size={23} /></button>
+                <BoksLogo seasonal />
+                <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом bok")}><ReaderMoreIcon size={23} /></button>
+              </header>
+              {getBokArtwork(currentStory) ? <img className="reader-cover__art" src={getBokArtwork(currentStory)!} alt="" /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
+              <div className="reader-cover__heading">
+                <h1>{currentStory.title}</h1>
+                <button type="button" className="reader-cover__byline" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button>
               </div>
-
-              {/* A piece made for the series says so where the reader is
-                  already looking, and opens from here - the rail is hidden
-                  while the reader reads, and this is the one thing about
-                  the boks they would want to know before starting it. */}
-              {currentSeriesPiece && (
-                <button
-                  type="button"
-                  className="reader-series-chip"
-                  onClick={(event) => {
-                    releaseFocus(event);
-                    formatFromSeries.current = false;
-                    openReadingFormat(currentSeriesPiece.storyId);
-                  }}
-                >
-                  <Sparkles className="size-3.5" aria-hidden="true" />
-                  <span className="reader-series-chip__mark">boks series</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{t.listenProduction}</span>
+              <div className="reader-cover__caption">
+                <div className="reader-cover__buttons">
+                  <button type="button" className="reader-read-button" onClick={() => readText(true)}>{t("Read", "Читать")}<ReaderDownIcon size={19} /></button>
+                  {currentSeriesPiece && <button type="button" className="reader-play-button" onClick={() => openReadingFormat(currentStory.id)}><ReaderPlayIcon size={18} />{t("Play", "Слушать")}</button>}
+                </div>
+                <button type="button" className="feed-swipe-hint" onClick={() => void nextStory("button")}>
+                  <span>{selectedIndex > 0 ? t("Swipe between boks", "Листайте boks в обе стороны") : t("Swipe left for next bok", "Смахните влево к следующему bok")}</span>
+                  <span className={`feed-swipe-gesture${selectedIndex > 0 ? " feed-swipe-gesture--both" : ""}`} aria-hidden="true"><i /><i /></span>
                 </button>
-              )}
-              <h1 className="reader-title max-w-[680px] break-words text-[var(--foreground)]">
-                {currentStory.title}
-              </h1>
-              <div className="story-copy mt-7 max-w-[680px] text-[var(--foreground)]">
+              </div>
+            </div>
+            <div className="reader-content">
+              <div className="reader-text-heading"><span className="reader-text-heading__eyebrow">boks</span><div className="reader-text-heading__desktop-tools"><span>{currentAuthorLabel}</span><button type="button" aria-label={t("Reading settings", "Настройки чтения")} onClick={() => openAccount("manual", "general", "typography")}><ReaderTypeIcon size={23} /></button></div><h2>{currentStory.title}</h2><button type="button" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button></div>
+              <div ref={textRegion} className={`story-copy${storyBlocks[0]?.kind !== "verse" ? " story-copy--prose" : ""}`} lang={currentStory.language || "und"} translate="no">
                 {storyBlocks.map((block, index) => (
                   <p
                     key={`${currentStory.id}-${index}`}
@@ -2733,126 +2782,40 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                   </p>
                 ))}
               </div>
+              <div className="bok-endmark" aria-hidden="true">b.</div>
+              <ReadingFinale key={currentStory.id} inline actions={finale} onAgain={() => readText(true)} />
             </div>
           </div>
 
-          {boundaryPull && (
-            <div
-              className={`boundary-pull-cue boundary-pull-cue--${boundaryPull.direction}${
-                boundaryPull.progress >= 1 ? " boundary-pull-cue--armed" : ""
-              }`}
-              style={{
-                // Visible from the moment the pull engages. Opacity used to
-                // *equal* progress, so for most of a pull the cue was a faint
-                // ghost, and it was removed the instant it filled - nobody saw
-                // it full. The ring now shows progress; the cue is simply there.
-                opacity: 0.55 + boundaryPull.progress * 0.45,
-                transform: `translate(-50%, ${boundaryPull.direction === "next" ? "" : "-"}${Math.round((1 - boundaryPull.progress) * 20)}px)`,
-              }}
-              aria-hidden="true"
-            >
-              <span
-                className="boundary-pull-ring"
-                style={{
-                  background: `conic-gradient(var(--primary) ${Math.round(boundaryPull.progress * 360)}deg, var(--border) 0deg)`,
-                }}
-              >
-                <span className="boundary-pull-ring__inner">
-                  {boundaryPull.direction === "next" ? (
-                    <ChevronDown className="size-4" />
-                  ) : (
-                    <ChevronUp className="size-4" />
-                  )}
-                </span>
-              </span>
-              {/* Armed says what letting go will do, so the reader decides it
-                  rather than discovering it. */}
-              <span>
-                {boundaryPull.progress >= 1
-                  ? boundaryPull.direction === "next"
-                    ? t.releaseNext
-                    : t.releasePrevious
-                  : boundaryPull.direction === "next"
-                    ? t.nextBok
-                    : t.previousBok}
-              </span>
+          <div className="reader-progress-ray" aria-hidden="true" style={{ width: `${textProgress * 100}%` }} />
+          {boundaryPull && !readerInteractionBlocked && (boundaryPull.direction === "next" || selectedIndex > 0) && (
+            <div className={`reader-edge-pull reader-edge-pull--${boundaryPull.direction}`} aria-hidden="true">
+              <span style={{ transform: `scaleX(${boundaryPull.progress})`, opacity: .35 + boundaryPull.progress * .65 }} />
             </div>
           )}
-
         </article>
 
-        {/*
-         * One cluster, bottom right: what this boks can be done with, and
-         * where to go from it. They used to be a column of the page and a row
-         * under it - which pushed the reading column off centre and took a
-         * strip of height that the text wanted. Floating them leaves the page
-         * to the text. On a phone the rail returns to a bar across the bottom
-         * and the two buttons go away, because a swipe is the way there.
-         */}
-        <div className="reader-dock">
-          {/* The format button: open to everyone on a finished piece - its own
-              pictures and its own voice - and to admins alone on every other,
-              where the cinema is still a prototype in a shared stand-in. A
-              registered poem is finished by definition. */}
-          <ReaderActionRail
-            inert={readerInteractionBlocked}
-            liked={isCurrentStoryLiked}
-            likeCount={displayedLikeCount(
-              currentStory.likes,
-              persistedLikedStoryIds.has(currentStory.id),
-              isCurrentStoryLiked
-            )}
-            commentCount={currentCommentCount}
-            formatLabel={
-              !cinemaOffered
-                ? null
-                : cinemaIsFinished || poemManifestUrl
-                  ? t.listenAndRead
-                  : t.listenAndReadPrototype
-            }
-            musicOn={musicOn}
-            canHide={isAdminReader}
-            onLike={() => void likeStory()}
-            onComments={() => setCommentOpen(true)}
-            onShare={() => void shareStory()}
-            onOpenFormat={() => {
-              formatFromSeries.current = false;
-              openReadingFormat(currentStory.id);
-            }}
-            onToggleMusic={() => {
-              if (musicOn) stopReadingMusic();
-              else startReadingMusic();
-              setMusicOn(!musicOn);
-            }}
-            onHide={openHideBok}
-          />
-
-          <nav className="reader-footer reader-ui" aria-label={t.moveThroughFeed}>
-            {selectedIndex > 0 && (
-              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); previousStory("button"); }} aria-label={t.previousLabel}>
-                <ChevronLeft className="size-4" />
-                <span>{t.previous}</span>
-              </button>
-            )}
-            {selectedIndex < rankedStories.length - 1 && (
-              <button className="swipe-cue" onClick={(event) => { releaseFocus(event); nextStory("button"); }} aria-label={t.nextLabel}>
-                <span>{t.nextBok}</span>
-                <ChevronRight className="size-4" />
-              </button>
-            )}
-          </nav>
-        </div>
+        <nav className="reader-actions reader-ui" aria-label={t("Bok actions", "Действия с bok")} inert={readerInteractionBlocked}>
+          <button type="button" className="reader-previous" aria-label={t("Previous bok", "Предыдущий bok")} disabled={selectedIndex === 0} onClick={() => previousStory("button")}><ReaderBackIcon size={23} /></button>
+          <button type="button" className="reader-counted-action" aria-label={`${t(isCurrentStoryLiked ? "Remove like" : "Like", isCurrentStoryLiked ? "Убрать отметку нравится" : "Нравится")}, ${currentLikeCount}`} aria-pressed={isCurrentStoryLiked} onClick={() => void likeStory()}><ReaderHeartIcon size={23} fill={isCurrentStoryLiked ? "currentColor" : "none"} /><span className="reader-action-count" aria-hidden="true">{formatCompactCount(currentLikeCount)}</span></button>
+          <button type="button" className="reader-counted-action" aria-label={`${t("Comments", "Комментарии")}, ${currentCommentCount}`} onClick={() => setCommentOpen(true)}><ReaderCommentsIcon size={23} /><span className="reader-action-count" aria-hidden="true">{formatCompactCount(currentCommentCount)}</span></button>
+          <button type="button" aria-label={t("Share", "Поделиться")} onClick={() => void shareStory()}><ReaderShareIcon size={23} /></button>
+          <button type="button" className="reader-next-arrow" onClick={(event) => { releaseFocus(event); nextStory("button"); }}>{t("Next bok", "Следующий bok")}</button>
+        </nav>
 
         {seriesOpen && seriesContext && (
-          <SeriesView
+          <div style={{ display: "contents" }} inert={readerOverlayOpen || formatOnScreen}><SeriesView
+            readerLanguages={seriesContext.readerLanguages}
+            onPiecesChanged={setPublishedSeriesPieces}
             heard={seriesHeard}
             openingStoryId={seriesOpening}
             signedIn={hasSignedInAccount}
             onOpenPiece={(piece) => void openSeriesPiece(piece)}
-            onOpenAccount={() => openAccount("manual")}
-          />
+            onOpenAccount={() => openAccount("manual", "general", "home")}
+          onOpenLanguages={() => openAccount("manual", "general", "languages")}
+          /></div>
         )}
-        {seriesContext && (
+        {seriesContext && !readerOverlayOpen && !formatOnScreen && (
           <ReaderTabs
             // In the feed the tabs are part of the reader's controls and leave
             // with them; on the shelf they stay.
@@ -2861,55 +2824,23 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
               seriesIsNew={seriesIsNew}
             onFeed={openFeed}
             onSeries={openSeries}
+            onYou={() => openAccount("manual")}
           />
         )}
 
-        {guestNoticeStep && isGuestReader && !authPanelOpen && !seriesOpen && (
-          <div className="guest-notice" role="status" aria-live="polite">
-            <div className="guest-notice__copy">
-              <p className="text-sm font-semibold">
-                {guestNoticeStep === "first"
-                  ? t.moreWithoutAccount(anonymousReadLimits.requiredSignup - anonymousReadLimits.firstNotice)
-                  : t.moreWithoutAccount(anonymousReadLimits.requiredSignup - anonymousReadLimits.secondNotice)}
-              </p>
-              <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                {t.alwaysFree}
-              </p>
-            </div>
-            <button className="guest-notice__dismiss" type="button" onClick={() => setGuestNoticeStep(null)} aria-label={t.notNow}>
-              <X className="size-4" />
-            </button>
-            <Button className="guest-notice__action" onClick={() => openAccount("notice")}>{t.createAccount}</Button>
-          </div>
+        {guestNoticeVisible && (
+          <aside className="reader-guest-notice" role="status" aria-live="polite">
+            <button className="reader-guest-notice__close" type="button" onClick={() => setGuestNoticeStep(null)} aria-label={t("Not now", "Не сейчас")}><X size={21} /></button>
+            <small>{t(`${guestReadCount} OF ${anonymousReadLimits.requiredSignup} GUEST BOKS`, `${guestReadCount} ИЗ ${anonymousReadLimits.requiredSignup} BOKS БЕЗ АККАУНТА`)}</small>
+            <h2>{t(`${Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount)} boks left without an account.`, `Ещё ${Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount)} boks без аккаунта.`)}</h2>
+            <p>{t("Reading is always free. An account keeps your history with you.", "Чтение всегда бесплатно. Аккаунт сохраняет вашу историю.")}</p>
+            <button className="reader-guest-notice__action" type="button" onClick={() => openAccount("notice")}>{t("Create account", "Создать аккаунт")}</button>
+            <button className="reader-guest-notice__keep" type="button" onClick={() => setGuestNoticeStep(null)}>{t("Keep reading", "Продолжить чтение")}</button>
+            <div className="reader-guest-notice__marks" aria-hidden="true">{Array.from({ length: anonymousReadLimits.requiredSignup }, (_, index) => <span key={index} className={index < guestReadCount ? "is-read" : undefined} />)}</div>
+          </aside>
         )}
 
-        {authorSheet && (
-          <AuthorSheet
-            key={`${authorSheet.handle}|${authorSheet.authorName ?? ""}`}
-            handle={authorSheet.handle}
-            authorName={authorSheet.authorName}
-            currentStoryId={currentStoryId}
-            canFollow={hasSignedInAccount}
-            onClose={() => setAuthorSheet(null)}
-            onOpenWriter={(writer) => openAuthor(authorSheet.handle, writer)}
-            onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
-            onOpenBok={(storyId) => {
-              setAuthorSheet(null);
-              void openReadBoks(storyId, "author");
-            }}
-            onRequestAccount={() => {
-              setAuthorSheet(null);
-              openAccount("manual", "follow");
-            }}
-            onFollowChanged={(authorUserId, following) =>
-              setFollowedAuthorIds((current) =>
-                following
-                  ? [...new Set([...current, authorUserId])]
-                  : current.filter((id) => id !== authorUserId)
-              )
-            }
-          />
-        )}
+        {authorPanel}
 
         {commentOpen && currentStory && (
           <CommentsSheet
@@ -2946,61 +2877,62 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             onClose={() => setBokMenuOpen(false)}
             onCopyLink={() => void copyBokLink()}
             onReport={reportCurrentBok}
+            onShare={() => { setBokMenuOpen(false); setShareOpen(true); }}
+            onSettings={() => { setBokMenuOpen(false); openAccount("manual", "general", "typography"); }}
+            formatLabel={cinemaOffered ? (cinemaIsFinished || poemManifestUrl ? t("Listen and read", "Слушать и читать") : t("Preview audio (admin)", "Проверить аудио (admin)")) : undefined}
+            onOpenFormat={cinemaOffered ? () => { setBokMenuOpen(false); openReadingFormat(currentStory.id); } : undefined}
+            musicOn={musicOn}
+            onToggleMusic={() => { if (musicOn) stopReadingMusic(); else startReadingMusic(); setMusicOn(!musicOn); }}
+            onHide={isAdminReader ? () => { setBokMenuOpen(false); openHideBok(); } : undefined}
+            onAuthor={() => openAuthor(currentStory.authorHandle, currentStory.authorName)}
           />
         )}
 
-        <UserAuthPanel
-          open={authPanelOpen}
-          intent={authIntent}
-          reason={authReason}
-          notice={authNotice}
-          guestReadCount={guestReadCount}
-          currentUser={user}
-          onClose={() => setAuthPanelOpen(false)}
-          onOpenReadBoks={(storyId) => {
-            // A boks from the library is read in the feed, so the shelf steps aside.
-            if (seriesOpen) openFeed();
-            void openReadBoks(storyId, "library");
-          }}
-          onFollowsChanged={setFollowedAuthorIds}
-          onUserChanged={handleUserChanged}
-          onReadingLanguagesChanged={adoptReadingLanguages}
-        />
+        {accountPanel}
+        {openIssuePanel}
 
         {isAdminReader && (
           <BokLifecycleDialog target={hideTarget} onClose={() => setHideTarget(null)} onDone={afterHideBok} />
         )}
-        {firstVisitHint && !seriesOpen && (
-          <p className="reader-hint" role="status">
-            {firstVisitHint === "touch"
-              ? t.hintTouch
-              : t.hintPointer}
-          </p>
-        )}
         {readerFlash && (
           <div className="reader-flash" role="status" aria-live="polite">
             <span>{readerFlash}</span>
-            <button type="button" onClick={() => setReaderFlash("")} aria-label={t.dismiss}>
+            <button type="button" onClick={() => setReaderFlash("")} aria-label={t("Dismiss", "Закрыть")}>
               <X className="size-4" />
             </button>
           </div>
         )}
 
+        {shareOpen && <ShareCard story={currentStory} artwork={getBokArtwork(currentStory)} onClose={() => setShareOpen(false)} onShared={() => recordReaderEvent("share", currentStory)} />}
+        {formatLoading && <div className="format-loading">
+          {getBokArtwork(currentStory) && <img className="format-status__cover" src={getBokArtwork(currentStory)!} alt="" />}
+          <header className="format-top"><button type="button" aria-label={t("Back", "Назад")} onClick={() => readText()}><ReaderBackIcon /></button><span className="format-top__title">{currentStory.title}</span><span /></header>
+          <FormatStatus onReadText={() => readText()} />
+        </div>}
         {/* Above everything. The cinema prototype is offered to admins only;
             finished pieces to everyone. Time in a format counts as reading
             the boks under it, and its events carry `metadata.format` so an
             analysis can tell listening from reading - see `formatUsed`. */}
         {cinemaOpen && currentStory && cinemaOffered && (
-          <CinemaMode
+          <div style={{ display: "contents" }} inert={readerOverlayOpen}><CinemaMode
             story={currentStory}
             finale={finale}
             recording={recording}
-            onClose={() => setCinemaOpen(false)}
-          />
+            autoPlay
+            suspended={readerOverlayOpen}
+            onPlaybackChange={onFormatPlayback}
+            onComments={() => setCommentOpen(true)}
+            onReadText={readText}
+            onClose={() => { if (seriesOpen) flushAftertaste(); setCinemaOpen(false); }}
+          /></div>
         )}
 
         {poem && (
-          <ImmersivePoem manifest={poem} finale={finale} recording={recording} onClose={() => setPoem(null)} />
+          <div style={{ display: "contents" }} inert={readerOverlayOpen}><ImmersivePoem manifest={poem} finale={finale} recording={recording} autoPlay
+            coverArtwork={getBokArtwork(currentStory) ?? undefined}
+            suspended={readerOverlayOpen}
+            onPlaybackChange={onFormatPlayback} onComments={() => setCommentOpen(true)} onReadText={readText}
+            onClose={() => { if (seriesOpen) flushAftertaste(); setPoem(null); }} /></div>
         )}
       </section>
     </main>

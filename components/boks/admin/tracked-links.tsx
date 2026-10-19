@@ -171,7 +171,7 @@ export function TrackedLinksPanel() {
   const archivedCount = (data?.links ?? []).filter((link) => link.archived).length;
 
   return (
-    <section className="panel overflow-hidden">
+    <section className="panel studio-tracked-links overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
         <div>
           <h2 className="text-xl font-semibold tracking-normal">Links</h2>
