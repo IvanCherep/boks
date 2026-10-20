@@ -496,7 +496,12 @@ npm run check:deploy-target
 - [x] Удалены оба прежних Series-only правила псевдоэлемента. Все три вкладки используют один индикатор: `left:0; right:0; margin-inline:auto`, без transform/translate.
 - [x] `npm run check`:1229 passed / 15 skipped, typecheck PASS, lint без ошибок (10 прежних предупреждений). Production build и deploy-target PASS (134 файла, production backend); `git diff --check` чист. Изменений схемы нет.
 - [x] Собранный Worker на `127.0.0.1:8788`, WebKit402×874: Feed и Series — индикатор16px, симметричные margins29px, смещение центра0px. Переход на настоящую полку проверен; ошибок в консоли нет.
-- [ ] Выпуск и проверка всех трёх вкладок на production, включая You в существующей авторизованной сессии.
+- [x] Выпущен Worker **76927928-1172-4720-bebc-d55eae0ecc63** с `--keep-vars`, без миграций. `/`, `/series`, `/admin`, `/author` возвращают200; feed без сессии401; CSP сохранён.
+- [x] Production Chromium402×874 и1440×900: Feed → You → Series → Feed, все три активных индикатора имеют симметричные margins29px и смещение центра0px. You проверен в существующей авторизованной сессии. Production WebKit402×874: Feed и Series также0px. Ошибок в консоли Chromium нет. Физический iPhone в этой проверке не использовался.
+
+Скриншоты: `work/v44-qa/2026-10-20-tabs-{feed,series,you,desktop}.png`. Логи: `/tmp/boks-indicator-{check,build,target,deploy}.log`. Поведение чтения, данные и действия кнопок не менялись. Предыдущая запись о проверке только Series выше заменена этой проверкой всех вкладок.
+
+При push обнаружены четыре новых коммита `origin/main` до `7a6f19b` (три стихотворения, Halloween-подборка, тыква Series). Выполнен rebase без конфликтов; все upstream-изменения сохранены. Объединённый код проверен заново: `npm run check`1289 passed / 15 skipped, build и deploy-target PASS (137 файлов). Итоговый Worker **62481fa2-aa11-4d29-8be2-f76432333c4b**, `--keep-vars`, без миграций. Post-deploy HTTP200/401 и CSP повторно подтверждены; Chromium402×874 — Halloween присутствует, переход Series → You → Feed даёт0px у каждого индикатора, console errors отсутствуют. Снимок `work/v44-qa/2026-10-20-tabs-series-merged.png`, логи `/tmp/boks-indicator-merged-{check,build,target,deploy}.log`.
 
 ## Стартовое сообщение для нового чата
 

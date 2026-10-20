@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-19.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-20.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -14,7 +14,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 **boks v44 reader and Studio (2026-10-18).** Deployed to `https://tryboks.com`
 from source based on `62407cb`; the complete v44 source and assets are recorded
 in the v44 Git commit dated 2026-10-19. Current Worker
-version: `421e2062-ad1a-4603-9620-1bbaef731167`. Covers, text, shared finale,
+version: `62481fa2-aa11-4d29-8be2-f76432333c4b`. Covers, text, shared finale,
 Feed/Series/You, playback controls, account/social/poster export and the grouped
 admin shell now use v44. Covers have a stable varied palette, corrected initial
 placement, the accepted pumpkin wordmark and translucent bok menu. The author
@@ -22,7 +22,8 @@ cabinet keeps its own interface.
 
 The latest polish fixes shared links (a per-bok portrait PNG, including artwork
 and Cyrillic), the persistent desktop dock centred in the cover pane, the
-mobile Series indicator, and the loading ornament (SVG instead of emoji).
+active indicator on all three tabs (a shared centring rule, verified in the
+production build on 2026-10-20), and the loading ornament (SVG instead of emoji).
 Desktop omits Read because its text is already visible; mobile keeps it.
 Settings opens Settings directly. Liked activity uses uniform rows; Read/Liked
 display the existing action timestamp in local time, without a schema change.
