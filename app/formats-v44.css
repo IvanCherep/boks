@@ -42,7 +42,8 @@
 .reader-tabs__tab { flex-direction: column; position: relative; z-index: 1; min-height: 48px; min-width: 0; border-radius: 8px; gap: 3px; color: var(--foreground); font-size: 10px; line-height: 1.1; }
 .reader-tabs__tab svg { width: 21px; height: 21px; }
 .reader-tabs__tab.is-active, .reader-tabs__tab--series.is-active { color: #9b2e1f; background: #fffaf080; }
-.reader-tabs__tab.is-active::before, .reader-tabs__tab--series.is-active::before { content: ""; display: block; position: absolute; top: -5px; left: 50%; width: 16px; height: 3px; background: #ca3e29; translate: -50% 0; transform: none; border-radius: 0 0 2px 2px; }
+/* Shared geometry for all three tabs; no legacy Series-only translation. */
+.reader-tabs__tab.is-active::before { content: ""; display: block; position: absolute; top: -5px; left: 0; right: 0; margin-inline: auto; width: 16px; height: 3px; background: #ca3e29; border-radius: 0 0 2px 2px; }
 .reader-tabs__series-word { font: inherit; }
 .reader-tabs__new { display: none; }
 .dark .reader-tabs { background: #37372f; }

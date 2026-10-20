@@ -6132,18 +6132,6 @@ body:has(.poem, .cinema) .reader-dock {
   background: linear-gradient(to top, rgb(var(--series-gold-rgb) / 14%), rgb(var(--series-gold-rgb) / 0%));
 }
 
-.reader-tabs__tab--series.is-active::before {
-  content: "";
-  position: absolute;
-  top: -0.36rem;
-  left: 50%;
-  width: 2.4rem;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--series-gold);
-  translate: -50% 0;
-}
-
 .reader-tabs__series-word {
   font-family: var(--font-serif);
   font-size: 1rem;
@@ -6205,10 +6193,6 @@ body:has(.poem, .cinema) .reader-dock {
 
   .reader-tabs__tab--series.is-active {
     background: rgb(var(--series-gold-rgb) / 14%);
-  }
-
-  .reader-tabs__tab--series.is-active::before {
-    display: none;
   }
 
   .reader-tabs__new {

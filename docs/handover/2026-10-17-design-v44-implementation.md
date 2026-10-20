@@ -490,6 +490,14 @@ npm run check:deploy-target
 
 В этом checkout `origin` указывает непосредственно на `https://github.com/IvanCherep/boks.git`. Секреты, `.env*`, `work/`, логи, сборка и локальные runtime-файлы исключены; проверка содержимого новых/изменённых файлов не нашла приватных ключей, service-role JWT или токенов провайдеров. Backup stash сохранён. Перед фиксацией `npm run check` прошёл: 1229 passed / 15 skipped, typecheck, lint без ошибок (10 прежних предупреждений). `verify:schema` прошёл: 59 миграций / 421 проверка. Build и deploy-target проверены на том же коде при последнем выпуске счётчиков выше; runtime-код с тех пор не менялся. `git diff --check` чист. Источник истины для результата push — GitHub `main`, для CI — Actions этого коммита.
 
+## 2026-10-20 — центр индикатора Feed / Series / You
+
+- [x] Воспроизведено на production в WebKit: у Feed `left:37px`, ширина16px, `translate:none` при ширине кнопки74px — смещение центра на8px вправо. У Series сохранялось `translate:-50%` из старого `globals.css`. Прошлая проверка только Series не обнаружила регрессию остальных вкладок.
+- [x] Удалены оба прежних Series-only правила псевдоэлемента. Все три вкладки используют один индикатор: `left:0; right:0; margin-inline:auto`, без transform/translate.
+- [x] `npm run check`:1229 passed / 15 skipped, typecheck PASS, lint без ошибок (10 прежних предупреждений). Production build и deploy-target PASS (134 файла, production backend); `git diff --check` чист. Изменений схемы нет.
+- [x] Собранный Worker на `127.0.0.1:8788`, WebKit402×874: Feed и Series — индикатор16px, симметричные margins29px, смещение центра0px. Переход на настоящую полку проверен; ошибок в консоли нет.
+- [ ] Выпуск и проверка всех трёх вкладок на production, включая You в существующей авторизованной сессии.
+
 ## Стартовое сообщение для нового чата
 
 > boks v44 уже выпущен на production18 октября2026. Прочитай AGENTS.md, docs/project-state.md и этот handover, проверь текущий diff и раздел Production-релиз. Исходники v44 сохранены отдельным коммитом поверх 62407cb; backup stash сохранён. Проверь git status и синхронизацию с origin/main перед новой работой. Сохраняй реальный каталог, foreground attribution, новые жесты/плееры, tracked links и guest telemetry. Не откатывай Worker отдельно от текущего source/schema. Новые изменения проверяй по frozen v44 и записывай фактические проверки и оставшиеся вопросы.
