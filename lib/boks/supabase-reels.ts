@@ -20,7 +20,7 @@ import type {
  * places in the browser, and a column added to one silently missed the rest.
  */
 export const publishedReelColumns =
-  "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at,language";
+  "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at,language,summary";
 
 export type SupabaseReelRow = {
   id: string;
@@ -36,6 +36,8 @@ export type SupabaseReelRow = {
   created_at: string;
   /** ISO 639-1 code from the database's detector, `und` when undetermined. */
   language?: string | null;
+  /** The editorial summary shown on the cover; empty when there is none. */
+  summary?: string | null;
   /**
    * Public totals: how many readers liked it and how many replied. Present
    * when the row came through an aggregate - the feed RPC or
@@ -83,6 +85,8 @@ export type SupabaseCandidateRow = {
   language?: string;
   /** Retired opening line; the database keeps it empty. */
   hook?: string;
+  /** The editorial summary shown on the cover; empty when there is none. */
+  summary?: string;
   hasEmbedding?: boolean;
   tasteSimilarity?: number | string | null;
   tasteSamples?: number;
@@ -201,6 +205,7 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
           word_count: Number(row.wordCount) || 0,
           created_at: String(row.createdAt),
           language: row.language ?? null,
+          summary: row.summary ?? "",
           // The feed RPC already returns both totals to every reader. They
           // used to stop here, feeding the ranker only, so the rail could not
           // show a like count at all.
@@ -281,6 +286,7 @@ export function mapSupabaseReelToStory(
     minutes: reel.minutes,
     wordCount: Number(reel.word_count) || 0,
     ...(reel.language ? { language: reel.language } : {}),
+    ...(reel.summary?.trim() ? { summary: reel.summary.trim() } : {}),
     likes: reel.likes_count ?? 0,
     shares: 0,
     starts: 0,

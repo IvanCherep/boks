@@ -109,6 +109,15 @@ describe("inferReadOutcome", () => {
     expect(inferReadOutcome(longBok, 70, 0.9)).toBe("skip");
   });
 
+  it("counts a short piece read to the end at a fast reader's pace", () => {
+    // Production skips before labeling.v2: a 126-word poem scrolled to the end
+    // in eight seconds, a 250-word story in twelve.
+    expect(inferReadOutcome(story({ wordCount: 126, minutes: 1 }), 8, 1)).toBe("complete");
+    expect(inferReadOutcome(story({ wordCount: 249, minutes: 1 }), 12, 1)).toBe("complete");
+    // Flicking a long story to its end is still not reading it.
+    expect(inferReadOutcome(story({ wordCount: 1812, minutes: 8 }), 12, 1)).toBe("skip");
+  });
+
   it("judges the same reader and the same boks identically over time", () => {
     // The threshold must not drift: a finish rate is only comparable if the
     // instrument stays fixed.

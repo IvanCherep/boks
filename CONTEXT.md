@@ -30,6 +30,10 @@ _Avoid_: import user, system author
 A bok an author has sent for review and an admin has not yet approved or refused.
 _Avoid_: draft, upload
 
+**Summary**:
+One or two editorial sentences on a bok's cover saying what it is and why to read it, in the text's own language.
+_Avoid_: hook (the retired author-written opener), description, blurb, annotation
+
 **Archived bok**:
 A bok hidden from readers by an admin with a recorded reason; it can be restored. Shown as "Deleted" in the console.
 _Avoid_: deleted bok (except for permanent erasure)
@@ -93,6 +97,10 @@ _Avoid_: feed log, provenance row
 **Read**:
 A bok judged finished from foreground reading time and scroll progress; there is no "finished" button. The event is named `complete`.
 _Avoid_: finish, completion
+
+**Shown**:
+A bok that was on the reader's screen in an earlier visit; the feed serves every unshown bok before any shown one.
+_Avoid_: seen (in prose), viewed
 
 **Skip**:
 Leaving a bok before it could plausibly have been read.

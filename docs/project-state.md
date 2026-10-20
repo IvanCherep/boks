@@ -11,6 +11,32 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live
 
+**A curated catalogue, a summary on every cover, a new feed every visit
+(2026-10-20).** Three things readers said were wrong. (1) Too much filler:
+every published bok was read by an editor pass and only works with real value
+or a hook were kept - 223 of 545 (109 en, 114 ru). Every series piece and every
+finished Tolstoy and Dostoevsky piece stayed; Dostoevsky's «Домовой», an
+abandoned draft with editorial braces that breaks off mid-sentence, did not.
+The other 343 are archived through the same columns `archive_bok` writes, each
+with a reason starting "Catalogue curation 2026-10-20" - Content -> Deleted
+restores any of them. About twenty canonical works (Tennyson's «Lady of
+Shalott», «In Flanders Fields», Pushkin's «Я помню чудное мгновенье», Gray's
+«Elegy», Keats's «To Autumn» …) were archived only because their *texts* are
+damaged (truncated, imprint or a second poem spliced in); a clean re-import
+brings them back. The decisions and reasons were not kept in the repo; the
+archive reasons are the record. (2) A summary: `reels.summary`, migration
+`20261020120000_boks_bok_summary.sql`, carried by `published_boks` and
+`get_recommendation_candidates`, shown on the cover under the byline; all 223
+have one, written in the text's language. (3) Repetition: `for_you`
+(ranking.v3) served part-read boks back at the top as "resume" and ranked
+everything deterministically, so the same pieces led every visit. Now every
+bok the reader has never been shown comes before any shown one, and finished
+ones last. And "read" was undercounted (labeling.v2): production skips
+included a 126-word poem scrolled to the end in 8 s and a 250-word story in
+12 s; reaching the end now counts above 15% of the 238-wpm estimate, a short
+unscrollable piece at 30%, otherwise 60%. Compare finish rates across
+`labeling_version`, never across the change.
+
 **boks v44 reader and Studio (2026-10-18).** Deployed to `https://tryboks.com`
 from source based on `62407cb`; the complete v44 source and assets are recorded
 in the v44 Git commit dated 2026-10-19. Current Worker

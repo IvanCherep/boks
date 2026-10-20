@@ -21,7 +21,15 @@
  *                time instead of its own creation time; a stored arm naming a
  *                strategy this build lacks is re-attributed to the one that
  *                actually ranked (2026-10-05)
+ *   labeling.v2  skip below 15% of expected time (floor 4 s); complete when
+ *                scrolled to 85% at any pace above that, at 30% without
+ *                anything to scroll, or at 60% of expected time otherwise
+ *                (2026-10-20)
+ *   ranking.v3   `for_you` serves everything the reader has never been shown
+ *                before anything shown in an earlier visit, and finished pieces
+ *                last; part-read pieces are no longer resumed to the top
+ *                (2026-10-20)
  */
 export const SIGNALS_VERSION = "signals.v1";
-export const RANKING_VERSION = "ranking.v2";
-export const LABELING_VERSION = "labeling.v1";
+export const RANKING_VERSION = "ranking.v3";
+export const LABELING_VERSION = "labeling.v2";

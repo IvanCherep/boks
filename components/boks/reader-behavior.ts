@@ -80,17 +80,22 @@ export function inferReadOutcome(
   const scrollable = options.scrollable ?? true;
 
   // Too little time for the length of the piece, whatever the scroll says.
-  if (activeSeconds < Math.max(5, expectedSeconds * 0.25)) return "skip";
+  if (activeSeconds < Math.max(4, expectedSeconds * 0.15)) return "skip";
 
   // Nothing to scroll: the whole text was on screen, so attention is the only
   // evidence there is - and it is enough.
-  if (!scrollable) return activeSeconds >= expectedSeconds * 0.4 ? "complete" : "skip";
+  if (!scrollable) return activeSeconds >= expectedSeconds * 0.3 ? "complete" : "skip";
 
-  // Reached the end and spent a plausible amount of time getting there.
-  if (progress >= 0.85 && activeSeconds >= expectedSeconds * 0.4) return "complete";
+  // Reached the end, at any pace a person can actually read at. 238 wpm is an
+  // average; an attentive reader of verse or a familiar text runs at three to
+  // four times it. Measured on production before this change: of the skips
+  // that had scrolled to the very end, most had spent 20-35% of the expected
+  // time - a 126-word poem in eight seconds, a 250-word story in twelve -
+  // and the reader who left them felt they had read them.
+  if (progress >= 0.85) return "complete";
 
   // Stayed long enough that they read most of it without reaching the very end.
-  return activeSeconds >= expectedSeconds * 0.7 ? "complete" : "skip";
+  return activeSeconds >= expectedSeconds * 0.6 ? "complete" : "skip";
 }
 
 /**

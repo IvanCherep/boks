@@ -21,6 +21,8 @@ export type Story = {
   wordCount: number;
   /** ISO 639-1 code, `und` when the database could not tell. Absent on old rows. */
   language?: string;
+  /** One or two editorial sentences on what it is and why to read it. Absent when there is none. */
+  summary?: string;
   likes: number;
   shares: number;
   starts: number;

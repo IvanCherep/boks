@@ -110,15 +110,29 @@ describe("for_you ranking", () => {
     expect(backToBack).toEqual([]);
   });
 
-  it("puts an unfinished boks first, as a resume", () => {
+  it("does not bring back a part-read boks while anything unseen is left", () => {
+    // Readers asked for something new on every visit; leaving a piece half-read
+    // was their answer, not a bookmark.
     const entries = rank(
       plain,
       reader({ bokState: { p5: state({ maxProgress: 0.45, totalDwellSeconds: 40 }) } })
     );
 
-    expect(entries[0].candidate.id).toBe("p5");
-    expect(entries[0].candidateSource).toBe("resume");
-    expect(entries[0].explanations?.join(" ")).toContain("resume");
+    expect(entries.map((entry) => entry.candidate.id).indexOf("p5")).toBe(plain.length - 1);
+  });
+
+  it("serves only unseen boks first, then what was shown, then what was finished", () => {
+    const entries = rank(
+      plain,
+      reader({
+        bokState: {
+          p0: state({ maxProgress: 1, completedAt: daysAgo(2), totalDwellSeconds: 90, liked: true }),
+          p1: state({ seenCount: 1, totalDwellSeconds: 2 }),
+        },
+      })
+    );
+    const ids = entries.map((entry) => entry.candidate.id);
+    expect(ids.slice(-2)).toEqual(["p1", "p0"]);
   });
 
   it("does not resume something the reader already finished", () => {
@@ -291,14 +305,14 @@ describe("for_you and the semantic source", () => {
     expect(withVectors).toEqual(withoutFields);
   });
 
-  it("does not let one similar piece outrank something the reader was part-way through", () => {
+  it("lets an unseen similar piece outrank something the reader was part-way through", () => {
     const resumeId = "far2";
     const ranked = rank(
       semanticSet(0.95),
       reader({ bokState: { [resumeId]: state({ maxProgress: 0.6, totalDwellSeconds: 90 }) } })
     );
-    expect(ranked[0]?.candidate.id).toBe(resumeId);
-    expect(ranked[0]?.candidateSource).toBe("resume");
+    expect(ranked[0]?.candidate.id).not.toBe(resumeId);
+    expect(ranked.at(-1)?.candidate.id).toBe(resumeId);
   });
 
   it("prefers the piece unlike the recent stretch among otherwise equal discoveries", () => {

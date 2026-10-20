@@ -153,7 +153,7 @@ export const forYou = defineStrategy({
   id: "for_you",
   name: "For you",
   description:
-    "Ported from the original boks ranker: resume, affinity and discovery sources scored on reader history, author trust and freshness, then a greedy slate that spaces authors, shapes and lengths.",
+    "Ported from the original boks ranker: affinity and discovery sources scored on reader history, author trust and freshness, then a greedy slate that spaces authors, shapes and lengths. Anything the reader has already been shown waits behind everything they have not.",
   family: "personal",
   // Declared for display only. This ranker is not a weighted sum of the shared
   // signals; it scores its own contributions and explains each one.
@@ -493,10 +493,14 @@ function selectSlate(prepared: Scored[], original: ScoredCandidate[], limit: num
   while (placed.length < wanted && remaining.length) {
     let bestIndex = 0;
     let best: { total: number; explanations: string[] } | null = null;
+    // Something new while there is anything new. Only once the tier is spent
+    // does the slate fall back to what the reader has already met.
+    const tier = Math.min(...remaining.map((entry) => shownTier(entry.state)));
 
     for (let index = 0; index < remaining.length; index += 1) {
+      if (shownTier(remaining[index].state) !== tier) continue;
       const scored = slateScore(remaining[index], placed);
-      if (!best || isBetter(remaining[index], scored, remaining[bestIndex], best)) {
+      if (!best || shownTier(remaining[bestIndex].state) !== tier || isBetter(remaining[index], scored, remaining[bestIndex], best)) {
         best = scored;
         bestIndex = index;
       }
@@ -517,6 +521,7 @@ function selectSlate(prepared: Scored[], original: ScoredCandidate[], limit: num
 
   // Anything beyond the limit keeps a stable, explainable order rather than
   // an arbitrary one: the feed may be extended later from this same slate.
+  remaining.sort((left, right) => shownTier(left.state) - shownTier(right.state));
   for (const leftover of remaining) {
     const entry = byId.get(leftover.candidate.id);
     if (entry) {
@@ -525,6 +530,22 @@ function selectSlate(prepared: Scored[], original: ScoredCandidate[], limit: num
   }
 
   return out;
+}
+
+/**
+ * Has this reader already met this bok, and how far did it go?
+ *
+ * 0 - never shown. 1 - shown, opened or part-read, not finished. 2 - finished.
+ *
+ * Readers asked for something new on every visit, and said plainly that a
+ * piece they left half-read coming back is not wanted - leaving it was the
+ * answer. So the old `resume` source no longer outranks the unseen: anything
+ * already on screen in an earlier visit waits until the new is used up.
+ */
+export function shownTier(state: ReaderBokState) {
+  if (state.completedAt) return 2;
+  if (state.seenCount > 0 || state.eventCount > 0 || state.lastEventAt) return 1;
+  return 0;
 }
 
 function isBetter(

@@ -2758,6 +2758,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
               <div className="reader-cover__heading">
                 <h1>{currentStory.title}</h1>
                 <button type="button" className="reader-cover__byline" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button>
+                {currentStory.summary && <p className="reader-cover__summary" lang={currentStory.language || "und"} translate="no">{currentStory.summary}</p>}
               </div>
               <div className="reader-cover__caption">
                 <div className="reader-cover__buttons">
