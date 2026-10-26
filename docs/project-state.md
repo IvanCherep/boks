@@ -9,19 +9,19 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ---
 
-## Built, not yet deployed
+## Built, database migrated, not yet deployed
 
 **Thesis studies (2026-10-26).** The tests behind РГ1, РГ2, А1, А2, Б1, Б2 and
 Б3 of the НИР3 presentation (А3 is being replaced): participant pages at
 `/study/<key>`, a Studio tab (Research → Studies) with one switch per study -
 every study starts off - materials, previews, results and export, and a gallery
 of every participant form for the presentation. Migration
-`20261026100000_boks_studies.sql` is not applied to production and the Worker is
-not redeployed. Verified: the unit tests; the migration and its checks applied
-to a throwaway local Postgres 14 (the full `npm run verify:schema` needs Docker,
-which this machine lacks - CI runs it); Б1's gesture record and replay in a real
-immersive poem in Chrome; every form rendered at phone size. Not done: a run
-against a Supabase project with the migration, and no study has materials yet.
+`20261026100000_boks_studies.sql` is applied to production (2026-10-26, after
+CI's `npm run verify:schema` passed with it); every study is off there. The
+Worker is not redeployed, so `/study/<key>` and the Studies tab are not live
+yet. Verified: the unit tests and CI's schema checks; Б1's gesture record and replay in a real
+immersive poem in Chrome; every form rendered at phone size. Not done: a participant run
+against production, and no study has materials yet.
 See `docs/studies.md`.
 
 ## Live
