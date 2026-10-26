@@ -9,7 +9,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ---
 
-## Built, database migrated, not yet deployed
+## Live, every study switched off
 
 **Thesis studies (2026-10-26).** The tests behind РГ1, РГ2, А1, А2, Б1, Б2 and
 Б3 of the НИР3 presentation (А3 is being replaced): participant pages at
@@ -17,9 +17,10 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 every study starts off - materials, previews, results and export, and a gallery
 of every participant form for the presentation. Migration
 `20261026100000_boks_studies.sql` is applied to production (2026-10-26, after
-CI's `npm run verify:schema` passed with it); every study is off there. The
-Worker is not redeployed, so `/study/<key>` and the Studies tab are not live
-yet. Verified: the unit tests and CI's schema checks; Б1's gesture record and replay in a real
+CI's `npm run verify:schema` passed with it); every study is off there. Deployed
+the same day from `7618ae1`, Worker version
+`d1f40efb-3869-4a2c-8ce4-5f8501315733`: `/study/<key>` answers on
+`https://tryboks.com` and says the study is not running. Verified: the unit tests and CI's schema checks; Б1's gesture record and replay in a real
 immersive poem in Chrome; every form rendered at phone size. Not done: a participant run
 against production, and no study has materials yet.
 See `docs/studies.md`.
