@@ -3069,6 +3069,174 @@ begin
 end $$;
 
 
+-- Studies (migration 20261026100000).
+--
+-- The switch is the point: a study that is off takes no participant and no
+-- answer, and a reader can never turn one on, read another participant's
+-- answers or see which b3 fragments the algorithm chose.
+do $$
+declare
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_guest uuid := '88888888-8888-4888-8888-888888888888';
+  v_new_account uuid := '99999999-9999-4999-8999-999999999999';
+  v_old_guest uuid := 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  v_reel uuid;
+  v_study jsonb;
+  v_first jsonb;
+  v_again jsonb;
+  v_other jsonb;
+  v_fragment jsonb;
+  v_trace jsonb;
+  v_count integer;
+begin
+  insert into auth.users (id, is_anonymous) values (v_guest, true), (v_new_account, false) on conflict (id) do nothing;
+  select id into v_reel from public.reels where status = 'published' order by created_at, id limit 1;
+
+  -- A reader sees the study as off, with no materials, and cannot join.
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  v_study := public.get_boks_study('rg1');
+  perform public.boks_assert((v_study ->> 'enabled')::boolean = false, 'a study starts switched off');
+  perform public.boks_assert(v_study -> 'participant' = 'null'::jsonb, 'nobody is in a study before joining');
+  begin
+    perform public.enroll_in_boks_study('rg1', 'visitor-1');
+    perform public.boks_assert(false, 'nobody joins a study that is off');
+  exception when sqlstate '55000' then
+    perform public.boks_assert(true, 'nobody joins a study that is off');
+  end;
+  begin
+    perform public.set_boks_study_enabled('rg1', true);
+    perform public.boks_assert(false, 'a reader cannot switch a study on');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot switch a study on');
+  end;
+  begin
+    perform public.list_boks_studies();
+    perform public.boks_assert(false, 'a reader cannot list studies');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot list studies');
+  end;
+  begin
+    perform 1 from public.boks_study_responses;
+    perform public.boks_assert(false, 'a reader cannot read study answers directly');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot read study answers directly');
+  end;
+  reset role;
+
+  -- The admin switches rg1 on with materials, and b1 and b3 too.
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  perform public.set_boks_study_materials('rg1', jsonb_build_object('targets', jsonb_build_array(v_reel)));
+  perform public.set_boks_study_enabled('rg1', true);
+  perform public.set_boks_study_enabled('b1', true);
+  perform public.set_boks_study_enabled('b3', true);
+  perform public.boks_assert(
+    public.import_boks_study_fragments('check', jsonb_build_array(
+      jsonb_build_object('method', 'algorithm', 'sourceTitle', 'Война и мир', 'body', 'Один два три четыре.', 'rank', 1),
+      jsonb_build_object('method', 'window', 'sourceTitle', 'Война и мир', 'body', 'Пять шесть семь.')
+    )) = 2,
+    'an admin imports b3 fragments');
+  reset role;
+
+  -- Joining: a balanced condition, the same one on a second call.
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  v_study := public.get_boks_study('rg1');
+  perform public.boks_assert(v_study -> 'materials' -> 'targets' ->> 0 = v_reel::text, 'a running study shows its materials');
+  v_first := public.enroll_in_boks_study('rg1', 'visitor-1');
+  perform public.boks_assert(v_first ->> 'condition' in ('series', 'text'), 'rg1 assigns series or text');
+  v_again := public.enroll_in_boks_study('rg1', 'visitor-1');
+  perform public.boks_assert(v_again ->> 'id' = v_first ->> 'id', 'joining twice keeps the same assignment');
+  perform public.record_boks_study_response((v_first ->> 'id')::uuid, 'after_reading',
+    '{"moved": 6, "thought": 5}'::jsonb, v_reel, null, v_first ->> 'condition', 120);
+  v_study := public.get_boks_study('rg1');
+  perform public.boks_assert(v_study -> 'participant' -> 'steps' -> 0 ->> 'step' = 'after_reading',
+    'a participant sees the steps they finished');
+  reset role;
+
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
+  v_other := public.enroll_in_boks_study('rg1', 'visitor-2');
+  perform public.boks_assert(v_other ->> 'condition' <> v_first ->> 'condition',
+    'the second participant gets the other condition');
+  begin
+    perform public.record_boks_study_response((v_first ->> 'id')::uuid, 'after_reading', '{}'::jsonb);
+    perform public.boks_assert(false, 'nobody answers for another participant');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'nobody answers for another participant');
+  end;
+  reset role;
+
+  -- Switched off: answers stop, what was collected stays.
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  perform public.set_boks_study_enabled('rg1', false);
+  perform public.boks_assert(
+    ((public.get_boks_study_responses('rg1') ->> 'total')::integer) = 1,
+    'an admin reads the answers collected');
+  reset role;
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  begin
+    perform public.record_boks_study_response((v_first ->> 'id')::uuid, 'after_reading', '{}'::jsonb);
+    perform public.boks_assert(false, 'no answers while the study is off');
+  exception when sqlstate '55000' then
+    perform public.boks_assert(true, 'no answers while the study is off');
+  end;
+  begin
+    perform public.get_boks_study_responses('rg1');
+    perform public.boks_assert(false, 'a reader cannot read study answers');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot read study answers');
+  end;
+
+  -- b3: the method stays hidden, and a rater never gets the same fragment twice.
+  v_first := public.enroll_in_boks_study('b3', 'visitor-1');
+  v_fragment := public.next_boks_study_fragment((v_first ->> 'id')::uuid);
+  perform public.boks_assert(v_fragment ? 'body' and not v_fragment ? 'method', 'a rater sees the fragment, not its method');
+  perform public.record_boks_study_response((v_first ->> 'id')::uuid, 'fragment_rating',
+    '{"standalone": "yes", "complete": "no"}'::jsonb, null, (v_fragment ->> 'id')::uuid);
+  perform public.boks_assert(
+    public.next_boks_study_fragment((v_first ->> 'id')::uuid) ->> 'id' <> v_fragment ->> 'id',
+    'a rater is not given a fragment they rated');
+
+  -- b1: an active trace is replayed by exactly one passive participant.
+  v_first := public.enroll_in_boks_study('b1', 'visitor-1');
+  perform public.boks_assert(public.claim_boks_study_trace((v_first ->> 'id')::uuid, v_reel) is null,
+    'with no trace recorded the first participant is active');
+  perform public.record_boks_study_response((v_first ->> 'id')::uuid, 'trace',
+    '{"events": [[1000, "down", 0.5, 0.5]]}'::jsonb, v_reel, null, 'active');
+  reset role;
+
+  perform public.boks_test_login(v_guest, true);
+  set local role authenticated;
+  v_other := public.enroll_in_boks_study('b1', 'visitor-2');
+  v_trace := public.claim_boks_study_trace((v_other ->> 'id')::uuid, v_reel);
+  perform public.boks_assert(v_trace -> 'trace' -> 'events' -> 0 ->> 1 = 'down', 'a passive participant gets the recorded trace');
+  perform public.boks_assert(
+    public.claim_boks_study_trace((v_other ->> 'id')::uuid, v_reel) ->> 'traceId' = v_trace ->> 'traceId',
+    'a reload claims the same trace again');
+  reset role;
+
+  perform public.boks_test_login(v_new_account);
+  set local role authenticated;
+  v_other := public.enroll_in_boks_study('b1', 'visitor-3');
+  perform public.boks_assert(public.claim_boks_study_trace((v_other ->> 'id')::uuid, v_reel) is null,
+    'a trace is replayed by one passive participant only');
+  reset role;
+
+  select count(*) into v_count from public.boks_study_yokes;
+  perform public.boks_assert(v_count = 1, 'one yoke was stored');
+
+  delete from public.boks_study_participants;
+  delete from public.boks_study_fragments where batch = 'check';
+  update public.boks_studies set enabled = false, materials = '{}'::jsonb;
+  delete from auth.users where id in (v_guest, v_new_account);
+end $$;
+reset role;
+
 -- The Data API surface (migration 20260925100000).
 --
 -- Two mistakes this makes impossible. A reader able to write through a view -

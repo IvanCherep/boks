@@ -26,6 +26,7 @@ import { TrackedLinksPanel } from "@/components/boks/admin/tracked-links";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
 import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
+import { AdminStudies } from "@/components/boks/admin/studies";
 import {
   loadBoksUserContext,
   reviewBokSubmission,
@@ -54,6 +55,7 @@ export const adminTabs = [
   { id: "people", label: "People", heading: "Accounts", group: "People" },
   { id: "feedback", label: "Feedback", heading: "Reader feedback", group: "People" },
   { id: "experiments", label: "Experiments", heading: "Experiments", group: "Research" },
+  { id: "studies", label: "Studies", heading: "Studies", group: "Research" },
   { id: "interactions", label: "Interactions", heading: "Interactions", group: "Research" },
   { id: "poetry", label: "Poetry", heading: "Immersive poems", group: "Research" },
 ] as const;
@@ -353,6 +355,7 @@ export function AdminDashboard() {
         {tab === "rights" && <RightsReview />}
 
         {tab === "experiments" && <RecommendationLab />}
+        {tab === "studies" && <AdminStudies />}
         {tab === "interactions" && <InteractionSandbox />}
         {tab === "poetry" && <PoetrySandbox />}
 

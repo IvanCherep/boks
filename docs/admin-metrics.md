@@ -222,3 +222,15 @@ Removed because each was a number that looked like a measurement and was not:
 - **Rate metrics exclude readers with fewer than five starts.** A rate over two starts is noise wearing a percentage sign. The excluded count is reported.
 - **Reading fatigue is per browser, not per account.** The same reader on two devices shares an arm but not an "already read" set.
 - **Distinct boks opened is counted per day and summed.** A reader who reopens the same boks on two days is counted twice. Fixing it costs a column in the RPC.
+
+## Studies
+
+The thesis studies (`docs/studies.md`). Each number is computed in the browser from the raw answers by `lib/boks/studies/results.ts`, one value per participant; admins' own runs are left out unless the box is ticked.
+
+| Field | Computed from | Decision it supports |
+|---|---|---|
+| Participants, finished, by condition | `boks_study_participants` | Whether the arms are filling evenly; enrolment balances them. |
+| Effect, 95% interval, n | the hypothesis's own outcome per participant: a scale mean, a share, or a paired difference; percentile bootstrap | Read against the hypothesis threshold. Below 5 an arm nothing is estimated; at pilot size the interval, not "met", is the result. |
+| Facts | refusals (А1), sessions with nothing opened (РГ2), screened out (Б2), accepted algorithm fragments (Б3) | The denominators the comparisons hide. |
+| Fragment table (Б3) | ratings per fragment, «да» to both, accepted at two of three | Which fragments the algorithm got right, beside the same-length windows. |
+

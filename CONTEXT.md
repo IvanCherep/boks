@@ -164,6 +164,22 @@ _Avoid_: score, KPI
 A normalised 0..1 feature of a candidate that an algorithm scores against; a ranking input, not a metric.
 _Avoid_: metric, feature flag
 
+**Study**:
+One of the controlled tests behind the thesis hypotheses (РГ1, РГ2, А1, А2, Б1, Б2, Б3), run at `/study/<key>` and switched on and off in Studio. Distinct from the experiment, which splits the live feed between algorithms.
+_Avoid_: survey, test, experiment (that is the feed split)
+
+**Participant**:
+A person enrolled in one study, with the condition the server assigned and the seed of their plan.
+_Avoid_: respondent, subject, user
+
+**Condition**:
+What a participant's study varies for them - Series or text, feed or catalogue, active or passive.
+_Avoid_: arm (that is the experiment's), group, variant
+
+**Successful session**:
+In studies РГ2 and А2: within the session a new text was read to the end, by measurement and by the participant's own answer, and the choice was rated 4 or 5 of 5.
+_Avoid_: удачная находка outside the thesis text
+
 ### Reading formats
 
 **Reading format**:

@@ -49,6 +49,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 | Accounts, handles, comments | `components/boks/user-auth-panel.tsx`, `comments-sheet.tsx` | `components/boks/supabase-browser-data.ts`, migrations |
 | Author cabinet and limits | `components/boks/author-console.tsx` | `lib/boks/author/submission-quota.ts`, `lib/boks/contracts.ts` |
 | Admin console | `components/boks/admin-dashboard.tsx`, `components/boks/admin/` | `docs/admin-metrics.md` before adding a metric |
+| Thesis studies (`/study/<key>`, Studio → Studies) | `docs/studies.md` | `lib/boks/studies/`, `components/boks/studies/` |
 | Add an algorithm | one file in `lib/boks/recommendations/strategies/` + its `index.ts` | a ranking case in `lib/boks/recommendations/feed.test.ts` |
 | Metrics or attribution | `lib/recsys/aggregate/metrics.ts`, `lib/boks/contracts.ts` | `specs/boks-recommendation-experiments.md` |
 | Feed serving | `app/api/feed/route.ts`, `lib/boks/feed-service.ts` | `components/boks/worker-feed-breaker.ts` |

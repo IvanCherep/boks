@@ -13,6 +13,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 | Product scope and rules | `specs/boks-product-spec.md` |
 | Algorithms, signals, metrics, experiments | `specs/boks-recommendation-experiments.md` |
 | Every number in `/admin` and the decision it supports | `docs/admin-metrics.md` - read before adding a metric |
+| The thesis studies: protocols, the on/off switch, forms, results | `docs/studies.md` |
 | Code standards, boundaries, UI and data standards | `docs/engineering-standards.md` |
 | Architecture risks and the next refactors | `docs/architecture-review.md` |
 | Trust boundaries, controls, Advisor exceptions | `docs/security.md` - read before auth, grants, API or database-boundary work |

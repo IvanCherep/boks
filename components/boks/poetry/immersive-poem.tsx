@@ -40,6 +40,12 @@ import {
   type GestureLayer,
 } from "@/components/boks/poetry/gesture-layer";
 import { createOverlayLayer } from "@/components/boks/poetry/gesture-overlay";
+import {
+  createTraceRecorder,
+  dueSamples,
+  type GestureSampleKind,
+  type GestureTrace,
+} from "@/lib/boks/studies/gesture-trace";
 
 /**
  * A poem as a place rather than a page.
@@ -63,6 +69,8 @@ import { createOverlayLayer } from "@/components/boks/poetry/gesture-overlay";
 type Status = "loading" | "ready" | "ended" | "error";
 
 const controlsIdleMs = 2600;
+/** The replayed hand of study b1; a real pointer id is never negative. */
+const replayPointerId = -1;
 // Actual media positions for a format/text round trip in this page session.
 // Never inferred from recommendation telemetry, never sent as a read outcome.
 const poemPositions = new Map<string, number>();
@@ -104,6 +112,8 @@ export function ImmersivePoem({
   onComments,
   onPlaybackChange,
   onClose,
+  gestureTrace,
+  withoutFinale = false,
 }: {
   manifest: PoemManifest;
   coverArtwork?: string;
@@ -120,6 +130,19 @@ export function ImmersivePoem({
   onComments?: () => void;
   onPlaybackChange?: (state: FormatPlaybackState) => void;
   onClose: () => void;
+  /**
+   * A study ends the piece with its own questions. The shared ending asks
+   * "what stayed with you - moved me, want to think", which in study rg1
+   * would put the questions' own words in front of one condition only.
+   */
+  withoutFinale?: boolean;
+  /**
+   * Study b1 only (`lib/boks/studies/gesture-trace.ts`). `record` hands back
+   * what the reader's hand did, once, when the poem ends or closes; `replay`
+   * takes the gestures away from the reader and performs a recorded trace at
+   * the same moments of the reading instead.
+   */
+  gestureTrace?: { mode: "record"; onTrace: (trace: GestureTrace) => void } | { mode: "replay"; trace: GestureTrace };
 }) {
   const words = useMessages(messages);
   const uiLanguage = useUiLanguage();
@@ -173,6 +196,12 @@ export function ImmersivePoem({
   });
   /** The hand as the overlay gestures read it - see `GestureInput`. */
   const input = useRef<GestureInput>({ drag: null, releases: [], flown: 0, connections: 0 });
+  const surface = useRef<HTMLButtonElement>(null);
+  const replaying = gestureTrace?.mode === "replay";
+  const traceRecorder = useRef<ReturnType<typeof createTraceRecorder> | null>(null);
+  const traceHandler = useRef<((trace: GestureTrace) => void) | null>(null);
+  const traceFlushed = useRef(false);
+  const replayCursor = useRef({ index: 0, at: 0 });
   const stillRef = useRef(false);
   /** The last values written to the DOM, so an unchanged frame writes nothing. */
   const painted = useRef({ from: -1, to: -1, fade: -1, played: -1, ms: -1 });
@@ -546,6 +575,36 @@ export function ImmersivePoem({
     return () => cancelAnimationFrame(raf);
   }, [manifest]);
 
+  /*
+   * Study b1: the reader's hand as a trace. Started with the first sample,
+   * handed over once - when the reading ends, or when the poem closes before
+   * that - so a participant who leaves early still leaves what they did.
+   */
+  useEffect(() => {
+    traceHandler.current = gestureTrace?.mode === "record" ? gestureTrace.onTrace : null;
+  }, [gestureTrace]);
+  function traceSample(kind: GestureSampleKind, clientX: number, clientY: number) {
+    if (!traceHandler.current || traceFlushed.current) return;
+    const box = surface.current?.getBoundingClientRect();
+    if (!box || !box.width || !box.height) return;
+    traceRecorder.current ??= createTraceRecorder(manifest.durationMs);
+    const element = audio.current;
+    traceRecorder.current.add(kind, (element?.currentTime ?? 0) * 1000, (clientX - box.left) / box.width, (clientY - box.top) / box.height, {
+      now: performance.now(),
+      paused: !element || element.paused,
+    });
+  }
+  const flushTrace = useCallback(() => {
+    const handler = traceHandler.current;
+    if (!handler || traceFlushed.current) return;
+    traceFlushed.current = true;
+    handler(traceRecorder.current?.trace() ?? { version: 1, durationMs: manifest.durationMs, samples: [], pausedSamples: 0 });
+  }, [manifest.durationMs]);
+  useEffect(() => {
+    if (status === "ended") flushTrace();
+  }, [status, flushTrace]);
+  useEffect(() => () => flushTrace(), [flushTrace]);
+
   const revealChrome = useCallback(() => {
     setChromeVisible(true);
     window.clearTimeout(idleTimer.current);
@@ -695,7 +754,59 @@ export function ImmersivePoem({
    * ambiguous middle, both eased by the frame loop. A press long enough, or a
    * movement far enough, to have been the gesture does not also pause.
    */
-  function releaseHand(pointerId: number, x?: number, y?: number, width = 0) {
+  /*
+   * The hand going down and moving: what a pointer does on a gesture scene,
+   * kept apart from the event so study b1's replay can do the same.
+   */
+  function handDown(pointerId: number, clientX: number, clientY: number) {
+    const target = surface.current;
+    if (!target) return false;
+    const shown = painted.current;
+    const index = gestureSceneAt(manifest.scenes, { from: shown.from, to: shown.to, progress: shown.fade });
+    const gesture = manifest.scenes[index]?.gesture;
+    if (!gesture) return false;
+    hand.current.swallowClick = false;
+    const box = target.getBoundingClientRect();
+    if (gesture.kind === "fling" || gesture.kind === "threads" || gesture.kind === "wipe") {
+      const x = clientX - box.left;
+      const y = clientY - box.top;
+      input.current.drag = { scene: index, x0: x, y0: y, x, y };
+    }
+    hand.current.pointer = {
+      id: pointerId,
+      x: clientX,
+      y: clientY,
+      at: performance.now(),
+      moved: 0,
+      scene: index,
+    };
+    if (gesture.kind === "hold") hand.current.holdTarget = 1;
+    return true;
+  }
+
+  function handMove(pointerId: number, clientX: number, clientY: number) {
+    const target = surface.current;
+    const pointer = hand.current.pointer;
+    if (!target || !pointer || pointer.id !== pointerId) return;
+    const dx = clientX - pointer.x;
+    pointer.moved = Math.max(pointer.moved, Math.hypot(dx, clientY - pointer.y));
+    const effect = manifest.scenes[pointer.scene]?.gesture?.effect;
+    if (effect === "lean-between") {
+      hand.current.leanTarget = dragLean(dx, target.clientWidth);
+    } else if (effect === "turn-away") {
+      // Turning all the way round takes more than leaning does.
+      hand.current.leanTarget = dragLean(dx, target.clientWidth, 0.55);
+    }
+    const drag = input.current.drag;
+    if (drag) {
+      const box = target.getBoundingClientRect();
+      drag.x = clientX - box.left;
+      drag.y = clientY - box.top;
+    }
+  }
+
+  function handUp(pointerId: number, x?: number, y?: number) {
+    const width = surface.current?.clientWidth ?? 0;
     const state = hand.current;
     const pointer = state.pointer;
     if (!pointer || pointer.id !== pointerId) return;
@@ -727,8 +838,44 @@ export function ImmersivePoem({
     }
   }
 
+  /*
+   * Study b1's passive version: the recorded hand, performed through the same
+   * three functions a real pointer goes through, at the recording's moments.
+   * Its own loop, so the poem's frame loop stays as it was. The cursor lives
+   * in a ref: the loop restarts with every render, the replay must not. A
+   * seek backwards lets go of whatever was held and picks the trace up again
+   * after the new position.
+   */
+  const replay = gestureTrace?.mode === "replay" ? gestureTrace.trace : null;
+  useEffect(() => {
+    if (!replay) return;
+    let raf = 0;
+    const frame = () => {
+      const element = audio.current;
+      const box = surface.current?.getBoundingClientRect();
+      if (element && box) {
+        const ms = element.currentTime * 1000;
+        const cursor = replayCursor.current;
+        const step = dueSamples(replay, cursor.index, cursor.at, ms);
+        replayCursor.current = { index: step.cursor, at: ms };
+        if (step.released) handUp(replayPointerId);
+        for (const [, kind, x, y] of step.due) {
+          const clientX = box.left + x * box.width;
+          const clientY = box.top + y * box.height;
+          if (kind === "down") handDown(replayPointerId, clientX, clientY);
+          else if (kind === "move") handMove(replayPointerId, clientX, clientY);
+          else if (kind === "up") handUp(replayPointerId, clientX, clientY);
+          else handUp(replayPointerId);
+        }
+      }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  });
+
   const gestureHint =
-    scene?.gesture && !gestureFound[scene.id] && status !== "ended" && !recording
+    scene?.gesture && !gestureFound[scene.id] && status !== "ended" && !recording && !replaying
       ? gestureHintIn(scene.gesture.hint, uiLanguage)
       : null;
 
@@ -798,6 +945,7 @@ export function ImmersivePoem({
       {/* A press or a sideways movement on a gesture scene works the picture;
           only a quick tap still plays and pauses. */}
       <button
+        ref={surface}
         type="button"
         className="poem__surface"
         disabled={suspended || status === "ended" || textPreview}
@@ -809,49 +957,28 @@ export function ImmersivePoem({
           toggle();
         }}
         onPointerDown={(event) => {
-          const shown = painted.current;
-          const index = gestureSceneAt(manifest.scenes, { from: shown.from, to: shown.to, progress: shown.fade });
-          const gesture = manifest.scenes[index]?.gesture;
-          if (!gesture) return;
-          hand.current.swallowClick = false;
-          const box = event.currentTarget.getBoundingClientRect();
-          if (gesture.kind === "fling" || gesture.kind === "threads" || gesture.kind === "wipe") {
-            const x = event.clientX - box.left;
-            const y = event.clientY - box.top;
-            input.current.drag = { scene: index, x0: x, y0: y, x, y };
-          }
-          hand.current.pointer = {
-            id: event.pointerId,
-            x: event.clientX,
-            y: event.clientY,
-            at: performance.now(),
-            moved: 0,
-            scene: index,
-          };
+          // The passive version: the recorded hand does the gestures; a tap
+          // still plays and pauses.
+          if (replaying) return;
+          if (!handDown(event.pointerId, event.clientX, event.clientY)) return;
+          traceSample("down", event.clientX, event.clientY);
           event.currentTarget.setPointerCapture?.(event.pointerId);
-          if (gesture.kind === "hold") hand.current.holdTarget = 1;
         }}
         onPointerMove={(event) => {
-          const pointer = hand.current.pointer;
-          if (!pointer || pointer.id !== event.pointerId) return;
-          const dx = event.clientX - pointer.x;
-          pointer.moved = Math.max(pointer.moved, Math.hypot(dx, event.clientY - pointer.y));
-          const effect = manifest.scenes[pointer.scene]?.gesture?.effect;
-          if (effect === "lean-between") {
-            hand.current.leanTarget = dragLean(dx, event.currentTarget.clientWidth);
-          } else if (effect === "turn-away") {
-            // Turning all the way round takes more than leaning does.
-            hand.current.leanTarget = dragLean(dx, event.currentTarget.clientWidth, 0.55);
-          }
-          const drag = input.current.drag;
-          if (drag) {
-            const box = event.currentTarget.getBoundingClientRect();
-            drag.x = event.clientX - box.left;
-            drag.y = event.clientY - box.top;
-          }
+          if (replaying || hand.current.pointer?.id !== event.pointerId) return;
+          handMove(event.pointerId, event.clientX, event.clientY);
+          traceSample("move", event.clientX, event.clientY);
         }}
-        onPointerUp={(event) => releaseHand(event.pointerId, event.clientX, event.clientY, event.currentTarget.clientWidth)}
-        onPointerCancel={(event) => releaseHand(event.pointerId)}
+        onPointerUp={(event) => {
+          if (replaying || hand.current.pointer?.id !== event.pointerId) return;
+          traceSample("up", event.clientX, event.clientY);
+          handUp(event.pointerId, event.clientX, event.clientY);
+        }}
+        onPointerCancel={(event) => {
+          if (replaying || hand.current.pointer?.id !== event.pointerId) return;
+          traceSample("cancel", event.clientX, event.clientY);
+          handUp(event.pointerId);
+        }}
         // A long press is the gesture here, not a request for a menu.
         onContextMenu={(event) => event.preventDefault()}
         aria-label={playing ? words.pause : words.listen}
@@ -1034,7 +1161,7 @@ export function ImmersivePoem({
 
       {/* The same ending as every other boks series piece - see
           reading-finale.tsx. The poem draws the reading, never its own end. */}
-      {status === "ended" && (
+      {status === "ended" && !withoutFinale && (
         <ReadingFinale
           actions={finale ? { ...finale, onComments: onComments ?? finale.onComments } : undefined}
           title={manifest.title}

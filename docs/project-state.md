@@ -1,13 +1,28 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-20.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-26.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
 go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ---
+
+## Built, not yet deployed
+
+**Thesis studies (2026-10-26).** The tests behind РГ1, РГ2, А1, А2, Б1, Б2 and
+Б3 of the НИР3 presentation (А3 is being replaced): participant pages at
+`/study/<key>`, a Studio tab (Research → Studies) with one switch per study -
+every study starts off - materials, previews, results and export, and a gallery
+of every participant form for the presentation. Migration
+`20261026100000_boks_studies.sql` is not applied to production and the Worker is
+not redeployed. Verified: the unit tests; the migration and its checks applied
+to a throwaway local Postgres 14 (the full `npm run verify:schema` needs Docker,
+which this machine lacks - CI runs it); Б1's gesture record and replay in a real
+immersive poem in Chrome; every form rendered at phone size. Not done: a run
+against a Supabase project with the migration, and no study has materials yet.
+See `docs/studies.md`.
 
 ## Live
 

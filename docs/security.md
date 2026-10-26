@@ -50,6 +50,12 @@ Updated 2026-10-18 after the v44 production release; both forward migrations are
   enabled even though the product exposes only magic-link authentication.
 - Data API table grants are deny-by-default and asserted in
   `scripts/local-supabase/checks.sql`.
+- Study tables (`20261026100000_boks_studies.sql`) have no Data API grants.
+  Participants - anonymous sessions included - write only through RPCs that
+  check the study's switch, that the participant row is the caller's, and a cap
+  of 300 answers per participant at 128 KB each; nothing is written while a
+  study is off. Answers, materials and fragment methods are readable only by
+  admins (`is_boks_admin`), and a b3 rater never receives a fragment's method.
 
 Shared poster images (`/b/[id]/image`) query one published bok with the public
 key before consulting the five-minute Worker render cache. Fonts and artwork

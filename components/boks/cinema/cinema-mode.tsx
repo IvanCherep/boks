@@ -188,6 +188,7 @@ export function CinemaMode({
   onComments,
   onPlaybackChange,
   onClose,
+  withoutFinale = false,
 }: {
   story: Story;
   /** What the ending's buttons do - the same object every format is given. */
@@ -204,6 +205,12 @@ export function CinemaMode({
   onComments?: () => void;
   onPlaybackChange?: (state: FormatPlaybackState) => void;
   onClose: () => void;
+  /**
+   * A study ends the piece with its own questions. The shared ending asks
+   * "what stayed with you - moved me, want to think", which in study rg1
+   * would put the questions' own words in front of one condition only.
+   */
+  withoutFinale?: boolean;
 }) {
   const { t } = useReaderPreferences();
   const words = cinemaWords(t);
@@ -573,7 +580,7 @@ export function CinemaMode({
         />
       )}
 
-      {phase === "ended" && (
+      {phase === "ended" && !withoutFinale && (
         <ReadingFinale
           actions={{
             ...finale,

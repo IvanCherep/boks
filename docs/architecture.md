@@ -20,6 +20,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `app/api/feed/route.ts`: the canonical feed. Forwards the reader's Supabase JWT (the Worker holds no elevated credential), assigns the arm, ranks, records the served feed.
 - `app/api/geo/route.ts`: the two-letter country from Cloudflare's `CF-IPCountry`; the IP is never read.
 - `app/privacy/page.tsx`, `app/terms/page.tsx`: legal pages.
+- `app/study/[key]/page.tsx`: a thesis study's participant page (`docs/studies.md`); `app/study.css` its styles.
 - `app/layout.tsx`, `app/globals.css`: document shell, theme bootstrap and base styles. `app/reader-v44.css`, `app/formats-v44.css`, `app/social-v44.css`, `app/admin-v44.css` scope the accepted v44 tokens and surfaces to reader and Studio, preserving the author cabinet.
 - `proxy.ts`: security headers (`lib/boks/security-headers.ts`) and the canonical-host redirect (`lib/boks/canonical-host.ts`).
 
@@ -61,6 +62,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `components/boks/author-console.tsx`: submission cabinet, review status, refusal reason, revision, the length guardrail. `lib/boks/author/submission-quota.ts` mirrors the daily limit for the UI; the database is the authority. `lib/boks/bok-title.ts` mirrors the title-from-first-line rule.
 - `components/boks/admin-dashboard.tsx`: admin auth, grouped Studio navigation and per-section loading.
 - `components/boks/admin/`: one file per tab - `overview.tsx`, `moderation-queue.tsx`, `rights-review.tsx`, `content-operations.tsx`, `people.tsx`, `guest-funnel.tsx`, `guest-day.tsx`, `tracked-links.tsx`, `growth.tsx`, `feedback-inbox.tsx`, `catalogue-import.tsx`, `recommendation-lab.tsx` (+ `experiment-editor.tsx`, `sample-size-panel.tsx`, `position-effects.tsx`, `metric-bars.tsx`), and the poetry/interaction sandboxes.
+- `components/boks/admin/studies.tsx` + `study-form-gallery.tsx`: the Studies tab - each study's on/off switch, materials, results and export, and every participant form in a phone frame.
 - `components/boks/admin/admin-inspector.tsx` + `inspector-context.tsx`: the console's one detail surface. Every tab opens a bok or a person with `useAdminInspector().openBok(id)` / `openPerson(userId)`; never build a per-tab detail view. Views: `bok-inspector.tsx`, `person-inspector.tsx`.
 - `components/boks/admin/bok-lifecycle-dialog.tsx`: the only hide / restore / erase confirmation. Authority is the RPC's `is_boks_admin`, never this UI.
 
@@ -82,6 +84,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `lib/boks/recommendations/`: `signals.ts` (0..1 ranking signals), `strategy.ts` (the contract), `strategies/` (one file per algorithm; `strategies/index.ts` is the registry list), `registry.ts`, `experiments.ts` (split and deterministic assignment), `feed.ts` (`buildReaderFeed`, the one ranking seam), `reader-profile.ts`, `metrics.ts`, `divergence.ts`, `versions.ts` (version stamps on every served feed).
 - `lib/recsys/aggregate/`: reader-level metric definitions and comparison inputs - the one catalogue of metrics. `lib/recsys/statistics/`: comparison, power and sample-size statistics.
 - `lib/boks/import/`: catalogue file parsing and the wikitext converter.
+- `lib/boks/studies/`: the thesis studies - protocols and conditions, materials, seeded plans, measured sessions, Б1's gesture traces, results. `components/boks/studies/` renders them; see `docs/studies.md`.
 
 ### Database and tooling
 

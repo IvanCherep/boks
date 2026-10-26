@@ -53,6 +53,9 @@ import {
   type SupabaseReelRow,
 } from "@/lib/boks/supabase-reels";
 import type { ReaderEvent } from "@/lib/boks/contracts";
+import type { StudyKey, StudyStep } from "@/lib/boks/studies/protocol";
+import type { StudyFragmentRow, StudyResponseRow } from "@/lib/boks/studies/results";
+import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
 import {
   buildRecommendationLab,
@@ -1525,4 +1528,164 @@ export async function setSupabaseCommentLike(
   });
   if (result.error) throw result.error;
   return result.data as CommentLikeState;
+}
+
+// Studies -----------------------------------------------------------------
+//
+// The controlled tests behind the thesis hypotheses (`docs/studies.md`).
+// A participant is an ordinary Supabase session, a guest's included; every
+// write is refused by the database while the study is switched off.
+
+export type StudyParticipant = {
+  id: string;
+  condition: string;
+  seed: number;
+  createdAt: string;
+  completedAt: string | null;
+  steps: { step: string; reelId: string | null; fragmentId: string | null; condition: string | null }[];
+};
+
+export type StudyState = {
+  key: StudyKey;
+  enabled: boolean;
+  materials: Record<string, unknown>;
+  participant: StudyParticipant | null;
+};
+
+export type StudyAdminRow = {
+  key: StudyKey;
+  enabled: boolean;
+  materials: Record<string, unknown>;
+  updatedAt: string;
+  participants: number;
+  completed: number;
+  byCondition: Record<string, number>;
+  responses: number;
+  lastResponseAt: string | null;
+  fragments: number | null;
+};
+
+export async function loadStudy(key: StudyKey): Promise<StudyState | null> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  await getAnonymousSupabaseUserId();
+  const result = await supabase.rpc("get_boks_study", { p_key: key });
+  if (result.error) throw result.error;
+  return (result.data ?? null) as StudyState | null;
+}
+
+export async function enrollInStudy(key: StudyKey, visitorId: string): Promise<StudyParticipant> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  await getAnonymousSupabaseUserId();
+  const result = await supabase.rpc("enroll_in_boks_study", { p_key: key, p_visitor_id: visitorId });
+  if (result.error) throw result.error;
+  return result.data as StudyParticipant;
+}
+
+export async function recordStudyResponse(input: {
+  participantId: string;
+  step: StudyStep;
+  answers: Record<string, unknown>;
+  reelId?: string | null;
+  fragmentId?: string | null;
+  condition?: string | null;
+  clientSeconds?: number | null;
+}) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("record_boks_study_response", {
+    p_participant_id: input.participantId,
+    p_step: input.step,
+    p_answers: input.answers,
+    p_reel_id: input.reelId ?? null,
+    p_fragment_id: input.fragmentId ?? null,
+    p_condition: input.condition ?? null,
+    p_client_seconds: input.clientSeconds ?? null,
+  });
+  if (result.error) throw result.error;
+  return Number(result.data);
+}
+
+export async function completeStudy(participantId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("complete_boks_study", { p_participant_id: participantId });
+  if (result.error) throw result.error;
+}
+
+export type StudyFragment = { id: string; sourceTitle: string; sourceAuthor: string; language: string; body: string; wordCount: number };
+
+export async function nextStudyFragment(participantId: string): Promise<StudyFragment | null> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("next_boks_study_fragment", { p_participant_id: participantId });
+  if (result.error) throw result.error;
+  return (result.data ?? null) as StudyFragment | null;
+}
+
+export async function claimStudyTrace(participantId: string, reelId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("claim_boks_study_trace", { p_participant_id: participantId, p_reel_id: reelId });
+  if (result.error) throw result.error;
+  return (result.data ?? null) as { traceId: number; trace: GestureTrace } | null;
+}
+
+/** Published boks by id, in the order asked; an unpublished id is left out. */
+export async function loadStudyBoks(ids: readonly string[]): Promise<Story[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  if (ids.length === 0) return [];
+  const result = await supabase.from("published_boks").select(publishedReelColumns).in("id", [...new Set(ids)]);
+  if (result.error) throw result.error;
+  const byId = new Map(((result.data ?? []) as SupabaseReelRow[]).map((row) => [row.id, mapSupabaseReelToStory(row)]));
+  return ids.map((id) => byId.get(id)).filter((story): story is Story => Boolean(story));
+}
+
+export async function listStudies(): Promise<StudyAdminRow[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("list_boks_studies");
+  if (result.error) throw result.error;
+  return (result.data ?? []) as StudyAdminRow[];
+}
+
+export async function setStudyEnabled(key: StudyKey, enabled: boolean) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("set_boks_study_enabled", { p_key: key, p_enabled: enabled });
+  if (result.error) throw result.error;
+}
+
+export async function setStudyMaterials(key: StudyKey, materials: Record<string, unknown>) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("set_boks_study_materials", { p_key: key, p_materials: materials });
+  if (result.error) throw result.error;
+}
+
+/** Every response of a study, oldest first, in pages of 5000. */
+export async function loadStudyResponses(key: StudyKey): Promise<StudyResponseRow[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const rows: StudyResponseRow[] = [];
+  for (let page = 0; page < 20; page += 1) {
+    const result = await supabase.rpc("get_boks_study_responses", { p_key: key, p_limit: 5000, p_offset: rows.length });
+    if (result.error) throw result.error;
+    const data = result.data as { total: number; rows: StudyResponseRow[] };
+    rows.push(...data.rows);
+    if (rows.length >= data.total || data.rows.length === 0) break;
+  }
+  return rows;
+}
+
+export async function importStudyFragments(batch: string, fragments: Record<string, unknown>[]) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("import_boks_study_fragments", { p_batch: batch, p_rows: fragments });
+  if (result.error) throw result.error;
+  return Number(result.data);
+}
+
+export async function listStudyFragments(batch?: string): Promise<StudyFragmentRow[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("list_boks_study_fragments", { p_batch: batch ?? null });
+  if (result.error) throw result.error;
+  return (result.data ?? []) as StudyFragmentRow[];
+}
+
+export async function deleteStudyFragmentBatch(batch: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("delete_boks_study_fragment_batch", { p_batch: batch });
+  if (result.error) throw result.error;
+  return Number(result.data);
 }
