@@ -61,17 +61,11 @@ export type B1Materials = {
 };
 
 export type B2Materials = {
-  pieces: {
-    /** The Series piece the author is met through. */
-    series: string;
-    author: string;
-    /** Other plain texts by the same author for the showcase. */
-    sameAuthor: string[];
-    /** Plain texts by other authors for the showcase. */
-    others: string[];
-  }[];
-  /** Authors listed beside the real ones in the screening question. */
-  distractorAuthors: string[];
+  /** Each block's length; every participant has one with music and one in silence. */
+  minutes: number;
+  /** Two comparable sets of plain texts, unfamiliar, of similar genre and length; one per block. */
+  setA: string[];
+  setB: string[];
 };
 
 export type B3Materials = {
@@ -102,7 +96,7 @@ export const materialTemplates: { [K in StudyKey]: StudyMaterials[K] } = {
   a2: { minutes: 10, setA: [], setB: [] },
   a3: { targets: [], profileSize: 5, perParticipant: 10, feedPoolSize: 40 },
   b1: { pieces: [], perParticipant: 2 },
-  b2: { pieces: [], distractorAuthors: [] },
+  b2: { minutes: 5, setA: [], setB: [] },
   b3: { batch: "" },
 };
 
@@ -122,7 +116,6 @@ const problemWords = defineMessages({
   setsShare: "setA and setB must not share a bok.",
   setsSize: "setA and setB should be the same size.",
   perParticipant: "perParticipant is larger than the number of pieces.",
-  author: (index: number) => `pieces[${index}].author is needed for the screening question.`,
   batch: "batch is lower-case letters, digits, - and _.",
 }, {
   ru: {
@@ -140,7 +133,6 @@ const problemWords = defineMessages({
     setsShare: "У setA и setB не должно быть общих боков.",
     setsSize: "setA и setB должны быть одного размера.",
     perParticipant: "perParticipant больше числа произведений.",
-    author: (index) => `pieces[${index}].author нужен для отборочного вопроса.`,
     batch: "batch: только строчные латинские буквы, цифры, - и _.",
   },
 });
@@ -255,21 +247,11 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
     return { pieces, perParticipant };
   },
   b2(raw, read) {
-    const pieces = read.list(raw.pieces, "pieces", 1).map((piece, index) => {
-      const item = read.object(piece, `pieces[${index}]`);
-      const author = read.text(item.author, `pieces[${index}].author`);
-      if (!author) read.problems.push(read.t.author(index));
-      return {
-        series: read.id(item.series, `pieces[${index}].series`),
-        author,
-        sameAuthor: read.ids(item.sameAuthor, `pieces[${index}].sameAuthor`, 1),
-        others: read.ids(item.others, `pieces[${index}].others`, 2),
-      };
-    });
-    const distractorAuthors = read.list(raw.distractorAuthors ?? [], "distractorAuthors", 0)
-      .map((name, index) => read.text(name, `distractorAuthors[${index}]`))
-      .filter(Boolean);
-    return { pieces, distractorAuthors };
+    const setA = read.ids(raw.setA, "setA", 3);
+    const setB = read.ids(raw.setB, "setB", 3);
+    if (setA.some((id) => setB.includes(id))) read.problems.push(read.t.setsShare);
+    if (setA.length !== setB.length) read.problems.push(read.t.setsSize);
+    return { minutes: read.number(raw.minutes, "minutes", 1, 15, 5), setA, setB };
   },
   b3(raw, read) {
     const batch = read.text(raw.batch, "batch").toLowerCase();
@@ -303,10 +285,5 @@ export function seriesBokIds(key: StudyKey, raw: unknown): string[] {
   const ids = (list: unknown) => (Array.isArray(list) ? list.filter((id): id is string => typeof id === "string") : []);
   if (key === "rg1") return [...(typeof value.familiarization === "string" ? [value.familiarization] : []), ...ids(value.targets)];
   if (key === "b1") return ids(value.pieces);
-  if (key === "b2") {
-    return (Array.isArray(value.pieces) ? value.pieces : [])
-      .map((piece) => (piece && typeof piece === "object" ? (piece as Record<string, unknown>).series : null))
-      .filter((id): id is string => typeof id === "string");
-  }
   return [];
 }

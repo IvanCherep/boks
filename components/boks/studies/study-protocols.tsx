@@ -27,7 +27,8 @@ import {
 } from "@/components/boks/studies/study-reader";
 import { StudySeriesPlayer, type SeriesMeasure } from "@/components/boks/studies/study-series";
 import type { StudyMaterials } from "@/lib/boks/studies/materials";
-import { b2PieceFor, b2Showcase, planA1, planA2, planB1, planB2, planRg1, planRg2, type StudyFormat } from "@/lib/boks/studies/plan";
+import { planA1, planA2, planB1, planB2, planRg1, planRg2, type B2Plan, type StudyFormat } from "@/lib/boks/studies/plan";
+import { startReadingMusic, stopReadingMusic } from "@/components/boks/reading-music";
 import { interestScale, planA3Targets, rankA3, type A3Candidate, type A3Rating } from "@/lib/boks/studies/a3";
 import type { StudyKey, StudyStep } from "@/lib/boks/studies/protocol";
 import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
@@ -65,15 +66,15 @@ const agree = (words: StudyWords, key: string, label: string): ScaleQuestion => 
   key, label, max: 7, low: words.scaleDisagree, high: words.scaleAgree,
 });
 
-const intensity = (words: StudyWords, key: string, label: string): ScaleQuestion => ({
-  key, label, max: 7, low: words.scaleWeak, high: words.scaleStrong,
-});
-
 /** The scale questions of each protocol, for the participant page and the Studio gallery alike. */
 export const studyQuestions = {
   rg1: (words: StudyWords) => [agree(words, "moved", words.rg1Moved), agree(words, "thought", words.rg1Thought)],
   a1: (words: StudyWords) => [agree(words, "closure", words.a1Closure)],
-  b1: (words: StudyWords) => [intensity(words, "intensity", words.b1Intensity), intensity(words, "feeling", words.b1Feeling)],
+  b1: (words: StudyWords): ScaleQuestion[] => [{ key: "immersion", label: words.b1Immersion, max: 7, low: words.scaleNotImmersed, high: words.scaleImmersed }],
+  b2: (words: StudyWords): ScaleQuestion[] => [
+    { key: "enjoyment", label: words.b2Enjoyment, max: 7, low: words.scaleNotAtAll, high: words.scaleVeryMuch },
+    { key: "distraction", label: words.b2Distraction, max: 7, low: words.scaleNotAtAll, high: words.scaleVeryMuch },
+  ],
   a3: (words: StudyWords): ScaleQuestion[] => [{ key: "interest", label: words.a3Interest, max: interestScale, low: words.scaleDull, high: words.scaleInteresting }],
 };
 
@@ -549,85 +550,75 @@ function B1({ run }: { run: StudyRun<"b1"> }) {
 
 // b2 ----------------------------------------------------------------------
 
-/** Started means opened and read for at least this long, or a fifth of the way. */
-export const b2StartedSeconds = 10;
-
-function B2({ run }: { run: StudyRun<"b2"> }) {
+/**
+ * One of b2's blocks: its intro, five minutes of plain texts in the feed with
+ * the reading music on or off, then the two questions. The music starts from
+ * the intro's button (a browser plays sound only after a gesture) and stops
+ * when the block ends, without touching the reader's own music setting.
+ */
+function B2Block({ run, index, block, minutes, stories, onSaved }: {
+  run: StudyRun<"b2">;
+  index: number;
+  block: B2Plan["blocks"][number];
+  minutes: number;
+  stories: Story[];
+  onSaved: () => void;
+}) {
   const { words } = run;
-  const plan = useMemo(() => planB2(run.materials, run.participant.seed), [run]);
-  const [piece, setPiece] = useState<StudyMaterials["b2"]["pieces"][number] | null>(null);
-  const [phase, setPhase] = useState<"screen" | "meet" | "showcase" | "reading" | "ineligible">("screen");
-  const [chosen, setChosen] = useState<Story | null>(null);
+  const [phase, setPhase] = useState<"intro" | "read" | "ask">("intro");
+  const [result, setResult] = useState<SessionMeasurement | null>(null);
   const saving = useSaving();
-  const ids = piece ? [piece.series, ...piece.sameAuthor, ...piece.others] : [];
-  const { stories, error } = useStories(ids);
-  const showcase = useMemo(() => (piece ? b2Showcase(piece, run.participant.seed) : []), [piece, run.participant.seed]);
-  const format: StudyFormat = run.participant.condition === "series" ? "series" : "text";
+  useEffect(() => () => stopReadingMusic(false), []);
+  const music = block.mode === "music";
 
-  if (phase === "ineligible") return <StudyMessage title={words.thanksTitle} body={<p>{words.b2Ineligible}</p>} />;
-  if (phase === "screen") {
-    return (
-      <>
-        <CheckListForm words={words} title={words.b2ScreenTitle} body={words.b2ScreenBody} busy={saving.busy}
-          options={plan.screeningAuthors.map((author) => ({ id: author, label: author }))}
-          onSubmit={(knownAuthors) => {
-            const next = b2PieceFor(run.materials, plan, knownAuthors);
-            saving.save(
-              () => run.record("familiarity", { knownAuthors, eligible: Boolean(next), piece: next?.series ?? null }),
-              () => {
-                if (!next) { setPhase("ineligible"); run.finish(); return; }
-                setPiece(next);
-                setPhase("meet");
-              }
-            );
-          }} />
-        <SaveError error={saving.error} />
-      </>
-    );
+  if (phase === "intro") {
+    return <Interstitial eyebrow={words.eyebrow}
+      title={music ? words.b2MusicTitle(minutes) : words.b2SilenceTitle(minutes)}
+      body={<p>{music ? words.b2MusicBody : words.b2SilenceBody}</p>}
+      action={words.start}
+      onAction={() => {
+        if (music) startReadingMusic(false);
+        else stopReadingMusic(false);
+        setPhase("read");
+      }} />;
   }
-  if (!stories || !piece) return <Loading words={words} error={error} />;
-  const series = stories.get(piece.series);
-  if (!series) return <Loading words={words} error={words.textMissing} />;
-  if (phase === "meet") {
-    return <ReadIn story={series} format={format} words={words} note={words.readThisText}
-      onDone={(result) => saving.save(
-        () => run.record("after_reading", { phase: "meeting", ...result }, { reelId: series.id, condition: format }),
-        () => setPhase("showcase")
-      )} />;
-  }
-  const record = (story: Story | null, measure?: ReadingMeasure) => {
-    const entry = story ? showcase.find((item) => item.bokId === story.id) : undefined;
-    const started = Boolean(measure && (measure.activeSeconds >= b2StartedSeconds || measure.progress >= 0.2));
-    return run.record("choice", {
-      chosen: story?.id ?? null,
-      sameAuthor: entry?.sameAuthor ?? false,
-      started,
-      activeSeconds: measure?.activeSeconds ?? 0,
-      progress: measure?.progress ?? 0,
-      offered: showcase,
-    }, { reelId: story?.id ?? null, condition: format });
-  };
-  if (phase === "showcase" || !chosen) {
-    const offered = showcase.map((item) => stories.get(item.bokId)).filter((story): story is Story => Boolean(story));
-    return (
-      <>
-        <BokChoiceForm words={words} title={words.b2ShowcaseTitle} body={words.b2ShowcaseBody} boks={offered} nothingLabel={words.b2Leave} busy={saving.busy}
-          onChoose={(bokId) => {
-            const story = bokId ? stories.get(bokId) ?? null : null;
-            if (story) { setChosen(story); setPhase("reading"); }
-            else saving.save(() => record(null), run.finish);
-          }} />
-        <SaveError error={saving.error} />
-      </>
-    );
+  if (phase === "read" || !result) {
+    return <FeedBrowser words={words} stories={stories} minutes={minutes} set={block.set} mode="inline"
+      onFinish={(measurement) => { stopReadingMusic(false); setResult(measurement); setPhase("ask"); }} />;
   }
   return (
     <>
-      <StudyTextReader story={chosen} words={words} doneLabel={words.stopReading}
-        onDone={(measure) => saving.save(() => record(chosen, measure), run.finish)} />
+      <ScaleForm words={words} questions={studyQuestions.b2(words)} busy={saving.busy}
+        onSubmit={(answers) => saving.save(async () => {
+          await run.record("session", { index, mode: block.mode, measurement: result }, { condition: block.mode, clientSeconds: result.elapsedSeconds });
+          await run.record("session_survey", { index, mode: block.mode, set: block.set, ...answers }, { condition: block.mode });
+        }, onSaved)} />
       <SaveError error={saving.error} />
     </>
   );
+}
+
+/**
+ * b2: everyone reads two comparable sets of plain texts, one block with the
+ * quiet reading music and one in silence; the condition names the first
+ * block's mode and set, and the second gets the other of both.
+ */
+function B2({ run }: { run: StudyRun<"b2"> }) {
+  const { words } = run;
+  const plan = useMemo(() => planB2(run.materials, run.participant.condition), [run]);
+  const { stories, error } = useStories([...run.materials.setA, ...run.materials.setB]);
+  const [step, setStep] = useState<"headphones" | 0 | "pause" | 1>("headphones");
+  if (!stories) return <Loading words={words} error={error} />;
+  if (step === "headphones") {
+    return <Interstitial eyebrow={words.eyebrow} title={words.b2HeadphonesTitle} body={<p>{words.b2HeadphonesBody}</p>} action={words.continue} onAction={() => setStep(0)} />;
+  }
+  if (step === "pause") {
+    return <Interstitial eyebrow={words.eyebrow} title={words.b2PauseTitle} body={<p>{words.b2PauseBody}</p>} action={words.continue} onAction={() => setStep(1)} />;
+  }
+  const block = plan.blocks[step];
+  const list = block.bokIds.map((id) => stories.get(id)).filter((story): story is Story => Boolean(story));
+  return <B2Block key={step} run={run} index={step} block={block} minutes={plan.minutes} stories={list}
+    onSaved={() => (step === 0 ? setStep("pause") : run.finish())} />;
 }
 
 // b3 ----------------------------------------------------------------------

@@ -107,39 +107,26 @@ export function planB1(materials: B1Materials, seed: number): B1Plan {
   return { pieces: shuffle([...materials.pieces], next).slice(0, materials.perParticipant) };
 }
 
+export type B2Mode = "music" | "silence";
+
 export type B2Plan = {
-  /** Pieces in the order to try; the first whose author the participant does not know is used. */
-  order: number[];
-  /** The authors asked about in the screening, real and distractors, shuffled. */
-  screeningAuthors: string[];
+  /** Both blocks, in the order the condition names; the second swaps both mode and set. */
+  blocks: { mode: B2Mode; set: "a" | "b"; bokIds: string[] }[];
+  minutes: number;
 };
 
-export function planB2(materials: B2Materials, seed: number): B2Plan {
-  const next = createRandom(seed);
-  const authors = [...new Set([...materials.pieces.map((piece) => piece.author), ...materials.distractorAuthors])];
+/** The condition names the first block, as in a2; the second gets the other mode and the other set. */
+export function planB2(materials: B2Materials, condition: string): B2Plan {
+  const [first, set] = condition.split("_");
+  const firstMode: B2Mode = first === "silence" ? "silence" : "music";
+  const firstSet = set === "b" ? "b" : "a";
+  const ids = (which: "a" | "b") => (which === "a" ? materials.setA : materials.setB);
+  const otherSet = firstSet === "a" ? "b" : "a";
   return {
-    order: shuffle(materials.pieces.map((_, index) => index), next),
-    screeningAuthors: shuffle(authors, next),
+    minutes: materials.minutes,
+    blocks: [
+      { mode: firstMode, set: firstSet, bokIds: ids(firstSet) },
+      { mode: firstMode === "music" ? "silence" : "music", set: otherSet, bokIds: ids(otherSet) },
+    ],
   };
-}
-
-export type B2Showcase = { bokId: string; sameAuthor: boolean }[];
-
-/**
- * The showcase after the first meeting: one other text by the same author and
- * up to five by others, in an order drawn from the seed. The same for both
- * conditions, so only how the author was met differs.
- */
-export function b2Showcase(piece: B2Materials["pieces"][number], seed: number): B2Showcase {
-  const next = createRandom(seed ^ 0x5bd1e995);
-  const same = shuffle([...piece.sameAuthor], next)[0];
-  const others = shuffle([...piece.others], next).slice(0, 5);
-  return shuffle([{ bokId: same, sameAuthor: true }, ...others.map((bokId) => ({ bokId, sameAuthor: false }))], next);
-}
-
-/** The first piece whose author the participant did not say they know. */
-export function b2PieceFor(materials: B2Materials, plan: B2Plan, knownAuthors: readonly string[]) {
-  const known = new Set(knownAuthors.map((author) => author.trim().toLowerCase()));
-  const index = plan.order.find((candidate) => !known.has(materials.pieces[candidate].author.trim().toLowerCase()));
-  return index === undefined ? null : materials.pieces[index];
 }

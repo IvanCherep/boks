@@ -66,8 +66,12 @@ function rideTo(target: number, ms: number, thenPause: boolean) {
   }, 40);
 }
 
-/** Start it. Must be called from a gesture the first time. */
-export function startReadingMusic() {
+/**
+ * Start it. Must be called from a gesture the first time. `keep` false plays
+ * it without remembering the choice: a study's music block is not the
+ * reader's preference.
+ */
+export function startReadingMusic(keep = true) {
   if (typeof window === "undefined") return;
   if (!element) {
     element = new window.Audio(track);
@@ -79,7 +83,7 @@ export function startReadingMusic() {
     // Refused, or no network for it. Reading is unaffected.
   });
   rideTo(level, 900, false);
-  remember(true);
+  if (keep) remember(true);
 }
 
 /** Stop it, with `forget` false when something else is only borrowing silence. */

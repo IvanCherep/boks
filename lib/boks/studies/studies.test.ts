@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { studyConditions, studyKeys } from "@/lib/boks/studies/protocol";
 import { materialBokIds, materialTemplates, parseStudyMaterials } from "@/lib/boks/studies/materials";
-import { b2PieceFor, b2Showcase, planA1, planA2, planB1, planB2, planRg1, planRg2 } from "@/lib/boks/studies/plan";
+import { planA1, planA2, planB1, planB2, planRg1, planRg2 } from "@/lib/boks/studies/plan";
 import { ndcgAt, planA3Targets, profileVector, rankA3, type A3Candidate } from "@/lib/boks/studies/a3";
 import { successfulFind, type SessionMeasurement } from "@/lib/boks/studies/session";
 import { studyResponsesCsv, summariseStudy, type StudyResponseRow } from "@/lib/boks/studies/results";
@@ -107,21 +107,12 @@ describe("study plans", () => {
     expect(planB1({ pieces: [id(1), id(2), id(3)], perParticipant: 2 }, 3).pieces).toHaveLength(2);
   });
 
-  it("meets b2's author through a piece whose author is unknown, and offers exactly one other text by them", () => {
-    const materials = {
-      pieces: [
-        { series: id(1), author: "Edgar Allan Poe", sameAuthor: [id(2), id(3)], others: [id(4), id(5), id(6)] },
-        { series: id(7), author: "Emily Dickinson", sameAuthor: [id(8)], others: [id(9), id(10)] },
-      ],
-      distractorAuthors: ["Robert Burns"],
-    };
-    const plan = planB2(materials, 11);
-    expect(plan.screeningAuthors.sort()).toEqual(["Edgar Allan Poe", "Emily Dickinson", "Robert Burns"]);
-    expect(b2PieceFor(materials, plan, ["edgar allan poe"])?.author).toBe("Emily Dickinson");
-    expect(b2PieceFor(materials, plan, ["Edgar Allan Poe", "Emily Dickinson"])).toBeNull();
-    const showcase = b2Showcase(materials.pieces[0], 11);
-    expect(showcase.filter((entry) => entry.sameAuthor)).toHaveLength(1);
-    expect(showcase).toHaveLength(4);
+  it("gives b2's second block the other mode and the other set", () => {
+    const materials = { minutes: 5, setA: [id(1), id(2), id(3)], setB: [id(4), id(5), id(6)] };
+    const plan = planB2(materials, "silence_b");
+    expect(plan.blocks.map((block) => [block.mode, block.set])).toEqual([["silence", "b"], ["music", "a"]]);
+    expect(plan.blocks[0].bokIds).toEqual(materials.setB);
+    expect(planB2(materials, "music_a").blocks[1]).toEqual({ mode: "silence", set: "b", bokIds: materials.setB });
   });
 });
 
@@ -262,6 +253,30 @@ describe("study results", () => {
     expect(summary.comparisons[0].result.effect).toBe(1);
     expect(summary.comparisons[0].meetsThreshold).toBe(true);
     expect(summary.facts[0].value).toBe("12");
+  });
+
+  it("judges b1 by the paired share immersed 6 or 7, active against automatic", () => {
+    const rows: StudyResponseRow[] = [];
+    for (let n = 1; n <= 6; n += 1) {
+      rows.push(row(n, { step: "after_reading", condition: "active", participantCondition: "yoked", answers: { immersion: 6 } }));
+      rows.push(row(n, { step: "after_reading", condition: "passive", participantCondition: "yoked", answers: { immersion: n % 2 ? 7 : 4 } }));
+    }
+    const summary = summariseStudy("b1", rows);
+    expect(summary.comparisons[0].unit).toBe("share");
+    expect(summary.comparisons[0].result.effect).toBeCloseTo(0.5);
+  });
+
+  it("pairs b2's music and silence blocks within each participant", () => {
+    const rows: StudyResponseRow[] = [];
+    for (let n = 1; n <= 6; n += 1) {
+      rows.push(row(n, { step: "session_survey", condition: "music", participantCondition: "music_a", answers: { index: 0, mode: "music", enjoyment: 6, distraction: 2 } }));
+      rows.push(row(n, { step: "session_survey", condition: "silence", participantCondition: "music_a", answers: { index: 1, mode: "silence", enjoyment: n <= 3 ? 6 : 5, distraction: 2 } }));
+    }
+    rows.push(row(7, { step: "session_survey", condition: "music", participantCondition: "music_b", answers: { index: 0, mode: "music", enjoyment: 7, distraction: 1 } }));
+    const summary = summariseStudy("b2", rows);
+    expect(summary.comparisons[0].result.effect).toBeCloseTo(0.5);
+    expect(summary.comparisons[0].meetsThreshold).toBe(true);
+    expect(summary.facts[0].value).toBe("1");
   });
 
   it("judges a3 by the paired Precision@5 of the two stored orders, NDCG@5 beside it", () => {

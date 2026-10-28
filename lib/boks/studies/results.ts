@@ -109,14 +109,17 @@ const resultWords = defineMessages({
   strongBoth: "Share answering 6 or 7 to both questions",
   satisfiedShare: "Share satisfied with the session (6 or 7)",
   meanSecondary: (question: string) => `${question} (secondary, mean)`,
-  strongResponse: "Strong response: 6 or 7 to both questions, participants in both roles",
+  immersedShare: "Highly immersed: 6 or 7, participants in both roles",
+  music: "Music",
+  silence: "Silence",
+  enjoyedShare: "Share enjoying the reading (6 or 7), paired",
+  distractionSecondary: "«Насколько вас что-то отвлекало от чтения?», 1–7 (secondary, mean)",
+  oneBlockOnly: "Answered after one block only (left out)",
   incomplete: "Profile fixed, ten not all rated yet (can return later)",
   flat: "Every one of the ten rated 1 (no order is better; left out)",
   noDirection: "Five ratings all at 3 (no profile; both orders the same, kept in)",
-  intensityBoth: "Emotional intensity, participants in both roles",
-  intensityEvery: "Emotional intensity, every rating",
-  startedSameAuthor: "Chose and started another text by the author",
-  screenedOut: "Knew every author offered (left out)",
+  immersionBoth: "Immersion, participants in both roles",
+  immersionEvery: "Immersion, every rating",
   fragmentsAccepted: "Algorithm fragments accepted (target: 80 of 100)",
   acceptedValue: (accepted: number, total: number, rated: number) => `${accepted} of ${total}, ${rated} with three ratings`,
   noneImported: "none imported",
@@ -149,14 +152,17 @@ const resultWords = defineMessages({
     strongBoth: "Доля ответивших 6 или 7 на оба вопроса",
     satisfiedShare: "Доля довольных сессией (6 или 7)",
     meanSecondary: (question) => `${question} (вторичная, среднее)`,
-    strongResponse: "Сильный отклик: 6 или 7 на оба вопроса, участники в обеих ролях",
+    immersedShare: "Высокое погружение: 6 или 7, участники в обеих ролях",
+    music: "Музыка",
+    silence: "Тишина",
+    enjoyedShare: "Доля получивших удовольствие от чтения (6 или 7), парно",
+    distractionSecondary: "«Насколько вас что-то отвлекало от чтения?», 1–7 (вторичная, среднее)",
+    oneBlockOnly: "Ответили только после одного блока (исключены)",
     incomplete: "Профиль зафиксирован, десять оценены не все (можно вернуться позже)",
     flat: "Все десять оценены на 1 (ни один порядок не лучше; исключены)",
     noDirection: "Все пять оценок равны 3 (профиля нет; оба порядка одинаковы, оставлены)",
-    intensityBoth: "Эмоциональная интенсивность, участники в обеих ролях",
-    intensityEvery: "Эмоциональная интенсивность, все оценки",
-    startedSameAuthor: "Выбрали и начали другой текст автора",
-    screenedOut: "Знали всех предложенных авторов (исключены)",
+    immersionBoth: "Погружение, участники в обеих ролях",
+    immersionEvery: "Погружение, все оценки",
     fragmentsAccepted: "Принятые фрагменты алгоритма (цель: 80 из 100)",
     acceptedValue: (accepted, total, rated) => `${accepted} из ${total}, с тремя оценками ${rated}`,
     noneImported: "ничего не импортировано",
@@ -384,51 +390,64 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   },
   b1(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
-    const strongPairs: { control: number; variant: number }[] = [];
+    const highPairs: { control: number; variant: number }[] = [];
     const active: number[] = [];
     const passive: number[] = [];
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
     for (const rows of groups.values()) {
       const own: Record<"active" | "passive", number[]> = { active: [], passive: [] };
-      const ownStrong: Record<"active" | "passive", number[]> = { active: [], passive: [] };
       for (const row of rows.filter((entry) => entry.step === "after_reading")) {
-        const a = scale(row.answers.intensity);
-        const b = scale(row.answers.feeling);
-        if (a === null || b === null) continue;
+        const immersion = scale(row.answers.immersion);
+        if (immersion === null) continue;
         const role = row.condition === "passive" ? "passive" : "active";
-        own[role].push((a + b) / 2);
-        ownStrong[role].push(a >= 6 && b >= 6 ? 1 : 0);
-        (role === "active" ? active : passive).push((a + b) / 2);
+        own[role].push(immersion);
+        (role === "active" ? active : passive).push(immersion);
       }
       if (own.active.length && own.passive.length) {
-        const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
         pairs.push({ control: mean(own.passive), variant: mean(own.active) });
-        strongPairs.push({ control: mean(ownStrong.passive), variant: mean(ownStrong.active) });
+        highPairs.push({ control: mean(own.passive.map((value) => (value >= 6 ? 1 : 0))), variant: mean(own.active.map((value) => (value >= 6 ? 1 : 0))) });
       }
     }
     summary.comparisons.push(
-      comparePairs(w.strongResponse, strongPairs, 0.1, "share", [w.passive, w.active]),
-      comparePairs(w.meanSecondary(w.intensityBoth), pairs, 0, "points", [w.passive, w.active]),
-      compare(w.meanSecondary(w.intensityEvery), passive, active, 0, "points", [w.passive, w.active])
+      comparePairs(w.immersedShare, highPairs, 0.1, "share", [w.passive, w.active]),
+      comparePairs(w.meanSecondary(w.immersionBoth), pairs, 0, "points", [w.passive, w.active]),
+      compare(w.meanSecondary(w.immersionEvery), passive, active, 0, "points", [w.passive, w.active])
     );
   },
   b2(groups, summary, w) {
-    const started: Record<"series" | "text", number[]> = { series: [], text: [] };
-    let screenedOut = 0;
+    const enjoyed: { control: number; variant: number }[] = [];
+    const enjoyment: { control: number; variant: number }[] = [];
+    const distraction: { control: number; variant: number }[] = [];
+    let unpaired = 0;
     for (const rows of groups.values()) {
-      const screening = rows.find((row) => row.step === "familiarity");
-      if (screening && screening.answers.eligible === false) {
-        screenedOut += 1;
+      const blocks: Partial<Record<"music" | "silence", Record<string, unknown>>> = {};
+      for (const row of rows) {
+        const mode = row.answers.mode;
+        if (row.step !== "session_survey" || (mode !== "music" && mode !== "silence") || blocks[mode]) continue;
+        blocks[mode] = row.answers;
+      }
+      const music = blocks.music;
+      const silence = blocks.silence;
+      if (!music || !silence) {
+        if (music || silence) unpaired += 1;
         continue;
       }
-      const choice = rows.find((row) => row.step === "choice");
-      if (!choice) continue;
-      const condition = choice.condition === "series" ? "series" : "text";
-      started[condition].push(choice.answers.sameAuthor === true && choice.answers.started === true ? 1 : 0);
+      const withMusic = scale(music.enjoyment);
+      const inSilence = scale(silence.enjoyment);
+      if (withMusic !== null && inSilence !== null) {
+        enjoyment.push({ control: inSilence, variant: withMusic });
+        enjoyed.push({ control: inSilence >= 6 ? 1 : 0, variant: withMusic >= 6 ? 1 : 0 });
+      }
+      const distractedMusic = scale(music.distraction);
+      const distractedSilence = scale(silence.distraction);
+      if (distractedMusic !== null && distractedSilence !== null) distraction.push({ control: distractedSilence, variant: distractedMusic });
     }
     summary.comparisons.push(
-      compare(w.startedSameAuthor, started.text, started.series, 0.15, "share", [w.text, w.series])
+      comparePairs(w.enjoyedShare, enjoyed, 0.1, "share", [w.silence, w.music]),
+      comparePairs(w.meanSecondary("«Насколько вам понравился сам процесс чтения?», 1–7"), enjoyment, 0, "points", [w.silence, w.music]),
+      comparePairs(w.distractionSecondary, distraction, 0, "points", [w.silence, w.music])
     );
-    summary.facts.push({ label: w.screenedOut, value: String(screenedOut) });
+    summary.facts.push({ label: w.oneBlockOnly, value: String(unpaired) });
   },
   b3() {
     // Fragments are summarised with their rows; see `summariseFragments`.

@@ -28,7 +28,8 @@ export const studyConditions = {
   // One protocol for everyone: the comparison is offline, with and without the profile.
   a3: ["profile"],
   b1: ["yoked"],
-  b2: ["series", "text"],
+  // First block's mode and set; the second block gets the other of both.
+  b2: ["music_a", "music_b", "silence_a", "silence_b"],
   b3: ["rater"],
 } as const satisfies Record<StudyKey, readonly string[]>;
 
@@ -38,13 +39,13 @@ export type StudyCondition<K extends StudyKey = StudyKey> = (typeof studyConditi
 export const studySteps = [
   // Before reading: which of these texts or authors the participant knows.
   "familiarity",
-  // Two scale questions after a text (rg1, a1, b1).
+  // Scale questions after a text (rg1, a1, b1).
   "after_reading",
-  // The next text chosen from a showcase, or none (a1, b2).
+  // The next text chosen from a showcase, or none (a1).
   "choice",
-  // Ten minutes in an interface: what was opened and read (rg2, a2).
+  // Minutes in an interface: what was opened and read (rg2, a2, and b2's five-minute blocks).
   "session",
-  // The questions after such a session.
+  // The questions after such a session or block.
   "session_survey",
   // b1: the active participant's gesture timings, replayed to a passive one.
   "trace",
@@ -121,19 +122,19 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     key: "b1",
     label: "Б1",
     owner: "Ivan",
-    title: "What interaction adds",
-    comparison: "An active Series scene against a passive one replaying the same events at the same moments.",
-    outcome: "Share with a strong response, 6 or 7 to both intensity questions, 1–7: at least +10 pp.",
+    title: "Immersion from two actions",
+    comparison: "Series with the reader's two interactive actions against automatic playback repeating a recorded session's effects and pauses at the same moments.",
+    outcome: "Share answering 6 or 7 to «Насколько сильно вы были погружены в произведение?», 1–7: at least +10 pp, 95% interval above 0.",
     design: "within",
   },
   b2: {
     key: "b2",
     label: "Б2",
     owner: "Ivan",
-    title: "Series as a way into an author",
-    comparison: "A first meeting with an unknown author through Series or through the plain text of the same piece.",
-    outcome: "Share choosing and starting another plain text by the same author: at least +15 pp.",
-    design: "between",
+    title: "Music and the enjoyment of reading",
+    comparison: "Each participant reads two comparable sets of plain texts, five minutes with the quiet boks reading music and five in silence; order and sets at random.",
+    outcome: "Share answering 6 or 7 to «Насколько вам понравился сам процесс чтения?», 1–7: music minus silence at least +10 pp, paired, 95% interval above 0.",
+    design: "within",
   },
   b3: {
     key: "b3",
@@ -174,14 +175,14 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
     outcome: "Precision@5 — доля текстов с интересом 4–5 из 5 в первой пятёрке: в среднем не меньше +10 п. п., 95% интервал выше 0. NDCG@5 — дополнительно.",
   },
   b1: {
-    title: "Что добавляет интерактив",
-    comparison: "Активная сцена Series против пассивной, которая воспроизводит те же события в те же моменты.",
-    outcome: "Доля с сильным откликом — 6 или 7 на оба вопроса об интенсивности, 1–7: не меньше +10 п. п.",
+    title: "Погружение от двух действий",
+    comparison: "Series с двумя интерактивными действиями читателя против автоматического воспроизведения, которое повторяет эффекты и паузы записанного сеанса в те же моменты.",
+    outcome: "Доля ответивших 6 или 7 на «Насколько сильно вы были погружены в произведение?», 1–7: не меньше +10 п. п., 95% интервал выше 0.",
   },
   b2: {
-    title: "Series как вход к автору",
-    comparison: "Первое знакомство с незнакомым автором через Series или через простой текст того же произведения.",
-    outcome: "Доля выбравших и начавших другой простой текст того же автора: не меньше +15 п. п.",
+    title: "Музыка и удовольствие от чтения",
+    comparison: "Каждый участник читает два сопоставимых набора обычных текстов: пять минут с тихой фоновой музыкой boks и пять в тишине; порядок и наборы случайные.",
+    outcome: "Доля ответивших 6 или 7 на «Насколько вам понравился сам процесс чтения?», 1–7: музыка минус тишина не меньше +10 п. п., парно, 95% интервал выше 0.",
   },
   b3: {
     title: "Фрагменты, которые держатся сами",
