@@ -1,6 +1,7 @@
 "use client";
 
 import { initialMetrics } from "@/components/boks/constants";
+import type { LlmReply, LlmTask, YandexModel } from "@/lib/boks/fragments/llm";
 import { analyticsAllowed } from "@/lib/boks/analytics-gate";
 import type { FeedbackSurface } from "@/components/boks/feedback";
 import type {
@@ -1688,6 +1689,26 @@ export async function importStudyFragments(batch: string, fragments: Record<stri
   const result = await supabase.rpc("import_boks_study_fragments", { p_batch: batch, p_rows: fragments });
   if (result.error) throw result.error;
   return Number(result.data);
+}
+
+/**
+ * One language-model call of the fragment cutter, through the Worker that
+ * holds the key (`app/api/admin/fragments/llm`). Errors carry the HTTP
+ * status, so the caller's retry knows a 429 from a 403.
+ */
+export async function callFragmentModel(model: YandexModel, task: LlmTask, signal?: AbortSignal): Promise<LlmReply> {
+  const token = await currentAccessToken();
+  if (!token) throw Object.assign(new Error("Sign in again to use the model."), { status: 401 });
+  const response = await fetch("/api/admin/fragments/llm", {
+    method: "POST",
+    cache: "no-store",
+    signal,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ model, task }),
+  });
+  const payload = (await response.json().catch(() => ({}))) as LlmReply & { error?: string };
+  if (!response.ok) throw Object.assign(new Error(payload.error ?? `The model call failed (${response.status}).`), { status: response.status });
+  return { json: payload.json ?? null, usage: payload.usage ?? null };
 }
 
 export async function listStudyFragments(batch?: string): Promise<StudyFragmentRow[]> {

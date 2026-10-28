@@ -27,6 +27,7 @@ import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
 import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
 import { AdminStudies } from "@/components/boks/admin/studies";
+import { FragmentCutter } from "@/components/boks/admin/fragment-cutter";
 import {
   loadBoksUserContext,
   reviewBokSubmission,
@@ -58,6 +59,7 @@ export const adminTabs = [
   { id: "studies", label: "Studies", heading: "Studies", group: "Research" },
   { id: "interactions", label: "Interactions", heading: "Interactions", group: "Research" },
   { id: "poetry", label: "Poetry", heading: "Immersive poems", group: "Research" },
+  { id: "cutter", label: "Cutter", heading: "Fragment cutter", group: "Research" },
 ] as const;
 
 export type AdminTab = (typeof adminTabs)[number]["id"];
@@ -358,6 +360,7 @@ export function AdminDashboard() {
         {tab === "studies" && <AdminStudies />}
         {tab === "interactions" && <InteractionSandbox />}
         {tab === "poetry" && <PoetrySandbox />}
+        {tab === "cutter" && <FragmentCutter />}
 
         {tab === "guests" && <GuestFunnelPanel />}
         {tab === "links" && <TrackedLinksPanel />}

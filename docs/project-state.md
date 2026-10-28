@@ -11,6 +11,18 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**Fragment cutter in Studio, with a language model (2026-10-28).** Б3's cutter
+is now a nine-stage pipeline (`docs/fragment-cutter.md`): structure, TextTiling,
+transition markers, noisy-OR fusion, candidates spread by MMR, then Yandex
+models marking scenes, moving edges, a checklist judge and a both-orders
+pairwise tournament; a work may yield fewer fragments or none, with the reason.
+Studio → Research → Cutter runs it in the browser on an uploaded or pasted
+work; model calls go one at a time through `/api/admin/fragments/llm`
+(admins only, `YANDEX_API_KEY` and `YANDEX_FOLDER_ID` as Worker secrets).
+Verified: live runs on «Степь» and «Дуэль» from the CLI (5 fragments each,
+~70 calls and ~150k tokens a work). Alice AI cannot do the pairwise stage
+(always picks the second), so gpt-oss-120b does it by default.
+
 **Studies match the presentation (2026-10-28).** Checked against the НИР3 team
 presentation slide by slide. РГ2 is now within-participant - a feed session and
 a catalogue session for everyone, random order, different texts - judged by
@@ -26,8 +38,7 @@ denominator. Migrations `20261028100000_boks_studies_rg2_within_and_a3.sql` and
 (2026-10-28, after `npm run verify:schema` passed with them); every study is
 still off. Deployed the same day from `efd3751`, Worker version
 `ecde98cf-6e3f-4ada-a1d6-ebfe32a4dd5a`; `/study/a3` and `/study/rg2` answer.
-Not done: a participant run of РГ2 or А3 against a real stack, and a live
-`--llm` run of the cutter (no API key here). See `docs/studies.md`.
+Not done: a participant run of РГ2 or А3 against a real stack. See `docs/studies.md`.
 
 **Thesis studies (2026-10-26).** The tests behind РГ1, РГ2, А1, А2, Б1, Б2 and
 Б3 of the НИР3 presentation (А3 is being replaced): participant pages at

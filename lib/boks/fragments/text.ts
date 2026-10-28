@@ -22,6 +22,12 @@ export type Paragraph = {
   heading: boolean;
   /** A line of dialogue: opens with a dash or a quotation mark. */
   dialogue: boolean;
+  /**
+   * A piece of an author's paragraph that was too long to cut around, split
+   * at a sentence end (`splitLongParagraphs`). A fragment may start or end
+   * here, but the reader then begins or stops mid-paragraph.
+   */
+  continued?: boolean;
 };
 
 export type TextRange = { start: number; end: number };
@@ -67,6 +73,51 @@ export function splitParagraphs(source: string): Paragraph[] {
       dialogue: /^[—–\-«"“„']/.test(text),
     };
   });
+}
+
+/**
+ * Paragraphs longer than `maxWords`, split into runs of whole sentences of
+ * about `targetWords`. Without this a work pasted with no line breaks, or one
+ * whose author writes pages-long paragraphs, has nowhere to cut at all. The
+ * pieces are still offsets into the source, so the text is untouched; each
+ * piece after the first is marked `continued`.
+ */
+export function splitLongParagraphs(source: string, paragraphs: Paragraph[], maxWords: number, targetWords = 150): Paragraph[] {
+  const out: Paragraph[] = [];
+  for (const paragraph of paragraphs) {
+    if (paragraph.words <= maxWords || paragraph.heading) {
+      out.push({ ...paragraph, index: out.length });
+      continue;
+    }
+    const sentences = splitSentences(source, paragraph);
+    let from = 0;
+    while (from < sentences.length) {
+      let to = from;
+      let words = countWords(source.slice(sentences[from].start, sentences[from].end));
+      while (to + 1 < sentences.length && words < targetWords) {
+        to += 1;
+        words += countWords(source.slice(sentences[to].start, sentences[to].end));
+      }
+      // A short tail joins the piece before it rather than standing alone.
+      if (to + 1 < sentences.length) {
+        const rest = countWords(source.slice(sentences[to + 1].start, paragraph.end));
+        if (rest < targetWords / 3) to = sentences.length - 1;
+      }
+      const start = sentences[from].start;
+      const end = sentences[to].end;
+      out.push({
+        index: out.length,
+        start,
+        end,
+        words: countWords(source.slice(start, end)),
+        heading: false,
+        dialogue: from === 0 && paragraph.dialogue,
+        continued: from > 0,
+      });
+      from = to + 1;
+    }
+  }
+  return out;
 }
 
 /**
