@@ -161,7 +161,7 @@ const words = defineMessages(
         poetry: "Иммерсивные стихи",
         cutter: "Нарезка фрагментов",
       },
-      studio: "Студия",
+      studio: "Админка",
       sections: "Разделы студии",
       chooseSection: "Выберите раздел.",
       backToReading: "Назад к чтению",

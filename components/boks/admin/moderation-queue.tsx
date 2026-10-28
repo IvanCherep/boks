@@ -92,7 +92,7 @@ const words = defineMessages({
   approvePublish: "Одобрить и опубликовать",
   sendBack: "Вернуть с запиской",
   openRecord: "Открыть полную карточку",
-  studio: "Студия",
+  studio: "Админка",
   requestChanges: "Попросить правки",
   requestChangesHint: "Отправьте автору записку, чтобы он доработал бок.",
   to: (handle: string) => `Для @${handle}`,

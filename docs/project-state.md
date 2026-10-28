@@ -12,7 +12,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ## Live, every study switched off
 
 **The whole app follows the interface language (2026-10-28).** On a Russian
-interface, Studio (every tab, with its own EN / RU switch sharing the reader's
+interface, Studio («Админка» in Russian; every tab, with its own EN / RU switch sharing the reader's
 stored preference), `/privacy`, `/terms` and the rest of the reader are Russian
 (`docs/adr/0016-whole-app-follows-the-interface-language.md`). Data, exports,
 event names and model prompts stay as they are. Deployed from `8176c4c`, Worker version `28de037e-223f-4289-aaa1-64df10b6fe44`; checked
