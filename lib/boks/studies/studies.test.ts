@@ -223,22 +223,26 @@ describe("study results", () => {
     ...partial,
   });
 
-  it("compares rg1's two scales between formats and leaves the team out", () => {
+  it("compares rg1's share answering 6 or 7 to both between formats and leaves the team out", () => {
     const rows: StudyResponseRow[] = [];
     for (let n = 1; n <= 12; n += 1) {
       const series = n % 2 === 0;
       rows.push(row(n, {
         participantCondition: series ? "series" : "text",
         condition: series ? "series" : "text",
-        answers: { phase: "target", moved: series ? 6 : 4, thought: series ? 5 : 5 },
+        answers: { phase: "target", moved: series ? 6 : 4, thought: series ? 6 : 5 },
       }));
     }
     rows.push(row(99, { team: true, answers: { phase: "target", moved: 1, thought: 1 } }));
     const summary = summariseStudy("rg1", rows);
     expect(summary.participants).toBe(12);
-    expect(summary.comparisons[0].result.effect).toBe(2);
+    // Every series reader answered 6 to both, no text reader did: +100 pp.
+    expect(summary.comparisons[0].unit).toBe("share");
+    expect(summary.comparisons[0].result.effect).toBe(1);
     expect(summary.comparisons[0].meetsThreshold).toBe(true);
-    expect(summary.comparisons[1].meetsThreshold).toBe(false);
+    // The means stay as secondary measures.
+    expect(summary.comparisons[1].result.effect).toBe(2);
+    expect(summary.comparisons[2].result.effect).toBe(1);
   });
 
   it("pairs rg2's feed and catalogue sessions within each participant", () => {
@@ -260,7 +264,7 @@ describe("study results", () => {
     expect(summary.facts[0].value).toBe("12");
   });
 
-  it("judges a3 by the paired NDCG@5 of the two stored orders", () => {
+  it("judges a3 by the paired Precision@5 of the two stored orders, NDCG@5 beside it", () => {
     const targets = ["a", "b", "c", "d", "e", "f"].map((letter, n) => id(200 + n));
     const rows: StudyResponseRow[] = [];
     for (let n = 1; n <= 6; n += 1) {
@@ -272,8 +276,11 @@ describe("study results", () => {
     // An unfinished participant is counted, not compared.
     rows.push(row(7, { step: "ranking", reelId: null, answers: { withProfile: targets, withoutProfile: targets, hasProfile: true, targets } }));
     const summary = summariseStudy("a3", rows);
-    expect(summary.comparisons[0].result.effect).toBeGreaterThan(0.05);
+    // Top five with the profile: 5, 4, 3, 2, 1 → 2 of 5 interesting; without: 1, 1, 2, 3, 4 → 1 of 5.
+    expect(summary.comparisons[0].unit).toBe("share");
+    expect(summary.comparisons[0].result.effect).toBeCloseTo(0.2, 6);
     expect(summary.comparisons[0].meetsThreshold).toBe(true);
+    expect(summary.comparisons[1].result.effect).toBeGreaterThan(0.05);
     expect(summary.facts[0].value).toBe("1");
   });
 

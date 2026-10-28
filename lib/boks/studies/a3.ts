@@ -178,6 +178,16 @@ export function rankA3(input: {
 }
 
 /**
+ * Precision@k: the share of the top k, in this order, that the participant
+ * rated interesting - 4 or 5 of 5. The hypothesis's primary measure;
+ * NDCG@k (below) also weighs the order inside the top and is secondary.
+ */
+export function precisionAt(order: readonly string[], interest: Readonly<Record<string, number>>, k = 5) {
+  const top = order.slice(0, k);
+  return top.length ? top.filter((id) => (interest[id] ?? 0) >= 4).length / top.length : 0;
+}
+
+/**
  * NDCG@k with the gain the hypothesis states: interest minus one, discounted
  * by log2(place + 1) (Järvelin & Kekäläinen, 2002). The ideal order is the
  * participant's own ratings sorted. Null when every rating is 1: no order is

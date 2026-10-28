@@ -78,7 +78,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     owner: "team",
     title: "The value of Boks Series",
     comparison: "Series against the same text read plainly; format assigned at random, one piece per participant.",
-    outcome: "«Произведение меня тронуло» and «заставило задуматься», 1–7: both at least +0.5.",
+    outcome: "Share answering 6 or 7 to both «Произведение меня тронуло» and «заставило задуматься», 1–7: at least +10 pp, 95% interval above 0.",
     design: "between",
   },
   rg2: {
@@ -87,7 +87,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     owner: "team",
     title: "The value of the personal feed",
     comparison: "Each participant: ten minutes in the personal feed and ten in a catalogue with search and filters, order at random, different texts.",
-    outcome: "«Насколько вы довольны этим сеансом выбора и чтения?» 1–7: feed minus catalogue at least +0.5, 95% interval above 0.",
+    outcome: "Share satisfied with the session (6 or 7 to «Насколько вы довольны этим сеансом выбора и чтения?», 1–7): feed minus catalogue at least +10 pp, paired, 95% interval above 0.",
     design: "within",
   },
   a1: {
@@ -114,7 +114,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     owner: "Andrey",
     title: "Recommendations from five boks",
     comparison: "The same algorithm orders the same ten new texts offline, with a profile from the first five rated boks and without it.",
-    outcome: "NDCG@5 against the reader's own interest ratings, 1–5: at least +0.05 on average, 95% interval above 0.",
+    outcome: "Precision@5, the share of texts rated 4–5 of 5 in the top five: at least +10 pp on average, 95% interval above 0. NDCG@5 as a secondary measure.",
     design: "within",
   },
   b1: {
@@ -123,7 +123,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     owner: "Ivan",
     title: "What interaction adds",
     comparison: "An active Series scene against a passive one replaying the same events at the same moments.",
-    outcome: "Mean emotional intensity of two questions, 1–7: at least +0.5.",
+    outcome: "Share with a strong response, 6 or 7 to both intensity questions, 1–7: at least +10 pp.",
     design: "within",
   },
   b2: {
@@ -151,12 +151,12 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   rg1: {
     title: "Ценность Boks Series",
     comparison: "Series против того же текста простым чтением; формат назначается случайно, одно произведение на участника.",
-    outcome: "«Произведение меня тронуло» и «заставило задуматься», 1–7: обе не меньше +0,5.",
+    outcome: "Доля ответивших 6 или 7 на оба вопроса «Произведение меня тронуло» и «заставило задуматься», 1–7: не меньше +10 п. п., 95% интервал выше 0.",
   },
   rg2: {
     title: "Ценность персональной ленты",
     comparison: "Каждый участник: десять минут в персональной ленте и десять в каталоге с поиском и фильтрами, порядок случайный, тексты разные.",
-    outcome: "«Насколько вы довольны этим сеансом выбора и чтения?» 1–7: лента минус каталог не меньше +0,5, 95% интервал выше 0.",
+    outcome: "Доля довольных сессией (6 или 7 на «Насколько вы довольны этим сеансом выбора и чтения?», 1–7): лента минус каталог не меньше +10 п. п., парно, 95% интервал выше 0.",
   },
   a1: {
     title: "Целое произведение или фрагмент",
@@ -171,12 +171,12 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   a3: {
     title: "Рекомендации по пяти бокам",
     comparison: "Один и тот же алгоритм офлайн упорядочивает те же десять новых текстов: с профилем по первым пяти оценённым бокам и без него.",
-    outcome: "NDCG@5 по собственным оценкам интереса читателя, 1–5: в среднем не меньше +0,05, 95% интервал выше 0.",
+    outcome: "Precision@5 — доля текстов с интересом 4–5 из 5 в первой пятёрке: в среднем не меньше +10 п. п., 95% интервал выше 0. NDCG@5 — дополнительно.",
   },
   b1: {
     title: "Что добавляет интерактив",
     comparison: "Активная сцена Series против пассивной, которая воспроизводит те же события в те же моменты.",
-    outcome: "Средняя эмоциональная интенсивность по двум вопросам, 1–7: не меньше +0,5.",
+    outcome: "Доля с сильным откликом — 6 или 7 на оба вопроса об интенсивности, 1–7: не меньше +10 п. п.",
   },
   b2: {
     title: "Series как вход к автору",

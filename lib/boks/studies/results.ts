@@ -2,7 +2,7 @@ import { comparePaired, compareIndependent } from "@/lib/recsys/statistics";
 import type { ComparisonResult } from "@/lib/recsys/statistics/types";
 import type { StudyKey } from "@/lib/boks/studies/protocol";
 import { successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
-import { ndcgAt, type A3Ranking } from "@/lib/boks/studies/a3";
+import { ndcgAt, precisionAt, type A3Ranking } from "@/lib/boks/studies/a3";
 import { defineMessages } from "@/lib/i18n/messages";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
 
@@ -104,7 +104,12 @@ const resultWords = defineMessages({
   choseNothing: "Chose nothing",
   successfulFind: "Session with a successful find",
   satisfactionSecondary: "Session satisfaction, 1–7 (secondary)",
-  ndcg: "NDCG@5 of the ten new texts",
+  ndcg: "NDCG@5 of the ten new texts (secondary)",
+  precision: "Precision@5: share of texts rated 4–5 in the top five",
+  strongBoth: "Share answering 6 or 7 to both questions",
+  satisfiedShare: "Share satisfied with the session (6 or 7)",
+  meanSecondary: (question: string) => `${question} (secondary, mean)`,
+  strongResponse: "Strong response: 6 or 7 to both questions, participants in both roles",
   incomplete: "Profile fixed, ten not all rated yet (can return later)",
   flat: "Every one of the ten rated 1 (no order is better; left out)",
   noDirection: "Five ratings all at 3 (no profile; both orders the same, kept in)",
@@ -139,7 +144,12 @@ const resultWords = defineMessages({
     choseNothing: "Ничего не выбрали",
     successfulFind: "Сессия с успешной находкой",
     satisfactionSecondary: "Удовлетворённость сессией, 1–7 (вторичная)",
-    ndcg: "NDCG@5 десяти новых текстов",
+    ndcg: "NDCG@5 десяти новых текстов (вторичная)",
+    precision: "Precision@5: доля текстов с интересом 4–5 в первой пятёрке",
+    strongBoth: "Доля ответивших 6 или 7 на оба вопроса",
+    satisfiedShare: "Доля довольных сессией (6 или 7)",
+    meanSecondary: (question) => `${question} (вторичная, среднее)`,
+    strongResponse: "Сильный отклик: 6 или 7 на оба вопроса, участники в обеих ролях",
     incomplete: "Профиль зафиксирован, десять оценены не все (можно вернуться позже)",
     flat: "Все десять оценены на 1 (ни один порядок не лучше; исключены)",
     noDirection: "Все пять оценок равны 3 (профиля нет; оба порядка одинаковы, оставлены)",
@@ -248,6 +258,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   rg1(groups, summary, w) {
     const moved: Record<"series" | "text", number[]> = { series: [], text: [] };
     const thought: Record<"series" | "text", number[]> = { series: [], text: [] };
+    const strong: Record<"series" | "text", number[]> = { series: [], text: [] };
     for (const rows of groups.values()) {
       const answer = rows.find((row) => row.step === "after_reading" && row.answers.phase === "target");
       if (!answer) continue;
@@ -256,14 +267,17 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       const t = scale(answer.answers.thought);
       if (m !== null) moved[format].push(m);
       if (t !== null) thought[format].push(t);
+      if (m !== null && t !== null) strong[format].push(m >= 6 && t >= 6 ? 1 : 0);
     }
     summary.comparisons.push(
-      compare("«Произведение меня тронуло», 1–7", moved.text, moved.series, 0.5, "points", [w.text, w.series]),
-      compare("«Произведение заставило задуматься», 1–7", thought.text, thought.series, 0.5, "points", [w.text, w.series])
+      compare(w.strongBoth, strong.text, strong.series, 0.1, "share", [w.text, w.series]),
+      compare(w.meanSecondary("«Произведение меня тронуло», 1–7"), moved.text, moved.series, 0, "points", [w.text, w.series]),
+      compare(w.meanSecondary("«Произведение заставило задуматься», 1–7"), thought.text, thought.series, 0, "points", [w.text, w.series])
     );
   },
   rg2(groups, summary, w) {
     const satisfaction: { control: number; variant: number }[] = [];
+    const satisfied: { control: number; variant: number }[] = [];
     const moved: { control: number; variant: number }[] = [];
     const success: { control: number; variant: number }[] = [];
     let none = 0;
@@ -274,7 +288,10 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       if (!feed || !catalogue) continue;
       const feedScore = scale(feed.survey.sessionSatisfaction);
       const catalogueScore = scale(catalogue.survey.sessionSatisfaction);
-      if (feedScore !== null && catalogueScore !== null) satisfaction.push({ control: catalogueScore, variant: feedScore });
+      if (feedScore !== null && catalogueScore !== null) {
+        satisfaction.push({ control: catalogueScore, variant: feedScore });
+        satisfied.push({ control: catalogueScore >= 6 ? 1 : 0, variant: feedScore >= 6 ? 1 : 0 });
+      }
       const feedMoved = scale(feed.survey.moved);
       const catalogueMoved = scale(catalogue.survey.moved);
       if (feedMoved !== null && catalogueMoved !== null) moved.push({ control: catalogueMoved, variant: feedMoved });
@@ -282,7 +299,8 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       none += [feed, catalogue].filter((session) => session.measurement.reads.length === 0).length;
     }
     summary.comparisons.push(
-      comparePairs("«Насколько вы довольны этим сеансом выбора и чтения?», 1–7", satisfaction, 0.5, "points", [w.catalogue, w.feed]),
+      comparePairs(w.satisfiedShare, satisfied, 0.1, "share", [w.catalogue, w.feed]),
+      comparePairs(w.meanSecondary("«Насколько вы довольны этим сеансом выбора и чтения?», 1–7"), satisfaction, 0, "points", [w.catalogue, w.feed]),
       comparePairs(w.movedSecondary, moved, 0, "points", [w.catalogue, w.feed]),
       comparePairs(w.successfulSecondary, success, 0, "share", [w.catalogue, w.feed])
     );
@@ -331,6 +349,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   },
   a3(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
+    const precision: { control: number; variant: number }[] = [];
     let flat = 0;
     let incomplete = 0;
     let noDirection = 0;
@@ -344,6 +363,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
         continue;
       }
       if (!ranking.hasProfile) noDirection += 1;
+      precision.push({ control: precisionAt(ranking.withoutProfile, interest), variant: precisionAt(ranking.withProfile, interest) });
       const withProfile = ndcgAt(ranking.withProfile, interest);
       const withoutProfile = ndcgAt(ranking.withoutProfile, interest);
       if (withProfile === null || withoutProfile === null) {
@@ -353,7 +373,8 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       pairs.push({ control: withoutProfile, variant: withProfile });
     }
     summary.comparisons.push(
-      comparePairs(w.ndcg, pairs, 0.05, "score", [w.withoutProfile, w.withProfile])
+      comparePairs(w.precision, precision, 0.1, "share", [w.withoutProfile, w.withProfile]),
+      comparePairs(w.ndcg, pairs, 0, "score", [w.withoutProfile, w.withProfile])
     );
     summary.facts.push(
       { label: w.incomplete, value: String(incomplete) },
@@ -363,26 +384,31 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   },
   b1(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
+    const strongPairs: { control: number; variant: number }[] = [];
     const active: number[] = [];
     const passive: number[] = [];
     for (const rows of groups.values()) {
       const own: Record<"active" | "passive", number[]> = { active: [], passive: [] };
+      const ownStrong: Record<"active" | "passive", number[]> = { active: [], passive: [] };
       for (const row of rows.filter((entry) => entry.step === "after_reading")) {
         const a = scale(row.answers.intensity);
         const b = scale(row.answers.feeling);
         if (a === null || b === null) continue;
         const role = row.condition === "passive" ? "passive" : "active";
         own[role].push((a + b) / 2);
+        ownStrong[role].push(a >= 6 && b >= 6 ? 1 : 0);
         (role === "active" ? active : passive).push((a + b) / 2);
       }
       if (own.active.length && own.passive.length) {
         const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
         pairs.push({ control: mean(own.passive), variant: mean(own.active) });
+        strongPairs.push({ control: mean(ownStrong.passive), variant: mean(ownStrong.active) });
       }
     }
     summary.comparisons.push(
-      comparePairs(w.intensityBoth, pairs, 0.5, "points", [w.passive, w.active]),
-      compare(w.intensityEvery, passive, active, 0.5, "points", [w.passive, w.active])
+      comparePairs(w.strongResponse, strongPairs, 0.1, "share", [w.passive, w.active]),
+      comparePairs(w.meanSecondary(w.intensityBoth), pairs, 0, "points", [w.passive, w.active]),
+      compare(w.meanSecondary(w.intensityEvery), passive, active, 0, "points", [w.passive, w.active])
     );
   },
   b2(groups, summary, w) {
