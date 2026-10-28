@@ -1,3 +1,6 @@
+import { currentUiLanguage } from "@/components/boks/ui-language";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
+
 /**
  * "🇷🇸 Serbia" from "RS".
  *
@@ -11,19 +14,24 @@ export function countryFlag(code: string) {
   return String.fromCodePoint(...[...code].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65));
 }
 
-let names: Intl.DisplayNames | null = null;
+const names = new Map<UiLanguage, Intl.DisplayNames>();
 
-export function countryName(code: string) {
-  if (code === "unknown") return "Unknown";
+/** Named in the interface language. */
+export function countryName(code: string, language: UiLanguage = currentUiLanguage()) {
+  if (code === "unknown") return language === "ru" ? "Неизвестно" : "Unknown";
   try {
-    names ??= new Intl.DisplayNames(["en"], { type: "region" });
-    return names.of(code) ?? code;
+    let display = names.get(language);
+    if (!display) {
+      display = new Intl.DisplayNames([language], { type: "region" });
+      names.set(language, display);
+    }
+    return display.of(code) ?? code;
   } catch {
     return code;
   }
 }
 
-export function countryLabel(code: string) {
+export function countryLabel(code: string, language: UiLanguage = currentUiLanguage()) {
   const flag = countryFlag(code);
-  return flag ? `${flag} ${countryName(code)}` : countryName(code);
+  return flag ? `${flag} ${countryName(code, language)}` : countryName(code, language);
 }

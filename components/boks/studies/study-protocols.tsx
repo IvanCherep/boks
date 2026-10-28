@@ -7,6 +7,7 @@ import { effectiveReadingLanguages, storedReadingLanguages } from "@/components/
 import { inferReadOutcome } from "@/components/boks/reader-behavior";
 import { loadStudyBoks, loadSupabaseReaderFeed, type StudyFragment, type StudyParticipant } from "@/components/boks/supabase-browser-data";
 import type { StudyWords } from "@/components/boks/studies/study-copy";
+import { localizeBoksMessage } from "@/lib/boks/errors";
 import {
   BokChoiceForm,
   CheckListForm,
@@ -85,7 +86,7 @@ function useStories(ids: readonly string[]) {
     let cancelled = false;
     loadStudyBoks(key ? key.split(",") : []).then(
       (loaded) => { if (!cancelled) setStories(new Map(loaded.map((story) => [story.id, story]))); },
-      (failure: unknown) => { if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure)); }
+      (failure: unknown) => { if (!cancelled) setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure))); }
     );
     return () => { cancelled = true; };
   }, [key]);
@@ -114,7 +115,7 @@ function useSaving() {
       await work();
       then();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : String(failure));
+      setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure)));
     } finally {
       setBusy(false);
     }
@@ -159,7 +160,7 @@ function Rg1({ run }: { run: StudyRun<"rg1"> }) {
   if (!stories) return <Loading words={words} error={error} />;
   const familiar = stories.get(plan.familiarization.bokId);
   const target = stories.get(plan.target.bokId);
-  if (!familiar || !target) return <Loading words={words} error="A study text is not published." />;
+  if (!familiar || !target) return <Loading words={words} error={words.textMissing} />;
 
   if (step === "intro") return <Interstitial eyebrow={words.eyebrow} title={words.familiarizationTitle} body={<p>{words.familiarizationBody}</p>} action={words.start} onAction={() => setStep("fam0")} />;
   if (step === "fam0" || step === "fam1") {
@@ -237,7 +238,7 @@ function useServedSlate(run: StudyRun, limit: number) {
       readingLanguages: effectiveReadingLanguages(storedReadingLanguages()),
     }).then(
       (payload) => { if (!cancelled) setSlate(payload.stories.slice(0, limit)); },
-      (failure: unknown) => { if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure)); }
+      (failure: unknown) => { if (!cancelled) setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure))); }
     );
     return () => { cancelled = true; };
   }, [run, limit]);
@@ -308,7 +309,7 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
   if (typeof step === "number") {
     const read = plan.reads[step];
     const story = stories.get(read.bokId);
-    if (!story) return <Loading words={words} error="A study text is not published." />;
+    if (!story) return <Loading words={words} error={words.textMissing} />;
     return <ReadIn key={story.id} story={story} format="text" words={words} note={words.readThisText}
       onDone={(result) => { measure.current = result; setAsking(step); setStep("ask"); }} />;
   }
@@ -421,7 +422,7 @@ function A3({ run }: { run: StudyRun<"a3"> }) {
       })
       .catch((failure: unknown) => {
         fixing.current = false;
-        setError(failure instanceof Error ? failure.message : String(failure));
+        setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure)));
       });
   }, [profileDone, targets, pool, slate, ratings.profile, materials, run]);
 
@@ -465,7 +466,7 @@ function A3({ run }: { run: StudyRun<"a3"> }) {
   const position = targets.findIndex((id) => !answered.has(id));
   if (position === -1) return <Loading words={words} />;
   const story = pool.get(targets[position]);
-  if (!story) return <Loading words={words} error="A study text is not published." />;
+  if (!story) return <Loading words={words} error={words.textMissing} />;
   return <InterestRead key={story.id} run={run} story={story} progress={words.a3Progress(materials.profileSize + position + 1, total)}
     onRated={rate(story.id, true, position)} />;
 }
@@ -499,7 +500,7 @@ function B1Piece({ run, story, mayReplay, onDone }: {
         if (cancelled) return;
         setRole(claimed ? { role: "passive", traceId: claimed.traceId, trace: claimed.trace } : { role: "active", traceId: null, trace: null });
       },
-      (failure: unknown) => { if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure)); }
+      (failure: unknown) => { if (!cancelled) setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure))); }
     );
     return () => { cancelled = true; };
   }, [run, story.id, mayReplay]);
@@ -537,7 +538,7 @@ function B1({ run }: { run: StudyRun<"b1"> }) {
   const [hadPassive, setHadPassive] = useState(false);
   if (!stories) return <Loading words={run.words} error={error} />;
   const story = stories.get(plan.pieces[index]);
-  if (!story) return <Loading words={run.words} error="A study text is not published." />;
+  if (!story) return <Loading words={run.words} error={run.words.textMissing} />;
   return <B1Piece key={story.id} run={run} story={story} mayReplay={!hadPassive}
     onDone={(role) => {
       if (role === "passive") setHadPassive(true);
@@ -586,7 +587,7 @@ function B2({ run }: { run: StudyRun<"b2"> }) {
   }
   if (!stories || !piece) return <Loading words={words} error={error} />;
   const series = stories.get(piece.series);
-  if (!series) return <Loading words={words} error="A study text is not published." />;
+  if (!series) return <Loading words={words} error={words.textMissing} />;
   if (phase === "meet") {
     return <ReadIn story={series} format={format} words={words} note={words.readThisText}
       onDone={(result) => saving.save(
@@ -661,13 +662,13 @@ function B3({ run }: { run: StudyRun<"b3"> }) {
   const saving = useSaving();
   const fetchNext = () => {
     setFragment(undefined);
-    run.nextFragment().then(setFragment, (failure: unknown) => setError(failure instanceof Error ? failure.message : String(failure)));
+    run.nextFragment().then(setFragment, (failure: unknown) => setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure))));
   };
   useEffect(() => {
     let cancelled = false;
     run.nextFragment().then(
       (next) => { if (!cancelled) setFragment(next); },
-      (failure: unknown) => { if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure)); }
+      (failure: unknown) => { if (!cancelled) setError(localizeBoksMessage(failure instanceof Error ? failure.message : String(failure))); }
     );
     return () => { cancelled = true; };
   }, [run]);

@@ -8,6 +8,29 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { AdminInspectorContext, type AdminInspector } from "@/components/boks/admin/inspector-context";
 import { BokInspector } from "@/components/boks/admin/bok-inspector";
 import { PersonInspector } from "@/components/boks/admin/person-inspector";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const words = defineMessages(
+  {
+    back: "Back",
+    brandHome: "boks — back to reading",
+    account: "Account",
+    bok: "Boks",
+    accountDescription: "One account's profile, metrics, and the boks they wrote, liked, commented on and read.",
+    bokDescription: "One bok's text, history, metrics, comments and likes.",
+  },
+  {
+    ru: {
+      back: "Назад",
+      brandHome: "boks: назад к чтению",
+      account: "Аккаунт",
+      bok: "Бок",
+      accountDescription: "Профиль одного аккаунта, его метрики и боки, которые он написал, лайкнул, комментировал и читал.",
+      bokDescription: "Текст одного бока, его история, метрики, комментарии и лайки.",
+    },
+  }
+);
 
 type InspectorTarget = { kind: "bok"; id: string } | { kind: "person"; id: string };
 
@@ -26,6 +49,7 @@ export function AdminInspectorProvider({
   /** A boks was hidden, restored or erased from inside the inspector. */
   onChange?: () => void;
 }) {
+  const t = useMessages(words);
   const [stack, setStack] = useState<InspectorTarget[]>([]);
   const [changes, setChanges] = useState(0);
   const current = stack.at(-1) ?? null;
@@ -59,13 +83,13 @@ export function AdminInspectorProvider({
       <Sheet open={Boolean(current)} onOpenChange={(isOpen) => !isOpen && setStack([])}>
         <SheetContent side="right" className="admin-inspector">
           <SheetHeader className="admin-inspector__header">
-            <Button size="icon" variant="ghost" aria-label="Back" onClick={back}><ArrowLeft /></Button>
-            <a href="/" className="studio-brand" aria-label="boks — back to reading"><BoksLogo /></a>
-            <SheetTitle className="sr-only">{current?.kind === "person" ? "Account" : "Boks"}</SheetTitle>
+            <Button size="icon" variant="ghost" aria-label={t.back} onClick={back}><ArrowLeft /></Button>
+            <a href="/" className="studio-brand" aria-label={t.brandHome}><BoksLogo /></a>
+            <SheetTitle className="sr-only">{current?.kind === "person" ? t.account : t.bok}</SheetTitle>
             <SheetDescription className="sr-only">
               {current?.kind === "person"
-                ? "One account's profile, metrics, and the boks they wrote, liked, commented on and read."
-                : "One bok's text, history, metrics, comments and likes."}
+                ? t.accountDescription
+                : t.bokDescription}
             </SheetDescription>
           </SheetHeader>
           {/* Keyed by what it shows, so each boks or person opens at the top

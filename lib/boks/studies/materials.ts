@@ -1,4 +1,6 @@
 import type { StudyKey } from "@/lib/boks/studies/protocol";
+import { defineMessages } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * What each protocol is given to read: bok ids, chosen by the team in Studio.
@@ -104,10 +106,50 @@ export const materialTemplates: { [K in StudyKey]: StudyMaterials[K] } = {
   b3: { batch: "" },
 };
 
+/** The editor's problems, in the interface's language; field paths are JSON and stay as they are. */
+const problemWords = defineMessages({
+  object: (path: string) => `${path} must be an object.`,
+  bokId: (path: string) => `${path} must be a bok id.`,
+  repeats: (path: string) => `${path} repeats a bok.`,
+  text: (path: string) => `${path} must be text.`,
+  number: (path: string, min: number, max: number) => `${path} must be a number from ${min} to ${max}.`,
+  list: (path: string) => `${path} must be a list.`,
+  atLeast: (path: string, minimum: number) => `${path} needs at least ${minimum}.`,
+  familiarizationTarget: "The familiarization piece cannot also be a target.",
+  choiceKind: (index: number) => `choices[${index}].kind must be "whole" or "fragment".`,
+  twoOfEach: "choices needs at least two of each kind.",
+  choiceUsed: "A choice must be a text the pairs do not use.",
+  setsShare: "setA and setB must not share a bok.",
+  setsSize: "setA and setB should be the same size.",
+  perParticipant: "perParticipant is larger than the number of pieces.",
+  author: (index: number) => `pieces[${index}].author is needed for the screening question.`,
+  batch: "batch is lower-case letters, digits, - and _.",
+}, {
+  ru: {
+    object: (path) => `${path} должен быть объектом.`,
+    bokId: (path) => `${path} должен быть id бока.`,
+    repeats: (path) => `${path}: бок повторяется.`,
+    text: (path) => `${path} должен быть текстом.`,
+    number: (path, min, max) => `${path} должен быть числом от ${min} до ${max}.`,
+    list: (path) => `${path} должен быть списком.`,
+    atLeast: (path, minimum) => `${path}: нужно не меньше ${minimum}.`,
+    familiarizationTarget: "Произведение для знакомства не может быть ещё и целевым.",
+    choiceKind: (index) => `choices[${index}].kind должен быть "whole" или "fragment".`,
+    twoOfEach: "В choices нужно не меньше двух каждого вида.",
+    choiceUsed: "Текст для выбора не должен использоваться в pairs.",
+    setsShare: "У setA и setB не должно быть общих боков.",
+    setsSize: "setA и setB должны быть одного размера.",
+    perParticipant: "perParticipant больше числа произведений.",
+    author: (index) => `pieces[${index}].author нужен для отборочного вопроса.`,
+    batch: "batch: только строчные латинские буквы, цифры, - и _.",
+  },
+});
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Reader = {
   problems: string[];
+  t: (typeof problemWords)["en"];
   object(value: unknown, path: string): Record<string, unknown>;
   id(value: unknown, path: string): string;
   ids(value: unknown, path: string, minimum: number): string[];
@@ -116,45 +158,46 @@ type Reader = {
   list(value: unknown, path: string, minimum: number): unknown[];
 };
 
-function reader(): Reader {
+function reader(t: Reader["t"]): Reader {
   const problems: string[] = [];
   return {
     problems,
+    t,
     object(value, path) {
       if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
-      problems.push(`${path} must be an object.`);
+      problems.push(t.object(path));
       return {};
     },
     id(value, path) {
       const id = typeof value === "string" ? value.trim().toLowerCase() : "";
-      if (!uuidPattern.test(id)) problems.push(`${path} must be a bok id.`);
+      if (!uuidPattern.test(id)) problems.push(t.bokId(path));
       return id;
     },
     ids(value, path, minimum) {
       const list = this.list(value, path, minimum);
       const ids = list.map((item, index) => this.id(item, `${path}[${index}]`));
-      if (new Set(ids).size !== ids.length) problems.push(`${path} repeats a bok.`);
+      if (new Set(ids).size !== ids.length) problems.push(t.repeats(path));
       return ids;
     },
     text(value, path) {
       if (typeof value === "string") return value.trim();
-      if (value !== undefined) problems.push(`${path} must be text.`);
+      if (value !== undefined) problems.push(t.text(path));
       return "";
     },
     number(value, path, min, max, fallback) {
       if (value === undefined) return fallback;
       if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) {
-        problems.push(`${path} must be a number from ${min} to ${max}.`);
+        problems.push(t.number(path, min, max));
         return fallback;
       }
       return value;
     },
     list(value, path, minimum) {
       if (!Array.isArray(value)) {
-        problems.push(`${path} must be a list.`);
+        problems.push(t.list(path));
         return [];
       }
-      if (value.length < minimum) problems.push(`${path} needs at least ${minimum}.`);
+      if (value.length < minimum) problems.push(t.atLeast(path, minimum));
       return value;
     },
   };
@@ -164,7 +207,7 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
   rg1(raw, read) {
     const familiarization = read.id(raw.familiarization, "familiarization");
     const targets = read.ids(raw.targets, "targets", 1);
-    if (targets.includes(familiarization)) read.problems.push("The familiarization piece cannot also be a target.");
+    if (targets.includes(familiarization)) read.problems.push(read.t.familiarizationTarget);
     return { familiarization, targets };
   },
   rg2(raw, read) {
@@ -181,21 +224,21 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
     const choices = read.list(raw.choices, "choices", 4).map((choice, index) => {
       const item = read.object(choice, `choices[${index}]`);
       const kind: "whole" | "fragment" | null = item.kind === "whole" || item.kind === "fragment" ? item.kind : null;
-      if (!kind) read.problems.push(`choices[${index}].kind must be "whole" or "fragment".`);
+      if (!kind) read.problems.push(read.t.choiceKind(index));
       return { bokId: read.id(item.bokId, `choices[${index}].bokId`), kind: kind ?? "whole" };
     });
     if (choices.filter((choice) => choice.kind === "whole").length < 2 || choices.filter((choice) => choice.kind === "fragment").length < 2) {
-      read.problems.push("choices needs at least two of each kind.");
+      read.problems.push(read.t.twoOfEach);
     }
     const read_ = new Set(pairs.flatMap((pair) => [pair.whole, pair.fragment]));
-    if (choices.some((choice) => read_.has(choice.bokId))) read.problems.push("A choice must be a text the pairs do not use.");
+    if (choices.some((choice) => read_.has(choice.bokId))) read.problems.push(read.t.choiceUsed);
     return { pairs, choices };
   },
   a2(raw, read) {
     const setA = read.ids(raw.setA, "setA", 3);
     const setB = read.ids(raw.setB, "setB", 3);
-    if (setA.some((id) => setB.includes(id))) read.problems.push("setA and setB must not share a bok.");
-    if (setA.length !== setB.length) read.problems.push("setA and setB should be the same size.");
+    if (setA.some((id) => setB.includes(id))) read.problems.push(read.t.setsShare);
+    if (setA.length !== setB.length) read.problems.push(read.t.setsSize);
     return { minutes: read.number(raw.minutes, "minutes", 1, 30, 10), setA, setB };
   },
   a3(raw, read) {
@@ -208,14 +251,14 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
   b1(raw, read) {
     const pieces = read.ids(raw.pieces, "pieces", 1);
     const perParticipant = read.number(raw.perParticipant, "perParticipant", 1, 6, 2);
-    if (pieces.length && perParticipant > pieces.length) read.problems.push("perParticipant is larger than the number of pieces.");
+    if (pieces.length && perParticipant > pieces.length) read.problems.push(read.t.perParticipant);
     return { pieces, perParticipant };
   },
   b2(raw, read) {
     const pieces = read.list(raw.pieces, "pieces", 1).map((piece, index) => {
       const item = read.object(piece, `pieces[${index}]`);
       const author = read.text(item.author, `pieces[${index}].author`);
-      if (!author) read.problems.push(`pieces[${index}].author is needed for the screening question.`);
+      if (!author) read.problems.push(read.t.author(index));
       return {
         series: read.id(item.series, `pieces[${index}].series`),
         author,
@@ -230,13 +273,13 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
   },
   b3(raw, read) {
     const batch = read.text(raw.batch, "batch").toLowerCase();
-    if (batch && !/^[a-z0-9][a-z0-9_-]{0,39}$/.test(batch)) read.problems.push("batch is lower-case letters, digits, - and _.");
+    if (batch && !/^[a-z0-9][a-z0-9_-]{0,39}$/.test(batch)) read.problems.push(read.t.batch);
     return { batch };
   },
 };
 
-export function parseStudyMaterials<K extends StudyKey>(key: K, raw: unknown): ParsedMaterials<K> {
-  const read = reader();
+export function parseStudyMaterials<K extends StudyKey>(key: K, raw: unknown, language: UiLanguage = "en"): ParsedMaterials<K> {
+  const read = reader(problemWords[language]);
   const materials = parsers[key](read.object(raw, "materials"), read) as StudyMaterials[K];
   if (read.problems.length) return { ok: false, materials: null, problems: read.problems };
   return { ok: true, materials, problems: [] };

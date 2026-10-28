@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 import { sharedBokTarget } from "@/lib/boks/shared-bok-redirect";
+
+const messages = defineMessages({ opening: "Opening this bok…" }, { ru: { opening: "Открываем бок…" } });
 
 /**
  * Hands the shared id to the reader.
@@ -27,4 +31,9 @@ export function OpenSharedBok({ id }: { id: string }) {
   }, [id]);
 
   return null;
+}
+
+/** The one line a person may glimpse before the redirect, in the interface language. */
+export function OpeningSharedBok() {
+  return <>{useMessages(messages).opening}</>;
 }

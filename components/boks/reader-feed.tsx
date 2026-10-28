@@ -95,7 +95,7 @@ import {
   saveFeedbackState,
   type FeedbackState,
 } from "@/components/boks/feedback";
-import { readableBoksError } from "@/lib/boks/errors";
+import { localizeBoksMessage, readableBoksError } from "@/lib/boks/errors";
 import {
   emptyFeedNotice,
   effectiveReadingLanguages,
@@ -211,7 +211,7 @@ const messages = defineMessages(
       noBackend: "У читалки пока нет сервера.",
       couldNotRefresh: "Не удалось обновить ленту.",
       couldNotSignIn: "Не удалось завершить вход.",
-      hidden: (title: string) => `«${title}» скрыт от читателей. Вернуть можно в Admin → Content → Deleted.`,
+      hidden: (title: string) => `«${title}» скрыт от читателей. Вернуть можно в Студии → Контент → Удалённые.`,
       suspendedReading: "Этот аккаунт заблокирован. Читать по-прежнему можно.",
       suspended: "Этот аккаунт заблокирован.",
       couldNotLoad: "Не удалось загрузить boks.",
@@ -461,8 +461,10 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const notify = useCallback(
     (message: string) => {
       if (!message) return;
-      setReaderFlash(message);
-      setStatus(message);
+      // A sentence the database or sign-in wrote in English, in the interface language.
+      const shown = localizeBoksMessage(message);
+      setReaderFlash(shown);
+      setStatus(shown);
     },
     [setStatus]
   );
@@ -1221,7 +1223,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     onComments: () => setCommentOpen(true),
     onInteract: () => { readingClock.current.hold(); setReadingPhase("finale"); },
     nextBok: nextBok ? { id: nextBok.id, title: nextBok.title, authorName: nextBok.authorName, artwork: getBokArtwork(nextBok) } : undefined,
-    nextLabel: formatFromSeries.current ? t("Back to Series", "Вернуться в Series") : t("Find more boks", "Найти ещё boks"),
+    nextLabel: formatFromSeries.current ? t("Back to Series", "Вернуться к сериям") : t("Find more boks", "Найти ещё боки"),
     onNext: () => {
       flushAftertaste();
       setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
@@ -2575,12 +2577,12 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     setStoryHasMore(remaining > 12);
   }
 
-  const issueTitle = openIssue?.kind === "unavailable" ? t("Bok unavailable.", "Bok недоступен.") : openIssue?.kind === "audio" ? t("Audio unavailable", "Аудио недоступно") : t("Couldn’t load the bok.", "Не удалось загрузить bok.");
+  const issueTitle = openIssue?.kind === "unavailable" ? t("Bok unavailable.", "Бок недоступен.") : openIssue?.kind === "audio" ? t("Audio unavailable", "Аудио недоступно") : t("Couldn’t load the bok.", "Не удалось загрузить бок.");
   const openIssuePanel = openIssue && <ReaderSheet label={issueTitle} onClose={() => setOpenIssue(null)} className="reader-system-dialog">
     <div className="reader-system-page__body">
-      <header className="reader-system-page__header"><button type="button" aria-label={t("Back", "Назад")} onClick={() => setOpenIssue(null)}><ReaderBackIcon size={21} /></button><span>{openIssue.kind === "unavailable" ? t("Shared bok", "Ссылка на bok") : t("Connection error", "Ошибка соединения")}</span><span /></header>
+      <header className="reader-system-page__header"><button type="button" aria-label={t("Back", "Назад")} onClick={() => setOpenIssue(null)}><ReaderBackIcon size={21} /></button><span>{openIssue.kind === "unavailable" ? t("Shared bok", "Ссылка на бок") : t("Connection error", "Ошибка соединения")}</span><span /></header>
       {openIssue.kind === "unavailable" ? <div className="reader-system-missing" aria-hidden="true"><span>b.</span><i /></div> : <div className="reader-system-art reader-system-art--offline" aria-hidden="true">·<i>—</i>·</div>}
-      <h1 className="reader-system-title">{openIssue.kind === "unavailable" ? <>Bok<br />{t("unavailable.", "недоступен.")}</> : issueTitle}</h1>
+      <h1 className="reader-system-title">{openIssue.kind === "unavailable" ? <>{t("Bok", "Бок")}<br />{t("unavailable.", "недоступен.")}</> : issueTitle}</h1>
     <div className="reader-system-actions">
       <p className="text-sm text-[var(--muted-foreground)]">{openIssue.kind === "unavailable" ? t("It may have been removed or is no longer published. You can keep reading from your feed.", "Возможно, его удалили или сняли с публикации. Вы можете продолжить чтение в ленте.") : t("Check your connection and try again.", "Проверьте соединение и попробуйте снова.")}</p>
       {openIssue.kind !== "unavailable" && <Button className="w-full" onClick={() => {
@@ -2590,7 +2592,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         else void openReadBoks(issue.storyId, issue.entry);
       }}>{t("Try again", "Попробовать снова")}</Button>}
       {openIssue.kind === "audio" && <Button className="w-full" variant="secondary" onClick={() => readText()}>{t("Read text", "Читать текст")}</Button>}
-      <Button className="w-full" variant={openIssue.kind === "unavailable" ? "default" : "ghost"} onClick={() => { setOpenIssue(null); openFeed(); }}>{openIssue.kind === "unavailable" ? t("Open another bok", "Открыть другой bok") : t("Back to the feed", "Вернуться в ленту")}</Button>
+      <Button className="w-full" variant={openIssue.kind === "unavailable" ? "default" : "ghost"} onClick={() => { setOpenIssue(null); openFeed(); }}>{openIssue.kind === "unavailable" ? t("Open another bok", "Открыть другой бок") : t("Back to the feed", "Вернуться в ленту")}</Button>
       {openIssue.kind === "unavailable" && <Button variant="ghost" onClick={() => { setOpenIssue(null); openAccount("manual", "general", "feedback"); }}>{t("Report a broken link", "Сообщить о нерабочей ссылке")}</Button>}
     </div>
     </div>
@@ -2729,7 +2731,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             <span className="reader-topbar__mark"><BoksLogo seasonal={readingPhase === "cover"} /></span>
             <div className="reader-topbar__tools reader-ui">
               {readingPhase !== "cover" && <button type="button" aria-label={t("Text settings", "Настройки текста")} onClick={() => openAccount("manual", "general", "typography")}><ReaderTypeIcon size={23} /></button>}
-            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом bok")}>
+            <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}>
               <ReaderMoreIcon className="size-5" />
             </button>
             </div>
@@ -2752,7 +2754,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
               <header className="reader-cover__desktop-bar">
                 <button type="button" onClick={() => openAccount("manual", "general", "home")} aria-label={t("Settings", "Настройки")}><ReaderSettingsIcon size={23} /></button>
                 <BoksLogo seasonal />
-                <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом bok")}><ReaderMoreIcon size={23} /></button>
+                <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
               </header>
               {getBokArtwork(currentStory) ? <img className="reader-cover__art" src={getBokArtwork(currentStory)!} alt="" /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
               <div className="reader-cover__heading">
@@ -2766,7 +2768,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                   {currentSeriesPiece && <button type="button" className="reader-play-button" onClick={() => openReadingFormat(currentStory.id)}><ReaderPlayIcon size={18} />{t("Play", "Слушать")}</button>}
                 </div>
                 <button type="button" className="feed-swipe-hint" onClick={() => void nextStory("button")}>
-                  <span>{selectedIndex > 0 ? t("Swipe between boks", "Листайте boks в обе стороны") : t("Swipe left for next bok", "Смахните влево к следующему bok")}</span>
+                  <span>{selectedIndex > 0 ? t("Swipe between boks", "Листайте боки в обе стороны") : t("Swipe left for next bok", "Смахните влево к следующему боку")}</span>
                   <span className={`feed-swipe-gesture${selectedIndex > 0 ? " feed-swipe-gesture--both" : ""}`} aria-hidden="true"><i /><i /></span>
                 </button>
               </div>
@@ -2796,12 +2798,12 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           )}
         </article>
 
-        <nav className="reader-actions reader-ui" aria-label={t("Bok actions", "Действия с bok")} inert={readerInteractionBlocked}>
-          <button type="button" className="reader-previous" aria-label={t("Previous bok", "Предыдущий bok")} disabled={selectedIndex === 0} onClick={() => previousStory("button")}><ReaderBackIcon size={23} /></button>
+        <nav className="reader-actions reader-ui" aria-label={t("Bok actions", "Действия с боком")} inert={readerInteractionBlocked}>
+          <button type="button" className="reader-previous" aria-label={t("Previous bok", "Предыдущий бок")} disabled={selectedIndex === 0} onClick={() => previousStory("button")}><ReaderBackIcon size={23} /></button>
           <button type="button" className="reader-counted-action" aria-label={`${t(isCurrentStoryLiked ? "Remove like" : "Like", isCurrentStoryLiked ? "Убрать отметку нравится" : "Нравится")}, ${currentLikeCount}`} aria-pressed={isCurrentStoryLiked} onClick={() => void likeStory()}><ReaderHeartIcon size={23} fill={isCurrentStoryLiked ? "currentColor" : "none"} /><span className="reader-action-count" aria-hidden="true">{formatCompactCount(currentLikeCount)}</span></button>
           <button type="button" className="reader-counted-action" aria-label={`${t("Comments", "Комментарии")}, ${currentCommentCount}`} onClick={() => setCommentOpen(true)}><ReaderCommentsIcon size={23} /><span className="reader-action-count" aria-hidden="true">{formatCompactCount(currentCommentCount)}</span></button>
           <button type="button" aria-label={t("Share", "Поделиться")} onClick={() => void shareStory()}><ReaderShareIcon size={23} /></button>
-          <button type="button" className="reader-next-arrow" onClick={(event) => { releaseFocus(event); nextStory("button"); }}>{t("Next bok", "Следующий bok")}</button>
+          <button type="button" className="reader-next-arrow" onClick={(event) => { releaseFocus(event); nextStory("button"); }}>{t("Next bok", "Следующий бок")}</button>
         </nav>
 
         {seriesOpen && seriesContext && (
@@ -2880,7 +2882,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             onReport={reportCurrentBok}
             onShare={() => { setBokMenuOpen(false); setShareOpen(true); }}
             onSettings={() => { setBokMenuOpen(false); openAccount("manual", "general", "typography"); }}
-            formatLabel={cinemaOffered ? (cinemaIsFinished || poemManifestUrl ? t("Listen and read", "Слушать и читать") : t("Preview audio (admin)", "Проверить аудио (admin)")) : undefined}
+            formatLabel={cinemaOffered ? (cinemaIsFinished || poemManifestUrl ? t("Listen and read", "Слушать и читать") : t("Preview audio (admin)", "Проверить аудио (администратор)")) : undefined}
             onOpenFormat={cinemaOffered ? () => { setBokMenuOpen(false); openReadingFormat(currentStory.id); } : undefined}
             musicOn={musicOn}
             onToggleMusic={() => { if (musicOn) stopReadingMusic(); else startReadingMusic(); setMusicOn(!musicOn); }}

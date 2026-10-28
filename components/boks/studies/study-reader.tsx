@@ -302,7 +302,7 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: Br
           <BokCover story={story} words={words} onOpen={() => setReading({ story, openedAt: session.elapsed() })} />
         </div>
       ))}
-      <nav className="study-feed__nav" aria-label="Feed">
+      <nav className="study-feed__nav" aria-label={words.feedNav}>
         <button type="button" onClick={() => go(-1)} disabled={index === 0} aria-label={words.back}><ArrowUp aria-hidden="true" /></button>
         <span>{index + 1} / {stories.length}</span>
         <button type="button" onClick={() => go(1)} disabled={index >= stories.length - 1} aria-label={words.next}><ArrowDown aria-hidden="true" /></button>

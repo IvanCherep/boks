@@ -2,6 +2,25 @@
 
 import type React from "react";
 import { Info } from "lucide-react";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const words = defineMessages(
+  {
+    summary: "How this is measured",
+    is: "What it is.",
+    how: "How it is computed.",
+    not: "What it is not.",
+  },
+  {
+    ru: {
+      summary: "Как это измеряется",
+      is: "Что это.",
+      how: "Как считается.",
+      not: "Чем это не является.",
+    },
+  }
+);
 
 /**
  * What a number on this console means, folded away until asked for.
@@ -34,23 +53,24 @@ export function MetricNote({
   /** Names the metric in the summary, for a screen reader out of context. */
   label: string;
 }) {
+  const t = useMessages(words);
   return (
     <details className="metric-note">
       <summary className="metric-note-summary">
         <Info className="size-3.5" aria-hidden="true" />
-        <span>How this is measured</span>
+        <span>{t.summary}</span>
         <span className="sr-only"> — {label}</span>
       </summary>
       <div className="metric-note-body">
         <p>
-          <strong>What it is.</strong> {is}
+          <strong>{t.is}</strong> {is}
         </p>
         <p>
-          <strong>How it is computed.</strong> {how}
+          <strong>{t.how}</strong> {how}
         </p>
         {not && (
           <p>
-            <strong>What it is not.</strong> {not}
+            <strong>{t.not}</strong> {not}
           </p>
         )}
       </div>

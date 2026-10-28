@@ -6,8 +6,10 @@ import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { InteractiveScene } from "@/components/boks/interactions/interactive-scene";
-import { interactionScenes, type InteractionScene } from "@/lib/boks/interactions/scenes";
+import { interactionScenes, localizeScene, primitiveLabels, type InteractionScene } from "@/lib/boks/interactions/scenes";
 import { interactionSoundMuted, setInteractionSoundMuted } from "@/lib/boks/interactions/sound";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
 
 /**
  * Twelve mechanics, one at a time, with a frame counter running.
@@ -24,6 +26,37 @@ import { interactionSoundMuted, setInteractionSoundMuted } from "@/lib/boks/inte
  */
 
 const verdictKey = "boks-interaction-verdicts";
+
+const words = defineMessages({
+  back: "Back",
+  soundOn: "Sound on",
+  soundOff: "Sound off",
+  worstFrame: (ms: number) => `worst frame ${ms} ms`,
+  keep: "Keep",
+  shelve: "Shelve",
+  counts: (scenes: number, mechanics: number) => `${scenes} scenes · ${mechanics} mechanics`,
+  verdicts: (kept: number, shelved: number) => `${kept} keep · ${shelved} shelved`,
+  select: "Select a mechanic",
+  keptTag: "keep",
+  shelvedTag: "shelved",
+  hint: "Test on a phone. Watch the worst frame as well as average FPS. Keep and Shelve are saved in this browser and can be undone.",
+}, {
+  ru: {
+    back: "Назад",
+    soundOn: "Включить звук",
+    soundOff: "Выключить звук",
+    worstFrame: (ms) => `худший кадр ${ms} мс`,
+    keep: "Оставить",
+    shelve: "Отложить",
+    counts: (scenes, mechanics) =>
+      `${scenes} ${plural("ru", scenes, { one: "сцена", few: "сцены", many: "сцен", other: "сцены" })} · ${mechanics} ${plural("ru", mechanics, { one: "механика", few: "механики", many: "механик", other: "механики" })}`,
+    verdicts: (kept, shelved) => `оставлено ${kept} · отложено ${shelved}`,
+    select: "Выберите механику",
+    keptTag: "оставить",
+    shelvedTag: "отложено",
+    hint: "Проверяйте на телефоне. Смотрите на худший кадр, а не только на средний FPS. «Оставить» и «Отложить» сохраняются в этом браузере, их можно отменить.",
+  },
+});
 
 type Verdict = "keep" | "shelve";
 
@@ -99,6 +132,7 @@ function SceneOverlay({
   onVerdict: (verdict: Verdict) => void;
   onClose: () => void;
 }) {
+  const t = useMessages(words);
   const { fps, worstMs } = useFrameMeter(true);
   const [muted, setMuted] = useState(interactionSoundMuted);
   const dialog = useRef<HTMLDivElement>(null);
@@ -124,7 +158,7 @@ function SceneOverlay({
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     }}>
       <div className="isandbox__bar">
-        <button type="button" className="isandbox__back" onClick={onClose} aria-label="Back"><ReaderBackIcon /></button>
+        <button type="button" className="isandbox__back" onClick={onClose} aria-label={t.back}><ReaderBackIcon /></button>
         <BoksLogo />
         <div className="isandbox__bar-actions">
           <button
@@ -134,7 +168,7 @@ function SceneOverlay({
               setMuted(next);
               setInteractionSoundMuted(next);
             }}
-            aria-label={muted ? "Sound on" : "Sound off"}
+            aria-label={muted ? t.soundOn : t.soundOff}
             aria-pressed={muted}
           >
             {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
@@ -150,7 +184,7 @@ function SceneOverlay({
       <div className="isandbox__foot">
         <div className={`isandbox__meter ${worstMs > 50 ? "is-bad" : ""}`}>
           <span>{fps} FPS</span>
-          <span className="isandbox__worst">worst frame {worstMs} ms</span>
+          <span className="isandbox__worst">{t.worstFrame(worstMs)}</span>
         </div>
         <div className="isandbox__verdict">
           <Button
@@ -159,7 +193,7 @@ function SceneOverlay({
             size="sm"
             onClick={() => onVerdict("keep")}
           >
-            <Check className="size-4" /> Keep
+            <Check className="size-4" /> {t.keep}
           </Button>
           <Button
             aria-pressed={verdict === "shelve"}
@@ -167,7 +201,7 @@ function SceneOverlay({
             size="sm"
             onClick={() => onVerdict("shelve")}
           >
-            Shelve
+            {t.shelve}
           </Button>
         </div>
       </div>
@@ -176,6 +210,9 @@ function SceneOverlay({
 }
 
 export function InteractionSandbox() {
+  const t = useMessages(words);
+  const language = useUiLanguage();
+  const scenes = interactionScenes.map((scene) => localizeScene(scene, language));
   const [open, setOpen] = useState<InteractionScene | null>(null);
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
 
@@ -203,10 +240,10 @@ export function InteractionSandbox() {
 
   return (
     <section className="space-y-4">
-      <div className="studio-filter-line"><span>{interactionScenes.length} scenes · {new Set(interactionScenes.map(scene => scene.primitive)).size} mechanics</span><span>{kept} keep · {shelved} shelved</span></div>
-      <p className="studio-meta">Select a mechanic</p>
+      <div className="studio-filter-line"><span>{t.counts(scenes.length, new Set(scenes.map(scene => scene.primitive)).size)}</span><span>{t.verdicts(kept, shelved)}</span></div>
+      <p className="studio-meta">{t.select}</p>
       <ul className="isandbox__grid">
-        {interactionScenes.map((scene) => (
+        {scenes.map((scene) => (
           <li key={scene.id}>
             <button type="button" className="isandbox__card" onClick={() => setOpen(scene)}>
               {/* Only the cover, and only lazily: twelve scenes mounted at once
@@ -215,11 +252,11 @@ export function InteractionSandbox() {
               <img src={`/interactions/${scene.id}/before.webp`} alt="" loading="lazy" decoding="async" />
               <span className="isandbox__card-title">{scene.title}</span>
               <span className="isandbox__card-meta">
-                {scene.primitive} · {scene.hint}
+                {primitiveLabels[language][scene.primitive]} · {scene.hint}
               </span>
               {verdicts[scene.id] && (
                 <span className={`isandbox__tag isandbox__tag--${verdicts[scene.id]}`}>
-                  {verdicts[scene.id] === "keep" ? "keep" : "shelved"}
+                  {verdicts[scene.id] === "keep" ? t.keptTag : t.shelvedTag}
                 </span>
               )}
             </button>
@@ -227,10 +264,10 @@ export function InteractionSandbox() {
         ))}
       </ul>
 
-      <p className="studio-hint">Test on a phone. Watch the worst frame as well as average FPS. Keep and Shelve are saved in this browser and can be undone.</p>
+      <p className="studio-hint">{t.hint}</p>
       {open && (
         <SceneOverlay
-          scene={open}
+          scene={localizeScene(open, language)}
           verdict={verdicts[open.id]}
           onVerdict={(verdict) => setVerdict(open.id, verdict)}
           onClose={() => setOpen(null)}

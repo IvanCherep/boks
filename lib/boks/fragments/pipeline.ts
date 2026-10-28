@@ -43,6 +43,8 @@ import { pairTask, readPair, scorePair, swissPairs, tournamentShare, type Match 
 import { readingMinutes, splitLongParagraphs, splitParagraphs, type Paragraph } from "@/lib/boks/fragments/text";
 import { drawWindows, type FragmentWindow } from "@/lib/boks/fragments/windows";
 import { seedFor, type FragmentImportRow, type FragmentWork } from "@/lib/boks/fragments";
+import { defineMessages, plural } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 export type PipelineStage = "structure" | "lexical" | "markers" | "candidates" | "scenes" | "refine" | "judge" | "tournament" | "rank";
 
@@ -89,7 +91,68 @@ export type PipelineOptions = {
   seed?: number;
   onProgress?: (progress: PipelineProgress) => void;
   signal?: AbortSignal;
+  /** Language of the stage notes, diagnosis and reasons; the CLI and reports keep English. */
+  uiLanguage?: UiLanguage;
 };
+
+/** What the pipeline tells the editor, in the interface's language. Model prompts are not here. */
+const pipelineWords = defineMessages({
+  structureNote: (paragraphs: number, words: number, split: number) =>
+    `${paragraphs} paragraphs, ${words} words` + (split ? `; long paragraphs split into ${split} more pieces` : ""),
+  tooShort: (minutes: string, minimum: number) =>
+    `The whole text reads in ${minutes} min, under the ${minimum}-minute minimum: it is a bok already, not a work to cut.`,
+  lexicalNote: (gaps: number) => `TextTiling over ${gaps} gaps`,
+  markersNote: (count: number) => `${count} transition markers`,
+  noCandidates: (min: number, max: number) => `No run of whole paragraphs reads in ${min}-${max} minutes without starting or ending on a title.`,
+  candidatesNote: (count: number, min: number, max: number) => `${count} spans of ${min}-${max} min`,
+  scenesLeftNothing: "The scene stage left no candidate inside what it read; ranking on the offline signals.",
+  scenesNote: (scenes: number, chunks: number) => `${scenes} scenes in ${chunks} chunks`,
+  refineNote: (moved: number, total: number) => `${moved} of ${total} moved`,
+  judgeNote: (judged: number, total: number) => `${judged} of ${total} judged`,
+  tournamentNote: (fragments: number, pairs: number, decided: number) => `${fragments} fragments, ${pairs} pairs, ${decided} decided both ways`,
+  enoughBetter: "Passed, but the work already has enough better fragments.",
+  nonePassed: (count: number) => `None of the ${count} best candidates passed:`,
+  onlyPassed: (kept: number, count: number) => `Only ${kept} of the ${count} best candidates passed the bar.`,
+  modelFailed: "A model stage failed on every call; check the model's availability before trusting this order.",
+  rankNote: (kept: number, rejected: number) => `${kept} kept, ${rejected} not`,
+  midSentence: "ends mid-sentence",
+  noJudgement: "the model gave no usable judgement",
+  notStandalone: (value: string, bar: number) => `not understandable without the book (standalone ${value} < ${bar})`,
+  notComplete: (value: string, bar: number) => `does not come to a close (complete ${value} < ${bar})`,
+  lowJudge: (value: string, bar: number) => `judge score ${value} < ${bar}`,
+  midDialogue: "ends mid-dialogue",
+  weakEdges: "weak boundaries at its edges",
+}, {
+  ru: {
+    structureNote: (paragraphs, words, split) =>
+      `${paragraphs} ${plural("ru", paragraphs, { one: "абзац", few: "абзаца", many: "абзацев", other: "абзаца" })}, ${words} ${plural("ru", words, { one: "слово", few: "слова", many: "слов", other: "слова" })}`
+      + (split ? `; длинные абзацы разбиты ещё на ${split} ${plural("ru", split, { one: "часть", few: "части", many: "частей", other: "части" })}` : ""),
+    tooShort: (minutes, minimum) =>
+      `Весь текст читается за ${minutes} мин, меньше минимума в ${minimum} мин: это уже бок, а не произведение для нарезки.`,
+    lexicalNote: (gaps) => `TextTiling по ${gaps} ${plural("ru", gaps, { one: "стыку", few: "стыкам", many: "стыкам", other: "стыкам" })}`,
+    markersNote: (count) => `${count} ${plural("ru", count, { one: "маркер перехода", few: "маркера перехода", many: "маркеров перехода", other: "маркера перехода" })}`,
+    noCandidates: (min, max) => `Ни один отрезок из целых абзацев не читается за ${min}-${max} мин так, чтобы не начинаться и не заканчиваться заголовком.`,
+    candidatesNote: (count, min, max) => `${count} ${plural("ru", count, { one: "отрезок", few: "отрезка", many: "отрезков", other: "отрезка" })} по ${min}-${max} мин`,
+    scenesLeftNothing: "После этапа сцен внутри прочитанного не осталось кандидатов; ранжирую по офлайн-сигналам.",
+    scenesNote: (scenes, chunks) => `${scenes} ${plural("ru", scenes, { one: "сцена", few: "сцены", many: "сцен", other: "сцены" })} в ${chunks} ${plural("ru", chunks, { one: "куске", few: "кусках", many: "кусках", other: "кусках" })}`,
+    refineNote: (moved, total) => `сдвинуто ${moved} из ${total}`,
+    judgeNote: (judged, total) => `оценено ${judged} из ${total}`,
+    tournamentNote: (fragments, pairs, decided) =>
+      `${fragments} ${plural("ru", fragments, { one: "фрагмент", few: "фрагмента", many: "фрагментов", other: "фрагмента" })}, ${pairs} ${plural("ru", pairs, { one: "пара", few: "пары", many: "пар", other: "пары" })}, в обоих порядках решено ${decided}`,
+    enoughBetter: "Прошёл, но у произведения уже достаточно фрагментов лучше.",
+    nonePassed: (count) => `Ни один из ${count} лучших кандидатов не прошёл:`,
+    onlyPassed: (kept, count) => `Порог прошли только ${kept} из ${count} лучших кандидатов.`,
+    modelFailed: "Один из этапов модели не удался ни разу; проверьте доступность модели, прежде чем верить этому порядку.",
+    rankNote: (kept, rejected) => `оставлено ${kept}, отброшено ${rejected}`,
+    midSentence: "обрывается на середине предложения",
+    noJudgement: "модель не дала пригодной оценки",
+    notStandalone: (value, bar) => `непонятен без книги (самостоятельность ${value} < ${bar})`,
+    notComplete: (value, bar) => `не приходит к завершению (завершённость ${value} < ${bar})`,
+    lowJudge: (value, bar) => `оценка судьи ${value} < ${bar}`,
+    midDialogue: "обрывается посреди диалога",
+    weakEdges: "слабые границы по краям",
+  },
+});
 
 /** How the fusion weighs each signal: the chance it alone marks a real boundary. */
 export const fusionWeights = { structure: 0.95, scene: 0.85, lexical: 0.7, marker: 0.5 };
@@ -179,7 +242,9 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
     seed = 1,
     onProgress,
     signal,
+    uiLanguage = "en",
   } = options;
+  const t = pipelineWords[uiLanguage];
   const poolSize = Math.min(24, Math.max(perWork, options.poolSize ?? perWork * 3));
   const stages = { scenes: true, refine: true, judge: true, tournament: true, ...options.stages };
   const bar = strictnessBars[strictness];
@@ -220,21 +285,21 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
     dialogueShare: paragraphs.length ? paragraphs.filter((paragraph) => paragraph.dialogue).length / paragraphs.length : 0,
     candidates: 0,
   };
-  report("structure", `${authorParagraphs.length} paragraphs, ${words} words` + (stats.splitParagraphs ? `; long paragraphs split into ${stats.splitParagraphs} more pieces` : ""));
+  report("structure", t.structureNote(authorParagraphs.length, words, stats.splitParagraphs));
 
   const empty = (reason: string): PipelineResult => ({
     work, status: "none", diagnosis: [...diagnosis, reason], fragments: [], rejected: [], windows: [], stages: reports,
     scenes: null, stats, usage, modelChecked: false,
   });
-  if (readingMinutes(words) < minMinutes) return empty(`The whole text reads in ${readingMinutes(words).toFixed(1)} min, under the ${minMinutes}-minute minimum: it is a bok already, not a work to cut.`);
+  if (readingMinutes(words) < minMinutes) return empty(t.tooShort(readingMinutes(words).toFixed(1), minMinutes));
 
   // 2-3. Lexical cohesion and markers, fused.
   const cohesion = measureCohesion(source, paragraphs);
-  report("lexical", `TextTiling over ${paragraphs.length - 1} gaps`);
+  report("lexical", t.lexicalNote(paragraphs.length - 1));
   const markers = measureTransitions(source, paragraphs);
   const markerCount = markers.filter((value) => value > 0).length;
   let boundaries = fuseBoundaries(paragraphs, cohesion.depth, markers);
-  report("markers", `${markerCount} transition markers`);
+  report("markers", t.markersNote(markerCount));
 
   // 4. Candidates.
   const scoreAll = (paragraphQuality?: (number | null)[]) =>
@@ -242,9 +307,9 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
   let candidates = scoreAll();
   stats.candidates = candidates.length;
   if (candidates.length === 0) {
-    return empty(`No run of whole paragraphs reads in ${minMinutes}-${maxMinutes} minutes without starting or ending on a title.`);
+    return empty(t.noCandidates(minMinutes, maxMinutes));
   }
-  report("candidates", `${candidates.length} spans of ${minMinutes}-${maxMinutes} min`);
+  report("candidates", t.candidatesNote(candidates.length, minMinutes, maxMinutes));
 
   // 5. Scenes.
   let scenes: SceneMap | null = null;
@@ -271,8 +336,8 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
       return true;
     });
     if (rescored.length > 0) candidates = rescored;
-    else diagnosis.push("The scene stage left no candidate inside what it read; ranking on the offline signals.");
-    report("scenes", `${scenes.scenes.length} scenes in ${chunks.length} chunks`, chunks.length, scenes.failed);
+    else diagnosis.push(t.scenesLeftNothing);
+    report("scenes", t.scenesNote(scenes.scenes.length, chunks.length), chunks.length, scenes.failed);
   }
 
   const byspan = new Map(candidates.map((candidate) => [`${candidate.firstParagraph}:${candidate.lastParagraph}`, candidate]));
@@ -306,7 +371,7 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
     for (const candidate of refined) {
       if (!pool.some((other) => candidate.firstParagraph <= other.lastParagraph && other.firstParagraph <= candidate.lastParagraph)) pool.push(candidate);
     }
-    report("refine", `${refinedFrom.size} of ${refined.length} moved`, refined.length, failed);
+    report("refine", t.refineNote(refinedFrom.size, refined.length), refined.length, failed);
   }
 
   // 7. Judge.
@@ -331,7 +396,7 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
       judgements.set(candidate, combineJudgements(votes));
       onProgress?.({ stage: "judge", done: ++done, total: pool.length });
     });
-    report("judge", `${pool.length - failed} of ${pool.length} judged`, pool.length * Math.max(1, judgeVotes), failed);
+    report("judge", t.judgeNote(pool.length - failed, pool.length), pool.length * Math.max(1, judgeVotes), failed);
   }
 
   // 8. Tournament, among the fragments nothing has vetoed.
@@ -342,7 +407,7 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
     const judgement = judgements.get(candidate) ?? null;
     const algorithmNormalised = high > low ? (candidate.score - low) / (high - low) : 0.5;
     const judge = judgement ? judgeScore(judgement) : null;
-    const reasons = rejectionReasons(candidate, judgement, judge, judged, bar);
+    const reasons = rejectionReasons(candidate, judgement, judge, judged, bar, t);
     const preliminary = judge === null ? algorithmNormalised : 0.35 * algorithmNormalised + 0.65 * judge;
     return { candidate, judgement, algorithmNormalised, judge, reasons, preliminary, tournament: null as number | null };
   });
@@ -382,7 +447,7 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
       const shares = tournamentShare(entrants.length, matches);
       entrants.forEach((item, index) => (item.tournament = shares[index]));
       const decided = matches.filter((match) => match.points[0] !== 0.5).length;
-      report("tournament", `${entrants.length} fragments, ${matches.length} pairs, ${decided} decided both ways`, calls, failed);
+      report("tournament", t.tournamentNote(entrants.length, matches.length, decided), calls, failed);
     }
   }
 
@@ -415,22 +480,22 @@ export async function runFragmentPipeline(work: FragmentWork, options: PipelineO
   const fragments = kept.map((item, index) => ({ ...item.entry, rank: index + 1 }));
   const rejected = scored.filter((item) => !kept.includes(item)).map((item) => ({
     ...item.entry,
-    reasons: item.reasons.length ? item.reasons : ["Passed, but the work already has enough better fragments."],
+    reasons: item.reasons.length ? item.reasons : [t.enoughBetter],
   }));
 
   if (fragments.length === 0) {
     const counts = new Map<string, number>();
     for (const item of scored) for (const reason of item.reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
-    diagnosis.push(`None of the ${scored.length} best candidates passed:`, ...[...counts.entries()].sort((a, b) => b[1] - a[1]).map(([reason, count]) => `${count} × ${reason}`));
+    diagnosis.push(t.nonePassed(scored.length), ...[...counts.entries()].sort((a, b) => b[1] - a[1]).map(([reason, count]) => `${count} × ${reason}`));
   } else if (fragments.length < perWork) {
-    diagnosis.push(`Only ${fragments.length} of the ${scored.length} best candidates passed the bar.`);
+    diagnosis.push(t.onlyPassed(fragments.length, scored.length));
   }
   if (useModel && usage.calls > 0 && reports.some((entry) => entry.failed > 0 && entry.failed === entry.calls)) {
-    diagnosis.push("A model stage failed on every call; check the model's availability before trusting this order.");
+    diagnosis.push(t.modelFailed);
   }
 
   const windows = drawWindows(source, paragraphs, fragments, createRandom(seedFor(seed, work.sourceTitle)));
-  report("rank", `${fragments.length} kept, ${rejected.length} not`);
+  report("rank", t.rankNote(fragments.length, rejected.length));
 
   return {
     work,
@@ -462,18 +527,19 @@ function rejectionReasons(
   judge: number | null,
   judged: boolean,
   bar: { standalone: number; complete: number; judge: number },
+  t: (typeof pipelineWords)["en"],
 ) {
   const reasons: string[] = [];
-  if (candidate.cues.includes("unfinished_sentence")) reasons.push("ends mid-sentence");
+  if (candidate.cues.includes("unfinished_sentence")) reasons.push(t.midSentence);
   if (judged) {
-    if (!judgement || judge === null) return [...reasons, "the model gave no usable judgement"];
-    if (judgement.standalone < bar.standalone) reasons.push(`not understandable without the book (standalone ${judgement.standalone.toFixed(1)} < ${bar.standalone})`);
-    if (judgement.complete < bar.complete) reasons.push(`does not come to a close (complete ${judgement.complete.toFixed(1)} < ${bar.complete})`);
-    if (judge < bar.judge) reasons.push(`judge score ${judge.toFixed(2)} < ${bar.judge}`);
+    if (!judgement || judge === null) return [...reasons, t.noJudgement];
+    if (judgement.standalone < bar.standalone) reasons.push(t.notStandalone(judgement.standalone.toFixed(1), bar.standalone));
+    if (judgement.complete < bar.complete) reasons.push(t.notComplete(judgement.complete.toFixed(1), bar.complete));
+    if (judge < bar.judge) reasons.push(t.lowJudge(judge.toFixed(2), bar.judge));
     return reasons;
   }
-  if (candidate.cues.includes("ends_mid_dialogue")) reasons.push("ends mid-dialogue");
-  if (candidate.boundary < 0.4) reasons.push("weak boundaries at its edges");
+  if (candidate.cues.includes("ends_mid_dialogue")) reasons.push(t.midDialogue);
+  if (candidate.boundary < 0.4) reasons.push(t.weakEdges);
   return reasons;
 }
 

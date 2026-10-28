@@ -1,6 +1,8 @@
 import { buildReaderFeed } from "@/lib/boks/recommendations/feed";
 import { listRecommendationStrategies, recommendationAlgorithmName } from "@/lib/boks/recommendations/registry";
 import { emptyReaderSignals, type ReaderSignals, type StoryCandidate } from "@/lib/boks/recommendations/signals";
+import { plural } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * Do these algorithms actually produce different feeds?
@@ -44,6 +46,8 @@ export type DivergenceRequest = {
   visitorId?: string;
   topK?: number;
   now?: Date;
+  /** Language of the names and the summary; the admin lab passes the interface's. */
+  language?: UiLanguage;
 };
 
 /** Above this share of shared top picks, an experiment cannot resolve anything. */
@@ -55,6 +59,7 @@ export function measureStrategyDivergence(request: DivergenceRequest): Divergenc
     request.algorithmIds ?? listRecommendationStrategies().map((strategy) => strategy.id);
   const topK = Math.max(1, request.topK ?? 10);
   const candidateCount = request.candidates.length;
+  const language = request.language ?? "en";
 
   const rankings = new Map<string, string[]>();
   for (const algorithmId of algorithmIds) {
@@ -82,8 +87,8 @@ export function measureStrategyDivergence(request: DivergenceRequest): Divergenc
       pairs.push({
         leftAlgorithmId: algorithmIds[left],
         rightAlgorithmId: algorithmIds[right],
-        leftAlgorithmName: recommendationAlgorithmName(algorithmIds[left]),
-        rightAlgorithmName: recommendationAlgorithmName(algorithmIds[right]),
+        leftAlgorithmName: recommendationAlgorithmName(algorithmIds[left], language),
+        rightAlgorithmName: recommendationAlgorithmName(algorithmIds[right], language),
         overlap: topOverlap(leftRanking, rightRanking, topK),
         kendallTau: kendallTau(leftRanking, rightRanking),
       });
@@ -100,7 +105,7 @@ export function measureStrategyDivergence(request: DivergenceRequest): Divergenc
     pairs: pairs.sort((left, right) => right.overlap - left.overlap),
     meanOverlap,
     verdict: verdictFor(meanOverlap),
-    summary: summaryFor(meanOverlap, candidateCount, topK),
+    summary: summaryFor(meanOverlap, candidateCount, topK, language),
   };
 }
 
@@ -110,8 +115,20 @@ function verdictFor(meanOverlap: number): DivergenceVerdict {
   return "usable";
 }
 
-function summaryFor(meanOverlap: number, candidateCount: number, topK: number) {
+function summaryFor(meanOverlap: number, candidateCount: number, topK: number, language: UiLanguage) {
   const percent = Math.round(meanOverlap * 100);
+
+  if (language === "ru") {
+    const across = `${candidateCount} ${plural("ru", candidateCount, { one: "бока", few: "боков", many: "боков", other: "бока" })}`;
+    const agree = `Алгоритмы совпадают на ${percent}% своих первых ${topK} позиций из ${across}.`;
+    if (meanOverlap >= indistinguishableOverlap) {
+      return `${agree} Они показывают почти одну и ту же ленту, поэтому никакой эксперимент их не различит. Опубликуйте больше боков, прежде чем читать любое сравнение.`;
+    }
+    if (meanOverlap >= weakOverlap) {
+      return `${agree} Есть немного места для измерения, но настоящая разница будет маленькой и проявится нескоро.`;
+    }
+    return `Алгоритмы совпадают лишь на ${percent}% своих первых ${topK} позиций из ${across}. Это действительно разные ленты, так что сравнение может что-то показать.`;
+  }
 
   if (meanOverlap >= indistinguishableOverlap) {
     return `The algorithms agree on ${percent}% of their top ${topK} across ${candidateCount} boks. They are serving nearly the same feed, so no experiment can tell them apart. Publish more boks before reading any comparison.`;

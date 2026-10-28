@@ -41,7 +41,7 @@ const seriesMessages = defineMessages({
 }, { ru: {
   series: "boks series", start: "Слушать", again: "Ещё раз", opening: "Открываем…", more: "Все серии",
   empty: "Пока нет серий на выбранных языках.", emptyAction: "Изменить языки",
-  account: "Аккаунт", feed: "Лента", seriesTab: "Серии", newBadge: "new", tabs: "Разделы", duration: "Длительность",
+  account: "Аккаунт", feed: "Лента", seriesTab: "Серии", newBadge: "новое", tabs: "Разделы", duration: "Длительность",
 } });
 function useSeriesWords() { return useMessages(seriesMessages); }
 

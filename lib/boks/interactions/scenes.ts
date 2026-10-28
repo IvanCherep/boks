@@ -20,6 +20,7 @@
  */
 
 import type { SoundProfile } from "@/lib/boks/interactions/sound";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 export type ScenePrimitive = "toggle" | "hold" | "drag" | "mask" | "slider";
 
@@ -223,6 +224,34 @@ export function affordanceFor(scene: InteractionScene): Affordance {
 export function dragCueAngle(scene: InteractionScene): number {
   if (scene.axis === "y") return scene.direction === "up" ? -90 : 90;
   return 0;
+}
+
+/** The scenes' words in Russian; the English is on the scenes themselves. */
+const russianScenes: Record<string, Pick<InteractionScene, "title" | "hint">> = {
+  "tap-light": { title: "Лампа в кабинете", hint: "Коснитесь лампы" },
+  "move-light": { title: "Свет в туманном переулке", hint: "Ведите свет" },
+  "hold-focus": { title: "Лев и щенок в толпе", hint: "Удерживайте" },
+  "wipe-frost": { title: "Иней на окне ночного поезда", hint: "Сотрите иней" },
+  "drag-door": { title: "Дверь в гостиную при свечах", hint: "Откройте дверь" },
+  "time-slider": { title: "С бала в холодный рассвет", hint: "Тяните вправо" },
+  "tap-bell": { title: "Колокол в снежной тишине", hint: "Коснитесь колокола" },
+  "water-ripples": { title: "Лунный пруд, золотая рябь", hint: "Коснитесь воды" },
+  "reveal-ink": { title: "Строка оживает при свече", hint: "Проявите строку" },
+  "swipe-crowd": { title: "Раздвинуть толпу", hint: "Раздвиньте толпу" },
+  "hold-moment": { title: "Ускользающий миг", hint: "Не отпускайте" },
+  "pull-bookmark": { title: "Бордовая закладка на рассвете", hint: "Потяните закладку" },
+};
+
+/** The mechanics' names, for Studio. */
+export const primitiveLabels: Record<UiLanguage, Record<ScenePrimitive, string>> = {
+  en: { toggle: "toggle", hold: "hold", drag: "drag", mask: "mask", slider: "slider" },
+  ru: { toggle: "переключение", hold: "удержание", drag: "перетаскивание", mask: "маска", slider: "ползунок" },
+};
+
+/** A scene with its title and hint in the interface's language. */
+export function localizeScene(scene: InteractionScene, language: UiLanguage): InteractionScene {
+  const words = language === "ru" ? russianScenes[scene.id] : undefined;
+  return words ? { ...scene, ...words } : scene;
 }
 
 export function sceneById(id: string): InteractionScene | null {

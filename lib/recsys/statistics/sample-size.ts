@@ -2,6 +2,8 @@ import { compareIndependent } from "@/lib/recsys/statistics/compare";
 import { coefficientOfVariation, mean } from "@/lib/recsys/statistics/descriptive";
 import { estimatePower, simulatePower } from "@/lib/recsys/statistics/power";
 import type { ComparisonOptions, ComparisonStatus } from "@/lib/recsys/statistics/types";
+import { plural } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * How a comparison behaves as readers accumulate.
@@ -90,7 +92,7 @@ function roundTo(value: number, places = 4) {
 export function buildSampleSizeCurve(
   controlValues: number[],
   variantValues: number[],
-  options: ComparisonOptions & { targetEffect?: number; desiredPower?: number }
+  options: ComparisonOptions & { targetEffect?: number; desiredPower?: number; language?: UiLanguage }
 ): SampleSizeCurve {
   const readersPerArmNow = Math.min(controlValues.length, variantValues.length);
   const targetEffect = options.targetEffect ?? 0.3;
@@ -168,6 +170,7 @@ export function buildSampleSizeCurve(
       needed: now?.readersNeededForTargetEffect ?? null,
       targetEffect,
       mean: mean(pooled),
+      language: options.language ?? "en",
     }),
   };
 }
@@ -183,7 +186,9 @@ function describeCurve(input: {
   needed: number | null;
   targetEffect: number;
   mean: number;
+  language: UiLanguage;
 }) {
+  if (input.language === "ru") return describeCurveRu(input);
   if (!input.readersPerArmNow) {
     return `No reader has been measured on ${input.metric} yet, so there is nothing to compare and nothing to project.`;
   }
@@ -206,5 +211,33 @@ function describeCurve(input: {
     (input.needed
       ? `Resolving ${percent(input.targetEffect)} needs about ${input.needed} per arm.`
       : `Resolving ${percent(input.targetEffect)} is beyond the sizes this tool searches.`)
+  );
+}
+
+/** The same readout in Russian: its own sentences, not a template of the English. */
+function describeCurveRu(input: Parameters<typeof describeCurve>[0]) {
+  if (!input.readersPerArmNow) {
+    return `Ни один читатель ещё не измерен по метрике «${input.metric}», так что сравнивать и прогнозировать нечего.`;
+  }
+
+  const readers = plural("ru", input.readersPerArmNow, { one: "читатель", few: "читателя", many: "читателей", other: "читателя" });
+  const size = `${input.readersPerArmNow} ${readers} на вариант`;
+
+  if (input.mde === null) {
+    return (
+      `${size}. При таком разбросе по метрике «${input.metric}» надёжно видно разве что утроение, ` +
+      `поэтому любую разницу на этом экране считайте нерешённой. ` +
+      (input.needed
+        ? `Чтобы обнаружить ${percent(input.targetEffect)}, нужно около ${input.needed} на вариант.`
+        : `Чтобы обнаружить ${percent(input.targetEffect)}, нужно больше читателей, чем ищет этот инструмент.`)
+    );
+  }
+
+  return (
+    `${size}. При таком размере выборки по метрике «${input.metric}» видны различия примерно от ${percent(input.mde)} и больше; ` +
+    `всё, что меньше, не видно, как бы оно ни выглядело. ` +
+    (input.needed
+      ? `Чтобы различить ${percent(input.targetEffect)}, нужно около ${input.needed} на вариант.`
+      : `Различить ${percent(input.targetEffect)} не получится в пределах размеров, которые ищет этот инструмент.`)
   );
 }

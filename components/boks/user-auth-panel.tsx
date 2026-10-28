@@ -61,8 +61,8 @@ import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { ReaderTabs } from "@/components/boks/series/series-view";
 import { YouSettings } from "@/components/boks/you-settings";
 import { bokCoverPalette } from "@/components/boks/reader/bok-cover-palette";
-import { defineMessages } from "@/lib/i18n/messages";
-import { useMessages } from "./ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
+import { currentUiLanguage, useMessages } from "./ui-language";
 
 const activityMessages = defineMessages({
   likedAt: (time: string) => `Liked at ${time}`,
@@ -71,6 +71,32 @@ const activityMessages = defineMessages({
   likedAt: (time: string) => `Понравилось в ${time}`,
   readAt: (time: string) => `Прочитано в ${time}`,
 } });
+
+/**
+ * What a failure says when the error itself has nothing readable. Read with
+ * `currentUiLanguage()` at the moment of failure, since some are set from
+ * effects and callbacks.
+ */
+const failureMessages = defineMessages({
+  loadAccount: "Could not load account.",
+  changeLanguages: "Could not change your languages.",
+  saveSettings: "Could not save settings.",
+  deleteAccount: "Could not delete the account.",
+  signOut: "Could not sign out.",
+  cooldown: (seconds: number) => `One link a minute per address. ${seconds} seconds to go.`,
+}, { ru: {
+  loadAccount: "Не удалось загрузить аккаунт.",
+  changeLanguages: "Не удалось изменить языки чтения.",
+  saveSettings: "Не удалось сохранить настройки.",
+  deleteAccount: "Не удалось удалить аккаунт.",
+  signOut: "Не удалось выйти.",
+  cooldown: (seconds: number) =>
+    `Не чаще одной ссылки в минуту на адрес. Осталось ${seconds} ${plural("ru", seconds, { one: "секунда", few: "секунды", many: "секунд", other: "секунды" })}.`,
+} });
+
+function failure() {
+  return failureMessages[currentUiLanguage()];
+}
 
 // boks routes are separate surfaces with separate data loads, so they are
 // linked with plain anchors. vinext's `next/link` client navigation throws
@@ -294,7 +320,7 @@ export function UserAuthPanel({
     const handle = window.setTimeout(() => {
       setAccountLoading(true);
       refreshUser()
-        .catch((error) => setStatus(readableBoksError(error, "Could not load account.")))
+        .catch((error) => setStatus(readableBoksError(error, failure().loadAccount)))
         .finally(() => setAccountLoading(false));
     }, 0);
     return () => window.clearTimeout(handle);
@@ -317,7 +343,7 @@ export function UserAuthPanel({
     if (remaining > 0) {
       // The button is disabled while waiting, so reaching here means a second
       // tab or a stale render. Say the number rather than fail silently.
-      setStatus(`One link a minute per address. ${Math.ceil(remaining / 1000)} seconds to go.`);
+      setStatus(failure().cooldown(Math.ceil(remaining / 1000)));
       return;
     }
 
@@ -432,7 +458,7 @@ export function UserAuthPanel({
       // A failed save must not leave the pill showing a choice that was not kept.
       setReadingLanguages(previous);
       rememberReadingLanguages(previous);
-      setStatus(readableBoksError(error, "Could not change your languages."));
+      setStatus(readableBoksError(error, failure().changeLanguages));
     } finally {
       setBusy(false);
     }
@@ -456,7 +482,7 @@ export function UserAuthPanel({
       onUserChanged(next);
       setStatus(t("Settings saved.", "Настройки сохранены."));
     } catch (error) {
-      setStatus(readableBoksError(error, "Could not save settings."));
+      setStatus(readableBoksError(error, failure().saveSettings));
     } finally {
       setBusy(false);
     }
@@ -480,7 +506,7 @@ export function UserAuthPanel({
       clearLocalReaderState();
       window.location.reload();
     } catch (error) {
-      setDeleteError(readableBoksError(error, "Could not delete the account."));
+      setDeleteError(readableBoksError(error, failure().deleteAccount));
       setBusy(false);
     }
   }
@@ -497,7 +523,7 @@ export function UserAuthPanel({
       // to this device and ranked the next feed with it.
       window.location.reload();
     } catch (error) {
-      setStatus(readableBoksError(error, "Could not sign out."));
+      setStatus(readableBoksError(error, failure().signOut));
     } finally {
       setBusy(false);
     }
@@ -550,7 +576,7 @@ export function UserAuthPanel({
   const noticeText = required
     ? surface === "author" ? t("Your email, to submit boks for review.", "Войдите, чтобы отправлять боки на проверку.")
       : t("You have read 15 boks without an account. Sign in to keep reading for free.", "Вы прочитали 15 боков без аккаунта. Войдите, чтобы продолжить читать бесплатно.")
-    : reason === "notice" ? t(`You can read ${remainingGuestBoks} more boks without an account. An account keeps your reading history.`, `Можно прочитать ещё ${remainingGuestBoks} боков без аккаунта. Аккаунт сохраняет историю чтения.`)
+    : reason === "notice" ? t(`You can read ${remainingGuestBoks} more boks without an account. An account keeps your reading history.`, `Без аккаунта можно прочитать ещё ${remainingGuestBoks} ${plural("ru", remainingGuestBoks, { one: "бок", few: "бока", many: "боков", other: "бока" })}. Аккаунт сохраняет историю чтения.`)
     : intent === "like" ? t("Sign in to like this bok.", "Войдите, чтобы поставить лайк.")
     : intent === "comment" ? t("Sign in to comment with your @handle.", "Войдите, чтобы комментировать под своим @именем.")
     : intent === "follow" ? t("Sign in to follow this account.", "Войдите, чтобы подписаться.")
@@ -652,7 +678,7 @@ export function UserAuthPanel({
             <h1 className="social-display">{authRequestFailed ? t("Couldn’t send the code.", "Не удалось отправить код.") : gate ? t("Sign in to continue.", "Войдите, чтобы продолжить.") : t("Sign in.", "Войти.")}</h1>
             <p className="social-muted">{gate || intent !== "general" || surface === "author" ? noticeText : authRequestFailed ? t("We couldn’t connect to send it. Your email is still here.", "Не удалось подключиться. Ваш email сохранён здесь.") : t("Enter your email to sign in or create an account. We’ll send you a code.", "Введите email для входа или создания аккаунта. Мы отправим код.")}</p>
             <form className="auth-email-form" autoComplete="on" onSubmit={submitAuth}>
-              <label className="you-field" htmlFor={emailInputId}>Email<Input id={emailInputId} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required placeholder="you@example.com" value={email} onChange={event => { setEmail(event.target.value); setStatus(""); }} /></label>
+              <label className="you-field" htmlFor={emailInputId}>{t("Email", "Электронная почта")}<Input id={emailInputId} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required placeholder="you@example.com" value={email} onChange={event => { setEmail(event.target.value); setStatus(""); }} /></label>
               {authRequestFailed && status && <p className="auth-error-message" role="alert">{status}</p>}
               <Button className="you-wide-button" type="submit" disabled={busy || waiting}>{busy ? t("Sending…", "Отправляем…") : waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : authRequestFailed ? t("Try again", "Попробовать ещё раз") : t("Continue", "Продолжить")}</Button>
               {terms}

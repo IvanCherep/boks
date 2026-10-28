@@ -1,4 +1,5 @@
 import { buildSampleSizeCurve, type SampleSizeCurve } from "@/lib/recsys/statistics/sample-size";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 import { controlAlgorithmId, recommendationAlgorithmName } from "@/lib/boks/recommendations/registry";
 import {
   compareAlgorithms,
@@ -114,6 +115,8 @@ export type LabOptions = {
   /** Resamples per estimate. Lowered in the console; raised for a thesis run. */
   resamples?: number;
   seed?: number;
+  /** Language of algorithm names, cohort labels and the sample-size readout; English unless the console asks. */
+  language?: UiLanguage;
 };
 
 export function buildRecommendationLab(
@@ -141,6 +144,7 @@ export function buildRecommendationLab(
             minimumReaders: options.minimumReadersPerArm,
             resamples: options.resamples,
             seed: options.seed,
+            language: options.language,
           })
         )
       )
@@ -166,6 +170,7 @@ export function buildRecommendationLab(
             bootstrapSamples: options.resamples,
             permutationSamples: options.resamples,
             seed: options.seed,
+            language: options.language,
           }
         )
       : null;
@@ -178,10 +183,10 @@ export function buildRecommendationLab(
   const newReaders = readersInFirstWeek(totals);
   const cohorts = variants.length
     ? [
-        { id: "new" as const, label: "First week", rows: rows.filter((row) => newReaders.has(row.userId)) },
+        { id: "new" as const, label: options.language === "ru" ? "Первая неделя" : "First week", rows: rows.filter((row) => newReaders.has(row.userId)) },
         {
           id: "returning" as const,
-          label: "Beyond a week",
+          label: options.language === "ru" ? "Дольше недели" : "Beyond a week",
           rows: rows.filter((row) => !newReaders.has(row.userId)),
         },
       ].map((group) => {
@@ -193,6 +198,7 @@ export function buildRecommendationLab(
               minimumReaders: options.minimumReadersPerArm,
               resamples: options.resamples,
               seed: options.seed,
+              language: options.language,
             })
           : null;
         return {
@@ -264,7 +270,7 @@ function summariseArms(
 
     return {
       algorithmId,
-      algorithmName: recommendationAlgorithmName(algorithmId),
+      algorithmName: recommendationAlgorithmName(algorithmId, options.language),
       isControl: algorithmId === options.controlAlgorithmId,
       readers: readerValues.length,
       sessions: sumBy(entries, (entry) => entry.sessions),

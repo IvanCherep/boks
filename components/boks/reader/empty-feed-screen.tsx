@@ -4,8 +4,9 @@ import { useReaderPreferences } from "../reader-preferences";
 import { BoksFlower } from "./boks-flower";
 import { Button } from "@/components/ui/button";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
+import { localizeBoksMessage } from "@/lib/boks/errors";
 import {
-  readingLanguageNames,
+  readingLanguageNamesIn,
   type EmptyFeedNotice,
   type ReadingLanguage,
 } from "@/components/boks/reading-languages";
@@ -32,7 +33,13 @@ export function EmptyFeedScreen({
   onChangeLanguages: () => void;
   onRetry: () => void;
 }) {
-  const { t } = useReaderPreferences();
+  const { preferences, t } = useReaderPreferences();
+  const language = preferences.locale;
+  // The load phase's own words ("Loading", "Ready") and any sentence the
+  // database wrote, in the interface language.
+  const message = notice.kind === "message"
+    ? notice.message === "Ready" ? t("Ready", "Готово") : notice.message === "Loading" ? t("Loading…", "Загрузка…") : localizeBoksMessage(notice.message, language)
+    : "";
   return (
     <main className={`reader-system-page${loading ? " reader-system-page--loading" : ""}`}>
       <div className="reader-system-page__body">
@@ -40,11 +47,11 @@ export function EmptyFeedScreen({
         {notice.kind === "language" ? (
           <>
             <div className="reader-system-art reader-system-art--languages" aria-hidden="true">Аа<span>…</span></div>
-            <h1 className="reader-system-title">{t(notice.title, "Пока нет boks на выбранных языках")}</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{t(notice.body, "Ваш выбор языков сохранён. Вы можете изменить его или вернуться позже.")}</p>
+            <h1 className="reader-system-title">{notice.title}</h1>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{notice.body}</p>
             {notice.offer.length > 0 && (
               <Button className="mt-4" onClick={() => onAddLanguages(notice.offer)}>
-                {t("Add", "Добавить")} {notice.offer.map((language) => readingLanguageNames[language]).join(t(" and ", " и "))}
+                {t("Add", "Добавить")} {notice.offer.map((code) => language === "ru" ? readingLanguageNamesIn.ru[code].toLowerCase() : readingLanguageNamesIn.en[code]).join(t(" and ", " и "))}
               </Button>
             )}
             <Button className="mt-2 w-full" variant="ghost" onClick={onChangeLanguages}>
@@ -59,7 +66,7 @@ export function EmptyFeedScreen({
                 network is stopping the call the app makes next - on some
                 providers that call is blocked while the site is not. */}
             <h1 className="reader-system-title">
-              {t("Couldn’t load the bok.", "Не удалось загрузить bok.")}
+              {t("Couldn’t load the bok.", "Не удалось загрузить бок.")}
             </h1>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
               {t("The page loaded, but the connection to the reading service failed. Try another Wi-Fi, mobile data, or a VPN.", "Страница загрузилась, но соединиться с сервисом чтения не удалось. Попробуйте другую сеть Wi-Fi, мобильный интернет или VPN.")}
@@ -78,10 +85,10 @@ export function EmptyFeedScreen({
         ) : (
           <>{loading ? <>
             <div className="reader-system-art reader-system-art--loading" aria-hidden="true"><span>b</span><BoksFlower /></div>
-            <h1 className="reader-system-title">{t("Loading bok…", "Загружаем bok…")}</h1>
+            <h1 className="reader-system-title">{t("Loading bok…", "Загружаем бок…")}</h1>
             <div className="reader-loading-skeleton" aria-hidden="true"><span /><span /><span /><span /><span /></div>
             <p role="status" className="reader-system-status">{t("Loading…", "Загрузка…")}</p>
-          </> : <><div className="reader-system-art reader-system-art--languages" aria-hidden="true">b.</div><h1 className="reader-system-title">{t("No boks yet.", "Здесь пока нет boks.")}</h1><p>{notice.message}</p><Button className="mt-4" onClick={onRetry}>{t("Try again", "Попробовать снова")}</Button></>}</>
+          </> : <><div className="reader-system-art reader-system-art--languages" aria-hidden="true">b.</div><h1 className="reader-system-title">{t("No boks yet.", "Здесь пока нет боков.")}</h1><p>{message}</p><Button className="mt-4" onClick={onRetry}>{t("Try again", "Попробовать снова")}</Button></>}</>
         )}
       </div>
     </main>

@@ -59,6 +59,7 @@ import type { StudyFragmentRow, StudyResponseRow } from "@/lib/boks/studies/resu
 import type { A3Candidate } from "@/lib/boks/studies/a3";
 import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 import {
   buildRecommendationLab,
   defaultExperimentConfig,
@@ -654,7 +655,7 @@ export async function loadSlatePositionEffects(
   return (result.data as SlatePositionRow[]) ?? [];
 }
 
-export async function loadRecommendationLab(days = 30): Promise<RecommendationLabPayload> {
+export async function loadRecommendationLab(days = 30, language: UiLanguage = "en"): Promise<RecommendationLabPayload> {
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const result = await supabase.rpc("get_recommendation_lab", { p_days: days });
@@ -670,7 +671,9 @@ export async function loadRecommendationLab(days = 30): Promise<RecommendationLa
       dataQuality: null,
       available: false,
       notice:
-        "Attributed recommendation events are not in this Supabase project yet. Apply the migrations in supabase/migrations, then reload.",
+        language === "ru"
+          ? "Атрибутированных событий рекомендаций в этом проекте Supabase пока нет. Примените миграции из supabase/migrations и перезагрузите."
+          : "Attributed recommendation events are not in this Supabase project yet. Apply the migrations in supabase/migrations, then reload.",
     };
   }
 
@@ -702,6 +705,7 @@ export async function loadRecommendationLab(days = 30): Promise<RecommendationLa
       // Fewer resamples than a thesis run: this is a console, and the interval
       // moves by well under a second of reading time between the two.
       resamples: 1200,
+      language,
     }),
     assignments: payload.assignments ?? [],
     topStories: payload.topStories ?? [],

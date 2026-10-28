@@ -1,4 +1,5 @@
 import { collapseToReaders, sessionsForReaders } from "@/lib/recsys/aggregate/readers";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 import { readerMetric } from "@/lib/recsys/aggregate/metrics";
 import { compareIndependent } from "@/lib/recsys/statistics/compare";
 import type { ReaderMetricId, ReaderOutcomeRow } from "@/lib/recsys/aggregate/types";
@@ -38,13 +39,15 @@ export type CompareAlgorithmsOptions = {
   /** Resamples per estimate. Lower in a console, higher for a thesis run. */
   resamples?: number;
   seed?: number;
+  /** Language of the metric label the comparison carries; English unless an admin screen asks. */
+  language?: UiLanguage;
 };
 
 export function compareAlgorithms(
   rows: ReaderOutcomeRow[],
   options: CompareAlgorithmsOptions
 ): AlgorithmComparison {
-  const definition = readerMetric(options.metric);
+  const definition = readerMetric(options.metric, options.language);
   const series = collapseToReaders(rows, options.metric);
 
   const control = series.valuesByAlgorithm[options.controlAlgorithmId] ?? [];

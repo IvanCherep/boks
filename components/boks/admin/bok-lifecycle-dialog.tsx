@@ -22,30 +22,95 @@ import {
   permanentlyDeleteArchivedBok,
   restoreArchivedBok,
 } from "@/components/boks/supabase-browser-data";
+import { currentUiLanguage, useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
 
 export type BokLifecycleAction = "archive" | "restore" | "delete";
 export type BokLifecycleTarget = { kind: BokLifecycleAction; bok: { id: string; title: string } };
 
-const copy: Record<BokLifecycleAction, { title: string; description: string; action: string }> = {
-  archive: {
-    title: "Hide this bok?",
-    description:
-      "It leaves the reader feed for everyone immediately and moves to Admin → Content → Deleted. Its text, likes, comments and reading history stay in the database, and it can be restored from there.",
-    action: "Hide bok",
+const words = defineMessages({
+  copy: {
+    archive: {
+      title: "Hide this bok?",
+      description:
+        "It leaves the reader feed for everyone immediately and moves to Admin → Content → Deleted. Its text, likes, comments and reading history stay in the database, and it can be restored from there.",
+      action: "Hide bok",
+    },
+    restore: {
+      title: "Restore bok?",
+      description:
+        "It goes back to where it was before it was hidden: the reader feed if it was published, the review queue if it was waiting, or refused.",
+      action: "Restore",
+    },
+    delete: {
+      title: "Delete permanently?",
+      description:
+        "This erases the text and all related likes, comments, reports and metrics. It cannot be undone.",
+      action: "Delete permanently",
+    },
+  } as Record<BokLifecycleAction, { title: string; description: string; action: string }>,
+  rightsLoadFailed: "Could not load the rights record. The server will check it before restoring.",
+  updateFailed: "Could not update this bok.",
+  studio: "Studio",
+  cannotUndo: "This cannot be undone.",
+  deleteWarning: "The text, comments, likes, reports and reading metrics for this bok will be erased.",
+  typeTitle: "Type this title exactly",
+  archiveSummary: "It will leave the feed and move to Deleted. Its text, comments and reading history stay.",
+  restoreSummary: "Return this bok to the state it had before it was hidden.",
+  rightsConfirmed: "Rights confirmed",
+  rightsNotConfirmed: "Rights not confirmed",
+  loadingRights: "Loading rights…",
+  rightsRequired: "A bok cannot return to the published feed without confirmed rights.",
+  whyHide: "Why are you hiding it?",
+  reasonPlaceholder: "Explain the reason…",
+  confirmation: "Confirmation",
+  archiveHistory: "Your reason, name and time are kept in the bok’s history.",
+  restoreHistory: "The record of hiding this bok stays in its history.",
+  deleteOnlyDeleted: "Only a bok already in Deleted can be permanently erased.",
+  cancel: "Cancel",
+  working: "Working…",
+}, { ru: {
+  copy: {
+    archive: {
+      title: "Скрыть этот бок?",
+      description:
+        "Он сразу исчезнет из ленты у всех и переместится в Студия → Контент → Удалённые. Текст, лайки, комментарии и история чтения останутся в базе, и оттуда его можно восстановить.",
+      action: "Скрыть бок",
+    },
+    restore: {
+      title: "Восстановить бок?",
+      description:
+        "Он вернётся туда, где был до скрытия: в ленту, если был опубликован, в очередь проверки, если ждал проверки, или в отклонённые.",
+      action: "Восстановить",
+    },
+    delete: {
+      title: "Удалить навсегда?",
+      description:
+        "Будут стёрты текст и все связанные лайки, комментарии, жалобы и метрики. Это нельзя отменить.",
+      action: "Удалить навсегда",
+    },
   },
-  restore: {
-    title: "Restore bok?",
-    description:
-      "It goes back to where it was before it was hidden: the reader feed if it was published, the review queue if it was waiting, or refused.",
-    action: "Restore",
-  },
-  delete: {
-    title: "Delete permanently?",
-    description:
-      "This erases the text and all related likes, comments, reports and metrics. It cannot be undone.",
-    action: "Delete permanently",
-  },
-};
+  rightsLoadFailed: "Не удалось загрузить сведения о правах. Сервер проверит их перед восстановлением.",
+  updateFailed: "Не удалось изменить бок.",
+  studio: "Студия",
+  cannotUndo: "Это нельзя отменить.",
+  deleteWarning: "Текст, комментарии, лайки, жалобы и метрики чтения этого бока будут стёрты.",
+  typeTitle: "Введите название точно",
+  archiveSummary: "Он уйдёт из ленты в Удалённые. Текст, комментарии и история чтения сохранятся.",
+  restoreSummary: "Вернуть бок в состояние, в котором он был до скрытия.",
+  rightsConfirmed: "Права подтверждены",
+  rightsNotConfirmed: "Права не подтверждены",
+  loadingRights: "Загружаем права…",
+  rightsRequired: "Без подтверждённых прав бок не вернётся в ленту.",
+  whyHide: "Почему вы его скрываете?",
+  reasonPlaceholder: "Объясните причину…",
+  confirmation: "Подтверждение",
+  archiveHistory: "Ваша причина, имя и время сохранятся в истории бока.",
+  restoreHistory: "Запись о скрытии останется в истории бока.",
+  deleteOnlyDeleted: "Навсегда стереть можно только бок, который уже в Удалённых.",
+  cancel: "Отмена",
+  working: "Выполняем…",
+} });
 
 /**
  * The one confirmation for changing a boks's lifecycle - hide, restore, erase -
@@ -91,10 +156,12 @@ function LifecycleForm({
   const { kind, bok } = target;
   const [record, setRecord] = useState<AdminBokDetail | null>(null);
   const [rightsError, setRightsError] = useState("");
+  const t = useMessages(words);
+  const copy = t.copy;
   useEffect(() => {
     if (kind !== "restore") return;
     let active = true;
-    void loadAdminBok(bok.id).then((value) => { if (active) setRecord(value); }).catch(() => { if (active) setRightsError("Could not load the rights record. The server will check it before restoring."); });
+    void loadAdminBok(bok.id).then((value) => { if (active) setRecord(value); }).catch(() => { if (active) setRightsError(words[currentUiLanguage()].rightsLoadFailed); });
     return () => { active = false; };
   }, [bok.id, kind]);
   const ready =
@@ -110,7 +177,7 @@ function LifecycleForm({
       else await permanentlyDeleteArchivedBok(bok.id, confirmation.trim());
       await onDone(target);
     } catch (caught) {
-      setError(readableBoksError(caught, "Could not update this bok."));
+      setError(readableBoksError(caught, t.updateFailed));
     } finally {
       setBusy(false);
     }
@@ -123,10 +190,10 @@ function LifecycleForm({
       onEscapeKeyDown={(event) => busy && event.preventDefault()}
     >
       <div className="studio-dialog-brand"><BoksLogo /></div>
-      <DialogHeader><p className="studio-eyebrow">Studio</p><DialogTitle>{copy[kind].title}</DialogTitle><DialogDescription className="sr-only">{copy[kind].description}</DialogDescription></DialogHeader>
+      <DialogHeader><p className="studio-eyebrow">{t.studio}</p><DialogTitle>{copy[kind].title}</DialogTitle><DialogDescription className="sr-only">{copy[kind].description}</DialogDescription></DialogHeader>
       <div className={`studio-dialog-symbol studio-dialog-symbol--${kind}`} aria-hidden="true">{kind === "archive" ? <Bookmark /> : kind === "restore" ? <RotateCcw /> : <X />}</div>
-      {kind === "delete" ? <><p className="studio-hint studio-hint--danger"><strong>This cannot be undone.</strong><br />The text, comments, likes, reports and reading metrics for this bok will be erased.</p><div className="studio-paper-slip"><p className="studio-eyebrow">Type this title exactly</p><h2>{bok.title}</h2></div></> : <><h2 className="studio-dialog-book">{bok.title}</h2><p className="studio-meta">{kind === "archive" ? "It will leave the feed and move to Deleted. Its text, comments and reading history stay." : "Return this bok to the state it had before it was hidden."}</p></>}
-      {kind === "restore" && <div className={`studio-hint ${record?.rights?.confirmed ? "studio-hint--confirmed" : ""}`}><strong>{record ? record.rights?.confirmed ? "Rights confirmed" : "Rights not confirmed" : rightsError || "Loading rights…"}</strong>{record?.rights?.note && <p>{record.rights.note}</p>}{record && !record.rights?.confirmed && <p>A bok cannot return to the published feed without confirmed rights.</p>}</div>}
+      {kind === "delete" ? <><p className="studio-hint studio-hint--danger"><strong>{t.cannotUndo}</strong><br />{t.deleteWarning}</p><div className="studio-paper-slip"><p className="studio-eyebrow">{t.typeTitle}</p><h2>{bok.title}</h2></div></> : <><h2 className="studio-dialog-book">{bok.title}</h2><p className="studio-meta">{kind === "archive" ? t.archiveSummary : t.restoreSummary}</p></>}
+      {kind === "restore" && <div className={`studio-hint ${record?.rights?.confirmed ? "studio-hint--confirmed" : ""}`}><strong>{record ? record.rights?.confirmed ? t.rightsConfirmed : t.rightsNotConfirmed : rightsError || t.loadingRights}</strong>{record?.rights?.note && <p>{record.rights.note}</p>}{record && !record.rights?.confirmed && <p>{t.rightsRequired}</p>}</div>}
       <form
         className="grid gap-4"
         onSubmit={(event) => {
@@ -136,25 +203,25 @@ function LifecycleForm({
       >
         {kind === "archive" && (
           <label className="grid gap-2 text-sm font-medium">
-            Why are you hiding it?
+            {t.whyHide}
             <Textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               maxLength={500}
-              placeholder="Explain the reason…"
+              placeholder={t.reasonPlaceholder}
               autoFocus
             />
           </label>
         )}
         {kind === "delete" && (
           <label className="grid gap-2 text-sm font-medium">
-            <span>Confirmation</span>
+            <span>{t.confirmation}</span>
             <Input placeholder={bok.title} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoFocus />
           </label>
         )}
-        {kind === "archive" && <p className="studio-hint">Your reason, name and time are kept in the bok’s history.</p>}
-        {kind === "restore" && <p className="studio-meta">The record of hiding this bok stays in its history.</p>}
-        {kind === "delete" && <p className="studio-meta">Only a bok already in Deleted can be permanently erased.</p>}
+        {kind === "archive" && <p className="studio-hint">{t.archiveHistory}</p>}
+        {kind === "restore" && <p className="studio-meta">{t.restoreHistory}</p>}
+        {kind === "delete" && <p className="studio-meta">{t.deleteOnlyDeleted}</p>}
         {error && (
           <p className="text-sm text-[var(--destructive)]" role="alert">
             {error}
@@ -162,10 +229,10 @@ function LifecycleForm({
         )}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" variant={kind === "restore" ? "default" : "destructive"} disabled={busy || !ready}>
-            {busy ? "Working…" : copy[kind].action}
+            {busy ? t.working : copy[kind].action}
           </Button>
         </DialogFooter>
       </form>

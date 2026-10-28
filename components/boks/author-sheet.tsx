@@ -8,6 +8,8 @@ import type { AuthorProfile } from "@/components/boks/client-types";
 import { loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { plural } from "@/lib/i18n/messages";
+import { currentUiLanguage } from "@/components/boks/ui-language";
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -87,7 +89,7 @@ export function AuthorSheet({
       })
       .catch((error) => {
         if (cancelled) return;
-        setStatus(error instanceof Error ? error.message : "Could not open this author.");
+        setStatus(error instanceof Error ? error.message : currentUiLanguage() === "ru" ? "Не удалось открыть автора." : "Could not open this author.");
       });
 
     return () => {
@@ -123,7 +125,7 @@ export function AuthorSheet({
           ? { ...current, following: !next, followers: Math.max(0, current.followers + (next ? -1 : 1)) }
           : current
       );
-      setStatus(error instanceof Error ? error.message : "Could not update following.");
+      setStatus(error instanceof Error ? error.message : t("Could not update following.", "Не удалось изменить подписку."));
     } finally {
       setBusy(false);
     }
@@ -232,7 +234,7 @@ export function AuthorSheet({
                 <li key={writer.name}>
                   <button type="button" className="author-writer" onClick={() => onOpenWriter?.(writer.name)}>
                     <span className="font-medium">{writer.name}</span>
-                    <span className="text-sm text-[var(--muted-foreground)]">{countLabel(writer.boks, "bok")}</span>
+                    <span className="text-sm text-[var(--muted-foreground)]">{t(countLabel(writer.boks, "bok"), `${writer.boks} ${plural("ru", writer.boks, { one: "бок", few: "бока", many: "боков", other: "бока" })}`)}</span>
                   </button>
                 </li>
               ))}

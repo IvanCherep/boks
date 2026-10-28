@@ -24,11 +24,18 @@ export function numberValue(value: unknown) {
   return typeof value === "number" ? value : Number(value || 0);
 }
 
-export function secondsLabel(value: unknown) {
+const durationUnits: Record<UiLanguage, { m: string; s: string }> = {
+  en: { m: "m", s: "s" },
+  ru: { m: " мин", s: " с" },
+};
+
+/** A duration in seconds for the admin screens: "3m 5s", or «3 мин 5 с» in Russian. */
+export function secondsLabel(value: unknown, language: UiLanguage = "en") {
   const seconds = numberValue(value);
-  if (!seconds) return "0s";
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  const unit = durationUnits[language];
+  if (!seconds) return `0${unit.s}`;
+  if (seconds < 60) return `${seconds}${unit.s}`;
+  return `${Math.floor(seconds / 60)}${unit.m} ${Math.round(seconds % 60)}${unit.s}`;
 }
 
 /**

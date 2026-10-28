@@ -3,6 +3,7 @@ import type {
   ReaderMetricId,
   ReaderTotals,
 } from "@/lib/recsys/aggregate/types";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * The reader-level metric catalogue.
@@ -107,16 +108,34 @@ export const READER_METRICS: Record<ReaderMetricId, ReaderMetricDefinition> = {
   },
 };
 
-export function readerMetric(id: ReaderMetricId): ReaderMetricDefinition {
+/** The labels in Russian, for the admin console. The catalogue above stays English for tests and exports. */
+const russianLabels: Record<ReaderMetricId, string> = {
+  active_seconds: "Секунды активного чтения",
+  seconds_per_session: "Активные секунды за сессию",
+  boks_opened: "Открыто разных боков",
+  sessions: "Сессии чтения",
+  days_active: "Активные дни",
+  completion_rate: "Доля дочитываний",
+  skip_rate: "Доля пропусков",
+  reaction_rate: "Доля реакций",
+};
+
+/** Seconds and percentage points in each language. */
+const units: Record<UiLanguage, { seconds: string; points: string }> = {
+  en: { seconds: "s", points: " pp" },
+  ru: { seconds: " с", points: " п.п." },
+};
+
+export function readerMetric(id: ReaderMetricId, language: UiLanguage = "en"): ReaderMetricDefinition {
   const definition = READER_METRICS[id];
   if (!definition) throw new Error(`Unknown reader metric: ${id}`);
-  return definition;
+  return language === "en" ? definition : { ...definition, label: russianLabels[id] };
 }
 
-export function formatReaderValue(id: ReaderMetricId, value: number) {
+export function formatReaderValue(id: ReaderMetricId, value: number, language: UiLanguage = "en") {
   const definition = readerMetric(id);
   if (definition.unit === "rate") return `${Math.round(value * 1000) / 10}%`;
-  if (definition.unit === "seconds") return `${Math.round(value)}s`;
+  if (definition.unit === "seconds") return `${Math.round(value)}${units[language].seconds}`;
   return `${Math.round(value * 100) / 100}`;
 }
 
@@ -126,11 +145,11 @@ export function formatReaderValue(id: ReaderMetricId, value: number) {
  * A rate difference is in percentage points, never "%": "+5%" next to a 40%
  * bar reads as a relative change, and it is not one.
  */
-export function formatReaderDifference(id: ReaderMetricId, value: number) {
+export function formatReaderDifference(id: ReaderMetricId, value: number, language: UiLanguage = "en") {
   const definition = readerMetric(id);
   const sign = value > 0 ? "+" : "";
-  if (definition.unit === "rate") return `${sign}${Math.round(value * 1000) / 10} pp`;
-  if (definition.unit === "seconds") return `${sign}${Math.round(value)}s`;
+  if (definition.unit === "rate") return `${sign}${Math.round(value * 1000) / 10}${units[language].points}`;
+  if (definition.unit === "seconds") return `${sign}${Math.round(value)}${units[language].seconds}`;
   return `${sign}${Math.round(value * 100) / 100}`;
 }
 

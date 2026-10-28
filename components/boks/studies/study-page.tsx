@@ -16,7 +16,8 @@ import {
   type StudyParticipant,
   type StudyState,
 } from "@/components/boks/supabase-browser-data";
-import { useMessages } from "@/components/boks/ui-language";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { localizeBoksMessage } from "@/lib/boks/errors";
 import { studyCopy, studyMinutes } from "@/components/boks/studies/study-copy";
 import { StudyFrame, StudyIntro, StudyMessage } from "@/components/boks/studies/study-forms";
 import { StudyProtocol, type StudyRun } from "@/components/boks/studies/study-protocols";
@@ -55,6 +56,7 @@ function previewRequest() {
 
 export function StudyPage({ studyKey }: { studyKey: string }) {
   const words = useMessages(studyCopy);
+  const language = useUiLanguage();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [preview, setPreview] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,7 +64,7 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
 
   const buildRun = useCallback(
     (state: StudyState, participant: { id: string; condition: string; seed: number; steps?: StudyParticipant["steps"] }, previewing: boolean): StudyRun | { problems: string[] } => {
-      const parsed = parseStudyMaterials(state.key, state.materials);
+      const parsed = parseStudyMaterials(state.key, state.materials, language);
       if (!parsed.ok) return { problems: parsed.problems };
       let fragments = [...sampleFragments];
       return {
@@ -90,7 +92,7 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
         },
       };
     },
-    [words]
+    [words, language]
   );
 
   useEffect(() => {
@@ -119,7 +121,7 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
       if (state.participant?.completedAt) return setPhase({ kind: "done" });
       setPhase({ kind: "intro", state });
     })().catch((error: unknown) => {
-      if (!cancelled) setPhase({ kind: "failed", message: error instanceof Error ? error.message : String(error) });
+      if (!cancelled) setPhase({ kind: "failed", message: localizeBoksMessage(error instanceof Error ? error.message : String(error)) });
     });
     return () => { cancelled = true; };
   }, [key, buildRun]);
@@ -142,7 +144,7 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
       const run = buildRun(state, participant, preview);
       setPhase("problems" in run ? { kind: "materials", problems: run.problems } : { kind: "running", run });
     } catch (error) {
-      setPhase({ kind: "failed", message: error instanceof Error ? error.message : String(error) });
+      setPhase({ kind: "failed", message: localizeBoksMessage(error instanceof Error ? error.message : String(error)) });
     } finally {
       setBusy(false);
     }

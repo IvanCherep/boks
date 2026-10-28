@@ -101,7 +101,7 @@ export function BokMenuSheet({
   }
 
   return (
-    <ReaderSheet label={t("This bok", "Этот bok")} onClose={onClose} className="bok-menu-v44">
+    <ReaderSheet label={t("This bok", "Этот бок")} onClose={onClose} className="bok-menu-v44">
       <header className="bok-menu-heading">
         {artwork ? <img src={artwork} alt="" /> : <span className="bok-menu-heading__type" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{story.title.charAt(0)}</span>}
         <span className="bok-menu-heading-copy"><span className="bok-menu-kicker">{t("Reading now", "Сейчас читаете")}</span><strong translate="no">{story.title}</strong><small translate="no">{story.authorName || atHandle(story.authorHandle)}</small></span>

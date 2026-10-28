@@ -9,7 +9,7 @@ import {
   sharedBokIdFrom,
 } from "@/lib/boks/share-preview";
 import { sharedBokRedirectScript } from "@/lib/boks/shared-bok-redirect";
-import { OpenSharedBok } from "./open-shared-bok";
+import { OpenSharedBok, OpeningSharedBok } from "./open-shared-bok";
 import { sharePosterVersion } from "@/lib/boks/share-link";
 import { sharePosterSize } from "@/lib/boks/share-poster";
 
@@ -111,7 +111,7 @@ export default async function SharedBokPage({
           <Suspense fallback={null}>
             <SharedBokText id={id} />
           </Suspense>
-          <p className="mt-8 text-sm text-[var(--muted-foreground)]">Opening this bok…</p>
+          <p className="mt-8 text-sm text-[var(--muted-foreground)]"><OpeningSharedBok /></p>
         </article>
         <OpenSharedBok id={id} />
       </main>

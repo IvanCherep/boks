@@ -5,16 +5,52 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BoksFeedbackPage, BoksFeedbackRow } from "@/components/boks/client-types";
 import { loadBoksFeedback } from "@/components/boks/supabase-browser-data";
+import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages, plural } from "@/lib/i18n/messages";
 
 const pageSize = 100;
 
-const surfaceLabels: Record<string, string> = {
-  settings: "Settings",
-  after_3: "After 3 boks",
-  after_10: "After 10 boks",
-  after_30: "After 30 boks",
-  other: "Elsewhere",
-};
+const words = defineMessages(
+  {
+    surfaces: {
+      settings: "Settings",
+      after_3: "After 3 boks",
+      after_10: "After 10 boks",
+      after_30: "After 30 boks",
+      other: "Elsewhere",
+    } as Record<string, string>,
+    loading: "Loading…",
+    empty: "Nothing yet. The box is in Settings and after the 3rd, 10th and 30th bok.",
+    couldNotLoad: "Could not load feedback.",
+    totals: (total: number, today: number) => `${total} note${total === 1 ? "" : "s"}, ${today} in the last 24 hours`,
+    reading: "Reading the inbox…",
+    refresh: "Refresh",
+    noAccount: "a reader with no account",
+    boksRead: (n: number) => `${n} bok${n === 1 ? "" : "s"} read`,
+    loadMore: (n: number) => `Load ${n} more`,
+  },
+  {
+    ru: {
+      surfaces: {
+        settings: "Настройки",
+        after_3: "После 3 боков",
+        after_10: "После 10 боков",
+        after_30: "После 30 боков",
+        other: "В другом месте",
+      },
+      loading: "Загрузка…",
+      empty: "Пока ничего. Форма есть в настройках и после 3-го, 10-го и 30-го бока.",
+      couldNotLoad: "Не удалось загрузить отзывы.",
+      totals: (total: number, today: number) =>
+        `${total} ${plural("ru", total, { one: "отзыв", few: "отзыва", many: "отзывов", other: "отзыва" })}, ${today} за последние 24 часа`,
+      reading: "Читаем входящие…",
+      refresh: "Обновить",
+      noAccount: "читатель без аккаунта",
+      boksRead: (n: number) => `прочитано ${n} ${plural("ru", n, { one: "бок", few: "бока", many: "боков", other: "бока" })}`,
+      loadMore: (n: number) => `Загрузить ещё ${n}`,
+    },
+  }
+);
 
 /**
  * Everything readers have written, newest first.
@@ -29,9 +65,12 @@ const surfaceLabels: Record<string, string> = {
  * show. That is the feature working, not data missing.
  */
 export function FeedbackInbox() {
+  const t = useMessages(words);
+  const language = useUiLanguage();
+  const surfaceLabels = t.surfaces;
   const [page, setPage] = useState<BoksFeedbackPage | null>(null);
   const [rows, setRows] = useState<BoksFeedbackRow[]>([]);
-  const [status, setStatus] = useState("Loading…");
+  const [status, setStatus] = useState(() => words[currentUiLanguage()].loading);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async (offset: number) => {
@@ -40,9 +79,9 @@ export function FeedbackInbox() {
       const next = await loadBoksFeedback({ limit: pageSize, offset });
       setPage(next);
       setRows((current) => (offset === 0 ? next.rows : [...current, ...next.rows]));
-      setStatus(next.total === 0 ? "Nothing yet. The box is in Settings and after the 3rd, 10th and 30th bok." : "");
+      setStatus(next.total === 0 ? words[currentUiLanguage()].empty : "");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not load feedback.");
+      setStatus(error instanceof Error ? error.message : words[currentUiLanguage()].couldNotLoad);
     } finally {
       setBusy(false);
     }
@@ -62,8 +101,8 @@ export function FeedbackInbox() {
         <div>
           <p className="text-sm text-[var(--muted-foreground)]">
             {page
-              ? `${page.total} note${page.total === 1 ? "" : "s"}, ${page.newToday} in the last 24 hours`
-              : "Reading the inbox…"}
+              ? t.totals(page.total, page.newToday)
+              : t.reading}
           </p>
           {page && Object.keys(page.bySurface).length > 0 && (
             <p className="text-sm text-[var(--muted-foreground)]">
@@ -74,7 +113,7 @@ export function FeedbackInbox() {
           )}
         </div>
         <Button variant="outline" onClick={() => void refresh(0)} disabled={busy}>
-          <RefreshCw className="size-4" /> Refresh
+          <RefreshCw className="size-4" /> {t.refresh}
         </Button>
       </div>
 
@@ -86,10 +125,10 @@ export function FeedbackInbox() {
             <p className="whitespace-pre-wrap text-sm leading-6">{row.message}</p>
             <p className="mt-3 text-sm text-[var(--muted-foreground)]">
               {[
-                row.handle ? `@${row.handle}` : "a reader with no account",
+                row.handle ? `@${row.handle}` : t.noAccount,
                 surfaceLabels[row.surface] ?? row.surface,
-                `${row.boksRead} bok${row.boksRead === 1 ? "" : "s"} read`,
-                new Date(row.createdAt).toLocaleString(),
+                t.boksRead(row.boksRead),
+                new Date(row.createdAt).toLocaleString(language),
               ].join(" · ")}
             </p>
           </article>
@@ -97,7 +136,7 @@ export function FeedbackInbox() {
 
         {page && rows.length < page.total && (
           <Button variant="outline" onClick={() => void refresh(rows.length)} disabled={busy}>
-            {busy ? "Loading…" : `Load ${Math.min(pageSize, page.total - rows.length)} more`}
+            {busy ? t.loading : t.loadMore(Math.min(pageSize, page.total - rows.length))}
           </Button>
         )}
       </div>

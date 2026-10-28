@@ -6,6 +6,7 @@ import { FeedbackForm } from "@/components/boks/feedback-form";
 import { ReaderSheet } from "@/components/boks/reader-sheet";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { ReaderBackIcon } from "./reader-icons";
+import { plural } from "@/lib/i18n/messages";
 
 /** The real reading milestone uses the same letter and sent views as Settings. */
 export function FeedbackSheet({ milestone, sent, boksRead, visitorId, onSent, onClose }: {
@@ -27,7 +28,7 @@ export function FeedbackSheet({ milestone, sent, boksRead, visitorId, onSent, on
     </> : <>
       <div className="you-postmark" aria-hidden="true">boks<span>FEEDBACK</span></div>
       <h1 className="social-display">{t("Send feedback.", "Обратная связь.")}</h1>
-      <p className="social-muted">{t(`You’ve read ${milestone} boks. Tell us about a problem or suggest an improvement.`, `Вы прочитали ${milestone} боков. Расскажите о проблеме или предложите улучшение.`)}</p>
+      <p className="social-muted">{t(`You’ve read ${milestone} boks. Tell us about a problem or suggest an improvement.`, `Вы прочитали ${milestone} ${plural("ru", milestone, { one: "бок", few: "бока", many: "боков", other: "бока" })}. Расскажите о проблеме или предложите улучшение.`)}</p>
       <FeedbackForm presentation="letter" surface={surfaceForMilestone(milestone)} boksRead={boksRead} visitorId={visitorId} onSent={onSent} />
       <Button className="you-wide-button" variant="ghost" onClick={onClose}>{t("Not now", "Не сейчас")}</Button>
     </>}

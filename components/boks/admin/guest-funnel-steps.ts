@@ -1,4 +1,7 @@
 import type { GuestFunnel } from "@/components/boks/client-types";
+import { currentUiLanguage } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * The guest funnel as steps, with the one number a founder acts on: where the
@@ -19,23 +22,41 @@ export type FunnelStep = {
   ofAll: number | null;
 };
 
-const order: { key: FunnelStep["key"]; label: string }[] = [
-  { key: "guests", label: "Guest devices" },
-  { key: "startedReading", label: "Started reading" },
-  { key: "finishedOne", label: "Finished a bok" },
-  { key: "finishedThree", label: "Finished three" },
-  { key: "sawSignup", label: "Saw the sign-up" },
-  { key: "requestedLink", label: "Asked for a sign-in link" },
-  { key: "createdAccount", label: "Created an account" },
-];
+type StepKey = Exclude<FunnelStep["key"], "cameBack">;
 
-export function funnelSteps(funnel: GuestFunnel["funnel"]): FunnelStep[] {
+const order: StepKey[] = ["guests", "startedReading", "finishedOne", "finishedThree", "sawSignup", "requestedLink", "createdAccount"];
+
+const stepLabels = defineMessages<Record<StepKey, string>>(
+  {
+    guests: "Guest devices",
+    startedReading: "Started reading",
+    finishedOne: "Finished a bok",
+    finishedThree: "Finished three",
+    sawSignup: "Saw the sign-up",
+    requestedLink: "Asked for a sign-in link",
+    createdAccount: "Created an account",
+  },
+  {
+    ru: {
+      guests: "Устройства гостей",
+      startedReading: "Начали читать",
+      finishedOne: "Дочитали бок",
+      finishedThree: "Дочитали три",
+      sawSignup: "Увидели регистрацию",
+      requestedLink: "Запросили ссылку для входа",
+      createdAccount: "Создали аккаунт",
+    },
+  }
+);
+
+export function funnelSteps(funnel: GuestFunnel["funnel"], language: UiLanguage = currentUiLanguage()): FunnelStep[] {
   const total = funnel.guests;
-  return order.map((step, index) => {
-    const count = funnel[step.key] ?? 0;
-    const previous = index === 0 ? null : funnel[order[index - 1].key] ?? 0;
+  return order.map((key, index) => {
+    const count = funnel[key] ?? 0;
+    const previous = index === 0 ? null : funnel[order[index - 1]] ?? 0;
     return {
-      ...step,
+      key,
+      label: stepLabels[language][key],
       count,
       ofPrevious: previous ? count / previous : null,
       ofAll: total ? count / total : null,

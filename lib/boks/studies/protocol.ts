@@ -9,6 +9,8 @@
  * `docs/studies.md`.
  */
 
+import type { UiLanguage } from "@/lib/i18n/ui-language";
+
 export const studyKeys = ["rg1", "rg2", "a1", "a2", "a3", "b1", "b2", "b3"] as const;
 export type StudyKey = (typeof studyKeys)[number];
 
@@ -143,6 +145,56 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     design: "rating",
   },
 };
+
+/** The admin's Russian for each study; labels, keys and the quoted participant questions stay. */
+const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "comparison" | "outcome">> = {
+  rg1: {
+    title: "Ценность Boks Series",
+    comparison: "Series против того же текста простым чтением; формат назначается случайно, одно произведение на участника.",
+    outcome: "«Произведение меня тронуло» и «заставило задуматься», 1–7: обе не меньше +0,5.",
+  },
+  rg2: {
+    title: "Ценность персональной ленты",
+    comparison: "Каждый участник: десять минут в персональной ленте и десять в каталоге с поиском и фильтрами, порядок случайный, тексты разные.",
+    outcome: "«Насколько вы довольны этим сеансом выбора и чтения?» 1–7: лента минус каталог не меньше +0,5, 95% интервал выше 0.",
+  },
+  a1: {
+    title: "Целое произведение или фрагмент",
+    comparison: "Каждый участник читает оба вида в случайном порядке; затем свободно выбирает среди новых текстов обоих видов или ничего.",
+    outcome: "Доля выбравших целое произведение минус доля выбравших фрагмент, среди всех: не меньше +15 п. п.",
+  },
+  a2: {
+    title: "Чтение прямо в ленте",
+    comparison: "Текст в ленте против карточки с отдельным экраном чтения; те же тексты в том же порядке.",
+    outcome: "Десятиминутные сессии с успешной находкой: не меньше +10 п. п., парно по участнику.",
+  },
+  a3: {
+    title: "Рекомендации по пяти бокам",
+    comparison: "Один и тот же алгоритм офлайн упорядочивает те же десять новых текстов: с профилем по первым пяти оценённым бокам и без него.",
+    outcome: "NDCG@5 по собственным оценкам интереса читателя, 1–5: в среднем не меньше +0,05, 95% интервал выше 0.",
+  },
+  b1: {
+    title: "Что добавляет интерактив",
+    comparison: "Активная сцена Series против пассивной, которая воспроизводит те же события в те же моменты.",
+    outcome: "Средняя эмоциональная интенсивность по двум вопросам, 1–7: не меньше +0,5.",
+  },
+  b2: {
+    title: "Series как вход к автору",
+    comparison: "Первое знакомство с незнакомым автором через Series или через простой текст того же произведения.",
+    outcome: "Доля выбравших и начавших другой простой текст того же автора: не меньше +15 п. п.",
+  },
+  b3: {
+    title: "Фрагменты, которые держатся сами",
+    comparison: "Фрагменты, нарезанные алгоритмом (и окна той же длины, вслепую), каждый оценивают три читателя.",
+    outcome: "Не меньше 80 из 100 фрагментов алгоритма с «да» на оба вопроса от двух из трёх читателей.",
+  },
+};
+
+/** A study's description in the interface's language; `studyDescriptions` is the English. */
+export function studyDescription(key: StudyKey, language: UiLanguage = "en"): StudyDescription {
+  const english = studyDescriptions[key];
+  return language === "ru" ? { ...english, ...russianDescriptions[key] } : english;
+}
 
 /** The study page's address. Plain, so a printed QR code stays short. */
 export function studyPath(key: StudyKey) {

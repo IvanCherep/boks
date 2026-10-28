@@ -1,6 +1,25 @@
 "use client";
 
 import { numberValue } from "@/components/boks/client-format";
+import { useMessages } from "@/components/boks/ui-language";
+import { defineMessages } from "@/lib/i18n/messages";
+
+const words = defineMessages(
+  {
+    noReads: "No attributed reads yet.",
+    best: "best",
+    nothingYet: "Nothing recorded yet.",
+    thisWeek: "this week",
+  },
+  {
+    ru: {
+      noReads: "Атрибутированных прочтений пока нет.",
+      best: "лучший",
+      nothingYet: "Пока ничего не записано.",
+      thisWeek: "на этой неделе",
+    },
+  }
+);
 
 export type MetricBarRow = {
   id: string;
@@ -31,8 +50,9 @@ export function MetricBars({
   /** Off for distributions, where the tallest bar is not a winner. */
   highlightBest?: boolean;
 }) {
+  const t = useMessages(words);
   if (!rows.length) {
-    return <p className="text-sm text-[var(--muted-foreground)]">No attributed reads yet.</p>;
+    return <p className="text-sm text-[var(--muted-foreground)]">{t.noReads}</p>;
   }
 
   const max = Math.max(1, ...rows.map((row) => Math.abs(numberValue(row.value))));
@@ -63,7 +83,7 @@ export function MetricBars({
                 {value}
                 {row.unit ?? ""}
               </strong>
-              {row.id === best?.id && !row.muted && <small>best</small>}
+              {row.id === best?.id && !row.muted && <small>{t.best}</small>}
               {row.note && <small>{row.note}</small>}
             </div>
           </div>
@@ -93,8 +113,9 @@ export function TimeSeriesBars({
   caption: string;
   unit?: string;
 }) {
+  const t = useMessages(words);
   if (!points.length) {
-    return <p className="text-sm text-[var(--muted-foreground)]">Nothing recorded yet.</p>;
+    return <p className="text-sm text-[var(--muted-foreground)]">{t.nothingYet}</p>;
   }
 
   const max = Math.max(1, ...points.map((point) => point.value));
@@ -107,7 +128,7 @@ export function TimeSeriesBars({
         {latest && (
           <strong className="time-series__latest">
             {latest.value}
-            {unit} this week
+            {unit} {t.thisWeek}
           </strong>
         )}
       </figcaption>

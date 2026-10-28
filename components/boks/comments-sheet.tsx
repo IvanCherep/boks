@@ -16,6 +16,7 @@ import {
 import { haptic } from "@/components/boks/reader-haptics";
 import { bareHandle } from "@/components/boks/reader/handles";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { readableBoksError } from "@/lib/boks/errors";
 
 type ReplyTarget = {
   rootId: number;
@@ -51,7 +52,7 @@ export function CommentsSheet({
   /** How many comments went, the comment and its replies, for the rail's count. */
   onDeleted?: (removed: number) => void;
 }) {
-  const { t } = useReaderPreferences();
+  const { preferences, t } = useReaderPreferences();
   const [comments, setComments] = useState(() =>
     initialComments.filter((comment) => comment.storyId === storyId)
   );
@@ -131,7 +132,7 @@ export function CommentsSheet({
       setReplyTarget(null);
       haptic("confirm");
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("Could not send comment.", "Не удалось отправить комментарий.");
+      const message = readableBoksError(error, t("Could not send comment.", "Не удалось отправить комментарий."));
       setSendError(message);
     } finally {
       setSubmitting(false);
@@ -145,7 +146,7 @@ export function CommentsSheet({
     }
     if (likingIds.has(comment.id)) return;
     if (!isSupabaseReader) {
-      onStatus("Comment likes need the Supabase reader.");
+      onStatus(t("Comment likes need the Supabase reader.", "Лайки комментариев работают только с сервером Supabase."));
       return;
     }
 
@@ -177,7 +178,7 @@ export function CommentsSheet({
       setComments((current) =>
         current.map((item) => (item.id === comment.id ? comment : item))
       );
-      onStatus(error instanceof Error ? error.message : "Could not update that like.");
+      onStatus(readableBoksError(error, t("Could not update that like.", "Не удалось обновить лайк.")));
     } finally {
       setLikingIds((current) => {
         const next = new Set(current);
@@ -194,9 +195,9 @@ export function CommentsSheet({
       setComments((current) => current.filter((entry) => entry.id !== comment.id && entry.parentCommentId !== comment.id));
       setConfirmingDelete(null);
       onDeleted?.(1 + (result.repliesRemoved ?? 0));
-      onStatus(result.repliesRemoved ? "Comment and its replies deleted." : "Comment deleted.");
+      onStatus(result.repliesRemoved ? t("Comment and its replies deleted.", "Комментарий и ответы на него удалены.") : t("Comment deleted.", "Комментарий удалён."));
     } catch (error) {
-      onStatus(error instanceof Error ? error.message : "Could not delete the comment.");
+      onStatus(readableBoksError(error, t("Could not delete the comment.", "Не удалось удалить комментарий.")));
     } finally {
       setDeletingId(null);
     }
@@ -218,11 +219,11 @@ export function CommentsSheet({
           <div className="comment-meta">
             <span className="comment-handle">@{handle}</span>
             {isAuthor && <span className="comment-author-tag">{t("author", "автор")}</span>}
-            <time dateTime={comment.createdAt}>{shortTimeAgo(comment.createdAt)}</time>
+            <time dateTime={comment.createdAt}>{shortTimeAgo(comment.createdAt, undefined, preferences.locale)}</time>
           </div>
           <p className="comment-copy">{comment.body}</p>
           {confirmingDelete === comment.id ? (
-            <div className="comment-confirm" role="group" aria-label="Confirm deleting this comment">
+            <div className="comment-confirm" role="group" aria-label={t("Confirm deleting this comment", "Подтвердите удаление комментария")}>
               <span>
                 {replyCount
                   ? t(`Delete this comment and its ${replyCount === 1 ? "reply" : `${replyCount} replies`}?`, `Удалить комментарий и ответы (${replyCount})?`)

@@ -13,6 +13,9 @@ const messages = defineMessages(
     sendTo: "If it keeps happening, send the lines below to",
     withBrowser: "with your browser name - that is usually enough for us to fix it.",
     what: "What went wrong",
+    couldNotOpen: "Couldn’t open boks.",
+    stopped: "The app stopped while opening. Reload to try again.",
+    sendDetails: "If it keeps happening, send the details below to",
   },
   {
     ru: {
@@ -22,6 +25,9 @@ const messages = defineMessages(
       sendTo: "Если это повторяется, пришлите строки ниже на",
       withBrowser: "и укажите ваш браузер - обычно этого хватает, чтобы мы всё исправили.",
       what: "Что пошло не так",
+      couldNotOpen: "Не удалось открыть boks.",
+      stopped: "Приложение остановилось при открытии. Перезагрузите, чтобы попробовать снова.",
+      sendDetails: "Если это повторяется, пришлите подробности ниже на",
     },
   }
 );
@@ -70,12 +76,12 @@ export class BoksErrorBoundary extends Component<{ children: ReactNode; v44?: bo
         <div className="reader-system-page__body">
           <header className="reader-system-page__header"><span>boks</span></header>
           <div className="reader-system-art reader-system-art--offline" aria-hidden="true">·<i>—</i>·</div>
-          <h1 className="reader-system-title">Couldn’t open boks.</h1>
-          <p className="mt-5">The app stopped while opening. Reload to try again.</p>
-          <button type="button" data-slot="button" data-variant="default" className="mt-5 items-center justify-center" onClick={() => window.location.reload()}>Reload boks</button>
-          <p className="mt-5">If it keeps happening, send the details below to <a className="auth-link" href={supportMailto}>{supportEmail}</a>.</p>
+          <h1 className="reader-system-title">{t.couldNotOpen}</h1>
+          <p className="mt-5">{t.stopped}</p>
+          <button type="button" data-slot="button" data-variant="default" className="mt-5 items-center justify-center" onClick={() => window.location.reload()}>{t.reload}</button>
+          <p className="mt-5">{t.sendDetails} <a className="auth-link" href={supportMailto}>{supportEmail}</a>.</p>
           <details className="reader-system-diagnostics">
-            <summary>What went wrong</summary>
+            <summary>{t.what}</summary>
             <p>{error.name}: {error.message}</p>
             <p>{typeof navigator === "undefined" ? "" : navigator.userAgent}</p>
           </details>

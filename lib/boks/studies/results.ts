@@ -3,6 +3,8 @@ import type { ComparisonResult } from "@/lib/recsys/statistics/types";
 import type { StudyKey } from "@/lib/boks/studies/protocol";
 import { successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
 import { ndcgAt, type A3Ranking } from "@/lib/boks/studies/a3";
+import { defineMessages } from "@/lib/i18n/messages";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * Raw study responses into the numbers each hypothesis is judged by.
@@ -77,6 +79,84 @@ export type StudySummary = {
   fragments?: { verdicts: FragmentVerdict[]; byMethod: Record<string, { rated: number; accepted: number; total: number }> };
 };
 
+/**
+ * The admin's words for the comparisons and facts. The participants' own
+ * questions are quoted in Russian in both languages, as they were asked.
+ */
+const resultWords = defineMessages({
+  text: "Text",
+  series: "Series",
+  catalogue: "Catalogue",
+  feed: "Feed",
+  fragment: "Fragment",
+  whole: "Whole",
+  cards: "Card + reading screen",
+  inline: "Text in the feed",
+  withoutProfile: "Without profile",
+  withProfile: "Profile from five boks",
+  passive: "Passive",
+  active: "Active",
+  movedSecondary: "«Прочитанное меня тронуло», 1–7 (secondary; both sessions with a text)",
+  successfulSecondary: "Successful session (secondary)",
+  nothingOpened: "Sessions with nothing opened (still rated for satisfaction)",
+  choseWholeMinusFragment: "Chose a whole work minus chose a fragment",
+  feltComplete: "Felt complete, 1–7",
+  choseNothing: "Chose nothing",
+  successfulFind: "Session with a successful find",
+  satisfactionSecondary: "Session satisfaction, 1–7 (secondary)",
+  ndcg: "NDCG@5 of the ten new texts",
+  incomplete: "Profile fixed, ten not all rated yet (can return later)",
+  flat: "Every one of the ten rated 1 (no order is better; left out)",
+  noDirection: "Five ratings all at 3 (no profile; both orders the same, kept in)",
+  intensityBoth: "Emotional intensity, participants in both roles",
+  intensityEvery: "Emotional intensity, every rating",
+  startedSameAuthor: "Chose and started another text by the author",
+  screenedOut: "Knew every author offered (left out)",
+  fragmentsAccepted: "Algorithm fragments accepted (target: 80 of 100)",
+  acceptedValue: (accepted: number, total: number, rated: number) => `${accepted} of ${total}, ${rated} with three ratings`,
+  noneImported: "none imported",
+  percent: (numerator: number, denominator: number, share: number) => `${numerator} of ${denominator} (${share}%)`,
+  noneYet: "none yet",
+}, {
+  ru: {
+    text: "Текст",
+    series: "Series",
+    catalogue: "Каталог",
+    feed: "Лента",
+    fragment: "Фрагмент",
+    whole: "Целое",
+    cards: "Карточка + экран чтения",
+    inline: "Текст в ленте",
+    withoutProfile: "Без профиля",
+    withProfile: "Профиль по пяти бокам",
+    passive: "Пассивно",
+    active: "Активно",
+    movedSecondary: "«Прочитанное меня тронуло», 1–7 (вторичная; обе сессии с текстом)",
+    successfulSecondary: "Успешная сессия (вторичная)",
+    nothingOpened: "Сессии, где ничего не открыли (удовлетворённость всё равно оценена)",
+    choseWholeMinusFragment: "Выбрали целое произведение минус выбрали фрагмент",
+    feltComplete: "Ощущение завершённости, 1–7",
+    choseNothing: "Ничего не выбрали",
+    successfulFind: "Сессия с успешной находкой",
+    satisfactionSecondary: "Удовлетворённость сессией, 1–7 (вторичная)",
+    ndcg: "NDCG@5 десяти новых текстов",
+    incomplete: "Профиль зафиксирован, десять оценены не все (можно вернуться позже)",
+    flat: "Все десять оценены на 1 (ни один порядок не лучше; исключены)",
+    noDirection: "Все пять оценок равны 3 (профиля нет; оба порядка одинаковы, оставлены)",
+    intensityBoth: "Эмоциональная интенсивность, участники в обеих ролях",
+    intensityEvery: "Эмоциональная интенсивность, все оценки",
+    startedSameAuthor: "Выбрали и начали другой текст автора",
+    screenedOut: "Знали всех предложенных авторов (исключены)",
+    fragmentsAccepted: "Принятые фрагменты алгоритма (цель: 80 из 100)",
+    acceptedValue: (accepted, total, rated) => `${accepted} из ${total}, с тремя оценками ${rated}`,
+    noneImported: "ничего не импортировано",
+    percent: (numerator, denominator, share) => `${numerator} из ${denominator} (${share}%)`,
+    noneYet: "пока нет",
+  },
+});
+
+type ResultWords = (typeof resultWords)["en"];
+
 /** Pilot-sized: 24 participants is about 12 an arm. */
 const minimumReaders = 5;
 
@@ -131,8 +211,8 @@ function byParticipant(rows: readonly StudyResponseRow[]) {
   return groups;
 }
 
-function percent(numerator: number, denominator: number) {
-  return denominator ? `${numerator} of ${denominator} (${Math.round((numerator / denominator) * 100)}%)` : "none yet";
+function percent(numerator: number, denominator: number, w: ResultWords) {
+  return denominator ? w.percent(numerator, denominator, Math.round((numerator / denominator) * 100)) : w.noneYet;
 }
 
 /** Session measurement and its survey, paired by `answers.index`. */
@@ -164,8 +244,8 @@ export function a3TestInterest(rows: readonly StudyResponseRow[]) {
   return interest;
 }
 
-const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, summary: StudySummary) => void } = {
-  rg1(groups, summary) {
+const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, summary: StudySummary, w: ResultWords) => void } = {
+  rg1(groups, summary, w) {
     const moved: Record<"series" | "text", number[]> = { series: [], text: [] };
     const thought: Record<"series" | "text", number[]> = { series: [], text: [] };
     for (const rows of groups.values()) {
@@ -178,11 +258,11 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       if (t !== null) thought[format].push(t);
     }
     summary.comparisons.push(
-      compare("«Произведение меня тронуло», 1–7", moved.text, moved.series, 0.5, "points", ["Text", "Series"]),
-      compare("«Произведение заставило задуматься», 1–7", thought.text, thought.series, 0.5, "points", ["Text", "Series"])
+      compare("«Произведение меня тронуло», 1–7", moved.text, moved.series, 0.5, "points", [w.text, w.series]),
+      compare("«Произведение заставило задуматься», 1–7", thought.text, thought.series, 0.5, "points", [w.text, w.series])
     );
   },
-  rg2(groups, summary) {
+  rg2(groups, summary, w) {
     const satisfaction: { control: number; variant: number }[] = [];
     const moved: { control: number; variant: number }[] = [];
     const success: { control: number; variant: number }[] = [];
@@ -202,13 +282,13 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       none += [feed, catalogue].filter((session) => session.measurement.reads.length === 0).length;
     }
     summary.comparisons.push(
-      comparePairs("«Насколько вы довольны этим сеансом выбора и чтения?», 1–7", satisfaction, 0.5, "points", ["Catalogue", "Feed"]),
-      comparePairs("«Прочитанное меня тронуло», 1–7 (secondary; both sessions with a text)", moved, 0, "points", ["Catalogue", "Feed"]),
-      comparePairs("Successful session (secondary)", success, 0, "share", ["Catalogue", "Feed"])
+      comparePairs("«Насколько вы довольны этим сеансом выбора и чтения?», 1–7", satisfaction, 0.5, "points", [w.catalogue, w.feed]),
+      comparePairs(w.movedSecondary, moved, 0, "points", [w.catalogue, w.feed]),
+      comparePairs(w.successfulSecondary, success, 0, "share", [w.catalogue, w.feed])
     );
-    summary.facts.push({ label: "Sessions with nothing opened (still rated for satisfaction)", value: String(none) });
+    summary.facts.push({ label: w.nothingOpened, value: String(none) });
   },
-  a1(groups, summary) {
+  a1(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
     let refused = 0;
     const closure: Record<"whole" | "fragment", number[]> = { whole: [], fragment: [] };
@@ -225,12 +305,12 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       if (!kind) refused += 1;
     }
     summary.comparisons.push(
-      comparePairs("Chose a whole work minus chose a fragment", pairs, 0.15, "share", ["Fragment", "Whole"]),
-      compare("Felt complete, 1–7", closure.fragment, closure.whole, 0, "points", ["Fragment", "Whole"])
+      comparePairs(w.choseWholeMinusFragment, pairs, 0.15, "share", [w.fragment, w.whole]),
+      compare(w.feltComplete, closure.fragment, closure.whole, 0, "points", [w.fragment, w.whole])
     );
-    summary.facts.push({ label: "Chose nothing", value: percent(refused, pairs.length) });
+    summary.facts.push({ label: w.choseNothing, value: percent(refused, pairs.length, w) });
   },
-  a2(groups, summary) {
+  a2(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
     const satisfaction: { control: number; variant: number }[] = [];
     for (const rows of groups.values()) {
@@ -245,11 +325,11 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       }
     }
     summary.comparisons.push(
-      comparePairs("Session with a successful find", pairs, 0.1, "share", ["Card + reading screen", "Text in the feed"]),
-      comparePairs("Session satisfaction, 1–7 (secondary)", satisfaction, 0, "points", ["Card + reading screen", "Text in the feed"])
+      comparePairs(w.successfulFind, pairs, 0.1, "share", [w.cards, w.inline]),
+      comparePairs(w.satisfactionSecondary, satisfaction, 0, "points", [w.cards, w.inline])
     );
   },
-  a3(groups, summary) {
+  a3(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
     let flat = 0;
     let incomplete = 0;
@@ -273,15 +353,15 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       pairs.push({ control: withoutProfile, variant: withProfile });
     }
     summary.comparisons.push(
-      comparePairs("NDCG@5 of the ten new texts", pairs, 0.05, "score", ["Without profile", "Profile from five boks"])
+      comparePairs(w.ndcg, pairs, 0.05, "score", [w.withoutProfile, w.withProfile])
     );
     summary.facts.push(
-      { label: "Profile fixed, ten not all rated yet (can return later)", value: String(incomplete) },
-      { label: "Every one of the ten rated 1 (no order is better; left out)", value: String(flat) },
-      { label: "Five ratings all at 3 (no profile; both orders the same, kept in)", value: String(noDirection) }
+      { label: w.incomplete, value: String(incomplete) },
+      { label: w.flat, value: String(flat) },
+      { label: w.noDirection, value: String(noDirection) }
     );
   },
-  b1(groups, summary) {
+  b1(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
     const active: number[] = [];
     const passive: number[] = [];
@@ -301,11 +381,11 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       }
     }
     summary.comparisons.push(
-      comparePairs("Emotional intensity, participants in both roles", pairs, 0.5, "points", ["Passive", "Active"]),
-      compare("Emotional intensity, every rating", passive, active, 0.5, "points", ["Passive", "Active"])
+      comparePairs(w.intensityBoth, pairs, 0.5, "points", [w.passive, w.active]),
+      compare(w.intensityEvery, passive, active, 0.5, "points", [w.passive, w.active])
     );
   },
-  b2(groups, summary) {
+  b2(groups, summary, w) {
     const started: Record<"series" | "text", number[]> = { series: [], text: [] };
     let screenedOut = 0;
     for (const rows of groups.values()) {
@@ -320,9 +400,9 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       started[condition].push(choice.answers.sameAuthor === true && choice.answers.started === true ? 1 : 0);
     }
     summary.comparisons.push(
-      compare("Chose and started another text by the author", started.text, started.series, 0.15, "share", ["Text", "Series"])
+      compare(w.startedSameAuthor, started.text, started.series, 0.15, "share", [w.text, w.series])
     );
-    summary.facts.push({ label: "Knew every author offered (left out)", value: String(screenedOut) });
+    summary.facts.push({ label: w.screenedOut, value: String(screenedOut) });
   },
   b3() {
     // Fragments are summarised with their rows; see `summariseFragments`.
@@ -356,8 +436,9 @@ export function summariseFragments(rows: readonly StudyResponseRow[], fragments:
 export function summariseStudy(
   key: StudyKey,
   allRows: readonly StudyResponseRow[],
-  options: { includeTeam?: boolean; fragments?: readonly StudyFragmentRow[] } = {}
+  options: { includeTeam?: boolean; fragments?: readonly StudyFragmentRow[]; language?: UiLanguage } = {}
 ): StudySummary {
+  const w = resultWords[options.language ?? "en"];
   const rows = options.includeTeam ? allRows : allRows.filter((row) => !row.team);
   const groups = byParticipant(rows);
   const byCondition: Record<string, number> = {};
@@ -374,13 +455,13 @@ export function summariseStudy(
     comparisons: [],
     facts: [],
   };
-  summarisers[key](groups, summary);
+  summarisers[key](groups, summary, w);
   if (key === "b3") {
     summary.fragments = summariseFragments(rows, options.fragments ?? []);
     const algorithm = summary.fragments.byMethod.algorithm;
     summary.facts.push({
-      label: "Algorithm fragments accepted (target: 80 of 100)",
-      value: algorithm ? `${algorithm.accepted} of ${algorithm.total}, ${algorithm.rated} with three ratings` : "none imported",
+      label: w.fragmentsAccepted,
+      value: algorithm ? w.acceptedValue(algorithm.accepted, algorithm.total, algorithm.rated) : w.noneImported,
     });
   }
   return summary;

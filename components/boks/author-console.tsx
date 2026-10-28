@@ -65,6 +65,8 @@ const messages = defineMessages(
       "Leave this empty to publish under your @nickname. Fill it in if you want a name printed above it.",
     optional: "Optional",
     revising: "Revising",
+    openQuote: "“",
+    closeQuote: "”",
     revisingWhy: "Submitting sends this same bok back for review.",
     startNew: "Start a new bok instead",
     titleLabel: "Title (optional)",
@@ -132,6 +134,8 @@ const messages = defineMessages(
         "Оставьте пустым, чтобы публиковаться под @никнеймом. Заполните, если хотите, чтобы над ним стояло имя.",
       optional: "Необязательно",
       revising: "Правка",
+      openQuote: "«",
+      closeQuote: "»",
       revisingWhy: "При отправке этот же текст вернётся на проверку.",
       startNew: "Начать новый текст",
       titleLabel: "Название (необязательно)",
@@ -434,7 +438,7 @@ export function AuthorConsole() {
             {revising && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--reader)] p-3 text-sm">
                 <span>
-                  {words.revising} <strong>&ldquo;{revising.title}&rdquo;</strong>. {words.revisingWhy}
+                  {words.revising} <strong>{words.openQuote}{revising.title}{words.closeQuote}</strong>. {words.revisingWhy}
                 </span>
                 <Button
                   type="button"
