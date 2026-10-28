@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { studyConditions, studyKeys } from "@/lib/boks/studies/protocol";
 import { materialBokIds, materialTemplates, parseStudyMaterials } from "@/lib/boks/studies/materials";
-import { b2PieceFor, b2Showcase, planA1, planA2, planB1, planB2, planRg1 } from "@/lib/boks/studies/plan";
+import { b2PieceFor, b2Showcase, planA1, planA2, planB1, planB2, planRg1, planRg2 } from "@/lib/boks/studies/plan";
+import { ndcgAt, planA3Targets, profileVector, rankA3, type A3Candidate } from "@/lib/boks/studies/a3";
 import { successfulFind, type SessionMeasurement } from "@/lib/boks/studies/session";
 import { studyResponsesCsv, summariseStudy, type StudyResponseRow } from "@/lib/boks/studies/results";
 import { createTraceRecorder, dueSamples, isGestureTrace, type GestureTrace } from "@/lib/boks/studies/gesture-trace";
@@ -11,7 +12,14 @@ const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")
 
 describe("study protocol", () => {
   it("assigns the conditions the database assigns", () => {
-    const migration = readFileSync("supabase/migrations/20261026100000_boks_studies.sql", "utf8");
+    // The latest migration that defines the list is the one in force.
+    const latest = readdirSync("supabase/migrations")
+      .filter((name) => name.endsWith(".sql"))
+      .sort()
+      .map((name) => readFileSync(`supabase/migrations/${name}`, "utf8"))
+      .filter((sql) => sql.includes("function public.boks_study_conditions"))
+      .at(-1)!;
+    const migration = latest;
     for (const key of studyKeys) {
       const line = migration.match(new RegExp(`when '${key}' then array\\[([^\\]]*)\\]`));
       expect(line, key).not.toBeNull();
@@ -81,6 +89,20 @@ describe("study plans", () => {
     expect(plan.sessions.map((session) => [session.interface, session.set])).toEqual([["cards", "b"], ["inline", "a"]]);
   });
 
+  it("splits rg2's slate into two sessions with different texts, in the condition's order", () => {
+    const slate = Array.from({ length: 10 }, (_, n) => id(n + 1));
+    for (let seed = 1; seed < 30; seed += 1) {
+      const plan = planRg2(slate, "catalogue_first", seed, 4);
+      expect(plan.sessions.map((session) => session.interface)).toEqual(["catalogue", "feed"]);
+      const [first, second] = plan.sessions.map((session) => session.bokIds);
+      expect(first).toHaveLength(4);
+      expect(second).toHaveLength(4);
+      expect(first.some((bok) => second.includes(bok))).toBe(false);
+      expect(planRg2(slate, "catalogue_first", seed, 4)).toEqual(plan);
+    }
+    expect(planRg2(slate, "feed_first", 3, 5).sessions[0].interface).toBe("feed");
+  });
+
   it("takes as many b1 pieces as asked", () => {
     expect(planB1({ pieces: [id(1), id(2), id(3)], perParticipant: 2 }, 3).pieces).toHaveLength(2);
   });
@@ -100,6 +122,63 @@ describe("study plans", () => {
     const showcase = b2Showcase(materials.pieces[0], 11);
     expect(showcase.filter((entry) => entry.sameAuthor)).toHaveLength(1);
     expect(showcase).toHaveLength(4);
+  });
+});
+
+describe("a3: recommendations from five boks", () => {
+  const materials = { targets: Array.from({ length: 16 }, (_, n) => id(100 + n)), profileSize: 5, perParticipant: 10, feedPoolSize: 40 };
+  const authorOf = (bok: string) => `Author ${Number(bok.slice(-3)) % 8}`;
+
+  it("draws ten new texts by other authors, the same for the same seed", () => {
+    const rated = [{ bokId: id(100), author: "Author 4" }, { bokId: id(1), author: "author 1" }];
+    const targets = planA3Targets(materials, 9, rated, authorOf);
+    expect(targets).toEqual(planA3Targets(materials, 9, rated, authorOf));
+    expect(targets).not.toContain(id(100));
+    expect(targets.some((bok) => ["Author 4", "Author 1"].includes(authorOf(bok)))).toBe(false);
+    expect(targets.length).toBeLessThanOrEqual(10);
+  });
+
+  it("has no profile when the five ratings carry no direction", () => {
+    expect(profileVector([{ embedding: [1, 0], interest: 3 }, { embedding: [0, 1], interest: 3 }], [0, 0])).toBeNull();
+    expect(profileVector([{ embedding: [1, 0], interest: 5 }, { embedding: [0, 1], interest: 1 }], [0.5, 0.5])).toEqual([2, -2]);
+  });
+
+  it("computes NDCG@5 with interest minus one as the gain", () => {
+    const interest = { a: 5, b: 1, c: 3, d: 1, e: 1, f: 2 };
+    expect(ndcgAt(["a", "c", "f", "b", "d", "e"], interest)).toBeCloseTo(1, 6);
+    const worse = ndcgAt(["b", "d", "e", "f", "c", "a"], interest)!;
+    expect(worse).toBeGreaterThan(0);
+    expect(worse).toBeLessThan(0.5);
+    expect(ndcgAt(["a", "b"], { a: 1, b: 1 })).toBeNull();
+  });
+
+  it("moves texts like the ones rated high up the order, and changes nothing else", () => {
+    const candidate = (n: number, embedding: number[]): A3Candidate => ({
+      id: id(n), title: `T${n}`, genre: "", mood: "", minutes: 3, wordCount: 400, createdAt: "2026-10-01T00:00:00Z",
+      authorName: `Author ${n}`, impressions: 10, starts: 5, completes: 3, skips: 2, likes: 0, shares: 0, comments: 0,
+      readSecondsTotal: 300, hasEmbedding: true, embedding,
+    });
+    const liked = [1, 0, 0];
+    const disliked = [0, 1, 0];
+    const profile = [
+      { bokId: id(1), interest: 5 }, { bokId: id(2), interest: 5 }, { bokId: id(3), interest: 1 },
+      { bokId: id(4), interest: 1 }, { bokId: id(5), interest: 3 },
+    ];
+    const near = [11, 12, 13];
+    const far = [14, 15, 16];
+    const candidates = [
+      candidate(1, liked), candidate(2, [0.9, 0.1, 0]), candidate(3, disliked), candidate(4, [0.1, 0.9, 0]), candidate(5, [0, 0, 1]),
+      ...near.map((n) => candidate(n, [0.95, 0.05, 0.1])),
+      ...far.map((n) => candidate(n, [0.05, 0.95, 0.1])),
+    ];
+    const targets = [...far, ...near].map(id);
+    const now = new Date("2026-11-01T00:00:00Z");
+    const ranking = rankA3({ participantId: "p1", profile, candidates, targets, now });
+    expect(ranking.hasProfile).toBe(true);
+    expect(ranking.withProfile.slice(0, 3).sort()).toEqual(near.map(id).sort());
+    expect(new Set(ranking.withoutProfile)).toEqual(new Set(targets));
+    // Same input, same orders: the analysis can rank again from the snapshot.
+    expect(rankA3({ participantId: "p1", profile, candidates, targets, now })).toEqual(ranking);
   });
 });
 
@@ -160,6 +239,42 @@ describe("study results", () => {
     expect(summary.comparisons[0].result.effect).toBe(2);
     expect(summary.comparisons[0].meetsThreshold).toBe(true);
     expect(summary.comparisons[1].meetsThreshold).toBe(false);
+  });
+
+  it("pairs rg2's feed and catalogue sessions within each participant", () => {
+    const rows: StudyResponseRow[] = [];
+    const measurement = (kind: "feed" | "catalogue"): SessionMeasurement => ({
+      interface: kind, minutes: 10, offered: [], reads: [], endedBy: "timer", elapsedSeconds: 600,
+    });
+    for (let n = 1; n <= 6; n += 1) {
+      for (const [index, kind] of (["feed", "catalogue"] as const).entries()) {
+        rows.push(row(n, { step: "session", condition: kind, participantCondition: "feed_first", answers: { index, measurement: measurement(kind) } }));
+        rows.push(row(n, { step: "session_survey", condition: kind, participantCondition: "feed_first", answers: {
+          index, survey: { perBok: {}, satisfaction: null, moved: null, sessionSatisfaction: kind === "feed" ? 6 : 5 },
+        } }));
+      }
+    }
+    const summary = summariseStudy("rg2", rows);
+    expect(summary.comparisons[0].result.effect).toBe(1);
+    expect(summary.comparisons[0].meetsThreshold).toBe(true);
+    expect(summary.facts[0].value).toBe("12");
+  });
+
+  it("judges a3 by the paired NDCG@5 of the two stored orders", () => {
+    const targets = ["a", "b", "c", "d", "e", "f"].map((letter, n) => id(200 + n));
+    const rows: StudyResponseRow[] = [];
+    for (let n = 1; n <= 6; n += 1) {
+      rows.push(row(n, { step: "ranking", reelId: null, participantCondition: "profile", answers: {
+        withProfile: targets, withoutProfile: [...targets].reverse(), hasProfile: true, targets,
+      } }));
+      targets.forEach((bok, position) => rows.push(row(n, { step: "interest", reelId: bok, answers: { phase: "test", interest: 5 - Math.min(position, 4) } })));
+    }
+    // An unfinished participant is counted, not compared.
+    rows.push(row(7, { step: "ranking", reelId: null, answers: { withProfile: targets, withoutProfile: targets, hasProfile: true, targets } }));
+    const summary = summariseStudy("a3", rows);
+    expect(summary.comparisons[0].result.effect).toBeGreaterThan(0.05);
+    expect(summary.comparisons[0].meetsThreshold).toBe(true);
+    expect(summary.facts[0].value).toBe("1");
   });
 
   it("counts a1 refusals in the denominator", () => {

@@ -9,6 +9,11 @@
  * before, read to the end by the measurement *and* by their own account,
  * within the session's minutes, and the choice rated 4 or 5 of 5. Every raw
  * value is stored, so a different rule can be applied to the same data later.
+ *
+ * rg2 is judged by a different number from the same survey: how satisfied the
+ * participant is with the whole session of choosing and reading, 1..7, asked
+ * after every session in both studies, including a session in which nothing
+ * was opened.
  */
 
 export type ReadOutcome = "complete" | "skip";
@@ -43,6 +48,10 @@ export type SessionSurvey = {
   perBok: Record<string, { readBefore: "yes" | "no"; finished: "yes" | "part" | "no" }>;
   /** «Насколько вы довольны выбором?» 1..5; null when nothing was opened. */
   satisfaction: number | null;
+  /** «Насколько вы довольны этим сеансом выбора и чтения?» 1..7, always asked. Absent in answers saved before 28 October 2026. */
+  sessionSatisfaction?: number | null;
+  /** «Прочитанное меня тронуло» 1..7, the emotional response; null when nothing was opened. */
+  moved?: number | null;
 };
 
 export const successfulSatisfaction = 4;

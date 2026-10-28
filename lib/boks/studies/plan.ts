@@ -55,6 +55,27 @@ export function planA1(materials: A1Materials, condition: string, seed: number):
   return { reads, choices: shuffle([...wholes, ...fragments], next) };
 }
 
+export type Rg2Plan = {
+  /** Both sessions, in the order the condition names; the texts of one are never in the other. */
+  sessions: { interface: "feed" | "catalogue"; bokIds: string[] }[];
+};
+
+/**
+ * rg2 splits the participant's own served slate between the two sessions by
+ * alternating ranks, so each half is as personal as the other, and the seed
+ * says which half the feed gets. The feed shows its half in ranked order; the
+ * catalogue lists its half alphabetically.
+ */
+export function planRg2(slate: readonly string[], condition: string, seed: number, perSession: number): Rg2Plan {
+  const next = createRandom(seed);
+  const even = slate.filter((_, index) => index % 2 === 0).slice(0, perSession);
+  const odd = slate.filter((_, index) => index % 2 === 1).slice(0, perSession);
+  const [feedIds, catalogueIds] = next() < 0.5 ? [even, odd] : [odd, even];
+  const feed = { interface: "feed" as const, bokIds: feedIds };
+  const catalogue = { interface: "catalogue" as const, bokIds: catalogueIds };
+  return { sessions: condition === "catalogue_first" ? [catalogue, feed] : [feed, catalogue] };
+}
+
 export type BrowseInterface = "feed" | "catalogue" | "inline" | "cards";
 
 export type A2Plan = {

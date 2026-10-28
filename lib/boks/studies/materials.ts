@@ -17,8 +17,9 @@ export type Rg1Materials = {
 };
 
 export type Rg2Materials = {
+  /** Each session's length; every participant has two. */
   minutes: number;
-  /** How many texts the feed serves and the catalogue lists. */
+  /** Texts per session. Twice as many are drawn from the participant's own feed and split between the two. */
   poolSize: number;
 };
 
@@ -34,6 +35,21 @@ export type A2Materials = {
   /** Two comparable sets; each participant reads one per interface. */
   setA: string[];
   setB: string[];
+};
+
+export type A3Materials = {
+  /**
+   * The test pool: texts the ten after the profile are drawn from. None is
+   * served while the profile forms, and texts by the authors of the profile's
+   * five are left out, so the ten are new and by other authors.
+   */
+  targets: string[];
+  /** Rated boks that make the profile. The hypothesis says five. */
+  profileSize: number;
+  /** New texts rated after the profile is fixed. The hypothesis says ten. */
+  perParticipant: number;
+  /** How many texts of the participant's own feed the profile is formed from. */
+  feedPoolSize: number;
 };
 
 export type B1Materials = {
@@ -66,6 +82,7 @@ export type StudyMaterials = {
   rg2: Rg2Materials;
   a1: A1Materials;
   a2: A2Materials;
+  a3: A3Materials;
   b1: B1Materials;
   b2: B2Materials;
   b3: B3Materials;
@@ -78,9 +95,10 @@ export type ParsedMaterials<K extends StudyKey> =
 /** What a new study's editor starts from: the shape, with nothing chosen. */
 export const materialTemplates: { [K in StudyKey]: StudyMaterials[K] } = {
   rg1: { familiarization: "", targets: [] },
-  rg2: { minutes: 10, poolSize: 40 },
+  rg2: { minutes: 10, poolSize: 30 },
   a1: { pairs: [], choices: [] },
   a2: { minutes: 10, setA: [], setB: [] },
+  a3: { targets: [], profileSize: 5, perParticipant: 10, feedPoolSize: 40 },
   b1: { pieces: [], perParticipant: 2 },
   b2: { pieces: [], distractorAuthors: [] },
   b3: { batch: "" },
@@ -152,7 +170,7 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
   rg2(raw, read) {
     return {
       minutes: read.number(raw.minutes, "minutes", 1, 30, 10),
-      poolSize: read.number(raw.poolSize, "poolSize", 10, 120, 40),
+      poolSize: read.number(raw.poolSize, "poolSize", 10, 60, 30),
     };
   },
   a1(raw, read) {
@@ -179,6 +197,13 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
     if (setA.some((id) => setB.includes(id))) read.problems.push("setA and setB must not share a bok.");
     if (setA.length !== setB.length) read.problems.push("setA and setB should be the same size.");
     return { minutes: read.number(raw.minutes, "minutes", 1, 30, 10), setA, setB };
+  },
+  a3(raw, read) {
+    const profileSize = read.number(raw.profileSize, "profileSize", 3, 10, 5);
+    const perParticipant = read.number(raw.perParticipant, "perParticipant", 5, 20, 10);
+    // Room for the authors of the profile's five to be left out.
+    const targets = read.ids(raw.targets, "targets", perParticipant + profileSize);
+    return { targets, profileSize, perParticipant, feedPoolSize: read.number(raw.feedPoolSize, "feedPoolSize", 10, 80, 40) };
   },
   b1(raw, read) {
     const pieces = read.ids(raw.pieces, "pieces", 1);

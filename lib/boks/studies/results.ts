@@ -2,6 +2,7 @@ import { comparePaired, compareIndependent } from "@/lib/recsys/statistics";
 import type { ComparisonResult } from "@/lib/recsys/statistics/types";
 import type { StudyKey } from "@/lib/boks/studies/protocol";
 import { successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
+import { ndcgAt, type A3Ranking } from "@/lib/boks/studies/a3";
 
 /**
  * Raw study responses into the numbers each hypothesis is judged by.
@@ -47,7 +48,8 @@ export type StudyComparison = {
   label: string;
   /** What the hypothesis needs from the effect. */
   threshold: number;
-  unit: "points" | "share";
+  /** points: a 1–7 or 1–5 scale; share: a proportion; score: a 0–1 metric such as NDCG, to three places. */
+  unit: "points" | "share" | "score";
   controlLabel: string;
   variantLabel: string;
   result: ComparisonResult;
@@ -151,6 +153,17 @@ export function sessionsOf(rows: readonly StudyResponseRow[]) {
     .map(([, value]) => ({ ...value, success: successfulFind(value.measurement, value.survey) !== null }));
 }
 
+/** a3: the first interest rating of each text shown after the profile was fixed. */
+export function a3TestInterest(rows: readonly StudyResponseRow[]) {
+  const interest: Record<string, number> = {};
+  for (const row of rows) {
+    if (row.step !== "interest" || row.answers.phase !== "test" || !row.reelId) continue;
+    const value = scale(row.answers.interest);
+    if (value !== null && interest[row.reelId] === undefined) interest[row.reelId] = value;
+  }
+  return interest;
+}
+
 const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, summary: StudySummary) => void } = {
   rg1(groups, summary) {
     const moved: Record<"series" | "text", number[]> = { series: [], text: [] };
@@ -170,18 +183,30 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
     );
   },
   rg2(groups, summary) {
-    const success: Record<"feed" | "catalogue", number[]> = { feed: [], catalogue: [] };
+    const satisfaction: { control: number; variant: number }[] = [];
+    const moved: { control: number; variant: number }[] = [];
+    const success: { control: number; variant: number }[] = [];
     let none = 0;
     for (const rows of groups.values()) {
-      const [session] = sessionsOf(rows);
-      if (!session) continue;
-      success[session.measurement.interface === "feed" ? "feed" : "catalogue"].push(session.success ? 1 : 0);
-      if (session.measurement.reads.length === 0) none += 1;
+      const sessions = sessionsOf(rows);
+      const feed = sessions.find((session) => session.measurement.interface === "feed");
+      const catalogue = sessions.find((session) => session.measurement.interface === "catalogue");
+      if (!feed || !catalogue) continue;
+      const feedScore = scale(feed.survey.sessionSatisfaction);
+      const catalogueScore = scale(catalogue.survey.sessionSatisfaction);
+      if (feedScore !== null && catalogueScore !== null) satisfaction.push({ control: catalogueScore, variant: feedScore });
+      const feedMoved = scale(feed.survey.moved);
+      const catalogueMoved = scale(catalogue.survey.moved);
+      if (feedMoved !== null && catalogueMoved !== null) moved.push({ control: catalogueMoved, variant: feedMoved });
+      success.push({ control: catalogue.success ? 1 : 0, variant: feed.success ? 1 : 0 });
+      none += [feed, catalogue].filter((session) => session.measurement.reads.length === 0).length;
     }
     summary.comparisons.push(
-      compare("Successful session", success.catalogue, success.feed, 0.15, "share", ["Catalogue", "Feed"])
+      comparePairs("«Насколько вы довольны этим сеансом выбора и чтения?», 1–7", satisfaction, 0.5, "points", ["Catalogue", "Feed"]),
+      comparePairs("«Прочитанное меня тронуло», 1–7 (secondary; both sessions with a text)", moved, 0, "points", ["Catalogue", "Feed"]),
+      comparePairs("Successful session (secondary)", success, 0, "share", ["Catalogue", "Feed"])
     );
-    summary.facts.push({ label: "Sessions with nothing opened (they count as unsuccessful)", value: String(none) });
+    summary.facts.push({ label: "Sessions with nothing opened (still rated for satisfaction)", value: String(none) });
   },
   a1(groups, summary) {
     const pairs: { control: number; variant: number }[] = [];
@@ -207,14 +232,53 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   },
   a2(groups, summary) {
     const pairs: { control: number; variant: number }[] = [];
+    const satisfaction: { control: number; variant: number }[] = [];
     for (const rows of groups.values()) {
       const sessions = sessionsOf(rows);
       const inline = sessions.find((session) => session.measurement.interface === "inline");
       const cards = sessions.find((session) => session.measurement.interface === "cards");
-      if (inline && cards) pairs.push({ control: cards.success ? 1 : 0, variant: inline.success ? 1 : 0 });
+      if (inline && cards) {
+        pairs.push({ control: cards.success ? 1 : 0, variant: inline.success ? 1 : 0 });
+        const inlineScore = scale(inline.survey.sessionSatisfaction);
+        const cardsScore = scale(cards.survey.sessionSatisfaction);
+        if (inlineScore !== null && cardsScore !== null) satisfaction.push({ control: cardsScore, variant: inlineScore });
+      }
     }
     summary.comparisons.push(
-      comparePairs("Session with a successful find", pairs, 0.1, "share", ["Card + reading screen", "Text in the feed"])
+      comparePairs("Session with a successful find", pairs, 0.1, "share", ["Card + reading screen", "Text in the feed"]),
+      comparePairs("Session satisfaction, 1–7 (secondary)", satisfaction, 0, "points", ["Card + reading screen", "Text in the feed"])
+    );
+  },
+  a3(groups, summary) {
+    const pairs: { control: number; variant: number }[] = [];
+    let flat = 0;
+    let incomplete = 0;
+    let noDirection = 0;
+    for (const rows of groups.values()) {
+      const ranking = rows.find((row) => row.step === "ranking")?.answers as A3Ranking | undefined;
+      if (!ranking) continue;
+      const interest = a3TestInterest(rows);
+      const targets = ranking.withProfile;
+      if (targets.some((id) => interest[id] === undefined)) {
+        incomplete += 1;
+        continue;
+      }
+      if (!ranking.hasProfile) noDirection += 1;
+      const withProfile = ndcgAt(ranking.withProfile, interest);
+      const withoutProfile = ndcgAt(ranking.withoutProfile, interest);
+      if (withProfile === null || withoutProfile === null) {
+        flat += 1;
+        continue;
+      }
+      pairs.push({ control: withoutProfile, variant: withProfile });
+    }
+    summary.comparisons.push(
+      comparePairs("NDCG@5 of the ten new texts", pairs, 0.05, "score", ["Without profile", "Profile from five boks"])
+    );
+    summary.facts.push(
+      { label: "Profile fixed, ten not all rated yet (can return later)", value: String(incomplete) },
+      { label: "Every one of the ten rated 1 (no order is better; left out)", value: String(flat) },
+      { label: "Five ratings all at 3 (no profile; both orders the same, kept in)", value: String(noDirection) }
     );
   },
   b1(groups, summary) {

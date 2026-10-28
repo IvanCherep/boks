@@ -55,6 +55,7 @@ import {
 import type { ReaderEvent } from "@/lib/boks/contracts";
 import type { StudyKey, StudyStep } from "@/lib/boks/studies/protocol";
 import type { StudyFragmentRow, StudyResponseRow } from "@/lib/boks/studies/results";
+import type { A3Candidate } from "@/lib/boks/studies/a3";
 import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
 import {
@@ -1542,7 +1543,8 @@ export type StudyParticipant = {
   seed: number;
   createdAt: string;
   completedAt: string | null;
-  steps: { step: string; reelId: string | null; fragmentId: string | null; condition: string | null }[];
+  /** What they have already answered; `answers` only for steps a protocol resumes from (a3's ratings and ranking). */
+  steps: { step: string; reelId: string | null; fragmentId: string | null; condition: string | null; answers?: Record<string, unknown> | null }[];
 };
 
 export type StudyState = {
@@ -1624,6 +1626,18 @@ export async function claimStudyTrace(participantId: string, reelId: string) {
   const result = await supabase.rpc("claim_boks_study_trace", { p_participant_id: participantId, p_reel_id: reelId });
   if (result.error) throw result.error;
   return (result.data ?? null) as { traceId: number; trace: GestureTrace } | null;
+}
+
+/**
+ * Study a3's snapshot: the counters the ranker reads and the semantic vector
+ * of each bok asked for, at most 20. A participant asks for their own; an
+ * admin previewing passes no participant.
+ */
+export async function loadStudyA3Candidates(participantId: string | null, ids: readonly string[]): Promise<A3Candidate[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("get_boks_study_a3_candidates", { p_participant_id: participantId, p_reel_ids: [...new Set(ids)] });
+  if (result.error) throw result.error;
+  return (result.data ?? []) as A3Candidate[];
 }
 
 /** Published boks by id, in the order asked; an unpublished id is left out. */

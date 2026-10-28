@@ -193,6 +193,8 @@ export type BoksGrowth = {
   }>;
   cohorts: Array<{ week: string; size: number; retained: Array<{ offset: number; readers: number }> }>;
   activation: { newReaders: number; finishedOne: number; finishedThree: number; signedUp: number };
+  /** Readers who read again exactly seven UTC days after their first reading day; absent before migration 20261028110000. */
+  daySeven?: { eligible: number; returned: number };
   stickiness: { daily: number; weekly: number; monthly: number };
   totals: { readers: number; accounts: number; minutes: number; boksFinished: number; publishedBoks: number };
 };

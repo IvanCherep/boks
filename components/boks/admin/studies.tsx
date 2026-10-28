@@ -19,7 +19,7 @@ import {
   type StudyAdminRow,
 } from "@/components/boks/supabase-browser-data";
 import { StudyFormGallery } from "@/components/boks/admin/study-form-gallery";
-import { materialBokIds, materialTemplates, parseStudyMaterials, seriesBokIds } from "@/lib/boks/studies/materials";
+import { materialBokIds, materialTemplates, parseStudyMaterials, seriesBokIds, type StudyMaterials } from "@/lib/boks/studies/materials";
 import { isSeriesBok } from "@/components/boks/studies/study-series";
 import { poemManifestFor } from "@/components/boks/poetry/poems";
 import { studyConditions, studyDescriptions, studyPath, type StudyKey } from "@/lib/boks/studies/protocol";
@@ -178,9 +178,10 @@ function StudyPanel({ study, onChange }: { study: StudyAdminRow; onChange: () =>
 
 const materialHelp: Record<StudyKey, string> = {
   rg1: "familiarization: a Series piece shown first in both formats. targets: Series pieces; each participant gets one, in their assigned format.",
-  rg2: "minutes: the session length. poolSize: how many texts of the participant's own feed both arms get - the feed in its order, the catalogue alphabetically.",
+  rg2: "minutes: each session's length; everyone has a feed session and a catalogue session, in the assigned order. poolSize: texts per session - twice as many are drawn from the participant's own feed and split by alternating ranks, so the two sessions never share a text.",
   a1: "pairs: at least 4 of { whole, fragment } of similar length (±10%), theme and difficulty. choices: new texts for the free choice, at least two of each kind ({ bokId, kind }).",
   a2: "setA and setB: comparable lists of the same size, in the order the feed shows them. minutes: each session's length.",
+  a3: "targets: the test pool, at least perParticipant + profileSize boks with semantic vectors, by many authors; none is served while the profile forms. profileSize: rated boks that fix the profile (5). perParticipant: new texts rated after it (10). feedPoolSize: how much of the participant's own feed the profile is formed from.",
   b1: "pieces: immersive poems with gesture scenes. perParticipant: how many each participant reads; their roles follow the recorded traces.",
   b2: "pieces: { series, author, sameAuthor: [other plain texts by them], others: [plain texts by other authors] }. distractorAuthors: names added to the screening question.",
   b3: "batch: the imported fragment batch to rate; empty rates every fragment.",
@@ -219,7 +220,18 @@ function MaterialsEditor({ study, onSaved }: { study: StudyAdminRow; onSaved: ()
     const notSeries = seriesBokIds(study.key, raw)
       .filter((id) => (study.key === "b1" ? !poemManifestFor(id) : !isSeriesBok(id)))
       .map((id) => `${id} is not ${study.key === "b1" ? "an immersive poem" : "a Series piece"}.`);
-    const all = [...parsed.problems, ...unpublished, ...notSeries];
+    // a1: a pair is comparable only at a similar length - within 10% in words.
+    const uneven = study.key === "a1" && parsed.ok
+      ? (parsed.materials as StudyMaterials["a1"]).pairs.flatMap((pair, index) => {
+          const whole = byId.get(pair.whole)?.wordCount ?? 0;
+          const fragment = byId.get(pair.fragment)?.wordCount ?? 0;
+          if (!whole || !fragment) return [];
+          return Math.abs(whole - fragment) / Math.max(whole, fragment) > 0.1
+            ? [`pairs[${index}]: ${whole} against ${fragment} words differ by more than 10%.`]
+            : [];
+        })
+      : [];
+    const all = [...parsed.problems, ...unpublished, ...notSeries, ...uneven];
     setProblems(all);
     return all.length ? null : (raw as Record<string, unknown>);
   }
@@ -342,12 +354,14 @@ function FragmentImport({ onChange }: { onChange: () => Promise<void> }) {
   );
 }
 
-function formatValue(value: number, unit: "points" | "share") {
+function formatValue(value: number, unit: "points" | "share" | "score") {
+  if (unit === "score") return value.toFixed(3);
   return unit === "share" ? `${Math.round(value * 1000) / 10}%` : (Math.round(value * 100) / 100).toFixed(2);
 }
 
-function formatEffect(value: number, unit: "points" | "share") {
+function formatEffect(value: number, unit: "points" | "share" | "score") {
   const sign = value > 0 ? "+" : "";
+  if (unit === "score") return `${sign}${value.toFixed(3)}`;
   return unit === "share" ? `${sign}${Math.round(value * 1000) / 10} pp` : `${sign}${(Math.round(value * 100) / 100).toFixed(2)}`;
 }
 

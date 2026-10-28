@@ -56,6 +56,7 @@ The trajectory. Everything plotted weekly is a count or a total.
 | Minutes read per week | Σ max(`active_seconds`) by week | The north star as a trend rather than a snapshot. |
 | Active readers / sessions / boks finished per week | distinct readers, sessions, `complete` events by week | Whether engagement grows with the reader base or dilutes. |
 | Retention triangle | per arrival week: share still reading N weeks later, **with cohort size printed** | The standard retention view. Cohort size is beside every row because a percentage off four readers is one person changing their mind. |
+| Returned on day 7 | readers whose first reader event fell on a UTC day 7–90 days ago (the denominator, printed); of them, those with any reader event exactly 7 UTC days later | The presentation's retention metric beside session satisfaction (value proposition, Lean Canvas). Readers too new to have had a day 7 are left out rather than counted as gone. |
 | Arrived / finished one / finished three / created an account | readers whose first event was in the last 30 days | Activation. A reader who never finishes a boks has not experienced the product, so acquisition spend on them is wasted. |
 | Boks published per week | `reels` published by week | Whether supply keeps pace with consumption. |
 

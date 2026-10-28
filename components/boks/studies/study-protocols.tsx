@@ -5,7 +5,7 @@ import type { Story } from "@/components/boks/client-types";
 import { getBrowserId } from "@/components/boks/reader-behavior";
 import { effectiveReadingLanguages, storedReadingLanguages } from "@/components/boks/reading-languages";
 import { inferReadOutcome } from "@/components/boks/reader-behavior";
-import { loadStudyBoks, loadSupabaseReaderFeed, type StudyFragment } from "@/components/boks/supabase-browser-data";
+import { loadStudyBoks, loadSupabaseReaderFeed, type StudyFragment, type StudyParticipant } from "@/components/boks/supabase-browser-data";
 import type { StudyWords } from "@/components/boks/studies/study-copy";
 import {
   BokChoiceForm,
@@ -26,13 +26,14 @@ import {
 } from "@/components/boks/studies/study-reader";
 import { StudySeriesPlayer, type SeriesMeasure } from "@/components/boks/studies/study-series";
 import type { StudyMaterials } from "@/lib/boks/studies/materials";
-import { b2PieceFor, b2Showcase, planA1, planA2, planB1, planB2, planRg1, type StudyFormat } from "@/lib/boks/studies/plan";
+import { b2PieceFor, b2Showcase, planA1, planA2, planB1, planB2, planRg1, planRg2, type StudyFormat } from "@/lib/boks/studies/plan";
+import { interestScale, planA3Targets, rankA3, type A3Candidate, type A3Rating } from "@/lib/boks/studies/a3";
 import type { StudyKey, StudyStep } from "@/lib/boks/studies/protocol";
 import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { SessionMeasurement } from "@/lib/boks/studies/session";
 
 /**
- * The seven protocols, each a short sequence of screens. A protocol knows
+ * The eight protocols, each a short sequence of screens. A protocol knows
  * its steps and nothing about storage: it hands every answer to `run.record`,
  * which writes it - or, in a Studio preview, drops it.
  */
@@ -42,6 +43,8 @@ export type StudyRun<K extends StudyKey = StudyKey> = {
   words: StudyWords;
   preview: boolean;
   participant: { id: string; condition: string; seed: number };
+  /** Steps already answered on an earlier visit; empty in a preview. */
+  history: StudyParticipant["steps"];
   materials: StudyMaterials[K];
   record: (step: StudyStep, answers: Record<string, unknown>, extra?: {
     reelId?: string | null;
@@ -50,6 +53,8 @@ export type StudyRun<K extends StudyKey = StudyKey> = {
     clientSeconds?: number | null;
   }) => Promise<void>;
   claimTrace: (reelId: string) => Promise<{ traceId: number; trace: GestureTrace } | null>;
+  /** a3: counters and semantic vectors of the profile's boks and the targets. */
+  a3Candidates: (ids: readonly string[]) => Promise<A3Candidate[]>;
   nextFragment: () => Promise<StudyFragment | null>;
   /** Marks the participant finished; the page then thanks them. */
   finish: () => void;
@@ -68,6 +73,7 @@ export const studyQuestions = {
   rg1: (words: StudyWords) => [agree(words, "moved", words.rg1Moved), agree(words, "thought", words.rg1Thought)],
   a1: (words: StudyWords) => [agree(words, "closure", words.a1Closure)],
   b1: (words: StudyWords) => [intensity(words, "intensity", words.b1Intensity), intensity(words, "feeling", words.b1Feeling)],
+  a3: (words: StudyWords): ScaleQuestion[] => [{ key: "interest", label: words.a3Interest, max: interestScale, low: words.scaleDull, high: words.scaleInteresting }],
 };
 
 /** Published boks by id, loaded once; `null` while loading. */
@@ -218,28 +224,48 @@ function Session({ run, index, kind, set, stories, minutes, onSaved }: {
   );
 }
 
-function Rg2({ run }: { run: StudyRun<"rg2"> }) {
-  const { words } = run;
-  const [pool, setPool] = useState<Story[] | null>(null);
+/** The participant's own served slate, for rg2's sessions and a3's profile. */
+function useServedSlate(run: StudyRun, limit: number) {
+  const [slate, setSlate] = useState<Story[] | null>(null);
   const [error, setError] = useState("");
-  const kind = run.participant.condition === "catalogue" ? "catalogue" : "feed";
   useEffect(() => {
     let cancelled = false;
-    // Both arms get the reader's own served slate: the feed shows it in its
-    // ranked order, the catalogue lists the same texts alphabetically.
     loadSupabaseReaderFeed({
-      limit: run.materials.poolSize,
+      limit,
       visitorId: getBrowserId("boks-reader"),
-      sessionId: `study-rg2-${run.participant.id}`,
+      sessionId: `study-${run.key}-${run.participant.id}`,
       readingLanguages: effectiveReadingLanguages(storedReadingLanguages()),
     }).then(
-      (payload) => { if (!cancelled) setPool(payload.stories.slice(0, run.materials.poolSize)); },
+      (payload) => { if (!cancelled) setSlate(payload.stories.slice(0, limit)); },
       (failure: unknown) => { if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure)); }
     );
     return () => { cancelled = true; };
-  }, [run]);
-  if (!pool) return <Loading words={words} error={error} />;
-  return <Session run={run} index={0} kind={kind} stories={pool} minutes={run.materials.minutes} onSaved={run.finish} />;
+  }, [run, limit]);
+  return { slate, error };
+}
+
+/**
+ * rg2: every participant has a feed session and a catalogue session, in the
+ * order the condition names, with different texts - two halves of their own
+ * served slate. The same survey follows both.
+ */
+function Rg2({ run }: { run: StudyRun<"rg2"> }) {
+  const { words } = run;
+  const { slate, error } = useServedSlate(run, run.materials.poolSize * 2);
+  const [step, setStep] = useState<0 | "between" | 1>(0);
+  const plan = useMemo(
+    () => (slate ? planRg2(slate.map((story) => story.id), run.participant.condition, run.participant.seed, run.materials.poolSize) : null),
+    [slate, run]
+  );
+  if (!slate || !plan) return <Loading words={words} error={error} />;
+  if (step === "between") {
+    return <Interstitial eyebrow={words.eyebrow} title={words.secondSessionTitle} body={<p>{words.secondSessionBody}</p>} action={words.continue} onAction={() => setStep(1)} />;
+  }
+  const byId = new Map(slate.map((story) => [story.id, story]));
+  const session = plan.sessions[step];
+  const stories = session.bokIds.map((id) => byId.get(id)).filter((story): story is Story => Boolean(story));
+  return <Session key={step} run={run} index={step} kind={session.interface} stories={stories} minutes={run.materials.minutes}
+    onSaved={() => (step === 0 ? setStep("between") : run.finish())} />;
 }
 
 function A2({ run }: { run: StudyRun<"a2"> }) {
@@ -320,6 +346,128 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
   }
   // The chosen text, to read if they want: the choice is already recorded.
   return chosen ? <StudyTextReader story={chosen} words={words} doneLabel={words.done} onDone={run.finish} /> : null;
+}
+
+// a3 ----------------------------------------------------------------------
+
+/** A text to read, then the interest question on leaving it. */
+function InterestRead({ run, story, progress, onRated }: {
+  run: StudyRun<"a3">;
+  story: Story;
+  progress: string;
+  onRated: (interest: number, measure: ReadingMeasure) => Promise<void>;
+}) {
+  const { words } = run;
+  const [measure, setMeasure] = useState<ReadingMeasure | null>(null);
+  const saving = useSaving();
+  if (!measure) {
+    return <StudyTextReader key={story.id} story={story} words={words} note={progress} doneLabel={words.a3Next} onDone={setMeasure} />;
+  }
+  return (
+    <>
+      <ScaleForm words={words} eyebrow={progress} title={story.title} questions={studyQuestions.a3(words)} busy={saving.busy}
+        onSubmit={(answers) => saving.save(() => onRated(Number(answers.interest), measure), () => undefined)} />
+      <SaveError error={saving.error} />
+    </>
+  );
+}
+
+/**
+ * a3: the ordinary feed with an interest question on leaving each text until
+ * the profile has its five ratings; then the snapshot and both versions'
+ * orders are recorded, and the ten targets follow in the seed's order. Every
+ * answer is written as it is given, so a participant can leave and come back
+ * to the same place.
+ */
+function A3({ run }: { run: StudyRun<"a3"> }) {
+  const { words, materials } = run;
+  const [ratings, setRatings] = useState<{ profile: A3Rating[]; test: A3Rating[] }>(() => ({
+    profile: run.history.filter((step) => step.step === "interest" && step.answers?.phase === "profile" && step.reelId)
+      .map((step) => ({ bokId: step.reelId!, interest: Number(step.answers?.interest) })),
+    test: run.history.filter((step) => step.step === "interest" && step.answers?.phase === "test" && step.reelId)
+      .map((step) => ({ bokId: step.reelId!, interest: Number(step.answers?.interest) })),
+  }));
+  const [targets, setTargets] = useState<string[] | null>(() => {
+    const ranked = run.history.find((step) => step.step === "ranking")?.answers?.targets;
+    return Array.isArray(ranked) ? ranked.filter((id): id is string => typeof id === "string") : null;
+  });
+  const [phase, setPhase] = useState<"intro" | "reading" | "ready">("intro");
+  const [error, setError] = useState("");
+  const fixing = useRef(false);
+  const profileDone = ratings.profile.length >= materials.profileSize;
+  const { slate, error: slateError } = useServedSlate(run, materials.feedPoolSize);
+  const { stories: pool, error: poolError } = useStories(materials.targets);
+  const total = materials.profileSize + materials.perParticipant;
+  const testDone = targets !== null && targets.every((id) => ratings.test.some((entry) => entry.bokId === id));
+  useEffect(() => {
+    if (testDone) run.finish();
+  }, [testDone, run]);
+
+  // Five ratings in: fix the profile, snapshot the candidates, record both orders.
+  useEffect(() => {
+    if (!profileDone || targets || !pool || !slate || fixing.current) return;
+    fixing.current = true;
+    const known = new Map([...slate, ...pool.values()].map((story) => [story.id, story]));
+    const profile = ratings.profile.slice(0, materials.profileSize);
+    const chosen = planA3Targets(materials, run.participant.seed,
+      profile.map((entry) => ({ bokId: entry.bokId, author: known.get(entry.bokId)?.authorName ?? "" })),
+      (id) => pool.get(id)?.authorName ?? null);
+    run.a3Candidates([...profile.map((entry) => entry.bokId), ...chosen])
+      .then(async (candidates) => {
+        const ranking = rankA3({ participantId: run.participant.id, profile, candidates, targets: chosen });
+        await run.record("ranking", { ...ranking, targets: chosen, profile, profileSize: materials.profileSize });
+        setTargets(chosen);
+        setPhase("ready");
+      })
+      .catch((failure: unknown) => {
+        fixing.current = false;
+        setError(failure instanceof Error ? failure.message : String(failure));
+      });
+  }, [profileDone, targets, pool, slate, ratings.profile, materials, run]);
+
+  if (error || slateError || poolError) return <Loading words={words} error={error || slateError || poolError} />;
+  if (phase === "intro") {
+    return <Interstitial eyebrow={words.eyebrow} title={words.a3IntroTitle} body={<p>{words.a3IntroBody(total)}</p>}
+      action={ratings.profile.length + ratings.test.length ? words.continue : words.start} onAction={() => setPhase("reading")} />;
+  }
+  if (!slate || !pool) return <Loading words={words} />;
+
+  const rate = (bokId: string, testPhase: boolean, position: number) => async (interest: number, measure: ReadingMeasure) => {
+    const story = testPhase ? pool.get(bokId) : slate.find((entry) => entry.id === bokId);
+    await run.record("interest", {
+      phase: testPhase ? "test" : "profile",
+      position,
+      interest,
+      activeSeconds: measure.activeSeconds,
+      progress: measure.progress,
+      outcome: story ? inferReadOutcome(story, measure.activeSeconds, measure.progress, { scrollable: measure.scrollable }) : null,
+    }, { reelId: bokId, condition: testPhase ? "test" : "profile", clientSeconds: measure.activeSeconds });
+    setRatings((current) => ({
+      ...current,
+      [testPhase ? "test" : "profile"]: [...current[testPhase ? "test" : "profile"], { bokId, interest }],
+    }));
+  };
+
+  if (!profileDone) {
+    // The ordinary feed, in its own order, without the test pool and without what is already rated.
+    const rated = new Set(ratings.profile.map((entry) => entry.bokId));
+    const next = slate.find((story) => !rated.has(story.id) && !materials.targets.includes(story.id));
+    if (!next) return <StudyMessage title={words.thanksTitle} body={<p>{words.a3FeedEmpty}</p>} />;
+    const done = ratings.profile.length;
+    return <InterestRead key={next.id} run={run} story={next} progress={words.a3Progress(done + 1, total)} onRated={rate(next.id, false, done)} />;
+  }
+  if (!targets) return <Loading words={words} />;
+  if (phase === "ready") {
+    return <Interstitial eyebrow={words.eyebrow} title={words.a3ProfileReadyTitle} body={<p>{words.a3ProfileReadyBody(targets.length)}</p>}
+      action={words.continue} onAction={() => setPhase("reading")} />;
+  }
+  const answered = new Set(ratings.test.map((entry) => entry.bokId));
+  const position = targets.findIndex((id) => !answered.has(id));
+  if (position === -1) return <Loading words={words} />;
+  const story = pool.get(targets[position]);
+  if (!story) return <Loading words={words} error="A study text is not published." />;
+  return <InterestRead key={story.id} run={run} story={story} progress={words.a3Progress(materials.profileSize + position + 1, total)}
+    onRated={rate(story.id, true, position)} />;
 }
 
 // b1 ----------------------------------------------------------------------
@@ -554,6 +702,7 @@ export function StudyProtocol({ run }: { run: StudyRun }) {
     case "rg2": return <Rg2 run={run as StudyRun<"rg2">} />;
     case "a1": return <A1 run={run as StudyRun<"a1">} />;
     case "a2": return <A2 run={run as StudyRun<"a2">} />;
+    case "a3": return <A3 run={run as StudyRun<"a3">} />;
     case "b1": return <B1 run={run as StudyRun<"b1">} />;
     case "b2": return <B2 run={run as StudyRun<"b2">} />;
     case "b3": return <B3 run={run as StudyRun<"b3">} />;

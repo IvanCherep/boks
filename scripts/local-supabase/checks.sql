@@ -808,6 +808,10 @@ begin
   -- ---------------------------------------------------------------- growth
   v_result := public.get_boks_growth(12);
   perform public.boks_assert(
+    (v_result -> 'daySeven' ->> 'returned')::int <= (v_result -> 'daySeven' ->> 'eligible')::int,
+    'return on day 7 is counted inside its own denominator'
+  );
+  perform public.boks_assert(
     jsonb_array_length(v_result -> 'weekly') = 12,
     'growth returns one row per week in the window, including weeks with nothing in them'
   );
@@ -3229,6 +3233,47 @@ begin
 
   select count(*) into v_count from public.boks_study_yokes;
   perform public.boks_assert(v_count = 1, 'one yoke was stored');
+
+  -- a3 (migration 20261028100000): its participants resume from their own
+  -- ratings, and the ranking snapshot is theirs and an admin's only.
+  perform public.boks_test_login(v_admin);
+  set local role authenticated;
+  perform public.set_boks_study_enabled('a3', true);
+  perform public.boks_assert(
+    jsonb_array_length(public.get_boks_study_a3_candidates(null, array[v_reel])) = 1,
+    'an admin previewing a3 gets the snapshot of a published bok');
+  reset role;
+
+  perform public.boks_test_login(v_reader);
+  set local role authenticated;
+  begin
+    perform public.get_boks_study_a3_candidates(null, array[v_reel]);
+    perform public.boks_assert(false, 'a reader is not an admin previewing a3');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader is not an admin previewing a3');
+  end;
+  v_first := public.enroll_in_boks_study('a3', 'visitor-1');
+  perform public.boks_assert(v_first ->> 'condition' = 'profile', 'a3 assigns its one condition');
+  perform public.record_boks_study_response((v_first ->> 'id')::uuid, 'interest',
+    jsonb_build_object('phase', 'profile', 'interest', 4), v_reel, null, 'profile', 30);
+  v_study := public.get_boks_study('a3');
+  perform public.boks_assert(
+    (v_study -> 'participant' -> 'steps' -> 0 -> 'answers' ->> 'interest')::integer = 4,
+    'an a3 participant gets their own ratings back to resume');
+  perform public.boks_assert(
+    (public.get_boks_study_a3_candidates((v_first ->> 'id')::uuid, array[v_reel]) -> 0 ->> 'id')::uuid = v_reel,
+    'an a3 participant gets the snapshot of the boks asked for');
+  reset role;
+
+  perform public.boks_test_login(v_guest);
+  set local role authenticated;
+  begin
+    perform public.get_boks_study_a3_candidates((v_first ->> 'id')::uuid, array[v_reel]);
+    perform public.boks_assert(false, 'nobody reads another participant''s a3 snapshot');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'nobody reads another participant''s a3 snapshot');
+  end;
+  reset role;
 
   delete from public.boks_study_participants;
   delete from public.boks_study_fragments where batch = 'check';

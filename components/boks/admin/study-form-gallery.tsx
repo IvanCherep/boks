@@ -51,10 +51,11 @@ export function galleryScreens(key: StudyKey, words: StudyWords): { caption: str
     case "rg2":
       return [
         intro,
-        { caption: "Before the session", body: <Interstitial eyebrow={words.eyebrow} title={words.sessionTitle(10)} body={<><p>{words.sessionIntroFeed}</p><p>{words.sessionRules(10)}</p></>} action={words.start} onAction={noop} /> },
-        { caption: "Feed condition: the personal feed, one bok a screen", body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="feed" onFinish={noop} /> },
-        { caption: "Catalogue condition: the same texts with search and filters", body: <CatalogueBrowser words={words} stories={sampleStories} minutes={10} onFinish={noop} /> },
-        { caption: "After ten minutes", body: <SessionSurveyForm words={words} opened={[first, third]} onSubmit={noop} /> },
+        { caption: "Before each session", body: <Interstitial eyebrow={words.eyebrow} title={words.sessionTitle(10)} body={<><p>{words.sessionIntroFeed}</p><p>{words.sessionRules(10)}</p></>} action={words.start} onAction={noop} /> },
+        { caption: "Feed session: the personal feed, one bok a screen", body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="feed" onFinish={noop} /> },
+        { caption: "Catalogue session: other texts of the same feed, with search and filters", body: <CatalogueBrowser words={words} stories={sampleStories} minutes={10} onFinish={noop} /> },
+        { caption: "After each session: the texts, the choice, «тронуло» 1–7 and session satisfaction 1–7", body: <SessionSurveyForm words={words} opened={[first, third]} onSubmit={noop} /> },
+        { caption: "Between the two sessions; the order is assigned at random", body: <Interstitial eyebrow={words.eyebrow} title={words.secondSessionTitle} body={<p>{words.secondSessionBody}</p>} action={words.continue} onAction={noop} /> },
       ];
     case "a1":
       return [
@@ -70,6 +71,14 @@ export function galleryScreens(key: StudyKey, words: StudyWords): { caption: str
         { caption: "Text in the feed", body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="inline" onFinish={noop} /> },
         { caption: "Card with a separate reading screen", body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="cards" onFinish={noop} /> },
         { caption: "After each session", body: <SessionSurveyForm words={words} opened={[second]} onSubmit={noop} /> },
+      ];
+    case "a3":
+      return [
+        intro,
+        { caption: "The ordinary feed with one question", body: <Interstitial eyebrow={words.eyebrow} title={words.a3IntroTitle} body={<p>{words.a3IntroBody(15)}</p>} action={words.start} onAction={noop} /> },
+        { caption: "A text from the participant's own feed", body: <StudyTextReader story={second} words={words} note={words.a3Progress(2, 15)} doneLabel={words.a3Next} onDone={noop} /> },
+        { caption: "On leaving every text: interest, 1–5", body: <ScaleForm words={words} eyebrow={words.a3Progress(2, 15)} title={second.title} questions={studyQuestions.a3(words)} onSubmit={noop} /> },
+        { caption: "Five rated: the profile is fixed; ten new texts by other authors follow in random order", body: <Interstitial eyebrow={words.eyebrow} title={words.a3ProfileReadyTitle} body={<p>{words.a3ProfileReadyBody(10)}</p>} action={words.continue} onAction={noop} /> },
       ];
     case "b1":
       return [

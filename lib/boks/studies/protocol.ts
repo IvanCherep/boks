@@ -1,15 +1,15 @@
 /**
- * The seven study protocols behind the thesis hypotheses: their keys, the
+ * The eight study protocols behind the thesis hypotheses: their keys, the
  * conditions the server assigns, and the names of the steps a participant's
  * answers are stored under.
  *
- * The condition lists mirror `public.boks_study_conditions` in
- * `20261026100000_boks_studies.sql`; `protocol.test.ts` reads the migration and
- * holds the two to the same lists. How each protocol runs is in
+ * The condition lists mirror `public.boks_study_conditions` in the latest
+ * migration that defines it; `studies.test.ts` reads it and holds the two to
+ * the same lists. How each protocol runs is in
  * `docs/studies.md`.
  */
 
-export const studyKeys = ["rg1", "rg2", "a1", "a2", "b1", "b2", "b3"] as const;
+export const studyKeys = ["rg1", "rg2", "a1", "a2", "a3", "b1", "b2", "b3"] as const;
 export type StudyKey = (typeof studyKeys)[number];
 
 export function isStudyKey(value: unknown): value is StudyKey {
@@ -18,10 +18,13 @@ export function isStudyKey(value: unknown): value is StudyKey {
 
 export const studyConditions = {
   rg1: ["series", "text"],
-  rg2: ["feed", "catalogue"],
+  // Both interfaces for everyone; the condition is which comes first.
+  rg2: ["feed_first", "catalogue_first"],
   a1: ["whole_first", "fragment_first"],
   // First session's interface and set; the second session gets the other of both.
   a2: ["inline_a", "inline_b", "cards_a", "cards_b"],
+  // One protocol for everyone: the comparison is offline, with and without the profile.
+  a3: ["profile"],
   b1: ["yoked"],
   b2: ["series", "text"],
   b3: ["rater"],
@@ -45,6 +48,10 @@ export const studySteps = [
   "trace",
   // b3: the two questions after a fragment.
   "fragment_rating",
+  // a3: interest in a text, 1..5, asked on leaving it.
+  "interest",
+  // a3: the profile fixed after five ratings and both versions' order of the ten that follow.
+  "ranking",
 ] as const;
 export type StudyStep = (typeof studySteps)[number];
 
@@ -77,9 +84,9 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     label: "РГ2",
     owner: "team",
     title: "The value of the personal feed",
-    comparison: "The personal feed against a catalogue of the same texts with search and filters; ten minutes.",
-    outcome: "Successful session: a new text read within 10 minutes and the choice rated 4–5/5. At least +15 pp.",
-    design: "between",
+    comparison: "Each participant: ten minutes in the personal feed and ten in a catalogue with search and filters, order at random, different texts.",
+    outcome: "«Насколько вы довольны этим сеансом выбора и чтения?» 1–7: feed minus catalogue at least +0.5, 95% interval above 0.",
+    design: "within",
   },
   a1: {
     key: "a1",
@@ -97,6 +104,15 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     title: "Reading straight in the feed",
     comparison: "Text in the feed against a card with a separate reading screen; the same texts in the same order.",
     outcome: "Ten-minute sessions with a successful find: at least +10 pp, paired by participant.",
+    design: "within",
+  },
+  a3: {
+    key: "a3",
+    label: "А3",
+    owner: "Andrey",
+    title: "Recommendations from five boks",
+    comparison: "The same algorithm orders the same ten new texts offline, with a profile from the first five rated boks and without it.",
+    outcome: "NDCG@5 against the reader's own interest ratings, 1–5: at least +0.05 on average, 95% interval above 0.",
     design: "within",
   },
   b1: {

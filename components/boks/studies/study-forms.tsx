@@ -293,9 +293,15 @@ export function BokChoiceForm({ words, title, body, boks, nothingLabel, busy, on
 export type SessionSurveyAnswer = {
   perBok: Record<string, { readBefore: "yes" | "no"; finished: "yes" | "part" | "no" }>;
   satisfaction: number | null;
+  sessionSatisfaction: number | null;
+  moved: number | null;
 };
 
-/** After ten minutes: each text opened, then how the choice felt. */
+/**
+ * After ten minutes: each text opened, how the choice felt, whether the
+ * reading moved them, and - always, even with nothing opened - how satisfied
+ * they are with the session as a whole, the same question after every session.
+ */
 export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
   words: StudyWords;
   opened: Story[];
@@ -304,6 +310,8 @@ export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
 }) {
   const [perBok, setPerBok] = useState<SessionSurveyAnswer["perBok"]>({});
   const [satisfaction, setSatisfaction] = useState<number | null>(null);
+  const [sessionSatisfaction, setSessionSatisfaction] = useState<number | null>(null);
+  const [moved, setMoved] = useState<number | null>(null);
   const yesNo = [{ value: "yes" as const, label: words.yes }, { value: "no" as const, label: words.no }];
   const finished = [
     { value: "yes" as const, label: words.yes },
@@ -311,7 +319,7 @@ export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
     { value: "no" as const, label: words.no },
   ];
   const complete = opened.every((story) => perBok[story.id]?.readBefore && perBok[story.id]?.finished) &&
-    (opened.length === 0 || satisfaction !== null);
+    (opened.length === 0 || (satisfaction !== null && moved !== null)) && sessionSatisfaction !== null;
   const set = (id: string, patch: Partial<SessionSurveyAnswer["perBok"][string]>) =>
     setPerBok((current) => ({ ...current, [id]: { ...current[id], ...patch } as SessionSurveyAnswer["perBok"][string] }));
   return (
@@ -332,8 +340,25 @@ export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
           onChange={setSatisfaction}
         />
       )}
+      {opened.length > 0 && (
+        <ScaleField
+          question={{ key: "moved", label: words.surveyMoved, max: 7, low: words.scaleDisagree, high: words.scaleAgree }}
+          value={moved}
+          onChange={setMoved}
+        />
+      )}
+      <ScaleField
+        question={{ key: "sessionSatisfaction", label: words.surveySessionSatisfaction, max: 7, low: words.scaleSessionUnhappy, high: words.scaleSessionHappy }}
+        value={sessionSatisfaction}
+        onChange={setSessionSatisfaction}
+      />
       <button type="button" className="study-button" disabled={!complete || busy}
-        onClick={() => onSubmit({ perBok, satisfaction: opened.length ? satisfaction : null })}>
+        onClick={() => onSubmit({
+          perBok,
+          satisfaction: opened.length ? satisfaction : null,
+          sessionSatisfaction,
+          moved: opened.length ? moved : null,
+        })}>
         {busy ? words.sending : words.send}
       </button>
     </StudyScreen>

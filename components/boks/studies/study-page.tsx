@@ -9,9 +9,11 @@ import {
   enrollInStudy,
   loadBoksUserContext,
   loadStudy,
+  loadStudyA3Candidates,
   nextStudyFragment,
   recordStudyResponse,
   type StudyFragment,
+  type StudyParticipant,
   type StudyState,
 } from "@/components/boks/supabase-browser-data";
 import { useMessages } from "@/components/boks/ui-language";
@@ -59,7 +61,7 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
   const key = isStudyKey(studyKey) ? studyKey : null;
 
   const buildRun = useCallback(
-    (state: StudyState, participant: { id: string; condition: string; seed: number }, previewing: boolean): StudyRun | { problems: string[] } => {
+    (state: StudyState, participant: { id: string; condition: string; seed: number; steps?: StudyParticipant["steps"] }, previewing: boolean): StudyRun | { problems: string[] } => {
       const parsed = parseStudyMaterials(state.key, state.materials);
       if (!parsed.ok) return { problems: parsed.problems };
       let fragments = [...sampleFragments];
@@ -67,12 +69,14 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
         key: state.key,
         words,
         preview: previewing,
-        participant,
+        participant: { id: participant.id, condition: participant.condition, seed: participant.seed },
+        history: previewing ? [] : participant.steps ?? [],
         materials: parsed.materials,
         record: async (step, answers, extra = {}) => {
           if (previewing) return;
           await recordStudyResponse({ participantId: participant.id, step, answers, ...extra });
         },
+        a3Candidates: (ids) => loadStudyA3Candidates(previewing ? null : participant.id, ids),
         claimTrace: (reelId) => (previewing ? Promise.resolve(null) : claimStudyTrace(participant.id, reelId)),
         nextFragment: (): Promise<StudyFragment | null> => {
           if (!previewing) return nextStudyFragment(participant.id);
@@ -123,7 +127,7 @@ export function StudyPage({ studyKey }: { studyKey: string }) {
   const start = async (state: StudyState) => {
     setBusy(true);
     try {
-      let participant: { id: string; condition: string; seed: number };
+      let participant: { id: string; condition: string; seed: number; steps?: StudyParticipant["steps"] };
       if (preview) {
         const request = previewRequest();
         const conditions: readonly string[] = studyConditions[state.key];

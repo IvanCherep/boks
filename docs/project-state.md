@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-26.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-28.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,18 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Studies match the presentation (2026-10-28).** Checked against the НИР3 team
+presentation slide by slide. РГ2 is now within-participant - a feed session and
+a catalogue session for everyone, random order, different texts - judged by
+«Насколько вы довольны этим сеансом выбора и чтения?» 1–7 (paired, ≥ +0.5), the
+same question now asked after А2's sessions too. А3 exists: a profile from the
+first five boks a reader rates 1–5 in their feed, then ten new texts by other
+authors in random order; the production ranker orders those ten offline with
+and without the profile, compared by NDCG@5 (≥ +0.05). Б3 has its fragment
+cutter (`docs/fragment-cutter.md`). А1's materials editor refuses pairs more
+than 10% apart in length. Migration `20261028100000_boks_studies_rg2_within_and_a3.sql`.
+See `docs/studies.md`.
 
 **Thesis studies (2026-10-26).** The tests behind РГ1, РГ2, А1, А2, Б1, Б2 and
 Б3 of the НИР3 presentation (А3 is being replaced): participant pages at
