@@ -19,8 +19,13 @@ pairwise tournament; a work may yield fewer fragments or none, with the reason.
 Studio → Research → Cutter runs it in the browser on an uploaded or pasted
 work; model calls go one at a time through `/api/admin/fragments/llm`
 (admins only, `YANDEX_API_KEY` and `YANDEX_FOLDER_ID` as Worker secrets).
-Verified: live runs on «Степь» and «Дуэль» from the CLI (5 fragments each,
-~70 calls and ~150k tokens a work). Alice AI cannot do the pairwise stage
+Deployed from `13b2641`, Worker version
+`fe06aa9d-7999-4e75-8dca-0a8c109f0e47`, secrets set. Verified: live runs on
+«Степь» and «Дуэль» from the CLI (5 fragments each, ~70 calls and ~150k
+tokens a work), and in production Studio on the first two chapters of «Дуэль»
+uploaded as a file (18 calls through the Worker, 2 fragments kept of 7, the
+rest with reasons). The route refuses a missing token (401) and a non-admin
+(403). Alice AI cannot do the pairwise stage
 (always picks the second), so gpt-oss-120b does it by default.
 
 **Studies match the presentation (2026-10-28).** Checked against the НИР3 team
