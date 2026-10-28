@@ -20,8 +20,14 @@ first five boks a reader rates 1–5 in their feed, then ten new texts by other
 authors in random order; the production ranker orders those ten offline with
 and without the profile, compared by NDCG@5 (≥ +0.05). Б3 has its fragment
 cutter (`docs/fragment-cutter.md`). А1's materials editor refuses pairs more
-than 10% apart in length. Migration `20261028100000_boks_studies_rg2_within_and_a3.sql`.
-See `docs/studies.md`.
+than 10% apart in length. Studio → Growth shows return on day 7 with its
+denominator. Migrations `20261028100000_boks_studies_rg2_within_and_a3.sql` and
+`20261028110000_boks_day_seven_return.sql` are applied to production
+(2026-10-28, after `npm run verify:schema` passed with them); every study is
+still off. Deployed the same day from `efd3751`, Worker version
+`ecde98cf-6e3f-4ada-a1d6-ebfe32a4dd5a`; `/study/a3` and `/study/rg2` answer.
+Not done: a participant run of РГ2 or А3 against a real stack, and a live
+`--llm` run of the cutter (no API key here). See `docs/studies.md`.
 
 **Thesis studies (2026-10-26).** The tests behind РГ1, РГ2, А1, А2, Б1, Б2 and
 Б3 of the НИР3 presentation (А3 is being replaced): participant pages at
