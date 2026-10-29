@@ -74,18 +74,32 @@ export function CoverHeading({ artwork, children }: { artwork: string | null; ch
     const image = cover?.querySelector<HTMLImageElement>(".reader-cover__art");
     if (!heading || !cover || !artwork || !image) return;
     heading.style.setProperty("--cover-heading-shade", ".75");
+    let active = true;
     let frame = 0;
     const measure = () => {
       try { heading.style.setProperty("--cover-heading-shade", String(headingShade(heading, image, cover))); }
       catch { /* Keep the protective default if image pixels are unavailable. */ }
     };
-    const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
+    const schedule = () => {
+      if (!active) return;
+      cancelAnimationFrame(frame); frame = requestAnimationFrame(measure);
+    };
+    // WebKit can report load/complete before its decoded WebP pixels are ready
+    // for canvas. A font swap can also change line rectangles without resizing
+    // the fixed line-height boxes observed below.
+    const imageLoaded = () => { void image.decode().then(schedule, schedule); };
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
     observer?.observe(heading); observer?.observe(cover);
     window.addEventListener("resize", schedule);
-    image.addEventListener("load", schedule);
-    if (image.complete) measure();
-    return () => { cancelAnimationFrame(frame); observer?.disconnect(); image.removeEventListener("load", schedule); window.removeEventListener("resize", schedule); };
+    image.addEventListener("load", imageLoaded);
+    document.fonts.addEventListener("loadingdone", schedule);
+    void document.fonts.ready.then(schedule);
+    if (image.complete) imageLoaded();
+    return () => {
+      active = false; cancelAnimationFrame(frame); observer?.disconnect();
+      image.removeEventListener("load", imageLoaded); window.removeEventListener("resize", schedule);
+      document.fonts.removeEventListener("loadingdone", schedule);
+    };
   }, [artwork]);
   return <div className="reader-cover__heading" ref={ref}>{children}</div>;
 }

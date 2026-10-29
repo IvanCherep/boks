@@ -13,7 +13,9 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 **Softer cover fades and Poe's opening scene (2026-10-29).** The adaptive
 heading shade now has longer eased transitions, reducing the visible stripe
-on pale skies while keeping the same protection under the text. A Dream
+on pale skies while keeping the same protection under the text. It resamples
+after image decoding and font loading, fixing an initially unshaded WebKit
+cover that otherwise needed a resize. A Dream
 Within a Dream uses its original opening Series scene, the couple parting by
 the sea, in the reader, shelf and share poster. Other covers are unchanged;
 new share links use poster version `v44-5`. Checked in Chromium and WebKit at

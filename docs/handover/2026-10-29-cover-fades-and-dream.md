@@ -10,6 +10,10 @@ frame. The latter had been replaced during the earlier redesign.
   former short linear ramps are now longer, with smoothstep opacity samples
   that flatten their slope at each end: 80px above and 160–280px below. Short
   landscape screens use 48px above to keep the independent wordmark clear.
+- Initial WebKit loading could leave the measured shade at zero until a
+  resize. The heading now resamples after image decoding and font readiness,
+  including subsequent font loads; fixed line-height boxes need not resize
+  when their glyphs change. Deferred callbacks stop scheduling after unmount.
 - The Poe cover now comes from `01-parting-kiss.webp`, the opening scene of
   `public/poetry/dream-within-dream/`. The registered 720×1280 WebP is generated
   from that original, with its matching JPEG for the share renderer. The
@@ -29,5 +33,7 @@ The restored image is checked in the reader and Series shelf, and the Worker
 poster is inspected at 720×900. Browser fixtures intercept identity and feed
 requests and block production writes. Local evidence is in the ignored
 `work/cover-fade-2026-10-29/` directory.
+The reported bright covers must receive protection on their initial phone
+load, without a resize; other crops can legitimately need none.
 
 Release details are recorded after production verification.
