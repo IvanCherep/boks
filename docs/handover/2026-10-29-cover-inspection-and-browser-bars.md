@@ -56,4 +56,15 @@ The actual built app is served through a local fixture proxy, with synthetic
 identity and bounded feed data. Screenshots and logs are in the ignored
 `work/browser-chrome-2026-10-29/` directory.
 
-Release details are recorded after production verification.
+## Release
+
+Pushed application commit `336998a` to main and deployed with `--keep-vars`:
+Worker `3c7e4147-b211-419e-91c0-110ef09c357f`, https://tryboks.com.
+The same Chromium and WebKit cases pass against the production bundle,
+including original-brightness pixel comparison, real Chromium touch,
+cancellation, buttons and swipes. Both theme surfaces and black browser/Home
+Screen/manifest hints are present. Public page/security-header checks,
+unauthenticated feed 401, corrected Poe assets and its 720×900 PNG poster all
+pass. Local preview, fixture proxy and Simulator have been stopped.
+CI passed for the application commit:
+https://github.com/IvanCherep/boks/actions/runs/40940015287.

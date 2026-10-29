@@ -17,7 +17,9 @@ release. Fast swipes and buttons retain their normal actions. Illustrated
 cover wordmarks and controls always stay white. The upper browser edge is
 black and the lower one follows the interface theme, independently of the
 image or playback. Safari iPhone Simulator verifies both themes and immediate
-switching; the browser host still controls its native UI. Details:
+switching; the browser host still controls its native UI. Deployed from
+`336998a`, Worker `3c7e4147-b211-419e-91c0-110ef09c357f`; Chromium and WebKit
+production checks pass. Details:
 `docs/handover/2026-10-29-cover-inspection-and-browser-bars.md`.
 
 **Softer cover fades and Poe's opening scene (2026-10-29).** The adaptive
