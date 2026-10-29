@@ -11,6 +11,19 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**Readable text on illustrated covers (2026-10-29).** Bright, detailed artwork
+made the cream title, byline and summary hard to read. A local soft gradient
+now follows the actual heading height, with strength estimated from the image
+under its rendered lines. It samples only the current cover at thumbnail
+resolution, recalculating on image load and resizing; no image data leaves the
+device. Naturally dark areas can need no extra shade. Artwork files, crops,
+wordmark contrast and reading measurements are unchanged. Tested with the two
+reported covers and three readable controls at phone, short-phone, landscape
+and desktop sizes in Chromium and WebKit, plus a white-background stress case.
+Deployed from `5ad087d`, Worker
+`37d900ee-3a08-4f35-8122-7540b8b0d081`. See
+`docs/handover/2026-10-29-cover-text-contrast.md`.
+
 **Illustrated catalogue covers, with Series preserved (2026-10-29).** All 223
 published boks now have illustrations: 191 WebP covers from the supplied
 archive were added by exact bok ID; the 32 existing Series covers, poster
