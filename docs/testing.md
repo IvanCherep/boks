@@ -167,6 +167,11 @@ Everything below runs locally. Nothing here deploys. GitHub Actions
 `check:deploy-target` on every push to `main` and every pull request, with
 placeholder public Supabase values and no secrets.
 
+The CI install sets `ONNXRUNTIME_NODE_INSTALL=skip`: the CPU runtime is bundled
+in npm, and these runners do not use CUDA. This skips ONNX's extra GPU download
+from NuGet, whose network timeout previously stopped `npm ci` before any checks.
+Other dependency install scripts still run normally.
+
 ### 1. Offline checks (no database, no network)
 
 ```bash

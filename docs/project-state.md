@@ -11,6 +11,13 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**CI installs the bundled CPU runtime (2026-10-29).** The ONNX installer now
+skips its additional CUDA download in GitHub Actions. A NuGet timeout had
+stopped dependency installation before checks began on the documentation-only
+commit after the cover release. The CPU runtime is already in the npm package;
+all dependency install scripts and validation gates remain enabled. See
+`docs/testing.md`.
+
 **Hold to inspect artwork; stable white cover branding (2026-10-29).** Holding
 a free area of an illustrated cover hides its interface and shading until
 release. Fast swipes and buttons retain their normal actions. Illustrated
