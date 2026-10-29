@@ -685,9 +685,9 @@ Finishing a piece therefore has one more step:
    `cwebp -q 80 -m 6 -sharp_yuv -resize 720 0 <frame>.png -o public/series/<name>.webp`.
 2. One entry in `components/boks/series/series-catalogue.ts`: format,
    language, cover and focus, duration, scene and moment counts, premiere date.
-   Set `coverLogoTone: "dark"` when the upper artwork needs dark controls;
-   the default is light. Reader native bars use the opposite neutral surface
-   (white for dark ink, black for light ink), available before the image loads.
+   Illustrated reader covers always use white wordmarks and controls. The
+   upper browser edge stays black; the lower edge follows the interface theme.
+   Neither colour depends on the piece's artwork.
 
 A **seasonal collection** (`seriesCollections` in the same file) puts a few
 pieces first on the shelf, in a set order, between two days of the reader's

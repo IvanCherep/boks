@@ -4,12 +4,11 @@ import { catalogueBokArtwork } from "@/lib/boks/catalogue-artwork";
 import { bokArtworkFocus, bokArtworkStyle, getBokArtwork, getBokPosterArtwork } from "./bok-artwork";
 
 describe("bok artwork", () => {
-  it("preserves every existing Series image, reader crop and wordmark contrast", () => {
+  it("preserves every registered Series image and reader crop", () => {
     for (const piece of seriesPieces) {
       expect(getBokArtwork({ id: piece.storyId }), piece.title).toBe(piece.cover);
       expect(bokArtworkFocus(piece.storyId), piece.title).toBe("50% 50%");
-      expect(bokArtworkStyle(piece.storyId)["--bok-art-ink"], piece.title)
-        .toBe(piece.coverLogoTone === "dark" ? "#222621" : "#fff8eb");
+      expect(bokArtworkStyle(piece.storyId)["--bok-art-focus"], piece.title).toBe("50% 50%");
     }
   });
 
@@ -29,10 +28,9 @@ describe("bok artwork", () => {
     }
   });
 
-  it("keeps every catalogue crop in bounds with an explicit contrast choice", () => {
+  it("keeps every catalogue crop in bounds", () => {
     for (const [bokId, artwork] of Object.entries(catalogueBokArtwork)) {
       expect(bokId).toMatch(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/u);
-      expect(artwork.coverLogoTone).toMatch(/^(dark|light)$/u);
       expect(artwork.coverFocus).toMatch(/^\d+(?:\.\d+)?% \d+(?:\.\d+)?%$/u);
       for (const value of artwork.coverFocus.split(" ")) {
         expect(Number.parseFloat(value)).toBeGreaterThanOrEqual(0);

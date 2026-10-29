@@ -36,4 +36,19 @@ requests and block production writes. Local evidence is in the ignored
 The reported bright covers must receive protection on their initial phone
 load, without a resize; other crops can legitimately need none.
 
-Release details are recorded after production verification.
+## Release
+
+The artwork/fade change is commit `8817e0c`; the initial WebKit loading fix is
+`837e410`. Both were pushed to main. The final Worker was deployed from
+`837e410` with `--keep-vars`, version
+`1929a6ba-27d8-4385-ac59-9b8b9f25155a`, https://tryboks.com.
+
+Chromium and WebKit each passed all 24 production cover cases, initial bright
+phone protection, white-image/resize protection and the restored Series shelf.
+There were no runtime errors or production writes. Production WebP/JPEG bytes
+match local sources; the versioned link names the new poster and its PNG is
+720×900 with `private, no-store`. Public page/security-header checks and the
+unauthenticated feed's 401 passed. Local preview was stopped. Physical
+iPhone/Arc appearance remains the user's device check.
+CI passed for the final application commit:
+https://github.com/IvanCherep/boks/actions/runs/40935104181.

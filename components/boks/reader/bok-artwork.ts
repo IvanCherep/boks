@@ -6,7 +6,7 @@ function artworkFor(bokId?: string) {
   const series = seriesPieceFor(bokId);
   // Preserve both the existing image and the reader's centred Series crop.
   // The Series shelf continues to own its separate authored coverFocus.
-  if (series) return { cover: series.cover, coverFocus: "50% 50%", coverLogoTone: series.coverLogoTone ?? "light" };
+  if (series) return { cover: series.cover, coverFocus: "50% 50%" };
   const artwork = Object.prototype.hasOwnProperty.call(catalogueBokArtwork, bokId) ? catalogueBokArtwork[bokId] : undefined;
   return artwork ? { cover: `/covers/${bokId}.webp`, ...artwork } : null;
 }
@@ -26,14 +26,10 @@ export function getBokPosterArtwork(bokId: string): string | null {
   return cover?.replace(/^\/(?:series|covers)\//u, "/share/art/").replace(/\.webp$/u, ".jpg") ?? null;
 }
 
-/** One authored contrast choice keeps the wordmark and native bar in sync,
- * before the picture loads. Native bars use the opposite neutral surface. */
+/** The image crop is authored per bok; illustrated cover controls stay white. */
 export function bokArtworkStyle(bokId: string) {
   const artwork = artworkFor(bokId);
-  const darkInk = artwork?.coverLogoTone === "dark";
   return {
-    "--bok-art-ink": darkInk ? "#222621" : "#fff8eb",
-    "--bok-art-chrome": darkInk ? "#ffffff" : "#000000",
     "--bok-art-focus": artwork?.coverFocus ?? "50% 50%",
   };
 }

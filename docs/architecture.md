@@ -37,10 +37,11 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `author-sheet.tsx`: an author's boks inside the reader.
 - `feedback.ts`, `feedback-form.tsx`: the no-account feedback box and its milestone prompts.
 - `reading-languages.ts`: the server-saved reading languages. `reader-preferences.ts` + `reader-preference-controls.tsx`: independent device locale and typography preferences.
-- `reader/boks-logo.tsx`, `reader/bok-artwork.ts`: shared wordmark and exact-ID artwork resolution. Existing Series covers take precedence over `lib/boks/catalogue-artwork.ts`; unregistered boks keep typography. The resolver shares catalogue focus/contrast and renderer-compatible poster paths across reader surfaces. Seasonal decoration is an explicit option, not a guessed calendar.
+- `reader/boks-logo.tsx`, `reader/bok-artwork.ts`: shared wordmark and exact-ID artwork resolution. Existing Series covers take precedence over `lib/boks/catalogue-artwork.ts`; unregistered boks keep typography. The resolver shares catalogue focus and renderer-compatible poster paths across reader surfaces. Illustrated cover controls stay white. Seasonal decoration is an explicit option, not a guessed calendar.
 - `reader/cover-heading.tsx`: the cover text's adaptive local shade. It samples only the current image at thumbnail resolution behind the actual text lines, on image load and size changes. The bounded canvas is ephemeral; no image data is stored or sent, and no reading event is recorded. The gradient follows the heading's natural height.
+- `reader/use-cover-inspection.ts`: a stationary hold on an illustrated cover temporarily hides its interface and shading. It excludes controls, cancels for movement before activation, and restores on release, cancellation, focus loss or story change. It clears the pending navigation gesture when activated; the existing reading clock and event definitions are unchanged.
 - `share-card.tsx` + `share-card-export.ts`: bok-link sharing and real canvas poster export, with native/copy/download fallbacks.
-- `theme.ts`, `theme-setting.tsx`: System/Light/Dark, applied before first paint.
+- `theme.ts`, `theme-setting.tsx`: System/Light/Dark, applied before first paint. The status-bar hint is always black. Real fixed edge elements in `app/layout.tsx`, styled in `app/globals.css`, give Safari separate upper black and lower theme surfaces; `reader-feed.tsx` no longer paints native bars from the current bok or player.
 - `reading-music.ts`, `reading-fullscreen.ts`, `home-screen-hint.ts`: ambient music, fullscreen for formats on Android/iPad, the one-time iPhone home-screen hint.
 - `error-boundary.tsx`: the crash screen around every surface.
 

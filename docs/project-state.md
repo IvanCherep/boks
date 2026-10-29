@@ -11,6 +11,15 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**Hold to inspect artwork; stable white cover branding (2026-10-29).** Holding
+a free area of an illustrated cover hides its interface and shading until
+release. Fast swipes and buttons retain their normal actions. Illustrated
+cover wordmarks and controls always stay white. The upper browser edge is
+black and the lower one follows the interface theme, independently of the
+image or playback. Safari iPhone Simulator verifies both themes and immediate
+switching; the browser host still controls its native UI. Details:
+`docs/handover/2026-10-29-cover-inspection-and-browser-bars.md`.
+
 **Softer cover fades and Poe's opening scene (2026-10-29).** The adaptive
 heading shade now has longer eased transitions, reducing the visible stripe
 on pale skies while keeping the same protection under the text. It resamples
@@ -18,8 +27,10 @@ after image decoding and font loading, fixing an initially unshaded WebKit
 cover that otherwise needed a resize. A Dream
 Within a Dream uses its original opening Series scene, the couple parting by
 the sea, in the reader, shelf and share poster. Other covers are unchanged;
-new share links use poster version `v44-5`. Checked in Chromium and WebKit at
-phone, short-phone, landscape and desktop sizes. Release details:
+new share links use poster version `v44-5`. Checked on the deployed bundle in
+Chromium and WebKit at phone, short-phone, landscape and desktop sizes.
+Deployed from `837e410`, Worker
+`1929a6ba-27d8-4385-ac59-9b8b9f25155a`. Release details:
 `docs/handover/2026-10-29-cover-fades-and-dream.md`.
 
 **Readable text on illustrated covers (2026-10-29).** Bright, detailed artwork

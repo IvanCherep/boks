@@ -46,7 +46,6 @@ export type SeriesPiece = {
   /** Where the subject of the cover sits, as CSS `object-position`. */
   coverFocus: string;
   /** Dark wordmark for a bright upper image; otherwise the cover uses light ink. */
-  coverLogoTone?: "dark" | "light";
   /** Length of the recording, from its alignment or manifest. Tested. */
   durationSeconds: number;
   /** Pictures the piece moves through. Tested against the format's registry. */
@@ -231,7 +230,6 @@ export const seriesPieces: readonly SeriesPiece[] = [
     title: "Не жалею, не зову, не плачу…",
     author: "Сергей Есенин",
     cover: "/series/ne-zhaleyu.webp",
-    coverLogoTone: "dark",
     coverFocus: "55% 40%",
     durationSeconds: 49,
     scenes: 4,
@@ -245,7 +243,6 @@ export const seriesPieces: readonly SeriesPiece[] = [
     title: "Первый снег",
     author: "Валерий Брюсов",
     cover: "/series/perviy-sneg.webp",
-    coverLogoTone: "dark",
     coverFocus: "55% 55%",
     durationSeconds: 32,
     scenes: 4,
@@ -298,7 +295,6 @@ export const seriesPieces: readonly SeriesPiece[] = [
     title: "Мужичок с ноготок",
     author: "Николай Некрасов",
     cover: "/series/muzhichok.webp",
-    coverLogoTone: "dark",
     coverFocus: "60% 60%",
     durationSeconds: 55,
     scenes: 4,

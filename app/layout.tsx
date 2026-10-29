@@ -10,7 +10,7 @@ import "./reader-v44.css";
 import "./formats-v44.css";
 import "./social-v44.css";
 import "./admin-v44.css";
-import { themeBootScript, themeColor } from "@/components/boks/theme";
+import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";
 import { uiLanguageBootScript } from "@/lib/i18n/ui-language";
 
 /**
@@ -38,15 +38,14 @@ export const metadata: Metadata = {
   /**
    * Opened from the home screen, boks is an app with no browser around it -
    * the only way an iPhone reader gets a poem without an address bar under
-   * it, since iPhone Safari gives a page no fullscreen. `default` keeps the
-   * status bar opaque, so nothing has to be pushed down from under it. The
-   * reader paints its outer surface as well as theme-color, including in
-   * standalone: a different status-bar surface creates a native edge glow.
+   * it, since iPhone Safari gives a page no fullscreen. `black` keeps the
+   * status bar opaque and black, with the content below it. The lower edge
+   * follows the interface theme independently.
    */
   appleWebApp: {
     capable: true,
     title: "boks",
-    statusBarStyle: "default",
+    statusBarStyle: "black",
   },
   /**
    * PNGs, not the SVG that used to be here: a wordmark stacked in three rows is
@@ -103,13 +102,19 @@ export default function RootLayout({
     // hydrates, so the attributes legitimately differ from the server's markup.
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content={themeColor.light} />
+        <meta name="theme-color" content={browserStatusBarColor} />
         {/* Before first paint: a reader in dark mode never sees a white flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         {/* `<html lang>` follows the interface language: the device's, or the reader's choice. */}
         <script dangerouslySetInnerHTML={{ __html: uiLanguageBootScript }} />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        {/* Real, fixed edge surfaces let Safari sample each native bar separately. */}
+        <div className="browser-edge browser-edge--top" aria-hidden="true" />
+        <div className="browser-edge browser-edge--bottom browser-edge--light" aria-hidden="true" />
+        <div className="browser-edge browser-edge--bottom browser-edge--dark" aria-hidden="true" />
+      </body>
     </html>
   );
 }
