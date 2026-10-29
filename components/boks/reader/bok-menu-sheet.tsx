@@ -10,7 +10,7 @@ import { ReaderSheet } from "@/components/boks/reader-sheet";
 import { atHandle } from "@/components/boks/reader/handles";
 
 import { bokCoverPalette } from "./bok-cover-palette";
-import { getBokArtwork } from "./bok-artwork";
+import { bokArtworkFocus, getBokArtwork } from "./bok-artwork";
 import { useReaderPreferences } from "../reader-preferences";
 
 export type BokReportKind = "copyright" | "other";
@@ -103,7 +103,7 @@ export function BokMenuSheet({
   return (
     <ReaderSheet label={t("This bok", "Этот бок")} onClose={onClose} className="bok-menu-v44">
       <header className="bok-menu-heading">
-        {artwork ? <img src={artwork} alt="" /> : <span className="bok-menu-heading__type" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{story.title.charAt(0)}</span>}
+        {artwork ? <img src={artwork} alt="" style={{ objectPosition: bokArtworkFocus(story.id) }} /> : <span className="bok-menu-heading__type" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{story.title.charAt(0)}</span>}
         <span className="bok-menu-heading-copy"><span className="bok-menu-kicker">{t("Reading now", "Сейчас читаете")}</span><strong translate="no">{story.title}</strong><small translate="no">{story.authorName || atHandle(story.authorHandle)}</small></span>
         <button className="bok-menu-close" type="button" onClick={onClose} aria-label={t("Close menu", "Закрыть меню")}><X /></button>
       </header>

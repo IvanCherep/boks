@@ -15,7 +15,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 - `app/page.tsx`, `app/series/page.tsx`, `app/author/page.tsx`, `app/admin/page.tsx`: route entrypoints only. `app/boks-client.tsx` re-exports the three client surfaces.
 - `app/b/[id]/page.tsx`: a shared bok. Server-rendered so messengers get a title, description and cover (`lib/boks/share-preview.ts`); `open-shared-bok.tsx` then opens it in the reader.
-- `app/b/[id]/image/route.tsx` + `lib/boks/share-poster.tsx`: portrait PNG for a shared published bok, with the same artwork/palette, title and byline as Share bok. The Worker checks publication before its five-minute image cache, loads only owned static assets and uses `next/og`. Fonts and JPEG conversions of the registered Series covers live in `public/share/`; new share links carry the poster version from `lib/boks/share-link.ts`.
+- `app/b/[id]/image/route.tsx` + `lib/boks/share-poster.tsx`: portrait PNG for a shared published bok, with the same artwork/palette, title and byline as Share bok. The Worker checks publication before its five-minute image cache, loads only owned static assets and uses `next/og`. Fonts and JPEG conversions of registered Series and catalogue covers live in `public/share/`; new share links carry the poster version from `lib/boks/share-link.ts`.
 - `app/a/[handle]/page.tsx`: an author's public page.
 - `app/api/feed/route.ts`: the canonical feed. Forwards the reader's Supabase JWT (the Worker holds no elevated credential), assigns the arm, ranks, records the served feed.
 - `app/api/geo/route.ts`: the two-letter country from Cloudflare's `CF-IPCountry`; the IP is never read.
@@ -37,7 +37,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `author-sheet.tsx`: an author's boks inside the reader.
 - `feedback.ts`, `feedback-form.tsx`: the no-account feedback box and its milestone prompts.
 - `reading-languages.ts`: the server-saved reading languages. `reader-preferences.ts` + `reader-preference-controls.tsx`: independent device locale and typography preferences.
-- `reader/boks-logo.tsx`, `reader/bok-artwork.ts`: shared wordmark and exact-ID series artwork resolution, with typography for ordinary boks. Seasonal decoration is an explicit option, not a guessed calendar.
+- `reader/boks-logo.tsx`, `reader/bok-artwork.ts`: shared wordmark and exact-ID artwork resolution. Existing Series covers take precedence over `lib/boks/catalogue-artwork.ts`; unregistered boks keep typography. The resolver shares catalogue focus/contrast and renderer-compatible poster paths across reader surfaces. Seasonal decoration is an explicit option, not a guessed calendar.
 - `share-card.tsx` + `share-card-export.ts`: bok-link sharing and real canvas poster export, with native/copy/download fallbacks.
 - `theme.ts`, `theme-setting.tsx`: System/Light/Dark, applied before first paint.
 - `reading-music.ts`, `reading-fullscreen.ts`, `home-screen-hint.ts`: ambient music, fullscreen for formats on Android/iPad, the one-time iPhone home-screen hint.
@@ -85,6 +85,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `lib/recsys/aggregate/`: reader-level metric definitions and comparison inputs - the one catalogue of metrics. `lib/recsys/statistics/`: comparison, power and sample-size statistics.
 - `lib/boks/import/`: catalogue file parsing and the wikitext converter.
 - `lib/boks/studies/`: the thesis studies - protocols and conditions, materials, seeded plans, measured sessions, Б1's gesture traces, results. `components/boks/studies/` renders them; see `docs/studies.md`.
+- `lib/boks/catalogue-artwork.ts`: static, exact-ID crop/contrast metadata for catalogue illustrations in `public/covers/`. It contains no literary texts or reading-format registrations; adding a cover does not add a Series piece. The import and asset rules are in `docs/catalogue-import.md`.
 
 ### Database and tooling
 

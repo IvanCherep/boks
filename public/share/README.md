@@ -3,9 +3,15 @@
 The `/b/[id]/image` Worker route renders the same portrait composition as the
 reader's Share bok card. It reads one published bok, never a catalogue dump.
 
-`art/*.jpg` are JPEG copies of `public/series/*.webp` (same pixels and crop,
-Pillow RGB, quality 90, optimize). Satori/Resvg cannot decode WebP. When adding
-a Series cover, add its JPEG here too; the poster asset test checks the registry.
+`art/*.jpg` are JPEG copies of registered WebP covers; Satori/Resvg cannot
+decode WebP. Existing Series copies come from `public/series/` (Pillow RGB,
+quality 90, optimize), and remain unchanged. Catalogue copies come from
+`public/covers/`, with the same UUID basename (Sharp, JPEG quality 88,
+mozjpeg). Both keep the source's 720×1280 pixels, without another crop or
+resize. The shared artwork resolver selects the matching JPEG and authored
+crop. When adding either kind of cover, add its JPEG here too; the poster
+asset test checks both registries. New shares include the version from
+`lib/boks/share-link.ts` so messengers can request the updated poster.
 
 `fonts/source-serif-4-italic.ttf` combines static instances of the installed
 `@fontsource-variable/source-serif-4` 5.3.0 standard italic Latin and Cyrillic

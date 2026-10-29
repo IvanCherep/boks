@@ -1,4 +1,5 @@
 import { bokCoverPalette } from "./reader/bok-cover-palette";
+import { bokArtworkFocus } from "./reader/bok-artwork";
 
 export type ShareBok = { id: string; title: string; authorName: string };
 
@@ -49,7 +50,8 @@ export async function renderBokPoster(story: ShareBok, artwork?: string | null):
     try {
       const image = await loadArtwork(artwork);
       const scale = Math.max(1080 / image.width, 1350 / image.height);
-      context.drawImage(image, (1080 - image.width * scale) / 2, (1350 - image.height * scale) / 2, image.width * scale, image.height * scale);
+      const [focusX, focusY] = bokArtworkFocus(story.id).split(" ").map(value => Number.parseFloat(value) / 100);
+      context.drawImage(image, (1080 - image.width * scale) * focusX, (1350 - image.height * scale) * focusY, image.width * scale, image.height * scale);
       hasArtwork = true;
       const shade = context.createLinearGradient(0, 0, 0, 1350);
       shade.addColorStop(0, "rgba(12,18,18,.28)");

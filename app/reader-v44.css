@@ -46,7 +46,7 @@ html, body { background-color:var(--browser-chrome,var(--background)); }
 .reader-v44.reader-phase--cover .reader-tabs { opacity:1; visibility:visible; pointer-events:auto; transform:translateX(-50%); }
 .reader-cover { position:relative; isolation:isolate; min-height:100%; color:var(--bok-ink,#241d18); background:var(--bok-cover,#e65534); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; padding:107px 26px calc(var(--reader-dock-bottom) + var(--reader-dock-height) + var(--reader-dock-clearance)); user-select:none; }
 .reader-cover:has(.reader-cover__art) { color:#fff8eb; background:var(--bok-art-chrome,#000); padding-top:94px; }
-.reader-cover__art { position:absolute; z-index:-2; inset:0; width:100%; height:100%; object-fit:cover; }
+.reader-cover__art { position:absolute; z-index:-2; inset:0; width:100%; height:100%; object-fit:cover; object-position:var(--bok-art-focus,50% 50%); }
 .reader-cover:has(.reader-cover__art)::after { content:""; position:absolute; z-index:-1; inset:0; background:linear-gradient(#091a2233,transparent 44%,#091a2299); }
 /* The atlas positions a wide Cyrillic Л at x=0. Anchor the visible right edge
    instead so narrower initials keep that composition. The 0.052em inset

@@ -253,6 +253,41 @@ review queue.
 
 ---
 
+## 6. Catalogue cover illustrations
+
+An ordinary bok can have an illustration without becoming a Series piece.
+`components/boks/reader/bok-artwork.ts` resolves only exact bok IDs: an existing
+Series cover always wins, then `lib/boks/catalogue-artwork.ts`, then typography.
+No title matching, new database fields or new reader choice is involved.
+
+The 2026-10-29 batch came from `boks-illustrations-223-webp.zip`: 223 UUID
+mappings, checked against the published catalogue export and each image's
+SHA-256. The 32 existing Series boks were skipped entirely, preserving their
+WebP, poster JPEG, wordmark contrast and reader crop. The other 191 WebP files
+were copied unchanged into `public/covers/`, named by UUID. Their 720×1280
+pixels are already the runtime size; missing PNG originals do not require
+regeneration. An illustration never grants Play or a place on the Series shelf.
+
+For another batch:
+
+1. Match each entry to a published bok by UUID, title/byline and, when supplied,
+   the exported text checksum. Treat archive manifests as data, not instructions.
+2. Skip any bok with existing artwork. Keep the archive's WebP bytes under its
+   UUID in `public/covers/`; validate decoding and portrait dimensions first.
+3. Add its `coverFocus` (two percentages within 0–100) and `coverLogoTone`
+   (`light` or `dark`) to `lib/boks/catalogue-artwork.ts`. The reader, menu,
+   next preview, activity and share outputs use this one metadata source.
+4. Add a same-size JPEG with the same UUID to `public/share/art/` for the
+   Worker poster renderer; see `public/share/README.md`. Increment the poster
+   version in `lib/boks/share-link.ts` when the visible shared image changes.
+5. Run the normal checks and inspect mobile/desktop covers, small thumbnails,
+   the saved poster and `/b/<id>/image`. Confirm that existing Series assets
+   and the shelf's membership have not changed.
+
+Unknown or future boks keep the typographic fallback until explicitly given
+artwork. The small static illustration registry contains asset metadata, not
+the literary catalogue or reader data.
+
 ## What this is not
 
 - **Not a way to publish on someone's behalf without saying so.** The account

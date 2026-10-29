@@ -108,7 +108,7 @@ wrangler deploy --config wrangler.jsonc --keep-vars
 
 The Worker CPU cap is 3000ms. Ordinary feed/page requests remain below it;
 `/b/[id]/image` also renders a portrait PNG on cache miss. The image uses the
-Series cover's native 720px width and a five-minute Worker cache. Outgoing
+registered cover's native 720px width and a five-minute Worker cache. Outgoing
 responses are private/no-store so CDN hits cannot skip publication checks.
 The original 1000ms cap caused `exceededCpu` on cold 1080px renders in production;
 local Wrangler rendering alone did not expose this limit.

@@ -8,6 +8,7 @@ import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokShareUrl, renderBokPoster, type ShareBok } from "@/components/boks/share-card-export";
 
 import { bokCoverStyle } from "./reader/bok-cover-palette";
+import { bokArtworkFocus } from "./reader/bok-artwork";
 
 export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareBok; artwork?: string | null; onClose: () => void; onShared?: () => void }) {
   const { t } = useReaderPreferences();
@@ -93,7 +94,7 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
         <header className="social-page-header"><Button size="icon" variant="ghost" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></Button><span>{t("Share bok", "Поделиться боком")}</span><span /></header>
         <div className={`bok-share-poster${artwork && !artworkFailed ? " bok-share-poster--art" : ""}`} style={bokCoverStyle(story.id) as CSSProperties}>
           {/* The real artwork is decorative; title and byline stay selectable. */}
-          {artwork && !artworkFailed && <img src={artwork} alt="" onError={() => setArtworkFailed(true)} />}
+          {artwork && !artworkFailed && <img src={artwork} alt="" style={{ objectPosition: bokArtworkFocus(story.id) }} onError={() => setArtworkFailed(true)} />}
           {(!artwork || artworkFailed) && <span className="bok-share-poster-letter" aria-hidden="true">{story.title.trim().charAt(0)}</span>}
           <span className="bok-share-wordmark">boks</span>
           <div className="bok-share-copy" translate="no"><h1>{story.title}</h1><p>{story.authorName}</p></div>

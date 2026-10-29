@@ -31,7 +31,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 
 - `docs/reading-formats.md`: the cinema and immersive-poem formats and the series shelf - routing a piece to a format, the cast, image specs and prompts, the story-moment effects, manifests, the properties never to animate, audio levels. The whole process for adding a series piece. Source material for poems lives in `docs/poetry/<slug>/`.
 - `docs/media-generation.md`: generating any audio - the key and scopes, what each failure code means, endpoint costs, the credit-multiplier and licensing traps, choosing takes by measurement.
-- `docs/catalogue-import.md`: loading a catalogue - the publisher-account model, the file format, the admin panel, test batches.
+- `docs/catalogue-import.md`: loading a catalogue - the publisher-account model, the file format, the admin panel, test batches, and exact-ID cover illustrations that preserve existing Series artwork.
 - `docs/copyright.md`: rights attestation on publishing, the per-bok report menu, handling a complaint.
 - `docs/public-domain-corpus.md`, `docs/russian-corpus.md`: where the English and Russian texts come from, why they are free to publish, how the converters work and what they got wrong first.
 - `docs/reading-languages.md`: which language a reader is offered, why the filter lives in retrieval, why an undetermined language is not a yes.

@@ -6,6 +6,7 @@ import { ReaderNextIcon as ArrowRight, ReaderHeartIcon as Heart, ReaderCommentsI
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokCoverStyle } from "./reader/bok-cover-palette";
+import { bokArtworkFocus } from "./reader/bok-artwork";
 import { formatCompactCount } from "./client-format";
 
 export type FinaleActions = {
@@ -71,7 +72,7 @@ export function ReadingFinale({ actions, onAgain, title, byline, artwork, inline
         <button type="button" aria-label={t(inline ? "Read again" : "Play again", inline ? "Прочитать снова" : "Послушать снова")} onClick={onAgain}><RotateCcw size={21} /></button>
       </div>
       {actions && <button type="button" className="bok-next-preview" onClick={actions.onNext}>
-        {actions.nextBok?.artwork ? <img src={actions.nextBok.artwork} alt="" width="64" height="64" loading="lazy" /> : actions.nextBok && <span className="bok-next-preview__type" style={bokCoverStyle(actions.nextBok.id) as React.CSSProperties} aria-hidden="true">{actions.nextBok.title.charAt(0)}</span>}
+        {actions.nextBok?.artwork ? <img src={actions.nextBok.artwork} alt="" width="64" height="64" loading="lazy" style={{ objectPosition: bokArtworkFocus(actions.nextBok.id) }} /> : actions.nextBok && <span className="bok-next-preview__type" style={bokCoverStyle(actions.nextBok.id) as React.CSSProperties} aria-hidden="true">{actions.nextBok.title.charAt(0)}</span>}
         <span className="bok-next-preview__copy"><small>{actions.nextBok ? t("UP NEXT", "ДАЛЬШЕ") : actions.nextLabel ?? t("Back to the feed", "Вернуться в ленту")}</small>
           {actions.nextBok && <><strong>{actions.nextBok.title}</strong><span>{actions.nextBok.authorName}</span></>}
         </span><span className="bok-next-preview__arrow"><ArrowRight size={22} /></span>
