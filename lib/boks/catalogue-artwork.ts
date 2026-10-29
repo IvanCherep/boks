@@ -194,7 +194,7 @@ export const catalogueBokArtwork: Readonly<Record<string, CatalogueBokArtwork>> 
   "f812ee09-8f5b-465b-b79c-d543a31334fa": { coverFocus: "55% 42%", coverLogoTone: "light" },
   "f8f0577c-292f-4e3d-bfd1-176fbeb9da1f": { coverFocus: "50% 44%", coverLogoTone: "light" },
   "fa4e5087-3332-414f-b841-e2a2b14a090a": { coverFocus: "53% 50%", coverLogoTone: "dark" },
-  "fbd9f3a6-8bd9-4137-9295-1a49ca2f0406": { coverFocus: "50% 46%", coverLogoTone: "dark" },
+  "fbd9f3a6-8bd9-4137-9295-1a49ca2f0406": { coverFocus: "50% 46%", coverLogoTone: "light" },
   "fd16f276-668f-42eb-bbf7-9f3703170dac": { coverFocus: "50% 55%", coverLogoTone: "light" },
   "fd3982f5-a42f-47a3-b14d-0abc436bc6d2": { coverFocus: "48% 54%", coverLogoTone: "dark" },
   "fd3d2682-f1b6-454a-868d-0d9240f39b3a": { coverFocus: "50% 52%", coverLogoTone: "light" },
