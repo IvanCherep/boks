@@ -141,6 +141,7 @@ import { FeedbackSheet } from "@/components/boks/reader/feedback-sheet";
 import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { bokArtworkStyle, getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { CoverHeading } from "@/components/boks/reader/cover-heading";
 import { textReadingState, type TextReadingPhase } from "@/components/boks/reader/text-reading-state";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { ShareCard } from "@/components/boks/share-card";
@@ -2757,11 +2758,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
                 <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
               </header>
               {getBokArtwork(currentStory) ? <img className="reader-cover__art" src={getBokArtwork(currentStory)!} alt="" /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
-              <div className="reader-cover__heading">
+              <CoverHeading artwork={getBokArtwork(currentStory)}>
                 <h1>{currentStory.title}</h1>
                 <button type="button" className="reader-cover__byline" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button>
                 {currentStory.summary && <p className="reader-cover__summary" lang={currentStory.language || "und"} translate="no">{currentStory.summary}</p>}
-              </div>
+              </CoverHeading>
               <div className="reader-cover__caption">
                 <div className="reader-cover__buttons">
                   <button type="button" className="reader-read-button" onClick={() => readText(true)}>{t("Read", "Читать")}<ReaderDownIcon size={19} /></button>
