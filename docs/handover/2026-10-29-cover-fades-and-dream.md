@@ -1,0 +1,33 @@
+# Cover fades and Poe restoration — 29 October 2026
+
+The user reported a visible horizontal shade on «Первый снег» and Binsey
+Poplars, and asked to restore A Dream Within a Dream to its opening Series
+frame. The latter had been replaced during the earlier redesign.
+
+## Changes
+
+- Keep the adaptive opacity and full protection behind the actual text. The
+  former short linear ramps are now longer, with smoothstep opacity samples
+  that flatten their slope at each end: 80px above and 160–280px below. Short
+  landscape screens use 48px above to keep the independent wordmark clear.
+- The Poe cover now comes from `01-parting-kiss.webp`, the opening scene of
+  `public/poetry/dream-within-dream/`. The registered 720×1280 WebP is generated
+  from that original, with its matching JPEG for the share renderer. The
+  Series shelf uses the scene's 42%/40% focal point; the reader retains its
+  centre crop. Other Series and catalogue assets are unchanged.
+- New share links use poster version `v44-5`, so the corrected artwork can
+  replace previously cached messenger cards. Previous asset files remain
+  available for clients already open.
+
+## Validation
+
+`npm run check`, `npm run build` and `npm run check:deploy-target` pass. No
+schema or data changes. Chromium and WebKit each check six covers at 402×736,
+320×568, 874×402 and 1440×900, plus white-image/resize protection. Screenshots
+compare the former fade with the new one; heading geometry is unchanged.
+The restored image is checked in the reader and Series shelf, and the Worker
+poster is inspected at 720×900. Browser fixtures intercept identity and feed
+requests and block production writes. Local evidence is in the ignored
+`work/cover-fade-2026-10-29/` directory.
+
+Release details are recorded after production verification.

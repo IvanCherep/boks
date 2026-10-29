@@ -4,8 +4,10 @@ The `/b/[id]/image` Worker route renders the same portrait composition as the
 reader's Share bok card. It reads one published bok, never a catalogue dump.
 
 `art/*.jpg` are JPEG copies of registered WebP covers; Satori/Resvg cannot
-decode WebP. Existing Series copies come from `public/series/` (Pillow RGB,
-quality 90, optimize), and remain unchanged. Catalogue copies come from
+decode WebP. Series copies come from `public/series/` (Pillow RGB,
+quality 90, optimize). The restored `dream-parting-kiss.jpg` uses Sharp,
+JPEG quality 90, mozjpeg, from the matching WebP; its source is the first
+scene in `public/poetry/dream-within-dream/`. Catalogue copies come from
 `public/covers/`, with the same UUID basename (Sharp, JPEG quality 88,
 mozjpeg). Both keep the source's 720×1280 pixels, without another crop or
 resize. The shared artwork resolver selects the matching JPEG and authored

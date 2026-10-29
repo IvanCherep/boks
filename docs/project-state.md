@@ -11,6 +11,15 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**Softer cover fades and Poe's opening scene (2026-10-29).** The adaptive
+heading shade now has longer eased transitions, reducing the visible stripe
+on pale skies while keeping the same protection under the text. A Dream
+Within a Dream uses its original opening Series scene, the couple parting by
+the sea, in the reader, shelf and share poster. Other covers are unchanged;
+new share links use poster version `v44-5`. Checked in Chromium and WebKit at
+phone, short-phone, landscape and desktop sizes. Release details:
+`docs/handover/2026-10-29-cover-fades-and-dream.md`.
+
 **Readable text on illustrated covers (2026-10-29).** Bright, detailed artwork
 made the cream title, byline and summary hard to read. A local soft gradient
 now follows the actual heading height, with strength estimated from the image
