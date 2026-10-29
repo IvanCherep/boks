@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-28.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-29.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,24 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Illustrated catalogue covers, with Series preserved (2026-10-29).** All 223
+published boks now have illustrations: 191 WebP covers from the supplied
+archive were added by exact bok ID; the 32 existing Series covers, poster
+JPEGs, reader crops and wordmark contrast were retained. The catalogue assets
+live in `public/covers/`, with crop/contrast metadata in
+`lib/boks/catalogue-artwork.ts`. Cover, menu, activity, next preview and both
+share outputs use the shared resolver; illustrations alone do not add Play or
+a place on the Series shelf. Unknown future boks retain typography.
+
+Deployed from `0e0d122`, Worker version
+`bad34ac9-3642-415e-b15b-31791abb5016`. Share links use poster version `v44-4`.
+All published cover files were checked against their local hashes after
+deployment; new and existing illustrated posters return 720×900 PNGs. The
+current main's pending `20261029100000_boks_study_b2_music.sql` migration was
+applied before release: Б2 was off, with empty materials and no participants
+or responses, and remains off. Details and validation are in
+`docs/handover/2026-10-29-catalogue-covers.md`.
 
 **The whole app follows the interface language (2026-10-28).** On a Russian
 interface, Studio («Админка» in Russian; every tab, with its own EN / RU switch sharing the reader's
