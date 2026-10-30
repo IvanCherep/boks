@@ -292,6 +292,18 @@ describe("study results", () => {
     expect(summary.facts[0].value).toBe("1");
   });
 
+  it("does not confirm b2 at the threshold when the interval reaches zero", () => {
+    const rows: StudyResponseRow[] = [];
+    for (let n = 1; n <= 10; n += 1) {
+      const [music, silence] = n === 1 ? [6, 5] : n === 2 ? [5, 6] : n === 3 ? [6, 5] : [5, 5];
+      rows.push(row(n, { step: "session_survey", condition: "music", participantCondition: "music_a", answers: { index: 0, mode: "music", enjoyment: music, distraction: 2 } }));
+      rows.push(row(n, { step: "session_survey", condition: "silence", participantCondition: "music_a", answers: { index: 1, mode: "silence", enjoyment: silence, distraction: 2 } }));
+    }
+    const summary = summariseStudy("b2", rows);
+    expect(summary.comparisons[0].result.effect).toBeCloseTo(0.1);
+    expect(summary.comparisons[0].meetsThreshold).toBe(false);
+  });
+
   it("judges a3 by the paired Precision@5 of the two stored orders, NDCG@5 beside it", () => {
     const targets = ["a", "b", "c", "d", "e", "f"].map((letter, n) => id(200 + n));
     const rows: StudyResponseRow[] = [];
