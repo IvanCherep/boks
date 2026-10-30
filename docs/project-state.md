@@ -11,6 +11,18 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**A1 measures liking after reading (2026-10-30).** The participant reads four
+prose texts from two matched pairs, two whole works and two coherent excerpts,
+in ABBA/BAAB order. The same liking question follows each text; optional
+closure/context questions come after all four primary ratings. No next-reading
+choice or whole/excerpt labels. Results compare each participant's share of
+ratings 6-7, whole minus excerpt, with a +15 pp target and a positive paired
+95% interval. Incomplete sets, prior familiarity and older instruments are
+excluded and counted; raw answers stay. Studio's A1 gallery uses complete
+375×667 screens and an exact, deliberately bounded episode from «Бирюк».
+All study switches remain off. See `docs/studies.md` and
+`docs/handover/2026-10-30-a1-post-reading-liking.md`.
+
 **Andrey's study instruments and gallery (2026-10-30).** A1 offers two new
 options with neutral format labels and asks closure only after the choice. A2 now measures a
 reported choice plus ease 6-7 of 7, cards minus full texts, with refusals kept

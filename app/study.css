@@ -150,6 +150,8 @@ button.study-bok { cursor: pointer; }
 .study-gallery__item { display: grid; gap: 8px; flex: none; margin: 0; }
 .study-gallery__item figcaption { font-size: 12px; color: var(--muted-foreground); max-width: 390px; }
 .study-gallery__phone { width: 390px; height: 844px; overflow: hidden; border: 0; border-radius: 0; box-shadow: none; }
+.study-gallery__phone[data-study-screen^="a1-"] { width: 375px; height: 667px; }
+.study-button--quiet { background: transparent; color: var(--study-muted); border: 1px solid var(--study-line); margin-top: 12px; }
 .study-gallery__phone .study { min-height: 100%; height: 100%; overflow: hidden; }
 .study-gallery__phone .study__body { min-height: 0; overflow-y: auto; padding-bottom: 22px; }
 .study-gallery__phone .study-reader { min-height: 0; max-height: none; }

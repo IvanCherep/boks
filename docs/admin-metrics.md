@@ -232,6 +232,6 @@ The thesis studies (`docs/studies.md`). Each number is computed in the browser f
 |---|---|---|
 | Participants, finished, by condition | `boks_study_participants` | Whether the arms are filling evenly; enrolment balances them. |
 | Effect, 95% interval, n | the hypothesis's own outcome per participant: a scale mean, a share, or a paired difference; percentile bootstrap | Read against the hypothesis threshold. Below 5 an arm nothing is estimated; at pilot size the interval, not "met", is the result. |
-| Facts | refusals (А1), sessions with nothing opened (РГ2), screened out (Б2), accepted algorithm fragments (Б3) | The denominators the comparisons hide. |
+| Facts | А1's included participants, high ratings with their denominators, incomplete/known-text sets and older instruments excluded; sessions with nothing opened (РГ2), screened out (Б2), accepted algorithm fragments (Б3) | The denominators and exclusions behind the comparisons. |
 | Fragment table (Б3) | ratings per fragment, «да» to both, accepted at two of three | Which fragments the algorithm got right, beside the same-length windows. |
 

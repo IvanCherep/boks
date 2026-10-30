@@ -26,23 +26,21 @@ export const galleryTargetIds = [
 
 export const galleryWholeId = galleryTargetIds[0];
 export const galleryFragmentSourceId = "c720d1ba-e20b-4b3e-adaa-8bcddaa0ca12"; // Бирюк
-export const galleryChoiceWholeId = galleryTargetIds[7];
-export const galleryChoiceFragmentSourceId = "48dc4cf3-19ac-49a4-9d84-d292bd5efedb"; // Город
 export const galleryA2Ids = [galleryTargetIds[4], galleryTargetIds[0], galleryTargetIds[5]];
-export const galleryBokIds = [...galleryProfileIds, ...galleryTargetIds, galleryFragmentSourceId, galleryChoiceFragmentSourceId];
+export const galleryBokIds = [...galleryProfileIds, ...galleryTargetIds, galleryFragmentSourceId];
 
 /**
- * A1 gallery only: an exact opening excerpt ending at a paragraph boundary,
- * close to the example whole work's length. This is not a validated material
- * set, not a new published bok, and never written as a participant answer.
+ * A1 gallery only: the storm/arrival episode of Бирюк, ending once the
+ * narrator is inside and the forester has lit the lamp (600 vs 553 words in
+ * the whole example). Keep the exact source, rather than cutting whichever
+ * paragraph happens to fit. The final study set still needs editorial review.
  */
-export function galleryExcerpt(source: Story, targetWords: number): Story {
-  const boundaries = [...source.body.matchAll(/\n\s*\n/g)].map((match) => match.index);
-  const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
-  const end = boundaries.reduce((best, next) =>
-    Math.abs(wordCount(source.body.slice(0, next)) - targetWords) < Math.abs(wordCount(source.body.slice(0, best)) - targetWords) ? next : best,
-  boundaries[0] ?? source.body.length);
+export function galleryExcerpt(source: Story): Story {
+  const ending = "Он поднял фонарь с полу, подошел к столу и зажег светильню.";
+  const at = source.body.indexOf(ending);
+  if (source.id !== galleryFragmentSourceId || at < 0) throw new Error("The A1 gallery excerpt boundary is unavailable.");
+  const end = at + ending.length;
   const body = source.body.slice(0, end).trimEnd();
-  const words = wordCount(body);
+  const words = body.trim().split(/\s+/).filter(Boolean).length;
   return { ...source, body, summary: "", wordCount: words, minutes: estimateMinutes(body) };
 }

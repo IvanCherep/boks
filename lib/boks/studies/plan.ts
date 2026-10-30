@@ -35,24 +35,26 @@ export function planRg1(materials: Rg1Materials, condition: string, seed: number
 }
 
 export type A1Plan = {
-  reads: { bokId: string; kind: "whole" | "fragment" }[];
-  choices: { bokId: string; kind: "whole" | "fragment" }[];
+  reads: { bokId: string; kind: "whole" | "fragment"; pair: number }[];
 };
 
 /**
- * Two different pairs, so the whole work and the fragment a participant reads
- * are not about the same thing; the order follows the condition. The choice
- * offers one new text of each kind in a shuffled order, with neutral format labels.
+ * Two randomly drawn matched pairs, both members of each read once. ABBA or
+ * BAAB balances each kind over early and late positions; the condition names
+ * the first kind. The seed fixes both the pairs and their order on a reload.
  */
 export function planA1(materials: A1Materials, condition: string, seed: number): A1Plan {
   const next = createRandom(seed);
-  const pairs = shuffle([...materials.pairs], next);
-  const whole = { bokId: pairs[0].whole, kind: "whole" as const };
-  const fragment = { bokId: pairs[1 % pairs.length].fragment, kind: "fragment" as const };
-  const reads = condition === "fragment_first" ? [fragment, whole] : [whole, fragment];
-  const wholes = shuffle(materials.choices.filter((choice) => choice.kind === "whole"), next).slice(0, 1);
-  const fragments = shuffle(materials.choices.filter((choice) => choice.kind === "fragment"), next).slice(0, 1);
-  return { reads, choices: shuffle([...wholes, ...fragments], next) };
+  const pairs = shuffle(materials.pairs.map((texts, pair) => ({ ...texts, pair })), next).slice(0, 2);
+  const kinds = condition === "fragment_first"
+    ? ["fragment", "whole", "whole", "fragment"] as const
+    : ["whole", "fragment", "fragment", "whole"] as const;
+  return {
+    reads: kinds.map((kind, index) => {
+      const pair = pairs[Math.floor(index / 2)];
+      return { bokId: pair[kind], kind, pair: pair.pair };
+    }),
+  };
 }
 
 export type Rg2Plan = {

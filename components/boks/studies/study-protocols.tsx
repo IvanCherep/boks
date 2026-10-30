@@ -9,7 +9,6 @@ import { loadStudyBoks, loadSupabaseReaderFeed, type StudyFragment, type StudyPa
 import type { StudyWords } from "@/components/boks/studies/study-copy";
 import { localizeBoksMessage } from "@/lib/boks/errors";
 import {
-  BokChoiceForm,
   A2SessionSurveyForm,
   CheckListForm,
   FragmentRatingForm,
@@ -70,7 +69,8 @@ const agree = (words: StudyWords, key: string, label: string): ScaleQuestion => 
 /** The scale questions of each protocol, for the participant page and the Studio gallery alike. */
 export const studyQuestions = {
   rg1: (words: StudyWords) => [agree(words, "moved", words.rg1Moved), agree(words, "thought", words.rg1Thought)],
-  a1: (words: StudyWords) => [agree(words, "closure", words.a1Closure)],
+  a1: (words: StudyWords): ScaleQuestion[] => [{ key: "liking", label: words.a1Liking, max: 7, low: words.a1Disliked, high: words.a1Liked }],
+  a1Details: (words: StudyWords) => [agree(words, "closure", words.a1Closure), agree(words, "context", words.a1Context)],
   b1: (words: StudyWords): ScaleQuestion[] => [{ key: "immersion", label: words.b1Immersion, max: 7, low: words.scaleNotImmersed, high: words.scaleImmersed }],
   b2: (words: StudyWords): ScaleQuestion[] => [
     { key: "enjoyment", label: words.b2Enjoyment, max: 7, low: words.scaleNotAtAll, high: words.scaleVeryMuch },
@@ -315,66 +315,49 @@ function A2({ run }: { run: StudyRun<"a2"> }) {
 function A1({ run }: { run: StudyRun<"a1"> }) {
   const { words } = run;
   const plan = useMemo(() => planA1(run.materials, run.participant.condition, run.participant.seed), [run]);
-  const { stories, error } = useStories([...plan.reads.map((read) => read.bokId), ...plan.choices.map((choice) => choice.bokId)]);
-  const [step, setStep] = useState<number | "closure" | "choose" | "chosen">(0);
-  const [asking, setAsking] = useState(0);
-  const [chosen, setChosen] = useState<Story | null>(null);
+  const { stories, error } = useStories(plan.reads.map((read) => read.bokId));
+  const [phase, setPhase] = useState<"reading" | "liking" | "details">("reading");
+  const [index, setIndex] = useState(0);
   const measures = useRef<Record<string, ReadingMeasure>>({});
   const saving = useSaving();
   if (!stories) return <Loading words={words} error={error} />;
-
-  if (typeof step === "number") {
-    const read = plan.reads[step];
-    const story = stories.get(read.bokId);
-    if (!story) return <Loading words={words} error={words.textMissing} />;
-    return <StudyTextReader key={story.id} story={story} words={words} progressLabel={read.kind === "whole" ? words.a1WholeLabel : words.a1FragmentLabel} doneLabel={words.nextStep}
+  const read = plan.reads[index];
+  const story = stories.get(read.bokId);
+  if (!story) return <Loading words={words} error={words.textMissing} />;
+  const attribution = { instrumentVersion: a1InstrumentVersion, phase, index, kind: read.kind, pair: read.pair };
+  if (phase === "reading") {
+    // Keep format labels out of the exposure: the participant evaluates the text.
+    return <StudyTextReader key={story.id} story={story} words={words} progressLabel={words.a1Progress(index + 1, plan.reads.length)} doneLabel={words.nextStep}
       onDone={(result) => {
         measures.current[story.id] = result;
-        setStep(step + 1 < plan.reads.length ? step + 1 : "choose");
+        setPhase("liking");
       }} />;
   }
-  if (step === "closure") {
-    const read = plan.reads[asking];
-    const story = stories.get(read.bokId);
+  if (phase === "liking") {
     return (
       <>
-        <ScaleForm key={asking} words={words} eyebrow={words.a1Recall} title={story?.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} busy={saving.busy}
+        <ScaleForm key={`liking-${index}`} words={words} eyebrow={words.a1Progress(index + 1, plan.reads.length)} title={story.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} busy={saving.busy}
           onSubmit={(answers) => saving.save(
-            () => run.record("after_reading", { instrumentVersion: a1InstrumentVersion, kind: read.kind, ...answers, ...measures.current[read.bokId] }, { reelId: read.bokId, condition: read.kind }),
+            () => run.record("after_reading", { ...attribution, ...answers, ...measures.current[read.bokId] }, { reelId: read.bokId, condition: read.kind }),
             () => {
-              if (asking + 1 < plan.reads.length) setAsking(asking + 1);
-              else if (chosen) setStep("chosen");
-              else run.finish();
+              if (index + 1 < plan.reads.length) { setIndex(index + 1); setPhase("reading"); }
+              else { setIndex(0); setPhase("details"); }
             }
           )} />
         <SaveError error={saving.error} />
       </>
     );
   }
-  if (step === "choose") {
-    const offered = plan.choices.map((choice) => stories.get(choice.bokId)).filter((story): story is Story => Boolean(story));
-    return (
-      <>
-        <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={offered} opening
-          formatLabels={Object.fromEntries(plan.choices.map((choice) => [choice.bokId, choice.kind === "whole" ? words.a1WholeLabel : words.a1FragmentLabel]))}
-          nothingLabel={words.chooseNothing} busy={saving.busy}
-          onChoose={(bokId) => {
-            const choice = plan.choices.find((entry) => entry.bokId === bokId);
-            saving.save(
-              () => run.record("choice", { instrumentVersion: a1InstrumentVersion, chosen: bokId, kind: choice?.kind ?? null, offered: plan.choices }, { reelId: bokId }),
-              () => {
-                setChosen(bokId ? stories.get(bokId) ?? null : null);
-                setAsking(0);
-                setStep("closure");
-              }
-            );
-          }} />
-        <SaveError error={saving.error} />
-      </>
-    );
-  }
-  // The chosen text, to read if they want: the choice is already recorded.
-  return chosen ? <StudyTextReader story={chosen} words={words} doneLabel={words.done} onDone={run.finish} /> : null;
+  // Ask diagnostic questions only after every primary rating is already saved.
+  const saveDetails = (answers: Record<string, number | boolean>) => saving.save(
+    () => run.record("after_reading", { ...attribution, ...answers }, { reelId: read.bokId, condition: read.kind }),
+    () => index + 1 < plan.reads.length ? setIndex(index + 1) : run.finish()
+  );
+  return <>
+    <ScaleForm key={`details-${index}`} words={words} eyebrow={words.a1Recall} title={story.title} questions={studyQuestions.a1Details(words)} busy={saving.busy}
+      onSubmit={saveDetails} onSkip={() => saveDetails({ skipped: true })} />
+    <SaveError error={saving.error} />
+  </>;
 }
 
 // a3 ----------------------------------------------------------------------

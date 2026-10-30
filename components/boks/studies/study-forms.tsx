@@ -159,7 +159,7 @@ export function OptionField({ label, options, value, onChange }: {
  * every scale has an answer: a skipped scale would be a missing value in the
  * one number the hypothesis is about.
  */
-export function ScaleForm({ words, eyebrow, title, questions, check, busy, onSubmit }: {
+export function ScaleForm({ words, eyebrow, title, questions, check, busy, onSubmit, onSkip }: {
   words: StudyWords;
   eyebrow?: string;
   title?: string;
@@ -168,6 +168,8 @@ export function ScaleForm({ words, eyebrow, title, questions, check, busy, onSub
   check?: { key: string; label: string };
   busy?: boolean;
   onSubmit: (answers: Record<string, number | boolean>) => void;
+  /** Optional diagnostic questions may be skipped without changing primary ratings. */
+  onSkip?: () => void;
 }) {
   const [values, setValues] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState(false);
@@ -188,6 +190,7 @@ export function ScaleForm({ words, eyebrow, title, questions, check, busy, onSub
         onClick={() => onSubmit(check ? { ...values, [check.key]: checked } : values)}>
         {busy ? words.sending : words.next}
       </button>
+      {onSkip && <button type="button" className="study-button study-button--quiet" disabled={busy} onClick={onSkip}>{words.a1SkipDetails}</button>}
     </StudyScreen>
   );
 }

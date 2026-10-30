@@ -26,10 +26,8 @@ export type Rg2Materials = {
 };
 
 export type A1Materials = {
-  /** A complete short work and a fragment of large prose of similar length, theme and difficulty. */
+  /** Complete short works and coherent prose excerpts, matched by length, theme and difficulty. */
   pairs: { whole: string; fragment: string }[];
-  /** New texts offered for the free choice, without saying which kind each is. */
-  choices: { bokId: string; kind: "whole" | "fragment" }[];
 };
 
 export type A2Materials = {
@@ -92,7 +90,7 @@ export type ParsedMaterials<K extends StudyKey> =
 export const materialTemplates: { [K in StudyKey]: StudyMaterials[K] } = {
   rg1: { familiarization: "", targets: [] },
   rg2: { minutes: 10, poolSize: 30 },
-  a1: { pairs: [], choices: [] },
+  a1: { pairs: [] },
   a2: { minutes: 10, setA: [], setB: [] },
   a3: { targets: [], profileSize: 5, perParticipant: 10, feedPoolSize: 40 },
   b1: { pieces: [], perParticipant: 2 },
@@ -110,9 +108,6 @@ const problemWords = defineMessages({
   list: (path: string) => `${path} must be a list.`,
   atLeast: (path: string, minimum: number) => `${path} needs at least ${minimum}.`,
   familiarizationTarget: "The familiarization piece cannot also be a target.",
-  choiceKind: (index: number) => `choices[${index}].kind must be "whole" or "fragment".`,
-  twoOfEach: "choices needs at least two of each kind.",
-  choiceUsed: "A choice must be a text the pairs do not use.",
   setsShare: "setA and setB must not share a bok.",
   setsSize: "setA and setB should be the same size.",
   perParticipant: "perParticipant is larger than the number of pieces.",
@@ -127,9 +122,6 @@ const problemWords = defineMessages({
     list: (path) => `${path} должен быть списком.`,
     atLeast: (path, minimum) => `${path}: нужно не меньше ${minimum}.`,
     familiarizationTarget: "Произведение для знакомства не может быть ещё и целевым.",
-    choiceKind: (index) => `choices[${index}].kind должен быть "whole" или "fragment".`,
-    twoOfEach: "В choices нужно не меньше двух каждого вида.",
-    choiceUsed: "Текст для выбора не должен использоваться в pairs.",
     setsShare: "У setA и setB не должно быть общих боков.",
     setsSize: "setA и setB должны быть одного размера.",
     perParticipant: "perParticipant больше числа произведений.",
@@ -213,18 +205,9 @@ const parsers: { [K in StudyKey]: (raw: Record<string, unknown>, read: Reader) =
       const item = read.object(pair, `pairs[${index}]`);
       return { whole: read.id(item.whole, `pairs[${index}].whole`), fragment: read.id(item.fragment, `pairs[${index}].fragment`) };
     });
-    const choices = read.list(raw.choices, "choices", 4).map((choice, index) => {
-      const item = read.object(choice, `choices[${index}]`);
-      const kind: "whole" | "fragment" | null = item.kind === "whole" || item.kind === "fragment" ? item.kind : null;
-      if (!kind) read.problems.push(read.t.choiceKind(index));
-      return { bokId: read.id(item.bokId, `choices[${index}].bokId`), kind: kind ?? "whole" };
-    });
-    if (choices.filter((choice) => choice.kind === "whole").length < 2 || choices.filter((choice) => choice.kind === "fragment").length < 2) {
-      read.problems.push(read.t.twoOfEach);
-    }
-    const read_ = new Set(pairs.flatMap((pair) => [pair.whole, pair.fragment]));
-    if (choices.some((choice) => read_.has(choice.bokId))) read.problems.push(read.t.choiceUsed);
-    return { pairs, choices };
+    const ids = pairs.flatMap((pair) => [pair.whole, pair.fragment]);
+    if (new Set(ids).size !== ids.length) read.problems.push(read.t.repeats("pairs"));
+    return { pairs };
   },
   a2(raw, read) {
     const setA = read.ids(raw.setA, "setA", 3);
@@ -275,7 +258,8 @@ export function materialBokIds(key: StudyKey, raw: unknown): string[] {
     else if (Array.isArray(value)) value.forEach(visit);
     else if (value && typeof value === "object") Object.values(value).forEach(visit);
   };
-  if (key !== "b3") visit(raw);
+  if (key === "a1") visit((raw && typeof raw === "object" ? raw as Record<string, unknown> : {}).pairs);
+  else if (key !== "b3") visit(raw);
   return [...ids];
 }
 

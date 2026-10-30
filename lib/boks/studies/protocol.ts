@@ -15,7 +15,7 @@ export const studyKeys = ["rg1", "rg2", "a1", "a2", "a3", "b1", "b2", "b3"] as c
 export type StudyKey = (typeof studyKeys)[number];
 
 /** A wording or sequence change must not silently pool earlier instruments. */
-export const a1InstrumentVersion = "a1-choice-before-closure-v2";
+export const a1InstrumentVersion = "a1-post-reading-liking-v3";
 export const a2InstrumentVersion = "a2-choice-ease-v2";
 
 export function isStudyKey(value: unknown): value is StudyKey {
@@ -45,7 +45,7 @@ export const studySteps = [
   "familiarity",
   // Scale questions after a text (rg1, a1, b1).
   "after_reading",
-  // The next text chosen from a showcase, or none (a1).
+  // A choice from a showcase (retained for earlier A1 instruments).
   "choice",
   // Minutes in an interface: what was opened and read (rg2, a2, and b2's five-minute blocks).
   "session",
@@ -100,8 +100,8 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     label: "А1",
     owner: "Andrey",
     title: "A whole work or a fragment",
-    comparison: "Reads both kinds in assigned order, then chooses between two new texts with neutral format labels or neither. Closure is asked only after the choice.",
-    outcome: "Share choosing a whole work minus share choosing a fragment, among everyone: at least +15 pp.",
+    comparison: "Four texts from two matched pairs: two whole works and two coherent excerpts. Rates liking after each; order is counterbalanced. Closure and context questions come after all four ratings.",
+    outcome: "Share of liking ratings at 6 or 7 out of 7: whole works minus excerpts at least +15 pp, paired by participant, 95% interval above 0.",
     design: "within",
   },
   a2: {
@@ -165,8 +165,8 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   },
   a1: {
     title: "Целое произведение или фрагмент",
-    comparison: "Читает оба вида в назначенном порядке, затем выбирает между двумя новыми текстами с нейтральными метками формата или ничего. Вопрос о завершённости задаём после выбора.",
-    outcome: "Доля выбравших целое произведение минус доля выбравших фрагмент, среди всех: не меньше +15 п. п.",
+    comparison: "Четыре текста из двух сопоставимых пар: два целых произведения и два связных фрагмента. После каждого - оценка впечатления; порядок чередуем. Завершённость и понятность спрашиваем после всех четырёх оценок.",
+    outcome: "Доля оценок 6 или 7 из 7 на вопрос «Насколько вам понравился этот текст?»: целые минус фрагменты не меньше +15 п. п., парно по участникам, 95% интервал выше 0.",
   },
   a2: {
     title: "Выбор по карточкам или полным текстам",

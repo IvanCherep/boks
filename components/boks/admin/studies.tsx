@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Story } from "@/components/boks/client-types";
+import { estimateMinutes } from "@/components/boks/client-format";
 import {
   deleteStudyFragmentBatch,
   importStudyFragments,
@@ -54,7 +55,7 @@ const words = defineMessages({
   materialHelp: {
     rg1: "familiarization: a Series piece shown first in both formats. targets: Series pieces; each participant gets one, in their assigned format.",
     rg2: "minutes: each session's length; everyone has a feed session and a catalogue session, in the assigned order. poolSize: texts per session - twice as many are drawn from the participant's own feed and split by alternating ranks, so the two sessions never share a text.",
-    a1: "pairs: at least 4 of { whole, fragment } of similar length (±10%), theme and difficulty. choices: a separate pool, at least two of each kind ({ bokId, kind }); each participant sees one of each, with neutral format labels, and a refusal. Closure is asked after choosing.",
+    a1: "pairs: at least 4 distinct pairs { whole, fragment }, matched by genre, theme, difficulty and length (within 10%). Use coherent excerpts, not arbitrary cut-offs, and texts taking 1-5 minutes. Each participant reads both members of two drawn pairs in ABBA/BAAB order and rates liking after each. No new-text choice pool. Recruit readers aged 18-35; approve the materials editorially before starting.",
     a2: "setA and setB: comparable lists of the same size, in the order the feed shows them. minutes: each session's length.",
     a3: "targets: the test pool, at least perParticipant + profileSize boks with semantic vectors, by many authors; none is served while the profile forms. profileSize: rated boks that fix the profile (5). perParticipant: new texts rated after it (10). feedPoolSize: how much of the participant's own feed the profile is formed from.",
     b1: "pieces: immersive poems with gesture scenes. perParticipant: how many each participant reads; their roles follow the recorded traces.",
@@ -66,6 +67,7 @@ const words = defineMessages({
   notPublished: (id: string) => `${id} is not a published bok.`,
   notSeries: (id: string, poem: boolean) => `${id} is not ${poem ? "an immersive poem" : "a Series piece"}.`,
   uneven: (index: number, whole: number, fragment: number) => `pairs[${index}]: ${whole} against ${fragment} words differ by more than 10%.`,
+  a1TooLong: (title: string) => `A1: “${title}” takes more than five minutes to read. Choose a shorter text.`,
   saved: "Saved.",
   saveFailed: "Could not save.",
   materialsJson: "Materials as JSON",
@@ -138,7 +140,7 @@ const words = defineMessages({
     materialHelp: {
       rg1: "familiarization: произведение серии, которое показывают первым в обоих форматах. targets: произведения серии; каждый участник получает одно в назначенном ему формате.",
       rg2: "minutes: длина каждой сессии; у каждого есть сессия в ленте и сессия в каталоге, в назначенном порядке. poolSize: текстов на сессию; из собственной ленты участника берётся вдвое больше и делится по чередующимся позициям, так что у двух сессий нет общих текстов.",
-      a1: "pairs: не меньше 4 пар { whole, fragment } близкой длины (±10%), темы и сложности. choices: отдельный набор, не меньше двух каждого вида ({ bokId, kind }); участнику показываем по одному с нейтральными метками формата и вариант отказа. Завершённость спрашиваем после выбора.",
+      a1: "pairs: не меньше 4 разных пар { whole, fragment }, близких по жанру, теме, сложности и длине (разница до 10%). Фрагменты должны быть связными, без произвольного обрыва; тексты - на 1-5 минут. Участник читает оба текста двух случайно выбранных пар в порядке АББА/БААБ и после каждого оценивает впечатление. Набор choices больше не нужен. Набираем читателей 18-35 лет; перед запуском редактор проверяет пары.",
       a2: "setA и setB: сопоставимые списки одного размера, в порядке показа в ленте. minutes: длина каждой сессии.",
       a3: "targets: тестовый пул, не меньше perParticipant + profileSize боков с семантическими векторами, от многих авторов; пока формируется профиль, ни один из них не показывается. profileSize: оценённые боки, которые фиксируют профиль (5). perParticipant: новые тексты, оцениваемые после него (10). feedPoolSize: из какой части собственной ленты участника формируется профиль.",
       b1: "pieces: иммерсивные стихи со сценами жестов. perParticipant: сколько читает каждый участник; роли следуют записанным трекам.",
@@ -150,6 +152,7 @@ const words = defineMessages({
     notPublished: (id) => `${id} не опубликованный бок.`,
     notSeries: (id, poem) => `${id} не ${poem ? "иммерсивный стих" : "произведение серии"}.`,
     uneven: (index, whole, fragment) => `pairs[${index}]: ${whole} против ${fragment} слов, разница больше 10%.`,
+    a1TooLong: (title) => `А1: «${title}» читается дольше пяти минут. Выберите более короткий текст.`,
     saved: "Сохранено.",
     saveFailed: "Не удалось сохранить.",
     materialsJson: "Материалы в JSON",
@@ -396,7 +399,8 @@ function MaterialsEditor({ study, onSaved }: { study: StudyAdminRow; onSaved: ()
             : [];
         })
       : [];
-    const all = [...parsed.problems, ...unpublished, ...notSeries, ...uneven];
+    const tooLong = study.key === "a1" ? stories.filter((story) => estimateMinutes(story.body) > 5).map((story) => t.a1TooLong(story.title)) : [];
+    const all = [...parsed.problems, ...unpublished, ...notSeries, ...uneven, ...tooLong];
     setProblems(all);
     return all.length ? null : (raw as Record<string, unknown>);
   }

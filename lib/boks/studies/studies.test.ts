@@ -47,13 +47,12 @@ describe("study materials", () => {
   it("accepts a complete a1 set and lists its boks", () => {
     const raw = {
       pairs: [1, 2, 3, 4].map((n) => ({ whole: id(n), fragment: id(n + 10) })),
-      choices: [
-        { bokId: id(21), kind: "whole" }, { bokId: id(22), kind: "whole" },
-        { bokId: id(23), kind: "fragment" }, { bokId: id(24), kind: "fragment" },
-      ],
     };
     expect(parseStudyMaterials("a1", raw).ok).toBe(true);
-    expect(materialBokIds("a1", raw)).toHaveLength(12);
+    expect(materialBokIds("a1", raw)).toHaveLength(8);
+    // Old materials may still carry a choice pool; it is not loaded or used.
+    expect(materialBokIds("a1", { ...raw, choices: [{ bokId: id(21) }] })).toHaveLength(8);
+    expect(parseStudyMaterials("a1", { pairs: [...raw.pairs, raw.pairs[0]] }).ok).toBe(false);
   });
 });
 
@@ -65,23 +64,20 @@ describe("study plans", () => {
     expect(planRg1(materials, "series", 7).familiarization.formats.sort()).toEqual(["series", "text"]);
   });
 
-  it("gives a1 one whole work and one fragment from different pairs, in the condition's order", () => {
+  it("gives a1 two matched pairs with each kind balanced over early and late positions", () => {
     const materials = {
       pairs: [1, 2, 3, 4].map((n) => ({ whole: id(n), fragment: id(n + 10) })),
-      choices: [
-        ...[21, 22, 23].map((n) => ({ bokId: id(n), kind: "whole" as const })),
-        ...[24, 25, 26].map((n) => ({ bokId: id(n), kind: "fragment" as const })),
-      ],
     };
     for (let seed = 1; seed < 50; seed += 1) {
       const plan = planA1(materials, "fragment_first", seed);
-      expect(plan.reads.map((read) => read.kind)).toEqual(["fragment", "whole"]);
-      const wholePair = materials.pairs.findIndex((pair) => pair.whole === plan.reads[1].bokId);
-      const fragmentPair = materials.pairs.findIndex((pair) => pair.fragment === plan.reads[0].bokId);
-      expect(wholePair).not.toBe(fragmentPair);
-      expect(plan.choices.filter((choice) => choice.kind === "whole")).toHaveLength(1);
-      expect(plan.choices.filter((choice) => choice.kind === "fragment")).toHaveLength(1);
-      expect(plan.choices.every((choice) => !plan.reads.some((read) => read.bokId === choice.bokId))).toBe(true);
+      expect(plan.reads.map((read) => read.kind)).toEqual(["fragment", "whole", "whole", "fragment"]);
+      expect(planA1(materials, "whole_first", seed).reads.map((read) => read.kind)).toEqual(["whole", "fragment", "fragment", "whole"]);
+      expect(planA1(materials, "fragment_first", seed)).toEqual(plan);
+      expect(new Set(plan.reads.map((read) => read.bokId)).size).toBe(4);
+      expect(plan.reads[0].pair).toBe(plan.reads[1].pair);
+      expect(plan.reads[2].pair).toBe(plan.reads[3].pair);
+      expect(plan.reads[0].pair).not.toBe(plan.reads[2].pair);
+      for (const read of plan.reads) expect(read.bokId).toBe(materials.pairs[read.pair][read.kind]);
     }
   });
 
@@ -324,15 +320,42 @@ describe("study results", () => {
     expect(summary.facts[0].value).toBe("1");
   });
 
-  it("counts a1 refusals in the denominator", () => {
-    const rows = [1, 2, 3, 4, 5, 6].map((n) =>
-      row(n, { step: "choice", answers: { instrumentVersion: a1InstrumentVersion, kind: n <= 3 ? "whole" : n === 4 ? "fragment" : null } })
-    );
-    rows.push(row(7, { step: "choice", answers: { kind: "whole" } }));
+  const a1Ratings = (participant: number, values: number[]) => values.map((liking, index) => row(participant, {
+    reelId: id(100 + index),
+    answers: {
+      instrumentVersion: a1InstrumentVersion, phase: "liking", index, pair: Math.floor(index / 2),
+      kind: index === 0 || index === 3 ? "whole" : "fragment", liking, knewBefore: false,
+    },
+  }));
+
+  it("compares A1 liking per participant, without pooling old choices, repeats, known texts or incomplete sets", () => {
+    const rows = [1, 2, 3, 4, 5, 6].flatMap((n) => a1Ratings(n, n <= 3 ? [7, 5, 5, 6] : [6, 6, 5, 5]));
+    rows.push(...a1Ratings(7, [7, 5, 5]));
+    const known = a1Ratings(8, [7, 5, 5, 7]);
+    known[0].answers.knewBefore = true;
+    rows.push(...known);
+    rows.push(row(9, { step: "choice", answers: { instrumentVersion: "a1-choice-before-closure-v2", kind: "whole" } }));
+    const repeat = a1Ratings(1, [1, 7, 7, 1]);
+    repeat.forEach((entry) => { entry.createdAt = "2026-11-02T10:00:00Z"; });
+    rows.push(...repeat);
+    // Reverse the transport order: first means first by timestamp, not the API's row order.
+    const summary = summariseStudy("a1", rows.reverse());
+    expect(summary.comparisons[0].result.readers).toBe(6);
+    expect(summary.comparisons[0].result.effect).toBeCloseTo(0.5, 6);
+    expect(summary.comparisons[0].meetsThreshold).toBe(true);
+    expect(summary.comparisons[2].result.status).toBe("insufficient_data"); // Optional diagnostics were not answered.
+    expect(summary.facts.map((fact) => fact.value)).toEqual(["6", "9 of 12 (75%)", "3 of 12 (25%)", "1", "1", "1"]);
+  });
+
+  it("does not confirm A1 from a positive point estimate alone or from invalid scales", () => {
+    const rows = [1, 2, 3, 4, 5, 6].flatMap((n) => a1Ratings(n, n <= 4 ? [7, 5, 5, 7] : [5, 7, 7, 5]));
+    const invalid = a1Ratings(7, [8, 5, 5, 7]);
+    rows.push(...invalid);
     const summary = summariseStudy("a1", rows);
-    expect(summary.comparisons[0].result.effect).toBeCloseTo(2 / 6, 4);
-    expect(summary.facts[0].value).toBe("2 of 6 (33%)");
-    expect(summary.facts[1].value).toBe("1");
+    expect(summary.comparisons[0].result.readers).toBe(6);
+    expect(summary.comparisons[0].result.effect).toBeGreaterThan(0.15);
+    expect(summary.comparisons[0].result.ci[0]).toBeLessThanOrEqual(0);
+    expect(summary.comparisons[0].meetsThreshold).toBe(false);
   });
 
   it("compares A2 cards minus full texts on choice and ease, keeps refusals, and excludes old or invalid instruments", () => {

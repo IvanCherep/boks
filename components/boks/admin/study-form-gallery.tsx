@@ -21,7 +21,7 @@ import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import type { Story } from "@/components/boks/client-types";
 import { loadStudyBoks } from "@/components/boks/supabase-browser-data";
-import { galleryA2Ids, galleryBokIds, galleryChoiceFragmentSourceId, galleryChoiceWholeId, galleryExcerpt, galleryFragmentSourceId, galleryProfileIds, galleryWholeId } from "@/components/boks/studies/study-gallery-examples";
+import { galleryA2Ids, galleryBokIds, galleryExcerpt, galleryFragmentSourceId, galleryProfileIds, galleryWholeId } from "@/components/boks/studies/study-gallery-examples";
 import { StudyA3Demo } from "@/components/boks/admin/study-a3-demo";
 
 /**
@@ -42,11 +42,11 @@ const galleryWords = defineMessages({
   rg2Catalogue: "Catalogue session: other texts of the same feed, with search and filters",
   rg2After: "After each session: the texts, the choice, «тронуло» 1–7 and session satisfaction 1–7",
   rg2Between: "Between the two sessions; the order is assigned at random",
-  a1Read: "A whole work or a fragment, read in turn",
-  a1After: "Only after the choice: closure of each earlier text, 1-7",
-  a1Choice: "Free choice: one new whole work and one excerpt, with neutral format labels, or neither",
-  a1Whole: "1. Read a complete work",
-  a1Fragment: "2. Read an excerpt from a longer work (order counterbalanced)",
+  a1After: "After all four liking ratings: optional closure and context questions",
+  a1Whole: "Read a whole work (format label visible only to the researcher)",
+  a1Fragment: "Read a coherent excerpt (same interface; order counterbalanced)",
+  a1RateWhole: "Immediately after the whole work: liking, 1-7",
+  a1RateFragment: "Immediately after the excerpt: the same liking question, 1-7",
   a2Known: "Before reading: which texts are already known",
   a2Inline: "Feed of full texts",
   a2Cards: "Card with a separate reading screen",
@@ -68,7 +68,7 @@ const galleryWords = defineMessages({
   b3Between: "Between fragments",
   galleryIntro: "Participant screens, using the same components as the study links. A1, A2 and A3 use published Boks texts and illustrations. You can try the controls; answers are not saved. Series playback is available in a study's Preview.",
   exampleNote: "Catalogue examples illustrate the procedure. A1's excerpts retain the source text verbatim; the team must approve the final matched pairs before starting the study.",
-  a1Method: "Two texts → free choice of the next read → closure questions. Formats are named neutrally; no preferred answer is suggested. Primary: share choosing whole minus share choosing excerpt, including refusals; target +15 pp.",
+  a1Method: "Four texts: two whole works and two coherent excerpts from two matched pairs. After each: liking, 1-7. The examples below show one pair; each participant reads a second pair too. Order ABBA/BAAB; no format labels during reading. Primary: each participant's share of 6-7 ratings, whole minus excerpt; target +15 pp and a positive 95% paired interval. Closure/context are optional and come after every primary rating.",
   a2Method: "Cards → reading screen versus full text in the feed. Each participant tries both for ten minutes with different, comparable sets; order and set assignment are counterbalanced. Primary: a text chosen AND ease rated 6 or 7; cards minus full texts, target +10 pp.",
   loadFailed: "Could not load the catalogue examples. Reload the page to try again.",
   language: "Language",
@@ -85,11 +85,11 @@ const galleryWords = defineMessages({
     rg2Catalogue: "Сессия в каталоге: другие тексты той же ленты, с поиском и фильтрами",
     rg2After: "После каждой сессии: тексты, выбор, «тронуло» 1–7 и удовлетворённость сессией 1–7",
     rg2Between: "Между двумя сессиями; порядок назначается случайно",
-    a1Read: "Целое произведение или фрагмент, по очереди",
-    a1After: "Только после выбора: завершённость каждого из первых двух текстов, 1-7",
-    a1Choice: "Свободный выбор: целое произведение и отрывок с нейтральными метками формата, или ничего",
-    a1Whole: "1. Чтение целого произведения",
-    a1Fragment: "2. Чтение фрагмента более длинного текста (порядок чередуется)",
+    a1After: "После всех четырёх оценок: необязательные вопросы о завершённости и контексте",
+    a1Whole: "Чтение целого произведения (метка формата видна только исследователю)",
+    a1Fragment: "Чтение связного фрагмента (тот же интерфейс; порядок чередуется)",
+    a1RateWhole: "Сразу после целого текста: впечатление, 1-7",
+    a1RateFragment: "Сразу после фрагмента: тот же вопрос, 1-7",
     a2Known: "Перед чтением: какие тексты уже знакомы",
     a2Inline: "Лента полных текстов",
     a2Cards: "Карточка с отдельным экраном чтения",
@@ -111,7 +111,7 @@ const galleryWords = defineMessages({
     b3Between: "Между фрагментами",
     galleryIntro: "Экраны участника на тех же компонентах, что и исследование по ссылке. В А1, А2 и А3 использованы опубликованные тексты и иллюстрации Boks. Кнопки можно попробовать, ответы не сохраняются. Плеер Series доступен в предпросмотре исследования.",
     exampleNote: "Примеры из каталога показывают процедуру. В А1 исходный текст фрагментов сохранён дословно; окончательные сопоставимые пары команда утверждает перед запуском исследования.",
-    a1Method: "Два текста → свободный выбор следующего чтения → вопросы о завершённости. Форматы обозначаем нейтрально, ожидаемый ответ не подсказываем. Основная метрика: доля выбравших целое минус доля выбравших фрагмент, с учётом отказов; цель +15 п.п.",
+    a1Method: "Четыре текста: два целых произведения и два связных фрагмента из двух сопоставимых пар. После каждого - впечатление, 1-7. Ниже показана одна пара; участник читает ещё вторую. Порядок АББА/БААБ; меток формата при чтении нет. Основная метрика: доля оценок 6-7 у каждого участника, целые минус фрагменты; цель +15 п.п. и парный 95% интервал выше 0. Вопросы о завершённости и контексте необязательные, после всех основных оценок.",
     a2Method: "Карточка → экран чтения против полного текста в ленте. Каждый участник пробует оба режима по десять минут с разными сопоставимыми наборами; порядок и наборы чередуем. Основная метрика: текст выбран И лёгкость оценена на 6 или 7; карточки минус полные тексты, цель +10 п.п.",
     loadFailed: "Не удалось загрузить примеры из каталога. Обновите страницу, чтобы повторить.",
     language: "Язык",
@@ -156,16 +156,14 @@ export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords
     case "a1": {
       if (!catalogue) return [];
       const whole = catalogue.get(galleryWholeId)!;
-      const fragment = galleryExcerpt(catalogue.get(galleryFragmentSourceId)!, whole.wordCount ?? 553);
-      const choiceWhole = catalogue.get(galleryChoiceWholeId)!;
-      const choiceFragment = galleryExcerpt(catalogue.get(galleryChoiceFragmentSourceId)!, choiceWhole.wordCount ?? 669);
+      const fragment = galleryExcerpt(catalogue.get(galleryFragmentSourceId)!);
       return [
         intro,
-        { id: "a1-whole", caption: t.a1Whole, body: <StudyTextReader story={whole} words={words} progressLabel={words.a1WholeLabel} doneLabel={words.nextStep} onDone={noop} /> },
-        { id: "a1-fragment", caption: t.a1Fragment, body: <StudyTextReader story={fragment} words={words} progressLabel={words.a1FragmentLabel} doneLabel={words.nextStep} onDone={noop} /> },
-        { id: "a1-choice", caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[choiceWhole, choiceFragment]} opening
-          formatLabels={{ [choiceWhole.id]: words.a1WholeLabel, [choiceFragment.id]: words.a1FragmentLabel }} nothingLabel={words.chooseNothing} onChoose={noop} /> },
-        { id: "a1-closure", caption: t.a1After, body: <ScaleForm words={words} eyebrow={words.a1Recall} title={whole.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
+        { id: "a1-whole", caption: t.a1Whole, body: <StudyTextReader story={whole} words={words} progressLabel={words.a1Progress(1, 4)} doneLabel={words.nextStep} onDone={noop} /> },
+        { id: "a1-liking-whole", caption: t.a1RateWhole, body: <ScaleForm words={words} eyebrow={words.a1Progress(1, 4)} title={whole.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
+        { id: "a1-fragment", caption: t.a1Fragment, body: <StudyTextReader story={fragment} words={words} progressLabel={words.a1Progress(2, 4)} doneLabel={words.nextStep} onDone={noop} /> },
+        { id: "a1-liking-fragment", caption: t.a1RateFragment, body: <ScaleForm words={words} eyebrow={words.a1Progress(2, 4)} title={fragment.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
+        { id: "a1-details", caption: t.a1After, body: <ScaleForm words={words} eyebrow={words.a1Recall} title={whole.title} questions={studyQuestions.a1Details(words)} onSubmit={noop} onSkip={noop} /> },
       ];
     }
     case "a2": {

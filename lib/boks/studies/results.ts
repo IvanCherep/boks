@@ -101,9 +101,15 @@ const resultWords = defineMessages({
   movedSecondary: "«Прочитанное меня тронуло», 1–7 (secondary; both sessions with a text)",
   successfulSecondary: "Successful session (secondary)",
   nothingOpened: "Sessions with nothing opened (still rated for satisfaction)",
-  choseWholeMinusFragment: "Chose a whole work minus chose a fragment",
-  feltComplete: "Felt complete, 1–7",
-  choseNothing: "Chose nothing",
+  a1LikedShare: "Share of liking ratings at 6 or 7, paired by participant",
+  a1LikingMean: "Liking, 1-7 (secondary, participant means)",
+  feltComplete: "Felt complete, 1-7 (secondary, paired)",
+  a1Context: "Enough context to understand, 1-7 (secondary, paired)",
+  a1Included: "Participants with four valid ratings of unfamiliar texts (primary)",
+  a1Incomplete: "Incomplete or invalid sets of four ratings (left out)",
+  a1Known: "Participants who had read a study text before (left out)",
+  a1WholeRatings: "Whole works: high ratings / ratings in the primary sample",
+  a1FragmentRatings: "Excerpts: high ratings / ratings in the primary sample",
   earlierInstrument: "Earlier instrument (kept in export, not pooled)",
   incompleteChoice: "Current instrument, no valid pair of session surveys yet",
   easyChoice: "Chose a text and rated ease 6 or 7 of 7",
@@ -152,9 +158,15 @@ const resultWords = defineMessages({
     movedSecondary: "«Прочитанное меня тронуло», 1–7 (вторичная; обе сессии с текстом)",
     successfulSecondary: "Успешная сессия (вторичная)",
     nothingOpened: "Сессии, где ничего не открыли (удовлетворённость всё равно оценена)",
-    choseWholeMinusFragment: "Выбрали целое произведение минус выбрали фрагмент",
-    feltComplete: "Ощущение завершённости, 1–7",
-    choseNothing: "Ничего не выбрали",
+    a1LikedShare: "Доля оценок впечатления 6 или 7, парно по участникам",
+    a1LikingMean: "Впечатление, 1-7 (дополнительно, средние по участникам)",
+    feltComplete: "Ощущение завершённости, 1-7 (дополнительно, парно)",
+    a1Context: "Хватило контекста для понимания, 1-7 (дополнительно, парно)",
+    a1Included: "Участники с четырьмя оценками новых для них текстов (основной расчёт)",
+    a1Incomplete: "Неполные или некорректные наборы из четырёх оценок (исключены)",
+    a1Known: "Участники, уже читавшие текст исследования (исключены)",
+    a1WholeRatings: "Целые: высокие оценки / оценки в основной выборке",
+    a1FragmentRatings: "Фрагменты: высокие оценки / оценки в основной выборке",
     earlierInstrument: "Прежняя версия (сохранена в выгрузке, в расчёт не входит)",
     incompleteChoice: "Новая версия, ещё нет двух корректных анкет сессии",
     easyChoice: "Выбрали текст и оценили лёгкость на 6 или 7 из 7",
@@ -332,29 +344,69 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   },
   a1(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
-    let refused = 0;
+    const likingMeans: { control: number; variant: number }[] = [];
+    const closure: { control: number; variant: number }[] = [];
+    const context: { control: number; variant: number }[] = [];
     let legacy = 0;
-    const closure: Record<"whole" | "fragment", number[]> = { whole: [], fragment: [] };
+    let incomplete = 0;
+    let known = 0;
+    const totals = { whole: { high: 0, ratings: 0 }, fragment: { high: 0, ratings: 0 } };
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const validScale = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 7;
     for (const rows of groups.values()) {
-      for (const row of rows.filter((entry) => entry.step === "after_reading" && entry.answers.instrumentVersion === a1InstrumentVersion)) {
-        const value = scale(row.answers.closure);
-        if (value !== null) closure[row.answers.kind === "fragment" ? "fragment" : "whole"].push(value);
+      const current = rows.filter((row) => row.answers.instrumentVersion === a1InstrumentVersion)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id - b.id);
+      if (!current.length) { legacy += 1; continue; }
+      // Reloads and retries cannot change the first response or increase n.
+      const first = new Map<string, StudyResponseRow>();
+      for (const row of current) {
+        if (row.step === "after_reading" && row.answers.phase === "liking" && row.reelId && !first.has(row.reelId)) first.set(row.reelId, row);
       }
-      const choice = rows.find((row) => row.step === "choice" && row.answers.instrumentVersion === a1InstrumentVersion);
-      if (!choice) {
-        if (rows.some((row) => row.step === "choice")) legacy += 1;
-        continue;
+      const ratings = [...first.values()];
+      const kinds = (kind: string) => ratings.filter((row) => row.answers.kind === kind);
+      const pairIds = new Set(ratings.map((row) => row.answers.pair));
+      const complete = ratings.length === 4 && kinds("whole").length === 2 && kinds("fragment").length === 2
+        && new Set(ratings.map((row) => row.answers.index)).size === 4
+        && ratings.every((row) => Number.isInteger(row.answers.index) && Number(row.answers.index) >= 0 && Number(row.answers.index) < 4
+          && Number.isInteger(row.answers.pair) && Number(row.answers.pair) >= 0 && validScale(row.answers.liking) && typeof row.answers.knewBefore === "boolean")
+        && pairIds.size === 2 && [...pairIds].every((pair) => {
+          const members = ratings.filter((row) => row.answers.pair === pair);
+          return members.length === 2 && members[0].answers.kind !== members[1].answers.kind;
+        });
+      if (!complete) { incomplete += 1; continue; }
+      if (ratings.some((row) => row.answers.knewBefore === true)) { known += 1; continue; }
+      const values = (kind: string) => kinds(kind).map((row) => Number(row.answers.liking));
+      const whole = values("whole");
+      const fragment = values("fragment");
+      const high = (values: number[]) => values.filter((value) => value >= 6).length;
+      // One paired observation per participant, not four independent readers.
+      pairs.push({ control: high(fragment) / fragment.length, variant: high(whole) / whole.length });
+      likingMeans.push({ control: mean(fragment), variant: mean(whole) });
+      totals.whole.high += high(whole); totals.whole.ratings += whole.length;
+      totals.fragment.high += high(fragment); totals.fragment.ratings += fragment.length;
+      const details = new Map<string, StudyResponseRow>();
+      for (const row of current) {
+        if (row.step === "after_reading" && row.answers.phase === "details" && row.reelId && first.has(row.reelId) && !details.has(row.reelId)) details.set(row.reelId, row);
       }
-      const kind = choice.answers.kind;
-      // Every participant is in the denominator; a refusal is neither kind.
-      pairs.push({ control: kind === "fragment" ? 1 : 0, variant: kind === "whole" ? 1 : 0 });
-      if (!kind) refused += 1;
+      for (const [field, target] of [["closure", closure], ["context", context]] as const) {
+        if (!ratings.every((row) => validScale(details.get(row.reelId!)?.answers[field]))) continue;
+        const detailMean = (kind: string) => mean(kinds(kind).map((row) => Number(details.get(row.reelId!)!.answers[field])));
+        target.push({ control: detailMean("fragment"), variant: detailMean("whole") });
+      }
     }
     summary.comparisons.push(
-      comparePairs(w.choseWholeMinusFragment, pairs, 0.15, "share", [w.fragment, w.whole], true),
-      compare(w.feltComplete, closure.fragment, closure.whole, 0, "points", [w.fragment, w.whole])
+      comparePairs(w.a1LikedShare, pairs, 0.15, "share", [w.fragment, w.whole], true),
+      comparePairs(w.a1LikingMean, likingMeans, 0, "points", [w.fragment, w.whole]),
+      comparePairs(w.feltComplete, closure, 0, "points", [w.fragment, w.whole]),
+      comparePairs(w.a1Context, context, 0, "points", [w.fragment, w.whole])
     );
-    summary.facts.push({ label: w.choseNothing, value: percent(refused, pairs.length, w) });
+    summary.facts.push(
+      { label: w.a1Included, value: String(pairs.length) },
+      { label: w.a1WholeRatings, value: percent(totals.whole.high, totals.whole.ratings, w) },
+      { label: w.a1FragmentRatings, value: percent(totals.fragment.high, totals.fragment.ratings, w) }
+    );
+    if (incomplete) summary.facts.push({ label: w.a1Incomplete, value: String(incomplete) });
+    if (known) summary.facts.push({ label: w.a1Known, value: String(known) });
     if (legacy) summary.facts.push({ label: w.earlierInstrument, value: String(legacy) });
   },
   a2(groups, summary, w) {
