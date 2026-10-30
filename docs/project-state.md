@@ -9,7 +9,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ---
 
-## Ready for release
+## Live, every study switched off
 
 **Andrey's study instruments and gallery (2026-10-30).** A1 offers two new
 options with neutral format labels and asks closure only after the choice. A2 now measures a
@@ -18,9 +18,9 @@ and earlier instruments excluded without deleting their answers. The A1-A3
 gallery uses 17 real catalogue works and their illustrations. Its admin-only
 A3 demonstration runs the same ranker with and without a five-rating profile
 on real vectors and counters; demonstration ratings are explicit and save
-nothing. Study switches and materials are unchanged. See `docs/studies.md`.
+nothing. Study switches and materials are unchanged. Deployed on 30 October; no study was activated. See `docs/studies.md` and
+`docs/handover/2026-10-30-andrey-study-forms.md`.
 
-## Live, every study switched off
 
 **CI installs the bundled CPU runtime (2026-10-29).** The ONNX installer now
 skips its additional CUDA download in GitHub Actions. A NuGet timeout had

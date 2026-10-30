@@ -351,7 +351,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       if (!kind) refused += 1;
     }
     summary.comparisons.push(
-      comparePairs(w.choseWholeMinusFragment, pairs, 0.15, "share", [w.fragment, w.whole]),
+      comparePairs(w.choseWholeMinusFragment, pairs, 0.15, "share", [w.fragment, w.whole], true),
       compare(w.feltComplete, closure.fragment, closure.whole, 0, "points", [w.fragment, w.whole])
     );
     summary.facts.push({ label: w.choseNothing, value: percent(refused, pairs.length, w) });
@@ -383,7 +383,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       }
     }
     summary.comparisons.push(
-      comparePairs(w.easyChoice, pairs, 0.1, "share", [w.inline, w.cards]),
+      comparePairs(w.easyChoice, pairs, 0.1, "share", [w.inline, w.cards], true),
       comparePairs(w.easeSecondary, ease, 0, "points", [w.inline, w.cards]),
       comparePairs(w.choiceSatisfactionSecondary, satisfaction, 0, "points", [w.inline, w.cards])
     );
@@ -417,7 +417,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       pairs.push({ control: withoutProfile, variant: withProfile });
     }
     summary.comparisons.push(
-      comparePairs(w.precision, precision, 0.1, "share", [w.withoutProfile, w.withProfile]),
+      comparePairs(w.precision, precision, 0.1, "share", [w.withoutProfile, w.withProfile], true),
       comparePairs(w.ndcg, pairs, 0, "score", [w.withoutProfile, w.withProfile])
     );
     summary.facts.push(

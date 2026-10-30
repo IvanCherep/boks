@@ -355,6 +355,8 @@ describe("study results", () => {
     expect(summary.comparisons[0].result.effect).toBeCloseTo(2 / 6, 4);
     expect(summary.comparisons[0].controlLabel).toBe("Full texts in the feed");
     expect(summary.comparisons[0].variantLabel).toBe("Card + reading screen");
+    // A positive point estimate is not confirmation while its interval includes zero.
+    expect(summary.comparisons[0].meetsThreshold).toBe(false);
     expect(summary.facts.map((fact) => fact.value)).toEqual(["2", "1", "1"]);
   });
 
