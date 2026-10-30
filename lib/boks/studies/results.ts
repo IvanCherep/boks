@@ -206,8 +206,8 @@ function comparePairs(
   threshold: number,
   unit: StudyComparison["unit"],
   names: [string, string],
-  /** Met only when the whole 95% interval clears the threshold, not just the effect. */
-  wholeInterval = false
+  /** Met only when the 95% interval is also above zero, not just the effect at the threshold. */
+  intervalAboveZero = false
 ): StudyComparison {
   const result = comparePaired(pairs, { metric: label, minimumReaders, power: "none" });
   return {
@@ -217,7 +217,7 @@ function comparePairs(
     controlLabel: names[0],
     variantLabel: names[1],
     result,
-    meetsThreshold: result.status === "insufficient_data" ? null : (wholeInterval ? result.ci[0] : result.effect) >= threshold,
+    meetsThreshold: result.status === "insufficient_data" ? null : result.effect >= threshold && (!intervalAboveZero || result.ci[0] > 0),
   };
 }
 
