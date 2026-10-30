@@ -57,7 +57,7 @@ import {
 } from "@/lib/boks/supabase-client";
 import { atHandle } from "@/components/boks/reader/handles";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
-import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { ReaderTabs } from "@/components/boks/series/series-view";
 import { YouSettings } from "@/components/boks/you-settings";
 import { bokCoverPalette } from "@/components/boks/reader/bok-cover-palette";
@@ -653,7 +653,7 @@ export function UserAuthPanel({
                   return <div key={`${item.storyId}-${readerLibraryActivityAt(item, libraryView)}`}>
                     {activityDate !== previousDate && <p className="activity-date">{activityDate}</p>}
                     <button type="button" className="library-item activity-bok" onClick={() => openReadBoks(item.storyId)}>
-                      <span className="activity-art" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{artwork ? <img src={artwork} alt="" /> : <i>b.</i>}</span>
+                      <span className="activity-art" aria-hidden="true" style={{ backgroundColor: palette.paper, color: palette.ink }}>{artwork ? <img src={artwork} alt="" style={{ objectPosition: bokArtworkFocus(item.storyId) }} /> : <i>b.</i>}</span>
                       <span className="activity-bok-copy"><strong translate="no">{item.title}</strong><small translate="no">{item.authorName || atHandle(item.authorHandle)}</small><em>{libraryView === "liked" ? activityTime ? activityWords.likedAt(activityTime) : t("Liked", "Нравится") : activityTime ? activityWords.readAt(activityTime) : t("Read", "Прочитано")}</em></span><ChevronRight />
                     </button>
                   </div>;

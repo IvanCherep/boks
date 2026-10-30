@@ -224,6 +224,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Safari samples fixed surfaces at the two viewport edges independently.
+   Keep these real elements outside the reader/player and its stacking context. */
+.browser-edge { display:none; }
+@media (pointer:coarse) {
+  .browser-edge { display:block; position:fixed; left:0; right:0; z-index:10000; pointer-events:none; }
+  .browser-edge--top { top:0; height:max(6px,env(safe-area-inset-top)); background:#000; }
+  .browser-edge--bottom { bottom:0; height:max(6px,env(safe-area-inset-bottom)); background:var(--background); }
+  /* A newly displayed surface also invalidates Safari's cached edge tint. */
+  .browser-edge--dark { display:none; }
+  :root[data-theme="dark"] .browser-edge--light { display:none; }
+  :root[data-theme="dark"] .browser-edge--dark { display:block; }
+}
+
 button,
 input,
 select,

@@ -1,6 +1,7 @@
 "use client";
 
 import { randomBoksId } from "@/lib/boks/browser-id";
+import { useCoverInspection } from "@/components/boks/reader/use-cover-inspection";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -63,7 +64,6 @@ import { ImmersivePoem } from "@/components/boks/poetry/immersive-poem";
 import { recordingRequested } from "@/components/boks/recording-mode";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { giveScreenBack, takeScreen } from "@/components/boks/reading-fullscreen";
-import { paintBrowserChrome, playerChromeColor } from "@/components/boks/theme";
 import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
@@ -141,6 +141,7 @@ import { FeedbackSheet } from "@/components/boks/reader/feedback-sheet";
 import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { bokArtworkStyle, getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { CoverHeading } from "@/components/boks/reader/cover-heading";
 import { textReadingState, type TextReadingPhase } from "@/components/boks/reader/text-reading-state";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { ShareCard } from "@/components/boks/share-card";
@@ -540,6 +541,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const sessionId = useRef("session");
   const touchStart = useRef<GestureStart | null>(null);
   const pointerStart = useRef<GestureStart | null>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
   /** When the text last scrolled - to tell a tap from the touch that stops a flick. */
   const lastScrollAt = useRef(0);
   /** When the current wheel pull became armed, and the timer that commits it. */
@@ -1190,15 +1192,6 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   useEffect(() => {
     if (!formatOnScreen) closedFormat();
   }, [formatOnScreen]);
-  // Safari also samples the document background for its native bars. Keep it
-  // with the visible surface, including cover swipes and closing a player.
-  const coverChrome = currentStory && !seriesOpen && !authPanelOpen && !commentOpen && !authorSheet && !shareOpen && readingPhase === "cover"
-    ? getBokArtwork(currentStory) ? bokArtworkStyle(currentStory.id)["--bok-art-chrome"] : bokCoverStyle(currentStory.id)["--bok-cover"]
-    : null;
-  useEffect(() => {
-    paintBrowserChrome(formatOnScreen ? playerChromeColor : coverChrome);
-    return () => paintBrowserChrome(null);
-  }, [formatOnScreen, coverChrome]);
   const seriesIndex = seriesSequence.findIndex(piece => piece.storyId === currentStoryId);
   const nextSeriesPiece = seriesIndex >= 0 ? seriesSequence[seriesIndex + 1] : undefined;
   const nextBok = formatFromSeries.current
@@ -1251,6 +1244,13 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const readerInteractionBlocked = Boolean(
     authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null
   );
+  const coverInspection = useCoverInspection(coverRef, currentStoryId,
+    Boolean(currentStory && getBokArtwork(currentStory) && !readerInteractionBlocked && storyTransition.phase === "idle"),
+    () => {
+      touchStart.current = null;
+      pointerStart.current = null;
+      clearBoundaryPull(true);
+    });
 
   const guestNoticeVisible = Boolean(guestNoticeStep && isGuestReader && !readerOverlayOpen && (formatOnScreen ? formatEnded : !seriesOpen && readingPhase !== "reading"));
   useEffect(() => {
@@ -2703,7 +2703,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       style={{ ...bokCoverStyle(currentStory.id), ...bokArtworkStyle(currentStory.id) } as React.CSSProperties}
       className={`reader-shell reader-v44 reader-viewport reader-phase--${readingPhase} overflow-hidden text-[var(--foreground)] ${
         readerChromeVisible || commentOpen ? "reader-shell--chrome" : "reader-shell--focus"
-      } ${guestNoticeVisible ? "reader-shell--notice" : ""}`}
+      } ${guestNoticeVisible ? "reader-shell--notice" : ""} ${coverInspection ? "reader-shell--artwork" : ""}`}
     >
       <section
         className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden"
@@ -2750,18 +2750,18 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             onScroll={onStoryScroll}
             onWheel={onStoryWheel}
           >
-            <div className="reader-cover">
+            <div className="reader-cover" ref={coverRef}>
               <header className="reader-cover__desktop-bar">
                 <button type="button" onClick={() => openAccount("manual", "general", "home")} aria-label={t("Settings", "Настройки")}><ReaderSettingsIcon size={23} /></button>
                 <BoksLogo seasonal />
                 <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
               </header>
-              {getBokArtwork(currentStory) ? <img className="reader-cover__art" src={getBokArtwork(currentStory)!} alt="" /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
-              <div className="reader-cover__heading">
+              {getBokArtwork(currentStory) ? <img className="reader-cover__art" src={getBokArtwork(currentStory)!} alt="" draggable={false} /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
+              <CoverHeading artwork={getBokArtwork(currentStory)}>
                 <h1>{currentStory.title}</h1>
                 <button type="button" className="reader-cover__byline" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button>
                 {currentStory.summary && <p className="reader-cover__summary" lang={currentStory.language || "und"} translate="no">{currentStory.summary}</p>}
-              </div>
+              </CoverHeading>
               <div className="reader-cover__caption">
                 <div className="reader-cover__buttons">
                   <button type="button" className="reader-read-button" onClick={() => readText(true)}>{t("Read", "Читать")}<ReaderDownIcon size={19} /></button>

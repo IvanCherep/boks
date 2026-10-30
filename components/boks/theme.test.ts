@@ -4,10 +4,9 @@ import {
   readThemePreference,
   resolveTheme,
   themeBootScript,
-  themeColor,
+  browserStatusBarColor,
   themeStorageKey,
   writeThemePreference,
-  paintBrowserChrome,
   applyTheme,
 } from "@/components/boks/theme";
 
@@ -15,35 +14,33 @@ describe("visible surface behind mobile browser chrome", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   function page() {
-    const properties = new Map<string, string>();
     const root = { dataset: { theme: "light" } as Record<string, string>, style: {
       colorScheme: "light",
-      setProperty: (key: string, value: string) => properties.set(key, value),
-      removeProperty: (key: string) => properties.delete(key),
     } };
     const meta = { content: "", setAttribute: (_: string, value: string) => { meta.content = value; } };
     vi.stubGlobal("document", { documentElement: root, querySelector: () => meta });
-    return { root, meta, properties };
+    return { root, meta };
   }
 
-  it("keeps the cover behind native bars when the theme changes, then restores the new theme", () => {
-    const { root, meta, properties } = page();
-    paintBrowserChrome("#9ba98a");
+  it("keeps the status bar black while the interface changes theme", () => {
+    const { root, meta } = page();
     applyTheme("dark", false);
-    expect(meta.content).toBe("#9ba98a");
-    expect(properties.get("--browser-chrome")).toBe("#9ba98a");
-    paintBrowserChrome(null);
-    expect(meta.content).toBe(themeColor.dark);
-    expect(properties.has("--browser-chrome")).toBe(false);
-    expect(root.dataset.browserChrome).toBeUndefined();
+    expect(meta.content).toBe(browserStatusBarColor);
+    expect(root.dataset.theme).toBe("dark");
+    expect(root.style.colorScheme).toBe("dark");
+    applyTheme("light", true);
+    expect(meta.content).toBe(browserStatusBarColor);
+    expect(root.dataset.theme).toBe("light");
+    expect(root.style.colorScheme).toBe("light");
   });
 
-  it("replaces player chrome with the next visible cover without retaining the old tint", () => {
-    const { meta, properties } = page();
-    paintBrowserChrome("#05070d");
-    paintBrowserChrome("#8ca6b2");
-    expect(meta.content).toBe("#8ca6b2");
-    expect(properties.get("--browser-chrome")).toBe("#8ca6b2");
+  it("keeps the status bar black when following either system theme", () => {
+    const { root, meta } = page();
+    for (const dark of [true, false]) {
+      applyTheme("system", dark);
+      expect(meta.content).toBe(browserStatusBarColor);
+      expect(root.dataset.theme).toBe(dark ? "dark" : "light");
+    }
   });
 });
 
@@ -109,8 +106,8 @@ describe("theme preference", () => {
 
 describe("themeBootScript", () => {
   it("applies a stored choice before the app loads", () => {
-    expect(bootWith("dark", false)).toEqual({ theme: "dark", colorScheme: "dark", meta: themeColor.dark });
-    expect(bootWith("light", true)).toEqual({ theme: "light", colorScheme: "light", meta: themeColor.light });
+    expect(bootWith("dark", false)).toEqual({ theme: "dark", colorScheme: "dark", meta: browserStatusBarColor });
+    expect(bootWith("light", true)).toEqual({ theme: "light", colorScheme: "light", meta: browserStatusBarColor });
   });
 
   it("follows the system when nothing is stored, as the app does", () => {

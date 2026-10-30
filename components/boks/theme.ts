@@ -20,33 +20,8 @@ export type ResolvedTheme = "light" | "dark";
 export const themeStorageKey = "boks-theme";
 export const themePreferences: readonly ThemePreference[] = ["system", "light", "dark"];
 
-/** The page background per theme, for the mobile browser's own chrome. */
-export const themeColor: Record<ResolvedTheme, string> = {
-  light: "#f4f2ed",
-  dark: "#141210",
-};
-
-/**
- * The poem and cinema players' own black. While one is open the status bar
- * above it - and, from the home screen, the whole top of the phone - should
- * be the picture's colour rather than the page's.
- */
-export const playerChromeColor = "#05070d";
-
-/** Native bars and overscroll use the same surface; null restores the theme. */
-export function paintBrowserChrome(color: string | null) {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  if (color) {
-    root.dataset.browserChrome = color;
-    root.style.setProperty("--browser-chrome", color);
-  } else {
-    delete root.dataset.browserChrome;
-    root.style.removeProperty("--browser-chrome");
-  }
-  const theme: ResolvedTheme = root.dataset.theme === "dark" ? "dark" : "light";
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color ?? themeColor[theme]);
-}
+/** The upper native bar stays black; the lower edge follows the CSS theme. */
+export const browserStatusBarColor = "#000000";
 
 type ThemeStorage = Pick<Storage, "getItem" | "setItem">;
 
@@ -98,7 +73,7 @@ export function applyTheme(preference: ThemePreference, prefersDark = systemPref
   const root = document.documentElement;
   root.dataset.theme = resolved;
   root.style.colorScheme = resolved;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", root.dataset.browserChrome ?? themeColor[resolved]);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", browserStatusBarColor);
   return resolved;
 }
 
@@ -109,7 +84,7 @@ export function applyTheme(preference: ThemePreference, prefersDark = systemPref
  */
 export const themeBootScript = `(function () {
   var key = ${JSON.stringify(themeStorageKey)};
-  var colors = ${JSON.stringify(themeColor)};
+  var statusColor = ${JSON.stringify(browserStatusBarColor)};
   var root = document.documentElement;
   var media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   function preference() {
@@ -126,7 +101,7 @@ export const themeBootScript = `(function () {
     root.dataset.theme = theme;
     root.style.colorScheme = theme;
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", root.dataset.browserChrome || colors[theme]);
+    if (meta) meta.setAttribute("content", statusColor);
   }
   apply();
   if (media) {

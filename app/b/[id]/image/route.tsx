@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { ImageResponse } from "next/og";
-import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { getBokPosterArtwork } from "@/components/boks/reader/bok-artwork";
 import { loadBokForShare } from "@/lib/boks/share-preview";
 import { SharePoster, sharePosterSize } from "@/lib/boks/share-poster";
 import { sharePosterVersion } from "@/lib/boks/share-link";
@@ -45,10 +45,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const cached = await cache?.match(key);
   if (cached) return publishedPoster(cached);
   try {
-    const cover = getBokArtwork({ id: bok.id });
+    const cover = getBokPosterArtwork(bok.id);
     const [loadedFonts, image] = await Promise.all([
       posterFonts(request),
-      cover ? asset(cover.replace("/series/", "/share/art/").replace(/\.webp$/u, ".jpg"), request) : undefined,
+      cover ? asset(cover, request) : undefined,
     ]);
     const artwork = image ? `data:image/jpeg;base64,${Buffer.from(image).toString("base64")}` : undefined;
     const rendered = new ImageResponse(<SharePoster bok={bok} artwork={artwork} />, { ...sharePosterSize, fonts: loadedFonts });

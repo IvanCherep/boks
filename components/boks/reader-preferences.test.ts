@@ -12,7 +12,7 @@ describe("device reading preferences", () => {
 
 describe("real bok share poster", () => {
   it("links to the individual bok with its encoded id", () => {
-    expect(bokShareUrl("a/b ?", "https://tryboks.com")).toBe("https://tryboks.com/b/a%2Fb%20%3F?card=v44-3");
+    expect(bokShareUrl("a/b ?", "https://tryboks.com")).toBe("https://tryboks.com/b/a%2Fb%20%3F?card=v44-5");
   });
 
   it("wraps long words and Cyrillic titles without losing their characters", () => {

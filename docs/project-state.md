@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-28.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-29.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,68 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**CI installs the bundled CPU runtime (2026-10-29).** The ONNX installer now
+skips its additional CUDA download in GitHub Actions. A NuGet timeout had
+stopped dependency installation before checks began on the documentation-only
+commit after the cover release. The CPU runtime is already in the npm package;
+all dependency install scripts and validation gates remain enabled. See
+`docs/testing.md`.
+
+**Hold to inspect artwork; stable white cover branding (2026-10-29).** Holding
+a free area of an illustrated cover hides its interface and shading until
+release. Fast swipes and buttons retain their normal actions. Illustrated
+cover wordmarks and controls always stay white. The upper browser edge is
+black and the lower one follows the interface theme, independently of the
+image or playback. Safari iPhone Simulator verifies both themes and immediate
+switching; the browser host still controls its native UI. Deployed from
+`336998a`, Worker `3c7e4147-b211-419e-91c0-110ef09c357f`; Chromium and WebKit
+production checks pass. Details:
+`docs/handover/2026-10-29-cover-inspection-and-browser-bars.md`.
+
+**Softer cover fades and Poe's opening scene (2026-10-29).** The adaptive
+heading shade now has longer eased transitions, reducing the visible stripe
+on pale skies while keeping the same protection under the text. It resamples
+after image decoding and font loading, fixing an initially unshaded WebKit
+cover that otherwise needed a resize. A Dream
+Within a Dream uses its original opening Series scene, the couple parting by
+the sea, in the reader, shelf and share poster. Other covers are unchanged;
+new share links use poster version `v44-5`. Checked on the deployed bundle in
+Chromium and WebKit at phone, short-phone, landscape and desktop sizes.
+Deployed from `837e410`, Worker
+`1929a6ba-27d8-4385-ac59-9b8b9f25155a`. Release details:
+`docs/handover/2026-10-29-cover-fades-and-dream.md`.
+
+**Readable text on illustrated covers (2026-10-29).** Bright, detailed artwork
+made the cream title, byline and summary hard to read. A local soft gradient
+now follows the actual heading height, with strength estimated from the image
+under its rendered lines. It samples only the current cover at thumbnail
+resolution, recalculating on image load and resizing; no image data leaves the
+device. Naturally dark areas can need no extra shade. Artwork files, crops,
+wordmark contrast and reading measurements are unchanged. Tested with the two
+reported covers and three readable controls at phone, short-phone, landscape
+and desktop sizes in Chromium and WebKit, plus a white-background stress case.
+Deployed from `5ad087d`, Worker
+`37d900ee-3a08-4f35-8122-7540b8b0d081`. See
+`docs/handover/2026-10-29-cover-text-contrast.md`.
+
+**Illustrated catalogue covers, with Series preserved (2026-10-29).** All 223
+published boks now have illustrations: 191 WebP covers from the supplied
+archive were added by exact bok ID; the 32 existing Series covers, poster
+JPEGs, reader crops and wordmark contrast were retained. The catalogue assets
+live in `public/covers/`, with crop/contrast metadata in
+`lib/boks/catalogue-artwork.ts`. Cover, menu, activity, next preview and both
+share outputs use the shared resolver; illustrations alone do not add Play or
+a place on the Series shelf. Unknown future boks retain typography.
+
+Deployed from `0e0d122`, Worker version
+`bad34ac9-3642-415e-b15b-31791abb5016`. Share links use poster version `v44-4`.
+All published cover files were checked against their local hashes after
+deployment; new and existing illustrated posters return 720×900 PNGs. The
+current main's pending `20261029100000_boks_study_b2_music.sql` migration was
+applied before release: Б2 was off, with empty materials and no participants
+or responses, and remains off. Details and validation are in
+`docs/handover/2026-10-29-catalogue-covers.md`.
 
 **The whole app follows the interface language (2026-10-28).** On a Russian
 interface, Studio («Админка» in Russian; every tab, with its own EN / RU switch sharing the reader's

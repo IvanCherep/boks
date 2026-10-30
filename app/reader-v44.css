@@ -27,9 +27,9 @@
 .reader-v44 .reader-tabs { translate:none; }
 .reader-viewport .series { position:absolute; }
 .reader-viewport.reader-phase--cover, .reader-viewport.reader-phase--cover .reader-card { background:var(--bok-cover); }
-.reader-viewport.reader-phase--cover:has(.reader-cover__art), .reader-viewport.reader-phase--cover:has(.reader-cover__art) .reader-card { background:var(--bok-art-chrome,#000); }
+.reader-viewport.reader-phase--cover:has(.reader-cover__art), .reader-viewport.reader-phase--cover:has(.reader-cover__art) .reader-card { background:#000; }
 html:has(.reader-viewport), body:has(.reader-viewport) { overflow:hidden; overscroll-behavior:none; }
-html, body { background-color:var(--browser-chrome,var(--background)); }
+html, body { background-color:var(--background); }
 .reader-v44 > section { max-width:1440px; }
 .reader-v44 .reader-card { display:block; border:0; }
 .reader-v44 .story-scroll { height:100%; padding:0; mask-image:none; -webkit-mask-image:none; }
@@ -39,20 +39,46 @@ html, body { background-color:var(--browser-chrome,var(--background)); }
 .reader-v44.reader-shell--focus.reader-phase--cover .reader-topbar { opacity:1; }
 .reader-v44 .reader-topbar .boks-logo { transition:opacity .2s; }
 .reader-v44.reader-phase--cover .reader-topbar { color:var(--bok-ink,#241d18); }
-.reader-v44:has(.reader-cover__art).reader-phase--cover .reader-topbar { color:var(--bok-art-ink,#fff8eb); }
+.reader-v44:has(.reader-cover__art).reader-phase--cover .reader-topbar { color:#fff8eb; text-shadow:0 1px 3px #0008; }
 .reader-v44.reader-shell--focus:not(.reader-phase--cover) .reader-topbar .boks-logo { opacity:0; }
 .reader-v44.reader-shell--focus:not(.reader-phase--cover) .reader-topbar { opacity:0; }
 .reader-v44.reader-phase--cover .reader-topbar .reader-ui { opacity:1; visibility:visible; pointer-events:auto; transform:none; }
 .reader-v44.reader-phase--cover .reader-tabs { opacity:1; visibility:visible; pointer-events:auto; transform:translateX(-50%); }
 .reader-cover { position:relative; isolation:isolate; min-height:100%; color:var(--bok-ink,#241d18); background:var(--bok-cover,#e65534); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; padding:107px 26px calc(var(--reader-dock-bottom) + var(--reader-dock-height) + var(--reader-dock-clearance)); user-select:none; }
-.reader-cover:has(.reader-cover__art) { color:#fff8eb; background:var(--bok-art-chrome,#000); padding-top:94px; }
-.reader-cover__art { position:absolute; z-index:-2; inset:0; width:100%; height:100%; object-fit:cover; }
+.reader-cover:has(.reader-cover__art) { color:#fff8eb; background:#000; padding-top:94px; }
+.reader-cover__art { position:absolute; z-index:-2; inset:0; width:100%; height:100%; object-fit:cover; object-position:var(--bok-art-focus,50% 50%); }
 .reader-cover:has(.reader-cover__art)::after { content:""; position:absolute; z-index:-1; inset:0; background:linear-gradient(#091a2233,transparent 44%,#091a2299); }
 /* The atlas positions a wide Cyrillic Л at x=0. Anchor the visible right edge
    instead so narrower initials keep that composition. The 0.052em inset
    allows for the italic overhang; tracking must not shrink a single glyph. */
 .reader-cover__letter { position:absolute; z-index:-1; top:140px; right:.052em; color:var(--bok-letter,#f2b67d); font:italic 400 480px/1 "Boks Cover Initial",Georgia,"Boks Literary",serif; letter-spacing:0; pointer-events:none; }
 .reader-cover__heading { width:100%; max-width:680px; margin:0 0 48px; }
+.reader-cover:has(.reader-cover__art) { -webkit-touch-callout:none; }
+.reader-shell--artwork .reader-cover > :not(.reader-cover__art),
+.reader-shell--artwork :is(.reader-topbar,.reader-tabs,.reader-actions,.reader-progress-ray,.reader-edge-pull,.reader-guest-notice) { visibility:hidden!important; opacity:0!important; pointer-events:none!important; }
+.reader-shell--artwork .reader-cover::after { opacity:0; }
+/* Artwork cannot reserve one fixed text area for every title and summary.
+   Shade the actual heading box, with the fade outside its text; keep the
+   rest of the illustration and the independent wordmark contrast untouched. */
+.reader-cover:has(.reader-cover__art) .reader-cover__heading { --cover-heading-fade-top:80px; --cover-heading-fade-bottom:clamp(160px,30vh,280px); position:relative; text-shadow:0 1px 3px #0006; }
+.reader-cover:has(.reader-cover__art) .reader-cover__heading::before {
+  content:""; position:absolute; z-index:-1; top:calc(-1 * var(--cover-heading-fade-top)); right:-26px; bottom:calc(-1 * var(--cover-heading-fade-bottom)); left:-26px; pointer-events:none;
+  /* Smoothstep samples flatten the slope at both ends of each long fade.
+     A short linear ramp makes a visible horizontal band on pale skies. */
+  background:linear-gradient(180deg,
+    transparent,
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .104)) calc(var(--cover-heading-fade-top) * .2),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .352)) calc(var(--cover-heading-fade-top) * .4),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .648)) calc(var(--cover-heading-fade-top) * .6),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .896)) calc(var(--cover-heading-fade-top) * .8),
+    rgb(7 16 20 / var(--cover-heading-shade,.75)) var(--cover-heading-fade-top),
+    rgb(7 16 20 / var(--cover-heading-shade,.75)) calc(100% - var(--cover-heading-fade-bottom)),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .896)) calc(100% - var(--cover-heading-fade-bottom) * .8),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .648)) calc(100% - var(--cover-heading-fade-bottom) * .6),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .352)) calc(100% - var(--cover-heading-fade-bottom) * .4),
+    rgb(7 16 20 / calc(var(--cover-heading-shade,.75) * .104)) calc(100% - var(--cover-heading-fade-bottom) * .2),
+    transparent);
+}
 .reader-cover__heading h1 { max-width:100%; font:400 62px/.98 "Boks Literary",serif; letter-spacing:-1.9px; text-wrap:balance; overflow-wrap:break-word; margin:0 0 20px; }
 .reader-cover:has(.reader-cover__art) h1 { max-width:310px; font-size:48px; }
 .reader-cover__byline { display:flex; align-items:center; gap:6px; font:400 12px/1.4 system-ui,sans-serif; letter-spacing:.1px; text-align:left; overflow-wrap:anywhere; min-height:44px; margin-top:-12px; }
@@ -164,6 +190,7 @@ html, body { background-color:var(--browser-chrome,var(--background)); }
 }
 @media(max-width:360px) {
   .reader-cover { padding-inline:24px; padding-top:98px; }
+  .reader-cover:has(.reader-cover__art) .reader-cover__heading::before { right:-24px; left:-24px; }
   .reader-cover__heading h1 { font-size:50px; }
   .reader-cover:has(.reader-cover__art) h1 { font-size:41px; }
   .reader-v44 .reader-content { padding-inline:24px; }
@@ -189,6 +216,7 @@ html, body { background-color:var(--browser-chrome,var(--background)); }
 @container reader-viewport (max-height:680px) and (max-width:1023px) { .reader-cover { padding-top:90px; } .reader-cover__heading h1 { font-size:42px; } }
 @container reader-viewport (max-height:520px) and (max-width:1023px) {
   .reader-cover, .reader-cover:has(.reader-cover__art) { padding-top:76px; }
+  .reader-cover:has(.reader-cover__art) .reader-cover__heading { --cover-heading-fade-top:48px; }
   .reader-cover__heading { margin-bottom:12px; }
   .reader-cover__heading h1, .reader-cover:has(.reader-cover__art) h1 { font-size:36px; max-width:none; }
   .reader-cover__byline { min-height:32px; }
