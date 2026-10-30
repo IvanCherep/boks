@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { studyConditions, studyKeys } from "@/lib/boks/studies/protocol";
+import { a1InstrumentVersion, a2InstrumentVersion, studyConditions, studyKeys } from "@/lib/boks/studies/protocol";
 import { materialBokIds, materialTemplates, parseStudyMaterials } from "@/lib/boks/studies/materials";
 import { planA1, planA2, planB1, planB2, planRg1, planRg2 } from "@/lib/boks/studies/plan";
 import { ndcgAt, planA3Targets, profileVector, rankA3, type A3Candidate } from "@/lib/boks/studies/a3";
-import { successfulFind, type SessionMeasurement } from "@/lib/boks/studies/session";
+import { easyChoice, successfulFind, type SessionMeasurement } from "@/lib/boks/studies/session";
 import { studyResponsesCsv, summariseStudy, type StudyResponseRow } from "@/lib/boks/studies/results";
 import { createTraceRecorder, dueSamples, isGestureTrace, type GestureTrace } from "@/lib/boks/studies/gesture-trace";
 
@@ -81,6 +81,7 @@ describe("study plans", () => {
       expect(wholePair).not.toBe(fragmentPair);
       expect(plan.choices.filter((choice) => choice.kind === "whole")).toHaveLength(1);
       expect(plan.choices.filter((choice) => choice.kind === "fragment")).toHaveLength(1);
+      expect(plan.choices.every((choice) => !plan.reads.some((read) => read.bokId === choice.bokId))).toBe(true);
     }
   });
 
@@ -193,6 +194,18 @@ describe("successful session", () => {
     expect(successfulFind(measurement, { ...survey, perBok: { [id(1)]: { readBefore: "yes", finished: "yes" } } })).toBeNull();
     expect(successfulFind(measurement, { ...survey, perBok: { [id(1)]: { readBefore: "no", finished: "part" } } })).toBeNull();
   });
+
+  it("A2 measures easy choosing without requiring a finished read, and distinguishes a refusal from missing data", () => {
+    const measured = { ...measurement, interface: "cards" as const, shown: [id(1)], reads: [] };
+    const survey = { instrumentVersion: a2InstrumentVersion, chosenBokId: id(1), choiceEase: 6, perBok: {}, satisfaction: null };
+    expect(easyChoice(measured, survey)).toBe(true);
+    expect(easyChoice(measured, { ...survey, choiceEase: 5 })).toBe(false);
+    expect(easyChoice(measured, { ...survey, chosenBokId: null, choiceEase: 7 })).toBe(false);
+    expect(easyChoice(measured, { ...survey, chosenBokId: id(2) })).toBeNull();
+    expect(easyChoice(measured, { ...survey, instrumentVersion: undefined })).toBeNull();
+    expect(easyChoice(measured, { ...survey, choiceEase: 8 })).toBeNull();
+    expect(easyChoice(measured, { ...survey, chosenBokId: undefined })).toBeNull();
+  });
 });
 
 describe("study results", () => {
@@ -266,22 +279,6 @@ describe("study results", () => {
     expect(summary.comparisons[0].result.effect).toBeCloseTo(0.5);
   });
 
-  it("judges a2 by easy choices, cards minus full texts, with «nothing» a failure", () => {
-    const rows: StudyResponseRow[] = [];
-    const measurement = (kind: "inline" | "cards"): SessionMeasurement => ({ interface: kind, minutes: 10, offered: [], reads: [], endedBy: "timer", elapsedSeconds: 600 });
-    for (let n = 1; n <= 6; n += 1) {
-      for (const [index, kind] of (["inline", "cards"] as const).entries()) {
-        rows.push(row(n, { step: "session", condition: kind, participantCondition: "inline_a", answers: { index, measurement: measurement(kind) } }));
-        rows.push(row(n, { step: "session_survey", condition: kind, participantCondition: "inline_a", answers: {
-          index, survey: { perBok: {}, satisfaction: null, sessionSatisfaction: 5, chosen: kind === "cards" ? id(1) : null, easyChoice: 7 },
-        } }));
-      }
-    }
-    const summary = summariseStudy("a2", rows);
-    expect(summary.comparisons[0].result.effect).toBe(1);
-    expect(summary.comparisons[0].meetsThreshold).toBe(true);
-  });
-
   it("pairs b2's music and silence blocks within each participant", () => {
     const rows: StudyResponseRow[] = [];
     for (let n = 1; n <= 6; n += 1) {
@@ -317,11 +314,36 @@ describe("study results", () => {
 
   it("counts a1 refusals in the denominator", () => {
     const rows = [1, 2, 3, 4, 5, 6].map((n) =>
-      row(n, { step: "choice", answers: { kind: n <= 3 ? "whole" : n === 4 ? "fragment" : null } })
+      row(n, { step: "choice", answers: { instrumentVersion: a1InstrumentVersion, kind: n <= 3 ? "whole" : n === 4 ? "fragment" : null } })
     );
+    rows.push(row(7, { step: "choice", answers: { kind: "whole" } }));
     const summary = summariseStudy("a1", rows);
     expect(summary.comparisons[0].result.effect).toBeCloseTo(2 / 6, 4);
     expect(summary.facts[0].value).toBe("2 of 6 (33%)");
+    expect(summary.facts[1].value).toBe("1");
+  });
+
+  it("compares A2 cards minus full texts on choice and ease, keeps refusals, and excludes old or invalid instruments", () => {
+    const rows: StudyResponseRow[] = [];
+    for (let n = 1; n <= 8; n += 1) {
+      for (const [index, kind] of (["cards", "inline"] as const).entries()) {
+        const measurement: SessionMeasurement = {
+          interface: kind, minutes: 10, offered: [id(100), id(101)], shown: [id(100)],
+          reads: [], endedBy: "participant", elapsedSeconds: 120,
+        };
+        // Four card successes, two inline successes; #6 refused, even with ease 7.
+        const survey = { instrumentVersion: a2InstrumentVersion, chosenBokId: n === 6 ? null : n === 8 ? id(101) : id(100),
+          choiceEase: n === 6 || n <= (kind === "cards" ? 4 : 2) ? 7 : 5, perBok: {}, satisfaction: 4 };
+        const version = n === 7 ? {} : { instrumentVersion: a2InstrumentVersion };
+        rows.push(row(n, { step: "session", answers: { ...version, index, measurement } }));
+        rows.push(row(n, { step: "session_survey", answers: { ...version, index, survey } }));
+      }
+    }
+    const summary = summariseStudy("a2", rows);
+    expect(summary.comparisons[0].result.effect).toBeCloseTo(2 / 6, 4);
+    expect(summary.comparisons[0].controlLabel).toBe("Full texts in the feed");
+    expect(summary.comparisons[0].variantLabel).toBe("Card + reading screen");
+    expect(summary.facts.map((fact) => fact.value)).toEqual(["2", "1", "1"]);
   });
 
   it("accepts a b3 fragment on two of three yeses to both questions", () => {

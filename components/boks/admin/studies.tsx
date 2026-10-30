@@ -54,7 +54,7 @@ const words = defineMessages({
   materialHelp: {
     rg1: "familiarization: a Series piece shown first in both formats. targets: Series pieces; each participant gets one, in their assigned format.",
     rg2: "minutes: each session's length; everyone has a feed session and a catalogue session, in the assigned order. poolSize: texts per session - twice as many are drawn from the participant's own feed and split by alternating ranks, so the two sessions never share a text.",
-    a1: "pairs: at least 4 of { whole, fragment } of similar length (±10%), theme and difficulty. choices: new texts for the free choice, at least two of each kind ({ bokId, kind }).",
+    a1: "pairs: at least 4 of { whole, fragment } of similar length (±10%), theme and difficulty. choices: a separate pool, at least two of each kind ({ bokId, kind }); each participant sees one of each, unlabelled, and a refusal. Closure is asked after choosing.",
     a2: "setA and setB: comparable lists of the same size, in the order the feed shows them. minutes: each session's length.",
     a3: "targets: the test pool, at least perParticipant + profileSize boks with semantic vectors, by many authors; none is served while the profile forms. profileSize: rated boks that fix the profile (5). perParticipant: new texts rated after it (10). feedPoolSize: how much of the participant's own feed the profile is formed from.",
     b1: "pieces: immersive poems with gesture scenes. perParticipant: how many each participant reads; their roles follow the recorded traces.",
@@ -138,7 +138,7 @@ const words = defineMessages({
     materialHelp: {
       rg1: "familiarization: произведение серии, которое показывают первым в обоих форматах. targets: произведения серии; каждый участник получает одно в назначенном ему формате.",
       rg2: "minutes: длина каждой сессии; у каждого есть сессия в ленте и сессия в каталоге, в назначенном порядке. poolSize: текстов на сессию; из собственной ленты участника берётся вдвое больше и делится по чередующимся позициям, так что у двух сессий нет общих текстов.",
-      a1: "pairs: не меньше 4 пар { whole, fragment } близкой длины (±10%), темы и сложности. choices: новые тексты для свободного выбора, не меньше двух каждого вида ({ bokId, kind }).",
+      a1: "pairs: не меньше 4 пар { whole, fragment } близкой длины (±10%), темы и сложности. choices: отдельный набор, не меньше двух каждого вида ({ bokId, kind }); участнику показываем по одному без меток и вариант отказа. Завершённость спрашиваем после выбора.",
       a2: "setA и setB: сопоставимые списки одного размера, в порядке показа в ленте. minutes: длина каждой сессии.",
       a3: "targets: тестовый пул, не меньше perParticipant + profileSize боков с семантическими векторами, от многих авторов; пока формируется профиль, ни один из них не показывается. profileSize: оценённые боки, которые фиксируют профиль (5). perParticipant: новые тексты, оцениваемые после него (10). feedPoolSize: из какой части собственной ленты участника формируется профиль.",
       b1: "pieces: иммерсивные стихи со сценами жестов. perParticipant: сколько читает каждый участник; роли следуют записанным трекам.",

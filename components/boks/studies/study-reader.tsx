@@ -7,8 +7,8 @@ import { createReaderClock } from "@/components/boks/reader-clock";
 import { inferReadOutcome } from "@/components/boks/reader-behavior";
 import { formatReaderBody, type ReaderBlock } from "@/components/boks/reader-text";
 import type { StudyWords } from "@/components/boks/studies/study-copy";
-import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { BokCard, BokCover } from "@/components/boks/studies/study-forms";
+import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import type { SessionMeasurement, SessionRead } from "@/lib/boks/studies/session";
 
 /**
@@ -69,18 +69,15 @@ export function useReadingMeasure(active: boolean, subject?: string) {
   return { scroller, onScroll, read };
 }
 
-export function TextBody({ story, blocks, details }: {
-  story: Story;
-  blocks?: ReaderBlock[];
-  /** a2: what a card shows - cover and reading time - above the full text, so the two carry the same data. */
-  details?: { minutes: string };
-}) {
+export function TextBody({ story, blocks, illustrated = false, words }: { story: Story; blocks?: ReaderBlock[]; illustrated?: boolean; words?: StudyWords }) {
   const shaped = useMemo(() => blocks ?? formatReaderBody(story.body, story.title), [blocks, story.body, story.title]);
+  const artwork = illustrated ? getBokArtwork(story) : null;
   return (
     <div className="study-text" lang={story.language && story.language !== "und" ? story.language : undefined}>
+      {artwork && <img className="study-text__art" src={artwork} alt="" style={{ objectPosition: bokArtworkFocus(story.id) }} />}
       {story.authorName && <p className="study-eyebrow">{story.authorName}</p>}
       {story.title && <h1>{story.title}</h1>}
-      {details && <p className="study-eyebrow">{details.minutes}</p>}
+      {illustrated && words && <p className="study-text__duration">{words.minutesShort(story.minutes)}</p>}
       {shaped.map((block, index) =>
         block.kind === "verse" ? (
           <p key={index} className="study-text__verse">
@@ -95,16 +92,18 @@ export function TextBody({ story, blocks, details }: {
 }
 
 /** One text to read to its end, then a button. Used by the protocols that hand out a text. */
-export function StudyTextReader({ story, words, note, doneLabel, onDone }: {
+export function StudyTextReader({ story, words, note, progressLabel, doneLabel, onDone }: {
   story: Story;
   words: StudyWords;
   note?: ReactNode;
+  progressLabel?: string;
   doneLabel?: string;
   onDone: (measure: ReadingMeasure) => void;
 }) {
   const { scroller, onScroll, read } = useReadingMeasure(true);
   return (
     <div className="study-reader" ref={scroller} onScroll={onScroll}>
+      {progressLabel && <p className="study-eyebrow study-reader__progress">{progressLabel}</p>}
       {note && <p className="study-reader__note">{note}</p>}
       <TextBody story={story} />
       <button type="button" className="study-button study-reader__done" onClick={() => onDone(read())}>
@@ -132,6 +131,7 @@ export const surveyMinimumSeconds = 5;
 function useSession(kind: SessionMeasurement["interface"], set: SessionMeasurement["set"], minutes: number, offered: string[]) {
   const started = useRef(0);
   const reads = useRef<SessionRead[]>([]);
+  const shown = useRef<string[]>([]);
   const counters = useRef({ searches: 0, filters: 0 });
   useEffect(() => {
     started.current = Date.now();
@@ -153,6 +153,7 @@ function useSession(kind: SessionMeasurement["interface"], set: SessionMeasureme
     ...(set ? { set } : {}),
     minutes,
     offered,
+    shown: [...shown.current],
     reads: reads.current,
     ...(kind === "catalogue" ? { searches: counters.current.searches, filters: counters.current.filters } : {}),
     endedBy,
@@ -161,14 +162,16 @@ function useSession(kind: SessionMeasurement["interface"], set: SessionMeasureme
   const count = (what: "searches" | "filters") => {
     counters.current[what] += 1;
   };
-  return { elapsed, close, finish, count };
+  const show = (id: string) => { if (!shown.current.includes(id)) shown.current.push(id); };
+  return { elapsed, close, finish, count, show };
 }
 
-function SessionTimer({ words, minutes, onExpire, onEnd }: {
+function SessionTimer({ words, minutes, onExpire, onEnd, staticPreview = false }: {
   words: StudyWords;
   minutes: number;
   onExpire: () => void;
   onEnd: () => void;
+  staticPreview?: boolean;
 }) {
   const [left, setLeft] = useState(minutes * 60);
   const expire = useRef(onExpire);
@@ -176,6 +179,7 @@ function SessionTimer({ words, minutes, onExpire, onEnd }: {
     expire.current = onExpire;
   });
   useEffect(() => {
+    if (staticPreview) return;
     const until = Date.now() + minutes * 60 * 1000;
     const handle = window.setInterval(() => {
       const remaining = (until - Date.now()) / 1000;
@@ -186,7 +190,7 @@ function SessionTimer({ words, minutes, onExpire, onEnd }: {
       }
     }, 500);
     return () => window.clearInterval(handle);
-  }, [minutes]);
+  }, [minutes, staticPreview]);
   return (
     <div className="study-session__bar">
       <span role="timer" aria-live="off">{words.timeLeft(formatLeft(left))}</span>
@@ -225,6 +229,9 @@ type BrowseProps = {
   stories: Story[];
   minutes: number;
   set?: "a" | "b";
+  /** Gallery only: keep the example timer at its start. Never set by a protocol. */
+  staticPreview?: boolean;
+  illustrated?: boolean;
   onFinish: (measurement: SessionMeasurement, opened: Story[]) => void;
 };
 
@@ -250,11 +257,11 @@ function openedStories(measurement: SessionMeasurement, stories: Story[]) {
  * own screen - the live product's mobile reader, and the shape rg2's feed arm
  * uses. The order is the slate's and is never changed here.
  */
-export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: BrowseProps & { mode: "inline" | "cards" | "feed" }) {
+export function FeedBrowser({ words, stories, minutes, set, mode, onFinish, staticPreview = false, illustrated = true }: BrowseProps & { mode: "inline" | "cards" | "feed" }) {
   const session = useSession(mode, set, minutes, stories.map((story) => story.id));
   const [index, setIndex] = useState(0);
   const [reading, setReading] = useState<{ story: Story; openedAt: number } | null>(null);
-  // rg2's feed is the same full-text feed; only a2's other arm is cards.
+  // RG2 uses full texts too; only A2 cards open a separate reader.
   const inline = mode !== "cards";
   const story = stories[index];
   const shownAt = useRef(0);
@@ -264,9 +271,10 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: Br
 
   useEffect(() => {
     shownAt.current = session.elapsed();
+    if (story) session.show(story.id);
     inlineScroller.current?.scrollTo({ top: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, story?.id]);
 
   const leaveInline = () => {
     if (inline && story) session.close(story, shownAt.current, readInline());
@@ -289,7 +297,7 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: Br
   if (reading) {
     return (
       <div className="study-session">
-        <SessionTimer words={words} minutes={minutes} onExpire={() => end("timer")} onEnd={() => end("participant")} />
+        <SessionTimer words={words} minutes={minutes} staticPreview={staticPreview} onExpire={() => end("timer")} onEnd={() => end("participant")} />
         <OpenText story={reading.story} words={words} measureRef={openMeasure} onBack={(measure) => {
           session.close(reading.story, reading.openedAt, measure);
           setReading(null);
@@ -300,15 +308,14 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: Br
 
   return (
     <div className="study-session">
-      <SessionTimer words={words} minutes={minutes} onExpire={() => end("timer")} onEnd={() => end("participant")} />
+      <SessionTimer words={words} minutes={minutes} staticPreview={staticPreview} onExpire={() => end("timer")} onEnd={() => end("participant")} />
       {story && (inline ? (
         <div className="study-reader study-reader--session" ref={inlineScroller} onScroll={onInlineScroll} key={story.id}>
-          {getBokArtwork(story) && <img className="study-feed__art" src={getBokArtwork(story)!} alt="" />}
-          <TextBody story={story} details={{ minutes: words.minutesShort(story.minutes) }} />
+          <TextBody story={story} illustrated={illustrated} words={words} />
         </div>
       ) : (
         <div className="study-feed-card" key={story.id}>
-          <BokCover story={story} words={words} onOpen={() => setReading({ story, openedAt: session.elapsed() })} />
+          <BokCover story={story} words={words} opening={mode === "cards"} onOpen={() => setReading({ story, openedAt: session.elapsed() })} />
         </div>
       ))}
       <nav className="study-feed__nav" aria-label={words.feedNav}>

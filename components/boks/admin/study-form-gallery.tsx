@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import "@/app/study.css";
 import { studyCopy, studyMinutes, type StudyWords } from "@/components/boks/studies/study-copy";
 import {
   BokChoiceForm,
+  A2EaseForm,
   CheckListForm,
   ScaleForm,
   SessionSurveyForm,
@@ -18,12 +19,15 @@ import { sampleFragments, sampleStories } from "@/components/boks/studies/study-
 import { studyDescription, studyKeys, type StudyKey } from "@/lib/boks/studies/protocol";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
+import type { Story } from "@/components/boks/client-types";
+import { loadStudyBoks } from "@/components/boks/supabase-browser-data";
+import { galleryA2Ids, galleryBokIds, galleryChoiceFragmentSourceId, galleryChoiceWholeId, galleryExcerpt, galleryFragmentSourceId, galleryProfileIds, galleryWholeId } from "@/components/boks/studies/study-gallery-examples";
+import { StudyA3Demo } from "@/components/boks/admin/study-a3-demo";
 
 /**
  * Every screen a participant meets, study by study, each in a phone-sized
- * frame: the real components with sample texts, so a screenshot for the
- * presentation is exactly what a participant will see. Nothing here talks to
- * the database; buttons do nothing.
+ * frame. Andrey's examples read a bounded list of published catalogue works
+ * with their own artwork. Rendering and local interactions never save answers.
  */
 
 const noop = () => undefined;
@@ -39,12 +43,15 @@ const galleryWords = defineMessages({
   rg2After: "After each session: the texts, the choice, «тронуло» 1–7 and session satisfaction 1–7",
   rg2Between: "Between the two sessions; the order is assigned at random",
   a1Read: "A whole work or a fragment, read in turn",
-  a1After: "After the choice: closure of each text read",
-  a1Choice: "The free choice: two cards, one of each kind, unlabelled, or none",
+  a1After: "Only after the choice: closure of each earlier text, 1-7",
+  a1Choice: "Free choice: one new whole work and one fragment, unlabelled, or neither",
+  a1Whole: "1. Read a complete work",
+  a1Fragment: "2. Read an excerpt from a longer work (order counterbalanced)",
   a2Known: "Before the timer: which texts are already known",
   a2Inline: "Feed of full texts",
-  a2Cards: "Feed of cards",
-  a2After: "After each session",
+  a2Cards: "Card with a separate reading screen",
+  a2After: "After each session: identify the chosen work or explicitly choose none",
+  a2Ease: "Then ease, 1-7; choice satisfaction and completion are secondary",
   a3Intro: "The ordinary feed with one question",
   a3Text: "A text from the participant's own feed",
   a3Rate: "On leaving every text: interest, 1–5",
@@ -59,7 +66,11 @@ const galleryWords = defineMessages({
   b2Pause: "A short pause, then the other mode with the other set",
   b3Fragment: "A fragment and the two questions; the cutting method is never shown",
   b3Between: "Between fragments",
-  galleryIntro: "Every screen a participant sees, with sample public-domain texts. The participant pages render these same components, so a screenshot here is what the study will show. Series pieces play in the product's own player and are not framed here; open a study's preview for them.",
+  galleryIntro: "Participant screens, using the same components as the study links. A1, A2 and A3 use published Boks texts and illustrations. You can try the controls; answers are not saved. Series playback is available in a study's Preview.",
+  exampleNote: "Catalogue examples illustrate the procedure. A1's excerpts retain the source text verbatim; the team must approve the final matched pairs before starting the study.",
+  a1Method: "Two texts → free choice of the next read → closure questions. Format labels and the purpose of the comparison are hidden from participants. Primary: share choosing whole minus share choosing excerpt, including refusals; target +15 pp.",
+  a2Method: "Cards → reading screen versus full text in the feed. Each participant tries both for ten minutes with different, comparable sets; order and set assignment are counterbalanced. Primary: a text chosen AND ease rated 6 or 7; cards minus full texts, target +10 pp.",
+  loadFailed: "Could not load the catalogue examples. Reload the page to try again.",
   language: "Language",
   study: "Study",
   all: "All",
@@ -75,12 +86,15 @@ const galleryWords = defineMessages({
     rg2After: "После каждой сессии: тексты, выбор, «тронуло» 1–7 и удовлетворённость сессией 1–7",
     rg2Between: "Между двумя сессиями; порядок назначается случайно",
     a1Read: "Целое произведение или фрагмент, по очереди",
-    a1After: "После выбора: завершённость прочитанных текстов",
-    a1Choice: "Свободный выбор: две карточки, по одной каждого вида, без пометок, или ничего",
+    a1After: "Только после выбора: завершённость каждого из первых двух текстов, 1-7",
+    a1Choice: "Свободный выбор: одно новое целое произведение и один фрагмент, без пометок, или ничего",
+    a1Whole: "1. Чтение целого произведения",
+    a1Fragment: "2. Чтение фрагмента более длинного текста (порядок чередуется)",
     a2Known: "До таймера: какие тексты уже знакомы",
     a2Inline: "Лента полных текстов",
-    a2Cards: "Лента карточек",
-    a2After: "После каждой сессии",
+    a2Cards: "Карточка с отдельным экраном чтения",
+    a2After: "После каждой сессии: выбранное произведение или явный отказ",
+    a2Ease: "Затем лёгкость, 1-7; удовлетворённость выбором и дочитывание - дополнительно",
     a3Intro: "Обычная лента с одним вопросом",
     a3Text: "Текст из собственной ленты участника",
     a3Rate: "При выходе из каждого текста: интерес, 1–5",
@@ -95,7 +109,11 @@ const galleryWords = defineMessages({
     b2Pause: "Короткая пауза, затем другой режим с другим набором",
     b3Fragment: "Фрагмент и два вопроса; способ нарезки никогда не показывается",
     b3Between: "Между фрагментами",
-    galleryIntro: "Все экраны, которые видит участник, на примерах общественного достояния. Страницы участника рисуют эти же компоненты, так что скриншот отсюда и есть то, что покажет исследование. Произведения серии играют в собственном плеере продукта и здесь не показаны; для них откройте предпросмотр исследования.",
+    galleryIntro: "Экраны участника на тех же компонентах, что и исследование по ссылке. В А1, А2 и А3 использованы опубликованные тексты и иллюстрации Boks. Кнопки можно попробовать, ответы не сохраняются. Плеер Series доступен в предпросмотре исследования.",
+    exampleNote: "Примеры из каталога показывают процедуру. В А1 исходный текст фрагментов сохранён дословно; окончательные сопоставимые пары команда утверждает перед запуском исследования.",
+    a1Method: "Два текста → свободный выбор следующего чтения → вопросы о завершённости. Метки формата и цель сравнения участнику не показываем. Основная метрика: доля выбравших целое минус доля выбравших фрагмент, с учётом отказов; цель +15 п.п.",
+    a2Method: "Карточка → экран чтения против полного текста в ленте. Каждый участник пробует оба режима по десять минут с разными сопоставимыми наборами; порядок и наборы чередуем. Основная метрика: текст выбран И лёгкость оценена на 6 или 7; карточки минус полные тексты, цель +10 п.п.",
+    loadFailed: "Не удалось загрузить примеры из каталога. Обновите страницу, чтобы повторить.",
     language: "Язык",
     study: "Исследование",
     all: "Все",
@@ -104,10 +122,10 @@ const galleryWords = defineMessages({
 
 type GalleryWords = (typeof galleryWords)["en"];
 
-function Phone({ caption, words, children }: { caption: string; words: StudyWords; children: ReactNode }) {
+function Phone({ caption, words, children, id }: { caption: string; words: StudyWords; children: ReactNode; id?: string }) {
   return (
     <figure className="study-gallery__item">
-      <div className="study-gallery__phone">
+      <div className="study-gallery__phone" data-study-screen={id}>
         <StudyFrame words={words}>{children}</StudyFrame>
       </div>
       <figcaption>{caption}</figcaption>
@@ -115,8 +133,8 @@ function Phone({ caption, words, children }: { caption: string; words: StudyWord
   );
 }
 
-export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords = galleryWords.en): { caption: string; body: ReactNode }[] {
-  const [first, second, third, fourth] = sampleStories;
+export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords = galleryWords.en, catalogue: Map<string, Story> | null = null): { id?: string; caption: string; body: ReactNode }[] {
+  const [first, , third] = sampleStories;
   const intro = { caption: t.intro, body: <StudyIntro words={words} minutes={studyMinutes[key]} what={words.introWhat[key]} onStart={noop} /> };
   switch (key) {
     case "rg1":
@@ -135,29 +153,43 @@ export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords
         { caption: t.rg2After, body: <SessionSurveyForm words={words} opened={[first, third]} onSubmit={noop} /> },
         { caption: t.rg2Between, body: <Interstitial eyebrow={words.eyebrow} title={words.secondSessionTitle} body={<p>{words.secondSessionBody}</p>} action={words.continue} onAction={noop} /> },
       ];
-    case "a1":
+    case "a1": {
+      if (!catalogue) return [];
+      const whole = catalogue.get(galleryWholeId)!;
+      const fragment = galleryExcerpt(catalogue.get(galleryFragmentSourceId)!, whole.wordCount ?? 553);
+      const choiceWhole = catalogue.get(galleryChoiceWholeId)!;
+      const choiceFragment = galleryExcerpt(catalogue.get(galleryChoiceFragmentSourceId)!, choiceWhole.wordCount ?? 669);
       return [
         intro,
-        { caption: t.a1Read, body: <StudyTextReader story={fourth} words={words} note={words.readThisText} onDone={noop} /> },
-        { caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[second, fourth]} nothingLabel={words.chooseNothing} onChoose={noop} /> },
-        { caption: t.a1After, body: <ScaleForm words={words} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
+        { id: "a1-whole", caption: t.a1Whole, body: <StudyTextReader story={whole} words={words} doneLabel={words.nextStep} onDone={noop} /> },
+        { id: "a1-fragment", caption: t.a1Fragment, body: <StudyTextReader story={fragment} words={words} doneLabel={words.nextStep} onDone={noop} /> },
+        { id: "a1-choice", caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[choiceWhole, choiceFragment]} nothingLabel={words.chooseNothing} onChoose={noop} /> },
+        { id: "a1-closure", caption: t.a1After, body: <ScaleForm words={words} eyebrow={words.a1Recall} title={whole.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
       ];
-    case "a2":
+    }
+    case "a2": {
+      if (!catalogue) return [];
+      const a2Stories = galleryA2Ids.map((id) => catalogue.get(id)!);
       return [
         intro,
-        { caption: t.a2Known, body: <CheckListForm words={words} title={words.familiarityTitle} body={words.familiarityBody} options={sampleStories.map((story) => ({ id: story.id, label: story.title, hint: story.authorName }))} onSubmit={noop} /> },
-        { caption: t.a2Inline, body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="inline" onFinish={noop} /> },
-        { caption: t.a2Cards, body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="cards" onFinish={noop} /> },
-        { caption: t.a2After, body: <SessionSurveyForm words={words} opened={[second]} askChoice onSubmit={noop} /> },
+        { caption: t.a2Known, body: <CheckListForm words={words} title={words.familiarityTitle} body={words.familiarityBody} options={a2Stories.map((story) => ({ id: story.id, label: story.title, hint: story.authorName }))} onSubmit={noop} /> },
+        { id: "a2-cards", caption: t.a2Cards, body: <FeedBrowser words={words} stories={a2Stories} minutes={10} mode="cards" illustrated staticPreview onFinish={noop} /> },
+        { id: "a2-inline", caption: t.a2Inline, body: <FeedBrowser words={words} stories={a2Stories} minutes={10} mode="inline" illustrated staticPreview onFinish={noop} /> },
+        { id: "a2-choice", caption: t.a2After, body: <BokChoiceForm words={words} title={words.a2ChoiceTitle} body={words.a2ChoiceBody} boks={a2Stories} nothingLabel={words.a2Nothing} onChoose={noop} /> },
+        { id: "a2-ease", caption: t.a2Ease, body: <A2EaseForm words={words} chosen={a2Stories[0]} onSubmit={noop} /> },
       ];
-    case "a3":
+    }
+    case "a3": {
+      if (!catalogue) return [];
+      const profileStory = catalogue.get(galleryProfileIds[0])!;
       return [
         intro,
         { caption: t.a3Intro, body: <Interstitial eyebrow={words.eyebrow} title={words.a3IntroTitle} body={<p>{words.a3IntroBody(15)}</p>} action={words.start} onAction={noop} /> },
-        { caption: t.a3Text, body: <StudyTextReader story={second} words={words} note={words.a3Progress(2, 15)} doneLabel={words.a3Next} onDone={noop} /> },
-        { caption: t.a3Rate, body: <ScaleForm words={words} eyebrow={words.a3Progress(2, 15)} title={second.title} questions={studyQuestions.a3(words)} onSubmit={noop} /> },
+        { id: "a3-text", caption: t.a3Text, body: <StudyTextReader story={profileStory} words={words} progressLabel={words.a3Progress(2, 15)} doneLabel={words.a3Next} onDone={noop} /> },
+        { id: "a3-rating", caption: t.a3Rate, body: <ScaleForm words={words} eyebrow={words.a3Progress(2, 15)} title={profileStory.title} questions={studyQuestions.a3(words)} onSubmit={noop} /> },
         { caption: t.a3Profile, body: <Interstitial eyebrow={words.eyebrow} title={words.a3ProfileReadyTitle} body={<p>{words.a3ProfileReadyBody(10)}</p>} action={words.continue} onAction={noop} /> },
       ];
+    }
     case "b1":
       return [
         intro,
@@ -189,6 +221,17 @@ export function StudyFormGallery() {
   const words = studyCopy[language];
   const t = useMessages(galleryWords);
   const uiLanguage = useUiLanguage();
+  const [catalogue, setCatalogue] = useState<Map<string, Story> | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    loadStudyBoks(galleryBokIds).then((stories) => {
+      if (cancelled) return;
+      if (stories.length !== galleryBokIds.length) { setLoadFailed(true); return; }
+      setCatalogue(new Map(stories.map((story) => [story.id, story])));
+    }, () => { if (!cancelled) setLoadFailed(true); });
+    return () => { cancelled = true; };
+  }, []);
   return (
     <section className="study-gallery">
       <p className="study-gallery__intro">{t.galleryIntro}</p>
@@ -211,11 +254,15 @@ export function StudyFormGallery() {
       {studyKeys.filter((key) => only === "all" || only === key).map((key) => (
         <div key={`${key}-${language}`} className="study-gallery__study">
           <h2>{studyDescription(key, uiLanguage).label} · {studyDescription(key, uiLanguage).title}</h2>
+          {(key === "a1" || key === "a2") && <p className="study-gallery__method">{key === "a1" ? t.a1Method : t.a2Method}</p>}
+          {(["a1", "a2", "a3"] as StudyKey[]).includes(key) && !catalogue && <p role={loadFailed ? "alert" : "status"}>{loadFailed ? t.loadFailed : words.loading}</p>}
           <div className="study-gallery__row">
-            {galleryScreens(key, words, t).map((screen) => (
-              <Phone key={screen.caption} caption={screen.caption} words={words}>{screen.body}</Phone>
+            {galleryScreens(key, words, t, catalogue).map((screen) => (
+              <Phone key={screen.caption} id={screen.id} caption={screen.caption} words={words}>{screen.body}</Phone>
             ))}
           </div>
+          {key === "a1" && catalogue && <p className="study-gallery__intro">{t.exampleNote}</p>}
+          {key === "a3" && catalogue && <StudyA3Demo stories={catalogue} language={language} />}
         </div>
       ))}
     </section>

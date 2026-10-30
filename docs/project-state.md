@@ -1,13 +1,24 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-29.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-30.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
 go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ---
+
+## Ready for release
+
+**Andrey's study instruments and gallery (2026-10-30).** A1 offers two new
+unlabelled options and asks closure only after the choice. A2 now measures a
+reported choice plus ease 6-7 of 7, cards minus full texts, with refusals kept
+and earlier instruments excluded without deleting their answers. The A1-A3
+gallery uses 17 real catalogue works and their illustrations. Its admin-only
+A3 demonstration runs the same ranker with and without a five-rating profile
+on real vectors and counters; demonstration ratings are explicit and save
+nothing. Study switches and materials are unchanged. See `docs/studies.md`.
 
 ## Live, every study switched off
 

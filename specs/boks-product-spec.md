@@ -104,3 +104,11 @@ boks tests whether readers want a dedicated literature feed for complete short s
 - Monetization: add author subscriptions, paid collections, or sponsor-supported free reading.
 - Operations: add pagination, moderation queues, cohort exports, and author-level reporting once inventory reaches thousands of texts.
 - Supabase analytics: attributed event and assignment tables now exist. The next step is precomputed daily rollups so the lab does not aggregate the raw event stream on every load.
+
+## Controlled thesis studies
+
+The ordinary reader retains one swipe-first algorithmic feed. Separate `/study/<key>` protocols are opened by research links and controlled from Studio → Studies, with admin-only no-write previews and a Participant forms gallery. All studies remain off until materials are approved. See `docs/studies.md` for the authoritative protocol and instrument versions.
+
+Andrey's A1 offers a whole work and a fragment as reading exposure, then one new unlabelled option of each kind or neither; closure questions follow the choice. A2 compares illustrated cards opening a reader with full texts directly in the feed, ten minutes each, in counterbalanced order with different comparable sets. Its primary outcome requires a reported choice and ease 6-7 of 7, keeping refusals in the denominator. A3 fixes a semantic profile after five interest ratings and independently evaluates two hidden rankings of the same ten new texts. Participant opinion here is an explicitly controlled study response; the live recommendation lab continues to compare algorithms by attributed behaviour.
+
+The gallery loads a bounded set of real published works and cover assets. Its A3 demonstration calls the same ranker on real snapshot vectors/counters with visibly labelled example ratings, saving no responses. No study is activated by visiting the gallery.

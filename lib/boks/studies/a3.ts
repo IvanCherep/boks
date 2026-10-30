@@ -18,8 +18,8 @@ import type { A3Materials } from "@/lib/boks/studies/materials";
  *
  * Offline, the production ranker orders those ten twice from the same
  * snapshot of counters: once with the profile as its semantic taste and once
- * with no taste at all. Nothing else differs, so the difference in NDCG@5
- * against the participant's own ratings is the profile's.
+ * with no taste at all. Nothing else differs. Precision@5 against the
+ * participant's ratings is primary; NDCG@5 is secondary.
  */
 
 export type A3Rating = { bokId: string; interest: number };

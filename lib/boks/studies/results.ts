@@ -1,7 +1,7 @@
 import { comparePaired, compareIndependent } from "@/lib/recsys/statistics";
 import type { ComparisonResult } from "@/lib/recsys/statistics/types";
-import type { StudyKey } from "@/lib/boks/studies/protocol";
-import { easySession, successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
+import { a1InstrumentVersion, a2InstrumentVersion, type StudyKey } from "@/lib/boks/studies/protocol";
+import { easyChoice, successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
 import { ndcgAt, precisionAt, type A3Ranking } from "@/lib/boks/studies/a3";
 import { defineMessages } from "@/lib/i18n/messages";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
@@ -92,7 +92,6 @@ const resultWords = defineMessages({
   whole: "Whole",
   cards: "Card + reading screen",
   inline: "Full texts in the feed",
-  easyChoice: "Chose a text without difficulty (chosen and «Мне было легко выбрать» 6 or 7)",
   againstControl: "Accepted share, algorithm minus random windows (target: at least 80% and +10 pp)",
   againstControlValue: (algorithm: number, control: number, gap: number) => `${algorithm}% against ${control}%: ${gap > 0 ? "+" : ""}${gap} pp`,
   withoutProfile: "Without profile",
@@ -105,6 +104,13 @@ const resultWords = defineMessages({
   choseWholeMinusFragment: "Chose a whole work minus chose a fragment",
   feltComplete: "Felt complete, 1–7",
   choseNothing: "Chose nothing",
+  earlierInstrument: "Earlier instrument (kept in export, not pooled)",
+  incompleteChoice: "Current instrument, no valid pair of session surveys yet",
+  easyChoice: "Chose a text and rated ease 6 or 7 of 7",
+  easeSecondary: "Ease of choosing, 1-7 (secondary, mean)",
+  choiceSatisfactionSecondary: "Choice satisfaction, 1-5 (secondary; both sessions with a choice)",
+  sessionsNoChoice: "Sessions with an explicit refusal (kept in denominator)",
+  successfulFind: "Session with a successful find",
   satisfactionSecondary: "Session satisfaction, 1–7 (secondary)",
   ndcg: "NDCG@5 of the ten new texts (secondary)",
   precision: "Precision@5: share of texts rated 4–5 in the top five",
@@ -137,7 +143,6 @@ const resultWords = defineMessages({
     whole: "Целое",
     cards: "Карточка + экран чтения",
     inline: "Полные тексты в ленте",
-    easyChoice: "Выбрали без затруднений (текст указан и «Мне было легко выбрать» 6 или 7)",
     againstControl: "Доля принятых, алгоритм минус случайные отрывки (цель: не меньше 80% и +10 п. п.)",
     againstControlValue: (algorithm, control, gap) => `${algorithm}% против ${control}%: ${gap > 0 ? "+" : ""}${gap} п. п.`,
     withoutProfile: "Без профиля",
@@ -150,6 +155,13 @@ const resultWords = defineMessages({
     choseWholeMinusFragment: "Выбрали целое произведение минус выбрали фрагмент",
     feltComplete: "Ощущение завершённости, 1–7",
     choseNothing: "Ничего не выбрали",
+    earlierInstrument: "Прежняя версия (сохранена в выгрузке, в расчёт не входит)",
+    incompleteChoice: "Новая версия, ещё нет двух корректных анкет сессии",
+    easyChoice: "Выбрали текст и оценили лёгкость на 6 или 7 из 7",
+    easeSecondary: "Лёгкость выбора, 1-7 (вторичная, среднее)",
+    choiceSatisfactionSecondary: "Довольны выбором, 1-5 (вторичная; выбор сделан в обеих сессиях)",
+    sessionsNoChoice: "Сессии без выбора (остаются в знаменателе)",
+    successfulFind: "Сессия с успешной находкой",
     satisfactionSecondary: "Удовлетворённость сессией, 1–7 (вторичная)",
     ndcg: "NDCG@5 десяти новых текстов (вторичная)",
     precision: "Precision@5: доля текстов с интересом 4–5 в первой пятёрке",
@@ -206,7 +218,6 @@ function comparePairs(
   threshold: number,
   unit: StudyComparison["unit"],
   names: [string, string],
-  /** Met only when the whole 95% interval clears the threshold, not just the effect. */
   wholeInterval = false
 ): StudyComparison {
   const result = comparePaired(pairs, { metric: label, minimumReaders, power: "none" });
@@ -321,14 +332,18 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   a1(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
     let refused = 0;
+    let legacy = 0;
     const closure: Record<"whole" | "fragment", number[]> = { whole: [], fragment: [] };
     for (const rows of groups.values()) {
-      for (const row of rows.filter((entry) => entry.step === "after_reading")) {
+      for (const row of rows.filter((entry) => entry.step === "after_reading" && entry.answers.instrumentVersion === a1InstrumentVersion)) {
         const value = scale(row.answers.closure);
         if (value !== null) closure[row.answers.kind === "fragment" ? "fragment" : "whole"].push(value);
       }
-      const choice = rows.find((row) => row.step === "choice");
-      if (!choice) continue;
+      const choice = rows.find((row) => row.step === "choice" && row.answers.instrumentVersion === a1InstrumentVersion);
+      if (!choice) {
+        if (rows.some((row) => row.step === "choice")) legacy += 1;
+        continue;
+      }
       const kind = choice.answers.kind;
       // Every participant is in the denominator; a refusal is neither kind.
       pairs.push({ control: kind === "fragment" ? 1 : 0, variant: kind === "whole" ? 1 : 0 });
@@ -339,28 +354,41 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       compare(w.feltComplete, closure.fragment, closure.whole, 0, "points", [w.fragment, w.whole])
     );
     summary.facts.push({ label: w.choseNothing, value: percent(refused, pairs.length, w) });
+    if (legacy) summary.facts.push({ label: w.earlierInstrument, value: String(legacy) });
   },
   a2(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
-    const finished: { control: number; variant: number }[] = [];
+    const ease: { control: number; variant: number }[] = [];
     const satisfaction: { control: number; variant: number }[] = [];
+    let legacy = 0;
+    let incomplete = 0;
+    let noChoice = 0;
     for (const rows of groups.values()) {
-      const sessions = sessionsOf(rows);
+      const current = rows.filter((row) => row.answers.instrumentVersion === a2InstrumentVersion);
+      if (current.length === 0) { legacy += 1; continue; }
+      const sessions = sessionsOf(current);
       const inline = sessions.find((session) => session.measurement.interface === "inline");
       const cards = sessions.find((session) => session.measurement.interface === "cards");
-      if (inline && cards) {
-        pairs.push({ control: easySession(inline.survey) ? 1 : 0, variant: easySession(cards.survey) ? 1 : 0 });
-        finished.push({ control: inline.success ? 1 : 0, variant: cards.success ? 1 : 0 });
-        const inlineScore = scale(inline.survey.sessionSatisfaction);
-        const cardsScore = scale(cards.survey.sessionSatisfaction);
-        if (inlineScore !== null && cardsScore !== null) satisfaction.push({ control: inlineScore, variant: cardsScore });
+      const inlineChoice = inline ? easyChoice(inline.measurement, inline.survey) : null;
+      const cardsChoice = cards ? easyChoice(cards.measurement, cards.survey) : null;
+      if (!inline || !cards || inlineChoice === null || cardsChoice === null) { incomplete += 1; continue; }
+      pairs.push({ control: inlineChoice ? 1 : 0, variant: cardsChoice ? 1 : 0 });
+      ease.push({ control: inline.survey.choiceEase!, variant: cards.survey.choiceEase! });
+      noChoice += [inline, cards].filter((session) => session.survey.chosenBokId === null).length;
+      const inlineScore = scale(inline.survey.satisfaction);
+      const cardsScore = scale(cards.survey.satisfaction);
+      if (inline.survey.chosenBokId && cards.survey.chosenBokId && inlineScore !== null && cardsScore !== null) {
+        satisfaction.push({ control: inlineScore, variant: cardsScore });
       }
     }
     summary.comparisons.push(
       comparePairs(w.easyChoice, pairs, 0.1, "share", [w.inline, w.cards]),
-      comparePairs(w.successfulSecondary, finished, 0, "share", [w.inline, w.cards]),
-      comparePairs(w.satisfactionSecondary, satisfaction, 0, "points", [w.inline, w.cards])
+      comparePairs(w.easeSecondary, ease, 0, "points", [w.inline, w.cards]),
+      comparePairs(w.choiceSatisfactionSecondary, satisfaction, 0, "points", [w.inline, w.cards])
     );
+    summary.facts.push({ label: w.sessionsNoChoice, value: String(noChoice) });
+    if (legacy) summary.facts.push({ label: w.earlierInstrument, value: String(legacy) });
+    if (incomplete) summary.facts.push({ label: w.incompleteChoice, value: String(incomplete) });
   },
   a3(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];

@@ -1,3 +1,5 @@
+import { a2InstrumentVersion } from "@/lib/boks/studies/protocol";
+
 /**
  * A browsing session in rg2 and a2: ten minutes in one interface, what was
  * opened and read, and the questions after it.
@@ -36,6 +38,8 @@ export type SessionMeasurement = {
   minutes: number;
   /** Ids in the order the interface offered them. */
   offered: string[];
+  /** Feed texts actually displayed, not the whole offered slate. Added in A2 v2. */
+  shown?: string[];
   reads: SessionRead[];
   /** Catalogue searches typed and filters used, for describing the control arm. */
   searches?: number;
@@ -45,6 +49,13 @@ export type SessionMeasurement = {
 };
 
 export type SessionSurvey = {
+  instrumentVersion?: string;
+  /** A2: one chosen text among those displayed, or an explicit refusal. */
+  chosenBokId?: string | null;
+  /** A2: «Мне было легко выбрать произведение для чтения», 1..7. */
+  choiceEase?: number | null;
+  /** A2 secondary self-report for the chosen text; not the inferred reader outcome. */
+  chosenFinished?: "yes" | "part" | "no";
   perBok: Record<string, { readBefore: "yes" | "no"; finished: "yes" | "part" | "no" }>;
   /** «Насколько вы довольны выбором?» 1..5; null when nothing was opened. */
   satisfaction: number | null;
@@ -52,15 +63,25 @@ export type SessionSurvey = {
   sessionSatisfaction?: number | null;
   /** «Прочитанное меня тронуло» 1..7, the emotional response; null when nothing was opened. */
   moved?: number | null;
-  /** a2: the text the participant says they chose; null is «nothing». Absent in rg2. */
-  chosen?: string | null;
-  /** a2: «Мне было легко выбрать» 1..7. Absent in rg2. */
-  easyChoice?: number | null;
 };
 
-/** a2's success: a text was chosen and the choice was easy, 6 or 7 of 7. «Nothing» is a failure. */
-export function easySession(survey: SessionSurvey) {
-  return Boolean(survey.chosen) && (survey.easyChoice ?? 0) >= 6;
+export type A2SessionSurvey = SessionSurvey & {
+  instrumentVersion: typeof a2InstrumentVersion;
+  chosenBokId: string | null;
+  choiceEase: number;
+};
+
+/**
+ * A2's primary outcome, independent of whether the text was finished.
+ * null means an absent/invalid instrument, never an unsuccessful choice.
+ * An explicit refusal is a valid zero, even with a high ease rating.
+ */
+export function easyChoice(measurement: SessionMeasurement, survey: SessionSurvey): boolean | null {
+  if (survey.instrumentVersion !== a2InstrumentVersion || !Number.isInteger(survey.choiceEase)
+    || survey.choiceEase! < 1 || survey.choiceEase! > 7) return null;
+  if (survey.chosenBokId === null) return false;
+  if (typeof survey.chosenBokId !== "string" || !measurement.shown?.includes(survey.chosenBokId)) return null;
+  return survey.choiceEase! >= 6;
 }
 
 export const successfulSatisfaction = 4;

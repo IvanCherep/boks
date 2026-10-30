@@ -101,6 +101,9 @@ button.study-bok { cursor: pointer; }
 .study-text .study-eyebrow { font-size: 12px; letter-spacing: 2px; }
 .study-text h1 { margin: 14px 0 26px; font: 400 39px/1.06 var(--study-serif); letter-spacing: -1.4px; text-wrap: balance; overflow-wrap: anywhere; }
 .study-text p { margin: 0 0 1em; }
+.study-text__art { display: block; width: 100%; height: 190px; object-fit: cover; margin-bottom: 22px; }
+.study-text .study-text__duration { margin: -12px 0 22px; font: 12px/1.4 var(--study-sans); color: var(--study-muted); }
+.study-reader__progress { margin-bottom: 22px; }
 .study-rating { display: grid; gap: 24px; margin-top: 14px; padding-top: 24px; border-top: 1px solid var(--study-line); }
 
 /* Ten-minute sessions */
@@ -113,7 +116,7 @@ button.study-bok { cursor: pointer; }
 .study-cover { position: relative; isolation: isolate; flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 60svh; padding: 34px 24px 24px; overflow: hidden; background: var(--bok-cover); color: var(--bok-ink); }
 .study-cover--art { background: #000; color: #fff8eb; }
 .study-cover__art { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.study-cover--art::after { content: ""; position: absolute; z-index: -1; inset: 0; background: linear-gradient(#091a2233, transparent 44%, #091a2299); }
+.study-cover--art::after { content: ""; position: absolute; z-index: -1; inset: 0; background: linear-gradient(#091a22b8, #091a2244 52%, #091a2299); }
 .study-cover__letter { position: absolute; z-index: -1; top: 90px; right: .05em; color: var(--bok-letter); font: italic 400 340px/1 "Boks Cover Initial", Georgia, var(--study-serif); pointer-events: none; }
 .study-cover__heading h2 { margin: 0 0 16px; font: 400 46px/.98 var(--study-serif); letter-spacing: -1.6px; text-wrap: balance; overflow-wrap: break-word; }
 .study-cover__byline { margin: 0; font: 400 12px/1.4 var(--study-sans); }
@@ -145,12 +148,51 @@ button.study-bok { cursor: pointer; }
 .study-gallery__intro { max-width: 760px; color: var(--muted-foreground); font-size: 14px; line-height: 1.5; }
 .study-gallery__study { display: grid; gap: 12px; }
 .study-gallery__study h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.study-gallery__method { max-width: 950px; margin: 0; font-size: 14px; line-height: 1.65; }
 .study-gallery__row { display: flex; gap: 20px; overflow-x: auto; padding: 4px 2px 16px; }
 .study-gallery__item { display: grid; gap: 8px; flex: none; margin: 0; }
 .study-gallery__item figcaption { font-size: 12px; color: var(--muted-foreground); max-width: 390px; }
 .study-gallery__phone { width: 390px; height: 844px; overflow: hidden; border: 1px solid var(--studio-line, #d7d2c3); border-radius: 28px; box-shadow: 0 10px 30px rgb(0 0 0 / .08); }
-.study-gallery__phone .study { min-height: 100%; height: 100%; overflow-y: auto; }
-.study-gallery__phone .study-reader, .study-gallery__phone .study-catalogue { max-height: none; }
+.study-gallery__phone .study { min-height: 100%; height: 100%; overflow: hidden; }
+.study-gallery__phone .study__body { min-height: 0; overflow-y: auto; padding-bottom: 22px; }
+.study-gallery__phone .study-reader { min-height: 0; max-height: none; }
+.study-gallery__phone .study-catalogue { max-height: none; }
+.study-gallery__phone .study-cover { min-height: 0; }
+.study-gallery__phone .study-reader--session { flex: 1; }
+.study-gallery__phone .study-feed__nav { flex: none; }
+
+/* A3 operator view: the same ranker as the protocol; never shown to participants. */
+.study-a3-demo { display: grid; gap: 28px; max-width: 1100px; padding: 32px; border: 1px solid var(--studio-line, #d7d2c3); background: #f6f1e8; color: #222621; border-radius: 14px; }
+.study-a3-demo h3 { margin: 5px 0 12px; font: 400 38px/1.1 "Boks Literary", Georgia, serif; letter-spacing: -1px; }
+.study-a3-demo h4 { margin: 0 0 14px; font-size: 16px; font-weight: 600; }
+.study-a3-demo p { margin: 0; max-width: 900px; font-size: 13px; line-height: 1.65; color: #555b4f; }
+.study-a3-demo .study-a3-demo__eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 1.8px; }
+.study-a3-demo__ratings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.study-a3-demo__ratings > div { display: grid; gap: 10px; align-content: start; }
+.study-a3-demo__ratings img { width: 100%; height: 130px; object-fit: cover; }
+.study-a3-demo__ratings strong { font: 400 19px/1.2 "Boks Literary", Georgia, serif; min-height: 46px; }
+.study-a3-demo__ratings [role="group"] { display: flex; gap: 4px; }
+.study-a3-demo__ratings button { flex: 1; min-height: 34px; border: 1px solid #c9cbbf; background: transparent; color: #222621; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.study-a3-demo__ratings button[aria-pressed="true"] { background: #222621; color: #f6f1e8; }
+.study-a3-demo__pool { display: flex; flex-wrap: wrap; gap: 7px; }
+.study-a3-demo__pool span { border: 1px solid #d8d5cb; border-radius: 5px; padding: 5px 9px; font-size: 11px; }
+.study-a3-demo__columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.study-a3-demo__columns > section { border-top: 3px solid #9da397; padding-top: 16px; }
+.study-a3-demo__columns > section:last-child { border-color: #c64c34; }
+.study-a3-demo__columns p { min-height: 48px; }
+.study-a3-demo__columns > section > small { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: #62675b; }
+.study-a3-demo__ranking { list-style: decimal; margin: 14px 0 0; padding-left: 22px; }
+.study-a3-demo__ranking li { min-height: 72px; border-bottom: 1px solid #d8d5cb; padding: 9px 0 9px 4px; font-size: 12px; }
+.study-a3-demo__ranking img { float: left; width: 45px; height: 54px; object-fit: cover; margin-right: 12px; }
+.study-a3-demo__ranking span { display: grid; gap: 4px; }
+.study-a3-demo__ranking strong { font: 400 19px/1.2 "Boks Literary", Georgia, serif; }
+.study-a3-demo__ranking small { font-size: 11px; color: #62675b; }
+.study-a3-demo footer { border-top: 1px solid #d8d5cb; padding-top: 20px; display: grid; gap: 8px; }
+@media (max-width: 700px) {
+  .study-a3-demo { padding: 20px; }
+  .study-a3-demo__ratings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .study-a3-demo__columns { grid-template-columns: 1fr; }
+}
 @media (max-width: 480px) {
   .study-gallery__phone { width: calc(100vw - 48px); }
 }

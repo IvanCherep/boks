@@ -10,6 +10,7 @@ import type { StudyWords } from "@/components/boks/studies/study-copy";
 import { localizeBoksMessage } from "@/lib/boks/errors";
 import {
   BokChoiceForm,
+  A2SessionSurveyForm,
   CheckListForm,
   FragmentRatingForm,
   ScaleForm,
@@ -30,7 +31,7 @@ import type { StudyMaterials } from "@/lib/boks/studies/materials";
 import { planA1, planA2, planB1, planB2, planRg1, planRg2, type B2Plan, type StudyFormat } from "@/lib/boks/studies/plan";
 import { startReadingMusic, stopReadingMusic } from "@/components/boks/reading-music";
 import { interestScale, planA3Targets, rankA3, type A3Candidate, type A3Rating } from "@/lib/boks/studies/a3";
-import type { StudyKey, StudyStep } from "@/lib/boks/studies/protocol";
+import { a1InstrumentVersion, a2InstrumentVersion, type StudyKey, type StudyStep } from "@/lib/boks/studies/protocol";
 import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { SessionMeasurement } from "@/lib/boks/studies/session";
 
@@ -207,17 +208,30 @@ function Session({ run, index, kind, set, stories, minutes, onSaved }: {
   const [result, setResult] = useState<{ measurement: SessionMeasurement; opened: Story[] } | null>(null);
   const saving = useSaving();
   if (phase === "intro") {
-    return <Interstitial eyebrow={words.eyebrow} title={words.sessionTitle(minutes)} body={<><p>{sessionIntro(words, kind)}</p><p>{words.sessionRules(minutes)}</p></>} action={words.start} onAction={() => setPhase("browse")} />;
+    return <Interstitial eyebrow={words.eyebrow} title={words.sessionTitle(minutes)} body={<><p>{sessionIntro(words, kind)}</p><p>{run.key === "a2" ? words.a2SessionRules(minutes) : words.sessionRules(minutes)}</p></>} action={words.start} onAction={() => setPhase("browse")} />;
   }
   if (phase === "browse" || !result) {
     const done = (measurement: SessionMeasurement, opened: Story[]) => { setResult({ measurement, opened }); setPhase("survey"); };
     return kind === "catalogue"
       ? <CatalogueBrowser words={words} stories={stories} minutes={minutes} onFinish={done} />
-      : <FeedBrowser words={words} stories={stories} minutes={minutes} set={set} mode={kind} onFinish={done} />;
+      : <FeedBrowser words={words} stories={stories} minutes={minutes} set={set} mode={kind} illustrated={run.key === "a2"} onFinish={done} />;
+  }
+  if (run.key === "a2") {
+    const shown = (result.measurement.shown ?? []).flatMap((id) => {
+      const story = stories.find((entry) => entry.id === id);
+      return story ? [story] : [];
+    });
+    return <>
+      <A2SessionSurveyForm words={words} shown={shown} busy={saving.busy} onSubmit={(survey) => saving.save(async () => {
+        await run.record("session", { instrumentVersion: a2InstrumentVersion, index, measurement: result.measurement }, { condition: kind, clientSeconds: result.measurement.elapsedSeconds });
+        await run.record("session_survey", { instrumentVersion: a2InstrumentVersion, index, survey }, { condition: kind });
+      }, onSaved)} />
+      <SaveError error={saving.error} />
+    </>;
   }
   return (
     <>
-      <SessionSurveyForm words={words} opened={result.opened} askChoice={run.key === "a2"} busy={saving.busy} onSubmit={(survey) => saving.save(async () => {
+      <SessionSurveyForm words={words} opened={result.opened} busy={saving.busy} onSubmit={(survey) => saving.save(async () => {
         await run.record("session", { index, measurement: result.measurement }, { condition: kind, clientSeconds: result.measurement.elapsedSeconds });
         await run.record("session_survey", { index, survey }, { condition: kind });
       }, onSaved)} />
@@ -274,9 +288,11 @@ function A2({ run }: { run: StudyRun<"a2"> }) {
   const { words } = run;
   const plan = useMemo(() => planA2(run.materials, run.participant.condition), [run]);
   const { stories, error } = useStories([...run.materials.setA, ...run.materials.setB]);
-  const [step, setStep] = useState<"familiarity" | 0 | 1>("familiarity");
+  const [step, setStep] = useState<"familiarity" | "between" | 0 | 1>("familiarity");
   const saving = useSaving();
   if (!stories) return <Loading words={words} error={error} />;
+  if (step === "between") return <Interstitial title={words.secondSessionTitle} body={<p>{words.secondSessionBody}</p>}
+    action={words.continue} onAction={() => setStep(1)} />;
   if (step === "familiarity") {
     const all = [...run.materials.setA, ...run.materials.setB].map((id) => stories.get(id)).filter((story): story is Story => Boolean(story));
     return (
@@ -291,7 +307,7 @@ function A2({ run }: { run: StudyRun<"a2"> }) {
   const session = plan.sessions[step];
   const list = session.bokIds.map((id) => stories.get(id)).filter((story): story is Story => Boolean(story));
   return <Session key={step} run={run} index={step} kind={session.interface} set={session.set} stories={list} minutes={plan.minutes}
-    onSaved={() => (step === 0 ? setStep(1) : run.finish())} />;
+    onSaved={() => (step === 0 ? setStep("between") : run.finish())} />;
 }
 
 // a1 ----------------------------------------------------------------------
@@ -300,10 +316,10 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
   const { words } = run;
   const plan = useMemo(() => planA1(run.materials, run.participant.condition, run.participant.seed), [run]);
   const { stories, error } = useStories([...plan.reads.map((read) => read.bokId), ...plan.choices.map((choice) => choice.bokId)]);
-  const [step, setStep] = useState<number | "choose" | "ask" | "chosen">(0);
+  const [step, setStep] = useState<number | "closure" | "choose" | "chosen">(0);
   const [asking, setAsking] = useState(0);
   const [chosen, setChosen] = useState<Story | null>(null);
-  const measures = useRef<Record<string, unknown>[]>([]);
+  const measures = useRef<Record<string, ReadingMeasure>>({});
   const saving = useSaving();
   if (!stories) return <Loading words={words} error={error} />;
 
@@ -311,16 +327,20 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
     const read = plan.reads[step];
     const story = stories.get(read.bokId);
     if (!story) return <Loading words={words} error={words.textMissing} />;
-    return <ReadIn key={story.id} story={story} format="text" words={words} note={words.readThisText}
-      onDone={(result) => { measures.current[step] = result; setStep(step + 1 < plan.reads.length ? step + 1 : "choose"); }} />;
+    return <StudyTextReader key={story.id} story={story} words={words} doneLabel={words.nextStep}
+      onDone={(result) => {
+        measures.current[story.id] = result;
+        setStep(step + 1 < plan.reads.length ? step + 1 : "choose");
+      }} />;
   }
-  if (step === "ask") {
+  if (step === "closure") {
     const read = plan.reads[asking];
+    const story = stories.get(read.bokId);
     return (
       <>
-        <ScaleForm key={asking} words={words} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} busy={saving.busy}
+        <ScaleForm key={asking} words={words} eyebrow={words.a1Recall} title={story?.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} busy={saving.busy}
           onSubmit={(answers) => saving.save(
-            () => run.record("after_reading", { kind: read.kind, ...answers, ...measures.current[asking] }, { reelId: read.bokId, condition: read.kind }),
+            () => run.record("after_reading", { instrumentVersion: a1InstrumentVersion, kind: read.kind, ...answers, ...measures.current[read.bokId] }, { reelId: read.bokId, condition: read.kind }),
             () => {
               if (asking + 1 < plan.reads.length) setAsking(asking + 1);
               else if (chosen) setStep("chosen");
@@ -339,11 +359,11 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
           onChoose={(bokId) => {
             const choice = plan.choices.find((entry) => entry.bokId === bokId);
             saving.save(
-              () => run.record("choice", { chosen: bokId, kind: choice?.kind ?? null, offered: plan.choices }, { reelId: bokId }),
+              () => run.record("choice", { instrumentVersion: a1InstrumentVersion, chosen: bokId, kind: choice?.kind ?? null, offered: plan.choices }, { reelId: bokId }),
               () => {
-                // The closure questions come after the choice, so they cannot steer it.
                 setChosen(bokId ? stories.get(bokId) ?? null : null);
-                setStep("ask");
+                setAsking(0);
+                setStep("closure");
               }
             );
           }} />
@@ -368,7 +388,7 @@ function InterestRead({ run, story, progress, onRated }: {
   const [measure, setMeasure] = useState<ReadingMeasure | null>(null);
   const saving = useSaving();
   if (!measure) {
-    return <StudyTextReader key={story.id} story={story} words={words} note={progress} doneLabel={words.a3Next} onDone={setMeasure} />;
+    return <StudyTextReader key={story.id} story={story} words={words} progressLabel={progress} doneLabel={words.a3Next} onDone={setMeasure} />;
   }
   return (
     <>

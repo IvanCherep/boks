@@ -14,6 +14,10 @@ import type { UiLanguage } from "@/lib/i18n/ui-language";
 export const studyKeys = ["rg1", "rg2", "a1", "a2", "a3", "b1", "b2", "b3"] as const;
 export type StudyKey = (typeof studyKeys)[number];
 
+/** A wording or sequence change must not silently pool earlier instruments. */
+export const a1InstrumentVersion = "a1-choice-before-closure-v2";
+export const a2InstrumentVersion = "a2-choice-ease-v2";
+
 export function isStudyKey(value: unknown): value is StudyKey {
   return typeof value === "string" && (studyKeys as readonly string[]).includes(value);
 }
@@ -96,7 +100,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     label: "А1",
     owner: "Andrey",
     title: "A whole work or a fragment",
-    comparison: "Each participant reads both kinds, order at random; then chooses freely among new texts of both kinds, or none.",
+    comparison: "Reads both kinds in assigned order, then chooses between two new texts or neither. Closure is asked only after the choice.",
     outcome: "Share choosing a whole work minus share choosing a fragment, among everyone: at least +15 pp.",
     design: "within",
   },
@@ -104,9 +108,9 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     key: "a2",
     label: "А2",
     owner: "Andrey",
-    title: "Choosing by cards",
-    comparison: "A feed of cards (cover, title, author, time, the opening lines) against a feed of full texts carrying the same data; the same texts in the same order.",
-    outcome: "Share of sessions with a text chosen and 6 or 7 to «Мне было легко выбрать», 1–7: cards minus full texts at least +10 pp, paired, 95% interval above 0. «Nothing» is a failure.",
+    title: "Choosing from cards or full texts",
+    comparison: "Two ten-minute sessions: illustrated cards opening a reading screen, and full texts in the feed. Interface order and two comparable text sets are counterbalanced.",
+    outcome: "Chose a text and rated ease of choosing 6 or 7 out of 7: cards minus full texts at least +10 pp, paired, 95% interval above 0.",
     design: "within",
   },
   a3: {
@@ -161,13 +165,13 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   },
   a1: {
     title: "Целое произведение или фрагмент",
-    comparison: "Каждый участник читает оба вида в случайном порядке; затем свободно выбирает среди новых текстов обоих видов или ничего.",
+    comparison: "Читает оба вида в назначенном порядке, затем выбирает между двумя новыми текстами или ничего. Вопрос о завершённости задаём после выбора.",
     outcome: "Доля выбравших целое произведение минус доля выбравших фрагмент, среди всех: не меньше +15 п. п.",
   },
   a2: {
-    title: "Выбор чтения по карточкам",
-    comparison: "Лента карточек (обложка, название, автор, время, первые строки) против ленты полных текстов с теми же данными; те же тексты в том же порядке.",
-    outcome: "Доля сессий, где текст указан и на «Мне было легко выбрать» ответ 6 или 7, 1–7: карточки минус полные тексты не меньше +10 п. п., парно, 95% интервал выше 0. «Ничего» считается неуспехом.",
+    title: "Выбор по карточкам или полным текстам",
+    comparison: "Две сессии по десять минут: карточки с иллюстрациями и переходом к чтению против полных текстов в ленте. Порядок режимов и два сопоставимых набора текстов чередуем между участниками.",
+    outcome: "Выбрали текст и оценили лёгкость выбора на 6 или 7 из 7: карточки минус полные тексты не меньше +10 п. п., парно, 95% интервал выше 0.",
   },
   a3: {
     title: "Рекомендации по пяти бокам",
