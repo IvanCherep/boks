@@ -85,6 +85,7 @@ button.study-bok { cursor: pointer; }
 .study-bok__copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
 .study-bok__copy strong { font: 400 19px/1.15 var(--study-serif); overflow-wrap: anywhere; }
 .study-bok__copy > span { font-size: 12px; color: var(--study-muted); overflow-wrap: anywhere; }
+.study-bok__copy > .study-bok__format { font-size: 10px; text-transform: uppercase; letter-spacing: .7px; color: var(--study-soft); margin-bottom: 5px; }
 .study-bok__copy small { margin-top: 3px; font: 400 14px/1.42 var(--study-serif); color: var(--study-soft); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 .study-bok__arrow { display: grid; place-items: center; width: 44px; height: 44px; flex: none; background: var(--study-ink); color: var(--study-paper); }
 .study-bok__arrow svg { width: 20px; height: 20px; }
@@ -147,12 +148,12 @@ button.study-bok { cursor: pointer; }
 .study-gallery { display: grid; gap: 28px; }
 .study-gallery__intro { max-width: 760px; color: var(--muted-foreground); font-size: 14px; line-height: 1.5; }
 .study-gallery__study { display: grid; gap: 12px; }
-.study-gallery__study h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.study-gallery__study > h2 { font-size: 18px; font-weight: 600; margin: 0; }
 .study-gallery__method { max-width: 950px; margin: 0; font-size: 14px; line-height: 1.65; }
 .study-gallery__row { display: flex; gap: 20px; overflow-x: auto; padding: 4px 2px 16px; }
 .study-gallery__item { display: grid; gap: 8px; flex: none; margin: 0; }
 .study-gallery__item figcaption { font-size: 12px; color: var(--muted-foreground); max-width: 390px; }
-.study-gallery__phone { width: 390px; height: 844px; overflow: hidden; border: 1px solid var(--studio-line, #d7d2c3); border-radius: 28px; box-shadow: 0 10px 30px rgb(0 0 0 / .08); }
+.study-gallery__phone { width: 390px; height: 844px; overflow: hidden; border: 0; border-radius: 0; box-shadow: none; }
 .study-gallery__phone .study { min-height: 100%; height: 100%; overflow: hidden; }
 .study-gallery__phone .study__body { min-height: 0; overflow-y: auto; padding-bottom: 22px; }
 .study-gallery__phone .study-reader { min-height: 0; max-height: none; }
@@ -160,6 +161,32 @@ button.study-bok { cursor: pointer; }
 .study-gallery__phone .study-cover { min-height: 0; }
 .study-gallery__phone .study-reader--session { flex: 1; }
 .study-gallery__phone .study-feed__nav { flex: none; }
+
+/* Reading uses the product's cover, artwork, adaptive shade and typography.
+   The study viewport is edge to edge; time limits run without a visible clock. */
+.study:has(.study-feed) { height: 100svh; min-height: 0; overflow: hidden; }
+.study:has(.study-feed) > .study__header { display: none; }
+.study__body:has(.study-feed) { max-width: none; padding: 0; min-height: 0; overflow: hidden; }
+.study-gallery__phone .study:has(.study-feed) { height: 100%; }
+.study-feed { position: relative; width: 100%; flex: 1; min-height: 0; height: 100%; overflow: hidden; touch-action: pan-y; }
+.study-feed__header { position: absolute; z-index: 5; inset: 0 0 auto; height: 74px; display: grid; grid-template-columns: 65px minmax(0,1fr) 65px; align-items: center; padding: 14px 18px; color: var(--foreground); background: var(--reader); }
+.study-feed.reader-phase--cover .study-feed__header { color: #fff8eb; background: transparent; text-shadow: 0 1px 3px #0008; }
+.study-feed__header .boks-logo { justify-self: center; font-size: 36px; }
+.study-feed__header > button { justify-self: end; display: grid; place-items: center; width: 40px; height: 40px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.study-feed__progress { font-size: 11px; font-variant-numeric: tabular-nums; }
+.study-feed.reader-v44 .reader-cover { position: relative; float: none; width: 100%; height: 100%; min-height: 100%; padding: 100px 26px 110px; }
+.study-feed.reader-v44 .reader-cover__heading { margin-bottom: 32px; }
+.study-feed.reader-v44 .reader-cover__heading h1 { font-size: 48px; }
+.study-feed .reader-cover__summary { -webkit-line-clamp: 3; line-clamp: 3; }
+.study-feed .reader-read-button { display: flex; }
+.study-feed__hint { margin: 8px 0 0; text-align: center; font: 500 12px/1.4 system-ui,sans-serif; }
+.study-feed__text { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; max-width: 720px; margin: 0 auto; padding: 94px 24px 110px; }
+.study-feed__text .study-reader__back { margin-top: -16px; }
+.study-feed__nav { position: absolute; z-index: 6; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; min-height: 48px; padding: 4px 8px; border-radius: 16px; background: #f4f1e9e8; color: #222621; backdrop-filter: blur(16px); font: 12px/1.4 system-ui,sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.study-feed__nav button { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 42px; min-height: 40px; padding: 4px 12px; border: 0; border-radius: 10px; background: none; color: inherit; cursor: pointer; }
+.study-feed__nav button:disabled { opacity: .28; cursor: default; }
+.study-feed__nav button:focus-visible, .study-feed__header button:focus-visible { outline: 2px solid var(--study-accent); outline-offset: 2px; }
+.study:has(.study-feed) .study__preview { position: absolute; z-index: 8; top: 67px; left: 50%; transform: translateX(-50%); margin: 0; white-space: nowrap; }
 
 /* A3 operator view: the same ranker as the protocol; never shown to participants. */
 .study-a3-demo { display: grid; gap: 28px; max-width: 1100px; padding: 32px; border: 1px solid var(--studio-line, #d7d2c3); background: #f6f1e8; color: #222621; border-radius: 14px; }

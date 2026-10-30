@@ -3,8 +3,10 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
-import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { bokArtworkStyle, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
+import { CoverHeading } from "@/components/boks/reader/cover-heading";
+import { ReaderDownIcon } from "@/components/boks/reader/reader-icons";
 import type { Story } from "@/components/boks/client-types";
 import type { StudyWords } from "@/components/boks/studies/study-copy";
 import { a2InstrumentVersion } from "@/lib/boks/studies/protocol";
@@ -235,14 +237,16 @@ function CoverTile({ story }: { story: Story }) {
 }
 
 /** A bok to choose: cover, title, byline, the cover summary; never its kind or format. */
-export function BokCard({ story, words, onOpen }: { story: Story; words: StudyWords; onOpen?: () => void }) {
+export function BokCard({ story, words, onOpen, opening = false, formatLabel }: { story: Story; words: StudyWords; onOpen?: () => void; opening?: boolean; formatLabel?: string }) {
+  const preview = opening ? story.body.trim().slice(0, 160).replace(/\s+/g, " ") : story.summary;
   const body = (
     <>
       <CoverTile story={story} />
       <span className="study-bok__copy">
+        {formatLabel && <span className="study-bok__format">{formatLabel}</span>}
         <strong>{story.title}</strong>
         <span>{story.authorName} · {words.minutesShort(Math.max(1, story.minutes))}</span>
-        {story.summary && <small>{story.summary}</small>}
+        {preview && <small>{preview}{opening && story.body.length > 160 ? "…" : ""}</small>}
       </span>
       {onOpen && <span className="study-bok__arrow" aria-hidden="true"><ArrowRight /></span>}
     </>
@@ -257,16 +261,16 @@ export function BokCover({ story, words, onOpen, opening = false }: { story: Sto
   const artwork = getBokArtwork(story);
   const preview = opening ? story.body.trim().slice(0, 180).replace(/\s+/g, " ") : story.summary;
   return (
-    <article className={`study-cover${artwork ? " study-cover--art" : ""}`} style={coverStyle(story)}>
-      {artwork ? <img className="study-cover__art" src={artwork} alt="" /> : <span className="study-cover__letter" aria-hidden="true">{story.title.charAt(0)}</span>}
-      <div className="study-cover__heading">
-        <h2>{story.title}</h2>
-        <p className="study-cover__byline">{story.authorName}{opening && ` · ${words.minutesShort(story.minutes)}`}</p>
-        {preview && <p className="study-cover__summary">{preview}{opening && story.body.length > 180 ? "…" : ""}</p>}
-      </div>
-      <button type="button" className="study-cover__read" onClick={onOpen}>
-        {words.open} <ArrowRight aria-hidden="true" />
-      </button>
+    <article className="reader-cover" style={{ ...coverStyle(story), ...bokArtworkStyle(story.id) } as CSSProperties}>
+      {artwork ? <img className="reader-cover__art" src={artwork} alt="" draggable={false} /> : <span className="reader-cover__letter" aria-hidden="true">{story.title.charAt(0)}</span>}
+      <CoverHeading artwork={artwork}>
+        <h1>{story.title}</h1>
+        <p className="reader-cover__byline">{story.authorName} · {words.minutesShort(story.minutes)}</p>
+        {preview && <p className="reader-cover__summary">{preview}{opening && story.body.length > 180 ? "…" : ""}</p>}
+      </CoverHeading>
+      <div className="reader-cover__caption"><div className="reader-cover__buttons">
+        <button type="button" className="reader-read-button" onClick={onOpen}>{words.open} <ReaderDownIcon size={19} /></button>
+      </div><p className="study-feed__hint">{words.feedSwipe}</p></div>
     </article>
   );
 }
@@ -322,19 +326,21 @@ export function A2EaseForm({ words, chosen, busy, onSubmit }: {
 }
 
 /** A free choice among texts, or none. */
-export function BokChoiceForm({ words, title, body, boks, nothingLabel, busy, onChoose }: {
+export function BokChoiceForm({ words, title, body, boks, nothingLabel, busy, onChoose, opening = false, formatLabels }: {
   words: StudyWords;
   title: string;
   body?: string;
   boks: Story[];
   nothingLabel: string;
+  opening?: boolean;
+  formatLabels?: Record<string, string>;
   busy?: boolean;
   onChoose: (bokId: string | null) => void;
 }) {
   return (
     <StudyScreen eyebrow={words.eyebrow} title={title} lead={body && <p>{body}</p>}>
       <div className="study-boks">
-        {boks.map((story) => <BokCard key={story.id} story={story} words={words} onOpen={busy ? undefined : () => onChoose(story.id)} />)}
+        {boks.map((story) => <BokCard key={story.id} story={story} words={words} opening={opening} formatLabel={formatLabels?.[story.id]} onOpen={busy ? undefined : () => onChoose(story.id)} />)}
       </div>
       <button type="button" className="study-button study-button--outline" disabled={busy} onClick={() => onChoose(null)}>
         {nothingLabel}

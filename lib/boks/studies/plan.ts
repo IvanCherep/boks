@@ -42,7 +42,7 @@ export type A1Plan = {
 /**
  * Two different pairs, so the whole work and the fragment a participant reads
  * are not about the same thing; the order follows the condition. The choice
- * offers one new text of each kind in a shuffled order, with neither labelled.
+ * offers one new text of each kind in a shuffled order, with neutral format labels.
  */
 export function planA1(materials: A1Materials, condition: string, seed: number): A1Plan {
   const next = createRandom(seed);

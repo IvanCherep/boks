@@ -12,7 +12,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ## Ready for release
 
 **Andrey's study instruments and gallery (2026-10-30).** A1 offers two new
-unlabelled options and asks closure only after the choice. A2 now measures a
+options with neutral format labels and asks closure only after the choice. A2 now measures a
 reported choice plus ease 6-7 of 7, cards minus full texts, with refusals kept
 and earlier instruments excluded without deleting their answers. The A1-A3
 gallery uses 17 real catalogue works and their illustrations. Its admin-only

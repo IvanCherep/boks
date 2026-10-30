@@ -327,7 +327,7 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
     const read = plan.reads[step];
     const story = stories.get(read.bokId);
     if (!story) return <Loading words={words} error={words.textMissing} />;
-    return <StudyTextReader key={story.id} story={story} words={words} doneLabel={words.nextStep}
+    return <StudyTextReader key={story.id} story={story} words={words} progressLabel={read.kind === "whole" ? words.a1WholeLabel : words.a1FragmentLabel} doneLabel={words.nextStep}
       onDone={(result) => {
         measures.current[story.id] = result;
         setStep(step + 1 < plan.reads.length ? step + 1 : "choose");
@@ -355,7 +355,9 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
     const offered = plan.choices.map((choice) => stories.get(choice.bokId)).filter((story): story is Story => Boolean(story));
     return (
       <>
-        <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={offered} nothingLabel={words.chooseNothing} busy={saving.busy}
+        <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={offered} opening
+          formatLabels={Object.fromEntries(plan.choices.map((choice) => [choice.bokId, choice.kind === "whole" ? words.a1WholeLabel : words.a1FragmentLabel]))}
+          nothingLabel={words.chooseNothing} busy={saving.busy}
           onChoose={(bokId) => {
             const choice = plan.choices.find((entry) => entry.bokId === bokId);
             saving.save(
@@ -388,7 +390,7 @@ function InterestRead({ run, story, progress, onRated }: {
   const [measure, setMeasure] = useState<ReadingMeasure | null>(null);
   const saving = useSaving();
   if (!measure) {
-    return <StudyTextReader key={story.id} story={story} words={words} progressLabel={progress} doneLabel={words.a3Next} onDone={setMeasure} />;
+    return <StudyTextReader key={story.id} story={story} words={words} feed progressLabel={progress} doneLabel={words.a3Next} onDone={setMeasure} />;
   }
   return (
     <>

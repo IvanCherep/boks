@@ -44,10 +44,10 @@ const galleryWords = defineMessages({
   rg2Between: "Between the two sessions; the order is assigned at random",
   a1Read: "A whole work or a fragment, read in turn",
   a1After: "Only after the choice: closure of each earlier text, 1-7",
-  a1Choice: "Free choice: one new whole work and one fragment, unlabelled, or neither",
+  a1Choice: "Free choice: one new whole work and one excerpt, with neutral format labels, or neither",
   a1Whole: "1. Read a complete work",
   a1Fragment: "2. Read an excerpt from a longer work (order counterbalanced)",
-  a2Known: "Before the timer: which texts are already known",
+  a2Known: "Before reading: which texts are already known",
   a2Inline: "Feed of full texts",
   a2Cards: "Card with a separate reading screen",
   a2After: "After each session: identify the chosen work or explicitly choose none",
@@ -68,7 +68,7 @@ const galleryWords = defineMessages({
   b3Between: "Between fragments",
   galleryIntro: "Participant screens, using the same components as the study links. A1, A2 and A3 use published Boks texts and illustrations. You can try the controls; answers are not saved. Series playback is available in a study's Preview.",
   exampleNote: "Catalogue examples illustrate the procedure. A1's excerpts retain the source text verbatim; the team must approve the final matched pairs before starting the study.",
-  a1Method: "Two texts → free choice of the next read → closure questions. Format labels and the purpose of the comparison are hidden from participants. Primary: share choosing whole minus share choosing excerpt, including refusals; target +15 pp.",
+  a1Method: "Two texts → free choice of the next read → closure questions. Formats are named neutrally; no preferred answer is suggested. Primary: share choosing whole minus share choosing excerpt, including refusals; target +15 pp.",
   a2Method: "Cards → reading screen versus full text in the feed. Each participant tries both for ten minutes with different, comparable sets; order and set assignment are counterbalanced. Primary: a text chosen AND ease rated 6 or 7; cards minus full texts, target +10 pp.",
   loadFailed: "Could not load the catalogue examples. Reload the page to try again.",
   language: "Language",
@@ -87,10 +87,10 @@ const galleryWords = defineMessages({
     rg2Between: "Между двумя сессиями; порядок назначается случайно",
     a1Read: "Целое произведение или фрагмент, по очереди",
     a1After: "Только после выбора: завершённость каждого из первых двух текстов, 1-7",
-    a1Choice: "Свободный выбор: одно новое целое произведение и один фрагмент, без пометок, или ничего",
+    a1Choice: "Свободный выбор: целое произведение и отрывок с нейтральными метками формата, или ничего",
     a1Whole: "1. Чтение целого произведения",
     a1Fragment: "2. Чтение фрагмента более длинного текста (порядок чередуется)",
-    a2Known: "До таймера: какие тексты уже знакомы",
+    a2Known: "Перед чтением: какие тексты уже знакомы",
     a2Inline: "Лента полных текстов",
     a2Cards: "Карточка с отдельным экраном чтения",
     a2After: "После каждой сессии: выбранное произведение или явный отказ",
@@ -111,7 +111,7 @@ const galleryWords = defineMessages({
     b3Between: "Между фрагментами",
     galleryIntro: "Экраны участника на тех же компонентах, что и исследование по ссылке. В А1, А2 и А3 использованы опубликованные тексты и иллюстрации Boks. Кнопки можно попробовать, ответы не сохраняются. Плеер Series доступен в предпросмотре исследования.",
     exampleNote: "Примеры из каталога показывают процедуру. В А1 исходный текст фрагментов сохранён дословно; окончательные сопоставимые пары команда утверждает перед запуском исследования.",
-    a1Method: "Два текста → свободный выбор следующего чтения → вопросы о завершённости. Метки формата и цель сравнения участнику не показываем. Основная метрика: доля выбравших целое минус доля выбравших фрагмент, с учётом отказов; цель +15 п.п.",
+    a1Method: "Два текста → свободный выбор следующего чтения → вопросы о завершённости. Форматы обозначаем нейтрально, ожидаемый ответ не подсказываем. Основная метрика: доля выбравших целое минус доля выбравших фрагмент, с учётом отказов; цель +15 п.п.",
     a2Method: "Карточка → экран чтения против полного текста в ленте. Каждый участник пробует оба режима по десять минут с разными сопоставимыми наборами; порядок и наборы чередуем. Основная метрика: текст выбран И лёгкость оценена на 6 или 7; карточки минус полные тексты, цель +10 п.п.",
     loadFailed: "Не удалось загрузить примеры из каталога. Обновите страницу, чтобы повторить.",
     language: "Язык",
@@ -161,9 +161,10 @@ export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords
       const choiceFragment = galleryExcerpt(catalogue.get(galleryChoiceFragmentSourceId)!, choiceWhole.wordCount ?? 669);
       return [
         intro,
-        { id: "a1-whole", caption: t.a1Whole, body: <StudyTextReader story={whole} words={words} doneLabel={words.nextStep} onDone={noop} /> },
-        { id: "a1-fragment", caption: t.a1Fragment, body: <StudyTextReader story={fragment} words={words} doneLabel={words.nextStep} onDone={noop} /> },
-        { id: "a1-choice", caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[choiceWhole, choiceFragment]} nothingLabel={words.chooseNothing} onChoose={noop} /> },
+        { id: "a1-whole", caption: t.a1Whole, body: <StudyTextReader story={whole} words={words} progressLabel={words.a1WholeLabel} doneLabel={words.nextStep} onDone={noop} /> },
+        { id: "a1-fragment", caption: t.a1Fragment, body: <StudyTextReader story={fragment} words={words} progressLabel={words.a1FragmentLabel} doneLabel={words.nextStep} onDone={noop} /> },
+        { id: "a1-choice", caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[choiceWhole, choiceFragment]} opening
+          formatLabels={{ [choiceWhole.id]: words.a1WholeLabel, [choiceFragment.id]: words.a1FragmentLabel }} nothingLabel={words.chooseNothing} onChoose={noop} /> },
         { id: "a1-closure", caption: t.a1After, body: <ScaleForm words={words} eyebrow={words.a1Recall} title={whole.title} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
       ];
     }
@@ -185,7 +186,7 @@ export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords
       return [
         intro,
         { caption: t.a3Intro, body: <Interstitial eyebrow={words.eyebrow} title={words.a3IntroTitle} body={<p>{words.a3IntroBody(15)}</p>} action={words.start} onAction={noop} /> },
-        { id: "a3-text", caption: t.a3Text, body: <StudyTextReader story={profileStory} words={words} progressLabel={words.a3Progress(2, 15)} doneLabel={words.a3Next} onDone={noop} /> },
+        { id: "a3-text", caption: t.a3Text, body: <StudyTextReader story={profileStory} words={words} feed progressLabel={words.a3Progress(2, 15)} doneLabel={words.a3Next} onDone={noop} /> },
         { id: "a3-rating", caption: t.a3Rate, body: <ScaleForm words={words} eyebrow={words.a3Progress(2, 15)} title={profileStory.title} questions={studyQuestions.a3(words)} onSubmit={noop} /> },
         { caption: t.a3Profile, body: <Interstitial eyebrow={words.eyebrow} title={words.a3ProfileReadyTitle} body={<p>{words.a3ProfileReadyBody(10)}</p>} action={words.continue} onAction={noop} /> },
       ];

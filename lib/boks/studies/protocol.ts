@@ -100,7 +100,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     label: "А1",
     owner: "Andrey",
     title: "A whole work or a fragment",
-    comparison: "Reads both kinds in assigned order, then chooses between two new texts or neither. Closure is asked only after the choice.",
+    comparison: "Reads both kinds in assigned order, then chooses between two new texts with neutral format labels or neither. Closure is asked only after the choice.",
     outcome: "Share choosing a whole work minus share choosing a fragment, among everyone: at least +15 pp.",
     design: "within",
   },
@@ -165,7 +165,7 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   },
   a1: {
     title: "Целое произведение или фрагмент",
-    comparison: "Читает оба вида в назначенном порядке, затем выбирает между двумя новыми текстами или ничего. Вопрос о завершённости задаём после выбора.",
+    comparison: "Читает оба вида в назначенном порядке, затем выбирает между двумя новыми текстами с нейтральными метками формата или ничего. Вопрос о завершённости задаём после выбора.",
     outcome: "Доля выбравших целое произведение минус доля выбравших фрагмент, среди всех: не меньше +15 п. п.",
   },
   a2: {

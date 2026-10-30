@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import type { Story } from "@/components/boks/client-types";
 import { createReaderClock } from "@/components/boks/reader-clock";
 import { inferReadOutcome } from "@/components/boks/reader-behavior";
@@ -9,6 +9,9 @@ import { formatReaderBody, type ReaderBlock } from "@/components/boks/reader-tex
 import type { StudyWords } from "@/components/boks/studies/study-copy";
 import { BokCard, BokCover } from "@/components/boks/studies/study-forms";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { BoksLogo } from "@/components/boks/reader/boks-logo";
+import { ReaderBackIcon, ReaderNextIcon } from "@/components/boks/reader/reader-icons";
+import { horizontalNavigationIntent } from "@/components/boks/reader-navigation";
 import type { SessionMeasurement, SessionRead } from "@/lib/boks/studies/session";
 
 /**
@@ -92,15 +95,30 @@ export function TextBody({ story, blocks, illustrated = false, words }: { story:
 }
 
 /** One text to read to its end, then a button. Used by the protocols that hand out a text. */
-export function StudyTextReader({ story, words, note, progressLabel, doneLabel, onDone }: {
+export function StudyTextReader({ story, words, note, progressLabel, doneLabel, onDone, feed = false }: {
   story: Story;
   words: StudyWords;
   note?: ReactNode;
   progressLabel?: string;
   doneLabel?: string;
+  /** A3 uses the ordinary illustrated cover and reading surface. */
+  feed?: boolean;
   onDone: (measure: ReadingMeasure) => void;
 }) {
-  const { scroller, onScroll, read } = useReadingMeasure(true);
+  const [cover, setCover] = useState(feed);
+  const { scroller, onScroll, read } = useReadingMeasure(!feed || !cover, story.id);
+  const advance = () => onDone(cover && feed ? { activeSeconds: 0, progress: 0, scrollable: false } : read());
+  const swipe = useFeedSwipe(advance);
+  if (feed) return (
+    <div className={`study-feed reader-v44 reader-phase--${cover ? "cover" : "text"}`} {...swipe}>
+      <StudyFeedHeader progress={progressLabel} cover={cover} />
+      {cover ? <BokCover story={story} words={words} opening onOpen={() => setCover(false)} /> :
+        <div className="study-feed__text" ref={scroller} onScroll={onScroll}><TextBody story={story} words={words} /></div>}
+      <nav className="study-feed__nav" aria-label={words.feedNav}>
+        <button type="button" onClick={advance}>{doneLabel ?? words.a3Next}<ReaderNextIcon size={20} /></button>
+      </nav>
+    </div>
+  );
   return (
     <div className="study-reader" ref={scroller} onScroll={onScroll}>
       {progressLabel && <p className="study-eyebrow study-reader__progress">{progressLabel}</p>}
@@ -111,6 +129,34 @@ export function StudyTextReader({ story, words, note, progressLabel, doneLabel, 
       </button>
     </div>
   );
+}
+
+/** The same horizontal intent as the reader; vertical gestures remain text scrolling. */
+function useFeedSwipe(next: () => void, previous?: () => void) {
+  const origin = useRef<{ x: number; y: number } | null>(null);
+  return {
+    onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      if ((event.target as HTMLElement).closest("button,a,input,textarea,select")) return;
+      origin.current = { x: event.clientX, y: event.clientY };
+    },
+    onPointerUp: (event: PointerEvent<HTMLElement>) => {
+      const start = origin.current;
+      origin.current = null;
+      if (!start || window.getSelection()?.toString()) return;
+      const direction = horizontalNavigationIntent(event.clientX - start.x, event.clientY - start.y);
+      if (direction === "next") next();
+      else if (direction === "previous") previous?.();
+    },
+    onPointerCancel: () => { origin.current = null; },
+  };
+}
+
+function StudyFeedHeader({ cover, progress, words, onClose }: { cover: boolean; progress?: string; words?: StudyWords; onClose?: () => void }) {
+  return <header className="study-feed__header">
+    <span className="study-feed__progress">{progress}</span>
+    <BoksLogo seasonal={cover} />
+    {onClose && words ? <button type="button" onClick={onClose} aria-label={words.endSession} title={words.endSession}><X size={21} /></button> : <span />}
+  </header>;
 }
 
 function formatLeft(seconds: number) {
@@ -166,12 +212,13 @@ function useSession(kind: SessionMeasurement["interface"], set: SessionMeasureme
   return { elapsed, close, finish, count, show };
 }
 
-function SessionTimer({ words, minutes, onExpire, onEnd, staticPreview = false }: {
+function SessionTimer({ words, minutes, onExpire, onEnd, staticPreview = false, hidden = false }: {
   words: StudyWords;
   minutes: number;
   onExpire: () => void;
   onEnd: () => void;
   staticPreview?: boolean;
+  hidden?: boolean;
 }) {
   const [left, setLeft] = useState(minutes * 60);
   const expire = useRef(onExpire);
@@ -191,6 +238,7 @@ function SessionTimer({ words, minutes, onExpire, onEnd, staticPreview = false }
     }, 500);
     return () => window.clearInterval(handle);
   }, [minutes, staticPreview]);
+  if (hidden) return null;
   return (
     <div className="study-session__bar">
       <span role="timer" aria-live="off">{words.timeLeft(formatLeft(left))}</span>
@@ -200,12 +248,13 @@ function SessionTimer({ words, minutes, onExpire, onEnd, staticPreview = false }
 }
 
 /** The text currently open, with its own measure; reports on the way out. */
-function OpenText({ story, words, measureRef, onBack }: {
+function OpenText({ story, words, measureRef, onBack, feed = false }: {
   story: Story;
   words: StudyWords;
   /** Lets the session read this text's measure when the timer ends it. */
   measureRef: { current: (() => ReadingMeasure) | null };
   onBack: (measure: ReadingMeasure) => void;
+  feed?: boolean;
 }) {
   const { scroller, onScroll, read } = useReadingMeasure(true);
   useEffect(() => {
@@ -215,7 +264,7 @@ function OpenText({ story, words, measureRef, onBack }: {
     };
   }, [measureRef, read]);
   return (
-    <div className="study-reader study-reader--session" ref={scroller} onScroll={onScroll}>
+    <div className={feed ? "study-feed__text" : "study-reader study-reader--session"} ref={scroller} onScroll={onScroll}>
       <button type="button" className="study-reader__back" onClick={() => onBack(read())}>
         <ArrowLeft aria-hidden="true" /> {words.back}
       </button>
@@ -282,7 +331,9 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish, stat
   const go = (step: 1 | -1) => {
     const next = index + step;
     if (next < 0 || next >= stories.length) return;
-    leaveInline();
+    if (reading && openMeasure.current) session.close(reading.story, reading.openedAt, openMeasure.current());
+    else leaveInline();
+    setReading(null);
     setIndex(next);
   };
   const end = (endedBy: "timer" | "participant") => {
@@ -293,35 +344,27 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish, stat
     const measurement = session.finish(endedBy);
     onFinish(measurement, openedStories(measurement, stories));
   };
-
-  if (reading) {
-    return (
-      <div className="study-session">
-        <SessionTimer words={words} minutes={minutes} staticPreview={staticPreview} onExpire={() => end("timer")} onEnd={() => end("participant")} />
-        <OpenText story={reading.story} words={words} measureRef={openMeasure} onBack={(measure) => {
-          session.close(reading.story, reading.openedAt, measure);
-          setReading(null);
-        }} />
-      </div>
-    );
-  }
+  const swipe = useFeedSwipe(() => go(1), () => go(-1));
+  const cover = !inline && !reading;
 
   return (
-    <div className="study-session">
-      <SessionTimer words={words} minutes={minutes} staticPreview={staticPreview} onExpire={() => end("timer")} onEnd={() => end("participant")} />
-      {story && (inline ? (
-        <div className="study-reader study-reader--session" ref={inlineScroller} onScroll={onInlineScroll} key={story.id}>
+    <div className={`study-feed reader-v44 reader-phase--${cover ? "cover" : "text"}`} {...swipe}>
+      <SessionTimer words={words} minutes={minutes} staticPreview={staticPreview} hidden onExpire={() => end("timer")} onEnd={() => end("participant")} />
+      <StudyFeedHeader cover={cover} words={words} onClose={() => end("participant")} />
+      {reading ? <OpenText story={reading.story} words={words} feed measureRef={openMeasure} onBack={(measure) => {
+        session.close(reading.story, reading.openedAt, measure);
+        setReading(null);
+      }} /> : story && (inline ? (
+        <div className="study-feed__text" ref={inlineScroller} onScroll={onInlineScroll} key={story.id}>
           <TextBody story={story} illustrated={illustrated} words={words} />
         </div>
       ) : (
-        <div className="study-feed-card" key={story.id}>
-          <BokCover story={story} words={words} opening={mode === "cards"} onOpen={() => setReading({ story, openedAt: session.elapsed() })} />
-        </div>
+        <BokCover key={story.id} story={story} words={words} opening={mode === "cards"} onOpen={() => setReading({ story, openedAt: session.elapsed() })} />
       ))}
       <nav className="study-feed__nav" aria-label={words.feedNav}>
-        <button type="button" onClick={() => go(-1)} disabled={index === 0} aria-label={words.back}><ArrowUp aria-hidden="true" /></button>
+        <button type="button" onClick={() => go(-1)} disabled={index === 0} aria-label={words.back}><ReaderBackIcon size={21} /></button>
         <span>{index + 1} / {stories.length}</span>
-        <button type="button" onClick={() => go(1)} disabled={index >= stories.length - 1} aria-label={words.next}><ArrowDown aria-hidden="true" /></button>
+        <button type="button" onClick={() => go(1)} disabled={index >= stories.length - 1} aria-label={words.next}><ReaderNextIcon size={21} /></button>
       </nav>
     </div>
   );
