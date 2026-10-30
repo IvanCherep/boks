@@ -257,7 +257,7 @@ export function BokCard({ story, words, onOpen, opening = false, formatLabel }: 
 }
 
 /** A bok as the feed shows it: its cover, with Read. */
-export function BokCover({ story, words, onOpen, opening = false }: { story: Story; words: StudyWords; onOpen: () => void; opening?: boolean }) {
+export function BokCover({ story, words, onOpen, onNext, opening = false }: { story: Story; words: StudyWords; onOpen: () => void; onNext?: () => void; opening?: boolean }) {
   const artwork = getBokArtwork(story);
   const preview = opening ? story.body.trim().slice(0, 180).replace(/\s+/g, " ") : story.summary;
   return (
@@ -270,7 +270,9 @@ export function BokCover({ story, words, onOpen, opening = false }: { story: Sto
       </CoverHeading>
       <div className="reader-cover__caption"><div className="reader-cover__buttons">
         <button type="button" className="reader-read-button" onClick={onOpen}>{words.open} <ReaderDownIcon size={19} /></button>
-      </div><p className="study-feed__hint">{words.feedSwipe}</p></div>
+      </div><button type="button" className="feed-swipe-hint" onClick={onNext}>
+        <span>{words.feedSwipe}</span><span className="feed-swipe-gesture" aria-hidden="true"><i /></span>
+      </button></div>
     </article>
   );
 }

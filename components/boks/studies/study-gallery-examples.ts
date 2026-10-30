@@ -1,4 +1,5 @@
 import type { Story } from "@/components/boks/client-types";
+import { estimateMinutes } from "@/components/boks/client-format";
 
 /** Published catalogue ids, not invented texts or research responses. Loaded in one bounded read. */
 export const galleryProfileIds = [
@@ -43,5 +44,5 @@ export function galleryExcerpt(source: Story, targetWords: number): Story {
   boundaries[0] ?? source.body.length);
   const body = source.body.slice(0, end).trimEnd();
   const words = wordCount(body);
-  return { ...source, body, summary: "", wordCount: words, minutes: Math.max(1, Math.ceil(words / 200)) };
+  return { ...source, body, summary: "", wordCount: words, minutes: estimateMinutes(body) };
 }

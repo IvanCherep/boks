@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type TouchEvent, type WheelEvent } from "react";
 import { ArrowLeft, Search, X } from "lucide-react";
 import type { Story } from "@/components/boks/client-types";
 import { createReaderClock } from "@/components/boks/reader-clock";
@@ -10,8 +10,8 @@ import type { StudyWords } from "@/components/boks/studies/study-copy";
 import { BokCard, BokCover } from "@/components/boks/studies/study-forms";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
-import { ReaderBackIcon, ReaderNextIcon } from "@/components/boks/reader/reader-icons";
-import { horizontalNavigationIntent } from "@/components/boks/reader-navigation";
+import { ReaderNextIcon } from "@/components/boks/reader/reader-icons";
+import { getScrollBoundary, horizontalNavigationIntent, horizontalWheelIntent, readerKeyAction, verticalBoundaryIntent } from "@/components/boks/reader-navigation";
 import type { SessionMeasurement, SessionRead } from "@/lib/boks/studies/session";
 
 /**
@@ -110,13 +110,12 @@ export function StudyTextReader({ story, words, note, progressLabel, doneLabel, 
   const advance = () => onDone(cover && feed ? { activeSeconds: 0, progress: 0, scrollable: false } : read());
   const swipe = useFeedSwipe(advance);
   if (feed) return (
-    <div className={`study-feed reader-v44 reader-phase--${cover ? "cover" : "text"}`} {...swipe}>
+    <div className={`study-feed reader-v44 reader-phase--${cover ? "cover" : "text"}`} tabIndex={0} {...swipe}>
       <StudyFeedHeader progress={progressLabel} cover={cover} />
-      {cover ? <BokCover story={story} words={words} opening onOpen={() => setCover(false)} /> :
-        <div className="study-feed__text" ref={scroller} onScroll={onScroll}><TextBody story={story} words={words} /></div>}
-      <nav className="study-feed__nav" aria-label={words.feedNav}>
-        <button type="button" onClick={advance}>{doneLabel ?? words.a3Next}<ReaderNextIcon size={20} /></button>
-      </nav>
+      {cover ? <BokCover story={story} words={words} opening onOpen={() => setCover(false)} onNext={advance} /> :
+        <div className="study-feed__text" ref={scroller} onScroll={onScroll}><TextBody story={story} words={words} />
+          <button type="button" className="study-button study-reader__done" onClick={advance}>{doneLabel ?? words.a3Next}<ReaderNextIcon size={20} /></button>
+        </div>}
     </div>
   );
   return (
@@ -133,21 +132,63 @@ export function StudyTextReader({ story, words, note, progressLabel, doneLabel, 
 
 /** The same horizontal intent as the reader; vertical gestures remain text scrolling. */
 function useFeedSwipe(next: () => void, previous?: () => void) {
-  const origin = useRef<{ x: number; y: number } | null>(null);
+  const origin = useRef<{ x: number; y: number; atTop: boolean; atBottom: boolean } | null>(null);
+  const wheel = useRef({ x: 0, y: 0, at: 0, navigatedAt: 0 });
+  const boundary = (root: HTMLElement) => {
+    const text = root.querySelector<HTMLElement>(".study-feed__text");
+    return text ? getScrollBoundary(text) : { atTop: true, atBottom: true };
+  };
+  const navigate = (direction: "next" | "previous" | null) => {
+    if (direction === "next") next();
+    else if (direction === "previous") previous?.();
+  };
+  const start = (target: EventTarget, root: HTMLElement, x: number, y: number) => {
+    if ((target as HTMLElement).closest("button,a,input,textarea,select")) { origin.current = null; return; }
+    origin.current = { x, y, ...boundary(root) };
+  };
+  const finish = (x: number, y: number) => {
+    const at = origin.current;
+    origin.current = null;
+    if (!at || window.getSelection()?.toString()) return;
+    const dx = x - at.x, dy = y - at.y;
+    navigate(horizontalNavigationIntent(dx, dy) ?? verticalBoundaryIntent(dy, at, 150, 18));
+  };
   return {
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      if ((event.target as HTMLElement).closest("button,a,input,textarea,select")) return;
-      origin.current = { x: event.clientX, y: event.clientY };
+      if (event.pointerType !== "touch") start(event.target, event.currentTarget, event.clientX, event.clientY);
     },
     onPointerUp: (event: PointerEvent<HTMLElement>) => {
-      const start = origin.current;
-      origin.current = null;
-      if (!start || window.getSelection()?.toString()) return;
-      const direction = horizontalNavigationIntent(event.clientX - start.x, event.clientY - start.y);
-      if (direction === "next") next();
-      else if (direction === "previous") previous?.();
+      if (event.pointerType !== "touch") finish(event.clientX, event.clientY);
     },
-    onPointerCancel: () => { origin.current = null; },
+    onPointerCancel: (event: PointerEvent<HTMLElement>) => { if (event.pointerType !== "touch") origin.current = null; },
+    onTouchStart: (event: TouchEvent<HTMLElement>) => {
+      const touch = event.touches[0];
+      start(event.target, event.currentTarget, touch.clientX, touch.clientY);
+    },
+    onTouchEnd: (event: TouchEvent<HTMLElement>) => {
+      const touch = event.changedTouches[0];
+      finish(touch.clientX, touch.clientY);
+    },
+    onTouchCancel: () => { origin.current = null; },
+    onWheel: (event: WheelEvent<HTMLElement>) => {
+      const now = performance.now();
+      if (now - wheel.current.navigatedAt < 700) return;
+      if (now - wheel.current.at > 520) { wheel.current.x = 0; wheel.current.y = 0; }
+      wheel.current.x += event.deltaX; wheel.current.y += event.deltaY; wheel.current.at = now;
+      const direction = horizontalWheelIntent(wheel.current.x, wheel.current.y);
+      if (direction) { wheel.current.navigatedAt = now; navigate(direction); }
+    },
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if ((event.target as HTMLElement).closest("button,a,input,textarea,select")) return;
+      const action = readerKeyAction(event.key, event.shiftKey, boundary(event.currentTarget));
+      if (!action) return;
+      event.preventDefault();
+      if (action === "next" || action === "previous") navigate(action);
+      else {
+        const text = event.currentTarget.querySelector<HTMLElement>(".study-feed__text");
+        text?.scrollBy({ top: (action === "scroll-down" ? 1 : -1) * text.clientHeight * .8, behavior: "smooth" });
+      }
+    },
   };
 }
 
@@ -330,7 +371,8 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish, stat
   };
   const go = (step: 1 | -1) => {
     const next = index + step;
-    if (next < 0 || next >= stories.length) return;
+    if (next < 0) return;
+    if (next >= stories.length) { end("participant"); return; }
     if (reading && openMeasure.current) session.close(reading.story, reading.openedAt, openMeasure.current());
     else leaveInline();
     setReading(null);
@@ -348,7 +390,7 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish, stat
   const cover = !inline && !reading;
 
   return (
-    <div className={`study-feed reader-v44 reader-phase--${cover ? "cover" : "text"}`} {...swipe}>
+    <div className={`study-feed reader-v44 reader-phase--${cover ? "cover" : "text"}`} tabIndex={0} {...swipe}>
       <SessionTimer words={words} minutes={minutes} staticPreview={staticPreview} hidden onExpire={() => end("timer")} onEnd={() => end("participant")} />
       <StudyFeedHeader cover={cover} words={words} onClose={() => end("participant")} />
       {reading ? <OpenText story={reading.story} words={words} feed measureRef={openMeasure} onBack={(measure) => {
@@ -357,15 +399,11 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish, stat
       }} /> : story && (inline ? (
         <div className="study-feed__text" ref={inlineScroller} onScroll={onInlineScroll} key={story.id}>
           <TextBody story={story} illustrated={illustrated} words={words} />
+          <button type="button" className="study-button study-reader__done" onClick={() => index + 1 < stories.length ? go(1) : end("participant")}>{words.a3Next}<ReaderNextIcon size={20} /></button>
         </div>
       ) : (
-        <BokCover key={story.id} story={story} words={words} opening={mode === "cards"} onOpen={() => setReading({ story, openedAt: session.elapsed() })} />
+        <BokCover key={story.id} story={story} words={words} opening={mode === "cards"} onOpen={() => setReading({ story, openedAt: session.elapsed() })} onNext={() => index + 1 < stories.length ? go(1) : end("participant")} />
       ))}
-      <nav className="study-feed__nav" aria-label={words.feedNav}>
-        <button type="button" onClick={() => go(-1)} disabled={index === 0} aria-label={words.back}><ReaderBackIcon size={21} /></button>
-        <span>{index + 1} / {stories.length}</span>
-        <button type="button" onClick={() => go(1)} disabled={index >= stories.length - 1} aria-label={words.next}><ReaderNextIcon size={21} /></button>
-      </nav>
     </div>
   );
 }
