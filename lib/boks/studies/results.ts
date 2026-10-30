@@ -1,7 +1,7 @@
 import { comparePaired, compareIndependent } from "@/lib/recsys/statistics";
 import type { ComparisonResult } from "@/lib/recsys/statistics/types";
 import type { StudyKey } from "@/lib/boks/studies/protocol";
-import { successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
+import { easySession, successfulFind, type SessionMeasurement, type SessionSurvey } from "@/lib/boks/studies/session";
 import { ndcgAt, precisionAt, type A3Ranking } from "@/lib/boks/studies/a3";
 import { defineMessages } from "@/lib/i18n/messages";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
@@ -91,7 +91,10 @@ const resultWords = defineMessages({
   fragment: "Fragment",
   whole: "Whole",
   cards: "Card + reading screen",
-  inline: "Text in the feed",
+  inline: "Full texts in the feed",
+  easyChoice: "Chose a text without difficulty (chosen and «Мне было легко выбрать» 6 or 7)",
+  againstControl: "Accepted share, algorithm minus random windows (target: at least 80% and +10 pp)",
+  againstControlValue: (algorithm: number, control: number, gap: number) => `${algorithm}% against ${control}%: ${gap > 0 ? "+" : ""}${gap} pp`,
   withoutProfile: "Without profile",
   withProfile: "Profile from five boks",
   passive: "Passive",
@@ -102,7 +105,6 @@ const resultWords = defineMessages({
   choseWholeMinusFragment: "Chose a whole work minus chose a fragment",
   feltComplete: "Felt complete, 1–7",
   choseNothing: "Chose nothing",
-  successfulFind: "Session with a successful find",
   satisfactionSecondary: "Session satisfaction, 1–7 (secondary)",
   ndcg: "NDCG@5 of the ten new texts (secondary)",
   precision: "Precision@5: share of texts rated 4–5 in the top five",
@@ -134,7 +136,10 @@ const resultWords = defineMessages({
     fragment: "Фрагмент",
     whole: "Целое",
     cards: "Карточка + экран чтения",
-    inline: "Текст в ленте",
+    inline: "Полные тексты в ленте",
+    easyChoice: "Выбрали без затруднений (текст указан и «Мне было легко выбрать» 6 или 7)",
+    againstControl: "Доля принятых, алгоритм минус случайные отрывки (цель: не меньше 80% и +10 п. п.)",
+    againstControlValue: (algorithm, control, gap) => `${algorithm}% против ${control}%: ${gap > 0 ? "+" : ""}${gap} п. п.`,
     withoutProfile: "Без профиля",
     withProfile: "Профиль по пяти бокам",
     passive: "Пассивно",
@@ -145,7 +150,6 @@ const resultWords = defineMessages({
     choseWholeMinusFragment: "Выбрали целое произведение минус выбрали фрагмент",
     feltComplete: "Ощущение завершённости, 1–7",
     choseNothing: "Ничего не выбрали",
-    successfulFind: "Сессия с успешной находкой",
     satisfactionSecondary: "Удовлетворённость сессией, 1–7 (вторичная)",
     ndcg: "NDCG@5 десяти новых текстов (вторичная)",
     precision: "Precision@5: доля текстов с интересом 4–5 в первой пятёрке",
@@ -201,7 +205,9 @@ function comparePairs(
   pairs: { control: number; variant: number }[],
   threshold: number,
   unit: StudyComparison["unit"],
-  names: [string, string]
+  names: [string, string],
+  /** Met only when the whole 95% interval clears the threshold, not just the effect. */
+  wholeInterval = false
 ): StudyComparison {
   const result = comparePaired(pairs, { metric: label, minimumReaders, power: "none" });
   return {
@@ -211,7 +217,7 @@ function comparePairs(
     controlLabel: names[0],
     variantLabel: names[1],
     result,
-    meetsThreshold: result.status === "insufficient_data" ? null : result.effect >= threshold,
+    meetsThreshold: result.status === "insufficient_data" ? null : (wholeInterval ? result.ci[0] : result.effect) >= threshold,
   };
 }
 
@@ -336,21 +342,24 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
   },
   a2(groups, summary, w) {
     const pairs: { control: number; variant: number }[] = [];
+    const finished: { control: number; variant: number }[] = [];
     const satisfaction: { control: number; variant: number }[] = [];
     for (const rows of groups.values()) {
       const sessions = sessionsOf(rows);
       const inline = sessions.find((session) => session.measurement.interface === "inline");
       const cards = sessions.find((session) => session.measurement.interface === "cards");
       if (inline && cards) {
-        pairs.push({ control: cards.success ? 1 : 0, variant: inline.success ? 1 : 0 });
+        pairs.push({ control: easySession(inline.survey) ? 1 : 0, variant: easySession(cards.survey) ? 1 : 0 });
+        finished.push({ control: inline.success ? 1 : 0, variant: cards.success ? 1 : 0 });
         const inlineScore = scale(inline.survey.sessionSatisfaction);
         const cardsScore = scale(cards.survey.sessionSatisfaction);
-        if (inlineScore !== null && cardsScore !== null) satisfaction.push({ control: cardsScore, variant: inlineScore });
+        if (inlineScore !== null && cardsScore !== null) satisfaction.push({ control: inlineScore, variant: cardsScore });
       }
     }
     summary.comparisons.push(
-      comparePairs(w.successfulFind, pairs, 0.1, "share", [w.cards, w.inline]),
-      comparePairs(w.satisfactionSecondary, satisfaction, 0, "points", [w.cards, w.inline])
+      comparePairs(w.easyChoice, pairs, 0.1, "share", [w.inline, w.cards]),
+      comparePairs(w.successfulSecondary, finished, 0, "share", [w.inline, w.cards]),
+      comparePairs(w.satisfactionSecondary, satisfaction, 0, "points", [w.inline, w.cards])
     );
   },
   a3(groups, summary, w) {
@@ -443,7 +452,7 @@ const summarisers: { [K in StudyKey]: (groups: Map<string, StudyResponseRow[]>, 
       if (distractedMusic !== null && distractedSilence !== null) distraction.push({ control: distractedSilence, variant: distractedMusic });
     }
     summary.comparisons.push(
-      comparePairs(w.enjoyedShare, enjoyed, 0.1, "share", [w.silence, w.music]),
+      comparePairs(w.enjoyedShare, enjoyed, 0.1, "share", [w.silence, w.music], true),
       comparePairs(w.meanSecondary("«Насколько вам понравился сам процесс чтения?», 1–7"), enjoyment, 0, "points", [w.silence, w.music]),
       comparePairs(w.distractionSecondary, distraction, 0, "points", [w.silence, w.music])
     );
@@ -507,6 +516,16 @@ export function summariseStudy(
     summary.facts.push({
       label: w.fragmentsAccepted,
       value: algorithm ? w.acceptedValue(algorithm.accepted, algorithm.total, algorithm.rated) : w.noneImported,
+    });
+    const acceptedShare = (method: string) => {
+      const rated = summary.fragments!.verdicts.filter((verdict) => verdict.fragment.method === method && verdict.ratings >= 3);
+      return rated.length ? Math.round((rated.filter((verdict) => verdict.accepted).length / rated.length) * 100) : null;
+    };
+    const ours = acceptedShare("algorithm");
+    const control = acceptedShare("window");
+    summary.facts.push({
+      label: w.againstControl,
+      value: ours === null || control === null ? w.noneYet : w.againstControlValue(ours, control, ours - control),
     });
   }
   return summary;

@@ -130,11 +130,11 @@ export function ScaleField({ question, value, onChange }: {
 export type ChoiceAnswer = "yes" | "no" | "unsure" | "part";
 
 /** A few labelled options in one row: yes / no / not sure. */
-export function OptionField({ label, options, value, onChange }: {
+export function OptionField<T extends string = ChoiceAnswer>({ label, options, value, onChange }: {
   label: string;
-  options: { value: ChoiceAnswer; label: string }[];
-  value: ChoiceAnswer | null;
-  onChange: (value: ChoiceAnswer) => void;
+  options: { value: T; label: string }[];
+  value: T | null;
+  onChange: (value: T) => void;
 }) {
   return (
     <fieldset className="study-question">
@@ -251,6 +251,11 @@ export function BokCard({ story, words, onOpen }: { story: Story; words: StudyWo
 }
 
 /** A bok as the feed shows it: its cover, with Read. */
+/** The start of the text, for the card; the stylesheet clamps it to three lines. */
+function openingLines(body: string) {
+  return body.trim().slice(0, 220);
+}
+
 export function BokCover({ story, words, onOpen }: { story: Story; words: StudyWords; onOpen: () => void }) {
   const artwork = getBokArtwork(story);
   return (
@@ -259,7 +264,8 @@ export function BokCover({ story, words, onOpen }: { story: Story; words: StudyW
       <div className="study-cover__heading">
         <h2>{story.title}</h2>
         <p className="study-cover__byline">{story.authorName}</p>
-        {story.summary && <p className="study-cover__summary">{story.summary}</p>}
+        <p className="study-cover__byline">{words.minutesShort(story.minutes)}</p>
+        <p className="study-cover__summary">{openingLines(story.body)}</p>
       </div>
       <button type="button" className="study-cover__read" onClick={onOpen}>
         {words.open} <ArrowRight aria-hidden="true" />
@@ -302,9 +308,11 @@ export type SessionSurveyAnswer = {
  * reading moved them, and - always, even with nothing opened - how satisfied
  * they are with the session as a whole, the same question after every session.
  */
-export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
+export function SessionSurveyForm({ words, opened, askChoice = false, busy, onSubmit }: {
   words: StudyWords;
   opened: Story[];
+  /** a2: which text was chosen, or nothing, and how easy the choice was. */
+  askChoice?: boolean;
   busy?: boolean;
   onSubmit: (answer: SessionSurveyAnswer) => void;
 }) {
@@ -312,6 +320,8 @@ export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
   const [satisfaction, setSatisfaction] = useState<number | null>(null);
   const [sessionSatisfaction, setSessionSatisfaction] = useState<number | null>(null);
   const [moved, setMoved] = useState<number | null>(null);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [easyChoice, setEasyChoice] = useState<number | null>(null);
   const yesNo = [{ value: "yes" as const, label: words.yes }, { value: "no" as const, label: words.no }];
   const finished = [
     { value: "yes" as const, label: words.yes },
@@ -319,11 +329,23 @@ export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
     { value: "no" as const, label: words.no },
   ];
   const complete = opened.every((story) => perBok[story.id]?.readBefore && perBok[story.id]?.finished) &&
-    (opened.length === 0 || (satisfaction !== null && moved !== null)) && sessionSatisfaction !== null;
+    (opened.length === 0 || (satisfaction !== null && moved !== null)) && sessionSatisfaction !== null &&
+    (!askChoice || (chosen !== null && easyChoice !== null));
   const set = (id: string, patch: Partial<SessionSurveyAnswer["perBok"][string]>) =>
     setPerBok((current) => ({ ...current, [id]: { ...current[id], ...patch } as SessionSurveyAnswer["perBok"][string] }));
   return (
     <StudyScreen eyebrow={words.eyebrow} title={words.surveyTitle} lead={opened.length === 0 && <p>{words.surveyNothingOpened}</p>}>
+      {askChoice && (
+        <>
+          <OptionField label={words.a2Chosen} value={chosen} onChange={setChosen}
+            options={[...opened.map((story) => ({ value: story.id, label: story.title })), { value: "nothing", label: words.a2ChoseNothing }]} />
+          <ScaleField
+            question={{ key: "easyChoice", label: words.a2Easy, max: 7, low: words.scaleDisagree, high: words.scaleAgree }}
+            value={easyChoice}
+            onChange={setEasyChoice}
+          />
+        </>
+      )}
       {opened.map((story) => (
         <div key={story.id} className="study-survey__bok">
           <BokCard story={story} words={words} />
@@ -358,6 +380,7 @@ export function SessionSurveyForm({ words, opened, busy, onSubmit }: {
           satisfaction: opened.length ? satisfaction : null,
           sessionSatisfaction,
           moved: opened.length ? moved : null,
+          ...(askChoice ? { chosen: chosen === "nothing" ? null : chosen, easyChoice } : {}),
         })}>
         {busy ? words.sending : words.send}
       </button>

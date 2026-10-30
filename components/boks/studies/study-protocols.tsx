@@ -217,7 +217,7 @@ function Session({ run, index, kind, set, stories, minutes, onSaved }: {
   }
   return (
     <>
-      <SessionSurveyForm words={words} opened={result.opened} busy={saving.busy} onSubmit={(survey) => saving.save(async () => {
+      <SessionSurveyForm words={words} opened={result.opened} askChoice={run.key === "a2"} busy={saving.busy} onSubmit={(survey) => saving.save(async () => {
         await run.record("session", { index, measurement: result.measurement }, { condition: kind, clientSeconds: result.measurement.elapsedSeconds });
         await run.record("session_survey", { index, survey }, { condition: kind });
       }, onSaved)} />
@@ -300,10 +300,10 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
   const { words } = run;
   const plan = useMemo(() => planA1(run.materials, run.participant.condition, run.participant.seed), [run]);
   const { stories, error } = useStories([...plan.reads.map((read) => read.bokId), ...plan.choices.map((choice) => choice.bokId)]);
-  const [step, setStep] = useState<number | "ask" | "choose" | "chosen">(0);
+  const [step, setStep] = useState<number | "choose" | "ask" | "chosen">(0);
   const [asking, setAsking] = useState(0);
   const [chosen, setChosen] = useState<Story | null>(null);
-  const measure = useRef<Record<string, unknown>>({});
+  const measures = useRef<Record<string, unknown>[]>([]);
   const saving = useSaving();
   if (!stories) return <Loading words={words} error={error} />;
 
@@ -312,7 +312,7 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
     const story = stories.get(read.bokId);
     if (!story) return <Loading words={words} error={words.textMissing} />;
     return <ReadIn key={story.id} story={story} format="text" words={words} note={words.readThisText}
-      onDone={(result) => { measure.current = result; setAsking(step); setStep("ask"); }} />;
+      onDone={(result) => { measures.current[step] = result; setStep(step + 1 < plan.reads.length ? step + 1 : "choose"); }} />;
   }
   if (step === "ask") {
     const read = plan.reads[asking];
@@ -320,8 +320,12 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
       <>
         <ScaleForm key={asking} words={words} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} busy={saving.busy}
           onSubmit={(answers) => saving.save(
-            () => run.record("after_reading", { kind: read.kind, ...answers, ...measure.current }, { reelId: read.bokId, condition: read.kind }),
-            () => setStep(asking + 1 < plan.reads.length ? asking + 1 : "choose")
+            () => run.record("after_reading", { kind: read.kind, ...answers, ...measures.current[asking] }, { reelId: read.bokId, condition: read.kind }),
+            () => {
+              if (asking + 1 < plan.reads.length) setAsking(asking + 1);
+              else if (chosen) setStep("chosen");
+              else run.finish();
+            }
           )} />
         <SaveError error={saving.error} />
       </>
@@ -337,8 +341,9 @@ function A1({ run }: { run: StudyRun<"a1"> }) {
             saving.save(
               () => run.record("choice", { chosen: bokId, kind: choice?.kind ?? null, offered: plan.choices }, { reelId: bokId }),
               () => {
-                const story = bokId ? stories.get(bokId) ?? null : null;
-                if (story) { setChosen(story); setStep("chosen"); } else run.finish();
+                // The closure questions come after the choice, so they cannot steer it.
+                setChosen(bokId ? stories.get(bokId) ?? null : null);
+                setStep("ask");
               }
             );
           }} />
@@ -607,8 +612,20 @@ function B2({ run }: { run: StudyRun<"b2"> }) {
   const { words } = run;
   const plan = useMemo(() => planB2(run.materials, run.participant.condition), [run]);
   const { stories, error } = useStories([...run.materials.setA, ...run.materials.setB]);
-  const [step, setStep] = useState<"headphones" | 0 | "pause" | 1>("headphones");
+  const [step, setStep] = useState<"familiarity" | "headphones" | 0 | "pause" | 1>("familiarity");
+  const saving = useSaving();
   if (!stories) return <Loading words={words} error={error} />;
+  if (step === "familiarity") {
+    const all = [...run.materials.setA, ...run.materials.setB].map((id) => stories.get(id)).filter((story): story is Story => Boolean(story));
+    return (
+      <>
+        <CheckListForm words={words} title={words.familiarityTitle} body={words.familiarityBody} busy={saving.busy}
+          options={all.map((story) => ({ id: story.id, label: story.title, hint: story.authorName }))}
+          onSubmit={(known) => saving.save(() => run.record("familiarity", { known }), () => setStep("headphones"))} />
+        <SaveError error={saving.error} />
+      </>
+    );
+  }
   if (step === "headphones") {
     return <Interstitial eyebrow={words.eyebrow} title={words.b2HeadphonesTitle} body={<p>{words.b2HeadphonesBody}</p>} action={words.continue} onAction={() => setStep(0)} />;
   }

@@ -7,6 +7,7 @@ import { createReaderClock } from "@/components/boks/reader-clock";
 import { inferReadOutcome } from "@/components/boks/reader-behavior";
 import { formatReaderBody, type ReaderBlock } from "@/components/boks/reader-text";
 import type { StudyWords } from "@/components/boks/studies/study-copy";
+import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { BokCard, BokCover } from "@/components/boks/studies/study-forms";
 import type { SessionMeasurement, SessionRead } from "@/lib/boks/studies/session";
 
@@ -68,12 +69,18 @@ export function useReadingMeasure(active: boolean, subject?: string) {
   return { scroller, onScroll, read };
 }
 
-export function TextBody({ story, blocks }: { story: Story; blocks?: ReaderBlock[] }) {
+export function TextBody({ story, blocks, details }: {
+  story: Story;
+  blocks?: ReaderBlock[];
+  /** a2: what a card shows - cover and reading time - above the full text, so the two carry the same data. */
+  details?: { minutes: string };
+}) {
   const shaped = useMemo(() => blocks ?? formatReaderBody(story.body, story.title), [blocks, story.body, story.title]);
   return (
     <div className="study-text" lang={story.language && story.language !== "und" ? story.language : undefined}>
       {story.authorName && <p className="study-eyebrow">{story.authorName}</p>}
       {story.title && <h1>{story.title}</h1>}
+      {details && <p className="study-eyebrow">{details.minutes}</p>}
       {shaped.map((block, index) =>
         block.kind === "verse" ? (
           <p key={index} className="study-text__verse">
@@ -247,7 +254,8 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: Br
   const session = useSession(mode, set, minutes, stories.map((story) => story.id));
   const [index, setIndex] = useState(0);
   const [reading, setReading] = useState<{ story: Story; openedAt: number } | null>(null);
-  const inline = mode === "inline";
+  // rg2's feed is the same full-text feed; only a2's other arm is cards.
+  const inline = mode !== "cards";
   const story = stories[index];
   const shownAt = useRef(0);
   const { scroller: inlineScroller, onScroll: onInlineScroll, read: readInline } = useReadingMeasure(inline && !reading, story?.id);
@@ -295,7 +303,8 @@ export function FeedBrowser({ words, stories, minutes, set, mode, onFinish }: Br
       <SessionTimer words={words} minutes={minutes} onExpire={() => end("timer")} onEnd={() => end("participant")} />
       {story && (inline ? (
         <div className="study-reader study-reader--session" ref={inlineScroller} onScroll={onInlineScroll} key={story.id}>
-          <TextBody story={story} />
+          {getBokArtwork(story) && <img className="study-feed__art" src={getBokArtwork(story)!} alt="" />}
+          <TextBody story={story} details={{ minutes: words.minutesShort(story.minutes) }} />
         </div>
       ) : (
         <div className="study-feed-card" key={story.id}>

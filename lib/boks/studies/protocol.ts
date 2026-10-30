@@ -87,7 +87,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     label: "РГ2",
     owner: "team",
     title: "The value of the personal feed",
-    comparison: "Each participant: ten minutes in the personal feed and ten in a catalogue with search and filters, order at random, different texts.",
+    comparison: "Each participant: ten minutes in the personal feed of full texts and ten in a catalogue with search and filters, order at random, different texts.",
     outcome: "Share satisfied with the session (6 or 7 to «Насколько вы довольны этим сеансом выбора и чтения?», 1–7): feed minus catalogue at least +10 pp, paired, 95% interval above 0.",
     design: "within",
   },
@@ -104,9 +104,9 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     key: "a2",
     label: "А2",
     owner: "Andrey",
-    title: "Reading straight in the feed",
-    comparison: "Text in the feed against a card with a separate reading screen; the same texts in the same order.",
-    outcome: "Ten-minute sessions with a successful find: at least +10 pp, paired by participant.",
+    title: "Choosing by cards",
+    comparison: "A feed of cards (cover, title, author, time, the opening lines) against a feed of full texts carrying the same data; the same texts in the same order.",
+    outcome: "Share of sessions with a text chosen and 6 or 7 to «Мне было легко выбрать», 1–7: cards minus full texts at least +10 pp, paired, 95% interval above 0. «Nothing» is a failure.",
     design: "within",
   },
   a3: {
@@ -142,7 +142,7 @@ export const studyDescriptions: Record<StudyKey, StudyDescription> = {
     owner: "Ivan",
     title: "Fragments that stand on their own",
     comparison: "Fragments cut by the algorithm (and same-length windows, blind), each rated by three readers.",
-    outcome: "At least 80 of 100 algorithm fragments with «yes» to both questions from two of three readers.",
+    outcome: "At least 80% of algorithm fragments with «yes» to both questions from two of three readers, and at least +10 pp over random windows of the same length.",
     design: "rating",
   },
 };
@@ -156,7 +156,7 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   },
   rg2: {
     title: "Ценность персональной ленты",
-    comparison: "Каждый участник: десять минут в персональной ленте и десять в каталоге с поиском и фильтрами, порядок случайный, тексты разные.",
+    comparison: "Каждый участник: десять минут в персональной ленте полных текстов и десять в каталоге с поиском и фильтрами, порядок случайный, тексты разные.",
     outcome: "Доля довольных сессией (6 или 7 на «Насколько вы довольны этим сеансом выбора и чтения?», 1–7): лента минус каталог не меньше +10 п. п., парно, 95% интервал выше 0.",
   },
   a1: {
@@ -165,9 +165,9 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
     outcome: "Доля выбравших целое произведение минус доля выбравших фрагмент, среди всех: не меньше +15 п. п.",
   },
   a2: {
-    title: "Чтение прямо в ленте",
-    comparison: "Текст в ленте против карточки с отдельным экраном чтения; те же тексты в том же порядке.",
-    outcome: "Десятиминутные сессии с успешной находкой: не меньше +10 п. п., парно по участнику.",
+    title: "Выбор чтения по карточкам",
+    comparison: "Лента карточек (обложка, название, автор, время, первые строки) против ленты полных текстов с теми же данными; те же тексты в том же порядке.",
+    outcome: "Доля сессий, где текст указан и на «Мне было легко выбрать» ответ 6 или 7, 1–7: карточки минус полные тексты не меньше +10 п. п., парно, 95% интервал выше 0. «Ничего» считается неуспехом.",
   },
   a3: {
     title: "Рекомендации по пяти бокам",
@@ -187,7 +187,7 @@ const russianDescriptions: Record<StudyKey, Pick<StudyDescription, "title" | "co
   b3: {
     title: "Фрагменты, которые держатся сами",
     comparison: "Фрагменты, нарезанные алгоритмом (и окна той же длины, вслепую), каждый оценивают три читателя.",
-    outcome: "Не меньше 80 из 100 фрагментов алгоритма с «да» на оба вопроса от двух из трёх читателей.",
+    outcome: "Не меньше 80% фрагментов алгоритма с «да» на оба вопроса от двух из трёх читателей и не меньше +10 п. п. к случайным отрывкам той же длины.",
   },
 };
 

@@ -42,7 +42,7 @@ export type A1Plan = {
 /**
  * Two different pairs, so the whole work and the fragment a participant reads
  * are not about the same thing; the order follows the condition. The choice
- * offers two of each kind in a shuffled order.
+ * offers two new cards, one of each kind, in a shuffled order.
  */
 export function planA1(materials: A1Materials, condition: string, seed: number): A1Plan {
   const next = createRandom(seed);
@@ -50,8 +50,8 @@ export function planA1(materials: A1Materials, condition: string, seed: number):
   const whole = { bokId: pairs[0].whole, kind: "whole" as const };
   const fragment = { bokId: pairs[1 % pairs.length].fragment, kind: "fragment" as const };
   const reads = condition === "fragment_first" ? [fragment, whole] : [whole, fragment];
-  const wholes = shuffle(materials.choices.filter((choice) => choice.kind === "whole"), next).slice(0, 2);
-  const fragments = shuffle(materials.choices.filter((choice) => choice.kind === "fragment"), next).slice(0, 2);
+  const wholes = shuffle(materials.choices.filter((choice) => choice.kind === "whole"), next).slice(0, 1);
+  const fragments = shuffle(materials.choices.filter((choice) => choice.kind === "fragment"), next).slice(0, 1);
   return { reads, choices: shuffle([...wholes, ...fragments], next) };
 }
 

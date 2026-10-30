@@ -117,7 +117,8 @@ button.study-bok { cursor: pointer; }
 .study-cover__letter { position: absolute; z-index: -1; top: 90px; right: .05em; color: var(--bok-letter); font: italic 400 340px/1 "Boks Cover Initial", Georgia, var(--study-serif); pointer-events: none; }
 .study-cover__heading h2 { margin: 0 0 16px; font: 400 46px/.98 var(--study-serif); letter-spacing: -1.6px; text-wrap: balance; overflow-wrap: break-word; }
 .study-cover__byline { margin: 0; font: 400 12px/1.4 var(--study-sans); }
-.study-cover__summary { margin: 14px 0 0; font: 400 16px/1.42 var(--study-serif); opacity: .86; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; line-clamp: 6; overflow: hidden; }
+.study-cover__summary { margin: 14px 0 0; font: 400 16px/1.42 var(--study-serif); opacity: .86; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.study-feed__art { display: block; width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 16px; }
 .study-cover__read { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 50px; margin-top: 28px; padding: 13px 20px; border: 0; border-radius: 4px 14px 4px 4px; background: #f6f1e8; color: #222621; font: 500 13px/1.35 var(--study-sans); cursor: pointer; }
 .study-cover__read svg { width: 18px; height: 18px; }
 .study-feed__nav { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 14px 0 0; color: var(--study-muted); font: 12px var(--study-sans); font-variant-numeric: tabular-nums; }

@@ -79,8 +79,8 @@ describe("study plans", () => {
       const wholePair = materials.pairs.findIndex((pair) => pair.whole === plan.reads[1].bokId);
       const fragmentPair = materials.pairs.findIndex((pair) => pair.fragment === plan.reads[0].bokId);
       expect(wholePair).not.toBe(fragmentPair);
-      expect(plan.choices.filter((choice) => choice.kind === "whole")).toHaveLength(2);
-      expect(plan.choices.filter((choice) => choice.kind === "fragment")).toHaveLength(2);
+      expect(plan.choices.filter((choice) => choice.kind === "whole")).toHaveLength(1);
+      expect(plan.choices.filter((choice) => choice.kind === "fragment")).toHaveLength(1);
     }
   });
 
@@ -264,6 +264,22 @@ describe("study results", () => {
     const summary = summariseStudy("b1", rows);
     expect(summary.comparisons[0].unit).toBe("share");
     expect(summary.comparisons[0].result.effect).toBeCloseTo(0.5);
+  });
+
+  it("judges a2 by easy choices, cards minus full texts, with «nothing» a failure", () => {
+    const rows: StudyResponseRow[] = [];
+    const measurement = (kind: "inline" | "cards"): SessionMeasurement => ({ interface: kind, minutes: 10, offered: [], reads: [], endedBy: "timer", elapsedSeconds: 600 });
+    for (let n = 1; n <= 6; n += 1) {
+      for (const [index, kind] of (["inline", "cards"] as const).entries()) {
+        rows.push(row(n, { step: "session", condition: kind, participantCondition: "inline_a", answers: { index, measurement: measurement(kind) } }));
+        rows.push(row(n, { step: "session_survey", condition: kind, participantCondition: "inline_a", answers: {
+          index, survey: { perBok: {}, satisfaction: null, sessionSatisfaction: 5, chosen: kind === "cards" ? id(1) : null, easyChoice: 7 },
+        } }));
+      }
+    }
+    const summary = summariseStudy("a2", rows);
+    expect(summary.comparisons[0].result.effect).toBe(1);
+    expect(summary.comparisons[0].meetsThreshold).toBe(true);
   });
 
   it("pairs b2's music and silence blocks within each participant", () => {

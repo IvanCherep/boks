@@ -139,8 +139,8 @@ export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords
       return [
         intro,
         { caption: t.a1Read, body: <StudyTextReader story={fourth} words={words} note={words.readThisText} onDone={noop} /> },
+        { caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[second, fourth]} nothingLabel={words.chooseNothing} onChoose={noop} /> },
         { caption: t.a1After, body: <ScaleForm words={words} questions={studyQuestions.a1(words)} check={{ key: "knewBefore", label: words.knewBefore }} onSubmit={noop} /> },
-        { caption: t.a1Choice, body: <BokChoiceForm words={words} title={words.a1ChooseTitle} body={words.a1ChooseBody} boks={[second, fourth, first, third]} nothingLabel={words.chooseNothing} onChoose={noop} /> },
       ];
     case "a2":
       return [
@@ -148,7 +148,7 @@ export function galleryScreens(key: StudyKey, words: StudyWords, t: GalleryWords
         { caption: t.a2Known, body: <CheckListForm words={words} title={words.familiarityTitle} body={words.familiarityBody} options={sampleStories.map((story) => ({ id: story.id, label: story.title, hint: story.authorName }))} onSubmit={noop} /> },
         { caption: t.a2Inline, body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="inline" onFinish={noop} /> },
         { caption: t.a2Cards, body: <FeedBrowser words={words} stories={sampleStories} minutes={10} mode="cards" onFinish={noop} /> },
-        { caption: t.a2After, body: <SessionSurveyForm words={words} opened={[second]} onSubmit={noop} /> },
+        { caption: t.a2After, body: <SessionSurveyForm words={words} opened={[second]} askChoice onSubmit={noop} /> },
       ];
     case "a3":
       return [

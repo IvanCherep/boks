@@ -52,7 +52,16 @@ export type SessionSurvey = {
   sessionSatisfaction?: number | null;
   /** «Прочитанное меня тронуло» 1..7, the emotional response; null when nothing was opened. */
   moved?: number | null;
+  /** a2: the text the participant says they chose; null is «nothing». Absent in rg2. */
+  chosen?: string | null;
+  /** a2: «Мне было легко выбрать» 1..7. Absent in rg2. */
+  easyChoice?: number | null;
 };
+
+/** a2's success: a text was chosen and the choice was easy, 6 or 7 of 7. «Nothing» is a failure. */
+export function easySession(survey: SessionSurvey) {
+  return Boolean(survey.chosen) && (survey.easyChoice ?? 0) >= 6;
+}
 
 export const successfulSatisfaction = 4;
 
