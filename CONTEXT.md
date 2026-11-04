@@ -26,6 +26,10 @@ _Avoid_: catalog, library, inventory
 An account that owns imported catalogue boks, each carrying its own byline.
 _Avoid_: import user, system author
 
+**Link-only piece**:
+A living author's work produced in a boks format and reachable only by its own link, before any agreement to publish; not a bok and not in the catalogue (`docs/link-only-pieces.md`).
+_Avoid_: unlisted bok, private bok, hidden bok
+
 **Submission**:
 A bok an author has sent for review and an admin has not yet approved or refused.
 _Avoid_: draft, upload

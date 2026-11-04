@@ -168,6 +168,16 @@ See `docs/studies.md`.
 
 ## Live
 
+**Link-only pieces (2026-11-04).** A living author's work can be produced in
+a boks format and shown only by its link, outside the catalogue and outside
+this public repository: `/l/<token>`, files in the `link-only` storage bucket
+(migration `20261104120000_boks_link_only_bucket.sql`), served same-origin by
+`app/l/[token]/f/[file]/route.ts`. The first is Алексей Прохоров's «там где
+скрипели качели», an immersive poem read by Alex Bell (−22.3 LUFS, theme
+−13 dB under it) over his five pictures, with a rub-to-remember haze in the
+third and a hold that warms the heart in the last. See
+`docs/link-only-pieces.md`.
+
 **A curated catalogue, a summary on every cover, a new feed every visit
 (2026-10-20).** Three things readers said were wrong. (1) Too much filler:
 every published bok was read by an editor pass and only works with real value

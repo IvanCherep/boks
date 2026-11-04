@@ -445,6 +445,9 @@ joined to the word after it instead.
 
 ### Adding a poem
 
+A living author's poem shown before any agreement to publish follows the same
+steps with no boks and no file in the repository: `docs/link-only-pieces.md`.
+
 The whole job is assets and JSON; the renderer, the finale and the tests come
 with it. The two English poems were added this way in one pass, which is the
 check that it works.
