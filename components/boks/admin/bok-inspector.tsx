@@ -21,12 +21,14 @@ export const bokStatusLabels = defineMessages<Record<AdminBokStatus, string>>({
   published: "Published",
   rejected: "Refused",
   archived: "Deleted",
+  withdrawn: "Withdrawn by the author",
 }, { ru: {
   draft: "Черновик",
   pending_review: "Ждёт проверки",
   published: "Опубликован",
   rejected: "Отклонён",
   archived: "Удалён",
+  withdrawn: "Снят автором",
 } });
 
 export function BokStatusBadge({ status }: { status: AdminBokStatus }) {

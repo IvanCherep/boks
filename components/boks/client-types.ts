@@ -240,7 +240,7 @@ export type BoksContentRow = {
 };
 
 /** Every state a boks can be in, as the admin inspector shows it. */
-export type AdminBokStatus = "draft" | "pending_review" | "published" | "rejected" | "archived";
+export type AdminBokStatus = "draft" | "pending_review" | "published" | "rejected" | "archived" | "withdrawn";
 
 /**
  * One boks as the admin inspector reads it (`get_admin_bok`). Metrics use the
@@ -442,7 +442,7 @@ export type ReaderLibraryItem = {
   commentPreview?: string;
 };
 
-export type BokReviewStatus = "draft" | "pending_review" | "published" | "rejected" | "archived";
+export type BokReviewStatus = "draft" | "pending_review" | "published" | "rejected" | "archived" | "withdrawn";
 
 export type AuthorBokSubmission = {
   id: string;
@@ -463,6 +463,36 @@ export type AuthorBokSubmission = {
   reviewedAt: string | null;
   reviewNote: string | null;
   createdAt: string;
+  /** Distinct readers other than the author; only on the author's own history. */
+  readers?: number;
+  /** Where a withdrawn piece was when its author took it down. */
+  withdrawnFromStatus?: BokReviewStatus | null;
+  withdrawnAt?: string | null;
+};
+
+/** What readers did with one of the author's own pieces (`get_my_bok_stats`). */
+export type AuthorBokStats = {
+  id: string;
+  title: string;
+  status: BokReviewStatus;
+  publishedAt: string | null;
+  submittedAt: string | null;
+  withdrawnAt: string | null;
+  metrics: {
+    readers: number;
+    readersWeek: number;
+    impressions: number;
+    starts: number;
+    completes: number;
+    /** Completes per start, in percent; null with no starts. */
+    finishRate: number | null;
+    minutes: number;
+    shares: number;
+    likes: number;
+    comments: number;
+    lastReadAt: string | null;
+  };
+  comments: { id: number; body: string; createdAt: string; handle: string | null; isReply: boolean; likes: number }[];
 };
 
 export type AdminModerationItem = AuthorBokSubmission & {
@@ -485,7 +515,7 @@ export type AdminUserRow = {
 };
 
 /** The cabinet's history filter: one status, or every piece. */
-export type AuthorBokStatusFilter = "all" | "pending_review" | "published" | "rejected" | "archived";
+export type AuthorBokStatusFilter = "all" | "pending_review" | "published" | "rejected" | "withdrawn" | "archived";
 
 export type AuthorBokSubmissionsPage = {
   items: AuthorBokSubmission[];

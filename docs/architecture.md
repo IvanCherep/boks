@@ -118,7 +118,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 ## Author and moderation
 
-1. `submit_bok_for_review()` writes a private `reels` row with `status = 'pending_review'`, enforcing the 15-minute promise and refusing the same text twice from one author, under a lock on the author's profile row. There is no limit on the number of submissions; `get_my_bok_quota()` remains only for old tabs and reports `unlimited`. `get_my_bok_submissions_page()` pages the author's history with counts per status.
+1. `submit_bok_for_review()` writes a private `reels` row with `status = 'pending_review'`, enforcing the 15-minute promise and refusing the same text twice from one author, under a lock on the author's profile row. There is no limit on the number of submissions; `get_my_bok_quota()` remains only for old tabs and reports `unlimited`. `get_my_bok_submissions_page()` pages the author's history with counts per status. The author withdraws (`withdraw_my_bok()`, status `withdrawn`), returns (`restore_my_bok()`) and, once withdrawn, deletes (`delete_my_bok()`) their own pieces; `get_my_bok_stats()` is one piece's reader numbers and comments for its author (`components/boks/author-works.tsx`).
 2. Admins approve or refuse with `review_bok_submission()`; approval requires a confirmed rights record. Refusal stores a reason only the author and admins see.
 3. `archive_bok()` hides a bok reversibly with actor, time and reason; `restore_archived_bok()` returns it to its previous status; `delete_archived_bok()` erases only an archived bok and requires its exact title.
 4. No browser writes `reels.status`, roles or suspension directly; all of it is admin-checked RPCs.

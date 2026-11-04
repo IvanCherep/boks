@@ -3,19 +3,16 @@
 import { randomBoksId } from "@/lib/boks/browser-id";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Clock3,
   Edit3,
   FilePlus2,
+  Library,
   FileText,
   PenLine,
   Scissors,
-  Search,
   Send,
-  ShieldCheck,
   Square,
   Upload,
   X,
-  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -32,11 +29,9 @@ import {
   splitIntoEpisodes,
 } from "@/lib/boks/author/author-files";
 import type {
-  AuthorBokStatusFilter,
   AuthorBokSubmission,
   AuthorBokSubmissionsPage,
   BoksUserContext,
-  BokReviewStatus,
 } from "@/components/boks/client-types";
 import { getBrowserId } from "@/components/boks/reader-behavior";
 import { Field, MetricTile } from "@/components/boks/shared-ui";
@@ -47,6 +42,7 @@ import {
   submitBokForReview,
 } from "@/components/boks/supabase-browser-data";
 import { UserAuthPanel } from "@/components/boks/user-auth-panel";
+import { AuthorWorks } from "@/components/boks/author-works";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
@@ -67,19 +63,12 @@ const messages = defineMessages(
   {
     statusSignIn: "Sign in to submit your texts.",
     statusSignUp: "Sign up or sign in to submit your texts.",
-    statusHistory: "Your review history is below.",
     statusWrite: "Write a text, or upload your files, and submit them for review.",
-    statusRevising: "The refused text is in the editor. Confirm the rights again and submit.",
+    statusRevising: "The text is in the editor. Confirm the rights again and submit it.",
     statusSuspended: "This account is suspended and cannot submit texts.",
     statusSubmitted: "Submitted for review. Readers will see it once an admin approves it.",
     loadFailed: "Could not load the author cabinet.",
-    historyFailed: "Could not load your texts. Try again.",
     submitFailed: "Could not submit this text.",
-    reviewWaiting: "Waiting for review",
-    reviewPublished: "Published",
-    reviewRejected: "Needs changes",
-    reviewArchived: "Removed",
-    reviewDraft: "Draft",
     title: "Author cabinet",
     intro:
       "Publish as much as you like: write one text here, or upload a whole folder of files at once. There is no limit on how many texts you submit. Each one is checked by a boks admin before readers see it.",
@@ -97,12 +86,15 @@ const messages = defineMessages(
     authorNameEmpty:
       "Leave it empty to publish under your @nickname. Fill it in to print a name above it, on every text you send.",
     optional: "Optional",
+    status: "Status",
+    modeWorks: "My texts",
+    withdrawnCount: "Withdrawn",
     modeWrite: "Write a text",
     modeFiles: "Upload files",
     revising: "Revising",
     openQuote: "“",
     closeQuote: "”",
-    revisingWhy: "Submitting sends this same text back for review.",
+    revisingWhy: "Submitting sends this same text to review again.",
     startNew: "Start a new text instead",
     titleLabel: "Title (optional)",
     titleHintEmpty: "Leave it empty and the first line of the text becomes the title.",
@@ -167,40 +159,20 @@ const messages = defineMessages(
     batchStopped: (sent: number, left: number) => `Stopped. Sent ${sent}; ${left} still in the queue.`,
     leaveWarning: "Your upload queue has not been sent. Leave anyway?",
     // History
-    status: "Status",
     published: "Published",
     inReview: "In review",
     needsWork: "Needs work",
-    yourBoks: "Your texts",
-    filterAll: "All",
-    searchPlaceholder: "Search by title or name",
-    min: "min",
-    liked: (n: number) => `${n} liked`,
-    replied: (n: number) => `${n} replied`,
-    revise: "Revise",
-    nothingYet: "Nothing submitted yet. Your texts will appear here with their status, likes and replies.",
-    nothingMatches: "No texts match.",
-    afterSignIn: "Your texts will appear here after you sign in.",
-    showMore: (left: number) => `Show more (${left} left)`,
-    loading: "Loading…",
   },
   {
     ru: {
       statusSignIn: "Войдите, чтобы отправлять свои тексты.",
       statusSignUp: "Зарегистрируйтесь или войдите, чтобы отправлять свои тексты.",
-      statusHistory: "Ниже - история проверки ваших текстов.",
       statusWrite: "Напишите текст или загрузите файлы и отправьте их на проверку.",
-      statusRevising: "Отклонённый текст открыт в редакторе. Ещё раз подтвердите права и отправьте.",
+      statusRevising: "Текст открыт в редакторе. Ещё раз подтвердите права и отправьте его.",
       statusSuspended: "Этот аккаунт заблокирован и не может отправлять тексты.",
       statusSubmitted: "Отправлено на проверку. Читатели увидят текст после одобрения администратора.",
       loadFailed: "Не удалось загрузить кабинет автора.",
-      historyFailed: "Не удалось загрузить ваши тексты. Попробуйте ещё раз.",
       submitFailed: "Не удалось отправить этот текст.",
-      reviewWaiting: "Ждёт проверки",
-      reviewPublished: "Опубликован",
-      reviewRejected: "Нужны правки",
-      reviewArchived: "Снят",
-      reviewDraft: "Черновик",
       title: "Кабинет автора",
       intro:
         "Публикуйте сколько угодно: напишите текст здесь или загрузите сразу всю папку с файлами. Ограничений на количество текстов нет. Каждый текст проверяет администратор boks, прежде чем его увидят читатели.",
@@ -218,12 +190,15 @@ const messages = defineMessages(
       authorNameEmpty:
         "Оставьте пустым, чтобы публиковаться под @никнеймом. Заполните, чтобы над ним стояло имя - на каждом отправленном тексте.",
       optional: "Необязательно",
+      status: "Статус",
+      modeWorks: "Мои тексты",
+      withdrawnCount: "Сняты вами",
       modeWrite: "Написать текст",
       modeFiles: "Загрузить файлы",
       revising: "Правка",
       openQuote: "«",
       closeQuote: "»",
-      revisingWhy: "При отправке этот же текст вернётся на проверку.",
+      revisingWhy: "При отправке этот же текст снова уйдёт на проверку.",
       startNew: "Начать новый текст",
       titleLabel: "Название (необязательно)",
       titleHintEmpty: "Если оставить пустым, названием станет первая строка текста.",
@@ -288,24 +263,9 @@ const messages = defineMessages(
           : `Отправлено на проверку: ${sent} ${ruPieces(sent)}. Читатели увидят каждый после одобрения администратора.`,
       batchStopped: (sent: number, left: number) => `Остановлено. Отправлено: ${sent}; в очереди осталось: ${left}.`,
       leaveWarning: "Очередь загрузки не отправлена. Всё равно уйти?",
-      status: "Статус",
       published: "Опубликовано",
       inReview: "На проверке",
       needsWork: "Нужны правки",
-      yourBoks: "Ваши тексты",
-      filterAll: "Все",
-      searchPlaceholder: "Поиск по названию или имени",
-      min: "мин",
-      liked: (n: number) =>
-        `${n} ${plural("ru", n, { one: "лайк", few: "лайка", many: "лайков", other: "лайка" })}`,
-      replied: (n: number) =>
-        `${n} ${plural("ru", n, { one: "ответ", few: "ответа", many: "ответов", other: "ответа" })}`,
-      revise: "Исправить",
-      nothingYet: "Пока ничего не отправлено. Здесь появятся ваши тексты - со статусом, лайками и ответами.",
-      nothingMatches: "Ничего не найдено.",
-      afterSignIn: "Ваши тексты появятся здесь, когда вы войдёте.",
-      showMore: (left: number) => `Показать ещё (осталось ${left})`,
-      loading: "Загружаем…",
     },
   }
 );
@@ -316,7 +276,6 @@ type Words = (typeof messages)["en"];
 type StatusLine = (words: Words, language: UiLanguage) => string;
 
 const authorDraftKey = "boks-author-draft";
-const historyPageSize = 20;
 
 type AuthorDraft = { title: string; body: string; authorName: string };
 
@@ -365,24 +324,13 @@ function writeAuthorDraft(draft: AuthorDraft | null) {
   }
 }
 
-function reviewStatusLabel(status: BokReviewStatus, words: Words) {
-  if (status === "pending_review") return words.reviewWaiting;
-  if (status === "published") return words.reviewPublished;
-  if (status === "rejected") return words.reviewRejected;
-  if (status === "archived") return words.reviewArchived;
-  return words.reviewDraft;
-}
-
-function ReviewStatusIcon({ status }: { status: BokReviewStatus }) {
-  if (status === "published") return <ShieldCheck className="size-4" />;
-  if (status === "rejected") return <XCircle className="size-4" />;
-  return <Clock3 className="size-4" />;
-}
-
-const emptyHistory: AuthorBokSubmissionsPage = {
-  items: [],
-  total: 0,
-  counts: { all: 0, pending_review: 0, published: 0, rejected: 0, archived: 0 },
+const emptyCounts: AuthorBokSubmissionsPage["counts"] = {
+  all: 0,
+  pending_review: 0,
+  published: 0,
+  rejected: 0,
+  withdrawn: 0,
+  archived: 0,
 };
 
 /** The rights statement and the licence it grants, shared by both ways of sending. */
@@ -443,7 +391,7 @@ export function AuthorConsole() {
 
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
-  const [mode, setMode] = useState<"write" | "files">("write");
+  const [mode, setMode] = useState<"works" | "write" | "files">("write");
   const [authorForm, setAuthorForm] = useState({
     title: "",
     body: "",
@@ -473,13 +421,11 @@ export function AuthorConsole() {
   const stopRequested = useRef(false);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
-  // The history, a page at a time.
-  const [history, setHistory] = useState<AuthorBokSubmissionsPage>(emptyHistory);
-  const [historyFilter, setHistoryFilter] = useState<AuthorBokStatusFilter>("all");
-  const [historyQuery, setHistoryQuery] = useState("");
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState(false);
-  const historyRequest = useRef(0);
+  // "My texts": its counts, and a key that reloads it after a send.
+  const [worksCounts, setWorksCounts] = useState<AuthorBokSubmissionsPage["counts"]>(emptyCounts);
+  const [worksKey, setWorksKey] = useState(0);
+  // Until the author picks a tab, one with texts opens on them.
+  const modeChosen = useRef(false);
 
   const authorMinutes = estimateMinutes(authorForm.body);
   const authorWords = wordCount(authorForm.body);
@@ -498,6 +444,8 @@ export function AuthorConsole() {
   useEffect(() => {
     const draft = readAuthorDraft();
     if (!draft) return;
+    // A text left half-written on this device opens in the editor, not the list.
+    modeChosen.current = true;
     const handle = window.setTimeout(() => {
       setAuthorForm((current) => ({
         ...current,
@@ -529,57 +477,47 @@ export function AuthorConsole() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [queue.length, sending, words.leaveWarning]);
 
-  const loadHistory = useCallback(
-    async (options: { filter: AuthorBokStatusFilter; query: string; append?: boolean; offset?: number }) => {
-      const request = ++historyRequest.current;
-      setHistoryLoading(true);
-      setHistoryError(false);
-      try {
-        const page = await loadMyBokSubmissionsPage({
-          status: options.filter,
-          query: options.query,
-          limit: historyPageSize,
-          offset: options.offset ?? 0,
-        });
-        if (request !== historyRequest.current) return page;
-        setHistory((current) =>
-          options.append ? { ...page, items: [...current.items, ...page.items] } : page
-        );
-        return page;
-      } catch (error) {
-        if (request === historyRequest.current) setHistoryError(true);
-        throw error;
-      } finally {
-        if (request === historyRequest.current) setHistoryLoading(false);
-      }
-    },
-    []
-  );
+  const receiveCounts = useCallback((counts: AuthorBokSubmissionsPage["counts"]) => {
+    setWorksCounts(counts);
+    if (!modeChosen.current && counts.all > 0) {
+      modeChosen.current = true;
+      setMode("works");
+    }
+  }, []);
+
+  // The tab bar's counts, read even while "My texts" is not the open tab.
+  const refreshCounts = useCallback(() => {
+    loadMyBokSubmissionsPage({ limit: 1 })
+      .then((page) => receiveCounts(page.counts))
+      .catch(() => undefined);
+  }, [receiveCounts]);
+
+  function chooseMode(next: "works" | "write" | "files") {
+    modeChosen.current = true;
+    setMode(next);
+  }
 
   const refreshAuthor = useCallback(async () => {
     const context = await loadBoksUserContext();
     setUser(context);
 
     if (context && !context.isAnonymous) {
-      const [page, byline] = await Promise.all([
-        loadHistory({ filter: "all", query: "" }),
-        loadMyDefaultAuthorName(),
-      ]);
-      setHistoryFilter("all");
-      setHistoryQuery("");
+      const byline = await loadMyDefaultAuthorName();
+      setWorksKey((key) => key + 1);
+      refreshCounts();
       setDefaultAuthorName(byline);
       // Prefilled rather than merely hinted, so publishing again is one less
       // decision. An author who wants a different byline overwrites it.
       setAuthorForm((current) => ({ ...current, authorName: current.authorName || byline }));
-      setStatus(() => (w: Words) => (page.counts.all ? w.statusHistory : w.statusWrite));
+      setStatus(() => (w: Words) => w.statusWrite);
     } else {
-      setHistory(emptyHistory);
+      setWorksCounts(emptyCounts);
       setDefaultAuthorName("");
       setStatus(() => (w: Words) => w.statusSignUp);
     }
 
     return context;
-  }, [loadHistory]);
+  }, [refreshCounts]);
 
   useEffect(() => {
     visitorId.current = getBrowserId("boks-author");
@@ -587,28 +525,9 @@ export function AuthorConsole() {
     refreshAuthor().catch((error) => setStatus(() => (w: Words) => readableBoksError(error, w.loadFailed)));
   }, [refreshAuthor]);
 
-  // Search waits for the author to stop typing.
-  const firstQuery = useRef(true);
-  useEffect(() => {
-    if (firstQuery.current) {
-      firstQuery.current = false;
-      return;
-    }
-    if (!signedInAuthor) return;
-    const handle = window.setTimeout(() => {
-      loadHistory({ filter: historyFilter, query: historyQuery.trim() }).catch(() => undefined);
-    }, 300);
-    return () => window.clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historyQuery]);
-
-  function chooseFilter(filter: AuthorBokStatusFilter) {
-    setHistoryFilter(filter);
-    loadHistory({ filter, query: historyQuery.trim() }).catch(() => undefined);
-  }
-
   function refreshHistory() {
-    return loadHistory({ filter: historyFilter, query: historyQuery.trim() }).catch(() => undefined);
+    setWorksKey((key) => key + 1);
+    refreshCounts();
   }
 
   function openAuth() {
@@ -616,6 +535,7 @@ export function AuthorConsole() {
   }
 
   function editSubmission(submission: AuthorBokSubmission) {
+    modeChosen.current = true;
     setMode("write");
     setAuthorForm((current) => ({
       title: submission.title,
@@ -631,8 +551,8 @@ export function AuthorConsole() {
     }));
     setRevising({ id: submission.id, title: submission.title });
     setStatus(() => (w: Words) => w.statusRevising);
-    // Revise sits under the history, far below the form it fills.
-    formSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // The form opens in place of the list; bring it into view.
+    window.setTimeout(() => formSection.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
   function blockedFromSending() {
@@ -670,7 +590,7 @@ export function AuthorConsole() {
         rightsConfirmed: false,
         rightsNote: "",
       }));
-      await refreshHistory();
+      refreshHistory();
       setStatus(() => (w: Words) => w.statusSubmitted);
     } catch (error) {
       setStatus(() => (w: Words) => readableBoksError(error, w.submitFailed));
@@ -814,22 +734,14 @@ export function AuthorConsole() {
     // A fresh statement for whatever is added next.
     setQueueRights((current) => ({ ...current, confirmed: false }));
     setQueueStatus(() => (w: Words) => (stopped ? w.batchStopped(sent, left + failed) : w.batchDone(sent, failed)));
-    await refreshHistory();
+    refreshHistory();
   }
 
-  const filterOptions: { id: AuthorBokStatusFilter; label: string }[] = [
-    { id: "all", label: words.filterAll },
-    { id: "pending_review", label: words.inReview },
-    { id: "published", label: words.published },
-    { id: "rejected", label: words.needsWork },
-    { id: "archived", label: words.reviewArchived },
-  ];
-  const historyLeft = Math.max(0, history.total - history.items.length);
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-5 text-[var(--foreground)] sm:px-8">
-      <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section ref={formSection} className="panel p-5 sm:p-7">
+      <div className="mx-auto grid max-w-6xl gap-5">
+        <section className="panel p-5 sm:p-7">
           <a href="/" className="brand-word">boks</a>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal sm:text-5xl">{words.title}</h1>
           <p className="mt-3 max-w-2xl text-[var(--muted-foreground)]">{words.intro}</p>
@@ -856,21 +768,23 @@ export function AuthorConsole() {
                 {words.publishingAsWhy}
               </p>
             )}
-            <Field label={words.authorName} hint={defaultAuthorName ? words.authorNameKept : words.authorNameEmpty}>
-              <Input
-                value={authorForm.authorName}
-                placeholder={words.optional}
-                onChange={(event) => setAuthorForm({ ...authorForm, authorName: event.target.value })}
-              />
-            </Field>
-
-            <div className="author-modes" role="tablist" aria-label={words.title}>
+            <div className="author-modes author-modes--three" role="tablist" aria-label={words.title}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === "works"}
+                className="author-mode"
+                onClick={() => chooseMode("works")}
+              >
+                <Library className="size-4" /> {words.modeWorks}
+                {worksCounts.all > 0 && <span className="author-mode__count author-mode__count--quiet">{worksCounts.all}</span>}
+              </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={mode === "write"}
                 className="author-mode"
-                onClick={() => setMode("write")}
+                onClick={() => chooseMode("write")}
               >
                 <PenLine className="size-4" /> {words.modeWrite}
               </button>
@@ -879,12 +793,33 @@ export function AuthorConsole() {
                 role="tab"
                 aria-selected={mode === "files"}
                 className="author-mode"
-                onClick={() => setMode("files")}
+                onClick={() => chooseMode("files")}
               >
                 <Upload className="size-4" /> {words.modeFiles}
                 {queue.length > 0 && <span className="author-mode__count">{queue.length}</span>}
               </button>
             </div>
+          </div>
+        </section>
+
+        {mode === "works" ? (
+          <AuthorWorks
+            signedIn={Boolean(signedInAuthor)}
+            refreshKey={worksKey}
+            onEdit={editSubmission}
+            onCounts={receiveCounts}
+          />
+        ) : (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section ref={formSection} className="panel p-5 sm:p-7">
+          <div className="grid gap-4">
+            <Field label={words.authorName} hint={defaultAuthorName ? words.authorNameKept : words.authorNameEmpty}>
+              <Input
+                value={authorForm.authorName}
+                placeholder={words.optional}
+                onChange={(event) => setAuthorForm({ ...authorForm, authorName: event.target.value })}
+              />
+            </Field>
 
             {mode === "write" ? (
               <>
@@ -1159,12 +1094,13 @@ export function AuthorConsole() {
           <div className="panel p-5">
             <h2 className="text-lg font-semibold tracking-normal">{words.status}</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{status}</p>
-            {signedInAuthor && history.counts.all > 0 && (
+            {signedInAuthor && worksCounts.all > 0 && (
               <dl className="author-counts mt-4">
                 {[
-                  { label: words.published, value: history.counts.published },
-                  { label: words.inReview, value: history.counts.pending_review },
-                  { label: words.needsWork, value: history.counts.rejected },
+                  { label: words.published, value: worksCounts.published },
+                  { label: words.inReview, value: worksCounts.pending_review },
+                  { label: words.needsWork, value: worksCounts.rejected },
+                  { label: words.withdrawnCount, value: worksCounts.withdrawn },
                 ].map((row) => (
                   <div key={row.label}>
                     <dt>{row.label}</dt>
@@ -1174,100 +1110,9 @@ export function AuthorConsole() {
               </dl>
             )}
           </div>
-          <div className="panel p-5">
-            <h2 className="text-lg font-semibold tracking-normal">
-              {words.yourBoks}
-              {history.counts.all > 0 && <span className="ml-2 text-[var(--muted-foreground)]">{history.counts.all}</span>}
-            </h2>
-            {signedInAuthor && history.counts.all > 0 && (
-              <div className="mt-3 grid gap-2">
-                <div className="author-filters" role="group" aria-label={words.status}>
-                  {filterOptions
-                    .filter((option) => option.id === "all" || history.counts[option.id] > 0 || historyFilter === option.id)
-                    .map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className="author-filter"
-                        aria-pressed={historyFilter === option.id}
-                        onClick={() => chooseFilter(option.id)}
-                      >
-                        {option.label} <span>{history.counts[option.id]}</span>
-                      </button>
-                    ))}
-                </div>
-                <label className="relative block">
-                  <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-[var(--muted-foreground)]" aria-hidden="true" />
-                  <Input
-                    className="pl-8"
-                    type="search"
-                    value={historyQuery}
-                    placeholder={words.searchPlaceholder}
-                    aria-label={words.searchPlaceholder}
-                    onChange={(event) => setHistoryQuery(event.target.value)}
-                  />
-                </label>
-              </div>
-            )}
-            <div className="mt-4 grid gap-3">
-              {historyError && <p className="text-sm text-[var(--destructive)]">{words.historyFailed}</p>}
-              {history.items.length ? (
-                history.items.map((submission) => (
-                  <article key={submission.id} className="submission-card">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-semibold">{submission.title}</p>
-                        <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                          {submission.minutes} {words.min}
-                          {submission.authorName ? ` · ${submission.authorName}` : ""}
-                          {submission.status === "published"
-                            ? ` · ${words.liked(submission.likes)} · ${words.replied(submission.comments)}`
-                            : ""}
-                        </p>
-                      </div>
-                      <span className={`review-badge review-badge--${submission.status}`}>
-                        <ReviewStatusIcon status={submission.status} />
-                        {reviewStatusLabel(submission.status, words)}
-                      </span>
-                    </div>
-                    {submission.reviewNote && (
-                      <p className="mt-3 rounded-lg bg-[var(--muted)] p-3 text-sm leading-6 text-[var(--muted-foreground)]">
-                        {submission.reviewNote}
-                      </p>
-                    )}
-                    {submission.status === "rejected" && submission.body && (
-                      <Button className="mt-3 w-full" variant="outline" onClick={() => editSubmission(submission)}>
-                        <Edit3 className="size-4" /> {words.revise}
-                      </Button>
-                    )}
-                  </article>
-                ))
-              ) : historyLoading ? (
-                <p className="text-sm text-[var(--muted-foreground)]">{words.loading}</p>
-              ) : (
-                <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                  {!signedInAuthor ? words.afterSignIn : history.counts.all ? words.nothingMatches : words.nothingYet}
-                </p>
-              )}
-              {historyLeft > 0 && (
-                <Button
-                  variant="outline"
-                  disabled={historyLoading}
-                  onClick={() =>
-                    loadHistory({
-                      filter: historyFilter,
-                      query: historyQuery.trim(),
-                      append: true,
-                      offset: history.items.length,
-                    }).catch(() => undefined)
-                  }
-                >
-                  {historyLoading ? words.loading : words.showMore(historyLeft)}
-                </Button>
-              )}
-            </div>
-          </div>
         </aside>
+        </div>
+        )}
       </div>
       <UserAuthPanel
         open={authPanelOpen}

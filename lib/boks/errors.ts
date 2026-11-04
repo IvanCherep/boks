@@ -120,6 +120,12 @@ const russianSentences: Record<string, string> = {
   "Confirm you hold the rights to publish this bok.": "Подтвердите, что у вас есть права на публикацию этого бока.",
   "Only a refused bok of your own can be revised.": "Исправить можно только свой отклонённый бок.",
   "You have already submitted this exact text.": "Вы уже отправляли ровно этот текст - он на проверке или опубликован.",
+  "Only your own text that is waiting, refused or published can be withdrawn.":
+    "Снять можно только свой текст, который ждёт проверки, отклонён или опубликован.",
+  "Only your own withdrawn text can be returned.": "Вернуть можно только свой снятый текст.",
+  "Withdraw the text first; only a withdrawn text of your own can be deleted.":
+    "Сначала снимите текст: удалить можно только свой снятый текст.",
+  "Type the title exactly to confirm deletion.": "Для удаления введите название точно.",
   "Sign in required to report a bok.": "Войдите, чтобы пожаловаться на бок.",
   "Sign in required to submit a bok.": "Войдите, чтобы отправить бок.",
   "Story text is required.": "Нужен текст.",

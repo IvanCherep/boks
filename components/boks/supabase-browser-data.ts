@@ -13,6 +13,7 @@ import type {
   AdminPersonDetail,
   AuthorBokSubmissionsPage,
   AuthorBokStatusFilter,
+  AuthorBokStats,
   BoksContentRow,
   BoksGrowth,
   BoksOverview,
@@ -860,7 +861,7 @@ export async function loadMyDefaultAuthorName(): Promise<string> {
   return (result.data as string | null) ?? "";
 }
 
-const emptyAuthorCounts = { all: 0, pending_review: 0, published: 0, rejected: 0, archived: 0 };
+const emptyAuthorCounts = { all: 0, pending_review: 0, published: 0, rejected: 0, withdrawn: 0, archived: 0 };
 
 /**
  * One page of the author's own history, newest first, with how many pieces
@@ -891,6 +892,37 @@ export async function loadMyBokSubmissionsPage(options: {
     total: Number(data.total) || 0,
     counts: { ...emptyAuthorCounts, ...(data.counts ?? {}) },
   };
+}
+
+/** The author takes their own piece off review or off the feed. */
+export async function withdrawMyBok(bokId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("withdraw_my_bok", { p_reel_id: bokId });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: string; title: string; status: string };
+}
+
+/** A withdrawn piece goes back where it was: published, or into review. */
+export async function restoreMyBok(bokId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("restore_my_bok", { p_reel_id: bokId });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: string; title: string; status: string };
+}
+
+/** Deletes a withdrawn piece for good; the exact title confirms it. */
+export async function deleteMyBok(bokId: string, confirmTitle: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("delete_my_bok", { p_reel_id: bokId, p_confirm: confirmTitle });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: string; title: string; deleted: true };
+}
+
+export async function loadMyBokStats(bokId: string): Promise<AuthorBokStats> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("get_my_bok_stats", { p_reel_id: bokId });
+  if (result.error) throw result.error;
+  return result.data as AuthorBokStats;
 }
 
 export async function reviewBokSubmission(input: {

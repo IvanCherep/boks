@@ -236,6 +236,74 @@ begin
   perform public.boks_assert((v_quota ->> 'total')::int = 0, 'the history filters by status');
   delete from public.reels where author_user_id = v_author and title in ('Fourth bok', 'Fifth bok');
 
+  -- ------------------------------------------- the author controls their work
+  -- Waiting: withdrawn leaves the queue, and comes back to it.
+  v_quota := public.withdraw_my_bok((select id from public.reels where title = 'Test bok 1'));
+  perform public.boks_assert(v_quota ->> 'status' = 'withdrawn', 'an author withdraws a piece waiting for review');
+  perform public.boks_assert(
+    (public.get_my_bok_submissions_page('withdrawn', '', 20, 0) ->> 'total')::int = 1,
+    'the history lists a withdrawn piece under its own status'
+  );
+  perform public.boks_assert(
+    (public.get_my_bok_submissions_page('withdrawn', '', 20, 0) -> 'items' -> 0 ->> 'body') <> '',
+    'a withdrawn piece carries its text, so it can be edited'
+  );
+  v_quota := public.restore_my_bok((select id from public.reels where title = 'Test bok 1'));
+  perform public.boks_assert(v_quota ->> 'status' = 'pending_review', 'a withdrawn waiting piece returns to the queue');
+
+  -- Published: withdrawn leaves every reader surface, and returns without review.
+  update public.reels set status = 'published', reviewed_at = now() where title = 'Test bok 2';
+  perform public.withdraw_my_bok((select id from public.reels where title = 'Test bok 2'));
+  perform public.boks_assert(
+    not exists (select 1 from public.published_boks where title = 'Test bok 2'),
+    'a withdrawn published piece is off the reader surfaces'
+  );
+  v_quota := public.restore_my_bok((select id from public.reels where title = 'Test bok 2'));
+  perform public.boks_assert(v_quota ->> 'status' = 'published', 'a withdrawn published piece returns published');
+
+  -- Stats are the author's own.
+  v_quota := public.get_my_bok_stats((select id from public.reels where title = 'Test bok 2'));
+  perform public.boks_assert((v_quota -> 'metrics' ->> 'readers')::int = 0, 'a new piece has no readers yet');
+  perform public.boks_assert(jsonb_typeof(v_quota -> 'comments') = 'array', 'stats carry the comments');
+
+  -- Withdrawn and edited, it goes back to review.
+  perform public.withdraw_my_bok((select id from public.reels where title = 'Test bok 2'));
+  perform public.submit_bok_for_review(
+    'Test bok 2', '', 'A second short story body, edited after withdrawing.', '', '', 0, 'Mira Vale', true, '',
+    (select id from public.reels where title = 'Test bok 2')
+  );
+  perform public.boks_assert(
+    (select status from public.reels where title = 'Test bok 2') = 'pending_review',
+    'an edited withdrawn piece goes back to review'
+  );
+  update public.reels
+  set text = 'A second short story body, well under fifteen minutes.', status = 'pending_review'
+  where title = 'Test bok 2';
+
+  -- Delete for good: only withdrawn, only with the exact title.
+  begin
+    perform public.delete_my_bok((select id from public.reels where title = 'Test bok 3'), 'Test bok 3');
+    perform public.boks_assert(false, 'a piece that is not withdrawn cannot be deleted');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Withdraw the text first%', 'delete needs a withdrawn piece: ' || v_error);
+  end;
+
+  perform public.submit_bok_for_review('Mistaken bok', '', 'Sent by mistake, then deleted.', '', '', 0, '', true);
+  perform public.withdraw_my_bok((select id from public.reels where title = 'Mistaken bok'));
+  begin
+    perform public.delete_my_bok((select id from public.reels where title = 'Mistaken bok'), 'mistaken');
+    perform public.boks_assert(false, 'delete needs the exact title');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Type the title exactly%', 'delete needs the exact title: ' || v_error);
+  end;
+  perform public.delete_my_bok((select id from public.reels where title = 'Mistaken bok'), 'Mistaken bok');
+  perform public.boks_assert(
+    not exists (select 1 from public.reels where title = 'Mistaken bok'),
+    'a withdrawn piece is deleted for good with its exact title'
+  );
+
   -- Yesterday's submissions are not counted as today's.
   update public.reels
   set submitted_at = now() - interval '2 days'
@@ -498,6 +566,22 @@ begin
 
   -- A reader must not be able to review or grant admin.
   perform public.boks_test_login(v_reader);
+
+  -- Nobody but the author withdraws, returns, reads the stats of, or deletes a piece.
+  begin
+    perform public.withdraw_my_bok((select id from public.reels where title = 'Test bok 1'));
+    perform public.boks_assert(false, 'another account cannot withdraw an author''s piece');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Only your own text%', 'another account cannot withdraw: ' || v_error);
+  end;
+  begin
+    perform public.get_my_bok_stats((select id from public.reels where title = 'Test bok 1'));
+    perform public.boks_assert(false, 'another account cannot read an author''s stats');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error = 'That boks is not available.', 'another account cannot read stats: ' || v_error);
+  end;
   perform public.ensure_boks_user_profile('Test Reader');
   perform public.accept_boks_terms('security-test');
   begin

@@ -11,6 +11,17 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**Authors manage their own texts (2026-11-04, code pushed; migration and
+deploy pending).** `/author` opens on **My texts**: status filter with counts,
+search, readers/likes/comments per row, and per-text statistics (readers,
+impressions, opened, read to the end, reading time, likes, comments, shares,
+newest 50 comments). An author withdraws a text from review or from the feed,
+returns it (published goes back without review), edits it (back to review), or
+deletes it for good once withdrawn
+(`20261104120000_boks_author_withdraws_own_work.sql`,
+`docs/adr/0017-author-withdraws-own-work.md`). Verified on the local stack in
+the browser. Apply both 2026-11-04 migrations before deploying.
+
 **Authors publish without a count limit (2026-11-04, code pushed; migration
 and deploy pending).** The 3-per-day limit is gone
 (`20261104100000_boks_unlimited_author_submissions.sql`). `/author` has two

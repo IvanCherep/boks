@@ -42,6 +42,10 @@ _Avoid_: hook (the retired author-written opener), description, blurb, annotatio
 A bok hidden from readers by an admin with a recorded reason; it can be restored. Shown as "Deleted" in the console.
 _Avoid_: deleted bok (except for permanent erasure)
 
+**Withdrawn bok**:
+A bok its own author took off review or off the feed (status `withdrawn`). Only the author returns, edits or deletes it; an admin removal is an archived bok, and neither side undoes the other's.
+_Avoid_: hidden, unpublished, archived (that is the admin's)
+
 ### People
 
 **Reader**:
