@@ -100,7 +100,14 @@ honest state, not a queue that has to be emptied.
 
 ---
 
-## 4. Importing a catalogue
+## 4. A living author's piece before an agreement
+
+A piece made to show an author what boks can do with their work is not
+published: it is a **link-only piece** (`docs/link-only-pieces.md`). It never
+enters the catalogue, its files are not in this public repository, and only
+its link reaches it. Taking it down is deleting its folder in storage.
+
+## 5. Importing a catalogue
 
 A bulk load attests **once for the batch**, not per file: a Project Gutenberg
 load is hundreds of files with the same answer. The console asks for the

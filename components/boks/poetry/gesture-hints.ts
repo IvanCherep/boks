@@ -21,6 +21,8 @@ export const gestureHintTranslations: Record<Exclude<UiLanguage, "en">, Record<s
     "Hold the candle": "Удерживайте свечу",
     "Wipe the glass": "Протрите стекло",
     "Drag sideways to turn around": "Проведите в сторону, чтобы обернуться",
+    "Rub to remember": "Протрите, чтобы вспомнить",
+    "Hold to warm the heart": "Удерживайте, чтобы согреть сердце",
   },
 };
 
