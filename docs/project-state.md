@@ -32,8 +32,10 @@ sequential sending with progress and Stop. The licence sentence and a link to
 `/terms#author-content` sit beside every submit, in both languages. The same
 text twice from one author is refused. History is paged with status counts,
 filter and search. Verified on the local stack in the browser (Russian UI).
-**Before deploying the Worker, apply the migration**: `npx supabase db push
---linked` - the new cabinet calls `get_my_bok_submissions_page`. The admin
+**Before deploying the Worker, apply the migrations**: `npx supabase db push
+--linked --include-all` (`--include-all` because `20261104100000` sorts before
+the already-applied `20261104120000`) - the new cabinet calls
+`get_my_bok_submissions_page` and `get_my_bok_stats`. The admin
 moderation queue still shows the newest 50 pending at a time.
 
 **A1 measures liking after reading (2026-10-30).** The participant reads four
