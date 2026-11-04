@@ -18,7 +18,7 @@ impressions, opened, read to the end, reading time, likes, comments, shares,
 newest 50 comments). An author withdraws a text from review or from the feed,
 returns it (published goes back without review), edits it (back to review), or
 deletes it for good once withdrawn
-(`20261104120000_boks_author_withdraws_own_work.sql`,
+(`20261104150000_boks_author_withdraws_own_work.sql`,
 `docs/adr/0017-author-withdraws-own-work.md`). Verified on the local stack in
 the browser. Apply both 2026-11-04 migrations before deploying.
 
