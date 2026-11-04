@@ -28,7 +28,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 - Reading time means foreground time; a clock running on a locked phone is not a metric.
 - A comparison is only worth reading if the arms produce different feeds and each arm has enough readers - measured with `npm run verify:divergence` and the lab's readiness line, not assumed.
 - Admin access is `user_profiles.role`, granted from `/admin` and enforced by RLS/RPC. Never by local storage, URL flags or `user_metadata`.
-- Authors: 15-minute promise enforced before review, at most 3 submissions per author per UTC day (database-enforced), admin approval before publication.
+- Authors: 15-minute promise and a rights statement enforced per piece before review, no limit on how many pieces an author submits (single texts or a batch of uploaded files), admin approval before publication. The cabinet links the author content licence in the Terms next to every submit.
 - Ranking is TypeScript, not SQL. The database returns candidates with counters; `lib/boks/recommendations` orders them. The Worker's `/api/feed` is the canonical ranking path and writes the served feed; the browser ranks only as a labelled fallback (`docs/adr/0001-ranking-executes-in-worker.md`). Adding an algorithm stays a one-file change.
 - Supabase is the only data store. Browser storage holds only the visitor id, the Supabase session and lightweight local profile state.
 
@@ -47,7 +47,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 | Reading formats (cinema, immersive poem), series shelf | `docs/reading-formats.md` | `components/boks/cinema/`, `poetry/`, `series/` |
 | Generating any audio | `docs/media-generation.md` | - |
 | Accounts, handles, comments | `components/boks/user-auth-panel.tsx`, `comments-sheet.tsx` | `components/boks/supabase-browser-data.ts`, migrations |
-| Author cabinet and limits | `components/boks/author-console.tsx` | `lib/boks/author/submission-quota.ts`, `lib/boks/contracts.ts` |
+| Author cabinet and uploads | `components/boks/author-console.tsx` | `lib/boks/author/author-files.ts`, `lib/boks/contracts.ts` |
 | Admin console | `components/boks/admin-dashboard.tsx`, `components/boks/admin/` | `docs/admin-metrics.md` before adding a metric |
 | Thesis studies (`/study/<key>`, Studio → Studies) | `docs/studies.md` | `lib/boks/studies/`, `components/boks/studies/` |
 | Add an algorithm | one file in `lib/boks/recommendations/strategies/` + its `index.ts` | a ranking case in `lib/boks/recommendations/feed.test.ts` |

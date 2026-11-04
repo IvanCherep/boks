@@ -179,5 +179,3 @@ export type AdminPagination = {
   query: string;
 };
 
-/** Boks an author may submit in one calendar day, in the author's own day. */
-export const dailyBokSubmissionLimit = 3;

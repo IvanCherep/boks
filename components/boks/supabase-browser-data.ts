@@ -11,7 +11,8 @@ import type {
   LinkAttribution,
   AdminBokDetail,
   AdminPersonDetail,
-  AuthorBokQuota,
+  AuthorBokSubmissionsPage,
+  AuthorBokStatusFilter,
   BoksContentRow,
   BoksGrowth,
   BoksOverview,
@@ -33,7 +34,6 @@ import type {
   SlatePositionRow,
   LanguageDemandRow,
 } from "@/components/boks/client-types";
-import { normalizeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
 import { normalizeReadingLanguages } from "@/components/boks/reading-languages";
 import {
   markWorkerFeedHealthy,
@@ -745,18 +745,6 @@ function normalizeReaderOutcomes(data: unknown): ReaderOutcomeRow[] {
   });
 }
 
-export async function loadMyBokQuota(): Promise<AuthorBokQuota> {
-  if (!supabase) return normalizeBokSubmissionQuota(null);
-
-  const result = await supabase.rpc("get_my_bok_quota");
-  if (result.error) {
-    if (isMissingDatabaseObject(result.error)) return normalizeBokSubmissionQuota(null);
-    throw result.error;
-  }
-
-  return normalizeBokSubmissionQuota(result.data);
-}
-
 export async function loadSupabaseAdminMetrics(options: {
   limit?: number;
   offset?: number;
@@ -872,16 +860,37 @@ export async function loadMyDefaultAuthorName(): Promise<string> {
   return (result.data as string | null) ?? "";
 }
 
-export async function loadMyBokSubmissions(limit = 50): Promise<AuthorBokSubmission[]> {
-  if (!supabase) return [];
+const emptyAuthorCounts = { all: 0, pending_review: 0, published: 0, rejected: 0, archived: 0 };
 
-  const result = await supabase.rpc("get_my_bok_submissions", {
-    p_limit: limit,
+/**
+ * One page of the author's own history, newest first, with how many pieces
+ * sit in each status. An author with hundreds of pieces is read a page at a
+ * time; the text comes back only for refused pieces, which go back into the
+ * editor.
+ */
+export async function loadMyBokSubmissionsPage(options: {
+  status?: AuthorBokStatusFilter;
+  query?: string;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<AuthorBokSubmissionsPage> {
+  if (!supabase) return { items: [], total: 0, counts: { ...emptyAuthorCounts } };
+
+  const result = await supabase.rpc("get_my_bok_submissions_page", {
+    p_status: options.status && options.status !== "all" ? options.status : "",
+    p_query: options.query ?? "",
+    p_limit: options.limit ?? 20,
+    p_offset: options.offset ?? 0,
   });
 
   if (result.error) throw result.error;
 
-  return (result.data ?? []) as AuthorBokSubmission[];
+  const data = (result.data ?? {}) as Partial<AuthorBokSubmissionsPage>;
+  return {
+    items: (data.items ?? []) as AuthorBokSubmission[],
+    total: Number(data.total) || 0,
+    counts: { ...emptyAuthorCounts, ...(data.counts ?? {}) },
+  };
 }
 
 export async function reviewBokSubmission(input: {

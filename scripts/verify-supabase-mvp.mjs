@@ -246,7 +246,7 @@ if (recommendationMigrationApplied) {
 const quotaResult = await supabase.rpc("get_my_bok_quota");
 if (!isMissingRpc(quotaResult.error)) {
   if (quotaResult.error) throw quotaResult.error;
-  assertOk(quotaResult.data?.limit === 3, "Daily bok submission limit is not three.");
+  assertOk(quotaResult.data?.exhausted !== true, "An author submission quota reports a limit; authors have none.");
   assertOk(quotaResult.data?.usedToday === 0, "Anonymous auth reported author submissions.");
   authorQuotaReadable = true;
 }

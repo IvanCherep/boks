@@ -119,6 +119,7 @@ const russianSentences: Record<string, string> = {
   "A bok must fit inside 15 minutes.": "Бок должен укладываться в 15 минут.",
   "Confirm you hold the rights to publish this bok.": "Подтвердите, что у вас есть права на публикацию этого бока.",
   "Only a refused bok of your own can be revised.": "Исправить можно только свой отклонённый бок.",
+  "You have already submitted this exact text.": "Вы уже отправляли ровно этот текст - он на проверке или опубликован.",
   "Sign in required to report a bok.": "Войдите, чтобы пожаловаться на бок.",
   "Sign in required to submit a bok.": "Войдите, чтобы отправить бок.",
   "Story text is required.": "Нужен текст.",
@@ -195,6 +196,10 @@ const russianPatterns: [RegExp, (...groups: string[]) => string][] = [
   [/^A nickname needs at least (\d+) characters\.$/, (n) => `В никнейме должно быть не меньше ${n} символов.`],
   [/^A nickname can be at most (\d+) characters\.$/, (n) => `В никнейме может быть не больше ${n} символов.`],
   [/^No account holds the nickname @(\S+)\.$/, (h) => `Нет аккаунта с никнеймом @${h}.`],
+  [
+    /^A bok must fit inside 15 minutes\. This one is (\d+) characters; the limit is (\d+)\.$/,
+    (n, max) => `Бок должен укладываться в 15 минут. В этом тексте ${n} символов, а можно не больше ${max}.`,
+  ],
 ];
 
 /** A reader-facing English sentence in the interface language, when we know it. */

@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, it } from "vitest";
-import { normalizeBokSubmissionQuota } from "@/lib/boks/author/submission-quota";
 import {
   buildReaderFeed,
   buildRecommendationLab,
@@ -103,7 +102,8 @@ async function submitBok(
   client: SupabaseClient,
   title: string,
   authorName = "",
-  text = "A short bok body that fits comfortably inside a fifteen minute break.",
+  // Unique per title: the database refuses the same text twice from one author.
+  text = `${title}: a short bok body that fits comfortably inside a fifteen minute break.`,
   rights: { confirmed?: boolean; note?: string } = {}
 ) {
   return client.rpc("submit_bok_for_review", {
@@ -241,25 +241,24 @@ describe.skipIf(!canRun)("Supabase product flow", () => {
     await fresh.auth.signOut();
   });
 
-  it("caps an author at three submissions a day", async () => {
+  it("lets an author submit more than three boks a day", async () => {
     // One submission was already spent by the byline check above.
-    for (let index = 2; index <= 3; index += 1) {
+    for (let index = 2; index <= 5; index += 1) {
       const result = await submitBok(author, `Flow bok ${stamp}-${index}`);
       expect(result.error, `submission ${index}`).toBeNull();
     }
 
-    const fourth = await submitBok(author, `Flow bok ${stamp}-4`);
-    expect(fourth.error?.message).toContain("Daily limit reached");
-  });
-
-  it("reports the remaining quota through the RPC the cabinet reads", async () => {
     const quota = await author.rpc("get_my_bok_quota");
     expect(quota.error).toBeNull();
+    expect(quota.data?.unlimited).toBe(true);
+    expect(quota.data?.exhausted).toBe(false);
+  });
 
-    const parsed = normalizeBokSubmissionQuota(quota.data);
-    expect(parsed.limit).toBe(3);
-    expect(parsed.usedToday).toBe(3);
-    expect(parsed.exhausted).toBe(true);
+  it("pages an author's history with counts by status", async () => {
+    const page = await author.rpc("get_my_bok_submissions_page", { p_status: "", p_query: "", p_limit: 2, p_offset: 0 });
+    expect(page.error).toBeNull();
+    expect(page.data.items).toHaveLength(2);
+    expect(page.data.counts.pending_review).toBeGreaterThanOrEqual(5);
   });
 
   it("keeps submitted boks out of the reader feed until an admin approves", async () => {

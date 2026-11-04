@@ -1,5 +1,4 @@
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
-import type { BokSubmissionQuota } from "@/lib/boks/author/submission-quota";
 import type {
   ReaderSignals,
   RecommendationExperimentConfig,
@@ -485,7 +484,16 @@ export type AdminUserRow = {
   likes: number;
 };
 
-export type AuthorBokQuota = BokSubmissionQuota;
+/** The cabinet's history filter: one status, or every piece. */
+export type AuthorBokStatusFilter = "all" | "pending_review" | "published" | "rejected" | "archived";
+
+export type AuthorBokSubmissionsPage = {
+  items: AuthorBokSubmission[];
+  /** Pieces matching the filter and search, across every page. */
+  total: number;
+  /** Every piece of this author's, by status, regardless of the filter. */
+  counts: Record<AuthorBokStatusFilter, number>;
+};
 
 export type LoadOptions = {
   view?: "reader" | "admin";

@@ -110,7 +110,7 @@ begin
   );
 
   v_quota := public.get_my_bok_quota();
-  perform public.boks_assert((v_quota ->> 'limit')::int = 3, 'daily limit is three boks');
+  perform public.boks_assert((v_quota ->> 'unlimited')::boolean, 'an author has no daily submission limit');
   perform public.boks_assert((v_quota ->> 'usedToday')::int = 0, 'a new author starts at zero submissions');
 
   -- No byline given: it falls back to the @nickname.
@@ -140,7 +140,7 @@ begin
   -- A pen name, chosen for this piece.
   perform public.submit_bok_for_review(
     'Test bok 2', 'A hook.',
-    'A short story body that is well under fifteen minutes.', 'literary', 'quiet', 4, 'Mira Vale',
+    'A second short story body, well under fifteen minutes.', 'literary', 'quiet', 4, 'Mira Vale',
     true, ''
   );
   perform public.boks_assert(
@@ -158,7 +158,7 @@ begin
   -- name for work that was submitted without one.
   perform public.submit_bok_for_review(
     'Test bok 3', 'A hook.',
-    'A short story body that is well under fifteen minutes.', '', '', 0, '', true
+    'A third short story body, well under fifteen minutes.', '', '', 0, '', true
   );
   perform public.boks_assert(
     (select author_name from public.reels where title = 'Test bok 3') is null,
@@ -192,26 +192,57 @@ begin
 
   v_quota := public.get_my_bok_quota();
   perform public.boks_assert((v_quota ->> 'usedToday')::int = 3, 'three submissions are counted');
-  perform public.boks_assert((v_quota ->> 'exhausted')::boolean, 'quota reports exhausted at the limit');
+  perform public.boks_assert(not (v_quota ->> 'exhausted')::boolean, 'the quota is never exhausted');
 
+  -- A fourth, fifth, ... submission the same day is accepted: there is no
+  -- daily limit for authors any more.
+  perform public.submit_bok_for_review(
+    'Fourth bok', 'A hook.',
+    'A fourth piece on the same day is accepted.', 'literary', 'quiet', 4, '', true
+  );
+  perform public.submit_bok_for_review(
+    'Fifth bok', 'A hook.',
+    'And a fifth one, because a real author has a body of work.', 'literary', 'quiet', 4, '', true
+  );
+  perform public.boks_assert(
+    (select count(*) from public.reels where author_user_id = v_author and status = 'pending_review') = 5,
+    'five submissions in one day are all waiting for review'
+  );
+
+  -- The same text twice is refused while the first copy is waiting.
   begin
     perform public.submit_bok_for_review(
-      'Fourth bok', 'A hook.',
-      'This one must be refused by the daily limit.', 'literary', 'quiet', 4, '', true
+      'Fifth bok again', 'A hook.',
+      'And a fifth one, because a real author has a body of work.', 'literary', 'quiet', 4, '', true
     );
-    perform public.boks_assert(false, 'a fourth submission is refused');
+    perform public.boks_assert(false, 'the same text twice is refused');
   exception when others then
     get stacked diagnostics v_error = message_text;
-    perform public.boks_assert(v_error like 'Daily limit reached%', 'a fourth submission is refused: ' || v_error);
+    perform public.boks_assert(v_error = 'You have already submitted this exact text.', 'the same text twice is refused: ' || v_error);
   end;
 
-  -- Yesterday's submissions must not consume today's quota.
+  -- The history is paged, counted by status, and searchable by title.
+  v_quota := public.get_my_bok_submissions_page('', '', 2, 0);
+  perform public.boks_assert(jsonb_array_length(v_quota -> 'items') = 2, 'a history page holds the page size');
+  perform public.boks_assert((v_quota ->> 'total')::int = 5, 'the history total counts every submission');
+  perform public.boks_assert((v_quota -> 'counts' ->> 'pending_review')::int = 5, 'the history counts by status');
+  perform public.boks_assert(
+    (v_quota -> 'items' -> 0 ->> 'body') = '',
+    'a history page carries no text for a piece that is not refused'
+  );
+  v_quota := public.get_my_bok_submissions_page('', 'fifth', 20, 0);
+  perform public.boks_assert((v_quota ->> 'total')::int = 1, 'the history searches by title');
+  v_quota := public.get_my_bok_submissions_page('published', '', 20, 0);
+  perform public.boks_assert((v_quota ->> 'total')::int = 0, 'the history filters by status');
+  delete from public.reels where author_user_id = v_author and title in ('Fourth bok', 'Fifth bok');
+
+  -- Yesterday's submissions are not counted as today's.
   update public.reels
   set submitted_at = now() - interval '2 days'
   where author_user_id = v_author;
 
   v_quota := public.get_my_bok_quota();
-  perform public.boks_assert((v_quota ->> 'usedToday')::int = 0, 'the quota resets for a new day');
+  perform public.boks_assert((v_quota ->> 'usedToday')::int = 0, 'the day counter resets for a new day');
 
   -- A submission stays private until an admin approves it.
   perform public.boks_assert(
@@ -758,11 +789,10 @@ begin
     'the minimum readers per arm defaults to 10 and cannot go below 2'
   );
 
-  -- The author limit's reset time carries its offset, so a browser cannot
-  -- read it as local time.
+  -- There is no author limit, so there is nothing to reset.
   perform public.boks_assert(
-    (public.get_my_bok_quota() ->> 'resetsAt') ~ '(Z|[+-][0-9]{2}(:?[0-9]{2})?)$',
-    'the quota reset time is an absolute instant, not a local wall-clock time'
+    (public.get_my_bok_quota() -> 'resetsAt') = 'null'::jsonb,
+    'an unlimited quota names no reset time'
   );
 
   perform public.boks_test_login(v_reader);

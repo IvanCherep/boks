@@ -40,7 +40,7 @@ the shelf entry - is `docs/reading-formats.md`.
 - Two reading formats alongside the feed, chosen by the piece rather than the reader: cinema for prose and immersive poems for verse. Neither changes how an ordinary bok is read.
 - The **series** tab (`/series`): every series piece on one shelf, filtered by the reader's languages.
 - Guest reading on anonymous Supabase sessions; accounts by passwordless email (a magic link or a 6-digit code); likes, comments with one-level replies and follows attributed to a unique `@handle`.
-- An author cabinet with the 15-minute guardrail, a database-enforced limit of 3 submissions per author per UTC day, and admin moderation.
+- An author cabinet with the 15-minute guardrail, no limit on the number of submissions, batch upload of .docx/.txt/.md files, and admin moderation.
 - `/admin`: overview, moderation, rights, content, people, guests, feedback, catalogue import, and a recommendation lab comparing algorithms against control with a live traffic-split editor.
 
 Supabase (Postgres with RLS and RPCs) is the only data store.

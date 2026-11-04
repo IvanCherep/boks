@@ -50,7 +50,7 @@ export function TermsEn() {
           <a href="/privacy">Privacy</a> page lists what is kept and how to delete it.
         </p>
 
-        <h2>Author content</h2>
+        <h2 id="author-content">Author content</h2>
         <p>
           Authors keep ownership of everything they publish or submit to boks: texts, excerpts, comments, names and
           handles. By submitting content, you give boks a worldwide, non-exclusive, royalty-free license to host,

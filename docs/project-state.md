@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-10-30.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-04.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,20 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Authors publish without a count limit (2026-11-04, code pushed; migration
+and deploy pending).** The 3-per-day limit is gone
+(`20261104100000_boks_unlimited_author_submissions.sql`). `/author` has two
+modes: Write a text, and Upload files - a queue of `.docx`/`.txt`/`.md` files
+read in the browser, each with an editable title, length and state, splitting
+of over-long texts into numbered parts, one rights statement per batch,
+sequential sending with progress and Stop. The licence sentence and a link to
+`/terms#author-content` sit beside every submit, in both languages. The same
+text twice from one author is refused. History is paged with status counts,
+filter and search. Verified on the local stack in the browser (Russian UI).
+**Before deploying the Worker, apply the migration**: `npx supabase db push
+--linked` - the new cabinet calls `get_my_bok_submissions_page`. The admin
+moderation queue still shows the newest 50 pending at a time.
 
 **A1 measures liking after reading (2026-10-30).** The participant reads four
 prose texts from two matched pairs, two whole works and two coherent excerpts,

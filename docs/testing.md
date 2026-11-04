@@ -132,10 +132,13 @@ Reader:
 Author:
 
 - `/author` submits a valid bok for admin review.
-- The daily submissions panel shows used/remaining and the reset time.
+- "Upload files" takes several .docx/.txt/.md files at once, lists each with its title, length and state, and sends all ready ones after one rights confirmation, with progress and a Stop button.
+- A text over 15 minutes can be split into parts from the editor or the queue.
 - The cabinet shows "Submitting as <name> (@handle)" and has no editable author name or handle field.
 - A published bok's byline matches the author's profile, not anything typed at submission time.
-- The submit button is disabled once 3 boks have been submitted today, and the database refuses a fourth even if the button is bypassed.
+- There is no daily limit: a fourth and fifth submission the same day are accepted; the same text twice is refused.
+- The rights checkbox sits next to the licence sentence and a link to `/terms#author-content`, in the interface language.
+- "Your texts" pages 20 at a time, filters by status and searches by title.
 - A signed-in reader can reach `/author` from "Write a bok" in the boks wordmark panel.
 - Pieces above 15 minutes are blocked.
 - Required fields are visible and understandable.
@@ -181,7 +184,7 @@ npm run check   # = npm run lint && npm run typecheck && npm test
 `npm test` covers the parts where a mistake is expensive and invisible:
 recommendation ranking per strategy, deterministic experiment assignment,
 metric/uplift math, the reader event queue, comment thread ordering, and the
-daily submission quota. It also fails when a standing doc (`AGENTS.md`,
+author file reading (.docx/.txt/.md) and episode splitting. It also fails when a standing doc (`AGENTS.md`,
 `CONTEXT.md`, `README.md`, `docs/*.md`, `specs/`) names a repo path or an
 `npm run` script that no longer exists (`lib/doc-references.test.ts`), so a
 rename has to update the docs that route agents to it.
