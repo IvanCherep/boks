@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-04.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-05.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,17 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**New Year wordmark and two animated covers (2026-11-05, release prepared).**
+Every page load chooses one of five illustrated ornaments: fir, red bauble,
+winter hat, snowman or a snow globe with a book. All wordmarks on the page
+share the choice until reload; the text-reading header remains undecorated.
+Only «Первый снег» and «Мальчик у Христа на ёлке» use the supplied animated
+covers: silent eight-second loops, played only while the cover is visible
+in the foreground and the reader is not blocked. Reduced motion and failed
+playback keep matching stills. Those two static covers and share JPEGs are
+updated too; other archive entries are not imported. New share links use
+`v44-6`. See `docs/handover/2026-11-05-new-year-logo-and-animated-covers.md`.
 
 **Authors manage their own texts (2026-11-04, code pushed; migration and
 deploy pending).** `/author` opens on **My texts**: status filter with counts,

@@ -288,6 +288,25 @@ Unknown or future boks keep the typographic fallback until explicitly given
 artwork. The small static illustration registry contains asset metadata, not
 the literary catalogue or reader data.
 
+### The two animated covers
+
+The 2026-11-05 update from `boks-20-gif-and-source-v3.zip` explicitly replaces
+only «Первый снег» (`7a67ce67-bceb-4e41-8f66-191718345880`) and «Мальчик у
+Христа на ёлке» (`3def4114-623e-4633-968a-52dd0e7cdf9b`). No other archive
+cover is imported. Their selected GIFs are converted to silent H.264 MP4,
+540×960, 25 fps, eight seconds, with the MP4 header at the start for playback.
+The two UUID-named videos live in `public/covers/`; exact-ID opt-in is
+`getBokCoverAnimation` in `components/boks/reader/bok-artwork.ts`.
+
+Matching stills replace the existing `public/series/perviy-sneg.webp` and
+the boy's UUID WebP in `public/covers/`, with matching JPEGs in
+`public/share/art/`. Existing crop metadata and Series membership stay intact;
+new share links use `v44-6`. Only the visible foreground reader cover plays
+motion. Reduced motion omits the video request; unavailable playback keeps
+the still. Menus, activity, next previews, Series cards and share posters
+continue to use the static artwork. This is cover presentation, not a new
+reading format or a catalogue publication.
+
 ## What this is not
 
 - **Not a way to publish on someone's behalf without saying so.** The account

@@ -27,17 +27,19 @@ function requiredShade(rgb: number[], opacity: number) {
 }
 
 /** Analyse only the current cover, at thumbnail resolution, behind actual text lines. */
-function headingShade(heading: HTMLElement, image: HTMLImageElement, cover: HTMLElement) {
+function headingShade(heading: HTMLElement, image: HTMLImageElement | HTMLVideoElement, cover: HTMLElement) {
   const bounds = cover.getBoundingClientRect();
-  if (!bounds.width || !bounds.height || !image.naturalWidth) return .75;
+  const width = image instanceof HTMLVideoElement ? image.videoWidth : image.naturalWidth;
+  const height = image instanceof HTMLVideoElement ? image.videoHeight : image.naturalHeight;
+  if (!bounds.width || !bounds.height || !width) return .75;
   const canvas = document.createElement("canvas");
   canvas.width = 80;
   canvas.height = Math.max(1, Math.round(80 * bounds.height / bounds.width));
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return .75;
-  const scale = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+  const scale = Math.max(canvas.width / width, canvas.height / height);
   const [x, y] = getComputedStyle(image).objectPosition.split(" ").map(value => Number.parseFloat(value) / 100);
-  context.drawImage(image, (canvas.width - image.naturalWidth * scale) * x, (canvas.height - image.naturalHeight * scale) * y, image.naturalWidth * scale, image.naturalHeight * scale);
+  context.drawImage(image, (canvas.width - width * scale) * x, (canvas.height - height * scale) * y, width * scale, height * scale);
   // Include the existing cover-wide shade; the new local gradient is not sampled.
   const base = context.createLinearGradient(0, 0, 0, canvas.height);
   base.addColorStop(0, "#091a2233"); base.addColorStop(.44, "transparent"); base.addColorStop(1, "#091a2299");
@@ -71,13 +73,15 @@ export function CoverHeading({ artwork, children }: { artwork: string | null; ch
   useLayoutEffect(() => {
     const heading = ref.current;
     const cover = heading?.closest<HTMLElement>(".reader-cover");
-    const image = cover?.querySelector<HTMLImageElement>(".reader-cover__art");
+    const image = cover?.querySelector<HTMLImageElement>("img.reader-cover__art");
+    const video = cover?.querySelector<HTMLVideoElement>("video.reader-cover__motion");
     if (!heading || !cover || !artwork || !image) return;
     heading.style.setProperty("--cover-heading-shade", ".75");
     let active = true;
     let frame = 0;
     const measure = () => {
-      try { heading.style.setProperty("--cover-heading-shade", String(headingShade(heading, image, cover))); }
+      const source = video?.dataset.ready === "true" && video.readyState >= 2 ? video : image;
+      try { heading.style.setProperty("--cover-heading-shade", String(headingShade(heading, source, cover))); }
       catch { /* Keep the protective default if image pixels are unavailable. */ }
     };
     const schedule = () => {
@@ -88,16 +92,29 @@ export function CoverHeading({ artwork, children }: { artwork: string | null; ch
     // for canvas. A font swap can also change line rectangles without resizing
     // the fixed line-height boxes observed below.
     const imageLoaded = () => { void image.decode().then(schedule, schedule); };
+    let lastVideoSample = 0;
+    const videoChanged = () => {
+      const now = performance.now();
+      if (now - lastVideoSample < 1000) return;
+      lastVideoSample = now;
+      schedule();
+    };
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
     observer?.observe(heading); observer?.observe(cover);
     window.addEventListener("resize", schedule);
     image.addEventListener("load", imageLoaded);
+    video?.addEventListener("playing", schedule);
+    video?.addEventListener("pause", schedule);
+    video?.addEventListener("error", schedule);
+    video?.addEventListener("timeupdate", videoChanged);
     document.fonts.addEventListener("loadingdone", schedule);
     void document.fonts.ready.then(schedule);
     if (image.complete) imageLoaded();
     return () => {
       active = false; cancelAnimationFrame(frame); observer?.disconnect();
       image.removeEventListener("load", imageLoaded); window.removeEventListener("resize", schedule);
+      video?.removeEventListener("playing", schedule); video?.removeEventListener("pause", schedule);
+      video?.removeEventListener("error", schedule); video?.removeEventListener("timeupdate", videoChanged);
       document.fonts.removeEventListener("loadingdone", schedule);
     };
   }, [artwork]);

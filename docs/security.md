@@ -1,6 +1,6 @@
 # boks Security Model
 
-Updated 2026-10-18 after the v44 production release; both forward migrations are applied.
+Updated 2026-11-05; production includes the current author-cabinet migrations.
 
 ## Trust Boundaries
 
@@ -85,6 +85,32 @@ Worker. After deployment, inspect response headers and test `/`, `/admin`, the
 reader API, a magic-link request, comments, likes, and an admin-only RPC.
 
 ## Advisor Exceptions And Residual Risk
+
+### 2026-11-05 asset release dependency audit
+
+The recheck reports 21 findings in the full dependency tree (one critical,
+three high, seventeen moderate), and three with `--omit=dev`: `next`,
+`zod` and `fast-uri`. This is not a clean audit. The package versions have
+not changed in this asset release; the October audit result below is a dated
+record, not the current result.
+
+The reported Next server Image Optimization/Server Actions/`use cache`
+paths are not used: Vinext owns the Worker and resolves `next/*` to its
+shims; the application has no `next/image`, `use server` or `use cache`.
+The application does not import Zod or fast-uri (the latter is in the unused
+form-resolver/Ajv dependency path). The deployed bundle must be checked for
+those paths after building; a future import reopens this assessment. This
+scoped release exception does not treat their vulnerable package versions
+as patched.
+
+Satori is reachable through Vinext's `next/og` shim and its SVG escaping
+advisory remains a separate residual risk. The poster route accepts only
+registered application-owned JPEGs and fixed style properties, renders
+moderated title/byline text as text children, and returns PNG, never SVG.
+These constraints must remain in place. Framework, validation-library and
+build-tool upgrades need a separately validated change; do not apply the
+audit's suggested downgrade of `eslint-config-next` or a broad framework
+upgrade as part of replacing assets.
 
 ### 2026-10-18 dependency audit
 

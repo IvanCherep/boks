@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seriesPieces } from "@/components/boks/series/series-catalogue";
 import { catalogueBokArtwork } from "@/lib/boks/catalogue-artwork";
-import { bokArtworkFocus, bokArtworkStyle, getBokArtwork, getBokPosterArtwork } from "./bok-artwork";
+import { bokArtworkFocus, bokArtworkStyle, getBokArtwork, getBokCoverAnimation, getBokPosterArtwork } from "./bok-artwork";
 
 describe("bok artwork", () => {
   it("preserves every registered Series image and reader crop", () => {
@@ -26,6 +26,19 @@ describe("bok artwork", () => {
       expect(getBokArtwork({ id })).toBeNull();
       expect(getBokPosterArtwork(id)).toBeNull();
     }
+  });
+
+  it("animates only the two selected covers while retaining their static poster paths", () => {
+    const firstSnow = "7a67ce67-bceb-4e41-8f66-191718345880";
+    const christmasBoy = "3def4114-623e-4633-968a-52dd0e7cdf9b";
+    for (const bokId of new Set([...seriesPieces.map(piece => piece.storyId), ...Object.keys(catalogueBokArtwork)])) {
+      expect(getBokCoverAnimation(bokId)).toBe([firstSnow, christmasBoy].includes(bokId) ? `/covers/${bokId}.mp4` : null);
+    }
+    expect(getBokArtwork({ id: firstSnow })).toBe("/series/perviy-sneg.webp");
+    expect(getBokPosterArtwork(firstSnow)).toBe("/share/art/perviy-sneg.jpg");
+    expect(getBokArtwork({ id: christmasBoy })).toBe(`/covers/${christmasBoy}.webp`);
+    expect(getBokPosterArtwork(christmasBoy)).toBe(`/share/art/${christmasBoy}.jpg`);
+    expect(getBokCoverAnimation("../covers/another")).toBeNull();
   });
 
   it("keeps every catalogue crop in bounds", () => {

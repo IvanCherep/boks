@@ -16,6 +16,13 @@ export function getBokArtwork(bok: { id?: string; title?: string; authorName?: s
   return artworkFor(bok.id)?.cover ?? null;
 }
 
+/** Only these two covers have motion; thumbnails and posters keep the still artwork. */
+export function getBokCoverAnimation(bokId: string): string | null {
+  return bokId === "7a67ce67-bceb-4e41-8f66-191718345880" || bokId === "3def4114-623e-4633-968a-52dd0e7cdf9b"
+    ? `/covers/${bokId}.mp4`
+    : null;
+}
+
 export function bokArtworkFocus(bokId: string) {
   return artworkFor(bokId)?.coverFocus ?? "50% 50%";
 }
