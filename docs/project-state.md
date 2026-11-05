@@ -11,7 +11,7 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
-**New Year wordmark and two animated covers (2026-11-05, release prepared).**
+**New Year wordmark and two animated covers (2026-11-05).**
 Every page load chooses one of five illustrated ornaments: fir, red bauble,
 winter hat, snowman or a snow globe with a book. All wordmarks on the page
 share the choice until reload; the text-reading header remains undecorated.
@@ -20,10 +20,13 @@ covers: silent eight-second loops, played only while the cover is visible
 in the foreground and the reader is not blocked. Reduced motion and failed
 playback keep matching stills. Those two static covers and share JPEGs are
 updated too; other archive entries are not imported. New share links use
-`v44-6`. See `docs/handover/2026-11-05-new-year-logo-and-animated-covers.md`.
+`v44-6`. Deployed from `24306cf`, Worker
+`963f333b-1f4a-4bee-b465-97c0cf1bb106`. Chromium/WebKit phone and desktop,
+live asset hashes, both PNG posters and CI pass. See
+`docs/handover/2026-11-05-new-year-logo-and-animated-covers.md`.
 
-**Authors manage their own texts (2026-11-04, code pushed; migration and
-deploy pending).** `/author` opens on **My texts**: status filter with counts,
+**Authors manage their own texts (2026-11-04; deployed 2026-11-05).**
+`/author` opens on **My texts**: status filter with counts,
 search, readers/likes/comments per row, and per-text statistics (readers,
 impressions, opened, read to the end, reading time, likes, comments, shares,
 newest 50 comments). An author withdraws a text from review or from the feed,
@@ -31,10 +34,11 @@ returns it (published goes back without review), edits it (back to review), or
 deletes it for good once withdrawn
 (`20261104150000_boks_author_withdraws_own_work.sql`,
 `docs/adr/0017-author-withdraws-own-work.md`). Verified on the local stack in
-the browser. Apply both 2026-11-04 migrations before deploying.
+the browser. Both author migrations were applied before the 2026-11-05
+Worker release; linked schema histories match and production RLS probes pass.
 
-**Authors publish without a count limit (2026-11-04, code pushed; migration
-and deploy pending).** The 3-per-day limit is gone
+**Authors publish without a count limit (2026-11-04; deployed 2026-11-05).**
+The 3-per-day limit is gone
 (`20261104100000_boks_unlimited_author_submissions.sql`). `/author` has two
 modes: Write a text, and Upload files - a queue of `.docx`/`.txt`/`.md` files
 read in the browser, each with an editable title, length and state, splitting
@@ -43,10 +47,9 @@ sequential sending with progress and Stop. The licence sentence and a link to
 `/terms#author-content` sit beside every submit, in both languages. The same
 text twice from one author is refused. History is paged with status counts,
 filter and search. Verified on the local stack in the browser (Russian UI).
-**Before deploying the Worker, apply the migrations**: `npx supabase db push
---linked --include-all` (`--include-all` because `20261104100000` sorts before
-the already-applied `20261104120000`) - the new cabinet calls
-`get_my_bok_submissions_page` and `get_my_bok_stats`. The admin
+The author migrations were applied on 2026-11-05 with `--include-all`
+because `20261104100000` sorts before the already-applied `20261104120000`;
+the new cabinet calls `get_my_bok_submissions_page` and `get_my_bok_stats`. The admin
 moderation queue still shows the newest 50 pending at a time.
 
 **A1 measures liking after reading (2026-10-30).** The participant reads four

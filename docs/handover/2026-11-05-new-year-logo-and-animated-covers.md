@@ -49,10 +49,39 @@ those migrations. The schema histories now match, with no pending migration.
 
 ## Validation and release
 
-Release validation and deployment are in progress. The schema gate passes
-67 migrations and 472 assertions; production RLS/RPC verification passes,
-and the divergence probe reports usable feeds on 223 boks. The dependency
-audit is not clean; its existing package findings and the narrower deployed
-paths are recorded in `docs/security.md`, without dependency upgrades in this
-asset release. Local command logs, browser fixtures and screenshots are in
-`work/new-year-release-2026-11-05/`.
+- `npm run check`: lint and typecheck pass; 1,378 unit tests pass, 15 skipped.
+  The existing image-element lint warnings remain warnings.
+- `npm run verify:schema`: 67 migrations and 472 assertions pass. Production
+  RLS/RPC verification passes after applying the two author migrations; linked
+  schema histories match. Divergence reports usable feeds on 223 boks.
+- Build and deployment-target verification pass against production Supabase.
+  The final server bundle contains no Zod, fast-uri or Next server paths.
+  The dependency audit is not clean; existing package findings and the narrower
+  deployed paths are recorded in `docs/security.md`, without dependency
+  upgrades in this asset release.
+- Chromium and WebKit, each at 390×844 and 1440×900: all 24 local scenarios
+  and all 24 production scenarios pass. They exercise per-document logo
+  consistency and reload variation, the undecorated text header, actual muted
+  inline looping playback, menu/Series/background/reduced-motion pauses,
+  mobile offscreen pause, failed video fallback, and static control/menu/share/
+  activity artwork. No runtime or hydration errors. A zero-threshold observer
+  initially missed the exact mobile cover edge; a positive 1% threshold fixes
+  it and both engines verify the fix. Browser identity/feed fixtures intercept
+  writes; these runs do not create production reader events.
+- All eleven deployed image/video assets return 200 with SHA-256 hashes equal
+  to the local release. Both real Worker posters return 720×900 PNG with
+  private/no-store, and shared metadata uses `v44-6`. Public routes and security
+  headers, unauthenticated API 401 responses and workers.dev's 308 pass.
+- GitHub CI for application commit `24306cf` passes:
+  https://github.com/IvanCherep/boks/actions/runs/42069694560.
+
+Pushed `24306cf` to main. `npm run deploy` built and checked the target, then
+Wrangler needed an explicit account because two accounts are available.
+Read-only deployment-history checks identified the existing production Worker;
+the same verified build was deployed there with `--keep-vars`.
+Worker version: `963f333b-1f4a-4bee-b465-97c0cf1bb106`,
+https://tryboks.com.
+
+Local command logs, browser fixtures and screenshots are in
+`work/new-year-release-2026-11-05/`. The browser checks use desktop emulation,
+not a physical iPhone. The local development server was stopped after QA.
