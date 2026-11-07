@@ -682,6 +682,10 @@ shelf - the second tab beside the feed, at `/series`. The shelf does not
 decide how a piece opens (the two registries above still do); it draws a card
 and asks the feed to open the boks, so the finale is the ordinary one.
 
+Back on the player’s loading screen cancels the request and returns to the
+same place on the shelf or in the reader. Read text opens the bok’s text. A
+late manifest response cannot reopen a cancelled player.
+
 Finishing a piece therefore has one more step:
 
 1. A cover: a frame of the piece's own art, downsized -
