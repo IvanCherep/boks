@@ -425,7 +425,7 @@ export function UserAuthPanel({
       onUserChanged(context);
       setSentMagicLink(null);
       setEmailCode("");
-      if (context && !context.isAnonymous) onEmailCodeVerified?.();
+      if (context && !context.isAnonymous && !context.bannedAt) onEmailCodeVerified?.();
     } catch (error) {
       setCodeError(explainBoksEmailCodeError(error));
     } finally {
