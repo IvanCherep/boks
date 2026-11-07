@@ -238,6 +238,7 @@ function SeriesHero({
     <button
       type="button"
       className={`series-hero${opening ? " is-opening" : ""}`}
+      data-series-bok-id={piece.storyId}
       onClick={onOpen}
       disabled={busy}
       aria-label={`${piece.title}, ${piece.author}. ${words.duration}: ${seriesDurationLabel(piece.durationSeconds, preferences.locale)}. ${opening ? words.opening : heard ? words.again : words.start}`}
@@ -302,6 +303,7 @@ function SeriesCollectionRow({
               <button
                 type="button"
                 className={`series-collection__card${opening ? " is-opening" : ""}`}
+                data-series-bok-id={piece.storyId}
                 onClick={() => onOpenPiece(piece)}
                 disabled={Boolean(openingStoryId)}
                 aria-label={`${index + 1} ${collectionWords.position} ${pieces.length}. ${piece.title}, ${piece.author}. ${words.duration}: ${seriesDurationLabel(piece.durationSeconds, preferences.locale)}. ${opening ? words.opening : words.start}`}
@@ -353,6 +355,7 @@ function SeriesShelf({
               <button
                 type="button"
                 className={`series-card${opening ? " is-opening" : ""}`}
+                data-series-bok-id={piece.storyId}
                 onClick={() => onOpenPiece(piece)}
                 disabled={Boolean(openingStoryId)}
                 aria-label={`${piece.title}, ${piece.author}. ${words.duration}: ${seriesDurationLabel(piece.durationSeconds, preferences.locale)}. ${opening ? words.opening : words.start}`}

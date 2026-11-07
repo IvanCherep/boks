@@ -510,6 +510,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [seriesIsNew, setSeriesIsNew] = useState(false);
   /** The piece being loaded from the shelf; its card shows a spinner. */
   const [seriesOpening, setSeriesOpening] = useState<string | null>(null);
+  const seriesScrollOnOpen = useRef(0);
   /** Whether the format on screen was opened from the shelf, so its end leads back there. */
   const formatFromSeries = useRef(false);
   /** Waiting for the feed to land on this boks before opening its format. */
@@ -1782,10 +1783,13 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // lets a browser hand over the whole screen.
     if (takeScreen()) formatTookScreen.current = true;
     const manifestUrl = poemManifestFor(storyId);
-    formatUsed.current = { storyId, format: manifestUrl ? "poem" : "cinema" };
     if (manifestUrl) {
       loadPoemManifest(manifestUrl)
-        .then((manifest) => { if (request === formatRequest.current) setPoem(manifest); }, () => {
+        .then((manifest) => {
+          if (request !== formatRequest.current) return;
+          formatUsed.current = { storyId, format: "poem" };
+          setPoem(manifest);
+        }, () => {
           if (request !== formatRequest.current) return;
           setOpenIssue({ kind: "audio", storyId });
           closedFormat();
@@ -1793,6 +1797,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         .finally(() => { if (request === formatRequest.current) { setSeriesOpening(null); setFormatLoading(false); } });
       return;
     }
+    formatUsed.current = { storyId, format: "cinema" };
     setCinemaOpen(true);
     setFormatLoading(false);
     setSeriesOpening(null);
@@ -1833,6 +1838,8 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
 
   async function openSeriesPiece(piece: SeriesPiece, continueSequence = false) {
     if (seriesOpening) return;
+    const shelfScroll = document.querySelector(".series__scroll");
+    if (shelfScroll) seriesScrollOnOpen.current = shelfScroll.scrollTop;
     // Heard marks may reorder the live shelf at an ending. Keep the actual
     // order chosen when this Series reading started, without wrapping.
     if (!continueSequence) setSeriesSequence(publishedSeriesPieces);
@@ -1874,10 +1881,28 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     storyProgress.current[currentStory.id] = Math.max(existing, measured.progress);
     return storyProgress.current[currentStory.id];
   }
-  function readText(fromStart = false) {
-    formatRequest.current += 1;
+  function closeFormatOpening() {
+    const request = ++formatRequest.current;
     setFormatLoading(false); setSeriesOpening(null); setOpenIssue(null);
     closedFormat();
+    return request;
+  }
+  function backFromFormatLoading() {
+    const request = closeFormatOpening();
+    requestAnimationFrame(() => {
+      if (request !== formatRequest.current) return;
+      if (seriesOpen && currentStoryId) {
+        // A directly opened shelf may have remounted when the bok arrived.
+        const shelfScroll = document.querySelector(".series__scroll");
+        if (shelfScroll) shelfScroll.scrollTop = seriesScrollOnOpen.current;
+        shelfScroll?.querySelector<HTMLButtonElement>(`[data-series-bok-id="${CSS.escape(currentStoryId)}"]`)?.focus({ preventScroll: true });
+      } else {
+        coverRef.current?.querySelector<HTMLButtonElement>(".reader-play-button")?.focus({ preventScroll: true });
+      }
+    });
+  }
+  function readText(fromStart = false) {
+    closeFormatOpening();
     setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
     if (seriesOpen) openFeed(false);
     requestAnimationFrame(() => {
@@ -2933,7 +2958,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         {shareOpen && <ShareCard story={currentStory} artwork={getBokArtwork(currentStory)} onClose={() => setShareOpen(false)} onShared={() => recordReaderEvent("share", currentStory)} />}
         {formatLoading && <div className="format-loading">
           {getBokArtwork(currentStory) && <img className="format-status__cover" src={getBokArtwork(currentStory)!} alt="" />}
-          <header className="format-top"><button type="button" aria-label={t("Back", "Назад")} onClick={() => readText()}><ReaderBackIcon /></button><span className="format-top__title">{currentStory.title}</span><span /></header>
+          <header className="format-top"><button type="button" aria-label={t("Back", "Назад")} onClick={backFromFormatLoading}><ReaderBackIcon /></button><span className="format-top__title">{currentStory.title}</span><span /></header>
           <FormatStatus onReadText={() => readText()} />
         </div>}
         {/* Above everything. The cinema prototype is offered to admins only;
