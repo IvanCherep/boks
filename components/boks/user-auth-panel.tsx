@@ -152,6 +152,8 @@ type UserAuthPanelProps = {
   onClose: () => void;
   onOpenReadBoks: (storyId: string, openComments?: boolean) => void;
   onUserChanged: (user: BoksUserContext | null) => void;
+  /** The caller returns to an open surface after a code is verified in this tab. */
+  onEmailCodeVerified?: () => void;
   /** Saved reading languages, for the reader to rebuild its feed with. */
   onReadingLanguagesChanged?: (languages: readonly string[]) => void;
   /** So the Follow control in the reader stays in step with this list. */
@@ -172,6 +174,7 @@ export function UserAuthPanel({
   onClose,
   onOpenReadBoks,
   onUserChanged,
+  onEmailCodeVerified,
   onReadingLanguagesChanged,
   onFollowsChanged,
   onOpenFeed,
@@ -256,10 +259,12 @@ export function UserAuthPanel({
     }
   }
 
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback(async (loadActivity = true) => {
     const context = (await completePendingBoksMagicLinkProfile(currentBoksTermsVersion)) ?? (await loadBoksUserContext());
     setUser(context);
     seedSettingsFor(context);
+
+    if (!loadActivity) return context;
 
     if (context && !context.isAnonymous) {
       const [items, followed] = await Promise.all([loadReaderLibrary(120, context.userId), loadFollowedAuthors()]);
@@ -415,10 +420,12 @@ export function UserAuthPanel({
     setCodeError("");
     try {
       await verifyBoksEmailCode({ email: sentMagicLink.email, code: emailCode });
-      const context = await refreshUser();
+      // A reader returning to a conversation needs the account, not its library.
+      const context = await refreshUser(!onEmailCodeVerified);
       onUserChanged(context);
       setSentMagicLink(null);
       setEmailCode("");
+      if (context && !context.isAnonymous) onEmailCodeVerified?.();
     } catch (error) {
       setCodeError(explainBoksEmailCodeError(error));
     } finally {

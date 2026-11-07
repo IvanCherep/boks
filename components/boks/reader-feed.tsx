@@ -372,6 +372,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const [profile, setProfile] = useState<ReaderProfile>(initialProfile);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [commentOpen, setCommentOpen] = useState(false);
+  const [commentComposerFocusRequested, setCommentComposerFocusRequested] = useState(false);
   // Comments this reader added or removed, per boks, against the count they
   // were added to. A fresher copy of the boks - a reload, opening it from the
   // library - already includes them and has a different base, so the change
@@ -389,6 +390,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   const readingLanguagesRef = useRef<readonly string[]>([]);
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
+  const commentAuthOpen = useRef(false);
   /**
    * Whether the account behind this browser has been looked up yet.
    *
@@ -960,6 +962,9 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       lastIdentity = identity;
       // A guest session being created: the first feed load already covers it.
       if (!session?.user || session.user.is_anonymous) return;
+      // A new account's languages govern the next boks, while its reader can
+      // still return to the open conversation on the current one.
+      const keepCommentBok = commentAuthOpen.current;
       completePendingBoksMagicLinkProfile(currentBoksTermsVersion)
         .then(async () => {
           // The same settling as a page load: the account, who it follows, and
@@ -971,7 +976,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             readingLanguagesRef.current = accountLanguages;
             setSeriesContext(seriesContextFor(accountLanguages));
           }
-          (languagesChanged ? reloadFeedReleasing() : loadFeed()).catch((error) =>
+          (languagesChanged && !keepCommentBok ? reloadFeedReleasing() : loadFeed()).catch((error) =>
             notify(error instanceof Error ? error.message : wordsNow().couldNotRefresh)
           );
         })
@@ -1680,6 +1685,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         { visitorId: visitorId.current, sessionId: sessionId.current }
       );
     }
+    commentAuthOpen.current = intent === "comment";
     setAuthReason(reason);
     setAuthInitialSection(section);
     setAuthIntent(intent);
@@ -2197,6 +2203,13 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     // reloads the page, and a sign-in arrives as an auth state change.
   }, []);
 
+  const closeAccount = useCallback(() => {
+    commentAuthOpen.current = false;
+    setAuthPanelOpen(false);
+  }, []);
+
+  const clearCommentComposerFocusRequest = useCallback(() => setCommentComposerFocusRequested(false), []);
+
   /**
    * Languages changed in Settings (already saved there).
    *
@@ -2608,7 +2621,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
           notice={authNotice}
           guestReadCount={guestReadCount}
           currentUser={user}
-          onClose={() => setAuthPanelOpen(false)}
+          onClose={closeAccount}
           onOpenReadBoks={async (storyId, openComments) => {
             // A boks from the library is read in the feed, so the shelf steps aside.
             if (seriesOpen) openFeed();
@@ -2616,6 +2629,11 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             if (opened && openComments) setPendingCommentStoryId(storyId);
           }}
           onUserChanged={handleUserChanged}
+          onEmailCodeVerified={authIntent === "comment" && commentOpen ? () => {
+            if (!commentAuthOpen.current) return;
+            closeAccount();
+            setCommentComposerFocusRequested(true);
+          } : undefined}
           onReadingLanguagesChanged={adoptReadingLanguages}
           onOpenFeed={() => { setAuthPanelOpen(false); openFeed(); }}
           onOpenSeries={() => { setAuthPanelOpen(false); openSeries(); }}
@@ -2855,7 +2873,12 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
             hasSignedInAccount={hasSignedInAccount}
             viewerHandle={user?.handle ?? null}
             isSupabaseReader={isSupabaseReader}
-            onClose={() => setCommentOpen(false)}
+            coveredByAccount={authPanelOpen}
+            restoreComposerFocus={commentComposerFocusRequested ? clearCommentComposerFocusRequest : undefined}
+            onClose={() => {
+              setCommentOpen(false);
+              clearCommentComposerFocusRequest();
+            }}
             onRequestAccount={() => openAccount("manual", "comment")}
             onSubmit={submitComment}
             onStatus={notify}

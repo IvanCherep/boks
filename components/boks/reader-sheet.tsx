@@ -22,6 +22,7 @@ export function ReaderSheet({
   expanded = false,
   onExpandedChange,
   className = "",
+  inactive = false,
 }: {
   /** Names the dialog for a screen reader, and both close controls. */
   label: string;
@@ -31,6 +32,8 @@ export function ReaderSheet({
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   className?: string;
+  /** The sheet stays mounted underneath a dialog that currently owns input. */
+  inactive?: boolean;
 }) {
   const { t } = useReaderPreferences();
   const dragStartY = useRef<number | null>(null);
@@ -56,13 +59,14 @@ export function ReaderSheet({
    * top, takes Escape first in the capture phase and closes only itself.
    */
   useEffect(() => {
+    if (inactive) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       closeRef.current();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [inactive]);
 
   function startGripDrag(event: PointerEvent<HTMLButtonElement>) {
     dragStartY.current = event.clientY;
@@ -90,6 +94,7 @@ export function ReaderSheet({
       role="dialog"
       aria-modal="true"
       aria-label={label}
+      inert={inactive}
       onKeyDown={(event) => {
         event.stopPropagation();
         if (event.key === "Tab") {

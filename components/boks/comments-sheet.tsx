@@ -30,6 +30,8 @@ export function CommentsSheet({
   hasSignedInAccount,
   viewerHandle,
   isSupabaseReader,
+  coveredByAccount,
+  restoreComposerFocus,
   onClose,
   onRequestAccount,
   onSubmit,
@@ -43,6 +45,9 @@ export function CommentsSheet({
   hasSignedInAccount: boolean;
   viewerHandle: string | null;
   isSupabaseReader: boolean;
+  coveredByAccount: boolean;
+  /** Present for one focus restoration after a successful sign-in. */
+  restoreComposerFocus?: () => void;
   onClose: () => void;
   onRequestAccount: () => void;
   onSubmit: (body: string, parentCommentId: number | null) => Promise<Comment>;
@@ -73,6 +78,15 @@ export function CommentsSheet({
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
+    if (!restoreComposerFocus || coveredByAccount || !hasSignedInAccount) return;
+    const frame = window.requestAnimationFrame(() => {
+      composerRef.current?.focus({ preventScroll: true });
+      restoreComposerFocus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [coveredByAccount, hasSignedInAccount, restoreComposerFocus]);
+
+  useEffect(() => {
     let active = true;
     if (!isSupabaseReader) {
       return;
@@ -100,14 +114,14 @@ export function CommentsSheet({
   const normalizedAuthorHandle = bareHandle(authorHandle).toLowerCase();
 
   function beginReply(comment: Comment) {
+    const handle = bareHandle(comment.visitorHandle || comment.visitorName || "reader");
+    const rootId = comment.parentCommentId ?? comment.id;
+    setReplyTarget({ rootId, handle });
     if (!hasSignedInAccount) {
       onRequestAccount();
       return;
     }
 
-    const handle = bareHandle(comment.visitorHandle || comment.visitorName || "reader");
-    const rootId = comment.parentCommentId ?? comment.id;
-    setReplyTarget({ rootId, handle });
     setExpandedThreads((current) => new Set(current).add(rootId));
     window.setTimeout(() => composerRef.current?.focus(), 0);
   }
@@ -141,6 +155,7 @@ export function CommentsSheet({
 
   async function toggleLike(comment: Comment) {
     if (!hasSignedInAccount) {
+      setReplyTarget(null);
       onRequestAccount();
       return;
     }
@@ -272,6 +287,7 @@ export function CommentsSheet({
   return (
     <ReaderSheet
       label={t("Comments", "Комментарии")}
+      inactive={coveredByAccount}
       onClose={onClose}
       expandable
       expanded={expanded}
@@ -387,7 +403,7 @@ export function CommentsSheet({
             </Button>
           </div>
         ) : (
-          <button type="button" className="comment-signup" onClick={onRequestAccount}>
+          <button type="button" className="comment-signup" onClick={() => { setReplyTarget(null); onRequestAccount(); }}>
             <span className="comment-avatar" aria-hidden="true"><UserRound className="size-4" /></span>
             <span>{t("Sign in to comment…", "Войдите, чтобы комментировать…")}</span>
             <i className="comment-guest-send" aria-hidden="true"><ArrowUp /></i>
