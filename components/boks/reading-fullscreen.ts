@@ -51,15 +51,19 @@ export function canTakeScreen(doc: FullscreenDocument, touchScreen: boolean) {
  * Asks for the whole screen. Must run while the tap that opened the format is
  * still fresh - browsers refuse fullscreen that no gesture asked for. Returns
  * whether it asked, so the caller knows the screen is its to give back.
+ * If the format closes before the request resolves, give it back on arrival.
  */
 export function takeScreen(
   doc: FullscreenDocument | undefined = typeof document === "undefined" ? undefined : document,
-  touchScreen = coarsePointer()
+  touchScreen = coarsePointer(),
+  keepScreen?: () => boolean
 ) {
   if (!doc || !canTakeScreen(doc, touchScreen)) return false;
   // A refusal (no gesture, a policy, an in-app browser) leaves the format in
   // the page as it always was. Nothing to tell the reader.
-  doc.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+  doc.documentElement.requestFullscreen?.({ navigationUI: "hide" }).then(() => {
+    if (keepScreen && !keepScreen()) giveScreenBack(doc);
+  }).catch(() => {});
   return true;
 }
 

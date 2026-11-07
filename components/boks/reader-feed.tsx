@@ -1178,6 +1178,10 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
   /** Exactly the condition the two players below are rendered under. */
   const formatOnScreen = Boolean(poem) || (cinemaOpen && Boolean(currentStory) && cinemaOffered);
 
+  function takeFormatScreen() {
+    if (takeScreen(undefined, undefined, () => formatTookScreen.current)) formatTookScreen.current = true;
+  }
+
   /** The screen and the browser's colour go back together, however a format closed. */
   function closedFormat() {
     // The music the format silenced comes back with the feed. Closing is a
@@ -1781,7 +1785,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     setFormatLoading(true);
     // Now, before the manifest loads: the tap that opened the format is what
     // lets a browser hand over the whole screen.
-    if (takeScreen()) formatTookScreen.current = true;
+    takeFormatScreen();
     const manifestUrl = poemManifestFor(storyId);
     if (manifestUrl) {
       loadPoemManifest(manifestUrl)
@@ -1851,7 +1855,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     }
     // The screen is asked for on the tap, not when the feed has landed: by
     // then the gesture that allows it may have gone stale.
-    if (takeScreen()) formatTookScreen.current = true;
+    takeFormatScreen();
     setSeriesOpening(piece.storyId);
     pendingSeriesFormat.current = piece.storyId;
     const found = await openReadBoks(piece.storyId, "series");

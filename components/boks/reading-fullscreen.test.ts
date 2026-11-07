@@ -45,6 +45,16 @@ describe("reading fullscreen", () => {
     await Promise.resolve();
   });
 
+  it("gives the screen back if it arrives after the format closes", async () => {
+    const { doc, exitFullscreen } = page();
+    let formatOpen = true;
+    expect(takeScreen(doc, true, () => formatOpen)).toBe(true);
+    formatOpen = false;
+    doc.fullscreenElement = {} as Element;
+    await Promise.resolve();
+    expect(exitFullscreen).toHaveBeenCalledTimes(1);
+  });
+
   it("gives the screen back only while it is held", () => {
     const held = page({ fullscreenElement: {} as Element });
     giveScreenBack(held.doc);
