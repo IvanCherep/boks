@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-05.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-07.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -10,6 +10,17 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Reader returns after sign-in and cancelled audio (2026-11-07).**
+A guest who signs in by entering the email code from a conversation returns
+to that bok and its focused composer. An intended reply keeps its recipient.
+Back during reading-format loading returns to the opening surface and keeps
+the Series card and scroll position. Late manifest and fullscreen responses
+cannot reopen the player or leave the browser in fullscreen. Read text still
+opens the bok. Deployed from `466db5d`, Worker
+`c09489ab-fc84-45b8-8dad-288ea39bb5f7`. The linked migration history matches.
+The published build passed both paths in mobile Chromium and WebKit with
+intercepted auth and feed requests. Chromium also passed delayed fullscreen.
 
 **New Year wordmark and two animated covers (2026-11-05).**
 Every page load chooses one of five illustrated ornaments: fir, red bauble,
