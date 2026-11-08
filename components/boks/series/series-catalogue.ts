@@ -604,10 +604,12 @@ export type SeriesCollection = {
   from: string;
   until?: string;
   /**
-   * A book the section stands for: its cover is shown beside the section's
-   * name. Held in link-only storage like the poems (`docs/link-only-pieces.md`).
+   * The poet a section belongs to: their photo beside the section's name, and
+   * a tap on either opens their author page (@handle). The photo is the
+   * author's, so it is held in link-only storage like the poems
+   * (`docs/link-only-pieces.md`), not in this public repository.
    */
-  book?: { title: string; cover: string };
+  author?: { handle: string; name: string; photo: string };
 };
 
 export const seriesCollections: readonly SeriesCollection[] = [
@@ -634,7 +636,7 @@ export const seriesCollections: readonly SeriesCollection[] = [
       "4eb182a0-770e-4b95-9059-07a31b229d78",
     ],
     from: "2026-11-08",
-    book: { title: "Верослов", cover: "/l/XFKejQcwEa7M_7jI_1T6LA/f/veroslov.webp" },
+    author: { handle: "prokhorov", name: "Алексей Прохоров", photo: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov.webp" },
   },
 ];
 

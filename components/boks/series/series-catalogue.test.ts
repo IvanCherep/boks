@@ -288,9 +288,11 @@ describe("seasonal collections", () => {
     for (const path of ["/", "/seriesx", "/series/a/b", "/b/series"]) expect(isSeriesPath(path), path).toBe(false);
   });
 
-  it("shows a book's cover from link-only storage, never from this public repository", () => {
+  it("shows an author's photo from link-only storage, never from this public repository", () => {
     for (const collection of seriesCollections) {
-      if (collection.book) expect(collection.book.cover).toMatch(/^\/l\/[A-Za-z0-9_-]{22,}\/f\/[a-z0-9-]+\.webp$/);
+      if (!collection.author) continue;
+      expect(collection.author.photo).toMatch(/^\/l\/[A-Za-z0-9_-]{22,}\/f\/[a-z0-9-]+\.webp$/);
+      expect(collection.author.handle).toMatch(/^[a-z][a-z0-9_]{2,23}$/);
     }
   });
 

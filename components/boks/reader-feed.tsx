@@ -2712,6 +2712,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         <div style={{ display: "contents" }} inert={readerOverlayOpen || formatOnScreen}><SeriesView
           readerLanguages={seriesContext.readerLanguages}
           focusCollection={seriesCollection}
+          onOpenAuthor={(handle, name) => openAuthor(handle, name)}
           onPiecesChanged={setPublishedSeriesPieces}
           heard={seriesHeard}
           openingStoryId={seriesOpening}
@@ -2873,6 +2874,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           <div style={{ display: "contents" }} inert={readerOverlayOpen || formatOnScreen}><SeriesView
             readerLanguages={seriesContext.readerLanguages}
           focusCollection={seriesCollection}
+          onOpenAuthor={(handle, name) => openAuthor(handle, name)}
             onPiecesChanged={setPublishedSeriesPieces}
             heard={seriesHeard}
             openingStoryId={seriesOpening}

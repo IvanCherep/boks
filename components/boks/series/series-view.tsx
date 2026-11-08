@@ -57,11 +57,13 @@ const collectionMessages = defineMessages({
   prokhorov: "Алексей Прохоров",
   prokhorovNote: "Read by the poet",
   position: "of",
+  openAuthor: "open the author's page",
 }, { ru: {
   halloween: "Хэллоуин",
   prokhorov: "Алексей Прохоров",
   prokhorovNote: "Читает автор",
   position: "из",
+  openAuthor: "открыть страницу автора",
 } });
 const collectionNotes: Partial<Record<SeriesCollection["id"], "prokhorovNote">> = { prokhorov: "prokhorovNote" };
 
@@ -88,10 +90,13 @@ export function SeriesView({
   onOpenAccount,
   onPiecesChanged,
   focusCollection = null,
+  onOpenAuthor,
 }: {
   readerLanguages: readonly string[];
   /** The section the page was opened on (`/series/<id>`): shown first, in every language. */
   focusCollection?: SeriesCollection["id"] | null;
+  /** Opens a poet's author page from their section's header. */
+  onOpenAuthor?: (handle: string, name: string) => void;
   heard: ReadonlySet<string>;
   /** The piece being loaded, so its card can say so. */
   openingStoryId: string | null;
@@ -187,6 +192,7 @@ export function SeriesView({
             pieces={collection.pieces}
             openingStoryId={openingStoryId}
             onOpenPiece={onOpenPiece}
+            onOpenAuthor={onOpenAuthor}
           />
         ))}
 
@@ -304,11 +310,13 @@ function SeriesCollectionRow({
   pieces,
   openingStoryId,
   onOpenPiece,
+  onOpenAuthor,
 }: {
   id: SeriesCollection["id"];
   pieces: readonly SeriesPiece[];
   openingStoryId: string | null;
   onOpenPiece: (piece: SeriesPiece) => void;
+  onOpenAuthor?: (handle: string, name: string) => void;
 }) {
   const words = useSeriesWords();
   const collectionWords = useMessages(collectionMessages);
@@ -316,19 +324,35 @@ function SeriesCollectionRow({
   const title = collectionWords[id];
   const noteKey = collectionNotes[id];
   const note = noteKey ? collectionWords[noteKey] : null;
-  const book = seriesCollections.find((collection) => collection.id === id)?.book;
+  const author = seriesCollections.find((collection) => collection.id === id)?.author;
+  // Inside the button only phrasing content is allowed, so no h2 or p there.
+  const linked = Boolean(author && onOpenAuthor);
+  const Title = linked ? "span" : "h2";
+  const Note = linked ? "span" : "p";
+  const heading = (
+    <>
+      {author && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="series-collection__photo" src={author.photo} alt="" width={320} height={320} decoding="async" />
+      )}
+      <span className="series-collection__name">
+        <Title className="series-collection__title">{title}</Title>
+        {note && <Note className="series-collection__note">{note}</Note>}
+      </span>
+    </>
+  );
   return (
     <section className={`series-collection series-collection--${id}`} aria-label={title}>
-      <header className={`series-collection__head${book ? " series-collection__head--book" : ""}`}>
-        {book && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="series-collection__book" src={book.cover} alt={`«${book.title}», ${title}`} width={480} height={761} decoding="async" />
-        )}
-        <div>
-          <h2 className="series-collection__title">{title}</h2>
-          {note && <p className="series-collection__note">{note}</p>}
-        </div>
-      </header>
+      {author && onOpenAuthor && linked ? (
+        <header className="series-collection__head series-collection__head--author">
+          <button type="button" className="series-collection__author-link" onClick={() => onOpenAuthor(author.handle, author.name)}
+            aria-label={`${author.name}: ${collectionWords.openAuthor}`}>
+            {heading}
+          </button>
+        </header>
+      ) : (
+        <header className={`series-collection__head${author ? " series-collection__head--author" : ""}`}>{heading}</header>
+      )}
       <ol className="series-collection__row">
         {pieces.map((piece, index) => {
           const opening = openingStoryId === piece.storyId;
