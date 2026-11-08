@@ -175,12 +175,19 @@ previews from Russia, and WhatsApp on the sender's phone, so they are fine.
 
 `go.tryboks.com` is the address to share where Telegram matters. It is the
 `boks-link-preview` Cloudflare Worker (`deploy/link-preview`): a preview bot
-gets the page from tryboks.com with the preview image moved to `go.`; a
+gets a small page of its own built from the tryboks.com page's preview tags,
+with every address in it (image, `og:url`, canonical) moved to `go.`; a
 person gets a 302 to the same path on tryboks.com and never touches Cloudflare
 again. One small request per click, nothing stored there; `tryboks.com` DNS is
 untouched. Deploy it only with
 `npx wrangler deploy --config ./wrangler.toml --no-autoconfig` from that
 folder - without the flags wrangler deploys the vinext app instead.
+
+What it took (2026-11-08): with the app's own page, or with `og:url` still
+naming tryboks.com, Telegram fetched the page and showed nothing; a VK preview
+worked from the start. Verified in Telegram with the small page. Cloudflare's
+Bot Fight Mode on the zone injects a challenge script and can block preview
+bots before the Worker runs - keep it off if previews stop.
 
 ## Load and Limits
 

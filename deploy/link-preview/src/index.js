@@ -43,14 +43,35 @@ export default {
       return new Response(upstream.body, { status: upstream.status, headers });
     }
 
-    // The preview image must come from here too: the bot cannot reach the site.
+    // A bot gets a small page of its own: the preview tags and nothing else,
+    // whole, with its length. The app's page is 20+ KB of scripts streamed in
+    // chunks, and Telegram fetched it and showed nothing (2026-11-08).
+    // Every address in it points here - the image and the page's own address
+    // (og:url, canonical) - since the bot cannot reach tryboks.com.
     const here = `${url.protocol}//${url.host}`;
-    const move = (element) => {
-      const value = element.getAttribute("content");
-      if (value && value.startsWith(site)) element.setAttribute("content", here + value.slice(site.length));
-    };
-    return new HTMLRewriter()
-      .on('meta[property="og:image"], meta[property="og:image:url"], meta[property="og:image:secure_url"], meta[name="twitter:image"]', { element: move })
-      .transform(new Response(upstream.body, { status: upstream.status, headers }));
+    const local = (value) => (value && value.startsWith(site) ? here + value.slice(site.length) : value);
+    const tags = [];
+    let title = "";
+    await new HTMLRewriter()
+      .on("meta[property], meta[name]", {
+        element(element) {
+          const key = element.getAttribute("property") || element.getAttribute("name");
+          const content = element.getAttribute("content");
+          if (content != null && /^(og:|twitter:|description$)/.test(key)) tags.push([element.hasAttribute("property") ? "property" : "name", key, local(content)]);
+        },
+      })
+      .on("title", { text(chunk) { title += chunk.text; } })
+      .transform(upstream)
+      .arrayBuffer();
+
+    const escape = (value) => String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const page = local(`${site}${url.pathname}`);
+    const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${escape(title.trim() || "boks")}</title>${tags
+      .map(([kind, key, content]) => `<meta ${kind}="${escape(key)}" content="${escape(content)}">`)
+      .join("")}<link rel="canonical" href="${escape(page)}"></head><body><a href="${escape(target)}">${escape(title.trim() || "boks")}</a></body></html>`;
+    const body = new TextEncoder().encode(html);
+    headers.set("Content-Type", "text/html; charset=utf-8");
+    headers.set("Content-Length", String(body.byteLength));
+    return new Response(request.method === "HEAD" ? null : body, { status: upstream.status, headers });
   },
 };
