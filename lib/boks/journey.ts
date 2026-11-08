@@ -32,7 +32,7 @@ export type JourneyAttribution = {
 
 
 /** boks's own hosts: a referrer from one of them is navigation, not a source. */
-const ownHosts = new Set(["tryboks.com", "read.tryboks.workers.dev", "localhost", "127.0.0.1"]);
+const ownHosts = new Set(["tryboks.ru", "www.tryboks.ru", "tryboks.com", "www.tryboks.com", "read.tryboks.workers.dev", "localhost", "127.0.0.1"]);
 
 function hostOf(value: string | null | undefined) {
   if (!value) return null;

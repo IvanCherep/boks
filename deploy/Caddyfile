@@ -1,0 +1,110 @@
+{
+	# Certificates come from Let's Encrypt automatically once DNS points here.
+}
+
+{$SITE_HOST}, tryboks.ru {
+	encode zstd gzip
+
+	# tryboks.ru is the standby address: pages redirect to the same path on
+	# {$SITE_HOST}. The API, sign-in and scripts are still served here, so a tab
+	# that was opened on tryboks.ru keeps working until it is reloaded.
+	@standby {
+		host tryboks.ru
+		not path /api/* /auth/v1/* /rest/v1/* /_next/*
+	}
+	redir @standby https://{$SITE_HOST}{uri} permanent
+
+	# Public: anyone with the link reads as a guest, as on tryboks.com.
+	# For a closed stand, put back a basic_auth block on everything except
+	# /auth/v1/*, /rest/v1/* and /api/* (they carry their own Bearer token).
+
+	# Overload guard (deploy/ops/overload.sh creates flags/busy.on): new page
+	# loads get the waiting page with a poem; the API, scripts and media keep
+	# working, so people already reading carry on.
+	@busy {
+		file {
+			root /flags
+			try_files /busy.on
+		}
+		not path /api/* /auth/v1/* /rest/v1/* /_next/* /share/* /l/*/f/* /b/*/image
+		not path_regexp \.[A-Za-z0-9]+$
+	}
+	# Preview of the waiting page, always available, never indexed.
+	handle /busy-preview {
+		header Cache-Control "no-store"
+		header X-Robots-Tag "noindex, nofollow"
+		root * /srv/busy
+		rewrite * /index.html
+		file_server
+	}
+
+	handle @busy {
+		header Cache-Control "no-store"
+		header Retry-After "120"
+		root * /srv/busy
+		rewrite * /index.html
+		file_server {
+			status 503
+		}
+	}
+
+	handle_path /auth/v1/* {
+		# GoTrue lives in the mailer's network namespace (see compose.yml).
+		reverse_proxy mailer:9999
+	}
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000
+	}
+
+	handle {
+		# Static files straight from disk, precompressed (deploy/precompress.mjs).
+		# Only paths with a file extension: /series is a page, /series/x.webp a file.
+		root * /srv/client
+
+		@immutable {
+			path /_next/static/*
+			file
+		}
+		handle @immutable {
+			header Cache-Control "public, max-age=31536000, immutable"
+			file_server {
+				precompressed br gzip
+			}
+		}
+
+		@asset {
+			path_regexp \.[A-Za-z0-9]+$
+			not path /b/*/image
+			file
+		}
+		handle @asset {
+			header Cache-Control "public, max-age=3600"
+			file_server {
+				precompressed br gzip
+			}
+		}
+
+		# Pages, API routes and everything rendered: the Node app.
+		handle {
+			reverse_proxy app:3000
+		}
+	}
+}
+
+# The www name: a permanent redirect to the same path, query included.
+www.tryboks.com {
+	redir https://{$SITE_HOST}{uri} permanent
+}
+
+# Internal only (not published): link-only files for the app's /l/<token>/f/<file>.
+# No directory listing; nothing outside the Docker network can reach this port.
+:8082 {
+	root * /link-only
+	file_server
+}
+
+# Internal only (not published): email templates for GoTrue.
+:8081 {
+	root * /templates
+	file_server
+}

@@ -57,7 +57,9 @@ export async function POST(request: Request) {
   }
 
   const transport = createSupabaseRestTransport({
-    restUrl: `${supabaseUrl}/rest/v1`,
+    // Self-hosted: talk to PostgREST over the private network instead of looping
+    // out through the public domain (BOKS_INTERNAL_REST_URL, e.g. http://rest:3000).
+    restUrl: process.env.BOKS_INTERNAL_REST_URL || `${supabaseUrl}/rest/v1`,
     apiKey: supabaseApiKey,
     accessToken,
     // A reader who has gone away needs no feed; stop asking the database.

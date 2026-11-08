@@ -1,0 +1,17 @@
+# Deploy from this folder: npx wrangler deploy
+# Secrets (once): TG_TOKEN, TG_CHAT, RELAY_KEY via `npx wrangler secret put <NAME>`.
+name = "boks-telegram"
+main = "src/index.js"
+compatibility_date = "2026-05-15"
+workers_dev = true
+
+[vars]
+SITE_URL = "https://tryboks.com"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+# KV namespace id is filled in after `npx wrangler kv namespace create STATE`.
+[[kv_namespaces]]
+binding = "STATE"
+id = "ae5fbb29638a4ee9bb57dc4b957abf5c"

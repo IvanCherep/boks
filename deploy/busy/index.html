@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>boks</title>
+<style>
+  :root { --bg: #f6f1e7; --ink: #1d1a16; --muted: #6f665a; --rule: #d9cfbf; --alert: #b45309; --alert-bg: #fdecd3; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #14120f; --ink: #ece4d6; --muted: #a39887; --rule: #3a342c; --alert: #f5a524; --alert-bg: #3a2a12; } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); }
+  body { font: 18px/1.6 Georgia, "Times New Roman", serif; display: grid; place-items: center; min-height: 100vh;
+         padding: 40px max(20px, env(safe-area-inset-left)) 40px max(20px, env(safe-area-inset-right)); }
+  main { max-width: 32rem; width: 100%; }
+  .mark { font: 600 15px/1 system-ui, sans-serif; letter-spacing: .18em; text-transform: lowercase; color: var(--muted); }
+  .alert { display: flex; align-items: center; gap: 12px; margin-top: 28px; }
+  .alert-icon { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--alert-bg); color: var(--alert);
+                display: grid; place-items: center; animation: pulse 2.4s ease-in-out infinite; }
+  .alert-icon svg { width: 24px; height: 24px; }
+  .alert-label { font: 600 13px/1.3 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--alert); }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  @media (prefers-reduced-motion: reduce) { .alert-icon { animation: none; } }
+  h1 { font-weight: 400; font-size: 1.5rem; line-height: 1.35; margin: 16px 0 10px; text-wrap: balance; }
+  @media (max-width: 480px) { body { font-size: 17px; place-items: start center; padding-top: 32px; } h1 { font-size: 1.35rem; } figure { padding: 22px 0; } }
+  p.note { color: var(--muted); margin: 0 0 32px; }
+  figure { margin: 0; padding: 28px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  blockquote { margin: 0; font-style: italic; white-space: pre-line; }
+  figcaption { margin-top: 16px; font: 14px/1.4 system-ui, sans-serif; color: var(--muted); }
+  .status { margin-top: 24px; font: 14px/1.4 system-ui, sans-serif; color: var(--muted); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark">boks</div>
+
+  <section data-lang="ru">
+    <div class="alert" role="status"><div class="alert-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div><span class="alert-label">Сервер перегружен</span></div>
+    <h1>Сейчас у нас очень много читателей.</h1>
+    <p class="note">Сервер переводит дух, мы уже добавляем ему сил. Страница откроется сама через пару минут, а чтобы скрасить ожидание, почитайте Пушкина.</p>
+    <figure>
+      <blockquote>Если жизнь тебя обманет,
+Не печалься, не сердись!
+В день уныния смирись:
+День веселья, верь, настанет.
+
+Сердце в будущем живёт;
+Настоящее уныло:
+Всё мгновенно, всё пройдёт;
+Что пройдёт, то будет мило.</blockquote>
+      <figcaption>Александр Пушкин, 1825</figcaption>
+    </figure>
+    <div class="status" id="status-ru">Проверяем каждые полминуты…</div>
+  </section>
+
+  <section data-lang="en" hidden>
+    <div class="alert" role="status"><div class="alert-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div><span class="alert-label">Server overloaded</span></div>
+    <h1>So many people are reading right now.</h1>
+    <p class="note">The server is catching its breath while we give it more room. This page will open by itself in a couple of minutes. Something to read while you wait:</p>
+    <figure>
+      <blockquote>“Hope” is the thing with feathers –
+That perches in the soul –
+And sings the tune without the words –
+And never stops – at all –</blockquote>
+      <figcaption>Emily Dickinson</figcaption>
+    </figure>
+    <div class="status" id="status-en">Checking every thirty seconds…</div>
+  </section>
+</main>
+<script>
+  // Russian if Russian appears anywhere in the browser's languages or in the system locale;
+  // English otherwise. Without JavaScript the Russian version stays (it is the default markup).
+  var langs = [].concat(navigator.languages || [], navigator.language || []);
+  try { langs.push(Intl.DateTimeFormat().resolvedOptions().locale || ""); } catch (e) {}
+  var ru = langs.some(function (l) { return /^ru\b/i.test(l); });
+  var forced = (location.search.match(/[?&]lang=(ru|en)\b/) || [])[1];   // for previewing: ?lang=ru / ?lang=en
+  if (forced) ru = forced === "ru";
+  document.querySelector('[data-lang="ru"]').hidden = !ru;
+  document.querySelector('[data-lang="en"]').hidden = ru;
+  if (!ru) document.documentElement.lang = "en";
+
+  // Come back by itself once the server lets new readers in again.
+  function check() {
+    fetch(location.href, { method: "HEAD", cache: "no-store" }).then(function (r) {
+      if (r.status !== 503) location.reload();
+    }).catch(function () {});
+  }
+  setInterval(check, 30000 + Math.floor(Math.random() * 10000));
+</script>
+</body>
+</html>

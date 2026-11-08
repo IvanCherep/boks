@@ -25,10 +25,30 @@ export const supabasePublishableApiKey = (supabasePublishableKey as string | und
  */
 const sessionMemory = new Map<string, string>();
 
+/**
+ * Until 2026-11-07 the API lived on vcmrvnihbptostnzaean.supabase.co, and
+ * supabase-js names the stored session after the API host. The accounts and
+ * their sessions moved to our own server with everything else, so a reader
+ * who last read on tryboks.com before the move still has a valid session under
+ * the old name. Pick it up once, under the new name, instead of making them a
+ * fresh guest with no history.
+ */
+export const legacyAuthStorageKey = "sb-vcmrvnihbptostnzaean-auth-token";
+
+export function readAuthItem(storage: Pick<Storage, "getItem" | "setItem" | "removeItem">, key: string) {
+  const value = storage.getItem(key);
+  if (value !== null || !key.endsWith("-auth-token") || key === legacyAuthStorageKey) return value;
+  const legacy = storage.getItem(legacyAuthStorageKey);
+  if (legacy === null) return null;
+  storage.setItem(key, legacy);
+  storage.removeItem(legacyAuthStorageKey);
+  return legacy;
+}
+
 const resilientAuthStorage = {
   getItem(key: string) {
     try {
-      return typeof window === "undefined" ? null : window.localStorage.getItem(key);
+      return typeof window === "undefined" ? null : readAuthItem(window.localStorage, key);
     } catch {
       return sessionMemory.get(key) ?? null;
     }

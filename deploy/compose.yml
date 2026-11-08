@@ -1,0 +1,187 @@
+# boks self-hosted stack: the three Supabase components the app uses
+# (Postgres, GoTrue, PostgREST), the Node app, and Caddy in front.
+# Secrets come from ./.env on the server (see .env.example); nothing secret here.
+name: boks
+
+services:
+  db:
+    image: ghcr.io/supabase/postgres:17.6.1.166
+    restart: unless-stopped
+    # Tuned for a 4 GB / 2 vCPU VM on network SSD; scale shared_buffers (~25% RAM)
+    # and effective_cache_size (~75% RAM) with the machine.
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=3GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - jit=off
+      - -c
+      - max_connections=60
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    # Reachable only from this machine (SSH tunnel for migrations), never from the internet.
+    ports: ["127.0.0.1:5432:5432"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  auth:
+    image: public.ecr.aws/supabase/gotrue:v2.197.0
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      mailer: { condition: service_started }
+    # GoTrue accepts plain-http hooks only on localhost, so it shares the
+    # mailer's network namespace: the hook is http://localhost:8090, and the
+    # rest of the stack reaches GoTrue as mailer:9999.
+    network_mode: service:mailer
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SITE_URL}/auth/v1
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${SITE_URL}/**
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      # Guests are anonymous sessions; accounts sign in by an email code or link.
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "true"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_MAILER_OTP_LENGTH: 6
+      GOTRUE_MAILER_OTP_EXP: 3600
+      GOTRUE_SECURITY_MANUAL_LINKING_ENABLED: "false"
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_SENDER_NAME: boks
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_INVITE: /auth/v1/verify
+      # The project's own templates (supabase/templates), served to GoTrue by Caddy on the internal network.
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://caddy:8081/magic-link.html
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: http://caddy:8081/confirmation.html
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Sign in to boks"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Sign in to boks"
+      # Auth emails go through our mailer (Resend, .ru sender with .com fallback).
+      GOTRUE_HOOK_SEND_EMAIL_ENABLED: "true"
+      GOTRUE_HOOK_SEND_EMAIL_URI: http://localhost:8090/send
+      GOTRUE_HOOK_SEND_EMAIL_SECRETS: ${HOOK_SECRET}
+      # Same limits as supabase/config.toml.
+      GOTRUE_SMTP_MAX_FREQUENCY: 60s
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: 100
+      GOTRUE_RATE_LIMIT_ANONYMOUS_USERS: 300
+      GOTRUE_RATE_LIMIT_TOKEN_REFRESH: 150
+      GOTRUE_RATE_LIMIT_SIGN_IN_SIGN_UPS: 100
+      GOTRUE_RATE_LIMIT_VERIFY: 100
+
+  rest:
+    image: public.ecr.aws/supabase/postgrest:v14.5
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    command: ["postgrest"]
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+
+  app:
+    image: node:22-bookworm-slim
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "server.js"]
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      BOKS_INTERNAL_REST_URL: http://rest:3000
+      # Link-only pieces (living authors): served to the app over the private network only.
+      BOKS_LINK_ONLY_BASE_URL: http://caddy:8082
+    volumes:
+      - ./app:/app:ro
+
+  # GoTrue's send-email hook: Resend from hello@tryboks.com, fallback hello@tryboks.ru.
+  mailer:
+    image: node:22-bookworm-slim
+    restart: unless-stopped
+    command: ["node", "/mailer/server.mjs"]
+    environment:
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      HOOK_SECRET: ${HOOK_SECRET}
+      AUTH_PUBLIC_URL: ${SITE_URL}/auth/v1
+      FROM_PRIMARY: "boks <hello@tryboks.com>"
+      FROM_FALLBACK: "boks <hello@tryboks.ru>"
+      REPLY_TO: support@tryboks.com
+      TEMPLATES_DIR: /templates
+    volumes:
+      - ./mailer:/mailer:ro
+      - ./templates:/templates:ro
+
+  # Test-only mailbox: catches every auth email. UI on 127.0.0.1:8025 (SSH tunnel).
+  mail:
+    image: public.ecr.aws/supabase/mailpit:v1.31.3
+    restart: unless-stopped
+    profiles: ["testmail"]
+    ports: ["127.0.0.1:8025:8025"]
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    depends_on: [app, auth, rest]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITE_HOST: ${SITE_HOST}
+      STAGING_USER: ${STAGING_USER}
+      STAGING_HASH: ${STAGING_HASH}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./templates:/templates:ro
+      - ./app/dist/client:/srv/client:ro
+      - ./link-only:/link-only:ro
+      - ./flags:/flags:ro
+      - ./busy:/srv/busy:ro
+      - caddydata:/data
+      - caddyconfig:/config
+
+volumes:
+  dbdata:
+  caddydata:
+  caddyconfig:

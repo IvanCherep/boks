@@ -40,6 +40,11 @@ export function linkOnlyContentType(file: string) {
 /** Where the Worker reads a file from. Null for anything outside the two patterns. */
 export function linkOnlyStorageUrl(supabaseUrl: string, token: string, file: string) {
   if (!isLinkOnlyToken(token) || !isLinkOnlyFile(file)) return null;
+  // Self-hosted: the bucket is S3-compatible object storage, not Supabase
+  // Storage. BOKS_LINK_ONLY_BASE_URL points at the folder that holds the
+  // token folders, e.g. https://<bucket>.s3.<region>.storage.selcloud.ru/link-only.
+  const base = globalThis.process?.env?.BOKS_LINK_ONLY_BASE_URL;
+  if (base) return `${base.replace(/\/+$/, "")}/${token}/${file}`;
   return `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public/${linkOnlyBucket}/${token}/${file}`;
 }
 

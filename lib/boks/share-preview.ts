@@ -123,7 +123,8 @@ export async function loadBokForShare(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
   try {
-    const request = `${url}/rest/v1/published_boks?id=eq.${id}&select=id,title,author_name,text,minutes,language&limit=1`;
+    const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
+    const request = `${restBase}/published_boks?id=eq.${id}&select=id,title,author_name,text,minutes,language&limit=1`;
     const response = await (options.fetchImpl ?? fetch)(request, {
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
       signal: controller.signal,

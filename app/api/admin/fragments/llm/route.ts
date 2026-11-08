@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import { HttpRequestError, readBoundedJsonObject } from "@/lib/boks/http-security";
 import {
   isYandexModel,
@@ -35,7 +34,8 @@ const modelTimeoutMs = 110_000;
 const stages = new Set<LlmTask["stage"]>(["scenes", "refine", "judge", "tournament"]);
 
 export async function POST(request: Request) {
-  const { YANDEX_API_KEY: apiKey, YANDEX_FOLDER_ID: folderId } = env;
+  // Worker secrets reach process.env under nodejs_compat; on Node they are plain env vars.
+  const { YANDEX_API_KEY: apiKey, YANDEX_FOLDER_ID: folderId } = (globalThis.process?.env ?? {}) as Record<string, string | undefined>;
   if (!apiKey || !folderId) return jsonError("The language model is not configured for this deployment.", 503);
   if (!supabaseUrl || !supabaseApiKey) return jsonError("Supabase is not configured for this deployment.", 503);
 
@@ -98,7 +98,8 @@ function readTask(value: unknown): LlmTask | null {
 /** Asks the database, as the caller, whether the caller is an admin. Null when it could not say. */
 async function isAdmin(token: string, signal: AbortSignal) {
   try {
-    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/is_boks_admin`, {
+    const restBase = globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${supabaseUrl}/rest/v1`;
+    const response = await fetch(`${restBase}/rpc/is_boks_admin`, {
       method: "POST",
       signal,
       headers: { "Content-Type": "application/json", apikey: supabaseApiKey!, Authorization: `Bearer ${token}` },

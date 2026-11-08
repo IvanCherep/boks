@@ -16,8 +16,11 @@
  * tab mid-read. And `/_next/` - the same tab still loads its chunks from where
  * its HTML came from.
  */
+// boks is self-hosted in Russia since 2026-11-07 and keeps tryboks.com as its
+// address. tryboks.ru is the standby address: it redirects here (the reverse
+// proxy does it first; the app repeats it in case a request reaches it directly).
 export const canonicalOrigin = "https://tryboks.com";
-export const retiredHosts = new Set(["read.tryboks.workers.dev"]);
+export const retiredHosts = new Set(["read.tryboks.workers.dev", "www.tryboks.com", "tryboks.ru", "www.tryboks.ru"]);
 
 export function canonicalRedirect(url: URL, host: string | null | undefined): string | null {
   const name = (host ?? url.host).toLowerCase().split(":")[0];

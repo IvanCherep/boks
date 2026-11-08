@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import { ImageResponse } from "next/og";
 import { getBokPosterArtwork } from "@/components/boks/reader/bok-artwork";
 import { loadBokForShare } from "@/lib/boks/share-preview";
@@ -6,7 +5,9 @@ import { SharePoster, sharePosterSize } from "@/lib/boks/share-poster";
 import { sharePosterVersion } from "@/lib/boks/share-link";
 
 async function asset(path: string, request: Request) {
-  const binding = (env as { ASSETS?: Fetcher }).ASSETS;
+  // On Cloudflare the static-assets binding is on globalThis via the Workers env;
+  // on Node there is none and the owned path is fetched from this same origin.
+  const binding = (globalThis as { __BOKS_ASSETS__?: Fetcher }).__BOKS_ASSETS__;
   // Only application-owned paths enter this function. No request parameter is
   // used as an image/font URL; production reads the static-assets binding.
   const response = binding
@@ -40,7 +41,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   // Check publication even for a cached image. Drafts and hidden boks have no poster.
   const bok = await loadBokForShare(id);
   if (!bok) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
-  const cache = (caches as CacheStorage & { default?: Cache }).default;
+  // `caches.default` exists only in Workers; on Node the poster is rendered per request.
+  const cache = (globalThis as { caches?: CacheStorage & { default?: Cache } }).caches?.default;
   const key = new Request(new URL(`/b/${bok.id}/image?v=${sharePosterVersion}`, request.url));
   const cached = await cache?.match(key);
   if (cached) return publishedPoster(cached);
