@@ -5725,6 +5725,20 @@ body:has(.poem, .cinema) .reader-dock {
     box-shadow: 0 0 90px 10px rgb(0 0 0 / 0.55);
   }
 
+  /* The controls and the title belong to the picture, not to the window. */
+  .poem .format-top {
+    left: calc((100vw - var(--poem-column)) / 2);
+    right: auto;
+    width: var(--poem-column);
+  }
+
+  .poem .format-controls,
+  .poem .format-start {
+    left: calc((100vw - var(--poem-column)) / 2 + 24px);
+    right: auto;
+    width: calc(var(--poem-column) - 48px);
+  }
+
   .poem__ambient {
     position: absolute;
     inset: 0;
