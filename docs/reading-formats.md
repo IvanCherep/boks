@@ -718,7 +718,7 @@ its Play icon shares the byline row and the language button has a 44px target.
 `series-catalogue.test.ts` fails if a finished piece is missing from the
 shelf, if a shelf entry would open as plain text, if a cover is missing or too
 heavy, or if the duration or counts disagree with the shipped recording. The
-shelf shows every language by default. Its one control is a language filter
+shelf opens in the interface language - Russian pieces on a Russian device, English on any other - until the reader chooses; "all languages" is one tap away and remembered. Its one control is a language filter
 (the icon at the right of the Series wordmark), kept on this device, which offers exactly the
 languages the pieces carry - a piece with `language: "it"` brings Italian with
 it, named by `lib/i18n/content-languages.ts`. The feed's reading languages do

@@ -10,9 +10,9 @@ import { loadSeriesBoks } from "@/components/boks/supabase-browser-data";
 import { ReaderSheet, ReaderSheetHeader } from "@/components/boks/reader-sheet";
 import { contentLanguageName } from "@/lib/i18n/content-languages";
 import { defineMessages } from "@/lib/i18n/messages";
-import { useMessages } from "@/components/boks/ui-language";
+import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import {
-  effectiveSeriesFilter, rememberSeriesFilter, seriesLanguages, storedSeriesFilter,
+  effectiveSeriesFilter, initialSeriesFilter, rememberSeriesFilter, seriesLanguages, storedSeriesFilter,
   activeCollections,
   arrangeSeriesShelf,
   publishedSeriesShelf,
@@ -66,7 +66,7 @@ const collectionNotes: Partial<Record<SeriesCollection["id"], "prokhorovNote">> 
 
 type CatalogueAnswer = Map<string, { title: string; authorName: string }> | null;
 
-const filterMessages = defineMessages({ title: "Series languages", hint: "Choose languages for this shelf. Nothing selected shows every language.", all: "All languages", done: "Done" }, { ru: { title: "Языки серий", hint: "Выберите языки для этой полки. Если ничего не выбрано, показаны все языки.", all: "Все языки", done: "Готово" } });
+const filterMessages = defineMessages({ title: "Series languages", hint: "Choose languages for this shelf. Until you choose, it shows the interface language.", all: "All languages", done: "Done" }, { ru: { title: "Языки серий", hint: "Выберите языки для этой полки. Пока вы не выбрали, показан язык интерфейса.", all: "Все языки", done: "Готово" } });
 
 /** One answer per page: the shelf is opened and closed, the catalogue does not change under it. */
 let catalogueAnswer: Promise<CatalogueAnswer> | null = null;
@@ -103,7 +103,9 @@ export function SeriesView({
   const filterWords = useMessages(filterMessages);
   const [filterOpen, setFilterOpen] = useState(false);
   const [languageFilter, setLanguageFilter] = useState<string[]>([]);
-  useEffect(() => { const timer = window.setTimeout(() => setLanguageFilter(storedSeriesFilter()), 0); return () => window.clearTimeout(timer); }, []);
+  // Until the reader chooses, the shelf follows the interface language.
+  const interfaceLanguage = useUiLanguage();
+  useEffect(() => { const timer = window.setTimeout(() => setLanguageFilter(initialSeriesFilter(storedSeriesFilter(), interfaceLanguage)), 0); return () => window.clearTimeout(timer); }, [interfaceLanguage]);
   const languageScope = [...languageFilter].sort().join(",");
   const [catalogue, setCatalogue] = useState<{ scope: string; answer: CatalogueAnswer } | null>(null);
   const [catalogueStatus, setCatalogueStatus] = useState<"loading" | "ready" | "error">("loading");

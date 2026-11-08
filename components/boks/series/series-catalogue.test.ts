@@ -7,6 +7,7 @@ import {
   isPremiere,
   seriesCollections,
   effectiveSeriesFilter,
+  initialSeriesFilter,
   orderSeries,
   seriesLanguages,
   publishedSeriesShelf,
@@ -124,6 +125,13 @@ describe("the order of the shelf", () => {
       "ru-new",
       "ru-old",
     ]);
+  });
+
+  it("opens in the interface language until the reader chooses", () => {
+    expect(initialSeriesFilter(null, "ru")).toEqual(["ru"]);
+    expect(initialSeriesFilter(null, "en")).toEqual(["en"]);
+    expect(initialSeriesFilter([], "ru")).toEqual([]);
+    expect(initialSeriesFilter(["en", "ru"], "ru")).toEqual(["en", "ru"]);
   });
 
   it("shows every language when there is no filter", () => {

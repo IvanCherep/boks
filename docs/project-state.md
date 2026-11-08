@@ -331,7 +331,7 @@ included; a missing translation is a type error. In Russian a bok is "текст
 Left English on purpose: the admin console, `/privacy` and `/terms`, the
 server-rendered `/b/<id>` share page and metadata, and database messages not in
 `lib/boks/errors.ts`'s table. The series shelf no longer follows the reader's
-feed languages: it shows every language, with a language filter (icon next to
+feed languages: it opens in the interface language (since 2026-11-08; every language before), with a language filter (icon next to
 "About") that offers exactly the languages its pieces carry - an Italian or
 Serbian piece brings its own option. Looked at in WebKit at iPhone 15 size in
 ru-RU and en-US against the built app.

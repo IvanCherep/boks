@@ -700,9 +700,10 @@ export function isPremiere(piece: SeriesPiece, today: Date) {
 /**
  * The shelf, in the order it is shown.
  *
- * Every language by default: the shelf is small and a production is pictures
- * and a voice as much as words. A reader narrows it with the shelf's own
- * language filter (`languages`); an empty filter is "all", never "none". The
+ * The shelf opens in the interface language (`initialSeriesFilter`): a
+ * Russian device sees the Russian pieces, any other the English ones. The
+ * reader widens or narrows it with the shelf's own language filter
+ * (`languages`); an empty filter is "all", never "none". The
  * newest first, and a piece already heard drops behind the ones not yet heard
  * - the shelf is for what to listen to next.
  */
@@ -743,14 +744,29 @@ export function effectiveSeriesFilter(filter: readonly string[], available: read
 
 const seriesFilterKey = "boks-series-languages";
 
-/** The shelf's filter is a view preference, kept on this device. */
-export function storedSeriesFilter(): string[] {
+/**
+ * The shelf's filter is a view preference, kept on this device. Null when the
+ * reader has never chosen; an empty list is a choice too - all languages.
+ */
+export function storedSeriesFilter(): string[] | null {
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(seriesFilterKey) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+    const raw = window.localStorage.getItem(seriesFilterKey);
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : null;
   } catch {
-    return [];
+    return null;
   }
+}
+
+/**
+ * What the shelf shows before the reader has chosen: the interface language -
+ * Russian on a Russian device, English on every other. A stored choice,
+ * including "all languages", always wins.
+ */
+export function initialSeriesFilter(stored: readonly string[] | null, interfaceLanguage: string): string[] {
+  if (stored) return [...stored];
+  return [interfaceLanguage === "ru" ? "ru" : "en"];
 }
 
 export function rememberSeriesFilter(languages: readonly string[]) {
