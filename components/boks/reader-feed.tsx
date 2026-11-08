@@ -123,12 +123,14 @@ import {
   loadSupabaseStory,
   recordSupabaseReaderEvents,
   recordSupabaseView,
+  loadBokSlug,
   reportBok,
   setMyReadingLanguages,
   setSupabaseLike,
   submitSupabaseComment,
 } from "@/components/boks/supabase-browser-data";
 import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
+import { bokShareUrl } from "@/lib/boks/share-link";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
@@ -484,6 +486,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   const [feedbackSent, setFeedbackSent] = useState(false);
   const feedbackState = useRef<FeedbackState>({ reads: 0, prompted: [] });
   const [bokMenuOpen, setBokMenuOpen] = useState(false);
+  // The open bok's slug, asked for when its menu opens: "Copy link" has to
+  // write in the tap itself, which a lookup in between would cost it.
+  const [menuSlug, setMenuSlug] = useState<{ id: string; slug: string | null } | null>(null);
   /** The admin-only "listen and read" prototype. See `components/boks/cinema`. */
   const [cinemaOpen, setCinemaOpen] = useState(false);
   /**
@@ -1111,6 +1116,12 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     [currentStory]
   );
   const currentStoryId = currentStory?.id;
+  useEffect(() => {
+    if (!bokMenuOpen || !currentStoryId) return;
+    let live = true;
+    void loadBokSlug(currentStoryId).then((slug) => { if (live) setMenuSlug({ id: currentStoryId, slug }); });
+    return () => { live = false; };
+  }, [bokMenuOpen, currentStoryId]);
   const currentComments = comments.filter((comment) => comment.storyId === currentStory?.id);
   const currentCommentDelta = currentStory ? commentCountDeltas[currentStory.id] : undefined;
   const currentCommentCount = currentStory
@@ -2103,7 +2114,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
 
   async function copyBokLink() {
     if (!currentStory) return;
-    const url = `${window.location.origin}/b/${currentStory.id}`;
+    const slug = menuSlug?.id === currentStory.id ? menuSlug.slug : null;
+    const url = bokShareUrl({ id: currentStory.id, slug }, window.location.origin);
     try {
       await navigator.clipboard.writeText(url);
       notify(wordsNow().linkCopied);

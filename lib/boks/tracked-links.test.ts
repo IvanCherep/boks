@@ -25,8 +25,9 @@ describe("tracked links", () => {
 
   it("builds the link to send: a bok's share link with the code, or the feed with it", () => {
     expect(trackedLinkUrl("https://tryboks.com/", { code: "msu", bokId: id })).toBe(
-      `https://tryboks.com/b/${id}?link=msu`
+      `https://go.tryboks.com/b/${id}?link=msu`
     );
-    expect(trackedLinkUrl("https://tryboks.com", { code: "msu", bokId: null })).toBe("https://tryboks.com/?link=msu");
+    expect(trackedLinkUrl("https://tryboks.com", { code: "msu", bokId: null })).toBe("https://go.tryboks.com/?link=msu");
+    expect(trackedLinkUrl("http://localhost:3000", { code: "msu", bokId: null })).toBe("http://localhost:3000/?link=msu");
   });
 });

@@ -6,6 +6,7 @@ import { ReaderBackIcon as ArrowLeft, ReaderShareIcon as Share2 } from "./reader
 import { Button } from "@/components/ui/button";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokShareUrl, renderBokPoster, type ShareBok } from "@/components/boks/share-card-export";
+import { loadBokSlug } from "@/components/boks/supabase-browser-data";
 
 import { bokCoverStyle } from "./reader/bok-cover-palette";
 import { bokArtworkFocus } from "./reader/bok-artwork";
@@ -18,7 +19,16 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
   const [artworkFailed, setArtworkFailed] = useState(false);
   const [posterDownloadUrl, setPosterDownloadUrl] = useState<string | null>(null);
   const panelRef = useRef<HTMLElement>(null);
-  const link = typeof window === "undefined" ? "" : bokShareUrl(story.id, window.location.origin);
+  // Asked for as the sheet opens, not on the tap: a share sheet must open in
+  // the tap itself, with no wait in between. A tap before the answer shares
+  // the id link, which opens the same bok.
+  const [slug, setSlug] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void loadBokSlug(story.id).then((value) => { if (live) setSlug(value); });
+    return () => { live = false; };
+  }, [story.id]);
+  const link = typeof window === "undefined" ? "" : bokShareUrl({ id: story.id, slug }, window.location.origin);
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;

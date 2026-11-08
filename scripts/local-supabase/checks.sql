@@ -3792,3 +3792,34 @@ end $$;
 reset role;
 select public.boks_test_logout();
 rollback;
+
+-- Bok slugs (20261109100000): a readable address given once on publishing,
+-- unique, never changed; a twin gets the start of its id.
+begin;
+do $$
+begin
+  perform public.boks_assert(public.boks_slug_base('Незнакомка', 'Александр Блок') = 'neznakomka-blok', 'a Russian title and surname become neznakomka-blok');
+  perform public.boks_assert(public.boks_slug_base('Три пальмы', 'М. Ю. Лермонтов') = 'tri-palmy-lermontov', 'initials are dropped, the surname stays');
+  perform public.boks_assert(public.boks_slug_base('Hope is the thing with feathers', 'Emily Dickinson') = 'hope-is-the-thing-with-feathers-dickinson', 'an English title keeps its words');
+  perform public.boks_assert(public.boks_slug_base('Щедрый вечер, ёлка!', 'boks') = 'shchedryi-vecher-elka', 'boks as the author adds nothing');
+  perform public.boks_assert(char_length(public.boks_slug_base(repeat('очень длинное название ', 10), 'Блок')) <= 60, 'a long title is cut at a word');
+end $$;
+insert into public.reels (id, title, author_name, text, status) values
+  ('5a190000-0000-4000-8000-000000000001', 'Осень', 'Александр Блок', 'Текст', 'published'),
+  ('5a190000-0000-4000-8000-000000000002', 'Осень', 'Александр Блок', 'Текст', 'published'),
+  ('5a190000-0000-4000-8000-000000000003', 'Осень', 'Александр Блок', 'Текст', 'draft');
+do $$
+begin
+  perform public.boks_assert((select slug from public.reels where id = '5a190000-0000-4000-8000-000000000001') = 'osen-blok', 'the first «Осень» gets the plain slug');
+  perform public.boks_assert((select slug from public.reels where id = '5a190000-0000-4000-8000-000000000002') = 'osen-blok-5a19', 'its twin gets the start of its id');
+  perform public.boks_assert((select slug from public.reels where id = '5a190000-0000-4000-8000-000000000003') is null, 'a draft has no slug yet');
+end $$;
+update public.reels set title = 'Осень (новая редакция)' where id = '5a190000-0000-4000-8000-000000000001';
+update public.reels set status = 'published' where id = '5a190000-0000-4000-8000-000000000003';
+do $$
+begin
+  perform public.boks_assert((select slug from public.reels where id = '5a190000-0000-4000-8000-000000000003') like 'osen-blok-5a19%' and (select slug from public.reels where id = '5a190000-0000-4000-8000-000000000003') <> 'osen-blok-5a19', 'a third twin gets a longer piece of its id');
+  perform public.boks_assert((select slug from public.reels where id = '5a190000-0000-4000-8000-000000000001') = 'osen-blok', 'a new title does not move a slug');
+  perform public.boks_assert((select count(*) from public.published_boks where slug like 'osen-blok%') = 3, 'published_boks carries the slug');
+end $$;
+rollback;

@@ -1,3 +1,5 @@
+import { shareOrigin } from "@/lib/boks/share-link";
+
 /**
  * Tracked links: a link an admin makes for one place - a faculty chat, a
  * university newsletter - so the console can say what that link brought.
@@ -36,7 +38,8 @@ export function linkCodeFrom(value: string | null | undefined) {
 
 /** The address to send. A link with a bok opens it; one without opens the feed. */
 export function trackedLinkUrl(origin: string, link: { code: string; bokId: string | null }) {
-  const base = origin.replace(/\/+$/, "");
+  // On go.tryboks.com like every shared link, so it previews in Telegram (`share-link.ts`).
+  const base = shareOrigin(origin).replace(/\/+$/, "");
   const code = encodeURIComponent(link.code);
   return link.bokId ? `${base}/b/${link.bokId}?link=${code}` : `${base}/?link=${code}`;
 }

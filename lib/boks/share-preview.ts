@@ -22,6 +22,8 @@ export type SharedBok = {
   text: string;
   minutes: number;
   language: string | null;
+  /** The bok's readable address, `/b/<slug>` (`20261109100000_boks_bok_slugs.sql`). */
+  slug: string | null;
 };
 
 const uuidPrefix = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -87,6 +89,7 @@ type PreviewRow = {
   text?: unknown;
   minutes?: unknown;
   language?: unknown;
+  slug?: unknown;
 };
 
 export function sharedBokFromRow(row: PreviewRow | null | undefined): SharedBok | null {
@@ -100,7 +103,22 @@ export function sharedBokFromRow(row: PreviewRow | null | undefined): SharedBok 
     text,
     minutes: Number(row.minutes) || 1,
     language: typeof row.language === "string" ? row.language : null,
+    slug: typeof row.slug === "string" && row.slug ? row.slug : null,
   };
+}
+
+const slugShape = /^[a-z0-9]+(?:-[a-z0-9]+)*/;
+
+/**
+ * What a `/b/...` segment names: a bok id, or a bok's slug (`/b/neznakomka-blok`).
+ * A slug is read as far as it is a slug, so text a messenger glued onto the
+ * link (`neznakomka-blokЧитай`) is left behind, as `sharedBokIdFrom` does for ids.
+ */
+export function sharedBokRefFrom(segment: string): { id: string } | { slug: string } | null {
+  const id = sharedBokIdFrom(segment);
+  if (uuidPrefix.test(id)) return { id };
+  const slug = id.trim().toLowerCase().match(slugShape)?.[0];
+  return slug && slug.length <= 80 ? { slug } : null;
 }
 
 /**
@@ -118,13 +136,14 @@ export async function loadBokForShare(
 ): Promise<SharedBok | null> {
   const url = options.url ?? (import.meta.env.VITE_SUPABASE_URL as string | undefined);
   const key = options.key ?? (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
-  if (!url || !key || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const filter = /^[0-9a-f-]{36}$/i.test(id) ? `id=eq.${id}` : /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) && id.length <= 80 ? `slug=eq.${id}` : null;
+  if (!url || !key || !filter) return null;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
   try {
     const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
-    const request = `${restBase}/published_boks?id=eq.${id}&select=id,title,author_name,text,minutes,language&limit=1`;
+    const request = `${restBase}/published_boks?${filter}&select=id,title,author_name,text,minutes,language,slug&limit=1`;
     const response = await (options.fetchImpl ?? fetch)(request, {
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
       signal: controller.signal,

@@ -1193,6 +1193,27 @@ export async function loadSeriesBoks(
   );
 }
 
+/** Slugs already asked for, so a share sheet opened twice asks once. */
+const bokSlugs = new Map<string, Promise<string | null>>();
+
+/**
+ * A published bok's slug, for its share link (`/b/neznakomka-blok`). Null when
+ * it has none or the lookup fails: the share link then uses the id, which
+ * opens the same bok.
+ */
+export function loadBokSlug(storyId: string): Promise<string | null> {
+  if (!supabase || !storyId) return Promise.resolve(null);
+  let answer = bokSlugs.get(storyId);
+  if (!answer) {
+    answer = Promise.resolve(supabase.from("published_boks").select("slug").eq("id", storyId).maybeSingle())
+      .then((result) => (result.error ? null : ((result.data as { slug?: string | null } | null)?.slug ?? null)))
+      .catch(() => null);
+    answer.then((slug) => { if (!slug) bokSlugs.delete(storyId); });
+    bokSlugs.set(storyId, answer);
+  }
+  return answer;
+}
+
 export async function loadSupabaseStory(storyId: string): Promise<{ story: Story; likedByMe: boolean } | null> {
   if (!supabase) return null;
 

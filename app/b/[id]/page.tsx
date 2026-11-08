@@ -6,7 +6,7 @@ import {
   shareDescription,
   shareReadingNote,
   shareTitle,
-  sharedBokIdFrom,
+  sharedBokRefFrom,
 } from "@/lib/boks/share-preview";
 import { sharedBokRedirectScript } from "@/lib/boks/shared-bok-redirect";
 import { OpenSharedBok, OpeningSharedBok } from "./open-shared-bok";
@@ -22,15 +22,26 @@ import { sharePosterSize } from "@/lib/boks/share-poster";
  * Now the title, the opening lines and the cover come from the server, and the
  * redirect below still takes a person to the reader.
  *
+ * The segment is a bok's slug (`/b/neznakomka-blok`, what the app shares) or
+ * its id (every link shared before slugs, which keeps working). A slug is
+ * turned into the id here, on the server, because the reader opens a bok by id.
+ *
  * Nothing here can fail the page: the lookup swallows its own errors and
  * returns null, and every branch has a generic answer.
  */
 type RouteParams = { id: string };
 
-async function idFrom(params: RouteParams | Promise<RouteParams>) {
+/** The segment as an id or a slug - repairing what messengers do to a link (`sharedBokRefFrom`). */
+async function refFrom(params: RouteParams | Promise<RouteParams>) {
   const resolved = await params;
-  // Repairs what messengers do to a shared link - see `sharedBokIdFrom`.
-  return sharedBokIdFrom(String(resolved?.id ?? ""));
+  const ref = sharedBokRefFrom(String(resolved?.id ?? ""));
+  return ref ? ("id" in ref ? ref.id : ref.slug) : "";
+}
+
+/** The bok's id, looking a slug up; "" when a slug names nothing. */
+async function idFor(ref: string) {
+  if (!ref || /^[0-9a-f-]{36}$/.test(ref)) return ref;
+  return (await loadBokForShare(ref))?.id ?? "";
 }
 
 export async function generateMetadata({
@@ -38,9 +49,9 @@ export async function generateMetadata({
 }: {
   params: RouteParams | Promise<RouteParams>;
 }): Promise<Metadata> {
-  const id = await idFrom(params);
-  const bok = await loadBokForShare(id);
-  const url = `${boksOrigin}/b/${id}`;
+  const ref = await refFrom(params);
+  const bok = await loadBokForShare(ref);
+  const url = `${boksOrigin}/b/${bok?.slug ?? ref}`;
 
   if (!bok) {
     return {
@@ -53,7 +64,7 @@ export async function generateMetadata({
 
   const title = shareTitle(bok);
   const description = shareDescription(bok.text);
-  const image = `${boksOrigin}/b/${id}/image?v=${sharePosterVersion}`;
+  const image = `${boksOrigin}/b/${bok.id}/image?v=${sharePosterVersion}`;
 
   return {
     title,
@@ -96,7 +107,7 @@ export default async function SharedBokPage({
 }: {
   params: RouteParams | Promise<RouteParams>;
 }) {
-  const id = await idFrom(params);
+  const id = await idFor(await refFrom(params));
 
   return (
     <>

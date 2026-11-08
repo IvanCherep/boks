@@ -1,5 +1,6 @@
 "use client";
 
+import { authorShareUrl } from "@/lib/boks/share-link";
 import { useEffect, useState } from "react";
 import { ReaderBackIcon as ArrowLeft, ReaderShareIcon } from "./reader/reader-icons";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ export function AuthorSheet({
   const [status, setStatus] = useState("Loading");
   const [busy, setBusy] = useState(false);
   const [profileLinkFallback, setProfileLinkFallback] = useState(false);
-  const profileLink = typeof window === "undefined" ? "" : new URL(`/?author=${encodeURIComponent(handle.replace(/^@+/, ""))}`, window.location.origin).href;
+  const profileLink = typeof window === "undefined" ? "" : authorShareUrl(handle, window.location.origin);
   async function copyProfileLink() {
     try { await navigator.clipboard.writeText(profileLink); setStatus(t("Profile link copied.", "Ссылка на профиль скопирована.")); }
     catch { setProfileLinkFallback(true); }

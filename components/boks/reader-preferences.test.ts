@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokShareUrl, wrapPosterText } from "@/components/boks/share-card-export";
+import { authorShareUrl } from "@/lib/boks/share-link";
 
 describe("device reading preferences", () => {
   it("bounds malformed local preferences without changing the content language", () => {
@@ -12,7 +13,10 @@ describe("device reading preferences", () => {
 
 describe("real bok share poster", () => {
   it("links to the individual bok with its encoded id", () => {
-    expect(bokShareUrl("a/b ?", "https://tryboks.com")).toBe("https://tryboks.com/b/a%2Fb%20%3F?card=v44-6");
+    expect(bokShareUrl({ id: "a/b ?" }, "http://localhost:3000")).toBe("http://localhost:3000/b/a%2Fb%20%3F");
+    expect(bokShareUrl({ id: "cc7e3800-3567-42c1-ba08-8554a345e25c", slug: "kosa-prokhorov" }, "https://tryboks.com")).toBe("https://go.tryboks.com/b/kosa-prokhorov");
+    expect(bokShareUrl({ id: "cc7e3800-3567-42c1-ba08-8554a345e25c", slug: null }, "https://tryboks.com")).toBe("https://go.tryboks.com/b/cc7e3800-3567-42c1-ba08-8554a345e25c");
+    expect(authorShareUrl("@prokhorov", "https://tryboks.com")).toBe("https://go.tryboks.com/@prokhorov");
   });
 
   it("wraps long words and Cyrillic titles without losing their characters", () => {

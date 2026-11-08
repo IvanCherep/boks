@@ -183,6 +183,13 @@ untouched. Deploy it only with
 `npx wrangler deploy --config ./wrangler.toml --no-autoconfig` from that
 folder - without the flags wrangler deploys the vinext app instead.
 
+Every link the app hands out is on `go.` (`lib/boks/share-link.ts`): a bok
+is `go.tryboks.com/b/<slug>` - its title and the author's surname in Latin
+letters, given once on publishing and never changed, with the start of the id
+added for a twin (`20261109100000_boks_bok_slugs.sql`); an author is
+`go.tryboks.com/@<handle>`, served by `/a/<handle>` (`proxy.ts`); tracked links
+and `/series/<section>` likewise. Old `/b/<uuid>` links keep working.
+
 What it took (2026-11-08): with the app's own page, or with `og:url` still
 naming tryboks.com, Telegram fetched the page and showed nothing; a VK preview
 worked from the start. Verified in Telegram with the small page. Cloudflare's

@@ -98,7 +98,7 @@ describe("reading a bok for a preview", () => {
     };
     const ok = (async () => new Response(JSON.stringify([row]), { status: 200 })) as typeof fetch;
     const bok = await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: ok });
-    expect(bok).toEqual(chekhov);
+    expect(bok).toEqual({ ...chekhov, slug: null });
   });
 
   it("drops a row with no text, which cannot be previewed", () => {
@@ -124,5 +124,27 @@ describe("reading the id out of a link a messenger damaged", () => {
   it("does not invent an id where there is none", () => {
     expect(sharedBokIdFrom("not-a-uuid")).toBe("not-a-uuid");
     expect(sharedBokIdFrom("%E0%A4%A")).toBe("%E0%A4%A");
+  });
+});
+
+describe("a bok named by its slug", () => {
+  it("reads a slug from the path, leaving glued text behind", async () => {
+    const { sharedBokRefFrom } = await import("@/lib/boks/share-preview");
+    expect(sharedBokRefFrom("neznakomka-blok")).toEqual({ slug: "neznakomka-blok" });
+    expect(sharedBokRefFrom(encodeURIComponent("neznakomka-blokЧитай"))).toEqual({ slug: "neznakomka-blok" });
+    expect(sharedBokRefFrom("cc7e3800-3567-42c1-ba08-8554a345e25cRead")).toEqual({ id: "cc7e3800-3567-42c1-ba08-8554a345e25c" });
+    expect(sharedBokRefFrom("../../etc")).toBeNull();
+  });
+
+  it("looks a slug up by slug, and nothing else", async () => {
+    const asked: string[] = [];
+    const fetchImpl = (async (input: string) => {
+      asked.push(String(input));
+      return new Response(JSON.stringify([{ id: "cc7e3800-3567-42c1-ba08-8554a345e25c", title: "коса", author_name: "Алексей Прохоров", text: "Текст", minutes: 1, language: "ru", slug: "kosa-prokhorov" }]));
+    }) as unknown as typeof fetch;
+    const bok = await loadBokForShare("kosa-prokhorov", { url: "https://example.test", key: "key", fetchImpl });
+    expect(bok?.slug).toBe("kosa-prokhorov");
+    expect(asked[0]).toContain("published_boks?slug=eq.kosa-prokhorov&");
+    expect(await loadBokForShare("kosa prokhorov", { url: "https://example.test", key: "key", fetchImpl })).toBeNull();
   });
 });
