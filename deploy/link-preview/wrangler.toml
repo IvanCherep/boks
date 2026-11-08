@@ -1,0 +1,14 @@
+# Deploy from this folder, always with both flags:
+#   npx wrangler deploy --config ./wrangler.toml --no-autoconfig
+# Without them wrangler 4.15x detects the vinext app two folders up and
+# deploys THAT (it once replaced the old `read` Worker this way).
+# Serves link previews from outside Russia at go.tryboks.com (see src/index.js).
+# The custom domain creates its own proxied DNS record; tryboks.com is untouched.
+name = "boks-link-preview"
+main = "src/index.js"
+compatibility_date = "2026-05-15"
+workers_dev = false
+routes = [{ pattern = "go.tryboks.com", custom_domain = true }]
+
+[vars]
+SITE_URL = "https://tryboks.com"

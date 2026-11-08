@@ -165,6 +165,23 @@ A rollback is the same no-downtime switch. It moves the app only: the database
 keeps every migration, so roll back only to a release that works against the
 current schema. When in doubt, repair forward from current source.
 
+## Link Previews in Telegram
+
+Telegram builds a link preview on its own servers abroad, and traffic between
+them and our server in Russia is cut (checked 2026-11-08: no packet from
+Telegram's address ranges reached the server while a link was being sent). So
+a `tryboks.com` link previews as nothing in Telegram. VK, OK and Yandex build
+previews from Russia, and WhatsApp on the sender's phone, so they are fine.
+
+`go.tryboks.com` is the address to share where Telegram matters. It is the
+`boks-link-preview` Cloudflare Worker (`deploy/link-preview`): a preview bot
+gets the page from tryboks.com with the preview image moved to `go.`; a
+person gets a 302 to the same path on tryboks.com and never touches Cloudflare
+again. One small request per click, nothing stored there; `tryboks.com` DNS is
+untouched. Deploy it only with
+`npx wrangler deploy --config ./wrangler.toml --no-autoconfig` from that
+folder - without the flags wrangler deploys the vinext app instead.
+
 ## Load and Limits
 
 Measured on 2026-11-07 (`deploy/loadtest/`): about 500 readers at once are
