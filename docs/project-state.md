@@ -1,7 +1,11 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-07.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-08.
+
+> **⚠️ Since 2026-11-07 production is our own server, not Cloudflare/Supabase Cloud.** Release only with
+> `npm run deploy` (no downtime), migrations with `bash deploy/migrate.sh`, rollback with
+> `bash deploy/release.sh --rollback`. Details and the rules: `AGENTS.md` (top) and `docs/hosting.md`.
 
 For *why* a thing is the way it is, `docs/adr/` and the handovers are the
 record. Test, check and migration counts are deliberately not kept here - they
@@ -205,6 +209,16 @@ against production, and no study has materials yet.
 See `docs/studies.md`.
 
 ## Live
+
+**Releases with no downtime (2026-11-08).** `npm run deploy` is now
+`deploy/release.sh`: it checks, builds the Node server, uploads it to
+`/opt/boks/releases/<id>` and switches the two app copies (`app-blue`,
+`app-green`) one at a time behind Caddy (`deploy/ops/switch.sh`); a copy that
+does not come up healthy puts both back on the previous release. Measured: 233
+of 233 requests answered during a switch. Static files of the previous release
+and of the last two days stay, so open tabs keep working; an older tab reloads
+itself once (`lib/boks/stale-release.ts`). Migrations: `deploy/migrate.sh`.
+The Cloudflare `wrangler deploy` script is gone; `docs/hosting.md` -> Deploy.
 
 **Embeddings are automatic (2026-11-08).** Every 15 minutes the server runs
 `deploy/ops/embed.sh` (cron in `/etc/cron.d/boks-ops`): a one-off `embedder`

@@ -2,6 +2,24 @@
 
 boks is a focused reading feed of complete short literature - each **bok** fits a 15-minute break - built so the founder can compare recommendation algorithms by measured reading behaviour. A reader opens the app, gets one algorithmic swipe-first feed, reads with minimal interface, and leaves attributed behavioural signals.
 
+> ## ⚠️ PRODUCTION MOVED: READ BEFORE ANY DEPLOY, MIGRATION OR SERVER CHANGE
+>
+> Since **2026-11-07** `https://tryboks.com` runs on **our own server in Russia** (Selectel, SSH alias `boks-app`),
+> **not** on Cloudflare Workers and **not** on Supabase Cloud. Everything about it is in `docs/hosting.md`.
+>
+> 1. **Deploy only with `npm run deploy`** (`deploy/release.sh`). It releases with **no downtime**: two app copies are
+>    switched one at a time. **Never `wrangler deploy` the app** and never restart the app containers by hand.
+> 2. **If `package.json` in your checkout still has `"deploy": "... wrangler deploy ..."`, your code is out of date. STOP.**
+>    Update from `github/main` first. Old code "deploys" to the retired Worker `read`: it reports success and
+>    changes nothing on tryboks.com.
+> 3. **Migrations: `bash deploy/migrate.sh`** (dry run), then `--apply`, **before** the code that needs them.
+>    `npx supabase db push --linked` writes to the old Supabase Cloud project, which is now only a backup.
+> 4. **Release only code that contains everything already live.** `npm run deploy` refuses a commit that is
+>    missing anything on `github/main`; merge first. Releasing older code silently removes other people's work.
+> 5. **Rollback:** `bash deploy/release.sh --rollback` (also no downtime). See what is live: `bash deploy/release.sh --list`.
+> 6. **After a release, a reload shows the new version.** Open tabs keep working on the old one; old scripts are kept
+>    for two days, then a stale tab reloads itself once.
+
 Read in this order, then the focused doc for the task:
 
 1. `CONTEXT.md` - the glossary. Use its terms in code, tests, issues and commits.

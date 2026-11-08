@@ -1,5 +1,10 @@
 # boks Hosting Guide
 
+> **⚠️ The one rule:** release with `npm run deploy` from code that contains everything on `github/main`,
+> migrations first with `bash deploy/migrate.sh`. Never `wrangler deploy` the app, never
+> `supabase db push --linked` (old Supabase Cloud project), never restart the app containers by hand.
+> If your `package.json` `deploy` script still says `wrangler`, your checkout is out of date: update it first.
+
 ## Current Hosting Shape
 
 Since 2026-11-07 boks runs on its own server in Russia (Selectel, Moscow),
@@ -77,6 +82,8 @@ npm run deploy                  # = bash deploy/release.sh
 `npm run deploy` does, in order, and stops at the first failure:
 
 1. refuses uncommitted changes (`ALLOW_DIRTY=1` overrides; the id says `-dirty`);
+   and a commit that lacks anything on `github/main` (`ALLOW_BEHIND=1` overrides):
+   a release replaces what is live, so older code takes shipped work off the site;
 2. `npm run check`: lint, typecheck, tests (`SKIP_CHECKS=1` skips);
 3. builds the Node server (`BOKS_PLATFORM=node`, `wrangler.jsonc` moved aside
    for the build), refuses a bundle that names a local backend

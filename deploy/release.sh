@@ -11,9 +11,14 @@
 # a release: it changes rarely and is copied by hand (docs/hosting.md -> Deploy).
 # Migrations are not part of it either: deploy/migrate.sh, before the release.
 #
+# Refuses a commit that does not contain everything on GitHub's main branch:
+# a release replaces what is live, and older code would take shipped work off
+# the site.
+#
 # Environment: ALLOW_DIRTY=1 releases uncommitted changes (the release id says
-# "-dirty"); SKIP_CHECKS=1 skips lint, typecheck and tests; BOKS_HOST and
-# BOKS_SECRETS override the SSH alias and the secrets file.
+# "-dirty"); ALLOW_BEHIND=1 releases a commit behind main; SKIP_CHECKS=1 skips
+# lint, typecheck and tests; BOKS_HOST and BOKS_SECRETS override the SSH alias
+# and the secrets file.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -45,6 +50,23 @@ if [ -n "$(git status --porcelain)" ]; then
   sha="$sha-dirty"
 fi
 id="$(date +%Y%m%d-%H%M%S)-$sha"
+
+# A release replaces what is live. Code that lacks a commit already on the
+# shared main branch would silently take someone's shipped work off the site.
+gh_remote=$(git remote -v | awk '/IvanCherep\/boks(\.git)? \(fetch\)/{print $1; exit}')
+if [ -n "$gh_remote" ]; then
+  git fetch -q "$gh_remote" main
+  if ! git merge-base --is-ancestor "$gh_remote/main" HEAD; then
+    [ "${ALLOW_BEHIND:-}" = 1 ] || {
+      echo "This commit is missing work that is on $gh_remote/main:" >&2
+      git log --oneline "HEAD..$gh_remote/main" | head -10 >&2
+      echo "Merge or rebase onto $gh_remote/main first (ALLOW_BEHIND=1 overrides, for a deliberate rollback of code)." >&2
+      exit 1
+    }
+  fi
+else
+  echo "warning: no remote for IvanCherep/boks; cannot check that this commit contains main" >&2
+fi
 
 if [ "${SKIP_CHECKS:-}" != 1 ]; then
   say "Checks: lint, typecheck, tests"
