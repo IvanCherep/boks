@@ -206,6 +206,18 @@ See `docs/studies.md`.
 
 ## Live
 
+**Embeddings are automatic (2026-11-08).** Every 15 minutes the server runs
+`deploy/ops/embed.sh` (cron in `/etc/cron.d/boks-ops`): a one-off `embedder`
+container (`deploy/embedder`, compose profile `jobs`) gives each published
+bok without a vector its `multilingual-e5-small` one, the same model and input
+as `scripts/embed-catalogue.mjs`. Every run, also an idle one, is a row in
+`background_job_runs` (migration `20261108120000`), shown to admins in Studio
+→ Content → Background jobs; a failure is reported once to Telegram.
+`bge-m3` (Cloudflare Workers AI) was measured against it on the 229 published
+boks the same day and lost on Russian (same-author gap 0.48 SD against 0.71,
+nearest neighbour by the same author 16/94 against 25/94), so the model stays.
+A Workers AI token for that test is in `~/boks-secrets/stack.env`.
+
 **Алексей Прохоров, the first living poet (2026-11-08, pending deploy).** Six
 poems - «коса», «у горы Мегиддо», «азбука веры», «из возвращения в побег»,
 «память шва», «розы Сарагосы» - published with his permission as boks under

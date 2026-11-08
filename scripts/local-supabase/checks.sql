@@ -3756,3 +3756,39 @@ begin
 end $$;
 reset role;
 rollback;
+
+-- Background job log (20261108120000): written by the server's own jobs as
+-- the owner, read only by admins through get_background_job_runs.
+begin;
+insert into public.background_job_runs (job, status, processed, remaining) values ('embedder', 'ok', 2, 0);
+set local role anon;
+do $$
+begin
+  begin
+    perform 1 from public.background_job_runs;
+    raise exception 'CHECK FAILED: anon read the background job log';
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'anon cannot read the background job log');
+  end;
+end $$;
+reset role;
+select public.boks_test_login('ac180000-0000-4000-8000-000000000001', false);
+set local role authenticated;
+do $$
+begin
+  begin
+    perform 1 from public.background_job_runs;
+    raise exception 'CHECK FAILED: a reader read the background job log';
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a signed-in reader cannot read the background job log');
+  end;
+  begin
+    perform public.get_background_job_runs('embedder', 5);
+    raise exception 'CHECK FAILED: a reader called get_background_job_runs';
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'only an admin can call get_background_job_runs');
+  end;
+end $$;
+reset role;
+select public.boks_test_logout();
+rollback;

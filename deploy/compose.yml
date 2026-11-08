@@ -181,6 +181,23 @@ services:
       - caddydata:/data
       - caddyconfig:/config
 
+  # Background job, not a service: run every 15 minutes by deploy/ops/embed.sh
+  # (`docker compose --profile jobs run --rm embedder`). Gives newly published
+  # boks their vector; the model is cached in ./embedder/node_modules.
+  embedder:
+    image: node:22-bookworm-slim
+    profiles: ["jobs"]
+    working_dir: /embedder
+    command: ["node", "embed.mjs"]
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+    volumes:
+      - ./embedder:/embedder
+    mem_limit: 1g
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   dbdata:
   caddydata:

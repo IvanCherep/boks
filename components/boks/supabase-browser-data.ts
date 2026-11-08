@@ -1413,6 +1413,33 @@ export async function loadEmbeddingCoverage() {
   };
 }
 
+export type BackgroundJobRun = {
+  id: number;
+  started_at: string;
+  finished_at: string | null;
+  status: "running" | "ok" | "failed";
+  processed: number;
+  remaining: number | null;
+  duration_ms: number | null;
+  details: { model?: string; titles?: string[] } | null;
+  error: string | null;
+};
+
+export type BackgroundJobReport = {
+  runs: BackgroundJobRun[];
+  lastOk: string | null;
+  failedLastDay: number;
+  processedLastWeek: number;
+};
+
+/** The server's background job log (`background_job_runs`). Admin-only on the server. */
+export async function loadBackgroundJobRuns(job: string, limit = 20) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("get_background_job_runs", { p_job: job, p_limit: limit });
+  if (result.error) throw result.error;
+  return result.data as BackgroundJobReport;
+}
+
 /** One boks in any status, for the admin inspector. Admin-only on the server. */
 export async function loadAdminBok(reelId: string) {
   if (!supabase) throw new Error("Supabase is not configured.");

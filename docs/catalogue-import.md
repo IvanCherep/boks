@@ -171,7 +171,8 @@ node scripts/build-catalogue-sql.mjs /tmp/add.sql work/<batch>/ru2.jsonl work/<b
 # 2. load it - inserts the bok and its rights record in one transaction
 npx supabase db query --linked --file /tmp/add.sql
 # 3. re-spread the publication dates so both languages stay mixed (see below)
-# 4. embed whatever has no vector yet
+# 4. embed whatever has no vector yet - or wait: the server's embedder does
+#    this every 15 minutes for every published bok (deploy/embedder)
 node scripts/embed-catalogue.mjs
 ```
 

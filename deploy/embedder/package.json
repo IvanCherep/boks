@@ -1,0 +1,10 @@
+{
+  "name": "boks-embedder",
+  "private": true,
+  "type": "module",
+  "description": "Gives newly published boks their multilingual-e5-small vector. Run by cron through deploy/ops/embed.sh.",
+  "dependencies": {
+    "@huggingface/transformers": "4.3.0",
+    "postgres": "3.4.7"
+  }
+}

@@ -5,7 +5,8 @@ import { Archive, RefreshCw, RotateCcw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { BoksContentRow } from "@/components/boks/client-types";
-import { loadBoksContent, loadEmbeddingCoverage } from "@/components/boks/supabase-browser-data";
+import { loadBoksContent } from "@/components/boks/supabase-browser-data";
+import { BackgroundJobs } from "@/components/boks/admin/background-jobs";
 import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 import {
   BokLifecycleDialog,
@@ -59,8 +60,6 @@ const words = defineMessages({
   refresh: "Refresh",
   publishedHint: "Hide keeps the bok and its history in Deleted.",
   archivedHint: "Restore returns a bok to its previous state. Permanent deletion cannot be undone.",
-  embeddingCoverage: "Embedding coverage",
-  coverage: (embedded: number, total: number, missing: number) => `${embedded} of ${total} embedded · ${missing} waiting`,
 }, { ru: {
   loading: "Загрузка...",
   noneMatch: (scope: ContentScope) => `Нет ${scope === "published" ? "опубликованных" : "удалённых"} боков по запросу.`,
@@ -101,8 +100,6 @@ const words = defineMessages({
   refresh: "Обновить",
   publishedHint: "Скрытый бок вместе с историей остаётся в Удалённых.",
   archivedHint: "Восстановление возвращает бок в прежнее состояние. Удаление навсегда нельзя отменить.",
-  embeddingCoverage: "Покрытие эмбеддингами",
-  coverage: (embedded: number, total: number, missing: number) => `${embedded} из ${total} с эмбеддингом · ${missing} в очереди`,
 } });
 
 /** Published and soft-deleted boks, with irreversible deletion as a separate step. */
@@ -117,7 +114,6 @@ export function ContentOperations() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<BokLifecycleTarget | null>(null);
-  const [coverage, setCoverage] = useState<{ model: string; publishedTotal: number; publishedEmbedded: number; publishedMissing: number } | null>(null);
   const { openBok, changes } = useAdminInspector();
   const t = useMessages(words);
   const language = useUiLanguage();
@@ -148,13 +144,6 @@ export function ContentOperations() {
       if (request === latestRequest.current) setBusy(false);
     }
   }, []);
-
-  useEffect(() => {
-    loadEmbeddingCoverage()
-      .then(setCoverage)
-      // A missing coverage line is not worth an error in a moderation screen.
-      .catch(() => setCoverage(null));
-  }, [changes]);
 
   // `changes` moves when the boks view hides, restores or erases a boks.
   useEffect(() => {
@@ -239,7 +228,7 @@ export function ContentOperations() {
         <Button variant="ghost" onClick={() => refresh(query, sort, page, scope)} disabled={busy}><RefreshCw className="size-4" /> {t.refresh}</Button>
         <p className="studio-meta">{scope === "published" ? t.publishedHint : t.archivedHint}</p>
       </div>
-      {coverage && <details className="studio-details"><summary>{t.embeddingCoverage} <span aria-hidden="true">+</span></summary><p className="studio-meta">{t.coverage(coverage.publishedEmbedded, coverage.publishedTotal, coverage.publishedMissing)} · {coverage.model}</p></details>}
+      <BackgroundJobs refreshKey={changes} />
 
       <BokLifecycleDialog target={pending} onClose={() => setPending(null)} onDone={afterAction} />
     </section>

@@ -514,3 +514,18 @@
 .studio-poem-preview h3 { font-size:33px; margin:22px 0 12px; }
 .studio-poem-preview p { font-size:12px; }
 .studio-poem-mark { position:absolute; right:-25px; top:42px; font-size:200px; line-height:1; color:#8e9a6266; transform:rotate(15deg); }
+
+/* Background jobs (components/boks/admin/background-jobs.tsx) */
+.studio-jobs { display:grid; gap:10px; border-top:1px solid var(--studio-line); padding:20px 0 8px; }
+.studio-jobs__head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.studio-jobs__title { margin:0; font:500 17px/1.3 var(--font-serif); }
+.studio-jobs__state { margin:0; font-size:14px; line-height:1.5; padding:10px 12px; border-radius:6px; border:1px solid var(--studio-line); }
+.studio-jobs__state--ok { background:#e7f0e2; border-color:#b9d1ad; color:#25461a; }
+.studio-jobs__state--bad { background:#f6e3df; border-color:#e0b2a8; color:#6e1f12; }
+.studio-jobs__state--idle { color:var(--studio-muted); }
+.studio-jobs__error { margin:0; padding:10px 12px; border-radius:6px; background:#f6e3df; color:#6e1f12; font:12px/1.5 ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+.studio-jobs__bad { color:#9b2c19; font-weight:600; }
+.studio-jobs__table { display:grid; font-size:12px; border-top:1px solid var(--studio-line); }
+.studio-jobs__row { display:grid; grid-template-columns:minmax(110px,1.4fr) 1fr 1fr 1fr 0.8fr; gap:8px; padding:7px 0; border-bottom:1px solid var(--studio-line); }
+.studio-jobs__row--head { color:var(--studio-muted); font-weight:600; }
+.studio-jobs__titles { grid-column:1 / -1; color:var(--studio-muted); overflow-wrap:anywhere; }
