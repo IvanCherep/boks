@@ -68,10 +68,12 @@ printf '{"id":"%s","commit":"%s","built":"%s"}\n' "$id" "$(git rev-parse HEAD)" 
 
 say "Upload"
 live=$(remote 'cat releases/CURRENT 2>/dev/null' || true)
-# Files with the same content as in the live release become hard links (-c:
-# compare content, a fresh build gives every file a new time).
+# Files with the same content as in the live release become hard links. A
+# fresh build gives every file a new time, so compare content (--checksum) and
+# do not keep times (no -t): --link-dest links only files equal in every kept
+# attribute.
 link=(); [ -n "$live" ] && link=(--checksum --link-dest="$REMOTE/releases/$live")
-rsync -az ${link[@]+"${link[@]}"} "$out/" "$HOST:$REMOTE/releases/$id/" -e "ssh -o LogLevel=ERROR"
+rsync -rlpz ${link[@]+"${link[@]}"} "$out/" "$HOST:$REMOTE/releases/$id/" -e "ssh -o LogLevel=ERROR"
 
 say "Switch"
 remote "ops/switch.sh $id"
