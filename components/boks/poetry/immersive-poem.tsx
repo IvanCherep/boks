@@ -109,6 +109,7 @@ export function ImmersivePoem({
   autoPlay = false,
   suspended = false,
   onReadText,
+  onOpenAuthor,
   onComments,
   onPlaybackChange,
   onClose,
@@ -127,6 +128,8 @@ export function ImmersivePoem({
   autoPlay?: boolean;
   suspended?: boolean;
   onReadText?: () => void;
+  /** Opens the author over the player (`FormatControls`). */
+  onOpenAuthor?: () => void;
   onComments?: () => void;
   onPlaybackChange?: (state: FormatPlaybackState) => void;
   onClose: () => void;
@@ -1190,6 +1193,7 @@ export function ImmersivePoem({
 
       {status !== "ended" && !recording && !textPreview && <FormatControls
         onShare={finale?.onShare}
+        onOpenAuthor={onOpenAuthor}
         title={manifest.title} byline={manifest.author} artwork={coverArtwork ?? manifest.scenes[0]?.image} start={!hasBegun}
         elapsed={elapsed} total={manifest.durationMs / 1000} playing={playing} stepSeconds={5}
         status={status === "loading" || status === "error" ? status : null}

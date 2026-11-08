@@ -185,6 +185,7 @@ export function CinemaMode({
   autoPlay = false,
   suspended = false,
   onReadText,
+  onOpenAuthor,
   onComments,
   onPlaybackChange,
   onClose,
@@ -202,6 +203,8 @@ export function CinemaMode({
   autoPlay?: boolean;
   suspended?: boolean;
   onReadText?: () => void;
+  /** Opens the author over the player (`FormatControls`). */
+  onOpenAuthor?: () => void;
   onComments?: () => void;
   onPlaybackChange?: (state: FormatPlaybackState) => void;
   onClose: () => void;
@@ -548,6 +551,7 @@ export function CinemaMode({
 
       {phase !== "ended" && !moment && !recording && <FormatControls
         onShare={finale?.onShare}
+        onOpenAuthor={onOpenAuthor}
         title={story.title} byline={story.authorName || "boks"} artwork={picture.placeholder ? undefined : picture.src}
         elapsed={elapsed} total={total} playing={progress.speaking} stepSeconds={15} hidden={bare && progress.speaking} start={phase === "cover"}
         status={audioStatus}

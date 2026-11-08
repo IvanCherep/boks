@@ -89,6 +89,12 @@
 .format-top:has(.format-share) { grid-template-columns: 92px minmax(0,1fr) 92px; }
 .format-top:has(.format-share) .format-top__back { justify-self: start; }
 .format-top__actions { display: flex; justify-content: flex-end; gap: 4px; }
+/* The title opens the author: title over the byline, the whole of it one target. */
+.format-top button.format-top__title--author { width: auto; height: auto; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px 10px; background: none; }
+.format-top__title--author span { font: 500 11px/1.35 var(--font-sans); }
+.format-top__title--author small { font: 400 10px/1.3 var(--font-sans); color: #f6f1e8b8; text-decoration: underline; text-decoration-color: #f6f1e855; text-underline-offset: 2px; }
+.format-menu__byline { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 0; border: 0; background: none; font-size: 11px; line-height: 1.2; color: #e6e3d8; text-decoration: underline; text-decoration-color: #e6e3d866; text-underline-offset: 2px; cursor: pointer; }
+.format-menu__byline svg { width: 13px; height: 13px; flex: none; }
 .cinema.is-recording .format-share, .poem.is-recording .format-share { display: none; }
 .format-top__title { justify-self: center; max-width: 210px; font: 500 11px/1.35 var(--font-sans); text-align: center; overflow-wrap: anywhere; }
 .format-top button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 8px; background: #14202822; color: inherit; }

@@ -2995,6 +2995,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             onPlaybackChange={onFormatPlayback}
             onComments={() => setCommentOpen(true)}
             onReadText={readText}
+            onOpenAuthor={currentStory.authorHandle ? () => openAuthor(currentStory.authorHandle, currentStory.authorName) : undefined}
             onClose={() => { if (seriesOpen) flushAftertaste(); setCinemaOpen(false); }}
           /></div>
         )}
@@ -3004,6 +3005,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             coverArtwork={getBokArtwork(currentStory) ?? undefined}
             suspended={readerOverlayOpen}
             onPlaybackChange={onFormatPlayback} onComments={() => setCommentOpen(true)} onReadText={readText}
+            onOpenAuthor={currentStory.authorHandle ? () => openAuthor(currentStory.authorHandle, currentStory.authorName) : undefined}
             onClose={() => { if (seriesOpen) flushAftertaste(); setPoem(null); }} /></div>
         )}
       </section>

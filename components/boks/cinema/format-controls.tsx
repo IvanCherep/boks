@@ -22,7 +22,7 @@ const waveHeights = Array.from({ length: 84 }, (_, index) => {
 export function FormatControls({
   title, byline, artwork, elapsed, total, playing, stepSeconds,
   onToggle, onSeek, onRestart, onReadText, onClose, voice, onVoiceChange,
-  music, onMusicChange, onMenuChange, hidden = false, moments = [], start = false, status = null, onShare,
+  music, onMusicChange, onMenuChange, hidden = false, moments = [], start = false, status = null, onShare, onOpenAuthor,
 }: {
   title: string; byline: string; artwork?: string;
   elapsed: number; total: number; playing: boolean; stepSeconds: 5 | 15;
@@ -33,6 +33,8 @@ export function FormatControls({
   start?: boolean; status?: "loading" | "error" | null;
   /** Opens the share sheet over the player: a piece is worth passing on while it plays, not only at its end. */
   onShare?: () => void;
+  /** Opens the author's page over the player, from the title and from the menu's byline. */
+  onOpenAuthor?: () => void;
 }) {
   const { t } = useReaderPreferences();
   const [menu, setMenu] = useState<"playback" | "sound" | null>(null);
@@ -51,7 +53,10 @@ export function FormatControls({
   return <>
     <header className={`format-top${hidden || menu ? " is-hidden" : ""}`}>
       <button type="button" className="format-top__back" aria-label={t("Back", "Назад")} onClick={onClose}><ArrowLeft /></button>
-      <span className="format-top__title" translate="no">{title}</span>
+      {onOpenAuthor ? <button type="button" className="format-top__title format-top__title--author" translate="no" onClick={onOpenAuthor}
+        aria-label={t(`${title}, ${byline}. Open the author`, `${title}, ${byline}. Открыть автора`)}>
+        <span>{title}</span><small>{byline}</small>
+      </button> : <span className="format-top__title" translate="no">{title}</span>}
       <span className="format-top__actions">
         {onShare && <button type="button" className="format-share" aria-label={t("Share", "Поделиться")} onClick={onShare}><Share /></button>}
         <button ref={trigger} type="button" className="format-menu-trigger" aria-label={t("Playback", "Воспроизведение")} onClick={() => {
@@ -120,7 +125,9 @@ export function FormatControls({
           {/* The prepared artwork has its own static asset size. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {artwork && <img src={artwork} alt="" />}
-          <div><h2 translate="no">{title}</h2><p translate="no">{byline}</p></div>
+          <div><h2 translate="no">{title}</h2>{onOpenAuthor
+            ? <button type="button" className="format-menu__byline" translate="no" onClick={() => { closeMenu(); onOpenAuthor(); }}>{byline}<ChevronRight /></button>
+            : <p translate="no">{byline}</p>}</div>
           <button type="button" className="format-menu__close" onClick={closeMenu} aria-label={t("Close playback", "Закрыть воспроизведение")}><X /></button>
         </div>
           <div className="format-menu__tiles">
