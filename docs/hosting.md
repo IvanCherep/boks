@@ -80,6 +80,7 @@ git status --short              # clean: a release is a commit
 bash deploy/migrate.sh          # when supabase/migrations changed: dry run
 bash deploy/migrate.sh --apply  # then apply, BEFORE the code that needs them
 npm run deploy                  # = bash deploy/release.sh
+git push origin main            # right away: the next release is built from main
 ```
 
 `npm run deploy` does, in order, and stops at the first failure:

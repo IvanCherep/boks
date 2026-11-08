@@ -16,6 +16,7 @@ boks is a focused reading feed of complete short literature - each **bok** fits 
 >    `npx supabase db push --linked` writes to the old Supabase Cloud project, which is now only a backup.
 > 4. **Release only code that contains everything already live.** `npm run deploy` refuses a commit that is
 >    missing anything on `github/main`; merge first. Releasing older code silently removes other people's work.
+>    **Push to `main` right after the release**, or the next release (built from `main`) takes your change off the site.
 > 5. **Rollback:** `bash deploy/release.sh --rollback` (also no downtime). See what is live: `bash deploy/release.sh --list`.
 > 6. **After a release, a reload shows the new version.** Open tabs keep working on the old one; old scripts are kept
 >    for two days, then a stale tab reloads itself once.
