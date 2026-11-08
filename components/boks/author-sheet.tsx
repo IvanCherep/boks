@@ -314,9 +314,9 @@ export function AuthorSheet({
                       <span className="author-cover__meta">
                         {/* In a publisher's catalogue the writer is what tells one
                             title from another; in a writer's own list it is noise. */}
-                        {[manyWriters ? bok.authorName : null, current ? t("reading now", "читаете сейчас") : t(`${Math.max(1, bok.minutes)} min`, `${Math.max(1, bok.minutes)} мин`)]
-                          .filter(Boolean)
-                          .map((part, index) => <span key={index}>{index > 0 && " · "}{part}</span>)}
+                        {manyWriters && bok.authorName && <>{bok.authorName} · </>}
+                        {/* The length never breaks across lines; a long name may. */}
+                        <span className="author-cover__length">{current ? t("reading now", "читаете сейчас") : t(`${Math.max(1, bok.minutes)} min`, `${Math.max(1, bok.minutes)} мин`)}</span>
                       </span>
                     </span>
                   </button>
