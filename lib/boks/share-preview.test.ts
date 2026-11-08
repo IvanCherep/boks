@@ -28,9 +28,23 @@ describe("how a shared bok reads in a messenger", () => {
     expect(shareTitle({ title: "   ", authorName: null })).toBe("A bok");
   });
 
-  it("opens with the piece itself, as one line", () => {
+  it("keeps a short poem's lines, whole", () => {
     const description = shareDescription("Бор сосновый\nв стране одинокой стоит;\nв нём ручья\nне найдёшь.");
-    expect(description).toBe("Бор сосновый в стране одинокой стоит; в нём ручья не найдёшь.");
+    expect(description).toBe("Бор сосновый\nв стране одинокой стоит;\nв нём ручья\nне найдёшь.");
+  });
+
+  it("opens a longer poem with its first lines and an ellipsis", () => {
+    const poem = "заходит смерть\nи просит наточить косу,\n\nты острослов\nсумеешь ли с железом\nя понимаю что сейчас спасу";
+    expect(shareDescription(poem)).toBe("заходит смерть\nи просит наточить косу,\nты острослов\nсумеешь ли с железом…");
+  });
+
+  it("does not put an ellipsis after a full stop", () => {
+    expect(shareDescription("Раз.\nДва.\nТри.\nЧетыре.\nПять.")).toBe("Раз.\nДва.\nТри.\nЧетыре…");
+  });
+
+  it("runs prose into one paragraph", () => {
+    const prose = "Первый абзац рассказа, длинный, как бывает у прозы, и уж точно длиннее восьмидесяти знаков в одной строке.\nВторой абзац.";
+    expect(shareDescription(prose)).not.toContain("\n");
   });
 
   it("cuts at a word and marks the cut, so no client truncates mid-word", () => {

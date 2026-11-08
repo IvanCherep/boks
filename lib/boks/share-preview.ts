@@ -57,14 +57,37 @@ export function shareTitle(bok: Pick<SharedBok, "title" | "authorName">) {
   return author ? `${title} — ${author}` : title;
 }
 
+/** How many lines of a poem a preview opens with. */
+export const shareDescriptionLines = 4;
+
+/** Lines no longer than this, at the start of a text, make it verse. */
+const verseLineLength = 80;
+
 /**
- * The opening of the piece, as one line.
+ * The opening of the piece, as a messenger shows it under the title.
  *
- * Verse loses its line breaks here and that is deliberate: a preview is a
- * single paragraph in every client, and a poem broken across a card's three
- * available lines reads worse than the same words run together.
+ * A poem keeps its lines: the first few, each on its own line, and an ellipsis
+ * after the last one shown - run together, verse read as a garbled sentence
+ * (Telegram, WhatsApp and VK all show line breaks in a description). Prose is
+ * one paragraph, cut at a word. Either way a text that fits is shown whole,
+ * with no ellipsis after it.
  */
 export function shareDescription(text: string, limit = shareDescriptionLimit) {
+  const lines = text.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const opening = lines.slice(0, shareDescriptionLines);
+  if (lines.length >= 2 && opening.every((line) => line.length <= verseLineLength)) {
+    const shown: string[] = [];
+    let length = 0;
+    for (const line of opening) {
+      if (shown.length && length + line.length + 1 > limit) break;
+      shown.push(line);
+      length += line.length + 1;
+    }
+    if (shown.length === lines.length) return shown.join("\n");
+    shown[shown.length - 1] = `${shown[shown.length - 1].replace(/[\s.,;:—–-]+$/, "")}…`;
+    return shown.join("\n");
+  }
+
   const flat = text.replace(/\s+/g, " ").trim();
   if (flat.length <= limit) return flat;
   const cut = flat.slice(0, limit + 1);
