@@ -36,7 +36,8 @@ export function PrivacyEn() {
         </p>
         <p>
           <strong>How you arrived:</strong> for each visit, the country your connection comes from (worked out by
-          Cloudflare from your network - boks never sees or keeps your IP address), whether you came through a
+          our server from your network address at the moment of the visit, with the country database of{" "}
+          <a href="https://db-ip.com">DB-IP</a>; the address itself is not kept for this), whether you came through a
           shared link, the site that sent you, and any campaign tag in the link. This tells us who our readers are
           and which languages to add next.
         </p>

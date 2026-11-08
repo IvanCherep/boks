@@ -141,8 +141,11 @@ services:
       BOKS_INTERNAL_REST_URL: http://rest:3000
       # Link-only pieces (living authors): served to the app over the private network only.
       BOKS_LINK_ONLY_BASE_URL: http://caddy:8082
+      # Visitor country by address (lib/boks/geoip.ts); refreshed by ops/geoip.sh.
+      BOKS_GEOIP_DB: /geoip/country.mmdb
     volumes:
       - ./slots/blue:/app:ro
+      - ./geoip:/geoip:ro
     stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/__health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
@@ -156,6 +159,7 @@ services:
     <<: *app
     volumes:
       - ./slots/green:/app:ro
+      - ./geoip:/geoip:ro
 
   # GoTrue's send-email hook: Resend from hello@tryboks.com, fallback hello@tryboks.ru.
   mailer:

@@ -210,6 +210,14 @@ See `docs/studies.md`.
 
 ## Live
 
+**Visitor country is recorded again (2026-11-09).** From the move on
+2026-11-07 until this fix, no visit had a country: Cloudflare used to supply
+it, and nothing on our server did. Now `/api/geo` looks the address up in
+DB-IP's country database on the server (`lib/boks/geoip.ts`,
+`deploy/ops/geoip.sh`); the address is not kept. Visits of 2026-11-07..09
+stay without a country - the addresses were never stored. `/privacy` says how
+the country is worked out (the effective date is unchanged).
+
 **Releases with no downtime (2026-11-08).** `npm run deploy` is now
 `deploy/release.sh`: it checks, builds the Node server, uploads it to
 `/opt/boks/releases/<id>` and switches the two app copies (`app-blue`,

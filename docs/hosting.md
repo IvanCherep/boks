@@ -26,6 +26,11 @@ not on Cloudflare Workers and Supabase Cloud.
   daily and weekly reports and trend forecasts to the team Telegram group
   through the `boks-telegram` Worker (Telegram is blocked from the server), and
   an overload guard that shows new visitors a waiting page (`deploy/busy/`).
+- Visitor country: without Cloudflare in front, `/api/geo` looks the
+  connecting address up in DB-IP's free country database
+  (`lib/boks/geoip.ts`, file `/opt/boks/geoip/country.mmdb`, refreshed on the
+  3rd of each month by `deploy/ops/geoip.sh`; CC BY 4.0, credited in
+  `/privacy`). Only the country code is kept, never the address.
 - Secrets: `/opt/boks/.env` on the server (template `deploy/.env.example`), a
   copy in `~/boks-secrets/stack.env` on the founder's machine. The deploy
   scripts read what they need from the server over SSH. Never in the
@@ -41,6 +46,7 @@ What is where on the server:
   slots/blue, slots/green                symlinks to the release each app copy runs
   static/                                static files Caddy serves: live release + recent ones
   ops/  mailer/  embedder/  busy/  templates/  link-only/  flags/
+  geoip/country.mmdb                     visitor country database (ops/geoip.sh, monthly)
 ```
 
 ## Environment Variables
