@@ -95,7 +95,7 @@ npm run verify:schema                           # миграции + RLS в Dock
 npx supabase start && npm run test:supabase     # полный флоу локально
 npm run build && npm run start                  # http://127.0.0.1:8787
 ```
-Деплой: `npm run deploy` (Cloudflare). Бэклог — GitHub Issues `IvanCherep/boks`.
+Деплой: `npm run deploy` (собственный сервер в Selectel, без простоя; `docs/hosting.md`). Бэклог — GitHub Issues `IvanCherep/boks`.
 
 ## Текущее состояние и открытые задачи (кратко)
 

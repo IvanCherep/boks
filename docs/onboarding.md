@@ -13,7 +13,8 @@ No secret is written in this repository. Every value below says where to get it.
 | Service | What to grant | Needed for |
 |---|---|---|
 | GitHub `IvanCherep/boks` | Collaborator, **Write** (Settings -> Collaborators) | push, issues (the backlog) |
-| Cloudflare (account that owns Worker `read` and `tryboks.com`) | Member with **Workers admin** (Manage account -> Members) | `npm run deploy`, logs |
+| Server `boks-app` (Selectel) | Their SSH key in `~boks/.ssh/authorized_keys`, and the secrets file `~/boks-secrets/stack.env` through a password manager | `npm run deploy`, `deploy/migrate.sh`, logs |
+| Cloudflare (DNS of `tryboks.com`, Telegram relay Worker) | Member with **DNS** / **Workers admin** - only if they will touch those | DNS, `deploy/telegram-relay` |
 | Supabase project `vcmrvnihbptostnzaean` | Organization member, **Developer** or **Owner** | migrations, dashboard, `supabase link` |
 | Resend (`tryboks.com` domain) | Team member - only if they will touch sign-in email | SMTP, delivery logs |
 | boks admin console | After they sign up on https://tryboks.com: `/admin` -> People -> grant **admin** | `/admin`, moderation, the experiment lab |
@@ -105,10 +106,9 @@ If all four pass and `wrangler whoami` shows the account, the setup is done.
 
 ```bash
 npm run check && npm run verify:schema
-npx supabase migration list --linked        # anything pending?
-npx supabase db push --linked --dry-run     # read the SQL
-npx supabase db push --linked               # schema first...
-npm run deploy                              # ...then the Worker
+bash deploy/migrate.sh                      # dry run: anything pending? read the SQL
+bash deploy/migrate.sh --apply              # schema first...
+npm run deploy                              # ...then the app, no downtime (docs/hosting.md)
 curl -s -o /dev/null -w '%{http_code}\n' https://tryboks.com/   # 200
 ```
 

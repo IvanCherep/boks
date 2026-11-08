@@ -12,6 +12,7 @@ import "./social-v44.css";
 import "./admin-v44.css";
 import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";
 import { uiLanguageBootScript } from "@/lib/i18n/ui-language";
+import { staleReleaseBootScript } from "@/lib/boks/stale-release";
 
 /**
  * The canonical origin, and the reason it is written down.
@@ -107,6 +108,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         {/* `<html lang>` follows the interface language: the device's, or the reader's choice. */}
         <script dangerouslySetInnerHTML={{ __html: uiLanguageBootScript }} />
+        {/* A tab older than the last release reloads instead of breaking (lib/boks/stale-release.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: staleReleaseBootScript }} />
       </head>
       <body className="antialiased">
         {children}

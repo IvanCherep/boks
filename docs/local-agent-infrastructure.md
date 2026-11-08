@@ -55,49 +55,37 @@ Cloudflare naming:
 
 Important files:
 
-- `wrangler.jsonc`: production Worker config.
-- `package.json`: deploy script.
+- `deploy/release.sh`: the release (`npm run deploy`); `deploy/ops/switch.sh`
+  switches the server to it with no downtime.
+- `deploy/compose.yml`, `deploy/Caddyfile`: the server stack.
 - `dist/`: generated build output, do not edit by hand.
 
-Deploy command:
+Deploy command (production is our own server since 2026-11-07, not the Worker):
 
 ```bash
+bash deploy/migrate.sh   # when migrations changed: dry run, then --apply
 npm run deploy
 ```
 
-That runs:
-
-```bash
-npm run build
-npm run check:deploy-target
-wrangler deploy --config wrangler.jsonc --keep-vars
-```
+It checks, builds the Node server, refuses a bundle that names a local
+backend (`check:deploy-target`), uploads it and switches the two app copies
+one at a time; `docs/hosting.md` -> Deploy has the details and the rollback.
 
 `check:deploy-target` reads the built artifact and refuses to deploy a bundle
-that names a loopback service origin, or one that names no Supabase backend at
-all. It exists because a local override once shipped to production: the site
-reached `http://127.0.0.1:54321`, which resolved only on the founder's laptop,
-so it looked healthy to one person and was broken - feed, sign-in and email -
-for everyone else. Every other check passed, because the code was right and
-only its address was wrong.
+that names a loopback service origin, or one that names no backend at all. It
+exists because a local override once shipped to production: the site reached
+`http://127.0.0.1:54321`, which resolved only on the founder's laptop, so it
+looked healthy to one person and was broken - feed, sign-in and email - for
+everyone else. Every other check passed, because the code was right and only
+its address was wrong.
 
-`--keep-vars` is required. It prevents Wrangler from deleting Cloudflare
-dashboard variables during a source-only deployment.
+If the agent cannot deploy:
 
-If Claude cannot deploy:
-
-1. Confirm it is running in the project root.
-2. Confirm dependencies exist with `npm install` or `npm ci`.
-3. Confirm Wrangler is authenticated:
-   ```bash
-   npx wrangler whoami
-   ```
-4. If not authenticated, run:
-   ```bash
-   npx wrangler login
-   ```
-   Complete the browser login as the Cloudflare account owner.
-5. Retry `npm run deploy`.
+1. Confirm it is running in the project root, with dependencies installed.
+2. Confirm `ssh boks-app true` works and `~/boks-secrets/stack.env` exists.
+   Neither can be created by an agent: ask the founder.
+3. Read the failing step's output; `bash deploy/release.sh --list` shows what
+   is live. Retry `npm run deploy` after fixing the cause.
 
 Do not rename the Cloudflare `workers.dev` subdomain unless the founder
 explicitly requests a URL strategy change. It affects all Workers in the
@@ -253,8 +241,9 @@ hosting plan.
 
 Local files:
 
-- `.env.local` - the production Supabase project. Used by `build`, `deploy` and
-  `verify:supabase`.
+- `.env.local` - the Supabase Cloud project (production until 2026-11-07,
+  now a backup). Used by `build` and `verify:supabase`; `npm run deploy` does
+  not read it, it sets the production values itself (`deploy/release.sh`).
 - `.env.development.local` - the local Supabase stack. Vite reads it in *dev
   mode only*, so it can never reach a production build.
 

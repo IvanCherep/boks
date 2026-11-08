@@ -1,6 +1,6 @@
 # boks Operations Guide
 
-Use `docs/testing.md` for structured reader, author, admin, and technical test scripts. Use `docs/hosting.md` for Cloudflare deployment and production URL checks.
+Use `docs/testing.md` for structured reader, author, admin, and technical test scripts. Use `docs/hosting.md` for deployment, rollback and production checks.
 
 ## Running a Test
 

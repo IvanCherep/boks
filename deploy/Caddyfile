@@ -84,9 +84,21 @@
 			}
 		}
 
-		# Pages, API routes and everything rendered: the Node app.
+		# Pages, API routes and everything rendered: the Node app, two copies.
+		# A copy that is starting or stopping answers 503 on /__health and gets
+		# no traffic; a request that cannot reach one copy is retried on the
+		# other, so a release (deploy/ops/switch.sh) is invisible to readers.
 		handle {
-			reverse_proxy app:3000
+			reverse_proxy app-blue:3000 app-green:3000 {
+				lb_policy least_conn
+				lb_try_duration 20s
+				lb_try_interval 250ms
+				health_uri /__health
+				health_interval 1s
+				health_timeout 2s
+				health_fails 1
+				health_passes 1
+			}
 		}
 	}
 }

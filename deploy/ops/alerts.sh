@@ -18,8 +18,11 @@ alert() {
   fi
 }
 
-# 1. Every service is running.
-down=$(docker compose ps --all --format '{{.Service}} {{.State}}' | awk '$1!="mail" && $2!="running"{print $1" ("$2")"}' | paste -sd, -)
+# 1. Every service is running. During a release (ops/switch.sh, flags/deploying,
+# at most 15 minutes old) an app copy being recreated is expected, not an outage.
+deploying=0
+[ -f flags/deploying ] && [ $(( $(date +%s) - $(cat flags/deploying) )) -lt 900 ] && deploying=1
+down=$(docker compose ps --all --format '{{.Service}} {{.State}}' | awk -v d=$deploying '$1!="mail" && $1!="embedder" && $2!="running" && !(d && $1 ~ /^app-/){print $1" ("$2")"}' | paste -sd, -)
 alert services "$([ -n "$down" ] && echo 1 || echo 0)" "<b>Не работают сервисы:</b> $down" "Все сервисы снова работают"
 
 # 2. A service keeps restarting (more than 3 restarts in total since it was created).

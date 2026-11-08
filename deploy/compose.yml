@@ -124,11 +124,17 @@ services:
       PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: 3600
 
-  app:
+  # The app runs as two identical copies, blue and green, both taking traffic
+  # (Caddy balances them). A release replaces one, waits until it is healthy,
+  # then the other, so the site never stops (deploy/ops/switch.sh,
+  # docs/hosting.md -> Deploy). Each copy runs the release its slot points at:
+  # ./slots/<colour> is a symlink to ./releases/<id>, resolved when the
+  # container is created.
+  app-blue: &app
     image: node:22-bookworm-slim
     restart: unless-stopped
     working_dir: /app
-    command: ["node", "server.js"]
+    command: ["node", "serve.mjs"]
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -136,7 +142,20 @@ services:
       # Link-only pieces (living authors): served to the app over the private network only.
       BOKS_LINK_ONLY_BASE_URL: http://caddy:8082
     volumes:
-      - ./app:/app:ro
+      - ./slots/blue:/app:ro
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/__health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      start_period: 60s
+      start_interval: 1s
+      retries: 3
+
+  app-green:
+    <<: *app
+    volumes:
+      - ./slots/green:/app:ro
 
   # GoTrue's send-email hook: Resend from hello@tryboks.com, fallback hello@tryboks.ru.
   mailer:
@@ -165,7 +184,7 @@ services:
   caddy:
     image: caddy:2.10
     restart: unless-stopped
-    depends_on: [app, auth, rest]
+    depends_on: [app-blue, app-green, auth, rest]
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:
       SITE_HOST: ${SITE_HOST}
@@ -174,7 +193,9 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./templates:/templates:ro
-      - ./app/dist/client:/srv/client:ro
+      # Static files of the current release and of recent ones, so a tab opened
+      # before a release can still load its scripts (deploy/ops/switch.sh prunes it).
+      - ./static:/srv/client:ro
       - ./link-only:/link-only:ro
       - ./flags:/flags:ro
       - ./busy:/srv/busy:ro

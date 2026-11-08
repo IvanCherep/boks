@@ -2,202 +2,177 @@
 
 ## Current Hosting Shape
 
-boks is hosted on Cloudflare Workers with Static Assets.
+Since 2026-11-07 boks runs on its own server in Russia (Selectel, Moscow),
+not on Cloudflare Workers and Supabase Cloud.
 
-Current public URL:
+- Address: `https://tryboks.com`. `tryboks.ru` and `www.tryboks.com` redirect
+  to it with path and query; on `tryboks.ru` the API, sign-in and `/_next/`
+  are still answered, for tabs opened there before 2026-11-08.
+- Server: `boks-app` (SSH alias; IP `135.106.236.123`), Ubuntu, 2 vCPU / 4 GB,
+  everything in `/opt/boks`, one Docker Compose stack: `deploy/compose.yml`.
+- Services: `db` (Postgres 17, Supabase image), `auth` (GoTrue), `rest`
+  (PostgREST), `app-blue` and `app-green` (two copies of the Node build of the
+  app), `caddy` (TLS, static files, routing: `deploy/Caddyfile`), `mailer`
+  (GoTrue's send-email hook, Resend). `embedder` is a 15-minute job, not a
+  service.
+- DNS: `tryboks.com` on Cloudflare, **DNS only** (grey cloud). Never turn on
+  the proxy: Cloudflare is throttled in Russia. `tryboks.ru` in Selectel DNS.
+- Ops (cron in `/etc/cron.d/boks-ops`, scripts in `deploy/ops/`): alerts,
+  daily and weekly reports and trend forecasts to the team Telegram group
+  through the `boks-telegram` Worker (Telegram is blocked from the server), and
+  an overload guard that shows new visitors a waiting page (`deploy/busy/`).
+- Secrets: `/opt/boks/.env` on the server (template `deploy/.env.example`), a
+  copy in `~/boks-secrets/stack.env` on the founder's machine. Never in the
+  repository.
 
-`https://tryboks.com`
+What is where on the server:
 
-Cloudflare naming:
-
-- Account `workers.dev` subdomain: `tryboks`
-- Production Worker name: `read`
-- Final free URL pattern: `<worker-name>.<account-subdomain>.workers.dev`
-- Old public routes for `boks` and `boks-prototype` should stay disabled.
-
-The production config lives in `wrangler.jsonc`. The local Sites manifest lives in `.openai/hosting.json`.
-
-Cloudflare references:
-
-- Workers routes and `workers.dev`: `https://developers.cloudflare.com/workers/configuration/routing/workers-dev/`
-- Wrangler configuration: `https://developers.cloudflare.com/workers/wrangler/configuration/`
+```text
+/opt/boks/
+  compose.yml  Caddyfile  .env           copies of deploy/compose.yml, deploy/Caddyfile
+  releases/<id>/                         one app build per release (deploy/release.sh)
+  releases/CURRENT, releases/PREVIOUS    the live release id and the one before it
+  slots/blue, slots/green                symlinks to the release each app copy runs
+  static/                                static files Caddy serves: live release + recent ones
+  ops/  mailer/  embedder/  busy/  templates/  link-only/  flags/
+```
 
 ## Environment Variables
 
-Local development and deployment need `.env.local`, copied from `.env.example`.
+The build needs two public values, both set by `deploy/release.sh`:
 
-Required public values:
+- `VITE_SUPABASE_URL` = `https://tryboks.com` (GoTrue and PostgREST are behind
+  the same origin, at `/auth/v1` and `/rest/v1`);
+- `VITE_SUPABASE_PUBLISHABLE_KEY` = the anon key (`ANON_KEY` in the secrets).
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
+Local development is unchanged: `.env.local` from `.env.example`
+(`docs/local-environment-runbook.md`). Never put a service-role key in browser
+code, source, screenshots or docs.
 
-Never store or deploy a Supabase service role key for browser code. Do not put service role keys in source, screenshots, Wrangler vars, or docs.
-
-Supabase Auth should allow:
-
-- anonymous sign-ins for guest reading;
-- email sign-up/sign-in for permanent reader accounts;
-- email confirmation and leaked-password protection, including for callers
-  that bypass the passwordless boks UI;
-- production redirect URL `https://tryboks.com`, with the workers.dev origin
-  kept on the allow-list while live links still name it;
-- no manual identity linking. Guest history is joined by the stable browser
-  visitor id, while Supabase creates a fresh permanent identity from the link.
+Auth (GoTrue, configured in `deploy/compose.yml`): anonymous sign-ins for
+guests, email OTP (link or 6-digit code) for accounts, `SITE_URL` and the
+redirect allow-list = `https://tryboks.com`.
 
 ## Email Delivery
 
-boks uses Supabase magic links for all user-facing authentication. For a real
-pilot, configure custom SMTP in Supabase Auth before inviting external testers.
-Supabase's default email sender is only for early exploration: it is limited,
-can refuse delivery to non-team addresses, and is currently capped at a very low
-hourly volume. When it fails, the app may receive `Error sending magic link
-email` from Supabase.
-
-Recommended setup:
-
-- Use a transactional provider such as Resend, Postmark, SendGrid, Brevo, or AWS
-  SES.
-- Configure it in Supabase dashboard under `Authentication -> SMTP`.
-- Keep auth email separate from marketing email.
-- Add SPF, DKIM, and DMARC for the sending domain before a conference or larger
-  test.
-- Raise the Supabase Auth email rate limit only after custom SMTP is active.
-
-Current pilot state:
-
-- Supabase Auth is configured to use Resend SMTP.
-- The sender is `hello@tryboks.com` (`[auth.email.smtp].admin_email` in
-  `supabase/config.toml`) on the Resend-verified `tryboks.com` domain, with
-  DKIM at `resend._domainkey.tryboks.com` and the return path on
-  `send.tryboks.com`. Mail *to* `hello@` has no Email Routing rule yet, so a
-  reply bounces; `support@tryboks.com` is routed (`docs/project-state.md`).
-- There is no DMARC record yet. Add one before a large invite wave.
-- Keep the Resend API key out of source. Push it with
-  `RESEND_API_KEY=<secret> npx supabase config push --project-ref <project-ref>`.
-
-Use `supabase config diff` before pushing config. Do not run a full config push if it would overwrite unrelated remote settings such as SMS/provider configuration.
+GoTrue does not send mail itself: its send-email hook calls `deploy/mailer`,
+which renders `supabase/templates` and sends through the Resend API from
+`hello@tryboks.com`, retrying from `hello@tryboks.ru` if Resend refuses. Both
+domains are verified in Resend (DKIM, return path, DMARC). Replies go to
+`support@tryboks.com` (Cloudflare Email Routing). A failed send or a fallback
+is reported to Telegram by `deploy/ops/alerts.sh`.
 
 ## Deploy
 
-Before deploy, from a clean tree:
+A release replaces the app with **no downtime**. Run it from the repository
+root on a machine with the `boks-app` SSH alias and `~/boks-secrets/stack.env`:
 
 ```bash
-git status --short
-npm run lint && npm run typecheck && npm test
-npm run verify:schema          # when migrations changed
-npx supabase db push --linked --dry-run   # when migrations changed: lists exactly what production will get
+git status --short              # clean: a release is a commit
+bash deploy/migrate.sh          # when supabase/migrations changed: dry run
+bash deploy/migrate.sh --apply  # then apply, BEFORE the code that needs them
+npm run deploy                  # = bash deploy/release.sh
 ```
 
-Apply migrations **before** deploying code that depends on them, and only
-forward migrations that old code also survives - a deploy is not atomic with
-the database, and tabs already open run the old client for a while.
+`npm run deploy` does, in order, and stops at the first failure:
 
-Deploy:
+1. refuses uncommitted changes (`ALLOW_DIRTY=1` overrides; the id says `-dirty`);
+2. `npm run check`: lint, typecheck, tests (`SKIP_CHECKS=1` skips);
+3. builds the Node server (`BOKS_PLATFORM=node`, `wrangler.jsonc` moved aside
+   for the build), refuses a bundle that names a local backend
+   (`check:deploy-target`), precompresses static files, adds
+   `deploy/app/serve.mjs` and `release.json`;
+4. uploads it to `/opt/boks/releases/<id>` (`<id>` = time + commit; files
+   unchanged since the live release become hard links, so it is quick);
+5. runs `ops/switch.sh <id>` on the server;
+6. checks that `/`, `/series` and `/api/geo` answer 200.
+
+How `ops/switch.sh` keeps the site up:
+
+- the app runs as two copies, `app-blue` and `app-green`; Caddy sends each
+  request to the less busy one and polls `/__health` on both every second;
+- it copies the release's static files into `static/`, then switches one copy:
+  the old process answers 503 on `/__health`, Caddy stops sending it requests,
+  it finishes the ones in flight and exits; the new one starts on the new
+  release and gets traffic once its health check passes. Then the other copy.
+  A request that cannot reach one copy is retried on the other;
+- if a copy does not become healthy, both are put back on the previous
+  release and the command fails;
+- `alerts.sh` stays quiet about the copies while `flags/deploying` exists.
+
+**Open tabs.** A reload always gets the new release. A tab that is not
+reloaded keeps running the version it loaded, so its scripts must still be
+there: `static/` keeps the files of the live and the previous release, and
+anything uploaded in the last two days. A tab older than that which asks for a
+missing file reloads itself once (`lib/boks/stale-release.ts`).
+
+**Migrations go first**, and only ones the live code also survives: the
+database is shared by both copies and by every open tab during and after a
+release.
+
+**Not part of a release:** `deploy/compose.yml`, `deploy/Caddyfile`,
+`deploy/ops/`, `deploy/mailer/`, `deploy/busy/`. They change rarely; copy the
+changed file and apply it deliberately:
 
 ```bash
-npm run deploy
+rsync -a deploy/ops/ boks-app:/opt/boks/ops/                          # scripts: nothing to restart
+rsync -a deploy/busy/ boks-app:/opt/boks/busy/                        # waiting page: nothing to restart
+rsync -a supabase/templates/ boks-app:/opt/boks/templates/            # email templates: read on every send
+rsync -a deploy/Caddyfile boks-app:/opt/boks/Caddyfile && \
+  ssh boks-app 'cd /opt/boks && docker compose restart caddy'          # a bind-mounted file: reload does not see it
+rsync -a deploy/compose.yml boks-app:/opt/boks/compose.yml && \
+  ssh boks-app 'cd /opt/boks && docker compose up -d <service>'        # only the service you changed
 ```
 
-The deploy command builds the app, refuses a bundle that points at a local backend (`npm run check:deploy-target`), and runs:
-
-```bash
-wrangler deploy --config wrangler.jsonc --keep-vars
-```
-
-`--keep-vars` matters because Cloudflare dashboard variables must not be deleted by a deploy that only includes source config.
-
-The Worker CPU cap is 3000ms. Ordinary feed/page requests remain below it;
-`/b/[id]/image` also renders a portrait PNG on cache miss. The image uses the
-registered cover's native 720px width and a five-minute Worker cache. Outgoing
-responses are private/no-store so CDN hits cannot skip publication checks.
-The original 1000ms cap caused `exceededCpu` on cold 1080px renders in production;
-local Wrangler rendering alone did not expose this limit.
+Restarting `caddy`, `auth`, `rest` or `db` is a short outage (seconds for
+Caddy); do it deliberately, not as part of a release. Never `docker compose up
+-d` the app copies by hand to release: use `npm run deploy`.
 
 ## Verify Production
 
-Run:
+`npm run deploy` already checks the three addresses. By hand:
 
 ```bash
-curl -I https://tryboks.com/
-curl -I https://tryboks.com/admin
-curl -I https://tryboks.com/series
-curl -s -o /dev/null -w '%{http_code}\n' -X POST https://tryboks.com/api/feed
+bash deploy/release.sh --list                      # live and previous release
+curl -s -o /dev/null -w '%{http_code}\n' https://tryboks.com/
 curl -s https://tryboks.com/api/geo
+ssh boks-app 'cd /opt/boks && docker compose ps'   # every service Up, app copies (healthy)
 ```
 
-Expected:
-
-- `/`, `/admin` and `/series` return `200`.
-- `POST /api/feed` without a session returns `401` - the feed needs the
-  reader's Supabase token; a real slate is checked in the browser.
-- `/api/geo` returns a two-letter country (or nothing) with `no-store`.
-- HTML responses include CSP, HSTS, `X-Content-Type-Options: nosniff`,
-  `X-Frame-Options: DENY`, Referrer-Policy, and Permissions-Policy.
-
-Then open these routes in a browser:
-
-- `https://tryboks.com/`
-- `https://tryboks.com/admin`
-- `https://tryboks.com/author`
-
-Check browser console for runtime errors.
-
-## Cloudflare Dashboard Checks
-
-In Cloudflare dashboard, open:
-
-`Workers & Pages -> read -> Domains`
-
-Expected:
-
-- Production Worker URL: enabled.
-- Production URL: `tryboks.com` (custom domain on the `read` Worker). The
-  workers.dev host `read.tryboks.workers.dev` serves the same Worker and is
-  kept alive by `"workers_dev": true` in `wrangler.jsonc` - omit that flag and
-  a `triggers deploy` silently 404s it.
-- Preview URLs: optional; keep enabled only if useful for manual version checks.
-- Custom domains: `tryboks.com` only (`docs/adr/0010-apex-only-origin.md`).
-- Routes: none.
-
-In `Workers & Pages`, old Workers may appear:
-
-- `boks`
-- `boks-prototype`
-
-They can remain as rollback references, but their public `workers.dev` routes should stay disabled. Delete them only after a deliberate cleanup decision.
-
-## DNS Notes
-
-After changing the account `workers.dev` subdomain, DNS and TLS can lag for several minutes. During that window:
-
-- Cloudflare dashboard may already show the correct URL.
-- Public resolvers may be inconsistent.
-- A local Mac or browser may show `ERR_NAME_NOT_RESOLVED`.
-
-Check public DNS:
-
-```bash
-dig @1.1.1.1 +short tryboks.com A
-dig @8.8.8.8 +short tryboks.com A
-```
-
-If Cloudflare dashboard shows the Worker URL enabled and public DNS eventually resolves, wait before changing config again.
+Then open `https://tryboks.com/`, `/series` and `/admin` in a browser and check
+the console for errors. HTML responses carry CSP, HSTS, `nosniff`,
+`X-Frame-Options: DENY`, Referrer-Policy and Permissions-Policy.
 
 ## Rollback
 
-Repair forward from current source, with a focused revert if needed. Never roll the Worker back alone: production schema has moved on and older code can break against it.
+```bash
+bash deploy/release.sh --rollback          # to releases/PREVIOUS
+bash deploy/release.sh --rollback <id>     # to any release from --list (five are kept)
+```
 
-Do not change the account `workers.dev` subdomain again unless the URL strategy changes. It affects every Worker under the account.
+A rollback is the same no-downtime switch. It moves the app only: the database
+keeps every migration, so roll back only to a release that works against the
+current schema. When in doubt, repair forward from current source.
 
-If `tryboks.com` fails after a deploy:
+## Load and Limits
 
-1. Check `wrangler deployments list --config wrangler.jsonc`.
-2. Check `Workers & Pages -> read -> Deployments`.
-3. Check `Workers & Pages -> read -> Domains`.
-4. Correct the current source and run its validation gates.
-5. Re-run `npm run deploy` with code compatible with the current production schema; keep `--keep-vars`.
+Measured on 2026-11-07 (`deploy/loadtest/`): about 500 readers at once are
+comfortable, about 25-30 new readers per second for a short burst, about 4-5
+per second sustained; the first feed load is the bottleneck. Above that, the
+overload guard (`deploy/ops/overload.sh`) shows new visitors the waiting page
+and reports to Telegram; the next step is a larger server in Selectel.
 
-## The Supabase Pro Plan, and What It Must Not Cost
+## Before 2026-11-07: Cloudflare Workers and Supabase Cloud
+
+Until the move the app was the Cloudflare Worker `read` with static assets and
+the database was Supabase project `vcmrvnihbptostnzaean`. `wrangler.jsonc` and
+the Worker code path (`vite.config.ts` without `BOKS_PLATFORM=node`) remain for
+local development with `npm run start`; **do not `wrangler deploy` the app** -
+`tryboks.com` no longer points at the Worker. The Supabase project is kept as a
+backup after the move and is to be deleted once server backups exist. The rest
+of this file is the record of that period.
+
+### The Supabase Pro Plan, and What It Must Not Cost
 
 Audited 2026-09-25 against the dashboard and the Management API. The rule for
 this project is one subscription and nothing else on the invoice, so every line
@@ -246,7 +221,7 @@ restricting CIDRs would affect the migration path and is unsafe until the
 address running `supabase db push` is stable or a deliberate lockout/recovery
 procedure exists.
 
-### What the Advisors found the first time we read them
+#### What the Advisors found the first time we read them
 
 Free, and worth the five minutes. The Security Advisor reported 3 errors and
 106 warnings; `supabase/migrations/20260925120000_boks_advisor_hardening.sql`
@@ -283,7 +258,7 @@ npx supabase backups list                        # daily backups, PITR state
 npx supabase branches list                       # must stay empty
 ```
 
-## Signing In With A Code
+### Signing In With A Code
 
 The reader can type a code instead of following the link, because the link
 cannot land everywhere: opened from a mail app, or from the app installed to a

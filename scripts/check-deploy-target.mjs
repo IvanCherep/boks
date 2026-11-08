@@ -16,7 +16,12 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 const root = path.join(path.dirname(new URL(import.meta.url).pathname), "..");
-const bundleRoots = ["dist/client", "dist/server"].map((dir) => path.join(root, dir));
+// The self-hosted release (deploy/release.sh) passes its own output directories
+// and its backend origin: `node scripts/check-deploy-target.mjs <dir>...` with
+// BOKS_BACKEND=https://tryboks.com.
+const argRoots = process.argv.slice(2);
+const bundleRoots = (argRoots.length ? argRoots : ["dist/client", "dist/server"]).map((dir) => path.resolve(root, dir));
+const expectedBackend = process.env.BOKS_BACKEND || null;
 
 /**
  * A backend address that only resolves on the machine that built the bundle.
@@ -65,6 +70,7 @@ for (const dir of bundleRoots) {
     const local = text.match(localBackend);
     if (local) offenders.push({ file: path.relative(root, file), found: local[0] });
     for (const match of text.matchAll(backendHost)) backendsFound.add(match[0]);
+    if (expectedBackend && ["\"", "`", "'"].some((q) => text.includes(q + expectedBackend + q))) backendsFound.add(expectedBackend);
   }
 }
 

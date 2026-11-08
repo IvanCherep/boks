@@ -37,7 +37,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 - Never put a Supabase service-role key, or any secret, in source, frontend code, Wrangler vars, docs, screenshots or console output.
 - Never load the whole catalogue into a reader or admin session: bounded batches, server-side search, sorting and pagination.
 - Never edit an applied migration. Production has every file in `supabase/migrations/`; change the schema with a new forward migration.
-- Never roll the Worker back on its own: the production schema has moved on, and older client code breaks against it. Redeploy from current source.
+- Release only with `npm run deploy` (`deploy/release.sh`: no downtime, `docs/hosting.md` -> Deploy); never `wrangler deploy` the app, `tryboks.com` is our own server since 2026-11-07. Apply migrations first (`bash deploy/migrate.sh`). Roll back only to a release that works against the current schema; otherwise repair forward.
 
 ## Change routing
 
@@ -55,7 +55,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 | Feed serving | `app/api/feed/route.ts`, `lib/boks/feed-service.ts` | `components/boks/worker-feed-breaker.ts` |
 | Database | a new file in `supabase/migrations/` | `scripts/local-supabase/checks.sql`, `docs/security.md` |
 | Catalogue, rights | `docs/catalogue-import.md`, `docs/copyright.md` | `lib/boks/import/` |
-| Hosting, deploy | `docs/hosting.md` | `wrangler.jsonc` |
+| Hosting, deploy, server | `docs/hosting.md` | `deploy/` (`release.sh`, `ops/switch.sh`, `compose.yml`, `Caddyfile`) |
 | Product behaviour | `specs/boks-product-spec.md` first | - |
 
 A database change that adds a table or view the Data API must reach grants it in the same migration (`docs/adr/0011-explicit-data-api-grants.md`). Prefer a `security definer` function with its own checks over a table grant, and never grant a write on a view.
@@ -71,7 +71,7 @@ npm run check:deploy-target
 
 CI (`.github/workflows/ci.yml`) runs all four on every push and pull request. Renaming or moving a file, or an npm script, fails `npm test` until the standing docs that name it are updated.
 
-With a running stack, also `npm run verify:divergence` and `npm run verify:supabase` (RLS probes against the project in `.env.local`). The full product flow runs against a local stack only: `npx supabase start && npm run test:supabase`. What each layer proves: `docs/testing.md`. Before migrating production: `npx supabase db push --linked --dry-run`. Deploy and post-deploy checks: `docs/hosting.md`.
+With a running stack, also `npm run verify:divergence` and `npm run verify:supabase` (RLS probes against the project in `.env.local`). The full product flow runs against a local stack only: `npx supabase start && npm run test:supabase`. What each layer proves: `docs/testing.md`. Before migrating production: `bash deploy/migrate.sh` (dry run; `--apply` to apply). Deploy, rollback and post-deploy checks: `docs/hosting.md`.
 
 ## Agent skills
 

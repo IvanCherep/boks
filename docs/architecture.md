@@ -4,7 +4,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 ## Shape
 
-- **Hosting**: one Cloudflare Worker (`read`) with static assets, serving `https://tryboks.com` (`docs/hosting.md`). Built with vinext (Next.js App Router on Vite).
+- **Hosting**: our own server in Russia since 2026-11-07: Postgres, GoTrue, PostgREST, two copies of the Node build of the app and Caddy in one Docker Compose stack (`deploy/`), serving `https://tryboks.com`; released with no downtime by `npm run deploy` (`docs/hosting.md`). The Cloudflare Worker build remains for local `npm run start`. Built with vinext (Next.js App Router on Vite).
 - **Data and auth**: Supabase - Postgres with RLS and narrowly scoped RPCs, anonymous sessions for guests, email OTP for accounts. It is the only store (`docs/adr/0013-remove-d1-compatibility-path.md`).
 - **Ranking**: pure TypeScript in `lib/boks/recommendations/`, run by the Worker at `/api/feed`, which also records the served feed. The browser runs the same code only as a labelled fallback (`docs/adr/0001-ranking-executes-in-worker.md`).
 - **Surfaces**: the reader (`/`, `/series`, `/b/<id>`, `/a/<handle>`), the author cabinet (`/author`) and the admin console (`/admin`).
