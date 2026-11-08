@@ -547,6 +547,7 @@ export function CinemaMode({
       )}
 
       {phase !== "ended" && !moment && !recording && <FormatControls
+        onShare={finale?.onShare}
         title={story.title} byline={story.authorName || "boks"} artwork={picture.placeholder ? undefined : picture.src}
         elapsed={elapsed} total={total} playing={progress.speaking} stepSeconds={15} hidden={bare && progress.speaking} start={phase === "cover"}
         status={audioStatus}

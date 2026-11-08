@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { ChevronRight, Pause, RotateCw, X } from "lucide-react";
-import { ReaderBackIcon as ArrowLeft, ReaderBookIcon as BookOpen, ReaderMoreIcon as MoreHorizontal, ReaderPlayIcon as Play, ReaderSettingsIcon as SlidersHorizontal } from "@/components/boks/reader/reader-icons";
+import { ReaderBackIcon as ArrowLeft, ReaderBookIcon as BookOpen, ReaderMoreIcon as MoreHorizontal, ReaderPlayIcon as Play, ReaderSettingsIcon as SlidersHorizontal, ReaderShareIcon as Share } from "@/components/boks/reader/reader-icons";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { formatClock } from "@/components/boks/cinema/scene-plan";
 
@@ -22,7 +22,7 @@ const waveHeights = Array.from({ length: 84 }, (_, index) => {
 export function FormatControls({
   title, byline, artwork, elapsed, total, playing, stepSeconds,
   onToggle, onSeek, onRestart, onReadText, onClose, voice, onVoiceChange,
-  music, onMusicChange, onMenuChange, hidden = false, moments = [], start = false, status = null,
+  music, onMusicChange, onMenuChange, hidden = false, moments = [], start = false, status = null, onShare,
 }: {
   title: string; byline: string; artwork?: string;
   elapsed: number; total: number; playing: boolean; stepSeconds: 5 | 15;
@@ -31,6 +31,8 @@ export function FormatControls({
   music?: number; onMusicChange?: (value: number) => void;
   onMenuChange: (open: boolean) => void; hidden?: boolean; moments?: readonly number[];
   start?: boolean; status?: "loading" | "error" | null;
+  /** Opens the share sheet over the player: a piece is worth passing on while it plays, not only at its end. */
+  onShare?: () => void;
 }) {
   const { t } = useReaderPreferences();
   const [menu, setMenu] = useState<"playback" | "sound" | null>(null);
@@ -50,9 +52,12 @@ export function FormatControls({
     <header className={`format-top${hidden || menu ? " is-hidden" : ""}`}>
       <button type="button" className="format-top__back" aria-label={t("Back", "Назад")} onClick={onClose}><ArrowLeft /></button>
       <span className="format-top__title" translate="no">{title}</span>
-      <button ref={trigger} type="button" className="format-menu-trigger" aria-label={t("Playback", "Воспроизведение")} onClick={() => {
-        setMenu("playback"); onMenuChange(true);
-      }}><MoreHorizontal /></button>
+      <span className="format-top__actions">
+        {onShare && <button type="button" className="format-share" aria-label={t("Share", "Поделиться")} onClick={onShare}><Share /></button>}
+        <button ref={trigger} type="button" className="format-menu-trigger" aria-label={t("Playback", "Воспроизведение")} onClick={() => {
+          setMenu("playback"); onMenuChange(true);
+        }}><MoreHorizontal /></button>
+      </span>
     </header>
     {status ? null : start ? <div className="format-start">
       <button type="button" className="format-start__read" onClick={onReadText}><BookOpen /><span>{t("Read text", "Читать текст")}</span></button>
@@ -121,6 +126,7 @@ export function FormatControls({
           <div className="format-menu__tiles">
             <button type="button" onClick={() => setMenu("sound")}><span className="format-menu__glyph"><SlidersHorizontal /></span><span>{t("Sound", "Звук")}<ChevronRight /></span></button>
             <button type="button" onClick={onReadText}><span className="format-menu__glyph"><BookOpen /></span><span>{t("Read text", "Читать текст")}<ChevronRight /></span></button>
+            {onShare && <button type="button" onClick={() => { closeMenu(); onShare(); }}><span className="format-menu__glyph"><Share /></span><span>{t("Share", "Поделиться")}<ChevronRight /></span></button>}
           </div>
           <button type="button" className="format-menu__restart" onClick={() => { closeMenu(); onRestart(); }}><RotateCw />{t("Restart", "Сначала")} <span>0:00</span></button>
           <button type="button" className="format-menu__resume" onClick={resume}>{t("Resume", "Продолжить")} <Play /></button>

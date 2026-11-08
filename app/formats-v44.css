@@ -85,6 +85,11 @@
 .format-start .format-bookmark { height: 77px; }
 .format-top { position: absolute; z-index: 8; top: 0; inset-inline: 0; min-height: calc(60px + env(safe-area-inset-top)); display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 10px; padding: max(8px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left)); color: #f6f1e8; transition: opacity 320ms ease; }
 .format-top.is-hidden { opacity: 0; pointer-events: none; }
+/* Back on the left, share and the menu on the right; equal side columns keep the title centred. */
+.format-top:has(.format-share) { grid-template-columns: 92px minmax(0,1fr) 92px; }
+.format-top:has(.format-share) .format-top__back { justify-self: start; }
+.format-top__actions { display: flex; justify-content: flex-end; gap: 4px; }
+.cinema.is-recording .format-share, .poem.is-recording .format-share { display: none; }
 .format-top__title { justify-self: center; max-width: 210px; font: 500 11px/1.35 var(--font-sans); text-align: center; overflow-wrap: anywhere; }
 .format-top button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 8px; background: #14202822; color: inherit; }
 .format-top button svg { width: 23px; height: 23px; stroke-width: 1.5; }
@@ -106,6 +111,7 @@
 .format-menu__close { width: 44px; height: 44px; display: grid; place-items: center; flex: none; margin-right: -9px; border-radius: 50%; background: #ffffff0d; color: inherit; }
 .format-menu__close svg { width: 19px; height: 19px; stroke-width: 1.5; }
 .format-menu__tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.format-menu__tiles > button:nth-child(3):last-child { grid-column: 1 / -1; }
 .format-menu__tiles button { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; min-height: 108px; border: 1px solid #ffffff1c; border-radius: 14px; padding: 15px; background: linear-gradient(150deg,#ffffff05,transparent 70%),#ffffff0d; box-shadow: 0 1px 0 #ffffff0a inset; color: inherit; text-align: left; }
 .format-menu__glyph { height: 34px; display: flex; align-items: center; }
 .format-menu__glyph svg { width: 29px; height: 29px; stroke-width: 1.4; }

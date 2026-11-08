@@ -1189,6 +1189,7 @@ export function ImmersivePoem({
       {status === "ended" && <button type="button" className="poem__close" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
 
       {status !== "ended" && !recording && !textPreview && <FormatControls
+        onShare={finale?.onShare}
         title={manifest.title} byline={manifest.author} artwork={coverArtwork ?? manifest.scenes[0]?.image} start={!hasBegun}
         elapsed={elapsed} total={manifest.durationMs / 1000} playing={playing} stepSeconds={5}
         status={status === "loading" || status === "error" ? status : null}
