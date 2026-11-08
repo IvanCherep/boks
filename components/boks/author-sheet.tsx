@@ -79,6 +79,17 @@ export function AuthorSheet({
 
   // Keyed by handle in the parent, so a different author mounts a fresh sheet
   // rather than resetting this one's state on the way in.
+  // How many boks the whole account publishes, when the sheet shows one writer
+  // in it: the "follow brings everything this account publishes" note only
+  // means something when the account publishes more than this writer.
+  const [accountTotal, setAccountTotal] = useState<number | null>(null);
+  useEffect(() => {
+    if (!authorName) return;
+    let cancelled = false;
+    loadBoksAuthor(handle).then((account) => { if (!cancelled) setAccountTotal(account?.totalBoks ?? null); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [handle, authorName]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -182,7 +193,7 @@ export function AuthorSheet({
         </div>
       </div>
 
-      {author?.byline && author.authorUserId && (
+      {author?.byline && author.authorUserId && accountTotal !== null && accountTotal > author.totalBoks && (
         <p className="px-4 pt-2 text-sm leading-6 text-[var(--muted-foreground)]">
           {t(`Following @${author.authorHandle} brings you everything this account publishes, not only ${author.byline}.`, `Подписка на @${author.authorHandle} распространяется на все боки этого аккаунта, а не только на ${author.byline}.`)}
         </p>
