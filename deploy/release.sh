@@ -68,7 +68,9 @@ printf '{"id":"%s","commit":"%s","built":"%s"}\n' "$id" "$(git rev-parse HEAD)" 
 
 say "Upload"
 live=$(remote 'cat releases/CURRENT 2>/dev/null' || true)
-link=(); [ -n "$live" ] && link=(--link-dest="$REMOTE/releases/$live")   # unchanged files become hard links
+# Files with the same content as in the live release become hard links (-c:
+# compare content, a fresh build gives every file a new time).
+link=(); [ -n "$live" ] && link=(--checksum --link-dest="$REMOTE/releases/$live")
 rsync -az ${link[@]+"${link[@]}"} "$out/" "$HOST:$REMOTE/releases/$id/" -e "ssh -o LogLevel=ERROR"
 
 say "Switch"
