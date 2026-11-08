@@ -108,8 +108,9 @@ Published this way:
 
 ### A poet's own address
 
-A poet with a section gets an address of their own to share, `/series/<section id>`
-(`app/series/prokhorov/page.tsx`): the shelf opened on their section, which
+A poet with a section gets an address of their own to share, `/series/<slug>`
+(`app/series/[section]/page.tsx`, registered with its pitch in
+`components/boks/series/series-sections.ts`): the shelf opened on their section, which
 comes first and in every language whatever the reader's shelf filter. A
 messenger previews it as their book's cover. Both pictures are the author's,
 so they live in a link-only folder of their own, not in `public/`:
@@ -118,11 +119,15 @@ so they live in a link-only folder of their own, not in `public/`:
   collection in `series-catalogue.ts`);
 - `<book>-share.jpg`, 1200x630, the link preview: the whole cover in the middle
   on a blurred copy of itself, because messengers crop a portrait image and
-  not all of them take WebP. JPEG is allowed in a link-only folder for this.
+  not all of them take WebP. JPEG is allowed in a link-only folder for this,
+  and a `-share.jpg` is the one file served without `X-Robots-Tag`.
+
+Telegram caches a preview per address: a link sent while it was still a 404
+keeps an empty card until it is sent to `@WebpageBot`.
 
 | Address | Author | Since | Preview |
 |---|---|---|---|
-| `/series/prokhorov` | Алексей Прохоров | 2026-11-08 | the cover of «Верослов» |
+| `/series/veroslov` (also `/series/prokhorov`) | Алексей Прохоров | 2026-11-08 | the cover of «Верослов», named after the book at the poet's wish |
 
 ## Pieces
 

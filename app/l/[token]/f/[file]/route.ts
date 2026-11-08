@@ -39,9 +39,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     "Content-Type": linkOnlyContentType(file),
     "Cache-Control": "public, max-age=600",
     "X-Content-Type-Options": "nosniff",
-    "X-Robots-Tag": "noindex, nofollow",
     "Accept-Ranges": "bytes",
   });
+  // A link preview card is meant to be fetched by every messenger; nothing
+  // else in a folder is.
+  if (!file.endsWith("-share.jpg")) headers.set("X-Robots-Tag", "noindex, nofollow");
   for (const name of ["Content-Length", "Content-Range", "ETag", "Last-Modified"]) {
     const value = upstream.headers.get(name);
     if (value) headers.set(name, value);
