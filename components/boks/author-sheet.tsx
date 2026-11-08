@@ -11,6 +11,10 @@ import { haptic } from "@/components/boks/reader-haptics";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { plural } from "@/lib/i18n/messages";
 import { currentUiLanguage } from "@/components/boks/ui-language";
+import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
+import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
+import type { CSSProperties } from "react";
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -151,6 +155,9 @@ export function AuthorSheet({
     .filter(Boolean)
     .join(" · ");
 
+  // The author's own pictures, fanned out at the top: up to three covers with art.
+  const fan = (author?.boks ?? []).filter((bok) => getBokArtwork({ id: bok.id })).slice(0, 3);
+
   return (
     <ReaderSheet
       label={author ? `${author.byline || "@" + author.authorHandle}` : t("Author", "Автор")}
@@ -160,7 +167,14 @@ export function AuthorSheet({
       <header className="social-page-header"><button className="social-icon" type="button" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button><span>{author?.byline ? t("Writer", "Писатель") : t("Author", "Автор")}</span><button type="button" className="social-icon" onClick={() => void shareProfile()} aria-label={t("Share profile", "Поделиться профилем")}><ReaderShareIcon /></button></header>
       <div className="author-profile-head flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className={`author-monogram${author?.byline ? " author-monogram--writer" : ""}`} aria-hidden="true">{author?.byline ? "“" : (author?.authorHandle || handle).replace(/^@+/, "")[0]?.toUpperCase()}<i>{author?.byline ? "”" : "✳"}</i></span>
+          {fan.length > 0 ? (
+            <span className={`author-fan author-fan--${fan.length}`} aria-hidden="true">
+              {fan.map((bok) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={bok.id} src={getBokArtwork({ id: bok.id })!} alt="" style={{ objectPosition: bokArtworkFocus(bok.id) }} />
+              ))}
+            </span>
+          ) : <span className={`author-monogram${author?.byline ? " author-monogram--writer" : ""}`} aria-hidden="true">{author?.byline ? "“" : (author?.authorHandle || handle).replace(/^@+/, "")[0]?.toUpperCase()}<i>{author?.byline ? "”" : "✳"}</i></span>}
           <span className="social-eyebrow">{author?.byline ? t("Writer", "Писатель") : t("Author", "Автор")}</span>
           <h2 className="author-profile-title" translate="no">
             {/* A name when there is one, otherwise the @handle stands alone
@@ -258,24 +272,38 @@ export function AuthorSheet({
         {author && author.boks.length > 0 && (
           <>
           <div className="author-list-label"><span>{t("Published boks", "Опубликованные боки")}</span><span>{author.totalBoks}</span></div>
-          <ul className="grid gap-2">
-            {author.boks.map((bok) => (
-              <li key={bok.id}>
-                <button
-                  type="button"
-                  className={`author-bok${bok.id === currentStoryId ? " author-bok--current" : ""}`}
-                  onClick={() => onOpenBok(bok.id)}
-                >
-                  <span className="font-medium">{bok.title}</span>
-                  {/* In a publisher's catalogue the writer is what tells one
-                      title from another; in a writer's own list it is noise. */}
-                  {!author.byline && bok.authorName && (
-                    <span className="mt-0.5 text-sm text-[var(--muted-foreground)]">{bok.authorName}</span>
-                  )}
-                  {bok.id === currentStoryId && <span className="author-bok-now">{t("reading now", "читаете сейчас")}</span>}
-                </button>
-              </li>
-            ))}
+          <ul className="author-covers">
+            {author.boks.map((bok) => {
+              const artwork = getBokArtwork({ id: bok.id });
+              const series = seriesPieceFor(bok.id);
+              const current = bok.id === currentStoryId;
+              return (
+                <li key={bok.id}>
+                  <button
+                    type="button"
+                    className={`author-cover${artwork ? " author-cover--art" : ""}${current ? " author-cover--current" : ""}`}
+                    style={bokCoverStyle(bok.id) as CSSProperties}
+                    onClick={() => onOpenBok(bok.id)}
+                  >
+                    {artwork ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="author-cover__art" src={artwork} alt="" loading="lazy" decoding="async" style={{ objectPosition: bokArtworkFocus(bok.id) }} />
+                    ) : (
+                      <span className="author-cover__letter" aria-hidden="true">{bok.title.trim().charAt(0)}</span>
+                    )}
+                    {series && <span className="author-cover__badge">{t("Listen", "Слушать")}</span>}
+                    <span className="author-cover__body">
+                      <span className="author-cover__title">{bok.title}</span>
+                      <span className="author-cover__meta">
+                        {/* In a publisher's catalogue the writer is what tells one
+                            title from another; in a writer's own list it is noise. */}
+                        {[!author.byline ? bok.authorName : null, current ? t("reading now", "читаете сейчас") : t(`${Math.max(1, bok.minutes)} min`, `${Math.max(1, bok.minutes)} мин`)].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           </>
         )}
