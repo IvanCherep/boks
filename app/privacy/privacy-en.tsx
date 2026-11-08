@@ -1,7 +1,7 @@
 import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
 
-const effectiveDate = "September 22, 2026";
+const effectiveDate = "November 9, 2026";
 
 export function PrivacyEn() {
   return (
@@ -68,16 +68,25 @@ export function PrivacyEn() {
 
         <h2>Where it is kept</h2>
         <p>
-          The database and sign-in run on Supabase, in its London region. The site is served by Cloudflare. Sign-in
-          emails are sent by Resend. On your device, boks stores your theme, your reading languages, a local reading
-          profile and, for guests, how many boks were read, in the browser&apos;s own storage. There are no
-          third-party trackers.
+          The site, the database and sign-in run on boks&apos;s own server in a Selectel data centre in Moscow
+          (Russia). Sign-in emails are sent by Resend, which receives your email address and the text of the email
+          to do so. Email to our address is forwarded by Cloudflare.
+        </p>
+        <p>
+          To make sign-in work and keep it secure, each sign-in session, including a guest one, records the network
+          address and the kind of browser it was opened from. They are kept for as long as the session exists: it is
+          deleted when you sign out or delete your account. They are used for nothing else.
+        </p>
+        <p>
+          On your device, boks stores your theme, your reading languages, a local reading profile and, for guests,
+          how many boks were read, in the browser&apos;s own storage. There are no third-party trackers.
         </p>
 
         <h2>How long it is kept</h2>
         <p>
           For as long as your account exists, or for the length of the pilot for activity recorded without an
-          account. Backups made by the database provider are kept for a few days and then replaced.
+          account. Until November 7, 2026 the boks database was hosted by Supabase in London. A copy of it as of that
+          date stays there for a while as a backup and will then be deleted; nothing new goes there.
         </p>
 
         <h2>Deleting it</h2>
