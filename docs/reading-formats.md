@@ -696,9 +696,13 @@ Finishing a piece therefore has one more step:
    upper browser edge stays black; the lower edge follows the interface theme.
    Neither colour depends on the piece's artwork.
 
-A **seasonal collection** (`seriesCollections` in the same file) puts a few
-pieces first on the shelf, in a set order, between two days of the reader's
-own calendar: Halloween is Poe, Dickinson, Hardy, 17 October to 2 November.
+A **collection** (`seriesCollections` in the same file) puts a few
+pieces first on the shelf, in a set order. A seasonal one is up between two
+days of the reader's own calendar: Halloween is Poe, Dickinson, Hardy, 17
+October to 2 November. A poet's section has no `until` and stays: Алексей
+Прохоров's six poems, with "Читает автор" under the name, since 8 November.
+Several can be up at once, each drawn as its own row, a piece only in the
+first that holds it.
 `arrangeSeriesShelf` draws it before the hero and takes its pieces out of the
 rest, and its visible order is the Series next order. Its name is in
 `collectionMessages` in `series-view.tsx`, under the collection's `id`; a new

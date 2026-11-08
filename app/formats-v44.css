@@ -245,7 +245,11 @@ html:has(.poem, .cinema, .isandbox__overlay), body:has(.poem, .cinema, .isandbox
 /* A seasonal collection: a dark band first on the shelf, its pieces in order. */
 .series-collection { margin: 0; padding: 22px 0 26px; background: #120d0a; color: #f6ecdc; }
 .series-collection--halloween { background: radial-gradient(120% 70% at 85% 0%, #5a2410 0%, #1d110b 48%, #0e0a08 100%); }
+.series-collection--prokhorov { background: radial-gradient(120% 70% at 15% 0%, #2c3546 0%, #14161d 50%, #0b0c10 100%); }
+.series-collection--prokhorov .series-collection__title, .series-collection--prokhorov .series-collection__number { color: #e9c99a; }
+.series-collection + .series-collection { border-top: 1px solid #ffffff14; }
 .series-collection__head { padding: 0 22px; }
+.series-collection__note { margin: 8px 0 0; font: 500 11px/1.3 var(--font-sans); letter-spacing: .6px; text-transform: uppercase; color: #f0dcc0b3; }
 .series-collection__title { margin: 0; font: italic 400 34px/1 var(--font-serif); letter-spacing: -1px; color: #f3a35b; }
 .series-collection__row { display: flex; gap: 12px; margin: 18px 0 0; padding: 0 22px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 22px; scrollbar-width: none; overscroll-behavior-x: contain; }
 .series-collection__row::-webkit-scrollbar { display: none; }

@@ -71,6 +71,41 @@ delete its folder (`npx supabase storage rm -r ss:///link-only/<token> --linked
 --experimental`); the page then says there is nothing at the link. Cached
 copies expire within ten minutes.
 
+## Published author-held pieces
+
+When a living author agrees to publish, the piece becomes an ordinary bok -
+in the catalogue, the feed and the series shelf - but its files still stay
+out of this public repository: permission to publish on boks is not
+permission to put the text and the recording on GitHub. The same bucket and
+the same route serve them, so a published author-held poem is a link-only
+folder whose manifest a bok points at:
+
+1. Make the folder exactly as above, with a fresh token.
+2. Insert the bok and its `bok_rights` row (the note names the author's
+   permission and the date) with a fixed id, from a scratch SQL file: the
+   text is the author's too, so the SQL does not go in the repository.
+3. Register `"<bok id>": "/l/<token>/f/manifest.json"` in
+   `components/boks/poetry/poems.ts`, and the shelf entry with its cover in
+   `components/boks/series/series-catalogue.ts`. The cover is a frame of our
+   own illustration and lives in `public/series/` as usual. The shelf test
+   cannot read a manifest in storage, so it checks only the address; check the
+   duration and scene count against the manifest when the folder is made.
+
+An author who reads the piece himself brings his own recording, usually
+mastered with music under it. Then there is no theme (`theme` is left out of
+the manifest), the recording is only brought down to the series' −22 LUFS by
+gain, and the word times come from ElevenLabs forced alignment
+(`/v1/forced-alignment`, the recording plus the exact text) checked against
+speech-to-text word times: forced alignment glues a short word that opens a
+line after a pause («в», «и») to the end of the phrase before it, and those
+take the speech-to-text start instead. Nothing is generated.
+
+Published this way:
+
+| Piece | Author | Since | Format |
+|---|---|---|---|
+| «коса», «у горы Мегиддо», «азбука веры», «из возвращения в побег», «память шва», «розы Сарагосы» | Алексей Прохоров | 2026-11-08 | immersive poems in the author's own recordings, 3 pictures each (5 for «розы Сарагосы»); their own section on the series shelf, under @boks until the author has an account |
+
 ## Pieces
 
 Recorded here by title only, never with the token.

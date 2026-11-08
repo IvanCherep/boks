@@ -65,6 +65,87 @@ export type SeriesPiece = {
  * The test names what is missing if any of it is not done.
  */
 export const seriesPieces: readonly SeriesPiece[] = [
+  // Алексей Прохоров, the first living poet on boks, in his own voice. The
+  // manifests live in storage (see `components/boks/poetry/poems.ts`); the
+  // durations here are the recordings' lengths, music included.
+  {
+    storyId: "cc7e3800-3567-42c1-ba08-8554a345e25c",
+    format: "poem",
+    language: "ru",
+    title: "коса",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-kosa.webp",
+    coverFocus: "45% 40%",
+    durationSeconds: 31,
+    scenes: 3,
+    moments: 0,
+    premieredOn: "2026-11-08",
+  },
+  {
+    storyId: "6c74c9da-dca3-4a16-b238-12c93242dc1f",
+    format: "poem",
+    language: "ru",
+    title: "из возвращения в побег",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-pobeg.webp",
+    coverFocus: "60% 55%",
+    durationSeconds: 52,
+    scenes: 3,
+    moments: 0,
+    premieredOn: "2026-11-08",
+  },
+  {
+    storyId: "c79992b0-37ea-41f9-a2c8-cc645a3b43b7",
+    format: "poem",
+    language: "ru",
+    title: "память шва",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-pamyat-shva.webp",
+    coverFocus: "35% 65%",
+    durationSeconds: 74,
+    scenes: 3,
+    moments: 0,
+    premieredOn: "2026-11-08",
+  },
+  {
+    storyId: "4c517503-f15f-4602-9d29-e1ac34cbbfad",
+    format: "poem",
+    language: "ru",
+    title: "азбука веры",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-azbuka-very.webp",
+    coverFocus: "30% 75%",
+    durationSeconds: 45,
+    scenes: 3,
+    moments: 0,
+    premieredOn: "2026-11-08",
+  },
+  {
+    storyId: "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07",
+    format: "poem",
+    language: "ru",
+    title: "у горы Мегиддо",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-megiddo.webp",
+    coverFocus: "50% 55%",
+    durationSeconds: 46,
+    scenes: 3,
+    moments: 0,
+    premieredOn: "2026-11-08",
+  },
+  {
+    storyId: "4eb182a0-770e-4b95-9059-07a31b229d78",
+    format: "poem",
+    language: "ru",
+    title: "розы Сарагосы",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-rozy-saragosy.webp",
+    coverFocus: "40% 45%",
+    durationSeconds: 80,
+    scenes: 5,
+    moments: 0,
+    premieredOn: "2026-11-08",
+  },
   // The Halloween three, in the order they are meant to be heard: Poe for the
   // eye, Dickinson for the hand, Hardy to end on something human.
   {
@@ -507,13 +588,21 @@ export function seriesFormatOf(storyId: string): SeriesFormat | null {
  * it and nowhere else on the shelf; the visible order - collection first - is
  * also the order Series next walks.
  */
+/**
+ * A row of pieces drawn above the rest of the shelf, in its own order.
+ *
+ * Two kinds: a seasonal one, up between two days of the reader's calendar
+ * (Halloween), and a poet's own section, up from the day it opened with no
+ * end (Алексей Прохоров). Its name is in `collectionMessages` in
+ * `series-view.tsx`, under its `id`.
+ */
 export type SeriesCollection = {
-  id: "halloween";
+  id: "halloween" | "prokhorov";
   /** In the order they are meant to be heard. */
   storyIds: readonly string[];
-  /** First day shown, and the first day it is no longer shown, `YYYY-MM-DD`, in the reader's own calendar. */
+  /** First day shown, and the first day it is no longer shown, `YYYY-MM-DD`, in the reader's own calendar. No `until`: it stays. */
   from: string;
-  until: string;
+  until?: string;
 };
 
 export const seriesCollections: readonly SeriesCollection[] = [
@@ -528,6 +617,19 @@ export const seriesCollections: readonly SeriesCollection[] = [
     from: "2026-10-17",
     until: "2026-11-03",
   },
+  {
+    // A poet's own section, read by the poet. Short first, the long roses last.
+    id: "prokhorov",
+    storyIds: [
+      "cc7e3800-3567-42c1-ba08-8554a345e25c",
+      "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07",
+      "4c517503-f15f-4602-9d29-e1ac34cbbfad",
+      "6c74c9da-dca3-4a16-b238-12c93242dc1f",
+      "c79992b0-37ea-41f9-a2c8-cc645a3b43b7",
+      "4eb182a0-770e-4b95-9059-07a31b229d78",
+    ],
+    from: "2026-11-08",
+  },
 ];
 
 /** The reader's own calendar day, `YYYY-MM-DD`. Halloween is local. */
@@ -536,34 +638,54 @@ export function localDay(today: Date) {
   return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 }
 
-/** The collection up today, if any. */
+/** The collections up today, in the order they are declared. */
+export function activeCollections(
+  today: Date,
+  collections: readonly SeriesCollection[] = seriesCollections
+): SeriesCollection[] {
+  const day = localDay(today);
+  return collections.filter((collection) => collection.from <= day && (!collection.until || day < collection.until));
+}
+
+/** The first collection up today, if any. */
 export function activeCollection(
   today: Date,
   collections: readonly SeriesCollection[] = seriesCollections
 ): SeriesCollection | null {
-  const day = localDay(today);
-  return collections.find((collection) => collection.from <= day && day < collection.until) ?? null;
+  return activeCollections(today, collections)[0] ?? null;
 }
 
 /**
- * The shelf as drawn: the collection, the piece that leads, the rest.
+ * The shelf as drawn: the collections, the piece that leads, the rest.
  *
- * The collection keeps its own order whatever has been heard, and only shows
+ * A collection keeps its own order whatever has been heard, and only shows
  * what is published and in the reader's languages. Fewer than two of its
  * pieces left is not a collection, and they go back to the ordinary shelf.
+ * A piece is drawn once, in the first collection that holds it.
  * `order` is everything in the order it appears.
  */
-export function arrangeSeriesShelf(shelf: readonly SeriesPiece[], collection: SeriesCollection | null) {
+export function arrangeSeriesShelf(
+  shelf: readonly SeriesPiece[],
+  collections: SeriesCollection | readonly SeriesCollection[] | null
+) {
+  const list: readonly SeriesCollection[] = collections == null ? [] : "storyIds" in collections ? [collections] : collections;
   const byId = new Map(shelf.map((piece) => [piece.storyId, piece]));
-  const gathered = (collection?.storyIds ?? []).flatMap((storyId) => byId.get(storyId) ?? []);
-  const together = gathered.length >= 2 ? gathered : [];
-  const inside = new Set(together.map((piece) => piece.storyId));
+  const inside = new Set<string>();
+  const drawn: { id: SeriesCollection["id"]; pieces: SeriesPiece[] }[] = [];
+  for (const collection of list) {
+    const gathered = collection.storyIds.flatMap((storyId) => (inside.has(storyId) ? [] : byId.get(storyId) ?? []));
+    if (gathered.length < 2) continue;
+    for (const piece of gathered) inside.add(piece.storyId);
+    drawn.push({ id: collection.id, pieces: gathered });
+  }
   const [lead = null, ...rest] = shelf.filter((piece) => !inside.has(piece.storyId));
   return {
-    collection: together.length ? { id: collection!.id, pieces: together } : null,
+    collections: drawn,
+    /** The first collection drawn, if any. */
+    collection: drawn[0] ?? null,
     lead,
     rest,
-    order: [...together, ...(lead ? [lead] : []), ...rest],
+    order: [...drawn.flatMap((collection) => collection.pieces), ...(lead ? [lead] : []), ...rest],
   };
 }
 

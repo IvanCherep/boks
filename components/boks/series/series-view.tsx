@@ -13,11 +13,12 @@ import { defineMessages } from "@/lib/i18n/messages";
 import { useMessages } from "@/components/boks/ui-language";
 import {
   effectiveSeriesFilter, rememberSeriesFilter, seriesLanguages, storedSeriesFilter,
-  activeCollection,
+  activeCollections,
   arrangeSeriesShelf,
   publishedSeriesShelf,
   seriesPieces,
   seriesDurationLabel,
+  type SeriesCollection,
   type SeriesPiece,
 } from "@/components/boks/series/series-catalogue";
 
@@ -45,14 +46,23 @@ const seriesMessages = defineMessages({
 } });
 function useSeriesWords() { return useMessages(seriesMessages); }
 
-/** A seasonal collection's name, by its id in `seriesCollections`. The numbered cards say the rest. */
+/**
+ * A collection's name, by its id in `seriesCollections`, and a line under it
+ * only where the cards cannot say it: a poet's section is read by the poet.
+ * A name keeps its own language.
+ */
 const collectionMessages = defineMessages({
   halloween: "Halloween",
+  prokhorov: "Алексей Прохоров",
+  prokhorovNote: "Read by the poet",
   position: "of",
 }, { ru: {
   halloween: "Хэллоуин",
+  prokhorov: "Алексей Прохоров",
+  prokhorovNote: "Читает автор",
   position: "из",
 } });
+const collectionNotes: Partial<Record<SeriesCollection["id"], "prokhorovNote">> = { prokhorov: "prokhorovNote" };
 
 type CatalogueAnswer = Map<string, { title: string; authorName: string }> | null;
 
@@ -115,13 +125,13 @@ export function SeriesView({
   const shelf = useMemo(() => {
     return publishedSeriesShelf(currentStatus === "ready" ? catalogue?.answer ?? null : null, activeFilter, heard);
   }, [catalogue, currentStatus, heard, activeFilter]);
-  // Read once: a shelf left open over midnight keeps the collection it opened with.
+  // Read once: a shelf left open over midnight keeps the collections it opened with.
   const [today] = useState(() => new Date());
-  const arranged = useMemo(() => arrangeSeriesShelf(shelf, activeCollection(today)), [shelf, today]);
+  const arranged = useMemo(() => arrangeSeriesShelf(shelf, activeCollections(today)), [shelf, today]);
   function changeFilter(next: string[]) { const value = effectiveSeriesFilter(next, languages.map(item => item.language)); rememberSeriesFilter(value); setLanguageFilter(value); }
   useEffect(() => { onPiecesChanged?.(arranged.order); }, [onPiecesChanged, arranged]);
 
-  const { lead, rest, collection } = arranged;
+  const { lead, rest, collections } = arranged;
 
   return (
     <div
@@ -157,14 +167,15 @@ export function SeriesView({
 
       <div className="series__scroll">
 
-        {collection && (
+        {collections.map((collection) => (
           <SeriesCollectionRow
+            key={collection.id}
             id={collection.id}
             pieces={collection.pieces}
             openingStoryId={openingStoryId}
             onOpenPiece={onOpenPiece}
           />
-        )}
+        ))}
 
         {lead && (
           <SeriesHero
@@ -281,7 +292,7 @@ function SeriesCollectionRow({
   openingStoryId,
   onOpenPiece,
 }: {
-  id: "halloween";
+  id: SeriesCollection["id"];
   pieces: readonly SeriesPiece[];
   openingStoryId: string | null;
   onOpenPiece: (piece: SeriesPiece) => void;
@@ -290,10 +301,13 @@ function SeriesCollectionRow({
   const collectionWords = useMessages(collectionMessages);
   const { preferences } = useReaderPreferences();
   const title = collectionWords[id];
+  const noteKey = collectionNotes[id];
+  const note = noteKey ? collectionWords[noteKey] : null;
   return (
     <section className={`series-collection series-collection--${id}`} aria-label={title}>
       <header className="series-collection__head">
         <h2 className="series-collection__title">{title}</h2>
+        {note && <p className="series-collection__note">{note}</p>}
       </header>
       <ol className="series-collection__row">
         {pieces.map((piece, index) => {

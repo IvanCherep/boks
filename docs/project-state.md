@@ -206,6 +206,16 @@ See `docs/studies.md`.
 
 ## Live
 
+**Алексей Прохоров, the first living poet (2026-11-08, pending deploy).** Six
+poems - «коса», «у горы Мегиддо», «азбука веры», «из возвращения в побег»,
+«память шва», «розы Сарагосы» - published with his permission as boks under
+@boks (moved to his account once he has one) and as immersive poems in his
+own recordings: no generated voice and no theme, his mix brought to −22.4
+LUFS by gain, words placed by forced alignment. They have their own row on
+the series shelf, "Алексей Прохоров · Читает автор", a collection with no
+end date. Text, recordings and manifests are in storage, not here
+(`docs/link-only-pieces.md`, "Published author-held pieces").
+
 **Link-only pieces (2026-11-04).** A living author's work can be produced in
 a boks format and shown only by its link, outside the catalogue and outside
 this public repository: `/l/<token>`, files in the `link-only` storage bucket

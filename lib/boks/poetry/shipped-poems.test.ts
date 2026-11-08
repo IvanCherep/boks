@@ -248,6 +248,12 @@ describe("the poem registry", () => {
     ];
     for (const url of urls) {
       expect(url).not.toBeNull();
+      // A living author's poem lives in storage, not in this public
+      // repository (`docs/link-only-pieces.md`); only its address is here.
+      if (url!.startsWith("/l/")) {
+        expect(url).toMatch(/^\/l\/[A-Za-z0-9_-]{22,64}\/f\/manifest\.json$/);
+        continue;
+      }
       expect(existsSync(publicFile(url!)), url!).toBe(true);
     }
   });

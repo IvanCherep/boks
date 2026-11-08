@@ -7,7 +7,8 @@ import type { PoemManifest } from "@/lib/boks/poetry/manifest";
  * field on the model and without a migration. A boks listed here opens in the
  * poetry player; everything else opens in the reader it always had. Adding a
  * poem is one line here once its folder under `public/poetry/` is built - see
- * `docs/reading-formats.md`.
+ * `docs/reading-formats.md`. A living author's poem points into storage
+ * instead (`/l/<token>/f/manifest.json`), never into `public/`.
  */
 const poems: Record<string, string> = {
   // Emma Lazarus — The New Colossus
@@ -72,6 +73,25 @@ const poems: Record<string, string> = {
   "8ec69ff8-473d-4fb9-a05d-92ae8567317a": "/poetry/one-need-not-be-a-chamber/manifest.json",
   // Thomas Hardy — The Shadow on the Stone
   "89cf5983-6c4b-466a-b0e8-79ea30a7d418": "/poetry/shadow-on-the-stone/manifest.json",
+  /*
+   * Алексей Прохоров, a living poet, read in his own recordings. Published
+   * with his permission, but the text, the voice and the manifest are his and
+   * this repository is public, so they live in storage and are served
+   * same-origin through the link-only route (`docs/link-only-pieces.md`,
+   * "Published author-held pieces"). Only the address is here.
+   */
+  // Алексей Прохоров — коса
+  "cc7e3800-3567-42c1-ba08-8554a345e25c": "/l/3rUtriwuz63oiW-iyvKd1g/f/manifest.json",
+  // Алексей Прохоров — из возвращения в побег
+  "6c74c9da-dca3-4a16-b238-12c93242dc1f": "/l/fVw4y7K1BW8JD_hQ51AXrQ/f/manifest.json",
+  // Алексей Прохоров — память шва
+  "c79992b0-37ea-41f9-a2c8-cc645a3b43b7": "/l/NWYTnM2R9oqeVx59nl0x3A/f/manifest.json",
+  // Алексей Прохоров — азбука веры
+  "4c517503-f15f-4602-9d29-e1ac34cbbfad": "/l/lZJ7_ulrugM3vow3HYWP8g/f/manifest.json",
+  // Алексей Прохоров — у горы Мегиддо
+  "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07": "/l/BXGiRQnLCc8ju7U0b3keGA/f/manifest.json",
+  // Алексей Прохоров — розы Сарагосы
+  "4eb182a0-770e-4b95-9059-07a31b229d78": "/l/uS_BvF9AbsYex07lzuXnVw/f/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

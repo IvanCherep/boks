@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import {
   activeCollection,
+  activeCollections,
   arrangeSeriesShelf,
   isPremiere,
   seriesCollections,
@@ -62,6 +63,12 @@ describe.each(seriesPieces.map((piece) => [piece.title, piece] as const))("%s on
 
   it("says how long it plays, as its own recording does", () => {
     let seconds: number;
+    if (piece.format === "poem" && poemManifestFor(piece.storyId)!.startsWith("/l/")) {
+      // Held in storage, not in this repository: checked when it is made
+      // (`docs/link-only-pieces.md`), not here.
+      expect(piece.durationSeconds).toBeGreaterThan(0);
+      return;
+    }
     if (piece.format === "poem") {
       const manifest = JSON.parse(
         readFileSync(publicFile(poemManifestFor(piece.storyId)!), "utf8")
@@ -208,7 +215,7 @@ describe("seasonal collections", () => {
     for (const collection of seriesCollections) {
       expect(new Set(collection.storyIds).size).toBe(collection.storyIds.length);
       for (const storyId of collection.storyIds) expect(seriesPieceFor(storyId), storyId).not.toBeNull();
-      expect(collection.from < collection.until).toBe(true);
+      if (collection.until) expect(collection.from < collection.until).toBe(true);
     }
   });
 
@@ -217,6 +224,24 @@ describe("seasonal collections", () => {
     expect(activeCollection(new Date(2026, 9, 17, 0, 1))?.id).toBe("halloween");
     expect(activeCollection(new Date(2026, 9, 31, 22))?.id).toBe("halloween");
     expect(activeCollection(new Date(2026, 10, 3, 0, 1))).toBeNull();
+  });
+
+  it("keeps a poet's section up from its first day, with no end", () => {
+    const ids = (day: Date) => activeCollections(day).map((collection) => collection.id);
+    expect(ids(new Date(2026, 10, 7, 23, 59))).not.toContain("prokhorov");
+    expect(ids(new Date(2026, 10, 8, 0, 1))).toEqual(["prokhorov"]);
+    expect(ids(new Date(2030, 0, 1))).toEqual(["prokhorov"]);
+  });
+
+  it("draws several collections, each piece once, before the rest", () => {
+    const prokhorov = seriesCollections.find((collection) => collection.id === "prokhorov")!;
+    const arranged = arrangeSeriesShelf(shelf, [halloween, prokhorov]);
+    expect(arranged.collections.map((collection) => collection.id)).toEqual(["halloween", "prokhorov"]);
+    const drawn = [...halloween.storyIds, ...prokhorov.storyIds];
+    expect(arranged.order.slice(0, drawn.length).map((piece) => piece.storyId)).toEqual(drawn);
+    expect(new Set(arranged.order.map((piece) => piece.storyId)).size).toBe(arranged.order.length);
+    expect(arranged.order).toHaveLength(seriesPieces.length);
+    expect(drawn).not.toContain(arranged.lead?.storyId);
   });
 
   it("comes first, in its own order, and its pieces appear nowhere else", () => {
