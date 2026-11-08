@@ -9,6 +9,7 @@ import "./v44-fonts.css";
 import "./reader-v44.css";
 import "./formats-v44.css";
 import "./social-v44.css";
+import "./author-v48.css";
 import "./admin-v44.css";
 import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";
 import { uiLanguageBootScript } from "@/lib/i18n/ui-language";

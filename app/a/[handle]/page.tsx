@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { boksOrigin } from "@/app/layout";
 import { authorPreviewDescription, loadAuthorForShare } from "@/lib/boks/author-preview";
 import { OpeningAuthor } from "./opening-author";
+import { authorPortraitFor } from "@/components/boks/author-portraits";
 
 /**
  * A shareable link to one author: `/a/<handle>`, shared as `/@<handle>`
@@ -30,7 +31,9 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   }
   const title = author.name.startsWith("@") ? `${author.name} · boks` : `${author.name} · @${author.handle}`;
   const description = authorPreviewDescription(author);
-  const image = `${boksOrigin}/og-cover.png`;
+  // An author with a portrait previews as their portrait card (design v48).
+  const portrait = authorPortraitFor(author.handle);
+  const image = portrait?.share ? `${boksOrigin}${portrait.share}` : `${boksOrigin}/og-cover.png`;
   return {
     title,
     description,
@@ -41,7 +44,7 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
       url,
       title,
       description,
-      images: [{ url: image, width: 1200, height: 630, alt: "boks" }],
+      images: [{ url: image, width: 1200, height: 630, alt: portrait ? `${portrait.given} ${portrait.family}` : "boks", ...(portrait?.share ? { type: "image/jpeg" } : {}) }],
     },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };

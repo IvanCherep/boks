@@ -15,6 +15,8 @@ import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-art
 import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import type { CSSProperties } from "react";
+import { authorPortraitFor } from "@/components/boks/author-portraits";
+import { AuthorPortraitPage } from "@/components/boks/author-portrait-page";
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -172,6 +174,25 @@ export function AuthorSheet({
 
   // The author's own pictures, fanned out at the top: up to three covers with art.
   const fan = (author?.boks ?? []).filter((bok) => getBokArtwork({ id: bok.id })).slice(0, 3);
+
+  // An author with a portrait gets the portrait page (design v48) - their own
+  // account, never one writer inside a publisher's list.
+  const portrait = authorPortraitFor(handle);
+  if (portrait && !author?.byline) {
+    return (
+      <AuthorPortraitPage
+        portrait={portrait}
+        author={author}
+        profileLink={profileLink}
+        following={Boolean(author?.following)}
+        busy={busy}
+        currentStoryId={currentStoryId}
+        onToggleFollow={() => void toggleFollow()}
+        onOpenBok={onOpenBok}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <ReaderSheet
