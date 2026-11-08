@@ -82,8 +82,8 @@ its address was wrong.
 If the agent cannot deploy:
 
 1. Confirm it is running in the project root, with dependencies installed.
-2. Confirm `ssh boks-app true` works and `~/boks-secrets/stack.env` exists.
-   Neither can be created by an agent: ask the founder.
+2. Confirm `ssh boks-app true` works. Access is an SSH key added on the
+   server (`docs/onboarding.md`); an agent cannot grant it: ask the founder.
 3. Read the failing step's output; `bash deploy/release.sh --list` shows what
    is live. Retry `npm run deploy` after fixing the cause.
 

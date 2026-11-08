@@ -27,7 +27,8 @@ not on Cloudflare Workers and Supabase Cloud.
   through the `boks-telegram` Worker (Telegram is blocked from the server), and
   an overload guard that shows new visitors a waiting page (`deploy/busy/`).
 - Secrets: `/opt/boks/.env` on the server (template `deploy/.env.example`), a
-  copy in `~/boks-secrets/stack.env` on the founder's machine. Never in the
+  copy in `~/boks-secrets/stack.env` on the founder's machine. The deploy
+  scripts read what they need from the server over SSH. Never in the
   repository.
 
 What is where on the server:
@@ -70,7 +71,9 @@ is reported to Telegram by `deploy/ops/alerts.sh`.
 ## Deploy
 
 A release replaces the app with **no downtime**. Run it from the repository
-root on a machine with the `boks-app` SSH alias and `~/boks-secrets/stack.env`:
+root on a machine with the `boks-app` SSH alias; that is the only access it
+needs. The build's values (anon key) and the migration password are read from
+`/opt/boks/.env` over SSH, so no secrets file is kept or handed over:
 
 ```bash
 git status --short              # clean: a release is a commit

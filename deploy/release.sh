@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Release boks to the server with no downtime. Run from the repository root
-# on a machine with the `boks-app` SSH alias and ~/boks-secrets/stack.env.
+# on a machine with the `boks-app` SSH alias. The values the build needs are
+# read from the server's /opt/boks/.env over SSH; nothing secret is kept locally.
 #
 #   npm run deploy                      check, build, upload and switch the committed HEAD
 #   bash deploy/release.sh --list       releases on the server, which one is live
@@ -17,13 +18,11 @@
 #
 # Environment: ALLOW_DIRTY=1 releases uncommitted changes (the release id says
 # "-dirty"); ALLOW_BEHIND=1 releases a commit behind main; SKIP_CHECKS=1 skips
-# lint, typecheck and tests; BOKS_HOST and BOKS_SECRETS override the SSH alias
-# and the secrets file.
+# lint, typecheck and tests; BOKS_HOST overrides the SSH alias.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 HOST=${BOKS_HOST:-boks-app}
-SECRETS=${BOKS_SECRETS:-$HOME/boks-secrets/stack.env}
 ORIGIN=https://tryboks.com
 REMOTE=/opt/boks
 remote() { ssh -o LogLevel=ERROR "$HOST" "cd $REMOTE && $*"; }
@@ -43,7 +42,7 @@ case "${1:-}" in
   *) echo "usage: deploy/release.sh [--list | --rollback [id]]" >&2; exit 2 ;;
 esac
 
-[ -f "$SECRETS" ] || { echo "No secrets file at $SECRETS" >&2; exit 1; }
+remote true || { echo "Cannot reach $HOST over SSH. docs/onboarding.md has how to get access." >&2; exit 1; }
 sha=$(git rev-parse --short HEAD)
 if [ -n "$(git status --porcelain)" ]; then
   [ "${ALLOW_DIRTY:-}" = 1 ] || { git status --short; echo "Uncommitted changes. Commit first, or ALLOW_DIRTY=1." >&2; exit 1; }
@@ -74,7 +73,8 @@ if [ "${SKIP_CHECKS:-}" != 1 ]; then
 fi
 
 say "Build $id"
-ANON_KEY=$(set -a; . "$SECRETS"; echo "$ANON_KEY")
+ANON_KEY=$(remote 'sed -n "s/^ANON_KEY=//p" .env')
+[ -n "$ANON_KEY" ] || { echo "No ANON_KEY in $REMOTE/.env on $HOST" >&2; exit 1; }
 # vinext builds a Cloudflare Worker whenever wrangler.jsonc exists; hide it.
 mv wrangler.jsonc wrangler.jsonc.release-off
 trap 'mv wrangler.jsonc.release-off wrangler.jsonc 2>/dev/null || true' EXIT

@@ -13,13 +13,40 @@ No secret is written in this repository. Every value below says where to get it.
 | Service | What to grant | Needed for |
 |---|---|---|
 | GitHub `IvanCherep/boks` | Collaborator, **Write** (Settings -> Collaborators) | push, issues (the backlog) |
-| Server `boks-app` (Selectel) | Their SSH key in `~boks/.ssh/authorized_keys`, and the secrets file `~/boks-secrets/stack.env` through a password manager | `npm run deploy`, `deploy/migrate.sh`, logs |
+| Server `boks-app` (Selectel) | Their **public** SSH key in `~boks/.ssh/authorized_keys` (below). Nothing else: the deploy scripts read what they need from the server | `npm run deploy`, `deploy/migrate.sh`, logs |
 | Cloudflare (DNS of `tryboks.com`, Telegram relay Worker) | Member with **DNS** / **Workers admin** - only if they will touch those | DNS, `deploy/telegram-relay` |
-| Supabase project `vcmrvnihbptostnzaean` | Organization member, **Developer** or **Owner** | migrations, dashboard, `supabase link` |
+| Supabase project `vcmrvnihbptostnzaean` | Not needed: since 2026-11-07 it is only a backup of the old production | - |
 | Resend (`tryboks.com` domain) | Team member - only if they will touch sign-in email | SMTP, delivery logs |
 | boks admin console | After they sign up on https://tryboks.com: `/admin` -> People -> grant **admin** | `/admin`, moderation, the experiment lab |
-| Database password (Supabase) | Hand over through a password manager, never chat or email | `supabase link`, `db push` |
 | `RESEND_API_KEY`, `ELEVENLABS_API_KEY` | Same, and only if needed (auth config push / audio generation) | see `docs/local-environment-runbook.md`, `docs/media-generation.md` |
+
+### Production deploy access (server `boks-app`)
+
+The engineer makes a key and sends only the public half (`.pub`):
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/boks_ed25519 -C "<their name>"
+```
+
+The owner, or anyone who already has access, adds it, with their name in the comment:
+
+```bash
+ssh boks-app 'echo "ssh-ed25519 AAAA... <their name>" >> ~/.ssh/authorized_keys'
+```
+
+The engineer adds to `~/.ssh/config`:
+
+```text
+Host boks-app
+  HostName 135.106.236.123
+  User boks
+  IdentityFile ~/.ssh/boks_ed25519
+```
+
+and checks: `ssh boks-app true`, `bash deploy/release.sh --list`, `bash deploy/migrate.sh` (a dry run).
+That is all `npm run deploy` needs. The user `boks` has sudo, so this is full
+access to the server, not only to releases. To take it away, delete their line
+from `~/.ssh/authorized_keys` on the server.
 
 ## 2. Install the tools
 

@@ -9,9 +9,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 HOST=${BOKS_HOST:-boks-app}
-SECRETS=${BOKS_SECRETS:-$HOME/boks-secrets/stack.env}
 PORT=55432
-PW=$(set -a; . "$SECRETS"; echo "$POSTGRES_PASSWORD")
+# The password is read from the server's .env over SSH, used for this run only.
+PW=$(ssh -o LogLevel=ERROR "$HOST" 'sed -n "s/^POSTGRES_PASSWORD=//p" /opt/boks/.env')
+[ -n "$PW" ] || { echo "Cannot read POSTGRES_PASSWORD from $HOST:/opt/boks/.env" >&2; exit 1; }
 
 ssh -o LogLevel=ERROR -o ExitOnForwardFailure=yes -fN -L "$PORT:127.0.0.1:5432" "$HOST"
 trap 'pkill -f "^ssh .*-L $PORT:127.0.0.1:5432" || true' EXIT
