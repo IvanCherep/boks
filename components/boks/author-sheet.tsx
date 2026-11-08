@@ -87,21 +87,31 @@ export function AuthorSheet({
   // in it: the "follow brings everything this account publishes" note only
   // means something when the account publishes more than this writer.
   const [accountTotal, setAccountTotal] = useState<number | null>(null);
-  useEffect(() => {
-    if (!authorName) return;
-    let cancelled = false;
-    loadBoksAuthor(handle).then((account) => { if (!cancelled) setAccountTotal(account?.totalBoks ?? null); }).catch(() => undefined);
-    return () => { cancelled = true; };
-  }, [handle, authorName]);
 
+  // Keyed by handle in the parent, so a different author mounts a fresh sheet
+  // rather than resetting this one's state on the way in.
   useEffect(() => {
     let cancelled = false;
 
-    loadBoksAuthor(handle, authorName)
-      .then((profile) => {
+    // Opened from a byline (the reader, a series shelf): when the account
+    // publishes only this writer, it is the writer's own account, and the
+    // reader gets that page - name, followers, everything - not the "one
+    // writer inside a publisher" view.
+    const load = async () => {
+      const [profile, account] = await Promise.all([
+        loadBoksAuthor(handle, authorName),
+        authorName ? loadBoksAuthor(handle).catch(() => null) : Promise.resolve(null),
+      ]);
+      const own = account && account.writers.length <= 1 ? account : null;
+      return { shown: own ?? profile, accountTotal: account?.totalBoks ?? null };
+    };
+
+    load()
+      .then(({ shown, accountTotal: total }) => {
         if (cancelled) return;
-        setAuthor(profile);
-        setStatus(profile ? "" : "This author is not available.");
+        setAuthor(shown);
+        setAccountTotal(total);
+        setStatus(shown ? "" : "This author is not available.");
       })
       .catch((error) => {
         if (cancelled) return;
