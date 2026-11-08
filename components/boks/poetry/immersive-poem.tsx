@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createMediaLevel } from "@/components/boks/cinema/media-level";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { ReaderBackIcon as ArrowLeft } from "@/components/boks/reader/reader-icons";
@@ -171,6 +171,8 @@ export function ImmersivePoem({
    * actually read them, the recalculation is a picture or a control bar.
    */
   const pictures = useRef<(HTMLElement | null)[]>([]);
+  /** The same pictures blurred at the sides of a wide screen; they follow the frame. */
+  const ambients = useRef<(HTMLImageElement | null)[]>([]);
   /*
    * A gesture scene's own picture and the canvas that redraws it, by scene
    * index. Empty for every poem without a `gesture` in its scene map.
@@ -467,6 +469,8 @@ export function ImmersivePoem({
         if (fade !== shown.fade && pair.to >= 0) {
           const arriving = pictures.current[pair.to];
           if (arriving) arriving.style.opacity = String(fade);
+          const arrivingSide = ambients.current[pair.to];
+          if (arrivingSide) arrivingSide.style.opacity = String(fade);
           moveDissolve(pair, fade);
         }
         shown.fade = fade;
@@ -488,6 +492,12 @@ export function ImmersivePoem({
         if (cinematic) {
           picture.style.transform = "";
           picture.style.transformOrigin = "";
+        }
+        const side = ambients.current[index];
+        if (side) {
+          side.style.opacity = picture.style.opacity;
+          side.style.zIndex = picture.style.zIndex;
+          side.style.visibility = picture.style.visibility;
         }
       });
       moveDissolve(pair, fade);
@@ -583,6 +593,36 @@ export function ImmersivePoem({
   useEffect(() => {
     traceHandler.current = gestureTrace?.mode === "record" ? gestureTrace.onTrace : null;
   }, [gestureTrace]);
+
+  /*
+   * No word wider than its zone.
+   *
+   * A zone is a fraction of the screen, and a long word set half again as
+   * large ("рассуждаешь" in a zone half a phone wide) ran off the edge. Each
+   * zone is measured once it is laid out, and again when the screen changes
+   * size; one that holds a word wider than itself is set smaller, just enough
+   * to hold it. Layout widths (offsetWidth), not boxes, so the words' own
+   * arrival scaling does not count. Never during the reading: the size of a
+   * word stays fixed for the whole poem.
+   */
+  useLayoutEffect(() => {
+    const root = stage.current;
+    if (!root) return;
+    const fit = () => {
+      for (const zone of root.querySelectorAll<HTMLElement>(".poem__zone")) {
+        zone.style.removeProperty("--poem-fit");
+        const room = zone.clientWidth;
+        let widest = 0;
+        for (const word of zone.querySelectorAll<HTMLElement>(".poem__word")) widest = Math.max(widest, word.offsetWidth);
+        if (room > 0 && widest > room) zone.style.setProperty("--poem-fit", (Math.floor((room / widest) * 100) / 100).toString());
+      }
+    };
+    fit();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
+    observer?.observe(root);
+    void document.fonts?.ready.then(fit);
+    return () => observer?.disconnect();
+  }, [manifest, recording]);
   function traceSample(kind: GestureSampleKind, clientX: number, clientY: number) {
     if (!traceHandler.current || traceFlushed.current) return;
     const box = surface.current?.getBoundingClientRect();
@@ -991,6 +1031,28 @@ export function ImmersivePoem({
         A poem has a handful of scenes, and loading them all up front means no
         dissolve ever waits on the network.
       */}
+      {/*
+        A wide screen shows the picture whole, as a phone does, in a 9:16
+        column; the sides hold the same picture, blurred and darkened, so the
+        frame sits in its own light rather than between white bars. Hidden on
+        a phone. Written by the same frame loop as the pictures it copies.
+      */}
+      <div className="poem__ambient" aria-hidden="true">
+        {manifest.scenes.map((poemScene, index) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={poemScene.id}
+            ref={(element) => {
+              ambients.current[index] = element;
+            }}
+            src={poemScene.image}
+            alt=""
+            draggable={false}
+            decoding="async"
+          />
+        ))}
+      </div>
+
       <div className="poem__frame">
         {manifest.scenes.map((poemScene, index) => (
           <Backdrop

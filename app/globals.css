@@ -4981,6 +4981,15 @@ html:has(.poem, .cinema) body {
   background: #05070d;
 }
 
+/* The strip Safari samples under its toolbar (layout.tsx, `.browser-edge`)
+   follows the light or dark theme; under a player it is the player. Read text
+   is paper again, so it goes back to the theme there. */
+@media (pointer: coarse) {
+  html:has(.poem, .cinema):not(:has(.poem-text-preview)) .browser-edge--bottom {
+    background: #05070d;
+  }
+}
+
 body:has(.poem, .cinema) .reader-tabs,
 body:has(.poem, .cinema) .reader-dock {
   display: none;
@@ -5137,6 +5146,7 @@ body:has(.poem, .cinema) .reader-dock {
   position: absolute;
   inset: 0;
   z-index: 3;
+  container-type: inline-size;
   pointer-events: none;
   transition: opacity 700ms var(--ease-out);
 }
@@ -5214,7 +5224,10 @@ body:has(.poem, .cinema) .reader-dock {
   gap: 0.18em;
   font-family: var(--font-display);
   /* The quiet size. A word that carries the line gets the larger one below. */
-  font-size: calc(clamp(1.55rem, 6.6vw, 2.5rem) * var(--poem-text-scale, 1));
+  /* The column's width, not the window's (`.poem__words` is the container):
+     on a phone the same thing, on a wide screen the 9:16 column. `--poem-fit`
+     shrinks a zone whose longest word would not fit (immersive-poem.tsx). */
+  font-size: calc(clamp(1.55rem, 6.6cqw, 2.5rem) * var(--poem-text-scale, 1) * var(--poem-fit, 1));
   font-weight: 500;
   line-height: 1.12;
   letter-spacing: -0.005em;
@@ -5677,6 +5690,68 @@ body:has(.poem, .cinema) .reader-dock {
    own controls would only sit underneath it. */
 .poem__controls.is-over {
   visibility: hidden;
+}
+
+/*
+ * A wide screen: the picture whole, in a 9:16 column, as on a phone.
+ *
+ * Covering a landscape window cut a portrait painting down to a band across
+ * its middle, and nobody could tell what was in it. The column holds the
+ * picture, the veil, the words and the tap surface, so text zones and
+ * gestures keep the coordinates they were placed in; the sides hold the same
+ * picture blurred and dimmed (`.poem__ambient`), driven by the same frame
+ * loop. A static blur on an image, never animated: only its opacity moves.
+ */
+.poem__ambient {
+  display: none;
+}
+
+@media (min-aspect-ratio: 3/4) {
+  .poem {
+    --poem-column: min(100vw, calc(100dvh * 9 / 16));
+  }
+
+  .poem__surface,
+  .poem__frame,
+  .poem__veil,
+  .poem__words,
+  .poem .format-status__cover {
+    left: calc((100vw - var(--poem-column)) / 2);
+    right: auto;
+    width: var(--poem-column);
+  }
+
+  .poem__frame {
+    box-shadow: 0 0 90px 10px rgb(0 0 0 / 0.55);
+  }
+
+  .poem__ambient {
+    position: absolute;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .poem__ambient img {
+    position: absolute;
+    inset: -6%;
+    width: 112%;
+    height: 112%;
+    object-fit: cover;
+    opacity: 0;
+    filter: blur(44px) saturate(1.15) brightness(0.5);
+    will-change: opacity;
+  }
+
+  /* Darker towards the window's edges, so the column is where the light is. */
+  .poem__ambient::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: radial-gradient(ellipse at center, transparent 30%, rgb(5 7 13 / 0.7) 100%);
+  }
 }
 
 /* Reduced motion: the words still arrive in order and the pictures still
