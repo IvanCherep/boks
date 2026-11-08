@@ -476,6 +476,7 @@
 .author-v44 .author-cover__body{position:absolute;z-index:1;inset:auto 12px 12px;display:flex;flex-direction:column;gap:5px}
 .author-v44 .author-cover__title{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font:400 19px/1.1 var(--font-serif),Georgia,serif;overflow-wrap:anywhere}
 .author-v44 .author-cover__meta{font:500 10px/1.3 var(--font-sans);letter-spacing:.5px;text-transform:uppercase;opacity:.78}
+.author-v44 .author-cover__meta>span{white-space:nowrap}
 .author-v44 .author-fan{position:relative;display:block;width:228px;height:156px;margin:0 0 18px}
 .author-v44 .author-fan img{position:absolute;bottom:0;left:0;width:104px;height:139px;object-fit:cover;border-radius:4px;box-shadow:0 12px 28px rgb(16 23 15/22%)}
 .author-v44 .author-fan--2 img:nth-child(1){transform:rotate(-6deg)}

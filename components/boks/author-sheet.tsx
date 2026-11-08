@@ -149,18 +149,23 @@ export function AuthorSheet({
 
   const meta = [
     author ? t(countLabel(author.totalBoks, "bok"), `Боков: ${author.totalBoks}`) : null,
-    author?.writers.length ? t(countLabel(author.writers.length, "byline"), `Авторов боков: ${author.writers.length}`) : null,
+    author && author.writers.length > 1 ? t(countLabel(author.writers.length, "byline"), `Авторов боков: ${author.writers.length}`) : null,
     author?.authorUserId && !author.byline ? t(countLabel(author.followers, "follower"), `Подписчиков: ${author.followers}`) : null,
   ]
     .filter(Boolean)
     .join(" · ");
+
+  // An account that publishes one writer is that writer's own: it is titled
+  // by their name, with the handle under it, not by the handle alone.
+  const ownName = !author?.byline && author?.writers.length === 1 ? author.writers[0].name : null;
+  const manyWriters = Boolean(author && !author.byline && author.writers.length > 1);
 
   // The author's own pictures, fanned out at the top: up to three covers with art.
   const fan = (author?.boks ?? []).filter((bok) => getBokArtwork({ id: bok.id })).slice(0, 3);
 
   return (
     <ReaderSheet
-      label={author ? `${author.byline || "@" + author.authorHandle}` : t("Author", "Автор")}
+      label={author ? `${author.byline || ownName || "@" + author.authorHandle}` : t("Author", "Автор")}
       onClose={onClose}
       className="author-v44 social-page"
     >
@@ -179,7 +184,7 @@ export function AuthorSheet({
           <h2 className="author-profile-title" translate="no">
             {/* A name when there is one, otherwise the @handle stands alone
                 rather than the sheet inventing a label. */}
-            {author?.byline || `@${author?.authorHandle ?? handle.replace(/^@+/, "")}`}
+            {author?.byline || ownName || `@${author?.authorHandle ?? handle.replace(/^@+/, "")}`}
           </h2>
           {/* Built as a list and joined, so a missing name never leaves the
               line starting with a separator. */}
@@ -200,6 +205,8 @@ export function AuthorSheet({
                 )}
                 {meta && ` · ${meta}`}
               </>
+            ) : ownName ? (
+              <>@{author?.authorHandle}{meta && ` · ${meta}`}</>
             ) : (
               meta
             )}
@@ -297,7 +304,9 @@ export function AuthorSheet({
                       <span className="author-cover__meta">
                         {/* In a publisher's catalogue the writer is what tells one
                             title from another; in a writer's own list it is noise. */}
-                        {[!author.byline ? bok.authorName : null, current ? t("reading now", "читаете сейчас") : t(`${Math.max(1, bok.minutes)} min`, `${Math.max(1, bok.minutes)} мин`)].filter(Boolean).join(" · ")}
+                        {[manyWriters ? bok.authorName : null, current ? t("reading now", "читаете сейчас") : t(`${Math.max(1, bok.minutes)} min`, `${Math.max(1, bok.minutes)} мин`)]
+                          .filter(Boolean)
+                          .map((part, index) => <span key={index}>{index > 0 && " · "}{part}</span>)}
                       </span>
                     </span>
                   </button>
