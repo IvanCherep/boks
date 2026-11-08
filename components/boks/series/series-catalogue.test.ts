@@ -8,6 +8,7 @@ import {
   seriesCollections,
   effectiveSeriesFilter,
   initialSeriesFilter,
+  isSeriesPath,
   orderSeries,
   seriesLanguages,
   publishedSeriesShelf,
@@ -267,6 +268,30 @@ describe("seasonal collections", () => {
     expect(arranged.collection).toBeNull();
     expect(arranged.order).toEqual(shelf);
     expect(arranged.lead).toBe(shelf[0]);
+  });
+
+  it("puts a section opened by its own address first, in every language", () => {
+    const prokhorov = seriesCollections.find((collection) => collection.id === "prokhorov")!;
+    const english = orderSeries(seriesPieces, ["en"], new Set());
+    const everything = orderSeries(seriesPieces, [], new Set());
+    expect(arrangeSeriesShelf(english, [prokhorov]).collections).toEqual([]);
+    const arranged = arrangeSeriesShelf(english, [halloween, prokhorov], { id: "prokhorov", shelf: everything });
+    expect(arranged.collections[0]?.id).toBe("prokhorov");
+    expect(arranged.collections[0]?.pieces.map((piece) => piece.storyId)).toEqual(prokhorov.storyIds);
+    expect(new Set(arranged.order.map((piece) => piece.storyId)).size).toBe(arranged.order.length);
+    // The rest of the shelf keeps the reader's languages.
+    expect(arranged.order.slice(prokhorov.storyIds.length).every((piece) => piece.language === "en")).toBe(true);
+  });
+
+  it("knows the shelf at a section's own address", () => {
+    for (const path of ["/series", "/series/", "/series/prokhorov"]) expect(isSeriesPath(path), path).toBe(true);
+    for (const path of ["/", "/seriesx", "/series/a/b", "/b/series"]) expect(isSeriesPath(path), path).toBe(false);
+  });
+
+  it("shows a book's cover from link-only storage, never from this public repository", () => {
+    for (const collection of seriesCollections) {
+      if (collection.book) expect(collection.book.cover).toMatch(/^\/l\/[A-Za-z0-9_-]{22,}\/f\/[a-z0-9-]+\.webp$/);
+    }
   });
 
   it("is not a collection with fewer than two of its pieces in the reader's languages", () => {

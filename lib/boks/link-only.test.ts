@@ -18,11 +18,11 @@ describe("link-only pieces", () => {
     expect(isLinkOnlyToken(`${token}.`)).toBe(false);
   });
 
-  it("serves only flat files of the three kinds a poem has", () => {
-    for (const file of ["manifest.json", "narration.mp3", "theme.mp3", "cover.webp", "01-kacheli-i-rozhdenie.webp"]) {
+  it("serves only flat files of the kinds a poem and its link preview have", () => {
+    for (const file of ["manifest.json", "narration.mp3", "theme.mp3", "cover.webp", "01-kacheli-i-rozhdenie.webp", "veroslov-share.jpg"]) {
       expect(isLinkOnlyFile(file)).toBe(true);
     }
-    for (const file of ["../manifest.json", "scenes/01.webp", ".env", "index.html", "a.mp3.js", "Manifest.JSON", ""]) {
+    for (const file of ["../manifest.json", "scenes/01.webp", ".env", "index.html", "a.mp3.js", "Manifest.JSON", "cover.jpeg", "cover.png", ""]) {
       expect(isLinkOnlyFile(file)).toBe(false);
     }
   });

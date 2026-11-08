@@ -603,6 +603,11 @@ export type SeriesCollection = {
   /** First day shown, and the first day it is no longer shown, `YYYY-MM-DD`, in the reader's own calendar. No `until`: it stays. */
   from: string;
   until?: string;
+  /**
+   * A book the section stands for: its cover is shown beside the section's
+   * name. Held in link-only storage like the poems (`docs/link-only-pieces.md`).
+   */
+  book?: { title: string; cover: string };
 };
 
 export const seriesCollections: readonly SeriesCollection[] = [
@@ -629,6 +634,7 @@ export const seriesCollections: readonly SeriesCollection[] = [
       "4eb182a0-770e-4b95-9059-07a31b229d78",
     ],
     from: "2026-11-08",
+    book: { title: "Верослов", cover: "/l/XFKejQcwEa7M_7jI_1T6LA/f/veroslov.webp" },
   },
 ];
 
@@ -666,14 +672,24 @@ export function activeCollection(
  */
 export function arrangeSeriesShelf(
   shelf: readonly SeriesPiece[],
-  collections: SeriesCollection | readonly SeriesCollection[] | null
+  collections: SeriesCollection | readonly SeriesCollection[] | null,
+  /**
+   * A section opened by its own address (`/series/<id>`): drawn first, and
+   * from `focus.shelf` - every language - so a link the poet shares shows his
+   * poems to a reader whose shelf is set to another language.
+   */
+  focus: { id: SeriesCollection["id"]; shelf: readonly SeriesPiece[] } | null = null
 ) {
-  const list: readonly SeriesCollection[] = collections == null ? [] : "storyIds" in collections ? [collections] : collections;
+  const given: readonly SeriesCollection[] = collections == null ? [] : "storyIds" in collections ? [collections] : collections;
+  const focused = focus ? (given.find((collection) => collection.id === focus.id) ?? seriesCollections.find((collection) => collection.id === focus.id)) : undefined;
+  const list = focused ? [focused, ...given.filter((collection) => collection !== focused)] : given;
   const byId = new Map(shelf.map((piece) => [piece.storyId, piece]));
+  const focusById = new Map((focus?.shelf ?? []).map((piece) => [piece.storyId, piece]));
   const inside = new Set<string>();
   const drawn: { id: SeriesCollection["id"]; pieces: SeriesPiece[] }[] = [];
   for (const collection of list) {
-    const gathered = collection.storyIds.flatMap((storyId) => (inside.has(storyId) ? [] : byId.get(storyId) ?? []));
+    const source = collection === focused ? focusById : byId;
+    const gathered = collection.storyIds.flatMap((storyId) => (inside.has(storyId) ? [] : source.get(storyId) ?? []));
     if (gathered.length < 2) continue;
     for (const piece of gathered) inside.add(piece.storyId);
     drawn.push({ id: collection.id, pieces: gathered });
@@ -687,6 +703,11 @@ export function arrangeSeriesShelf(
     rest,
     order: [...drawn.flatMap((collection) => collection.pieces), ...(lead ? [lead] : []), ...rest],
   };
+}
+
+/** `/series`, or one section of it at `/series/<id>`. */
+export function isSeriesPath(pathname: string) {
+  return /^\/series(\/[a-z0-9-]+)?\/?$/.test(pathname);
 }
 
 /** How many days a piece is a premiere for. */

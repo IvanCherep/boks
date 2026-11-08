@@ -15,12 +15,14 @@ const tokenPattern = /^[A-Za-z0-9_-]{22,64}$/;
  * before a request leaves the Worker, so a token cannot be used to read past
  * its own folder.
  */
-const filePattern = /^[a-z0-9][a-z0-9-]{0,80}\.(json|mp3|webp)$/;
+const filePattern = /^[a-z0-9][a-z0-9-]{0,80}\.(json|mp3|webp|jpg)$/;
 
 const contentTypes: Record<string, string> = {
   json: "application/json; charset=utf-8",
   mp3: "audio/mpeg",
   webp: "image/webp",
+  // A link preview: messengers take a JPEG everywhere, WebP not.
+  jpg: "image/jpeg",
 };
 
 export const linkOnlyBucket = "link-only";

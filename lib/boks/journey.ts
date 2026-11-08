@@ -76,7 +76,7 @@ export function journeyAttribution(href: string, referrer: string): JourneyAttri
   };
 
   return {
-    landing: shared ? "shared_bok" : pathname.replace(/\/+$/, "") === "/series" ? "series" : "home",
+    landing: shared ? "shared_bok" : /^\/series(\/[a-z0-9-]+)?$/.test(pathname.replace(/\/+$/, "")) ? "series" : "home",
     landingBokId: bokIdFrom(params.get("bok")),
     linkCode: linkCodeFrom(params.get("link")),
     referrerHost,

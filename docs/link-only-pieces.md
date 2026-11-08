@@ -106,6 +106,24 @@ Published this way:
 |---|---|---|---|
 | «коса», «у горы Мегиддо», «азбука веры», «из возвращения в побег», «память шва», «розы Сарагосы» | Алексей Прохоров | 2026-11-08 | immersive poems in the author's own recordings, 3 pictures each (5 for «розы Сарагосы»); their own section on the series shelf, under @boks until the author has an account |
 
+### A poet's own address
+
+A poet with a section gets an address of their own to share, `/series/<section id>`
+(`app/series/prokhorov/page.tsx`): the shelf opened on their section, which
+comes first and in every language whatever the reader's shelf filter. A
+messenger previews it as their book's cover. Both pictures are the author's,
+so they live in a link-only folder of their own, not in `public/`:
+
+- `<book>.webp`, 480 px wide, shown beside the section's name (`book` on the
+  collection in `series-catalogue.ts`);
+- `<book>-share.jpg`, 1200x630, the link preview: the whole cover in the middle
+  on a blurred copy of itself, because messengers crop a portrait image and
+  not all of them take WebP. JPEG is allowed in a link-only folder for this.
+
+| Address | Author | Since | Preview |
+|---|---|---|---|
+| `/series/prokhorov` | Алексей Прохоров | 2026-11-08 | the cover of «Верослов» |
+
 ## Pieces
 
 Recorded here by title only, never with the token.

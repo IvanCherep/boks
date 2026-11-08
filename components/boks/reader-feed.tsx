@@ -69,8 +69,10 @@ import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 import { ReaderTabs, SeriesView } from "@/components/boks/series/series-view";
 import {
+  isSeriesPath,
   seriesPieceFor,
   seriesPieces,
+  type SeriesCollection,
   type SeriesPiece,
 } from "@/components/boks/series/series-catalogue";
 import {
@@ -334,7 +336,7 @@ function seriesContextFor(readerLanguages: readonly string[]) {
   return { readerLanguages };
 }
 
-export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView } = {}) {
+export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { initialView?: ReaderView; seriesCollection?: SeriesCollection["id"] | null } = {}) {
   const {
     stories,
     comments,
@@ -1378,7 +1380,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       flushAftertasteRef.current();
       setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
       setCommentOpen(false); setShareOpen(false); setBokMenuOpen(false);
-      const onShelf = window.location.pathname === "/series";
+      const onShelf = isSeriesPath(window.location.pathname);
       setSeriesOpen(onShelf);
       if (onShelf) refreshSeriesContext();
     };
@@ -1816,7 +1818,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
     setBokMenuOpen(false);
     setAuthorSheet(null);
     setSeriesOpen(true);
-    if (window.location.pathname !== "/series") {
+    if (!isSeriesPath(window.location.pathname)) {
       window.history.pushState({ boksView: "series" }, "", "/series");
     }
   }
@@ -1829,7 +1831,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       setFormatLoading(false); setSeriesOpening(null); setOpenIssue(null);
     }
     setSeriesOpen(false);
-    if (window.location.pathname === "/series") {
+    if (isSeriesPath(window.location.pathname)) {
       // Back to where the shelf was opened from, when it was opened here;
       // a page that landed on /series has nothing behind it to go back to.
       // Read text stays in this reader instance. Traversing history lets the
@@ -2697,6 +2699,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
       <main className="reader-shell reader-v44 reader-viewport reader-shell--focus overflow-hidden text-[var(--foreground)]">
         <div style={{ display: "contents" }} inert={readerOverlayOpen || formatOnScreen}><SeriesView
           readerLanguages={seriesContext.readerLanguages}
+          focusCollection={seriesCollection}
           onPiecesChanged={setPublishedSeriesPieces}
           heard={seriesHeard}
           openingStoryId={seriesOpening}
@@ -2857,6 +2860,7 @@ export function ReaderFeed({ initialView = "feed" }: { initialView?: ReaderView 
         {seriesOpen && seriesContext && (
           <div style={{ display: "contents" }} inert={readerOverlayOpen || formatOnScreen}><SeriesView
             readerLanguages={seriesContext.readerLanguages}
+          focusCollection={seriesCollection}
             onPiecesChanged={setPublishedSeriesPieces}
             heard={seriesHeard}
             openingStoryId={seriesOpening}

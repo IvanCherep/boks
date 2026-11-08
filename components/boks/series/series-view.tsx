@@ -16,6 +16,7 @@ import {
   activeCollections,
   arrangeSeriesShelf,
   publishedSeriesShelf,
+  seriesCollections,
   seriesPieces,
   seriesDurationLabel,
   type SeriesCollection,
@@ -86,8 +87,11 @@ export function SeriesView({
   onOpenPiece,
   onOpenAccount,
   onPiecesChanged,
+  focusCollection = null,
 }: {
   readerLanguages: readonly string[];
+  /** The section the page was opened on (`/series/<id>`): shown first, in every language. */
+  focusCollection?: SeriesCollection["id"] | null;
   heard: ReadonlySet<string>;
   /** The piece being loaded, so its card can say so. */
   openingStoryId: string | null;
@@ -129,7 +133,14 @@ export function SeriesView({
   }, [catalogue, currentStatus, heard, activeFilter]);
   // Read once: a shelf left open over midnight keeps the collections it opened with.
   const [today] = useState(() => new Date());
-  const arranged = useMemo(() => arrangeSeriesShelf(shelf, activeCollections(today)), [shelf, today]);
+  const focusShelf = useMemo(
+    () => (focusCollection ? publishedSeriesShelf(currentStatus === "ready" ? catalogue?.answer ?? null : null, [], heard) : []),
+    [focusCollection, catalogue, currentStatus, heard]
+  );
+  const arranged = useMemo(
+    () => arrangeSeriesShelf(shelf, activeCollections(today), focusCollection ? { id: focusCollection, shelf: focusShelf } : null),
+    [shelf, today, focusCollection, focusShelf]
+  );
   function changeFilter(next: string[]) { const value = effectiveSeriesFilter(next, languages.map(item => item.language)); rememberSeriesFilter(value); setLanguageFilter(value); }
   useEffect(() => { onPiecesChanged?.(arranged.order); }, [onPiecesChanged, arranged]);
 
@@ -199,7 +210,7 @@ export function SeriesView({
 
         {currentStatus === "loading" && <p className="series-empty" role="status">{t("Loading series…", "Загружаем серии…")}</p>}
         {currentStatus === "error" && <div className="series-empty" role="alert"><p>{t("Series could not load.", "Не удалось загрузить серии.")}</p><button type="button" className="series-empty__action" onClick={() => { catalogueAnswer = null; setCatalogueStatus("loading"); setAttempt((value) => value + 1); }}>{t("Try again", "Попробовать снова")}</button></div>}
-        {!lead && currentStatus === "ready" && (
+        {!lead && collections.length === 0 && currentStatus === "ready" && (
           <div className="series-empty">
             <p>{words.empty}</p>
             <button type="button" className="series-empty__action" onClick={() => setFilterOpen(true)}>
@@ -305,11 +316,18 @@ function SeriesCollectionRow({
   const title = collectionWords[id];
   const noteKey = collectionNotes[id];
   const note = noteKey ? collectionWords[noteKey] : null;
+  const book = seriesCollections.find((collection) => collection.id === id)?.book;
   return (
     <section className={`series-collection series-collection--${id}`} aria-label={title}>
-      <header className="series-collection__head">
-        <h2 className="series-collection__title">{title}</h2>
-        {note && <p className="series-collection__note">{note}</p>}
+      <header className={`series-collection__head${book ? " series-collection__head--book" : ""}`}>
+        {book && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="series-collection__book" src={book.cover} alt={`«${book.title}», ${title}`} width={480} height={761} decoding="async" />
+        )}
+        <div>
+          <h2 className="series-collection__title">{title}</h2>
+          {note && <p className="series-collection__note">{note}</p>}
+        </div>
       </header>
       <ol className="series-collection__row">
         {pieces.map((piece, index) => {
