@@ -1214,6 +1214,23 @@ export function loadBokSlug(storyId: string): Promise<string | null> {
   return answer;
 }
 
+/** Slugs of many boks at once, for lists of links (the admin's tracked links). */
+export async function loadBokSlugs(storyIds: readonly string[]): Promise<Map<string, string>> {
+  const ids = [...new Set(storyIds.filter(Boolean))];
+  if (!supabase || ids.length === 0) return new Map();
+  const result = await supabase.from("published_boks").select("id,slug").in("id", ids);
+  if (result.error) return new Map();
+  const rows = (result.data ?? []) as { id: string; slug: string | null }[];
+  return new Map(rows.filter((row) => row.slug).map((row) => [String(row.id), String(row.slug)]));
+}
+
+/** The published bok a slug names, or null. */
+export async function loadBokIdBySlug(slug: string): Promise<string | null> {
+  if (!supabase || !slug) return null;
+  const result = await supabase.from("published_boks").select("id").eq("slug", slug).maybeSingle();
+  return result.error ? null : ((result.data as { id?: string } | null)?.id ?? null);
+}
+
 export async function loadSupabaseStory(storyId: string): Promise<{ story: Story; likedByMe: boolean } | null> {
   if (!supabase) return null;
 

@@ -196,6 +196,16 @@ worked from the start. Verified in Telegram with the small page. Cloudflare's
 Bot Fight Mode on the zone injects a challenge script and can block preview
 bots before the Worker runs - keep it off if previews stop.
 
+## Author Accounts the Team Holds
+
+An author who has not signed in yet (Алексей Прохоров, @prokhorov) gets a real
+account the team holds: `bash deploy/author-account.sh create <handle>
+<handle>@authors.tryboks.com`, then `move <handle> <bok-id>...` to make it
+the author of their boks. The placeholder address has no mailbox, so nobody can
+sign in to it. When the author's address is known, `email <handle> <address>`:
+from then on a code sent there signs them in to this very account, with their
+boks, handle and followers. `show <handle>` prints where an account stands.
+
 ## Load and Limits
 
 Measured on 2026-11-07 (`deploy/loadtest/`): about 500 readers at once are

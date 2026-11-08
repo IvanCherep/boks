@@ -1,36 +1,52 @@
-"use client";
-
-import { useEffect } from "react";
-import { useMessages } from "@/components/boks/ui-language";
-import { defineMessages } from "@/lib/i18n/messages";
-import { BoksFlower } from "@/components/boks/reader/boks-flower";
-
-const messages = defineMessages(
-  { opening: "Opening this author…", loading: "Loading…" },
-  { ru: { opening: "Открываем автора…", loading: "Загрузка…" } }
-);
+import type { Metadata } from "next";
+import { boksOrigin } from "@/app/layout";
+import { authorPreviewDescription, loadAuthorForShare } from "@/lib/boks/author-preview";
+import { OpeningAuthor } from "./opening-author";
 
 /**
- * A shareable link to one author, mirroring `/b/<id>` for a boks.
- *
- * The reader is a single stateful feed, so the handle is handed to it rather
- * than rendering a second copy of the reading surface.
+ * A shareable link to one author: `/a/<handle>`, shared as `/@<handle>`
+ * (`proxy.ts`). Rendered on the server so a messenger previews it with the
+ * author's name and boks; a person is handed to the reader (`OpeningAuthor`).
  */
-export default function SharedAuthorPage() {
-  const words = useMessages(messages);
-  useEffect(() => {
-    const handle = window.location.pathname.split("/").filter(Boolean).pop() ?? "";
-    window.location.replace(handle ? `/?author=${encodeURIComponent(handle)}` : "/");
-  }, []);
+type RouteParams = { handle: string };
 
-  return (
-    <main className="reader-v44 reader-system-page reader-system-page--loading">
-      <article className="reader-system-page__body">
-        <header className="reader-system-page__header"><a href="/">boks</a></header>
-        <div className="reader-system-art reader-system-art--loading" aria-hidden="true"><span>b</span><BoksFlower /></div>
-        <h1 className="reader-system-title">{words.opening}</h1>
-        <p className="reader-system-status" role="status">{words.loading}</p>
-      </article>
-    </main>
-  );
+async function handleFrom(params: RouteParams | Promise<RouteParams>) {
+  const resolved = await params;
+  let handle = String(resolved?.handle ?? "");
+  try {
+    handle = decodeURIComponent(handle);
+  } catch {
+    // Read as it is.
+  }
+  return handle.replace(/^@+/, "").toLowerCase();
+}
+
+export async function generateMetadata({ params }: { params: RouteParams | Promise<RouteParams> }): Promise<Metadata> {
+  const handle = await handleFrom(params);
+  const author = await loadAuthorForShare(handle);
+  const url = `${boksOrigin}/@${author?.handle ?? handle}`;
+  if (!author) {
+    return { title: "boks", alternates: { canonical: url }, openGraph: { type: "website", url, siteName: "boks", title: "boks" } };
+  }
+  const title = author.name.startsWith("@") ? `${author.name} · boks` : `${author.name} · @${author.handle}`;
+  const description = authorPreviewDescription(author);
+  const image = `${boksOrigin}/og-cover.png`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "profile",
+      siteName: "boks",
+      url,
+      title,
+      description,
+      images: [{ url: image, width: 1200, height: 630, alt: "boks" }],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
+
+export default function SharedAuthorPage() {
+  return <OpeningAuthor />;
 }

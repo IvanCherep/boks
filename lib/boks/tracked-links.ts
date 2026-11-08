@@ -25,6 +25,15 @@ export function bokIdFrom(value: string | null | undefined) {
  * The bok id in whatever an admin pasted: the id itself, a `/b/<id>` link
  * copied from the reader, or a `/?bok=<id>` address. Null when there is none.
  */
+/** A bok slug in what an admin pasted: `go.tryboks.com/b/kosa-prokhorov`, or the slug alone. */
+export function bokSlugFromInput(input: string) {
+  const text = input.trim().toLowerCase();
+  const fromLink = text.match(/\/b\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:[/?#]|$)/)?.[1];
+  const bare = /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(text) ? text : null;
+  const slug = fromLink ?? bare;
+  return slug && slug.length <= 80 ? slug : null;
+}
+
 export function bokIdFromInput(input: string) {
   const match = input.match(bokIdPattern);
   return match ? match[0].toLowerCase() : null;
@@ -37,9 +46,11 @@ export function linkCodeFrom(value: string | null | undefined) {
 }
 
 /** The address to send. A link with a bok opens it; one without opens the feed. */
-export function trackedLinkUrl(origin: string, link: { code: string; bokId: string | null }) {
-  // On go.tryboks.com like every shared link, so it previews in Telegram (`share-link.ts`).
+export function trackedLinkUrl(origin: string, link: { code: string; bokId: string | null; bokSlug?: string | null }) {
+  // On go.tryboks.com like every shared link, so it previews in Telegram
+  // (`share-link.ts`), and by the bok's slug once it is known.
   const base = shareOrigin(origin).replace(/\/+$/, "");
   const code = encodeURIComponent(link.code);
-  return link.bokId ? `${base}/b/${link.bokId}?link=${code}` : `${base}/?link=${code}`;
+  const bok = link.bokSlug || link.bokId;
+  return bok ? `${base}/b/${bok}?link=${code}` : `${base}/?link=${code}`;
 }

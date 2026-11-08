@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import type { LinkArrivalStats, LinkAttribution, TrackedLinkReport } from "@/components/boks/client-types";
 import {
   createTrackedLink,
+  loadBokIdBySlug,
+  loadBokSlug,
+  loadBokSlugs,
   loadLinkAttribution,
   setTrackedLinkArchived,
 } from "@/components/boks/supabase-browser-data";
@@ -14,7 +17,7 @@ import { readHiddenCountries } from "@/components/boks/admin/guest-funnel";
 import { percent } from "@/components/boks/admin/guest-funnel-steps";
 import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 import { countryLabel } from "@/components/boks/admin/country-label";
-import { bokIdFromInput, linkCodeFrom, trackedLinkUrl } from "@/lib/boks/tracked-links";
+import { bokIdFromInput, bokSlugFromInput, linkCodeFrom, trackedLinkUrl } from "@/lib/boks/tracked-links";
 import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 
@@ -58,7 +61,7 @@ const words = defineMessages(
     loading: "Loading…",
     couldNotLoad: "Could not load the links.",
     needName: "Give the link a name - who it is for, e.g. “MSU, philology - Лев и собачка”.",
-    badBok: "Paste a bok link (tryboks.com/b/…) or its id - copy it from the reader's share button.",
+    badBok: "Paste a bok link (go.tryboks.com/b/…) or its id - copy it from the reader's share button.",
     badCode: "A code is latin letters, digits and dashes, up to 40 - or leave it empty for a generated one.",
     couldNotCreate: "Could not create the link.",
     couldNotUpdate: "Could not update the link.",
@@ -118,7 +121,7 @@ const words = defineMessages(
       loading: "Загрузка…",
       couldNotLoad: "Не удалось загрузить ссылки.",
       needName: "Назовите ссылку: для кого она, например «МГУ, филфак: Лев и собачка».",
-      badBok: "Вставьте ссылку на бок (tryboks.com/b/…) или его id: скопируйте её кнопкой «Поделиться» в читалке.",
+      badBok: "Вставьте ссылку на бок (go.tryboks.com/b/…) или его id: скопируйте её кнопкой «Поделиться» в читалке.",
       badCode: "Код: латинские буквы, цифры и дефисы, до 40 символов. Или оставьте пустым, и код создастся сам.",
       couldNotCreate: "Не удалось создать ссылку.",
       couldNotUpdate: "Не удалось обновить ссылку.",
@@ -201,12 +204,17 @@ export function TrackedLinksPanel() {
   const [formNote, setFormNote] = useState("");
   const [created, setCreated] = useState<{ label: string; url: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  // Bok slugs for the links on screen, so each is shown and copied as
+  // go.tryboks.com/b/<slug>; until they arrive, by id - the same bok either way.
+  const [slugs, setSlugs] = useState<Map<string, string>>(new Map());
 
   const refresh = useCallback(async (window: number, team: boolean, hidden: string[]) => {
     setBusy(true);
     try {
-      setData(await loadLinkAttribution(window, { includeTeam: team, hideCountries: hidden }));
+      const report = await loadLinkAttribution(window, { includeTeam: team, hideCountries: hidden });
+      setData(report);
       setStatus("");
+      void loadBokSlugs(report.links.flatMap((link) => (link.bokId ? [link.bokId] : []))).then(setSlugs);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : words[currentUiLanguage()].couldNotLoad);
     } finally {
@@ -227,7 +235,7 @@ export function TrackedLinksPanel() {
   }, [days, includeTeam, hiddenCountries, refresh]);
 
   function urlOf(link: { code: string; bokId: string | null }) {
-    return trackedLinkUrl(window.location.origin, link);
+    return trackedLinkUrl(window.location.origin, { ...link, bokSlug: link.bokId ? slugs.get(link.bokId) : null });
   }
 
   async function copy(url: string) {
@@ -249,7 +257,9 @@ export function TrackedLinksPanel() {
       setFormNote(t.needName);
       return;
     }
-    const bokId = bokInput.trim() ? bokIdFromInput(bokInput) : null;
+    let bokId = bokInput.trim() ? bokIdFromInput(bokInput) : null;
+    const pastedSlug = bokInput.trim() && !bokId ? bokSlugFromInput(bokInput) : null;
+    if (pastedSlug) bokId = await loadBokIdBySlug(pastedSlug);
     if (bokInput.trim() && !bokId) {
       setFormNote(t.badBok);
       return;
@@ -263,7 +273,7 @@ export function TrackedLinksPanel() {
     setBusy(true);
     try {
       const link = await createTrackedLink({ label: name, bokId, code: typedCode ? linkCodeFrom(typedCode) : null });
-      const url = urlOf(link);
+      const url = trackedLinkUrl(window.location.origin, { ...link, bokSlug: link.bokId ? await loadBokSlug(link.bokId) : null });
       setCreated({ label: link.bokTitle ? `${link.label} → ${link.bokTitle}` : link.label, url });
       setLabel("");
       setBokInput("");
