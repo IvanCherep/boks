@@ -131,6 +131,7 @@ import {
 } from "@/components/boks/supabase-browser-data";
 import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
 import { bokShareUrl } from "@/lib/boks/share-link";
+import { authorFromPath, authorPath, bokPath, isBokPath } from "@/lib/boks/reader-address";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
@@ -477,6 +478,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     [setStatus]
   );
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
+  // The address bar follows the view (`lib/boks/reader-address.ts`): whether an
+  // author page is open, and which bok has its own address right now.
+  const authorOpenRef = useRef(false);
+  const addressedBok = useRef<string | null>(null);
+  useEffect(() => { authorOpenRef.current = Boolean(authorSheet); }, [authorSheet]);
   /** Where this visit came from; sent once the reader's identity is known. */
   const visitAttribution = useRef<JourneyAttribution | null>(null);
   const visitRecorded = useRef(false);
@@ -814,7 +820,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         }
         if (shared) await openReadBoksRef.current(shared, "share");
         // A shared author link names an account, so it opens the publisher.
-        if (sharedAuthor) setAuthorSheet({ handle: bareHandle(sharedAuthor) });
+        if (sharedAuthor) {
+          setAuthorSheet({ handle: bareHandle(sharedAuthor) });
+          window.history.replaceState({ boksView: "author", landed: true }, "", authorPath(bareHandle(sharedAuthor)));
+        }
       })
       .catch((error) => {
         notify(error.message);
@@ -1372,6 +1381,13 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStoryId]);
 
+  /** Moving on in the feed takes the bok's own address off the bar. */
+  useEffect(() => {
+    if (!addressedBok.current || currentStoryId === addressedBok.current) return;
+    addressedBok.current = null;
+    if (isBokPath(window.location.pathname) && !authorOpenRef.current) window.history.replaceState(null, "", "/");
+  }, [currentStoryId]);
+
   /** Moving off a boks the reader chose ends its `entry` tag. */
   useEffect(() => {
     const chosen = entryRef.current;
@@ -1383,6 +1399,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   /** The browser's back and forward move between the feed and the shelf. */
   useEffect(() => {
     const onPopState = () => {
+      // Back from an author's page closes just that page, over whatever it
+      // was opened on - a playing poem stays playing.
+      const author = authorFromPath(window.location.pathname);
+      if (author) { setAuthorSheet({ handle: author }); return; }
+      if (authorOpenRef.current) { setAuthorSheet(null); return; }
       formatRequest.current += 1;
       storyOpenRequest.current += 1;
       pendingSeriesFormat.current = null;
@@ -1727,6 +1748,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       if (storyScroll.current) storyScroll.current.scrollTop = 0;
       setAuthPanelOpen(false);
       hideReaderChrome();
+      if (entry !== "series") addressBok(storyId);
       return true;
     }
 
@@ -1754,6 +1776,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       setLiked((state) => ({ ...state, [story.id]: likedByMe }));
       setLibraryEntry({ story, index: selectedIndex });
       setPendingLibraryStoryId(story.id);
+      if (entry !== "series") addressBok(story.id);
       return true;
     } catch {
       if (request !== storyOpenRequest.current) return false;
@@ -2197,6 +2220,31 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     setBokMenuOpen(false);
     setAuthorSheet({ handle: bareHandle(handle), authorName });
     revealReaderChrome(0);
+    const path = authorPath(bareHandle(handle));
+    if (authorFromPath(window.location.pathname)) window.history.replaceState(window.history.state, "", path);
+    else window.history.pushState({ boksView: "author" }, "", path);
+  }
+
+  /**
+   * Closes an author's page and puts the address back. The page's own Back
+   * steps back in history when opening it pushed an entry; anything else (a
+   * bok opened from it, a page landed on from a link) replaces the address.
+   */
+  function closeAuthor(how: "back" | "replace") {
+    setAuthorSheet(null);
+    const state = window.history.state as { boksView?: string; landed?: boolean } | null;
+    if (how === "back" && state?.boksView === "author" && !state.landed) { window.history.back(); return; }
+    const base = isSeriesPath(window.location.pathname) || seriesOpen ? "/series" : "/";
+    window.history.replaceState(null, "", base);
+  }
+
+  /** A bok opened on its own gets its own address, `/b/<slug>`, until the reader moves on. */
+  function addressBok(storyId: string) {
+    addressedBok.current = storyId;
+    void loadBokSlug(storyId).then((slug) => {
+      if (addressedBok.current !== storyId || authorOpenRef.current || isSeriesPath(window.location.pathname)) return;
+      window.history.replaceState({ boksView: "bok" }, "", bokPath(slug ?? storyId));
+    });
   }
 
   function shareStory() { setShareOpen(true); }
@@ -2690,15 +2738,15 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       authorName={authorSheet.authorName}
       currentStoryId={currentStoryId}
       canFollow={hasSignedInAccount}
-      onClose={() => setAuthorSheet(null)}
+      onClose={() => closeAuthor("back")}
       onOpenWriter={(writer) => openAuthor(authorSheet.handle, writer)}
       onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
       onOpenBok={(storyId) => {
-        setAuthorSheet(null);
+        closeAuthor("replace");
         void openReadBoks(storyId, "author");
       }}
       onRequestAccount={() => {
-        setAuthorSheet(null);
+        closeAuthor("replace");
         openAccount("manual", "follow");
       }}
     />
