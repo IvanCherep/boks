@@ -77,7 +77,7 @@ export async function generateMetadata({
       url,
       title,
       description,
-      images: [{ url: image, ...sharePosterSize, alt: title, type: "image/png" }],
+      images: [{ url: image, ...sharePosterSize, alt: title, type: "image/jpeg" }],
       authors: bok.authorName ? [bok.authorName] : undefined,
     },
     twitter: { card: "summary_large_image", title, description, images: [image] },

@@ -1,5 +1,5 @@
 /** Bump when the poster changes so new shares do not reuse an old messenger card. */
-export const sharePosterVersion = "v44-6";
+export const sharePosterVersion = "v44-7";
 
 /**
  * Where shared links point. Telegram builds a link's preview on its servers
