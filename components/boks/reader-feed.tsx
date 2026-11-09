@@ -339,6 +339,31 @@ function seriesContextFor(readerLanguages: readonly string[]) {
   return { readerLanguages };
 }
 
+/**
+ * A guest who tapped Follow is sent to sign in; the author is remembered here
+ * (for the tab, half an hour) so that once signed in they are brought back to
+ * that author and the follow goes through - not dropped on the feed to find
+ * the author again.
+ */
+const pendingFollowKey = "boks-pending-follow";
+
+function rememberPendingFollow(target: { handle: string; authorName?: string }) {
+  try { window.sessionStorage.setItem(pendingFollowKey, JSON.stringify({ ...target, at: Date.now() })); } catch { /* storage off: nothing to come back to */ }
+}
+
+function takePendingFollow(): { handle: string; authorName?: string } | null {
+  try {
+    const raw = window.sessionStorage.getItem(pendingFollowKey);
+    if (!raw) return null;
+    window.sessionStorage.removeItem(pendingFollowKey);
+    const value = JSON.parse(raw) as { handle?: unknown; authorName?: unknown; at?: unknown };
+    if (typeof value.handle !== "string" || typeof value.at !== "number" || Date.now() - value.at > 30 * 60 * 1000) return null;
+    return { handle: value.handle, authorName: typeof value.authorName === "string" ? value.authorName : undefined };
+  } catch {
+    return null;
+  }
+}
+
 export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { initialView?: ReaderView; seriesCollection?: SeriesCollection["id"] | null } = {}) {
   const {
     stories,
@@ -477,7 +502,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     },
     [setStatus]
   );
-  const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string } | null>(null);
+  const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string; follow?: boolean } | null>(null);
   // The address bar follows the view (`lib/boks/reader-address.ts`): whether an
   // author page is open, and which bok has its own address right now.
   const authorOpenRef = useRef(false);
@@ -818,7 +843,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           setAuthPanelOpen(true);
           setReaderChromeVisible(true);
         }
-        if (shared) await openReadBoksRef.current(shared, "share");
+        // A link that names no bok (a slug nothing has) says so rather than
+        // quietly opening the feed.
+        if (shared && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shared)) {
+          setOpenIssue({ kind: "unavailable", storyId: shared, entry: "share" });
+        } else if (shared) await openReadBoksRef.current(shared, "share");
         // A shared author link names an account, so it opens the publisher.
         if (sharedAuthor) {
           setAuthorSheet({ handle: bareHandle(sharedAuthor) });
@@ -1174,6 +1203,19 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     );
   }, [identitySettled]);
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);
+  // Signed in after tapping Follow as a guest: back to that author, following.
+  useEffect(() => {
+    if (!hasSignedInAccount) return;
+    const pending = takePendingFollow();
+    if (!pending) return;
+    const timer = window.setTimeout(() => {
+      setAuthPanelOpen(false);
+      openAuthor(pending.handle, pending.authorName, true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // `openAuthor` reads only setters and the address bar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSignedInAccount]);
   const accountSuspended = Boolean(user?.bannedAt);
   /**
    * Whether to offer the admin Hide button. This only decides what is drawn:
@@ -2214,11 +2256,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
    * and sending both taps to the account answered "more by this writer" with
    * an alphabetical dump of everything the account had ever published.
    */
-  function openAuthor(handle: string, authorName?: string) {
+  function openAuthor(handle: string, authorName?: string, follow = false) {
     if (!handle) return;
     setCommentOpen(false);
     setBokMenuOpen(false);
-    setAuthorSheet({ handle: bareHandle(handle), authorName });
+    setAuthorSheet({ handle: bareHandle(handle), authorName, follow });
     revealReaderChrome(0);
     const path = authorPath(bareHandle(handle));
     if (authorFromPath(window.location.pathname)) window.history.replaceState(window.history.state, "", path);
@@ -2733,7 +2775,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
 
   const authorPanel = authorSheet && (
     <AuthorSheet
-      key={`${authorSheet.handle}|${authorSheet.authorName ?? ""}`}
+      key={`${authorSheet.handle}|${authorSheet.authorName ?? ""}|${authorSheet.follow ? "follow" : ""}`}
+      followOnOpen={authorSheet.follow}
       handle={authorSheet.handle}
       authorName={authorSheet.authorName}
       currentStoryId={currentStoryId}
@@ -2754,6 +2797,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         void openReadBoks(storyId, "author");
       }}
       onRequestAccount={() => {
+        // A guest who tapped Follow comes back to this author once signed in,
+        // and the follow goes through then (the effect on `hasSignedInAccount`).
+        rememberPendingFollow({ handle: authorSheet.handle, authorName: authorSheet.authorName });
         closeAuthor("replace");
         openAccount("manual", "follow");
       }}

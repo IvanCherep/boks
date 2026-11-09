@@ -1,7 +1,7 @@
 "use client";
 
 import { authorShareUrl } from "@/lib/boks/share-link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AuthorProfile } from "@/components/boks/client-types";
 import { loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
@@ -45,6 +45,8 @@ export type AuthorSheetProps = {
    * so a writer's list has to have a way back to it.
    */
   onOpenAccount?: () => void;
+  /** Follow as soon as the author is loaded: a guest tapped Follow and has just signed in. */
+  followOnOpen?: boolean;
 };
 
 export function AuthorSheet({
@@ -58,6 +60,7 @@ export function AuthorSheet({
   onFollowChanged,
   onOpenWriter,
   onOpenAccount,
+  followOnOpen = false,
 }: AuthorSheetProps) {
   const { t } = useReaderPreferences();
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
@@ -99,6 +102,17 @@ export function AuthorSheet({
       cancelled = true;
     };
   }, [handle, authorName]);
+
+  const followedOnOpen = useRef(false);
+  useEffect(() => {
+    if (!followOnOpen || followedOnOpen.current || !author?.authorUserId || !canFollow) return;
+    followedOnOpen.current = true;
+    if (author.following) return;
+    const timer = window.setTimeout(() => void toggleFollow(), 0);
+    return () => window.clearTimeout(timer);
+    // Once, when the author has loaded; `toggleFollow` reads the current author.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [followOnOpen, author, canFollow]);
 
   async function toggleFollow() {
     if (!author?.authorUserId) return;

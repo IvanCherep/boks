@@ -39,10 +39,14 @@ async function refFrom(params: RouteParams | Promise<RouteParams>) {
   return ref ? ("id" in ref ? ref.id : ref.slug) : "";
 }
 
-/** The bok's id, looking a slug up; "" when a slug names nothing. */
+/**
+ * The bok's id, looking a slug up. A slug that names nothing is passed on as
+ * it is: the reader then says the bok is unavailable, instead of opening the
+ * feed as if nothing had been asked for.
+ */
 async function idFor(ref: string) {
   if (!ref || /^[0-9a-f-]{36}$/.test(ref)) return ref;
-  return (await loadBokForShare(ref))?.id ?? "";
+  return (await loadBokForShare(ref))?.id ?? ref;
 }
 
 export async function generateMetadata({
