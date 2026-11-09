@@ -4,6 +4,9 @@ import { boksOrigin } from "@/app/layout";
 import { BoksErrorBoundary } from "@/components/boks/error-boundary";
 import { seriesSectionFromPath, seriesSectionPages } from "@/components/boks/series/series-sections";
 import { ReaderFeed } from "../../boks-client";
+import { authorAliasFor } from "@/components/boks/author-portraits";
+import { authorAliasMetadata } from "@/lib/boks/author-alias-metadata";
+import { OpeningAuthor } from "../../a/[handle]/opening-author";
 
 /**
  * A section of the series shelf at an address of its own, for its author to
@@ -24,6 +27,8 @@ async function pageFor(params: RouteParams | Promise<RouteParams>) {
 export async function generateMetadata({ params }: { params: RouteParams | Promise<RouteParams> }): Promise<Metadata> {
   const page = await pageFor(params);
   if (!page) return { title: "boks series" };
+  const alias = page.profileAlias ? authorAliasFor(page.profileAlias) : null;
+  if (alias) return authorAliasMetadata(boksOrigin, alias.alias);
   const url = `${boksOrigin}/series/${page.slug}`;
   const image = `${boksOrigin}${page.share.image}`;
   return {
@@ -46,6 +51,9 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
 export default async function SeriesSectionPage({ params }: { params: RouteParams | Promise<RouteParams> }) {
   const page = await pageFor(params);
   if (!page) notFound();
+  // A section that now stands for its author's page (`/series/veroslov`) opens it.
+  const alias = page.profileAlias ? authorAliasFor(page.profileAlias) : null;
+  if (alias) return <OpeningAuthor handle={alias.portrait.handle} />;
   return (
     <BoksErrorBoundary v44>
       <ReaderFeed initialView="series" seriesCollection={page.collection} />

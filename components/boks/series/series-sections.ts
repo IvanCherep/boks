@@ -10,6 +10,8 @@ export type SeriesSectionPage = {
   /** Earlier addresses that still open it. */
   aliases: readonly string[];
   collection: SeriesCollection["id"];
+  /** When set, the address opens this author alias (`author-portraits.ts`) instead of the shelf. */
+  profileAlias?: string;
   share: { title: string; description: string; image: string; alt: string };
 };
 
@@ -19,6 +21,8 @@ export const seriesSectionPages: readonly SeriesSectionPage[] = [
     slug: "veroslov",
     aliases: ["prokhorov"],
     collection: "prokhorov",
+    // Since 2026-11-09 his link opens his author page, previewed as the book.
+    profileAlias: "veroslov",
     share: {
       title: "«Верослов». Алексей Прохоров читает свои стихи",
       description:

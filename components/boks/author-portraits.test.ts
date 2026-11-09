@@ -17,3 +17,15 @@ describe("author portraits", () => {
     }
   });
 });
+
+describe("author aliases", () => {
+  it("open the author's page under another name, with their own preview", async () => {
+    const { authorAliasFor } = await import("@/components/boks/author-portraits");
+    const found = authorAliasFor("veroslov")!;
+    expect(found.portrait.handle).toBe("prokhorov");
+    expect(found.alias.image).toMatch(/^\/l\/[A-Za-z0-9_-]{22,}\/f\/[a-z0-9-]+-share\.jpg$/);
+    expect(found.alias.description.length).toBeLessThanOrEqual(200);
+    expect(`${found.alias.title} ${found.alias.description}`).not.toMatch(/—/);
+    expect(authorAliasFor("prokhorov")).toBeNull();
+  });
+});

@@ -16,12 +16,13 @@ const messages = defineMessages(
  * rendering a second copy of the reading surface. The page around this is
  * rendered on the server for the link preview (`page.tsx`).
  */
-export function OpeningAuthor() {
+export function OpeningAuthor({ handle: given }: { handle?: string } = {}) {
   const words = useMessages(messages);
   useEffect(() => {
-    const handle = window.location.pathname.split("/").filter(Boolean).pop() ?? "";
+    // A profile alias (`/veroslov`) names its author; `/a/<handle>` names itself.
+    const handle = given ?? window.location.pathname.split("/").filter(Boolean).pop() ?? "";
     window.location.replace(handle ? `/?author=${encodeURIComponent(handle)}` : "/");
-  }, []);
+  }, [given]);
 
   return (
     <main className="reader-v44 reader-system-page reader-system-page--loading">
