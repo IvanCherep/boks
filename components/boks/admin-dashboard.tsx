@@ -23,6 +23,7 @@ import { AdminPeople } from "@/components/boks/admin/people";
 import { FeedbackInbox } from "@/components/boks/admin/feedback-inbox";
 import { GuestFunnelPanel } from "@/components/boks/admin/guest-funnel";
 import { TrackedLinksPanel } from "@/components/boks/admin/tracked-links";
+import { PreviewLabPanel } from "@/components/boks/admin/preview-lab";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
 import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
@@ -528,6 +529,7 @@ export function AdminDashboard() {
 
         {tab === "guests" && <GuestFunnelPanel />}
         {tab === "links" && <TrackedLinksPanel />}
+        {tab === "links" && <PreviewLabPanel />}
         {tab === "growth" && <AdminGrowth />}
 
         {tab === "content" && <ContentOperations />}

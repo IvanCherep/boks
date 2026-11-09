@@ -15,7 +15,7 @@ const tokenPattern = /^[A-Za-z0-9_-]{22,64}$/;
  * before a request leaves the Worker, so a token cannot be used to read past
  * its own folder.
  */
-const filePattern = /^[a-z0-9][a-z0-9-]{0,80}\.(json|mp3|webp|jpg)$/;
+const filePattern = /^[a-z0-9][a-z0-9-]{0,80}\.(json|mp3|webp|jpg|gif|mp4)$/;
 
 const contentTypes: Record<string, string> = {
   json: "application/json; charset=utf-8",
@@ -23,6 +23,9 @@ const contentTypes: Record<string, string> = {
   webp: "image/webp",
   // A link preview: messengers take a JPEG everywhere, WebP not.
   jpg: "image/jpeg",
+  // Animated link previews (preview lab, `lib/boks/preview-lab.ts`).
+  gif: "image/gif",
+  mp4: "video/mp4",
 };
 
 export const linkOnlyBucket = "link-only";

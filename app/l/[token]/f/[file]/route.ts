@@ -43,7 +43,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   });
   // A link preview card is meant to be fetched by every messenger; nothing
   // else in a folder is.
-  if (!file.endsWith("-share.jpg")) headers.set("X-Robots-Tag", "noindex, nofollow");
+  if (!/-share\.(jpg|gif|webp|mp4)$/.test(file)) headers.set("X-Robots-Tag", "noindex, nofollow");
   for (const name of ["Content-Length", "Content-Range", "ETag", "Last-Modified"]) {
     const value = upstream.headers.get(name);
     if (value) headers.set(name, value);

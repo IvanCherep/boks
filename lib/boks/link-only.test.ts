@@ -19,7 +19,7 @@ describe("link-only pieces", () => {
   });
 
   it("serves only flat files of the kinds a poem and its link preview have", () => {
-    for (const file of ["manifest.json", "narration.mp3", "theme.mp3", "cover.webp", "01-kacheli-i-rozhdenie.webp", "veroslov-share.jpg"]) {
+    for (const file of ["manifest.json", "narration.mp3", "theme.mp3", "cover.webp", "01-kacheli-i-rozhdenie.webp", "veroslov-share.jpg", "lab-gif-share.gif", "lab-video-share.mp4"]) {
       expect(isLinkOnlyFile(file)).toBe(true);
     }
     for (const file of ["../manifest.json", "scenes/01.webp", ".env", "index.html", "a.mp3.js", "Manifest.JSON", "cover.jpeg", "cover.png", ""]) {
@@ -38,6 +38,8 @@ describe("link-only pieces", () => {
   it("names the right content type and same-origin path", () => {
     expect(linkOnlyContentType("narration.mp3")).toBe("audio/mpeg");
     expect(linkOnlyContentType("cover.webp")).toBe("image/webp");
+    expect(linkOnlyContentType("lab-gif-share.gif")).toBe("image/gif");
+    expect(linkOnlyContentType("lab-video-share.mp4")).toBe("video/mp4");
     expect(linkOnlyContentType("manifest.json")).toMatch(/^application\/json/);
     expect(linkOnlyFilePath(token, "cover.webp")).toBe(`/l/${token}/f/cover.webp`);
   });
