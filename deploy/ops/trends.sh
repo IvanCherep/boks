@@ -3,6 +3,12 @@
 # Records disk, database size and the hour's CPU peak; once a day (09:xx)
 # projects growth over the recorded window (up to 14 days) and warns, at most
 # once a week per subject, when something will cross its limit within 30 days.
+#
+# Both numbers ignore one-off events, which made the first warnings false
+# (2026-11-09): disk growth is the median hourly change, so installing
+# something once (the embedder's model, 1.2 GB) is not read as daily growth,
+# and the CPU peak is the highest level held for 45 s (three samples, the
+# overload guard's own rule), so a release or a job starting is not a peak.
 # Usage: trends.sh [--print]   (print the forecast instead of sending it)
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -16,26 +22,32 @@ now=$(date +%s)
 disk_used=$(df -B1 --output=used / | tail -1 | tr -d ' ')
 disk_size=$(df -B1 --output=size / | tail -1 | tr -d ' ')
 db_bytes=$(docker compose exec -T db psql -U postgres -h localhost -At -c "select pg_database_size('postgres')" 2>/dev/null | tail -1)
-cpu_peak=$(awk -v since=$((now-3600)) '$1>=since && $2>m{m=$2} END{print m+0}' "$STATE/load.log" 2>/dev/null || echo 0)
+cpu_peak=$(awk -v since=$((now-3600)) '$1>=since { a=b; b=c; c=$2; n++
+  if (n>=3) { lo=a; if (b<lo) lo=b; if (c<lo) lo=c; if (lo>m) m=lo } } END{print m+0}' "$STATE/load.log" 2>/dev/null || echo 0)
 [ "$PRINT" = 1 ] || echo "$now $disk_used $disk_size ${db_bytes:-0} $cpu_peak" >> "$LOG"
 tail -n 2000 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
 
 [ "$PRINT" = 1 ] || [ "$(date +%H)" = 09 ] || exit 0
 
 read -r status window disk_mb_day db_mb_day days_to_80 disk_pct db_mb cpu_peak_day < <(awk -v now="$now" '
-  $1 >= now - 14*86400 { if (!first) { t0=$1; d0=$2; b0=$4; first=1 } t1=$1; d1=$2; size=$3; b1=$4;
+  $1 >= now - 14*86400 { if (!first) { t0=$1; d0=$2; b0=$4; first=1 }
+                         else if ($1 > tp) { n++; rate[n] = ($2 - dp) * 3600 / ($1 - tp) }
+                         tp=$1; dp=$2; t1=$1; d1=$2; size=$3; b1=$4;
                          if ($1 >= now - 86400 && $5 > peak) peak=$5 }
   END {
     if (!first) { print "none 0"; exit }
     days = (t1 - t0) / 86400
-    if (days < 1) { printf "short %.1f\n", days; exit }
-    dg = (d1 - d0) / days; bg = (b1 - b0) / days
+    if (days < 3) { printf "short %.1f\n", days; exit }
+    # median hourly change of the disk, per day
+    for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (rate[j] < rate[i]) { x=rate[i]; rate[i]=rate[j]; rate[j]=x }
+    dg = (n % 2) ? rate[(n+1)/2] * 24 : (rate[n/2] + rate[n/2+1]) * 12
+    bg = (b1 - b0) / days
     to80 = (dg > 0) ? (size * 0.8 - d1) / dg : -1
     printf "ok %.1f %.0f %.0f %.0f %.0f %.1f %d\n", days, dg/1048576, bg/1048576, to80, d1*100/size, b1/1048576, peak
   }' "$LOG")
 
 if [ "$status" != ok ]; then
-  [ "$PRINT" = 1 ] && echo "Для прогноза нужно хотя бы сутки наблюдений (сейчас ${window} дн.)."
+  [ "$PRINT" = 1 ] && echo "Для прогноза нужно хотя бы трое суток наблюдений (сейчас ${window} дн.)."
   exit 0
 fi
 
