@@ -2,56 +2,96 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { AuthorProfile } from "@/components/boks/client-types";
-import type { AuthorPortrait } from "@/components/boks/author-portraits";
+import { authorInitials, mountAuthorRings, splitAuthorName, type RingsController } from "@/components/boks/author-rings";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
+import { plural } from "@/lib/i18n/messages";
 
 /**
- * An author's portrait page (design v48, docs in `author-portraits.ts`).
+ * An author's page (design v49), for every author.
  *
- * The portrait fills the first screen with the name set over it, one action -
- * Follow - and a small Share. Below, on the portrait's dark ground, the
- * author's boks as equal square covers, each one a plain way into the piece.
- * Share passes the public profile link only.
+ * The first screen: the portrait - or, with no photo, a paper medallion with
+ * the initials - inside living annual rings (`author-rings.ts`), the name set
+ * large, the handle, and one action, Follow. A small Share opens the public
+ * profile link. Below, on the same dark ground, the boks as equal square
+ * covers; a publisher of many writers also gets an index of them.
  *
- * It replaces the author sheet for an author who has a portrait, and keeps the
- * sheet's behaviour: Escape and Back close it, Follow is the real follow.
+ * Replaces the author sheet, and keeps its behaviour: Escape and Back close
+ * it, Follow is the real follow.
  */
+export type AuthorPageIdentity = {
+  handle: string;
+  /** The public name; "@handle" when there is none. */
+  name: string;
+  photo?: string | null;
+  thumb?: string | null;
+  focus?: string;
+};
+
 export function AuthorPortraitPage({
-  portrait,
+  identity,
   author,
   profileLink,
   following,
   busy,
   currentStoryId,
+  status,
+  publishedBy,
   onToggleFollow,
   onOpenBok,
+  onOpenWriter,
+  onOpenAccount,
   onClose,
 }: {
-  portrait: AuthorPortrait;
+  identity: AuthorPageIdentity;
   author: AuthorProfile | null;
   profileLink: string;
   following: boolean;
   busy: boolean;
   currentStoryId?: string;
+  /** Shown in place of the library: the author is unavailable, or a follow failed. */
+  status?: string;
+  /** The account that publishes this writer, when it is not their own (`@boks`). */
+  publishedBy?: string | null;
   onToggleFollow: () => void;
   onOpenBok: (storyId: string) => void;
+  onOpenWriter?: (name: string) => void;
+  onOpenAccount?: () => void;
   onClose: () => void;
 }) {
-  const { t } = useReaderPreferences();
+  const { t, preferences } = useReaderPreferences();
   const [sharing, setSharing] = useState(false);
   const [notice, setNotice] = useState("");
   const [copyFallback, setCopyFallback] = useState(false);
   const page = useRef<HTMLDivElement>(null);
-  const name = `${portrait.given} ${portrait.family}`;
+  const field = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const rings = useRef<RingsController | null>(null);
+  // An account with no public name is set by its handle, without the @ (the
+  // line under it says "@boks"), and its medallion carries one letter.
+  const nameless = identity.name.startsWith("@");
+  const { given, family } = splitAuthorName(nameless ? identity.name.replace(/^@+/, "") : identity.name);
+  const initials = nameless ? Array.from(identity.handle.toLocaleUpperCase())[0] ?? "" : authorInitials(identity.name, identity.handle);
   const displayLink = profileLink.replace(/^https?:\/\//, "");
+  // A long family name is set smaller rather than run off the screen.
+  const fit = Math.min(1, 9 / Math.max(1, Array.from(family).length));
 
   useEffect(() => {
-    // The layer itself takes focus, so a screen reader starts at the portrait
-    // and no button shows a focus ring before anyone has pressed a key.
+    // The layer takes focus, so no button shows a ring before a key is pressed.
     page.current?.focus({ preventScroll: true });
   }, []);
+
+  useEffect(() => {
+    if (!canvas.current || !field.current) return;
+    rings.current = mountAuthorRings(canvas.current, { host: field.current, root: page.current });
+    return () => { rings.current?.destroy(); rings.current = null; };
+  }, []);
+
+  useEffect(() => {
+    if (sharing) rings.current?.pause();
+    else rings.current?.resume();
+  }, [sharing]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -96,53 +136,77 @@ export function AuthorPortraitPage({
 
   async function shareLink() {
     try {
-      await navigator.share({ title: `${name} · boks`, url: profileLink });
+      await navigator.share({ title: `${identity.name} · boks`, url: profileLink });
       setSharing(false);
     } catch (error) {
       if (!(error instanceof Error && error.name === "AbortError")) await copyLink();
     }
   }
 
+  const openShare = () => { setCopyFallback(false); setSharing(true); };
   const boks = author?.boks ?? [];
+  const writers = author && !author.byline && author.writers.length > 1 ? author.writers : [];
   const canShareNatively = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const shareIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 4 19 8-19 8 4-8zm4 8h15" /></svg>;
+  const avatar = (size: "large" | "small") => identity.photo
+    // eslint-disable-next-line @next/next/no-img-element
+    ? <img className={size === "large" ? "ap-portrait__photo" : undefined} src={size === "large" ? identity.photo : identity.thumb ?? identity.photo} alt=""
+        style={{ objectPosition: identity.focus ?? "50% 43%" }} {...(size === "large" ? { fetchPriority: "high" as const } : { width: 56, height: 56 })} />
+    : <span className={size === "large" ? "ap-portrait__initials" : "ap-sheet__initials"} aria-hidden="true">{initials}</span>;
 
   return (
-    <div ref={page} className="ap" role="dialog" aria-modal="true" aria-label={name} tabIndex={-1}>
-      <section className="ap-hero">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="ap-hero__photo" src={portrait.photo} alt={t(`Portrait of ${name}`, `Портрет: ${name}`)}
-          style={{ "--ap-focus": portrait.focus ?? "50% 30%" } as CSSProperties} fetchPriority="high" />
-        <div className="ap-hero__shade" aria-hidden="true" />
+    <div ref={page} className="ap" role="dialog" aria-modal="true" aria-label={identity.name} tabIndex={-1}>
+      <section className={`ap-hero${identity.photo ? "" : " ap-hero--initials"}`}>
+        <div className="ap-hero__atmosphere" aria-hidden="true" />
         <header className="ap-hero__header">
           <button type="button" className="ap-icon ap-back" onClick={onClose} aria-label={t("Back", "Назад")}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5m6-6-6 6 6 6" /></svg>
           </button>
           <span className="ap-brand" aria-hidden="true">boks</span>
-          <button type="button" className="ap-icon" onClick={() => { setCopyFallback(false); setSharing(true); }} aria-label={t("Share this author", "Поделиться автором")}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M5 11v10h14V11" /></svg>
-          </button>
+          <button type="button" className="ap-icon" onClick={openShare} aria-label={t("Share this author", "Поделиться автором")}>{shareIcon}</button>
         </header>
-        <div className="ap-hero__id">
-          <h1 translate="no">
-            <span className="ap-hero__given">{portrait.given}</span>
-            <span className="ap-hero__family">{portrait.family}<span className="ap-dot">.</span></span>
-          </h1>
-          <span className="ap-handle">@{portrait.handle}</span>
+        <div className="ap-rings">
+          <div ref={field} className="ap-rings__field" aria-hidden="true"><canvas ref={canvas} /></div>
+          <figure className={`ap-portrait${identity.photo ? "" : " ap-portrait--initials"}`} aria-hidden={!identity.photo}>
+            {avatar("large")}
+          </figure>
         </div>
-        <div className="ap-hero__bottom">
-          <button type="button" className={`ap-follow${following ? " is-following" : ""}`} aria-pressed={following}
-            onClick={onToggleFollow} disabled={busy || !author?.authorUserId}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={following ? "m4 12 5 5L20 6" : "M12 4v16M4 12h16"} /></svg>
-            <span>{following ? t("Following", "Вы подписаны") : t("Follow", "Подписаться")}</span>
-          </button>
+        <div className="ap-hero__copy">
+          <h1 translate="no" style={{ "--ap-fit": fit } as CSSProperties}>
+            {given && <span className="ap-hero__given">{given}</span>}
+            <span className="ap-hero__family">{family}<span className="ap-dot">.</span></span>
+          </h1>
+          <span className="ap-handle">
+            {publishedBy && onOpenAccount
+              ? <>{t("Published by", "Публикует")} <button type="button" className="ap-handle__link" onClick={onOpenAccount}>@{publishedBy}</button></>
+              : `@${identity.handle}`}
+          </span>
+          <div className="ap-hero__actions">
+            <button type="button" className={`ap-follow${following ? " is-following" : ""}`} aria-pressed={following}
+              onClick={onToggleFollow} disabled={busy || !author?.authorUserId}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={following ? "m4 12 5 5L20 6" : "M12 4v16M4 12h16"} /></svg>
+              <span>{following ? t("Following", "Вы подписаны") : publishedBy ? t(`Follow @${publishedBy}`, `Подписаться на @${publishedBy}`) : t("Follow", "Подписаться")}</span>
+            </button>
+          </div>
         </div>
       </section>
 
       <section className="ap-library" aria-labelledby="ap-library-title">
         <div className="ap-library__inner">
           <h2 id="ap-library-title" className="ap-library__title">{t("Boks", "Боки")}<span>.</span></h2>
-          {!author && <p className="ap-library__status" role="status">{t("Loading…", "Загружаем…")}</p>}
-          <ul className="ap-grid" aria-label={t(`All boks by ${name}`, `Все боки: ${name}`)}>
+          {(status || !author) && <p className="ap-library__status" role="status">{status || t("Loading…", "Загружаем…")}</p>}
+          {writers.length > 0 && onOpenWriter && (
+            <ul className="ap-writers" aria-label={t("Writers", "Авторы")}>
+              {writers.map((writer) => (
+                <li key={writer.name}>
+                  <button type="button" onClick={() => onOpenWriter(writer.name)}>
+                    {writer.name}<span>{preferences.locale === "ru" ? `${writer.boks} ${plural("ru", writer.boks, { one: "бок", few: "бока", many: "боков", other: "бока" })}` : `${writer.boks} ${writer.boks === 1 ? "bok" : "boks"}`}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <ul className="ap-grid" aria-label={t(`All boks by ${identity.name}`, `Все боки: ${identity.name}`)}>
             {boks.map((bok, index) => {
               const artwork = getBokArtwork({ id: bok.id });
               const series = Boolean(seriesPieceFor(bok.id));
@@ -162,6 +226,7 @@ export function AuthorPortraitPage({
                     </span>
                     <span className="ap-card__label">
                       <span className="ap-card__title">{bok.title}</span>
+                      {writers.length > 0 && bok.authorName && <span className="ap-card__byline">{bok.authorName}</span>}
                       {series && <span className="ap-card__kind">Series</span>}
                     </span>
                   </button>
@@ -169,13 +234,14 @@ export function AuthorPortraitPage({
               );
             })}
           </ul>
+          {author && boks.length < author.totalBoks && (
+            <p className="ap-library__status">{t(`The newest ${boks.length} of ${author.totalBoks}.`, `Последние ${boks.length} из ${author.totalBoks}.`)}</p>
+          )}
           <footer className="ap-footer">
             <span className="ap-brand ap-brand--footer" aria-hidden="true">boks</span>
             <span className="ap-footer__person">
-              <span>@{portrait.handle}</span>
-              <button type="button" className="ap-icon" onClick={() => { setCopyFallback(false); setSharing(true); }} aria-label={t("Share this author", "Поделиться автором")}>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M5 11v10h14V11" /></svg>
-              </button>
+              <span>@{identity.handle}</span>
+              <button type="button" className="ap-icon" onClick={openShare} aria-label={t("Share this author", "Поделиться автором")}>{shareIcon}</button>
             </span>
           </footer>
         </div>
@@ -192,9 +258,8 @@ export function AuthorPortraitPage({
               </button>
             </header>
             <div className="ap-sheet__author">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={portrait.thumb} width={56} height={56} alt="" />
-              <div><strong translate="no">{name}</strong><span>@{portrait.handle}</span></div>
+              {avatar("small")}
+              <div><strong translate="no">{identity.name}</strong><span>@{identity.handle}</span></div>
             </div>
             <div className="ap-sheet__link">
               <span>{t("Profile link", "Ссылка на профиль")}</span>
@@ -209,7 +274,7 @@ export function AuthorPortraitPage({
               </button>
               {canShareNatively && (
                 <button type="button" className="ap-sheet__secondary" onClick={() => void shareLink()}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M5 11v10h14V11" /></svg>
+                  {shareIcon}
                   <span>{t("Share link", "Поделиться ссылкой")}</span>
                 </button>
               )}

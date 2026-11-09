@@ -2,19 +2,11 @@
 
 import { authorShareUrl } from "@/lib/boks/share-link";
 import { useEffect, useState } from "react";
-import { ReaderBackIcon as ArrowLeft, ReaderShareIcon } from "./reader/reader-icons";
-import { Button } from "@/components/ui/button";
-import { ReaderSheet } from "@/components/boks/reader-sheet";
 import type { AuthorProfile } from "@/components/boks/client-types";
 import { loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
 import { haptic } from "@/components/boks/reader-haptics";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
-import { plural } from "@/lib/i18n/messages";
 import { currentUiLanguage } from "@/components/boks/ui-language";
-import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
-import { bokCoverStyle } from "@/components/boks/reader/bok-cover-palette";
-import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
-import type { CSSProperties } from "react";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
 import { AuthorPortraitPage } from "@/components/boks/author-portrait-page";
 
@@ -69,26 +61,10 @@ export function AuthorSheet({
 }: AuthorSheetProps) {
   const { t } = useReaderPreferences();
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
-  const [status, setStatus] = useState("Loading");
+  // Why the page has no boks to show: still loading, unavailable, or a failed follow.
+  const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
-  const [profileLinkFallback, setProfileLinkFallback] = useState(false);
   const profileLink = typeof window === "undefined" ? "" : authorShareUrl(handle, window.location.origin);
-  async function copyProfileLink() {
-    try { await navigator.clipboard.writeText(profileLink); setStatus(t("Profile link copied.", "Ссылка на профиль скопирована.")); }
-    catch { setProfileLinkFallback(true); }
-  }
-  async function shareProfile() {
-    if (!navigator.share) return copyProfileLink();
-    try { await navigator.share({ title: `@${handle.replace(/^@+/, "")}`, url: profileLink }); }
-    catch (error) { if (!(error instanceof Error && error.name === "AbortError")) setProfileLinkFallback(true); }
-  }
-
-  // Keyed by handle in the parent, so a different author mounts a fresh sheet
-  // rather than resetting this one's state on the way in.
-  // How many boks the whole account publishes, when the sheet shows one writer
-  // in it: the "follow brings everything this account publishes" note only
-  // means something when the account publishes more than this writer.
-  const [accountTotal, setAccountTotal] = useState<number | null>(null);
 
   // Keyed by handle in the parent, so a different author mounts a fresh sheet
   // rather than resetting this one's state on the way in.
@@ -105,15 +81,14 @@ export function AuthorSheet({
         authorName ? loadBoksAuthor(handle).catch(() => null) : Promise.resolve(null),
       ]);
       const own = account && account.writers.length <= 1 ? account : null;
-      return { shown: own ?? profile, accountTotal: account?.totalBoks ?? null };
+      return own ?? profile;
     };
 
     load()
-      .then(({ shown, accountTotal: total }) => {
+      .then((shown) => {
         if (cancelled) return;
         setAuthor(shown);
-        setAccountTotal(total);
-        setStatus(shown ? "" : "This author is not available.");
+        setStatus(shown ? "" : currentUiLanguage() === "ru" ? "Этот автор недоступен." : "This author is not available.");
       })
       .catch((error) => {
         if (cancelled) return;
@@ -159,204 +134,35 @@ export function AuthorSheet({
     }
   }
 
-  const meta = [
-    author ? t(countLabel(author.totalBoks, "bok"), `Боков: ${author.totalBoks}`) : null,
-    author && author.writers.length > 1 ? t(countLabel(author.writers.length, "byline"), `Авторов боков: ${author.writers.length}`) : null,
-    author?.authorUserId && !author.byline ? t(countLabel(author.followers, "follower"), `Подписчиков: ${author.followers}`) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  // An account that publishes one writer is that writer's own: it is titled
-  // by their name, with the handle under it, not by the handle alone.
+  // Who the page is about. A writer inside a publisher's catalogue (Блок in
+  // @boks) by their byline; an author with a registered portrait by their
+  // public name; an account that publishes one writer by that writer's name;
+  // a publisher of many by its @handle. Before the profile loads, the byline
+  // the reader tapped stands in, so the page opens at once.
+  const portrait = !author?.byline ? authorPortraitFor(handle) : null;
   const ownName = !author?.byline && author?.writers.length === 1 ? author.writers[0].name : null;
-  const manyWriters = Boolean(author && !author.byline && author.writers.length > 1);
-
-  // The author's own pictures, fanned out at the top: up to three covers with art.
-  const fan = (author?.boks ?? []).filter((bok) => getBokArtwork({ id: bok.id })).slice(0, 3);
-
-  // An author with a portrait gets the portrait page (design v48) - their own
-  // account, never one writer inside a publisher's list.
-  const portrait = authorPortraitFor(handle);
-  if (portrait && !author?.byline) {
-    return (
-      <AuthorPortraitPage
-        portrait={portrait}
-        author={author}
-        profileLink={profileLink}
-        following={Boolean(author?.following)}
-        busy={busy}
-        currentStoryId={currentStoryId}
-        onToggleFollow={() => void toggleFollow()}
-        onOpenBok={onOpenBok}
-        onClose={onClose}
-      />
-    );
-  }
+  const bareHandle = (author?.authorHandle || handle).replace(/^@+/, "");
+  const name = author?.byline
+    || (portrait ? `${portrait.given} ${portrait.family}` : null)
+    || ownName
+    || (!author ? authorName : null)
+    || `@${bareHandle}`;
 
   return (
-    <ReaderSheet
-      label={author ? `${author.byline || ownName || "@" + author.authorHandle}` : t("Author", "Автор")}
+    <AuthorPortraitPage
+      identity={{ handle: bareHandle, name, photo: portrait?.photo, thumb: portrait?.thumb, focus: portrait?.focus }}
+      author={author}
+      profileLink={profileLink}
+      following={Boolean(author?.following)}
+      busy={busy}
+      currentStoryId={currentStoryId}
+      status={status}
+      publishedBy={author?.byline ? author.authorHandle : null}
+      onToggleFollow={() => void toggleFollow()}
+      onOpenBok={onOpenBok}
+      onOpenWriter={onOpenWriter}
+      onOpenAccount={onOpenAccount}
       onClose={onClose}
-      className="author-v44 social-page"
-    >
-      <header className="social-page-header"><button className="social-icon" type="button" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button><span>{author?.byline ? t("Writer", "Писатель") : t("Author", "Автор")}</span><button type="button" className="social-icon" onClick={() => void shareProfile()} aria-label={t("Share profile", "Поделиться профилем")}><ReaderShareIcon /></button></header>
-      <div className="author-profile-head flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          {fan.length > 0 ? (
-            <span className={`author-fan author-fan--${fan.length}`} aria-hidden="true">
-              {fan.map((bok) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={bok.id} src={getBokArtwork({ id: bok.id })!} alt="" style={{ objectPosition: bokArtworkFocus(bok.id) }} />
-              ))}
-            </span>
-          ) : <span className={`author-monogram${author?.byline ? " author-monogram--writer" : ""}`} aria-hidden="true">{author?.byline ? "“" : (author?.authorHandle || handle).replace(/^@+/, "")[0]?.toUpperCase()}<i>{author?.byline ? "”" : "✳"}</i></span>}
-          <span className="social-eyebrow">{author?.byline ? t("Writer", "Писатель") : t("Author", "Автор")}</span>
-          <h2 className="author-profile-title" translate="no">
-            {/* A name when there is one, otherwise the @handle stands alone
-                rather than the sheet inventing a label. */}
-            {author?.byline || ownName || `@${author?.authorHandle ?? handle.replace(/^@+/, "")}`}
-          </h2>
-          {/* Built as a list and joined, so a missing name never leaves the
-              line starting with a separator. */}
-          <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-            {author?.byline ? (
-              <>
-                {/* In writer mode the handle is the publisher, and it is a way
-                    back rather than a caption: this writer is one of the many
-                    that account publishes, and the account is what a reader
-                    follows. */}
-                {t("Published by", "Опубликовано")} {" "}
-                {onOpenAccount ? (
-                  <button type="button" className="author-account-link" onClick={onOpenAccount}>
-                    @{author.authorHandle}
-                  </button>
-                ) : (
-                  `@${author.authorHandle}`
-                )}
-                {meta && ` · ${meta}`}
-              </>
-            ) : ownName ? (
-              <>@{author?.authorHandle}{meta && ` · ${meta}`}</>
-            ) : (
-              meta
-            )}
-          </p>
-        </div>
-      </div>
-
-      {author?.byline && author.authorUserId && accountTotal !== null && accountTotal > author.totalBoks && (
-        <p className="px-4 pt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-          {t(`Following @${author.authorHandle} brings you everything this account publishes, not only ${author.byline}.`, `Подписка на @${author.authorHandle} распространяется на все боки этого аккаунта, а не только на ${author.byline}.`)}
-        </p>
-      )}
-
-      {author?.authorUserId ? (
-        <div className="author-profile-actions px-4 pt-3">
-          <Button
-            className="w-full"
-            variant={author.following ? "outline" : "default"}
-            onClick={toggleFollow}
-            disabled={busy}
-            aria-pressed={author.following}
-          >
-            {/* In writer mode the account is the publisher, not the writer.
-                A bare "Follow" under the heading "Anton Chekhov" would read
-                as following Chekhov, which is not what it does. */}
-            {author.byline
-              ? author.following
-                ? t(`Following @${author.authorHandle}`, `Вы подписаны на @${author.authorHandle}`)
-                : t(`Follow @${author.authorHandle}`, `Подписаться на @${author.authorHandle}`)
-              : author.following
-                ? t("Following", "Вы подписаны")
-                : t("Follow", "Подписаться")}
-          </Button>
-          {!author.byline && <Button variant="outline" onClick={() => void copyProfileLink()}>{t("Copy profile link", "Ссылка на профиль")}</Button>}
-        </div>
-      ) : (
-        author && (
-          <p className="px-4 pt-2 text-sm text-[var(--muted-foreground)]">
-            {t("There is no account behind this byline yet.", "Эта подпись пока не связана с аккаунтом.")}
-          </p>
-        )
-      )}
-
-      {profileLinkFallback && <input className="share-link-fallback" value={profileLink} readOnly aria-label={t("Profile link", "Ссылка на профиль")} onFocus={event => event.currentTarget.select()} />}
-      <div className="author-public-list">
-        {status && <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{status === "Loading" ? t("Loading…", "Загружаем…") : status === "This author is not available." ? t(status, "Этот автор недоступен.") : status}</p>}
-        {author && !author.boks.length && !status && (
-          <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">{t("Nothing published yet.", "Публикаций пока нет.")}</p>
-        )}
-
-        {/* A publisher's catalogue is indexed by its writers. A flat list of
-            457 titles is not something anyone reads; "24 writers" is. */}
-        {author && author.writers.length > 1 && (
-          <div className="mb-3">
-            <h3 className="text-sm font-semibold">{t("Bylines", "Авторы боков")}</h3>
-            <ul className="mt-2 grid gap-1">
-              {author.writers.map((writer) => (
-                <li key={writer.name}>
-                  <button type="button" className="author-writer" onClick={() => onOpenWriter?.(writer.name)}>
-                    <span className="font-medium">{writer.name}</span>
-                    <span className="text-sm text-[var(--muted-foreground)]">{t(countLabel(writer.boks, "bok"), `${writer.boks} ${plural("ru", writer.boks, { one: "бок", few: "бока", many: "боков", other: "бока" })}`)}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <h3 className="mt-4 text-sm font-semibold">{t("Newest", "Новое")}</h3>
-          </div>
-        )}
-
-        {author && author.boks.length > 0 && (
-          <>
-          <div className="author-list-label"><span>{t("Published boks", "Опубликованные боки")}</span><span>{author.totalBoks}</span></div>
-          <ul className="author-covers">
-            {author.boks.map((bok) => {
-              const artwork = getBokArtwork({ id: bok.id });
-              const series = seriesPieceFor(bok.id);
-              const current = bok.id === currentStoryId;
-              return (
-                <li key={bok.id}>
-                  <button
-                    type="button"
-                    className={`author-cover${artwork ? " author-cover--art" : ""}${current ? " author-cover--current" : ""}`}
-                    style={bokCoverStyle(bok.id) as CSSProperties}
-                    onClick={() => onOpenBok(bok.id)}
-                  >
-                    {artwork ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img className="author-cover__art" src={artwork} alt="" loading="lazy" decoding="async" style={{ objectPosition: bokArtworkFocus(bok.id) }} />
-                    ) : (
-                      <span className="author-cover__letter" aria-hidden="true">{bok.title.trim().charAt(0)}</span>
-                    )}
-                    {series && <span className="author-cover__badge">{t("Listen", "Слушать")}</span>}
-                    <span className="author-cover__body">
-                      <span className="author-cover__title">{bok.title}</span>
-                      <span className="author-cover__meta">
-                        {/* In a publisher's catalogue the writer is what tells one
-                            title from another; in a writer's own list it is noise. */}
-                        {manyWriters && bok.authorName && <>{bok.authorName} · </>}
-                        {/* The length never breaks across lines; a long name may. */}
-                        <span className="author-cover__length">{current ? t("reading now", "читаете сейчас") : t(`${Math.max(1, bok.minutes)} min`, `${Math.max(1, bok.minutes)} мин`)}</span>
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          </>
-        )}
-        {author && author.boks.length > 0 && author.boks.length < author.totalBoks && (
-          <p className="pt-3 text-center text-sm text-[var(--muted-foreground)]">
-            {t(`Showing the newest ${author.boks.length} of ${author.totalBoks}.`, `Показаны последние ${author.boks.length} из ${author.totalBoks}.`)}
-          </p>
-        )}
-      </div>
-    </ReaderSheet>
+    />
   );
-}
-
-function countLabel(value: number, noun: string) {
-  return `${value} ${noun}${value === 1 ? "" : "s"}`;
 }

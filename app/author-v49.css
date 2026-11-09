@@ -1,4 +1,4 @@
-/* Author portrait page, design v48 (components/boks/author-portrait-page.tsx).
+/* Author page, design v49 (components/boks/author-portrait-page.tsx).
    A full-screen layer: the portrait and name, then the boks as equal covers on
    the portrait's dark ground. Source Serif 4 is the design's own face. */
 .ap{--ap-ink:#192523;--ap-paper:#f3efe7;--ap-ground:#192321;--ap-red:#de593b;--ap-serif:"Source Serif 4 Variable","Source Serif 4",Georgia,serif;--ap-sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--ap-safe:env(safe-area-inset-bottom,0px);
@@ -14,20 +14,37 @@
 .ap-icon:active{transform:scale(.97)}
 .ap-icon--light{background:transparent;border:0!important;backdrop-filter:none;-webkit-backdrop-filter:none;color:var(--ap-ink)}
 
-/* The portrait. */
-.ap-hero{position:relative;isolation:isolate;overflow:hidden;background:var(--ap-ground);height:100svh;min-height:680px;max-height:950px}
-.ap-hero__photo{position:absolute;z-index:-2;inset:0 0 auto;width:100%;height:87%;object-fit:cover;object-position:var(--ap-focus,50% 30%);filter:contrast(1.03);-webkit-mask-image:linear-gradient(#000 53%,transparent 100%);mask-image:linear-gradient(#000 53%,transparent 100%);animation:ap-photo-in 1.2s cubic-bezier(.2,.7,.2,1) both}
-.ap-hero__shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,#1017147a,transparent 19%,transparent 51%,var(--ap-ground) 92%)}
-.ap-hero::after{content:"";pointer-events:none;position:absolute;z-index:-1;inset:0;opacity:.055;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.6' filter='url(%23n)'/%3E%3C/svg%3E")}
-.ap-hero__header{position:absolute;z-index:5;top:max(20px,env(safe-area-inset-top));left:20px;right:20px;display:flex;align-items:center;gap:14px}
-.ap-hero__header .ap-brand{flex:1}
-.ap-hero__id{position:absolute;left:23px;right:18px;bottom:calc(184px + var(--ap-safe))}
-.ap-hero__given{display:block;font:italic 500 clamp(45px,13vw,66px)/1.04 var(--ap-serif);letter-spacing:-.05em;animation:ap-title-in .85s .08s both}
-.ap-hero__family{display:block;font:560 clamp(58px,19.4vw,100px)/1.02 var(--ap-serif);letter-spacing:-.065em;animation:ap-title-in .85s .18s both}
+/* The first screen (v49): the portrait, or a medallion with initials, inside
+   living rings (components/boks/author-rings.ts); the name, the handle, Follow. */
+.ap{--ap-gutter:clamp(20px,5.9vw,48px)}
+.ap-hero{position:relative;isolation:isolate;overflow:hidden;background:var(--ap-ground);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(auto,1fr) auto;row-gap:clamp(12px,3.6vw,28px);min-height:100svh;padding:max(18px,env(safe-area-inset-top)) var(--ap-gutter) max(32px,var(--ap-safe))}
+.ap-hero__atmosphere{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 34%,#63725d1f,transparent 62%)}
+.ap-hero::after{content:"";pointer-events:none;position:absolute;z-index:3;inset:0;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.6' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ap-hero__header{grid-row:1;position:relative;z-index:5;display:flex;align-items:center;gap:12px}
+.ap-hero__header .ap-brand{flex:1;font-size:38px;letter-spacing:-3.2px}
+.ap-hero__header .ap-icon{width:44px;height:44px}
+.ap-hero__header .ap-icon svg{width:21px;height:21px;stroke-width:1.5}
+.ap-rings{grid-row:2;position:relative;z-index:1;min-height:clamp(210px,62vw,430px);pointer-events:none;--ap-field:clamp(540px,156vw,1000px)}
+.ap-rings__field{position:absolute;left:50%;top:50%;width:var(--ap-field);height:var(--ap-field);transform:translate(-50%,-50%);-webkit-mask-image:radial-gradient(ellipse at center,#000 40%,#000b 59%,transparent 73%);mask-image:radial-gradient(ellipse at center,#000 40%,#000b 59%,transparent 73%)}
+.ap-rings__field canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .8s ease}
+.ap-rings__field.is-ready canvas{opacity:1}
+.ap-portrait{--ap-portrait:clamp(140px,43vw,232px);position:absolute;left:50%;top:50%;width:var(--ap-portrait);height:var(--ap-portrait);margin:0;transform:translate(-50%,-50%);border-radius:50%;padding:4px;border:1px solid #ded9c440;background:var(--ap-ground);box-shadow:0 0 0 7px #19232166,0 12px 45px -16px #080f0d88;isolation:isolate;animation:ap-portrait-in 1s cubic-bezier(.2,.7,.2,1) both}
+.ap-portrait::after{content:"";position:absolute;inset:4px;border-radius:50%;box-shadow:inset 0 0 0 1px #fff3;pointer-events:none}
+.ap-portrait__photo{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+/* No photo: a paper medallion with the initials, never an invented face. */
+.ap-portrait--initials{display:grid;place-items:center;padding:0;border-color:#e3d6b34d;background:radial-gradient(ellipse at 35% 22%,#f5efdf 0%,#dbd6c3 65%,#b8bdac 100%);box-shadow:0 0 0 7px #19232199,0 12px 45px -16px #080f0d88,inset 0 1px 1px #fff9}
+.ap-portrait--initials::after{inset:5px;box-shadow:inset 0 0 0 1px #32403818}
+.ap-portrait__initials{position:relative;z-index:1;display:block;font:italic 500 calc(var(--ap-portrait) * .365)/1 var(--ap-serif);letter-spacing:-.105em;padding-right:.1em;color:#263b32;text-shadow:0 1px 0 #fff9;user-select:none}
+.ap-hero__copy{grid-row:3;position:relative;z-index:4;min-width:0}
+.ap-hero__copy h1{letter-spacing:-.065em}
+.ap-hero__given{display:block;font:italic 500 clamp(44px,14vw,92px)/1.09 var(--ap-serif);letter-spacing:-.05em;animation:ap-title-in .85s .08s both}
+.ap-hero__family{display:block;font:560 calc(clamp(52px,19vw,150px) * var(--ap-fit,1))/1.06 var(--ap-serif);letter-spacing:-.065em;white-space:nowrap;animation:ap-title-in .85s .18s both}
 .ap-dot{color:#e65436}
-.ap-handle{display:block;margin-top:18px;font-size:12px;letter-spacing:.025em;color:#d3d4c8}
-.ap-hero__bottom{position:absolute;left:23px;right:23px;bottom:calc(57px + var(--ap-safe));display:flex}
-.ap-follow{display:inline-flex;align-items:center;justify-content:center;gap:17px;min-width:205px;min-height:56px;padding:16px 21px;border-radius:5px 20px 5px 5px;background:var(--ap-red)!important;color:#fff7e8!important;font-size:14px;font-weight:550;transition:background .2s,transform .2s}
+.ap-handle{display:block;margin-top:18px;font-size:12px;line-height:1.5;letter-spacing:.025em;color:#b9c0b8}
+.ap-handle__link{padding:0;color:#e3e6dc!important;text-decoration:underline;text-decoration-color:#e3e6dc66;text-underline-offset:3px}
+.ap-hero__actions{margin-top:28px;width:fit-content}
+.ap-follow{display:inline-flex;align-items:center;justify-content:center;gap:11px;min-height:52px;padding:14px 20px;border-radius:6px 18px 6px 6px;background:#c44a32!important;color:#fff7e8!important;font-size:16px!important;font-weight:650!important;letter-spacing:-.015em;line-height:1.25;white-space:nowrap;box-shadow:inset 0 1px 0 #fff4,0 5px 18px -10px #0b1312;transition:background .2s,transform .2s}
+.ap-follow svg{width:19px;height:19px;stroke-width:1.8}
 .ap-follow.is-following{background:var(--ap-paper)!important;color:var(--ap-ink)!important}
 .ap-follow:active{transform:scale(.97)}
 .ap-follow:disabled{opacity:.7;cursor:default}
@@ -85,22 +102,25 @@
 .ap-toast{position:fixed;z-index:280;left:50%;bottom:calc(24px + var(--ap-safe));max-width:calc(100% - 32px);padding:15px 22px;border-radius:13px;background:var(--ap-paper);color:var(--ap-ink);font-size:12px;text-align:center;box-shadow:0 10px 35px #0003;opacity:0;transform:translate(-50%,15px);pointer-events:none;transition:.25s}
 .ap-toast.is-visible{opacity:1;transform:translate(-50%,0)}
 
-/* A wide screen: the name on the left, the portrait on the right. */
-@media(min-width:761px){
-  .ap-hero{height:min(940px,100svh);min-height:720px;max-height:none}
-  .ap-hero__photo{inset:0 0 auto auto;width:66%;height:108%;object-position:50% 40%;-webkit-mask-image:linear-gradient(90deg,transparent,#000 28%),linear-gradient(#000 65%,transparent 98%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 28%),linear-gradient(#000 65%,transparent 98%);mask-composite:intersect}
-  .ap-hero__shade{background:linear-gradient(0deg,var(--ap-ground) 1%,#19232100 62%)}
-  .ap-hero__header{left:5%;right:5%;top:27px}
-  .ap-brand{font-size:43px;letter-spacing:-3.5px}
-  .ap-hero__id{left:5%;right:4%;bottom:200px}
-  .ap-hero__given{font-size:clamp(60px,6vw,90px)}
-  .ap-hero__family{font-size:clamp(92px,12.7vw,190px);letter-spacing:-.07em}
-  .ap-handle{margin-top:21px;font-size:13px}
-  .ap-hero__bottom{left:5%;right:5%;bottom:60px}
-  .ap-follow{min-width:220px;min-height:58px;font-size:15px;gap:22px}
-  .ap-library{padding:30px 5% 0}
-  .ap-library__title{padding:20px 0 32px;font-size:clamp(64px,7.5vw,104px)!important}
-  .ap-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:46px 28px}
+/* A wide screen: the name on the left, the rings and portrait on the right. */
+@media(min-width:761px) and (orientation:landscape),(min-width:1051px){
+  .ap-hero{display:block;height:100svh;min-height:720px;max-height:1080px;padding:0}
+  .ap-hero__atmosphere{background:radial-gradient(ellipse at 76% 43%,#53615321,transparent 54%),radial-gradient(ellipse at 71% 39%,#8e70500d,transparent 42%)}
+  .ap-hero__header{position:absolute;top:max(27px,env(safe-area-inset-top));left:var(--ap-gutter);right:var(--ap-gutter)}
+  .ap-hero__header .ap-brand{font-size:43px;letter-spacing:-3.5px}
+  .ap-hero__header .ap-icon{width:46px;height:46px}
+  .ap-rings{position:absolute;left:75%;top:44%;width:var(--ap-field);height:var(--ap-field);min-height:0;transform:translate(-50%,-50%);--ap-field:clamp(820px,78vw,1100px)}
+  .ap-rings__field{inset:0;left:0;top:0;width:100%;height:100%;transform:none;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#0008 22%,#000 41%),radial-gradient(ellipse at 50% 49%,#000 45%,#000b 62%,transparent 74%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0%,#0008 22%,#000 41%),radial-gradient(ellipse at 50% 49%,#000 45%,#000b 62%,transparent 74%);mask-composite:intersect}
+  .ap-portrait{--ap-portrait:clamp(200px,18.3vw,274px);padding:5px;box-shadow:0 0 0 8px #19232166,0 18px 70px -24px #080f0d99}
+  .ap-portrait::after{inset:5px}
+  .ap-hero__copy{position:absolute;left:var(--ap-gutter);right:var(--ap-gutter);top:31%;max-width:1100px}
+  .ap-hero__given{font-size:clamp(66px,7.7vw,112px);line-height:1.1}
+  .ap-hero__family{font-size:calc(clamp(100px,11.5vw,176px) * var(--ap-fit,1));line-height:1.04}
+  .ap-handle{margin-top:24px;font-size:13px}
+  .ap-hero__actions{margin-top:47px}
+  .ap-library{padding:56px var(--ap-gutter) 0}
+  .ap-library__title{padding:20px 0 40px;font-size:clamp(76px,8.8vw,132px)!important}
+  .ap-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:52px 28px}
   .ap-card__label{padding:19px 0 0}
   .ap-card__title{font-size:clamp(28px,3vw,41px);letter-spacing:-.04em}
   .ap-card__kind{font-size:16px;margin-top:11px}
@@ -111,23 +131,33 @@
   .ap-sheet{padding:29px 24px calc(24px + var(--ap-safe))}
   .ap-sheet__header h2{font-size:30px}
 }
+@media(min-width:1051px) and (max-height:800px){
+  .ap-hero__copy{top:27%}
+  .ap-hero__given{font-size:clamp(60px,6.8vw,95px)}
+  .ap-hero__family{font-size:calc(clamp(96px,10.5vw,150px) * var(--ap-fit,1))}
+  .ap-hero__actions{margin-top:34px}
+}
 @media(max-width:359px){
-  .ap-hero__header{left:16px;right:16px}
-  .ap-hero__id{left:20px;right:15px}
-  .ap-hero__family{font-size:19.2vw}
-  .ap-hero__bottom{left:20px;right:20px}
-  .ap-follow{min-width:181px;font-size:13px;gap:14px}
   .ap-library{padding-inline:12px}
   .ap-grid{gap:28px 10px}
   .ap-card__title{font-size:21px}
   .ap-card__kind{font-size:13px}
   .ap-library__title{font-size:59px!important}
+  .ap-follow{font-size:15px!important}
 }
 @keyframes ap-title-in{from{opacity:0;transform:translateY(35px)}to{opacity:1;transform:none}}
-@keyframes ap-photo-in{from{opacity:0;filter:blur(4px);scale:1.035}to{opacity:1;filter:blur(0);scale:1}}
+@keyframes ap-portrait-in{from{opacity:0;scale:.96}to{opacity:1;scale:1}}
 @keyframes ap-sheet-in{from{opacity:0;transform:translateY(35px)}to{opacity:1;transform:none}}
 @keyframes ap-scrim-in{from{background:#0e181700}to{background:#0e181766}}
 @media(prefers-reduced-motion:reduce){
   .ap *,.ap *::before,.ap *::after{animation:none!important;transition:none!important}
   .ap-reveal{opacity:1;transform:none}
 }
+
+/* A publisher's writers, and the writer under each title in its list. */
+.ap-writers{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 30px;padding:0;list-style:none}
+.ap-writers button{display:inline-flex;align-items:baseline;gap:8px;min-height:40px;padding:9px 14px;border:1px solid #d6c9ab33!important;border-radius:999px;font-size:13px;color:#e8e3d6!important}
+.ap-writers button span{font-size:11px;color:#a8ab9f}
+.ap-card__byline{display:block;margin-top:8px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#b9bcb0}
+.ap-sheet__initials{display:grid;place-items:center;width:56px;height:56px;flex:none;border-radius:50%;background:radial-gradient(ellipse at 35% 22%,#f5efdf 0%,#dbd6c3 65%,#b8bdac 100%);font:italic 500 21px/1 var(--ap-serif);letter-spacing:-.08em;color:#263b32}
+.ap-sheet__author img{border-radius:50%!important}

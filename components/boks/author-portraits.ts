@@ -1,6 +1,7 @@
 /**
- * Authors with a portrait page (design v48): a full-bleed photo, their name
- * set large, and their boks as a library of equal covers.
+ * Authors with a photo on their page (design v49). Every author gets the
+ * page (`author-portrait-page.tsx`); one registered here gets their photo in
+ * its rings instead of a medallion with initials, and a set public name.
  *
  * There are no profile fields for a photo or a public name yet, so the few
  * authors who have one are registered here. The photo is the author's own, so
