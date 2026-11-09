@@ -131,7 +131,7 @@ keeps an empty card until it is sent to `@WebpageBot`.
 |---|---|---|---|
 | `/@prokhorov` | Алексей Прохоров | 2026-11-09 | his portrait page (design v48, `components/boks/author-portraits.ts`): `prokhorov-portrait.webp`, `prokhorov.webp` and the 1200x630 card `prokhorov-share.jpg`, all in the same folder as the «Верослов» cover |
 | `/veroslov` (also `/series/veroslov`, `/series/prokhorov`) | Алексей Прохоров | 2026-11-09 | an alias of his author page, previewed as the book (`veroslov-book-share.jpg`, 1024x1024, `aliases` in `author-portraits.ts`); until 2026-11-09 `/series/veroslov` opened the shelf: |
-| `/p/<slug>` (preview lab, temporary) | Алексей Прохоров | 2026-11-09 | his author page under twelve hidden addresses, each with a different card (`lab-*-share.*` in his folder): bookmarks, squares, a 4:5 poster, GIF, animated WebP, `og:video`. Listed in Studio → Links; delete when a format is chosen |
+| `/p/<slug>` (preview lab, temporary) | Алексей Прохоров | 2026-11-09 | his author page under twenty hidden addresses, each with a different card (`lab-*-share.*` in his folder): bookmarks, squares, a 4:5 poster, GIF, animated WebP, `og:video`. Listed in Studio → Links; delete when a format is chosen |
 | (was) `/series/veroslov` | Алексей Прохоров | 2026-11-08 | the cover of «Верослов», named after the book at the poet's wish |
 
 ## Pieces

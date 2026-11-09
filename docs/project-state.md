@@ -1239,7 +1239,7 @@ appearing as a 401 in somebody's browser.
 
 ## Preview lab (temporary, 2026-11-09)
 
-To choose a link-preview format, `/p/<slug>` opens Алексей Прохоров's page under twelve hidden addresses, each previewing with a different card: folk and strict bookmarks (600x1500), an animated bookmark GIF, bookmarks on a 1200x630 card, two squares, a 4:5 poster, a loud wide card, a 400x400 thumbnail, a poem GIF, the same as animated WebP, and an `og:video` MP4. Listed with copy buttons in Studio → Links → Preview lab; never indexed. The cards hold his photo, so they sit in his link-only folder (`lab-*-share.*`). Variants: `lib/boks/preview-lab.ts`. Remove it, `app/p/` and `components/boks/admin/preview-lab.tsx` once a format is chosen.
+To choose a link-preview format, `/p/<slug>` opens Алексей Прохоров's page under twenty hidden addresses, each previewing with a different card: folk and strict bookmarks (600x1500), an animated bookmark GIF, bookmarks on a 1200x630 card, two squares, a 4:5 poster, a loud wide card, a 400x400 thumbnail, a poem GIF, the same as animated WebP, and an `og:video` MP4; a second series (`marka-*`) tries the boks mark as a switch, a yellow bar with a red knob that rhymes with the dot after the surname. Listed with copy buttons in Studio → Links → Preview lab; never indexed. The cards hold his photo, so they sit in his link-only folder (`lab-*-share.*`). Variants: `lib/boks/preview-lab.ts`. Remove it, `app/p/` and `components/boks/admin/preview-lab.tsx` once a format is chosen.
 
 ## Not in production
 

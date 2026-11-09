@@ -99,6 +99,58 @@ export const previewLabVariants: readonly PreviewLabVariant[] = [
     image: { file: "lab-video-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 46 },
     video: { file: "lab-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 199 },
   },
+  // Series 2 (2026-11-09, from the call): black-and-white half-and-half card,
+  // the boks mark as a switch (yellow bar, red knob sunk in its round end)
+  // rhyming with the red dot after the surname, a frame, «Верослов» as a shadow.
+  {
+    slug: "marka-gorizont",
+    name: { en: "Mark: wide, b/w", ru: "Марка: горизонтальная, ч/б" },
+    note: { en: "1200x630, text and photo half and half, the switch mark with a square left end.", ru: "1200x630, текст и фото пополам, знак-тумблер с прямым левым краем." },
+    image: { file: "lab-marka-gorizont-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 75 },
+  },
+  {
+    slug: "marka-kruglaya",
+    name: { en: "Mark: round both ends", ru: "Марка: скруглена с двух сторон" },
+    note: { en: "Same card, the bar rounded at both ends, to compare with the square left end.", ru: "Та же карточка, полоса скруглена с обеих сторон: сравнить с прямым краем." },
+    image: { file: "lab-marka-kruglaya-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 75 },
+  },
+  {
+    slug: "marka-ramka",
+    name: { en: "Mark: in a frame", ru: "Марка: в рамке" },
+    note: { en: "A thin frame, the mark breaks its top edge like a label on a publication.", ru: "Тонкая рамка, знак разрывает её верхний край, как ярлык на издании." },
+    image: { file: "lab-marka-ramka-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 77 },
+  },
+  {
+    slug: "marka-zakladka",
+    name: { en: "Mark: bookmark", ru: "Марка: закладка" },
+    note: { en: "600x1500: boks on top, a square photo, the name, text below. A paper bookmark.", ru: "600x1500: сверху boks, ниже квадрат фото, имя, под ним текст. Бумажная закладка." },
+    image: { file: "lab-marka-zakladka-share.jpg", width: 600, height: 1500, type: "image/jpeg", kb: 71 },
+  },
+  {
+    slug: "marka-kvadrat",
+    name: { en: "Mark: square", ru: "Марка: квадрат" },
+    note: { en: "1080x1080 in a frame: photo above, the mark on the seam, name below.", ru: "1080x1080 в рамке: фото сверху, знак на стыке, имя снизу." },
+    image: { file: "lab-marka-kvadrat-share.jpg", width: 1080, height: 1080, type: "image/jpeg", kb: 108 },
+  },
+  {
+    slug: "marka-gif",
+    name: { en: "Mark: the switch turns on (GIF)", ru: "Марка: тумблер включается (GIF)" },
+    note: { en: "800x420: the knob slides right, uncovers boks, and the dot after the name drops in. First frame is the finished card.", ru: "800x420: шарик едет вправо, открывает boks, и падает точка после фамилии. Первый кадр готовая карточка." },
+    image: { file: "lab-marka-gif-share.gif", width: 800, height: 420, type: "image/gif", kb: 216 },
+  },
+  {
+    slug: "marka-video",
+    name: { en: "Mark: the switch turns on (video)", ru: "Марка: тумблер включается (видео)" },
+    note: { en: "The same as MP4 1200x630, 7 s, silent, with a still poster.", ru: "То же в MP4 1200x630, 7 с, без звука, со статичным постером." },
+    image: { file: "lab-marka-video-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 77 },
+    video: { file: "lab-marka-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 96 },
+  },
+  {
+    slug: "marka-shablon",
+    name: { en: "Mark: template for any author", ru: "Марка: шаблон для любого автора" },
+    note: { en: "The framed card with a placeholder name, photo and book: what another author would get.", ru: "Карточка в рамке с заглушками имени, фото и книги: что получит другой автор." },
+    image: { file: "lab-marka-shablon-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 52 },
+  },
 ];
 
 export function previewLabVariant(slug: string | null | undefined) {
