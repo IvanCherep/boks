@@ -36,11 +36,16 @@ export default {
     if (type) headers.set("Content-Type", type);
 
     if (!type.startsWith("text/html")) {
-      for (const name of ["Content-Length", "ETag", "Last-Modified"]) {
+      // Whole, with its length: Telegram gave up on a poster sent in chunks of
+      // unknown size, and showed the preview with no picture (2026-11-09).
+      const body = request.method === "HEAD" ? null : await upstream.arrayBuffer();
+      for (const name of ["ETag", "Last-Modified"]) {
         const value = upstream.headers.get(name);
         if (value) headers.set(name, value);
       }
-      return new Response(upstream.body, { status: upstream.status, headers });
+      if (body) headers.set("Content-Length", String(body.byteLength));
+      else if (upstream.headers.get("Content-Length")) headers.set("Content-Length", upstream.headers.get("Content-Length"));
+      return new Response(body, { status: upstream.status, headers });
     }
 
     // A bot gets a small page of its own: the preview tags and nothing else,

@@ -55,6 +55,8 @@ function remember(key: string, bytes: Uint8Array<ArrayBuffer>) {
 function jpegResponse(bytes: Uint8Array<ArrayBuffer>) {
   return new Response(bytes, { headers: {
     "Content-Type": "image/jpeg",
+    // Its length up front: a messenger may not download an image of unknown size.
+    "Content-Length": String(bytes.byteLength),
     "Cache-Control": "public, max-age=300",
     "X-Content-Type-Options": "nosniff",
   } });
