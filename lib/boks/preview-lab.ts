@@ -151,6 +151,67 @@ export const previewLabVariants: readonly PreviewLabVariant[] = [
     note: { en: "The framed card with a placeholder name, photo and book: what another author would get.", ru: "Карточка в рамке с заглушками имени, фото и книги: что получит другой автор." },
     image: { file: "lab-marka-shablon-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 52 },
   },
+  // Series 3 (2026-11-10): the light palette - white or yellow paper, a cut-out
+  // b/w portrait, heavy serif. The mark animates as a finger swipe: the red knob
+  // is touched, dragged right leaving the yellow track, and clicks on; then the
+  // dot after the surname drops in. Every GIF's first frame is the finished
+  // card, so a network that shows only a still gets the whole card.
+  {
+    slug: "svet-gorizont",
+    name: { en: "Light: wide, still", ru: "Светлая: горизонтальная, статика" },
+    note: { en: "1200x630 JPEG, the control: the same card with no motion.", ru: "1200x630 JPEG, контрольная: та же карточка без движения." },
+    image: { file: "lab-svet-gorizont-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 66 },
+  },
+  {
+    slug: "svet-swipe",
+    name: { en: "Light: swipe (GIF)", ru: "Светлая: свайп (GIF)" },
+    note: { en: "1200x630, 5.2 s: the switch turns off, a finger drags the knob with a little hesitation, it clicks on.", ru: "1200x630, 5,2 с: тумблер гаснет, палец тянет шарик с заминкой посередине, щелчок." },
+    image: { file: "lab-svet-swipe-share.gif", width: 1200, height: 630, type: "image/gif", kb: 205 },
+  },
+  {
+    slug: "svet-flick",
+    name: { en: "Light: flick (GIF)", ru: "Светлая: быстрый щелчок (GIF)" },
+    note: { en: "1200x630, 3.8 s: one quick flick and a springy click.", ru: "1200x630, 3,8 с: один быстрый взмах и пружинящий щелчок." },
+    image: { file: "lab-svet-flick-share.gif", width: 1200, height: 630, type: "image/gif", kb: 165 },
+  },
+  {
+    slug: "svet-pero",
+    name: { en: "Light: slow, like a pen (GIF)", ru: "Светлая: медленно, как пером (GIF)" },
+    note: { en: "1200x630, 6.4 s: the track is drawn slowly and evenly.", ru: "1200x630, 6,4 с: полоса прорисовывается медленно и ровно." },
+    image: { file: "lab-svet-pero-share.gif", width: 1200, height: 630, type: "image/gif", kb: 234 },
+  },
+  {
+    slug: "svet-video",
+    name: { en: "Light: swipe (video)", ru: "Светлая: свайп (видео)" },
+    note: { en: "The swipe as MP4 1200x630 with a still JPEG poster: the still for everyone, the motion where og:video plays.", ru: "Свайп в MP4 1200x630 со статичным JPEG-постером: статика всем, движение там, где играет og:video." },
+    image: { file: "lab-svet-video-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 66 },
+    video: { file: "lab-svet-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 56 },
+  },
+  {
+    slug: "svet-shov",
+    name: { en: "Yellow: «память шва», thread (GIF)", ru: "Жёлтая: «память шва», нить (GIF)" },
+    note: { en: "1200x630, the bok's title huge; the red knob runs along a thread like a needle and stitches it.", ru: "1200x630, название бока крупно; красный шарик бежит по нити, как игла, и прошивает её." },
+    image: { file: "lab-svet-shov-share.gif", width: 1200, height: 630, type: "image/gif", kb: 129 },
+  },
+  {
+    slug: "svet-shov-video",
+    name: { en: "Yellow: «память шва» (video)", ru: "Жёлтая: «память шва» (видео)" },
+    note: { en: "The same as MP4 with a still poster.", ru: "То же в MP4 со статичным постером." },
+    image: { file: "lab-svet-shov-video-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 48 },
+    video: { file: "lab-svet-shov-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 57 },
+  },
+  {
+    slug: "svet-zakladka",
+    name: { en: "Light: bookmark (GIF)", ru: "Светлая: закладка (GIF)" },
+    note: { en: "600x1500: mark, photo, name, a red rule that draws itself. How does a tall GIF crop?", ru: "600x1500: знак, фото, имя, красная черта прочерчивается. Как режется высокая GIF?" },
+    image: { file: "lab-svet-zakladka-share.gif", width: 600, height: 1500, type: "image/gif", kb: 252 },
+  },
+  {
+    slug: "svet-kvadrat",
+    name: { en: "Light: square (GIF)", ru: "Светлая: квадрат (GIF)" },
+    note: { en: "1080x1080, the flick: for VK, OK and Instagram-style square previews.", ru: "1080x1080, быстрый щелчок: для квадратных превью ВК, ОК, Instagram." },
+    image: { file: "lab-svet-kvadrat-share.gif", width: 1080, height: 1080, type: "image/gif", kb: 211 },
+  },
 ];
 
 export function previewLabVariant(slug: string | null | undefined) {
