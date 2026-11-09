@@ -2743,6 +2743,14 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
       onOpenBok={(storyId) => {
         closeAuthor("replace");
+        // Opened over the Series shelf: a series piece starts its player, as
+        // from the shelf itself; anything else leaves the shelf for the feed.
+        // Opening it in the feed under the shelf left the shelf on screen.
+        if (seriesOpen) {
+          const piece = seriesPieceFor(storyId);
+          if (piece) { void openSeriesPiece(piece); return; }
+          openFeed();
+        }
         void openReadBoks(storyId, "author");
       }}
       onRequestAccount={() => {
