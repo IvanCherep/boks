@@ -28,6 +28,38 @@ function posterFonts(request: Request) {
   return fonts;
 }
 
+/**
+ * Rendered posters, kept in memory on the Node server (Workers have
+ * `caches.default`; Node has nothing, so every request drew the poster again,
+ * about two seconds - longer than Telegram waits). Keyed by bok and poster
+ * version; the publication check above still runs on every request, so a
+ * hidden bok's poster is never served from here.
+ */
+const memory = new Map<string, { bytes: Uint8Array<ArrayBuffer>; at: number }>();
+const memoryLimit = 300;
+const memoryTtlMs = 6 * 60 * 60 * 1000;
+
+function remembered(key: string) {
+  const hit = memory.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > memoryTtlMs) { memory.delete(key); return null; }
+  return hit.bytes;
+}
+
+function remember(key: string, bytes: Uint8Array<ArrayBuffer>) {
+  memory.delete(key);
+  memory.set(key, { bytes, at: Date.now() });
+  while (memory.size > memoryLimit) memory.delete(memory.keys().next().value!);
+}
+
+function jpegResponse(bytes: Uint8Array<ArrayBuffer>) {
+  return new Response(bytes, { headers: {
+    "Content-Type": "image/jpeg",
+    "Cache-Control": "public, max-age=300",
+    "X-Content-Type-Options": "nosniff",
+  } });
+}
+
 function publishedPoster(response: Response) {
   const headers = new Headers(response.headers);
   // The Worker owns the render cache. A CDN/browser hit must not bypass the
@@ -47,6 +79,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const key = new Request(new URL(`/b/${bok.id}/image?v=${sharePosterVersion}`, request.url));
   const cached = await cache?.match(key);
   if (cached) return publishedPoster(cached);
+  const inMemory = remembered(key.url);
+  if (inMemory) return publishedPoster(jpegResponse(inMemory));
   try {
     const cover = getBokPosterArtwork(bok.id);
     const [loadedFonts, image] = await Promise.all([
@@ -57,11 +91,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const rendered = new ImageResponse(<SharePoster bok={bok} artwork={artwork} />, { ...sharePosterSize, fonts: loadedFonts });
     // Await the renderer so a failed stream cannot become a cached 200 image.
     // JPEG: a fifth of the PNG, which a messenger otherwise gives up on (`poster-jpeg.ts`).
-    const response = new Response(posterPngToJpeg(await rendered.arrayBuffer()), { headers: {
-      "Content-Type": "image/jpeg",
-      "Cache-Control": "public, max-age=300",
-      "X-Content-Type-Options": "nosniff",
-    } });
+    const bytes = posterPngToJpeg(await rendered.arrayBuffer());
+    remember(key.url, bytes);
+    const response = jpegResponse(bytes);
     await cache?.put(key, response.clone());
     return publishedPoster(response);
   } catch (error) {
