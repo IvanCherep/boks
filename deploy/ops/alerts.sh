@@ -3,7 +3,7 @@
 # once when it recovers (state files in $STATE), never on every run.
 set -uo pipefail
 cd "$(dirname "$0")/.."
-STATE=/var/lib/boks-ops
+STATE=${BOKS_OPS_STATE:-/var/lib/boks-ops}
 mkdir -p "$STATE"
 notify() { ops/notify.sh "$1" || true; }
 
@@ -58,3 +58,51 @@ if [ "$(date +%M)" = 00 ]; then
     alert "cert_$host" "$([ "$days" -lt 14 ] && echo 1 || echo 0)" "<b>Сертификат $host истекает через $days дн.</b>" "Сертификат $host продлён ($days дн.)"
   done
 fi
+
+# 7. Every new account, as it is confirmed: a reader who signed in with an
+# email code for the first time (guests are anonymous and not counted). The
+# address is masked; the handle is what the team knows them by. The first run
+# only sets the watermark, so nobody is announced twice or all at once.
+mark="$STATE/signups.since"
+if [ ! -f "$mark" ]; then
+  date -u +%Y-%m-%dT%H:%M:%SZ > "$mark"
+else
+  since=$(cat "$mark")
+  rows=$(docker compose exec -T db psql -U postgres -h localhost -qAt -F $'\t' -v since="$since" 2>/dev/null <<'SQL'
+set statement_timeout = '10s';
+select to_char(u.email_confirmed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+       coalesce('@' || p.handle, '—'),
+       regexp_replace(coalesce(u.email, ''), '^(.).*(@.*)$', '\1***\2'),
+       (select count(*) from auth.users t
+         where coalesce(t.is_anonymous, false) = false
+           and t.email_confirmed_at >= date_trunc('day', now() at time zone 'Europe/Moscow') at time zone 'Europe/Moscow')
+from auth.users u
+left join public.user_profiles p on p.user_id = u.id
+where coalesce(u.is_anonymous, false) = false
+  and u.email_confirmed_at > :'since'::timestamptz
+order by u.email_confirmed_at
+limit 20;
+SQL
+)
+  if [ -n "$rows" ]; then
+    while IFS=$'\t' read -r at handle email today; do
+      [ -n "$at" ] || continue
+      notify "🎉 <b>Новый пользователь:</b> $handle ($email). Регистраций сегодня: $today"
+      echo "$at" > "$mark"
+    done <<<"$rows"
+  fi
+fi
+
+# 8. Resend sends at most 100 emails a day on our plan; past that, nobody can
+# sign in. Counted from the mailer's own log since midnight UTC (Resend's day).
+# Each threshold is announced once a day: at 60 it is time to upgrade the plan.
+day=$(date -u +%Y-%m-%d)
+sent_today=$(docker compose logs mailer --since "${day}T00:00:00Z" 2>/dev/null | grep -c '"event":"sent"' || true)
+for threshold in 60 80 95; do
+  flag="$STATE/mail_quota_${threshold}.${day}"
+  if [ "$sent_today" -ge "$threshold" ] && [ ! -f "$flag" ]; then
+    touch "$flag"
+    notify "🚨 <b>Срочно: отправлено $sent_today из 100 писем за сутки</b> (Resend, сутки по UTC). На 100 письма со входом перестанут уходить. Обновите тариф Resend."
+  fi
+done
+find "$STATE" -name 'mail_quota_*' -mtime +3 -delete 2>/dev/null || true

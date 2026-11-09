@@ -22,7 +22,7 @@ not on Cloudflare Workers and Supabase Cloud.
   service.
 - DNS: `tryboks.com` on Cloudflare, **DNS only** (grey cloud). Never turn on
   the proxy: Cloudflare is throttled in Russia. `tryboks.ru` in Selectel DNS.
-- Ops (cron in `/etc/cron.d/boks-ops`, scripts in `deploy/ops/`): alerts,
+- Ops (cron in `/etc/cron.d/boks-ops`, scripts in `deploy/ops/`): alerts (including every new account, and the Resend daily quota: 60, 80 and 95 of 100 emails),
   daily and weekly reports and trend forecasts to the team Telegram group
   through the `boks-telegram` Worker (Telegram is blocked from the server), and
   an overload guard that shows new visitors a waiting page (`deploy/busy/`).
