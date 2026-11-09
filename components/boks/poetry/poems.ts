@@ -92,6 +92,8 @@ const poems: Record<string, string> = {
   "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07": "/l/BXGiRQnLCc8ju7U0b3keGA/f/manifest.json",
   // Алексей Прохоров — розы Сарагосы
   "4eb182a0-770e-4b95-9059-07a31b229d78": "/l/uS_BvF9AbsYex07lzuXnVw/f/manifest.json",
+  // Алексей Прохоров — полет сквозь сны
+  "cc083c1c-ae37-4390-b607-8abd4edd2f31": "/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

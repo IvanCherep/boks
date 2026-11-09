@@ -146,6 +146,19 @@ export const seriesPieces: readonly SeriesPiece[] = [
     moments: 0,
     premieredOn: "2026-11-08",
   },
+  {
+    storyId: "cc083c1c-ae37-4390-b607-8abd4edd2f31",
+    format: "poem",
+    language: "ru",
+    title: "полет сквозь сны",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-polet-skvoz-sny.webp",
+    coverFocus: "45% 40%",
+    durationSeconds: 69,
+    scenes: 5,
+    moments: 0,
+    premieredOn: "2026-11-10",
+  },
   // The Halloween three, in the order they are meant to be heard: Poe for the
   // eye, Dickinson for the hand, Hardy to end on something human.
   {
@@ -628,6 +641,7 @@ export const seriesCollections: readonly SeriesCollection[] = [
     // A poet's own section, read by the poet. Short first, the long roses last.
     id: "prokhorov",
     storyIds: [
+      "cc083c1c-ae37-4390-b607-8abd4edd2f31",
       "cc7e3800-3567-42c1-ba08-8554a345e25c",
       "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07",
       "4c517503-f15f-4602-9d29-e1ac34cbbfad",

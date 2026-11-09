@@ -105,6 +105,7 @@ Published this way:
 | Piece | Author | Since | Format |
 |---|---|---|---|
 | «коса», «у горы Мегиддо», «азбука веры», «из возвращения в побег», «память шва», «розы Сарагосы» | Алексей Прохоров | 2026-11-08 | immersive poems in the author's own recordings, 3 pictures each (5 for «розы Сарагосы»); their own section on the series shelf; published by the account @prokhorov, which the team holds until the author takes it (`deploy/author-account.sh`) |
+| «полет сквозь сны» | Алексей Прохоров | 2026-11-10 | immersive poem in the author's own recording, 5 pictures; first in his section; published straight from @prokhorov |
 
 ### A poet's own address
 
