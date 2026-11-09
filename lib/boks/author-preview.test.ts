@@ -37,3 +37,12 @@ describe("an author link's preview", () => {
     expect((await loadAuthorForShare("@Prokhorov", { url: "https://example.test", key: "k", fetchImpl: ok }))?.handle).toBe("prokhorov");
   });
 });
+
+describe("the line under an author link's title", () => {
+  it("says what boks is, in the author's language", async () => {
+    const { authorSharePitch } = await import("@/lib/boks/author-preview");
+    const { sharePitch } = await import("@/lib/boks/share-preview");
+    expect(authorSharePitch(sharedAuthorFromAnswer("prokhorov", prokhorov)!)).toBe(sharePitch.ru);
+    expect(authorSharePitch(sharedAuthorFromAnswer("x", { totalBoks: 1, writers: [{ name: "Emily Dickinson" }], boks: [{ title: "Hope" }] })!)).toBe(sharePitch.en);
+  });
+});

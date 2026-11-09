@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { boksOrigin } from "@/app/layout";
-import { authorPreviewDescription, loadAuthorForShare } from "@/lib/boks/author-preview";
+import { authorSharePitch, loadAuthorForShare } from "@/lib/boks/author-preview";
 import { OpeningAuthor } from "./opening-author";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
 
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
     return { title: "boks", alternates: { canonical: url }, openGraph: { type: "website", url, siteName: "boks", title: "boks" } };
   }
   const title = author.name.startsWith("@") ? `${author.name} · boks` : `${author.name} · @${author.handle}`;
-  const description = authorPreviewDescription(author);
+  const description = authorSharePitch(author);
   // An author with a portrait previews as their portrait card (design v48).
   const portrait = authorPortraitFor(author.handle);
   const image = portrait?.share ? `${boksOrigin}${portrait.share}` : `${boksOrigin}/og-cover.png`;

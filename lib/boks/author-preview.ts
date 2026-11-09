@@ -1,3 +1,5 @@
+import { sharePitch } from "@/lib/boks/share-preview";
+
 /**
  * What a shared author link (`/@prokhorov`) looks like in a messenger.
  *
@@ -38,6 +40,15 @@ export function sharedAuthorFromAnswer(handle: string, answer: AuthorAnswer | nu
     boks: total,
     titles: boks.map((bok) => (typeof bok.title === "string" ? bok.title.trim() : "")).filter(Boolean).slice(0, 3),
   };
+}
+
+/**
+ * The line under an author link's title: what boks is, like every bok link
+ * (`sharePitch`, 2026-11-09). English for an author whose name and titles are
+ * in English, Russian otherwise.
+ */
+export function authorSharePitch(author: SharedAuthor) {
+  return /[а-яё]/i.test(`${author.name} ${author.titles.join(" ")}`) ? sharePitch.ru : sharePitch.en;
 }
 
 /** One line under the name, in the writer's language as far as it shows. */
