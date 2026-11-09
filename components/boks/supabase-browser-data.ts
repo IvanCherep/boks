@@ -14,6 +14,8 @@ import type {
   AuthorBokSubmissionsPage,
   AuthorBokStatusFilter,
   AuthorBokStats,
+  AuthorPageIdentity,
+  MyAuthorPage,
   BoksContentRow,
   BoksGrowth,
   BoksOverview,
@@ -923,6 +925,39 @@ export async function loadMyBokStats(bokId: string): Promise<AuthorBokStats> {
   const result = await supabase.rpc("get_my_bok_stats", { p_reel_id: bokId });
   if (result.error) throw result.error;
   return result.data as AuthorBokStats;
+}
+
+export async function loadMyAuthorPage(): Promise<MyAuthorPage> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("get_my_author_page");
+  if (result.error) throw result.error;
+  return result.data as MyAuthorPage;
+}
+
+/**
+ * Saves the name and photo together. `photo` is "keep", "remove", or a new
+ * square JPEG as base64 (`lib/boks/author/author-photo.ts`).
+ */
+export async function saveMyAuthorPage(input: { name: string; photo: string; version: number }): Promise<MyAuthorPage> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("save_my_author_page", {
+    p_name: input.name,
+    p_photo: input.photo,
+    p_version: input.version,
+  });
+  if (result.error) throw result.error;
+  return result.data as MyAuthorPage;
+}
+
+/** What a reader sees on an author page; null when the author set nothing. */
+export async function loadAuthorPageIdentity(handle: string): Promise<AuthorPageIdentity | null> {
+  if (!supabase || !handle) return null;
+  const result = await supabase.rpc("get_boks_author_page", { p_handle: handle });
+  if (result.error) {
+    if (isMissingDatabaseObject(result.error)) return null;
+    throw result.error;
+  }
+  return (result.data as AuthorPageIdentity | null) ?? null;
 }
 
 export async function reviewBokSubmission(input: {

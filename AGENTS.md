@@ -66,7 +66,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 | Reading formats (cinema, immersive poem), series shelf | `docs/reading-formats.md` | `components/boks/cinema/`, `poetry/`, `series/` |
 | Generating any audio | `docs/media-generation.md` | - |
 | Accounts, handles, comments | `components/boks/user-auth-panel.tsx`, `comments-sheet.tsx` | `components/boks/supabase-browser-data.ts`, migrations |
-| Author cabinet and uploads | `components/boks/author-console.tsx` | `lib/boks/author/author-files.ts`, `lib/boks/contracts.ts` |
+| Author cabinet and uploads | `components/boks/author-cabinet/author-cabinet.tsx` | `lib/boks/author/author-files.ts`, `lib/boks/contracts.ts` |
 | Admin console | `components/boks/admin-dashboard.tsx`, `components/boks/admin/` | `docs/admin-metrics.md` before adding a metric |
 | Thesis studies (`/study/<key>`, Studio → Studies) | `docs/studies.md` | `lib/boks/studies/`, `components/boks/studies/` |
 | Add an algorithm | one file in `lib/boks/recommendations/strategies/` + its `index.ts` | a ranking case in `lib/boks/recommendations/feed.test.ts` |

@@ -62,7 +62,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 ### Author and admin
 
-- `components/boks/author-console.tsx`: submission cabinet, review status, refusal reason, revision, the length guardrail. `lib/boks/author/author-files.ts` reads .docx/.txt/.md files in the browser for the upload queue and splits a long text into parts. `lib/boks/bok-title.ts` mirrors the title-from-first-line rule.
+- `components/boks/author-cabinet/author-cabinet.tsx`: submission cabinet, review status, refusal reason, revision, the length guardrail. `lib/boks/author/author-files.ts` reads .docx/.txt/.md files in the browser for the upload queue and splits a long text into parts. `lib/boks/bok-title.ts` mirrors the title-from-first-line rule.
 - `components/boks/admin-dashboard.tsx`: admin auth, grouped Studio navigation and per-section loading.
 - `components/boks/admin/`: one file per tab - `overview.tsx`, `moderation-queue.tsx`, `rights-review.tsx`, `content-operations.tsx`, `people.tsx`, `guest-funnel.tsx`, `guest-day.tsx`, `tracked-links.tsx`, `growth.tsx`, `feedback-inbox.tsx`, `catalogue-import.tsx`, `recommendation-lab.tsx` (+ `experiment-editor.tsx`, `sample-size-panel.tsx`, `position-effects.tsx`, `metric-bars.tsx`), and the poetry/interaction sandboxes.
 - `components/boks/admin/studies.tsx` + `study-form-gallery.tsx`: the Studies tab - each study's on/off switch, materials, results and export, and every participant form in a phone frame.
@@ -119,7 +119,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 
 ## Author and moderation
 
-1. `submit_bok_for_review()` writes a private `reels` row with `status = 'pending_review'`, enforcing the 15-minute promise and refusing the same text twice from one author, under a lock on the author's profile row. There is no limit on the number of submissions; `get_my_bok_quota()` remains only for old tabs and reports `unlimited`. `get_my_bok_submissions_page()` pages the author's history with counts per status. The author withdraws (`withdraw_my_bok()`, status `withdrawn`), returns (`restore_my_bok()`) and, once withdrawn, deletes (`delete_my_bok()`) their own pieces; `get_my_bok_stats()` is one piece's reader numbers and comments for its author (`components/boks/author-works.tsx`).
+1. `submit_bok_for_review()` writes a private `reels` row with `status = 'pending_review'`, enforcing the 15-minute promise and refusing the same text twice from one author, under a lock on the author's profile row. There is no limit on the number of submissions; `get_my_bok_quota()` remains only for old tabs and reports `unlimited`. `get_my_bok_submissions_page()` pages the author's history with counts per status. The author withdraws (`withdraw_my_bok()`, status `withdrawn`), returns (`restore_my_bok()`) and, once withdrawn, deletes (`delete_my_bok()`) their own pieces; `get_my_bok_stats()` is one piece's reader numbers and comments for its author (`components/boks/author-cabinet/library.tsx`).
 2. Admins approve or refuse with `review_bok_submission()`; approval requires a confirmed rights record. Refusal stores a reason only the author and admins see.
 3. `archive_bok()` hides a bok reversibly with actor, time and reason; `restore_archived_bok()` returns it to its previous status; `delete_archived_bok()` erases only an archived bok and requires its exact title.
 4. No browser writes `reels.status`, roles or suspension directly; all of it is admin-checked RPCs.

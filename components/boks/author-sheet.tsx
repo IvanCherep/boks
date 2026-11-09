@@ -3,7 +3,8 @@
 import { authorShareUrl } from "@/lib/boks/share-link";
 import { useEffect, useRef, useState } from "react";
 import type { AuthorProfile } from "@/components/boks/client-types";
-import { loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
+import { loadAuthorPageIdentity, loadBoksAuthor, setAuthorFollow } from "@/components/boks/supabase-browser-data";
+import type { AuthorPageIdentity } from "@/components/boks/client-types";
 import { haptic } from "@/components/boks/reader-haptics";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { currentUiLanguage } from "@/components/boks/ui-language";
@@ -64,6 +65,8 @@ export function AuthorSheet({
 }: AuthorSheetProps) {
   const { t } = useReaderPreferences();
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
+  // The name and photo the author set in the cabinet, if any.
+  const [page, setPage] = useState<AuthorPageIdentity | null>(null);
   // Why the page has no boks to show: still loading, unavailable, or a failed follow.
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -102,6 +105,16 @@ export function AuthorSheet({
       cancelled = true;
     };
   }, [handle, authorName]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAuthorPageIdentity(handle.replace(/^@+/, ""))
+      .then((identity) => !cancelled && setPage(identity))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [handle]);
 
   const followedOnOpen = useRef(false);
   useEffect(() => {
@@ -149,22 +162,30 @@ export function AuthorSheet({
   }
 
   // Who the page is about. A writer inside a publisher's catalogue (Блок in
-  // @boks) by their byline; an author with a registered portrait by their
-  // public name; an account that publishes one writer by that writer's name;
-  // a publisher of many by its @handle. Before the profile loads, the byline
-  // the reader tapped stands in, so the page opens at once.
-  const portrait = !author?.byline ? authorPortraitFor(handle) : null;
-  const ownName = !author?.byline && author?.writers.length === 1 ? author.writers[0].name : null;
+  // @boks) by their byline; otherwise the name the author set for their page;
+  // an author with a registered portrait by its public name; an account that
+  // publishes one writer by that writer's name; a publisher of many by its
+  // @handle. Before the profile loads, the byline the reader tapped stands in,
+  // so the page opens at once. The photo: the author's own, then a registered one.
+  const writerView = Boolean(author?.byline);
+  const portrait = !writerView ? authorPortraitFor(handle) : null;
+  const ownName = !writerView && author?.writers.length === 1 ? author.writers[0].name : null;
   const bareHandle = (author?.authorHandle || handle).replace(/^@+/, "");
+  const pageName = !writerView ? page?.name?.trim() || null : null;
+  const pagePhoto = !writerView && page?.photoVersion ? `/a/${bareHandle}/photo?v=${page.photoVersion}` : null;
   const name = author?.byline
+    || pageName
     || (portrait ? `${portrait.given} ${portrait.family}` : null)
     || ownName
     || (!author ? authorName : null)
     || `@${bareHandle}`;
+  const identity = pagePhoto
+    ? { handle: bareHandle, name, photo: pagePhoto, thumb: pagePhoto, focus: "50% 50%" }
+    : { handle: bareHandle, name, photo: portrait?.photo, thumb: portrait?.thumb, focus: portrait?.focus };
 
   return (
     <AuthorPortraitPage
-      identity={{ handle: bareHandle, name, photo: portrait?.photo, thumb: portrait?.thumb, focus: portrait?.focus }}
+      identity={identity}
       author={author}
       profileLink={profileLink}
       following={Boolean(author?.following)}

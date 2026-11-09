@@ -126,6 +126,11 @@ const russianSentences: Record<string, string> = {
   "Withdraw the text first; only a withdrawn text of your own can be deleted.":
     "Сначала снимите текст: удалить можно только свой снятый текст.",
   "Type the title exactly to confirm deletion.": "Для удаления введите название точно.",
+  "The name on your page can be at most 60 characters, without < or >.":
+    "Имя на странице - не больше 60 символов, без < и >.",
+  "Your page was changed in another tab. Reload to see the latest version.":
+    "Страницу изменили в другой вкладке. Обновите страницу, чтобы увидеть последнюю версию.",
+  "This photo could not be read. Choose another one.": "Не получилось прочитать фотографию. Выберите другую.",
   "Sign in required to report a bok.": "Войдите, чтобы пожаловаться на бок.",
   "Sign in required to submit a bok.": "Войдите, чтобы отправить бок.",
   "Story text is required.": "Нужен текст.",

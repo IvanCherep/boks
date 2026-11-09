@@ -31,22 +31,21 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   }
   const title = author.name.startsWith("@") ? `${author.name} · boks` : `${author.name} · @${author.handle}`;
   const description = authorSharePitch(author);
-  // An author with a portrait previews as their portrait card (design v48).
+  // An author with a portrait card previews as it (design v48); one who set a
+  // photo in the cabinet, as that photo; anyone else, as boks.
   const portrait = authorPortraitFor(author.handle);
-  const image = portrait?.share ? `${boksOrigin}${portrait.share}` : `${boksOrigin}/og-cover.png`;
+  const photo = author.photoVersion ? `${boksOrigin}/a/${author.handle}/photo?v=${author.photoVersion}` : null;
+  const image = portrait?.share
+    ? { url: `${boksOrigin}${portrait.share}`, width: 1200, height: 630, alt: `${portrait.given} ${portrait.family}`, type: "image/jpeg" }
+    : photo
+      ? { url: photo, width: 640, height: 640, alt: author.name, type: "image/jpeg" }
+      : { url: `${boksOrigin}/og-cover.png`, width: 1200, height: 630, alt: "boks" };
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: {
-      type: "profile",
-      siteName: "boks",
-      url,
-      title,
-      description,
-      images: [{ url: image, width: 1200, height: 630, alt: portrait ? `${portrait.given} ${portrait.family}` : "boks", ...(portrait?.share ? { type: "image/jpeg" } : {}) }],
-    },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
+    openGraph: { type: "profile", siteName: "boks", url, title, description, images: [image] },
+    twitter: { card: photo && !portrait?.share ? "summary" : "summary_large_image", title, description, images: [image.url] },
   };
 }
 

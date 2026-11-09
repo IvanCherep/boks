@@ -18,6 +18,10 @@ _Avoid_: "a boks"
 The author name printed on one bok, chosen when it is published; it does not follow later changes to the account.
 _Avoid_: display name, pen name, author name
 
+**Page name**:
+The optional name (at most 60 characters) and photo an author sets for their own page (`/@handle`) in the cabinet; they title that page and its link preview only. Comments keep the @handle and every bok keeps its byline (`author_pages`, 20261110100000).
+_Avoid_: display name, profile name
+
 **Catalogue**:
 Every published bok the feed may draw from.
 _Avoid_: catalog, library, inventory

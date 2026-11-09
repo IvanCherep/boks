@@ -397,6 +397,24 @@ export type AuthorProfileWriter = {
   boks: number;
 };
 
+/**
+ * The name and photo an author set for their own page (`author_pages`).
+ * Both optional: without a name the page is titled by the @handle, without a
+ * photo it shows a monogram. Neither touches the handle or any byline.
+ */
+export type AuthorPageIdentity = {
+  name: string | null;
+  /** Set when there is a photo; its address is `/a/<handle>/photo?v=<photoVersion>`. */
+  photoVersion: number | null;
+};
+
+/** The author's own page as the cabinet edits it. */
+export type MyAuthorPage = AuthorPageIdentity & {
+  handle: string | null;
+  /** Grows with every save; a save from a tab holding an older one is refused. */
+  version: number;
+};
+
 export type AuthorProfile = {
   /** Empty for the seeded catalog, which has a byline but no account. */
   authorUserId: string;

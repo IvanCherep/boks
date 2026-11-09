@@ -13,6 +13,8 @@ export type SharedAuthor = {
   name: string;
   boks: number;
   titles: string[];
+  /** The photo the author set (`author_pages`), as `/a/<handle>/photo?v=<photoVersion>`. */
+  photoVersion?: number | null;
 };
 
 type AuthorAnswer = {
@@ -63,30 +65,60 @@ export function authorPreviewDescription(author: SharedAuthor) {
   return `${author.boks} ${author.boks === 1 ? "bok" : "boks"} on boks${quoted ? `: ${quoted}${author.boks > author.titles.length ? " and more" : ""}` : ""}.`;
 }
 
-export async function loadAuthorForShare(
-  handle: string,
-  options: { url?: string; key?: string; timeoutMs?: number; fetchImpl?: typeof fetch } = {}
-): Promise<SharedAuthor | null> {
+type RpcOptions = { url?: string; key?: string; timeoutMs?: number; fetchImpl?: typeof fetch };
+
+/** One anon RPC, bounded; null on any failure. Server side it goes over the private network. */
+async function publicRpc<T>(name: string, body: Record<string, unknown>, options: RpcOptions): Promise<T | null> {
   const url = options.url ?? (import.meta.env.VITE_SUPABASE_URL as string | undefined);
   const key = options.key ?? (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
-  const bare = handle.replace(/^@+/, "").toLowerCase();
-  if (!url || !key || !/^[a-z0-9_.-]{1,40}$/.test(bare)) return null;
-
+  if (!url || !key) return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
   try {
     const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
-    const response = await (options.fetchImpl ?? fetch)(`${restBase}/rpc/get_boks_author`, {
+    const response = await (options.fetchImpl ?? fetch)(`${restBase}/rpc/${name}`, {
       method: "POST",
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ p_handle: bare, p_limit: 3 }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
     if (!response.ok) return null;
-    return sharedAuthorFromAnswer(bare, (await response.json()) as AuthorAnswer);
+    return (await response.json()) as T;
   } catch {
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+export function bareHandle(handle: string) {
+  const bare = handle.replace(/^@+/, "").toLowerCase();
+  return /^[a-z0-9_.-]{1,40}$/.test(bare) ? bare : null;
+}
+
+export async function loadAuthorForShare(handle: string, options: RpcOptions = {}): Promise<SharedAuthor | null> {
+  const bare = bareHandle(handle);
+  if (!bare) return null;
+  const [answer, page] = await Promise.all([
+    publicRpc<AuthorAnswer>("get_boks_author", { p_handle: bare, p_limit: 3 }, options),
+    publicRpc<{ name?: unknown; photoVersion?: unknown } | null>("get_boks_author_page", { p_handle: bare }, options),
+  ]);
+  const author = sharedAuthorFromAnswer(bare, answer);
+  if (!author) return null;
+  // The name the author set for their page outranks a byline guessed from their boks.
+  if (page && typeof page.name === "string" && page.name.trim()) author.name = page.name.trim();
+  author.photoVersion = page && typeof page.photoVersion === "number" ? page.photoVersion : null;
+  return author;
+}
+
+/** The photo an author set, as JPEG bytes and its version; null without one. */
+export async function loadAuthorPhoto(handle: string, options: RpcOptions = {}): Promise<{ version: number; jpeg: Uint8Array<ArrayBuffer> } | null> {
+  const bare = bareHandle(handle);
+  if (!bare) return null;
+  const answer = await publicRpc<{ version?: unknown; jpeg?: unknown } | null>("get_boks_author_photo", { p_handle: bare }, { timeoutMs: 4000, ...options });
+  if (!answer || typeof answer.jpeg !== "string" || typeof answer.version !== "number") return null;
+  const binary = atob(answer.jpeg.replace(/\s+/g, ""));
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return { version: answer.version, jpeg: bytes };
 }

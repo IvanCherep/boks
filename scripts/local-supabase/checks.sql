@@ -3823,3 +3823,71 @@ begin
   perform public.boks_assert((select count(*) from public.published_boks where slug like 'osen-blok%') = 3, 'published_boks carries the slug');
 end $$;
 rollback;
+
+-- Author page name and photo (20261110100000): the author sets them, readers
+-- see them, a stale tab cannot overwrite a newer save.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('a9a90000-0000-4000-8000-000000000001', 'page@boks.test', false),
+  ('a9a90000-0000-4000-8000-000000000002', 'guest-page@boks.test', true);
+insert into public.user_profiles (user_id, handle) values
+  ('a9a90000-0000-4000-8000-000000000001', 'pagewriter')
+on conflict (user_id) do update set handle = excluded.handle;
+do $$
+declare
+  v_page jsonb;
+  v_error text;
+  v_jpeg text := encode('\xffd8ffe0'::bytea || convert_to(repeat('x', 200), 'UTF8'), 'base64');
+begin
+  perform public.boks_test_login('a9a90000-0000-4000-8000-000000000001');
+  v_page := public.get_my_author_page();
+  perform public.boks_assert((v_page ->> 'version')::integer = 0 and v_page ->> 'name' is null, 'a new author page has no name and version 0');
+
+  v_page := public.save_my_author_page('  Мира   Вейл ', v_jpeg, 0);
+  perform public.boks_assert(v_page ->> 'name' = 'Мира Вейл', 'the name is saved with its spaces tidied');
+  perform public.boks_assert((v_page ->> 'version')::integer = 1 and (v_page ->> 'photoVersion')::integer = 1, 'name and photo are saved together as version 1');
+
+  begin
+    perform public.save_my_author_page('Другое имя', 'keep', 0);
+    perform public.boks_assert(false, 'a save from an overtaken tab is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Your page was changed in another tab%', 'a stale version is refused: ' || v_error);
+  end;
+
+  begin
+    perform public.save_my_author_page(repeat('я', 61), 'keep', 1);
+    perform public.boks_assert(false, 'a name over 60 characters is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'The name on your page%', 'a long name is refused: ' || v_error);
+  end;
+
+  begin
+    perform public.save_my_author_page('Мира', encode(convert_to('<svg onload=alert(1)>' || repeat('x', 200), 'UTF8'), 'base64'), 1);
+    perform public.boks_assert(false, 'a photo that is not a JPEG is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'This photo could not be read%', 'only a JPEG is accepted: ' || v_error);
+  end;
+
+  v_page := public.save_my_author_page('', 'remove', 1);
+  perform public.boks_assert(v_page ->> 'name' is null and v_page ->> 'photoVersion' is null and (v_page ->> 'version')::integer = 2, 'an empty name and removed photo bring the monogram back');
+  perform public.save_my_author_page('Мира Вейл', v_jpeg, 2);
+
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author_page('@PageWriter') ->> 'name' = 'Мира Вейл', 'a reader sees the saved name by handle');
+  perform public.boks_assert(public.get_boks_author_photo('pagewriter') ->> 'jpeg' = v_jpeg, 'a reader gets the saved photo');
+  perform public.boks_assert(public.get_boks_author_page('nobody-here') is null, 'an unknown handle has no page');
+
+  perform public.boks_test_login('a9a90000-0000-4000-8000-000000000002', true);
+  begin
+    perform public.save_my_author_page('Гость', 'keep', 0);
+    perform public.boks_assert(false, 'a guest cannot save an author page');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Sign in required%', 'a guest is refused: ' || v_error);
+  end;
+  perform public.boks_test_logout();
+end $$;
+rollback;

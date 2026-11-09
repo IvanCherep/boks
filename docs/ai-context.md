@@ -63,7 +63,7 @@
 | Читалка | `components/boks/reader-feed.tsx`, `reader-navigation.ts`, `reader-behavior.ts`, `reader-clock.ts`, `reader-events.ts`, `components/boks/reader/` |
 | Форматы и полка series | `components/boks/cinema/`, `poetry/`, `interactions/`, `series/` |
 | Аккаунт, комментарии | `components/boks/user-auth-panel.tsx`, `comments-sheet.tsx`, `supabase-browser-data.ts` |
-| Кабинет автора | `components/boks/author-console.tsx`, `lib/boks/author/` |
+| Кабинет автора | `components/boks/author-cabinet/author-cabinet.tsx`, `lib/boks/author/` |
 | Админка | `components/boks/admin-dashboard.tsx`, `components/boks/admin/` (overview, moderation, rights, content, people, guests-funnel, feedback, catalogue import, recommendation lab + experiment editor) |
 | Ранжирование | `lib/boks/recommendations/` (`feed.ts`, `strategies/`), `lib/boks/feed-service.ts` |
 | Метрики | `lib/recsys/aggregate/metrics.ts`, контракты `lib/boks/contracts.ts` |

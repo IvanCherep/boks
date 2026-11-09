@@ -150,7 +150,7 @@ See `docs/catalogue-import.md` for the rest of the format.
 | Piece | File |
 |---|---|
 | Tables, RPCs, the backfill | `supabase/migrations/20260916140000_boks_rights_and_reports.sql` |
-| The attestation on the form | `components/boks/author-console.tsx` |
+| The attestation on the form | `components/boks/author-cabinet/author-cabinet.tsx` |
 | The bok's menu and report page | `components/boks/reader/bok-menu-sheet.tsx` |
 | The admin panel | `components/boks/admin/rights-review.tsx` |
 | Batch attestation | `components/boks/admin/catalogue-import.tsx` |

@@ -58,7 +58,7 @@ Reader UI starts in:
 
 Author UI starts in:
 
-- `components/boks/author-console.tsx`
+- `components/boks/author-cabinet/author-cabinet.tsx`
 
 Admin UI starts in:
 

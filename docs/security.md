@@ -64,6 +64,15 @@ Responses use private/no-store so the CDN cannot serve an image past the
 publication check. Unknown or hidden boks return 404; render errors are 503 and
 are not cached. The CPU cap is 3000ms, with 720px rendering to bound PNG work.
 
+Author page name and photo (`author_pages`, 20261110100000) have no Data API
+grants; `save_my_author_page` is the only write: a permanent, unsuspended
+account, its own row, a name of at most 60 characters without `<`, `>` or
+control characters, a photo that starts with the JPEG signature and is under
+700 KB, and a version check so a stale tab cannot overwrite a newer save. The
+browser crops and re-encodes the photo (dropping camera metadata) before
+sending it. `/a/<handle>/photo` serves only those bytes as `image/jpeg` with
+`nosniff`; a suspended account's page name and photo are not served.
+
 ## Release Checks
 
 Run before a security-sensitive deployment:
