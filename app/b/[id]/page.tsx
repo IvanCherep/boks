@@ -4,6 +4,7 @@ import { boksOrigin } from "@/app/layout";
 import {
   loadBokForShare,
   shareDescription,
+  sharePitchFor,
   shareReadingNote,
   shareTitle,
   sharedBokRefFrom,
@@ -63,7 +64,7 @@ export async function generateMetadata({
   }
 
   const title = shareTitle(bok);
-  const description = shareDescription(bok.text);
+  const description = sharePitchFor(bok);
   const image = `${boksOrigin}/b/${bok.id}/image?v=${sharePosterVersion}`;
 
   return {

@@ -162,3 +162,16 @@ describe("a bok named by its slug", () => {
     expect(await loadBokForShare("kosa prokhorov", { url: "https://example.test", key: "key", fetchImpl })).toBeNull();
   });
 });
+
+describe("the line under a shared bok's title", () => {
+  it("says what boks is, in the bok's language, short enough for two lines", async () => {
+    const { sharePitch, sharePitchFor } = await import("@/lib/boks/share-preview");
+    expect(sharePitchFor({ language: "en" })).toBe(sharePitch.en);
+    expect(sharePitchFor({ language: "ru" })).toBe(sharePitch.ru);
+    expect(sharePitchFor({ language: null })).toBe(sharePitch.ru);
+    for (const line of Object.values(sharePitch)) {
+      expect(line.length).toBeLessThanOrEqual(150);
+      expect(line).not.toMatch(/—/);
+    }
+  });
+});

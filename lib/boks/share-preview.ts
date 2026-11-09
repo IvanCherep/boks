@@ -57,6 +57,21 @@ export function shareTitle(bok: Pick<SharedBok, "title" | "authorName">) {
   return author ? `${title} — ${author}` : title;
 }
 
+/**
+ * What a shared bok's link says under its title, in a messenger: what boks
+ * is, not the opening of the piece (2026-11-09). The title and author already
+ * name the piece; the second line is the invitation. English for an English
+ * bok, Russian for everything else.
+ */
+export const sharePitch = {
+  ru: "Короткая литература в бесконечной ленте: рассказы и стихи, которые читаются за пару минут. Листайте и находите своё на boks.",
+  en: "Short literature in an endless feed: stories and poems you can read in a couple of minutes. Scroll and find yours on boks.",
+} as const;
+
+export function sharePitchFor(bok: Pick<SharedBok, "language">) {
+  return bok.language === "en" ? sharePitch.en : sharePitch.ru;
+}
+
 /** How many lines of a poem a preview opens with. */
 export const shareDescriptionLines = 4;
 
