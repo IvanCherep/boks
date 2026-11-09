@@ -28,7 +28,7 @@ The bucket is public: an object is served to anyone who asks for its exact
 path, and nobody can list the bucket, because `storage.objects` has no row
 policy for `anon` or `authenticated`. A token is 22 characters of base64url,
 128 random bits; the route refuses anything shorter and any file name outside
-`[a-z0-9-]+.(json|mp3|webp)`, so a request cannot walk out of its folder.
+`[a-z0-9-]+.(json|mp3|webp|jpg|gif|mp4)`, so a request cannot walk out of its folder.
 
 Same-origin rather than straight from storage because the scene gestures draw
 the picture into WebGL, which refuses a cross-origin image without CORS, and
@@ -120,7 +120,9 @@ so they live in a link-only folder of their own, not in `public/`:
 - `<book>-share.jpg`, 1200x630, the link preview: the whole cover in the middle
   on a blurred copy of itself, because messengers crop a portrait image and
   not all of them take WebP. JPEG is allowed in a link-only folder for this,
-  and a `-share.jpg` is the one file served without `X-Robots-Tag`.
+  and a `-share.jpg` is the one file served without `X-Robots-Tag` (also
+  `-share.gif`, `-share.webp` and `-share.mp4`, the animated cards of the
+  preview lab, `lib/boks/preview-lab.ts`).
 
 Telegram caches a preview per address: a link sent while it was still a 404
 keeps an empty card until it is sent to `@WebpageBot`.
@@ -129,6 +131,7 @@ keeps an empty card until it is sent to `@WebpageBot`.
 |---|---|---|---|
 | `/@prokhorov` | Алексей Прохоров | 2026-11-09 | his portrait page (design v48, `components/boks/author-portraits.ts`): `prokhorov-portrait.webp`, `prokhorov.webp` and the 1200x630 card `prokhorov-share.jpg`, all in the same folder as the «Верослов» cover |
 | `/veroslov` (also `/series/veroslov`, `/series/prokhorov`) | Алексей Прохоров | 2026-11-09 | an alias of his author page, previewed as the book (`veroslov-book-share.jpg`, 1024x1024, `aliases` in `author-portraits.ts`); until 2026-11-09 `/series/veroslov` opened the shelf: |
+| `/p/<slug>` (preview lab, temporary) | Алексей Прохоров | 2026-11-09 | his author page under twenty hidden addresses, each with a different card (`lab-*-share.*` in his folder): bookmarks, squares, a 4:5 poster, GIF, animated WebP, `og:video`. Listed in Studio → Links; delete when a format is chosen |
 | (was) `/series/veroslov` | Алексей Прохоров | 2026-11-08 | the cover of «Верослов», named after the book at the poet's wish |
 
 ## Pieces
