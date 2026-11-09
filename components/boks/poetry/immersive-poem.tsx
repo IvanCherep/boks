@@ -1228,9 +1228,10 @@ export function ImmersivePoem({
 
       {/* The same ending as every other boks series piece - see
           reading-finale.tsx. The poem draws the reading, never its own end. */}
-      {status === "ended" && !withoutFinale && (
+      {status === "ended" && !withoutFinale && !textPreview && (
         <ReadingFinale
           actions={finale ? { ...finale, onComments: onComments ?? finale.onComments } : undefined}
+          onReadText={readText}
           title={manifest.title}
           byline={manifest.author}
           artwork={manifest.scenes.at(-1)?.image}

@@ -458,9 +458,10 @@ export function CinemaMode({
   }, [progress, suspended, menuOpen, moment, phase, onPlaybackChange]);
 
   function readText() {
-    textRoundTrips.set(story.id, progress.elapsedSeconds);
+    // Read after the end: coming back plays it from the start, not the end.
+    textRoundTrips.set(story.id, phase === "ended" ? 0 : progress.elapsedSeconds);
     if (textRoundTrips.size > 32) textRoundTrips.delete(textRoundTrips.keys().next().value!);
-    writePosition(story.id, progress.elapsedSeconds, progress.totalSeconds);
+    writePosition(story.id, phase === "ended" ? 0 : progress.elapsedSeconds, progress.totalSeconds);
     narrator.current?.stop(); narrator.current = null;
     (onReadText ?? onClose)();
   }
@@ -596,6 +597,7 @@ export function CinemaMode({
               finale.onNext();
             },
           }}
+          onReadText={readText}
           title={story.title}
           byline={story.authorName}
           artwork={picture.placeholder ? undefined : picture.src}

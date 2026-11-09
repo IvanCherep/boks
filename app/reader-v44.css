@@ -154,6 +154,9 @@ html, body { background-color:var(--background); }
 .bok-finale__heading h2 { max-width:260px; margin:0 auto 14px; font:italic 400 32px/1.12 "Boks Literary",serif; text-wrap:balance; overflow-wrap:anywhere; }
 .bok-finale__heading p { font-size:12px; margin:0; opacity:.8; }
 .bok-finale__heading .bok-endmark { margin:22px auto 0; }
+.bok-finale__read { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:44px; margin:22px auto 0; padding:0 20px; border:1px solid var(--border); border-radius:999px; background:#fff6e714; color:var(--foreground); font-size:15px; font-weight:600; }
+.bok-finale__read:hover { background:#fff6e724; }
+.bok-finale__read:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
 .bok-finale--immersive .aftertaste-choice { background:#17212666; backdrop-filter:blur(16px); border-color:#fff6e726; }
 .bok-finale--immersive .aftertaste-choice[aria-pressed=true] { background:#f6f1e8; border-color:#f6f1e8; color:#222621; }
 .reader-v44 .reader-sheet { position:fixed; inset:auto 6px 0; max-width:520px; margin-inline:auto; z-index:240; border:0; border-radius:28px 28px 0 0; background:var(--card); padding-bottom:max(18px,calc(12px + env(safe-area-inset-bottom))); box-shadow:0 20px 70px #10170f33; }

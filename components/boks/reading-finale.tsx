@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, RotateCcw } from "lucide-react";
+import { BookOpen, Check, RotateCcw } from "lucide-react";
 import { ReaderNextIcon as ArrowRight, ReaderHeartIcon as Heart, ReaderCommentsIcon as MessageCircle, ReaderShareIcon as Share2 } from "./reader/reader-icons";
 import { aftertasteTags, type AftertasteTag } from "@/lib/boks/contracts";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
@@ -28,9 +28,15 @@ export type FinaleActions = {
 };
 
 /** One ending for HTML text and both reading formats. No completion button. */
-export function ReadingFinale({ actions, onAgain, title, byline, artwork, inline = false }: {
+export function ReadingFinale({ actions, onAgain, onReadText, title, byline, artwork, inline = false }: {
   actions?: FinaleActions;
   onAgain: () => void;
+  /**
+   * After listening, the words themselves: a listener who wants to read the
+   * piece should not have to find it in the player's menu. Not on the text's
+   * own ending, which is already under the text.
+   */
+  onReadText?: () => void;
   title?: string;
   byline?: string;
   artwork?: string | null;
@@ -50,6 +56,7 @@ export function ReadingFinale({ actions, onAgain, title, byline, artwork, inline
     {!inline && artwork && <img className="bok-finale__backdrop" src={artwork} alt="" />}
     {!inline && <div className="bok-finale__heading">
       {title && <h2>{title}</h2>}{byline && <p>{byline}</p>}<span className="bok-endmark" aria-hidden="true">b.</span>
+      {onReadText && <button type="button" className="bok-finale__read" onClick={onReadText}><BookOpen size={18} aria-hidden="true" /><span>{t("Read text", "Читать текст")}</span></button>}
     </div>}
     <div className="bok-finale__content">
       <h3>{t("What stayed with you?", "Что осталось с вами?")}</h3>
