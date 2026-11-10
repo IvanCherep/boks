@@ -13,7 +13,8 @@
 // key, so the loop is made again; a bok no longer published loses its loop.
 //
 // Nothing here is encoded in a request: a bok published a minute ago previews
-// with its poster until the next run.
+// with its poster until the next run. The poster itself is stored here too
+// (`<id>-<key>.jpg`, asked of the app), so copies do not redraw it.
 
 import { spawn } from "node:child_process";
 import { mkdtemp, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -33,6 +34,14 @@ const phases = process.env.PHASES_DIR ?? "/static/share/curtain/phases";
  */
 const perRun = Number(process.env.PER_RUN ?? 8);
 const pauseMs = Number(process.env.PAUSE_MS ?? 4000);
+/**
+ * Posters (1200x630 JPEG, the og:image) are stored too: drawing one takes a
+ * copy about two seconds, and its memory is empty after every release. The
+ * app draws them (`/b/<id>/image`, one at a time); this only asks at a calm
+ * moment and keeps the answer, which the app then serves first.
+ */
+const postersPerRun = Number(process.env.POSTERS_PER_RUN ?? 30);
+const posterPauseMs = Number(process.env.POSTER_PAUSE_MS ?? 1500);
 const busyFlag = process.env.BUSY_FLAG ?? "/flags/busy.on";
 /**
  * One-minute load per core: a run does not start above the first, and stops
@@ -121,6 +130,17 @@ async function makeLoop(id, key, work) {
   return true;
 }
 
+async function storePoster(id, key) {
+  const response = await app(`/b/${id}/image`);
+  if (!response.ok || response.headers.get("x-curtain-key") !== key) return false; // unpublished or changed meanwhile
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length < 1000 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
+  const partial = join(out, `.${id}-${key}.jpg.part`);
+  await writeFile(partial, bytes);
+  await rename(partial, join(out, `${id}-${key}.jpg`));
+  return true;
+}
+
 async function main() {
   const started = Date.now();
   const reason = await busy(startLoadPerCore);
@@ -135,14 +155,14 @@ async function main() {
 
   const stored = new Map(); // id -> file names
   for (const name of await readdir(out)) {
-    const match = /^([0-9a-f-]{36})-([0-9a-f]{8})\.mp4$/.exec(name);
+    const match = /^([0-9a-f-]{36})-([0-9a-f]{8})\.(mp4|jpg)$/.exec(name);
     if (match) stored.set(match[1], [...(stored.get(match[1]) ?? []), name]);
-    else if (name.endsWith(".mp4.part")) await rm(join(out, name), { force: true }); // a run that died
+    else if (name.endsWith(".part")) await rm(join(out, name), { force: true }); // a run that died
   }
 
   const work = await mkdtemp(join(tmpdir(), "curtain-"));
   await writeFile(join(work, "phases.txt"), phaseList());
-  let made = 0, current = 0, failed = 0, removed = 0;
+  let made = 0, current = 0, failed = 0, removed = 0, posters = 0;
   try {
     for (const id of published) {
       try {
@@ -151,7 +171,12 @@ async function main() {
         const key = (await answer.text()).trim();
         if (!/^[0-9a-f]{8}$/.test(key)) continue;
         const name = `${id}-${key}.mp4`;
-        const old = (stored.get(id) ?? []).filter((file) => file !== name);
+        const poster = `${id}-${key}.jpg`;
+        const old = (stored.get(id) ?? []).filter((file) => file !== name && file !== poster);
+        if (!(stored.get(id) ?? []).includes(poster) && posters < postersPerRun && !(await busy(stopLoadPerCore))) {
+          if (posters > 0) await sleep(posterPauseMs);
+          if (await storePoster(id, key)) posters += 1;
+        }
         if (!(stored.get(id) ?? []).includes(name)) {
           if (made >= perRun || (made > 0 && (await busy(stopLoadPerCore)))) continue;
           if (made > 0) await sleep(pauseMs);
@@ -167,7 +192,7 @@ async function main() {
         console.error(id, error instanceof Error ? error.message : error);
       }
     }
-    // Loops of boks that are no longer published.
+    // Loops and posters of boks that are no longer published.
     for (const [id, files] of stored) {
       if (published.has(id)) continue;
       for (const file of files) {
@@ -178,7 +203,7 @@ async function main() {
   } finally {
     await rm(work, { recursive: true, force: true });
   }
-  console.log(JSON.stringify({ job: "curtain", published: published.size, made, current, removed, failed, seconds: Math.round((Date.now() - started) / 1000) }));
+  console.log(JSON.stringify({ job: "curtain", published: published.size, made, current, posters, removed, failed, seconds: Math.round((Date.now() - started) / 1000) }));
   if (failed > 0 && made === 0 && current === 0) process.exitCode = 1;
 }
 

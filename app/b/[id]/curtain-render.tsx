@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { CurtainScene, curtainFonts, curtainLoopSize, curtainOverlay, curtainPosterSize, jpegSize, type CurtainCard } from "@/lib/boks/curtain";
 import { posterPngToJpeg } from "@/lib/boks/poster-jpeg";
+import { storedCurtainPoster } from "@/lib/boks/curtain-loop";
 
 import { readFile } from "node:fs/promises";
 import { join, normalize } from "node:path";
@@ -101,12 +102,17 @@ function oneAtATime<T>(work: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function remembered(key: string, render: () => Promise<Uint8Array<ArrayBuffer>>) {
+async function remembered(
+  key: string,
+  render: () => Promise<Uint8Array<ArrayBuffer>>,
+  stored?: () => Promise<Uint8Array<ArrayBuffer> | null>
+) {
   const hit = memory.get(key);
   if (hit && Date.now() - hit.at < memoryTtlMs) return hit.bytes;
   const pending = inFlight.get(key);
   if (pending) return pending;
-  const drawing = oneAtATime(render)
+  const drawing = (stored ? stored() : Promise.resolve(null))
+    .then((bytes) => bytes ?? oneAtATime(render))
     .then((bytes) => {
       memory.delete(key);
       memory.set(key, { bytes, at: Date.now() });
@@ -125,7 +131,7 @@ export function curtainPoster(card: CurtainCard, request: Request) {
     const rendered = new ImageResponse(<CurtainScene card={card} layer="poster" width={curtainPosterSize.width} artwork={artwork} overlay={curtain} />, { ...curtainPosterSize, fonts: loadedFonts });
     // JPEG: a fifth of the PNG, which a messenger otherwise gives up on (`poster-jpeg.ts`).
     return posterPngToJpeg(await rendered.arrayBuffer(), 85);
-  });
+  }, () => storedCurtainPoster(card));
 }
 
 /** A 960x504 PNG layer for the loop job: the cover alone, or the text alone on transparency. */

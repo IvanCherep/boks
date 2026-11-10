@@ -8,7 +8,8 @@
 #   bash deploy/release.sh --rollback   back to the release that was live before
 #   bash deploy/release.sh --rollback <id>
 #
-# deploy/ops/ (the server's scripts) is copied with every release. Other server
+# deploy/ops/ and deploy/curtain/curtain.mjs (the server's scripts) are copied
+# with every release. Other server
 # configuration (compose.yml, Caddyfile, mailer/) is not part of a release: it
 # changes rarely and is copied by hand (docs/hosting.md -> Deploy).
 # Migrations are not part of it either: deploy/migrate.sh, before the release.
@@ -105,6 +106,9 @@ rsync -rlpz ${link[@]+"${link[@]}"} "$out/" "$HOST:$REMOTE/releases/$id/" -e "ss
 say "Server scripts"
 rsync -rlpz --checksum --itemize-changes deploy/ops/ "$HOST:$REMOTE/ops/" -e "ssh -o LogLevel=ERROR" \
   | sed -n 's/^[<>]f[^ ]* /  updated ops\//p'
+# The curtain job's script is mounted into its container, read on each run.
+rsync -lpz --checksum --itemize-changes deploy/curtain/curtain.mjs "$HOST:$REMOTE/curtain/curtain.mjs" -e "ssh -o LogLevel=ERROR" \
+  | sed -n 's/^[<>]f[^ ]* /  updated curtain\//p'
 
 say "Switch"
 remote "ops/switch.sh $id"

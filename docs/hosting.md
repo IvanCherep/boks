@@ -22,7 +22,7 @@ not on Cloudflare Workers and Supabase Cloud.
   service.
 - DNS: `tryboks.com` on Cloudflare, **DNS only** (grey cloud). Never turn on
   the proxy: Cloudflare is throttled in Russia. `tryboks.ru` in Selectel DNS.
-- Curtain loops for link previews: `deploy/ops/curtain.sh` every 15 minutes from `/etc/cron.d/boks-ops` runs the `curtain` job (`deploy/curtain`, image built on the server: `docker compose --profile jobs build curtain`), writing `link-only/curtain/<id>-<key>.mp4`.
+- Curtain loops for link previews: `deploy/ops/curtain.sh` every 15 minutes from `/etc/cron.d/boks-ops` runs the `curtain` job (`deploy/curtain`, image built on the server: `docker compose --profile jobs build curtain`), writing `link-only/curtain/<id>-<key>.mp4`, and the poster `<id>-<key>.jpg` (asked of the app at a calm moment, up to 30 a run), which `/b/<id>/image` serves before drawing one. `curtain.mjs` is copied by every release.
 - Ops (cron in `/etc/cron.d/boks-ops`, scripts in `deploy/ops/`): alerts (including every new account, and the Resend daily quota: 60, 80 and 95 of 100 emails),
   daily and weekly reports and trend forecasts to the team Telegram group
   through the `boks-telegram` Worker (Telegram is blocked from the server), and
@@ -102,8 +102,8 @@ git push origin main            # right away: the next release is built from mai
    `deploy/app/serve.mjs` and `release.json`;
 4. uploads it to `/opt/boks/releases/<id>` (`<id>` = time + commit; files
    unchanged since the live release become hard links, so it is quick);
-5. copies `deploy/ops/` to the server (only changed files), so the switch is
-   the one this commit expects;
+5. copies `deploy/ops/` and `deploy/curtain/curtain.mjs` to the server (only
+   changed files), so the switch is the one this commit expects;
 6. runs `ops/switch.sh <id>` on the server;
 7. checks from outside that `/`, `/series` and `/api/geo` answer 200 (three
    tries each); if one keeps failing, it puts the previous release back by
