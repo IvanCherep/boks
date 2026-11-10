@@ -227,7 +227,8 @@ live, and the commands do not do what their names suggest.
 |---|---|
 | `npm run verify:schema` | a **throwaway** Postgres container, created and destroyed per run |
 | `npm run test:supabase` | the **running local stack**, after `supabase db reset` |
-| `npx supabase db push --linked` | **production** |
+| `bash deploy/migrate.sh` | **production** (our server, since 2026-11-07) |
+| `npx supabase db push --linked` | the **retired** Supabase Cloud project, a backup only: never for production |
 
 So: **`npm run verify:schema` passing does not mean your migration is in the
 local stack.** A new RPC will be missing from the running app, and the failure
@@ -257,8 +258,7 @@ what it costs.
 Before touching production schema:
 
 ```bash
-npx supabase migration list --linked          # compare local and remote
-npx supabase db push --linked --dry-run --yes # read the SQL first
+bash deploy/migrate.sh          # dry run: lists what production does not have, and the SQL
 ```
 
 ### Schema goes first, then the Worker
@@ -275,13 +275,13 @@ This has already happened once: the submission-form change was deployed while
 order, every time:
 
 ```bash
-npx supabase migration list --linked   # must report nothing pending
-npx supabase db push --linked --yes    # only if it does
+bash deploy/migrate.sh           # must list nothing pending
+bash deploy/migrate.sh --apply   # only if it does
 npm run deploy
 ```
 
-`migration list --linked` before a deploy is the cheap check. A migration whose
-`remote` field is empty is a migration production does not have.
+`bash deploy/migrate.sh` before a deploy is the cheap check
+(`docs/agents/production-changes.md` -> Schema).
 
 ---
 

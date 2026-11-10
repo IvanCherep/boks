@@ -169,7 +169,9 @@ different path:
 # 1. validate the JSONL and build one SQL file (nothing is sent yet)
 node scripts/build-catalogue-sql.mjs /tmp/add.sql work/<batch>/ru2.jsonl work/<batch>/en2.jsonl
 # 2. load it - inserts the bok and its rights record in one transaction
-npx supabase db query --linked --file /tmp/add.sql
+#    (production is our own server: dry run first, then --apply;
+#    docs/agents/production-changes.md)
+bash deploy/sql.sh /tmp/add.sql && bash deploy/sql.sh /tmp/add.sql --apply
 # 3. re-spread the publication dates so both languages stay mixed (see below)
 # 4. embed whatever has no vector yet - or wait: the server's embedder does
 #    this every 15 minutes for every published bok (deploy/embedder)

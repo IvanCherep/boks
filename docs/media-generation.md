@@ -227,7 +227,7 @@ committed as ordinary files under `public/` and ships with the Worker.
 ### The two rules that break production
 
 ```bash
-npx supabase db push --linked   # before npm run deploy, when a migration changed
+bash deploy/migrate.sh --apply  # before npm run deploy, when a migration changed (dry run first, without --apply)
 ```
 
 **Never run `supabase config push`.** It clears the Resend password out of the

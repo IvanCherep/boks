@@ -56,19 +56,18 @@ outside the repository. Then:
 4. A new scene-gesture hint needs its translation in
    `components/boks/poetry/gesture-hints.ts`; the hint test only reads
    `public/poetry/`, so it will not catch this one.
-5. Upload the folder to production:
+5. Upload the folder to production (the server's link-only folder, which
+   only the app can read; `docs/agents/production-changes.md`):
 
    ```bash
-   for f in <folder>/*; do
-     npx supabase storage cp "$f" "ss:///link-only/<token>/$(basename "$f")" --linked --experimental
-   done
+   rsync -a <folder>/ boks-app:/opt/boks/link-only/<token>/
    ```
 
 6. Open `https://tryboks.com/l/<token>` on a phone and play it through.
 
 Keep the link and the scratch folder outside git. To take a piece down,
-delete its folder (`npx supabase storage rm -r ss:///link-only/<token> --linked
---experimental`); the page then says there is nothing at the link. Cached
+delete its folder (`ssh boks-app 'rm -r /opt/boks/link-only/<token>'`); the
+page then says there is nothing at the link. Cached
 copies expire within ten minutes.
 
 ## Published author-held pieces

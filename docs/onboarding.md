@@ -71,7 +71,8 @@ npx wrangler login                 # browser login to Cloudflare
 npx wrangler whoami                # must list the boks account
 npx supabase login                 # browser login to Supabase
 npx supabase link --project-ref vcmrvnihbptostnzaean   # asks for the database password
-npx supabase migration list --linked                   # local and remote columns should match
+# production is our own server since 2026-11-07: `bash deploy/migrate.sh` (dry run) compares
+# migrations; the linked project above is the retired Supabase Cloud backup
 ```
 
 ## 5. Create the env files

@@ -745,10 +745,13 @@ playback keeps every scene's original placement.
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
-npx supabase db push --linked   # only if a migration changed; before deploy
+bash deploy/migrate.sh          # only if a migration changed: dry run, then --apply; before deploy
 npm run deploy
-git push github main
+git push github HEAD:main
 ```
+
+The whole route for a series piece on production, with what must exist first
+(the bok), is in `docs/agents/production-changes.md`.
 
 Never run `supabase config push` — it clears the Resend password from the auth
 config and stops every sign-in email.

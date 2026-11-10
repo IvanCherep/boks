@@ -20,6 +20,9 @@ boks is a focused reading feed of complete short literature - each **bok** fits 
 > 5. **Rollback:** `bash deploy/release.sh --rollback` (also no downtime). See what is live: `bash deploy/release.sh --list`.
 > 6. **After a release, a reload shows the new version.** Open tabs keep working on the old one; old scripts are kept
 >    for two days, then a stale tab reloads itself once.
+> 7. **Any change to production** (a release, new boks, a series piece, a data fix, server config): follow
+>    `docs/agents/production-changes.md`. It has one route per kind of change, how readers are kept from noticing,
+>    and what needs the user's approval first. Data on production goes through `bash deploy/sql.sh` (dry run, then `--apply`).
 
 Read in this order, then the focused doc for the task:
 
@@ -75,6 +78,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 | Database | a new file in `supabase/migrations/` | `scripts/local-supabase/checks.sql`, `docs/security.md` |
 | Catalogue, rights | `docs/catalogue-import.md`, `docs/copyright.md` | `lib/boks/import/` |
 | Hosting, deploy, server | `docs/hosting.md` | `deploy/` (`release.sh`, `ops/switch.sh`, `compose.yml`, `Caddyfile`) |
+| Anything on production: release, new boks, series piece, data fix | `docs/agents/production-changes.md` | `deploy/sql.sh`, `deploy/migrate.sh` |
 | Product behaviour | `specs/boks-product-spec.md` first | - |
 
 A database change that adds a table or view the Data API must reach grants it in the same migration (`docs/adr/0011-explicit-data-api-grants.md`). Prefer a `security definer` function with its own checks over a table grant, and never grant a write on a view.

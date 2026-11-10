@@ -2,7 +2,8 @@
 // Turns curated JSONL into one SQL file that loads a catalogue.
 //
 //   node scripts/build-catalogue-sql.mjs out.sql work/…/ru.jsonl work/…/en.jsonl
-//   npx supabase db query --linked --file out.sql
+//   bash deploy/sql.sh out.sql            (dry run on production, rolled back)
+//   bash deploy/sql.sh out.sql --apply    (docs/agents/production-changes.md)
 //
 // Why a file and not the admin console's importer: `import_boks_batch` takes
 // 100 rows per call, needs an admin JWT, and ignores `genre`, `mood` and

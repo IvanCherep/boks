@@ -22,6 +22,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 | Running boks locally, and the env-file traps | `docs/local-environment-runbook.md` |
 | Services and credentials an agent may touch (Cloudflare, Supabase, Resend) | `docs/local-agent-infrastructure.md` |
 | Hosting, deploy, post-deploy checks, rollback, plan costs | `docs/hosting.md` |
+| Changing production without readers noticing: one route per kind of change (code, boks, series, data, schema, server) | `docs/agents/production-changes.md` |
 | Test layers and manual QA scripts | `docs/testing.md` |
 | Running a user test, operator routine | `docs/boks-operations.md` |
 | Scale limits and the next growth moves | `docs/growth-readiness.md` |

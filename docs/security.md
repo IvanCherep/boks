@@ -88,9 +88,10 @@ npm run build
 npx supabase db advisors --linked --type all --level warn --fail-on none
 ```
 
-Database changes go first: `supabase db push --linked --dry-run`, review the
-expected forward migrations, push them, run `verify:supabase`, then deploy the
-Worker. After deployment, inspect response headers and test `/`, `/admin`, the
+Database changes go first: `bash deploy/migrate.sh` (dry run), review the
+expected forward migrations, `--apply` them, then `npm run deploy`
+(`docs/agents/production-changes.md`). The `--linked` advisor command above
+reads the retired Supabase Cloud project, kept as a backup. After deployment, inspect response headers and test `/`, `/admin`, the
 reader API, a magic-link request, comments, likes, and an admin-only RPC.
 
 ## Advisor Exceptions And Residual Risk

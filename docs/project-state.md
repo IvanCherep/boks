@@ -681,7 +681,7 @@ things to know about it:
 `vcmrvnihbptostnzaean` (eu-west-2).
 
 Migrations predating the two local v44 migrations listed above are applied to
-production (check with `npx supabase migration list --linked` before release).
+production (since 2026-11-07 production is our own server: check with `bash deploy/migrate.sh`).
 The production database includes the prior schema changes, which means **older client code will not work against it** —
 `user_profiles.display_name` no longer exists, and code that reads it breaks.
 Deploy from current source rather than rolling the Worker back on its own.

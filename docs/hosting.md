@@ -334,7 +334,9 @@ the table instead, and the ranker fetches embeddings rather than asking the
 database for nearest neighbours, so nothing is broken - but the index earns
 nothing today and should be re-checked before the catalogue grows.
 
-Re-run any of this with:
+These figures were taken on the Supabase Cloud project before the move; the
+commands below still read that retired backup, not the server. Re-run any of
+this with:
 
 ```bash
 npx supabase inspect db db-stats --linked        # size, cache hit, WAL

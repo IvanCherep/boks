@@ -139,15 +139,13 @@ Then edit the new migration under `supabase/migrations/`, update verification
 scripts, and run:
 
 ```bash
-npm run verify:supabase
-npx supabase migration list --linked
+npm run verify:schema
+bash deploy/migrate.sh          # production: lists what it lacks (dry run)
 ```
 
-Use a dry run before applying linked migrations:
-
-```bash
-npx supabase db push --linked --dry-run --yes
-```
+Apply with `bash deploy/migrate.sh --apply`, before the release that needs it
+(`docs/agents/production-changes.md` -> Schema). `--linked` commands reach the
+retired Supabase Cloud project, not production.
 
 Only apply migrations after reviewing the SQL and RLS impact.
 
