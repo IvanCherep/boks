@@ -174,6 +174,14 @@ curl -s https://tryboks.com/api/geo
 ssh boks-app 'cd /opt/boks && docker compose ps'   # every service Up, app copies (healthy)
 ```
 
+App logs survive releases in the host journal (compose.yml: `logging: journald`,
+tag `boks-app`); `docker compose logs app-blue` shows only the current copy.
+Errors of the last day, grouped:
+
+```bash
+ssh boks-app 'journalctl -t boks-app --since "-24h" -o cat | grep -iE "error|fail|unhandled" | cut -c1-200 | sort | uniq -c | sort -rn | head -40'
+```
+
 Then open `https://tryboks.com/`, `/series` and `/admin` in a browser and check
 the console for errors. HTML responses carry CSP, HSTS, `nosniff`,
 `X-Frame-Options: DENY`, Referrer-Policy and Permissions-Policy.

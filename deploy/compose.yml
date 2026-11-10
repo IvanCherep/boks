@@ -147,6 +147,14 @@ services:
       - ./slots/blue:/app:ro
       - ./geoip:/geoip:ro
     stop_grace_period: 30s
+    # Logs go to the host's journal, not to a file inside the container: a
+    # release recreates both copies, and Docker's own log file goes with the
+    # container. `docker compose logs app-blue` still works for the current
+    # copy; across releases: `journalctl -t boks-app --since "-24h"`.
+    logging:
+      driver: journald
+      options:
+        tag: boks-app
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/__health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
       interval: 5s
