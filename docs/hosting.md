@@ -176,7 +176,9 @@ ssh boks-app 'cd /opt/boks && docker compose ps'   # every service Up, app copie
 
 App logs survive releases in the host journal (compose.yml: `logging: journald`,
 tag `boks-app`); `docker compose logs app-blue` shows only the current copy.
-Errors of the last day, grouped:
+Reading the journal needs the `systemd-journal` group (`sudo usermod -aG
+systemd-journal boks`, done 2026-11-10); without it `journalctl` shows nothing
+and says nothing. Errors of the last day, grouped:
 
 ```bash
 ssh boks-app 'journalctl -t boks-app --since "-24h" -o cat | grep -iE "error|fail|unhandled" | cut -c1-200 | sort | uniq -c | sort -rn | head -40'
