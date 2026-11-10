@@ -10,8 +10,9 @@
 # it has and exits), wait until the new one is healthy, then the other copy.
 # While one copy restarts, the other answers everything.
 #
-# If a copy does not become healthy, both are put back on the release that was
-# live before, and the script fails. Nothing else on the server is touched.
+# If a copy does not become healthy, or the pages it requested of itself while
+# warming up failed (serve.mjs, /__warmup), both are put back on the release
+# that was live before, and the script fails. Nothing else on the server is touched.
 #
 # Static files: the release's dist/client is copied into ./static, which Caddy
 # serves, before any copy switches, and files of older releases stay for two
@@ -52,17 +53,29 @@ put() {  # <colour> <release-id>
   wait_healthy "app-$1"
 }
 
+# The release's self-check: before its first 200 a copy requests its own main
+# pages (deploy/app/serve.mjs); any 5xx or timeout there fails the release
+# before the second copy is touched. A copy without the check (an old release)
+# passes. NO_SELF_CHECK=1 skips it (an urgent rollback while the database is down).
+self_check() {  # <colour>
+  [ "${NO_SELF_CHECK:-}" = 1 ] && return 0
+  local report
+  report=$(docker compose exec -T "app-$1" node -e "fetch('http://127.0.0.1:3000/__warmup').then(r=>r.ok?r.text():'{}').then(t=>console.log(t),()=>console.log('{}'))" 2>/dev/null || echo '{}')
+  log "app-$1 warm-up: $report"
+  ! grep -q '"ok":false' <<<"$report"
+}
+
 log "release $id (live: ${live:-none})"
 rsync -a "$rel/dist/client/" static/
 
 done_colours=()
 for colour in blue green; do
-  if put "$colour" "$id"; then
+  if put "$colour" "$id" && self_check "$colour"; then
     done_colours+=("$colour")
     log "app-$colour is on $id"
     sleep 3   # Caddy sees the copy healthy within a second; leave margin
   else
-    log "app-$colour did not become healthy on $id. Its last lines:"
+    log "app-$colour failed on $id (not healthy, or its pages failed the warm-up). Its last lines:"
     docker compose logs --tail 30 "app-$colour" >&2 || true
     if [ -n "$live" ] && [ "$live" != "$id" ]; then
       log "putting both copies back on $live"

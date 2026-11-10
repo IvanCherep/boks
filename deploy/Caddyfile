@@ -85,9 +85,12 @@
 		}
 
 		# Pages, API routes and everything rendered: the Node app, two copies.
-		# A copy that is starting or stopping answers 503 on /__health and gets
-		# no traffic; a request that cannot reach one copy is retried on the
-		# other, so a release (deploy/ops/switch.sh) is invisible to readers.
+		# A copy that is warming up or stopping answers 503 on /__health and
+		# gets no traffic; a request that cannot reach one copy is retried on
+		# the other, so a release (deploy/ops/switch.sh) is invisible to readers.
+		# Two failed checks in a row, not one: a copy busy for a second (say,
+		# drawing a link-preview card) stays in rotation. A stopping copy keeps
+		# answering for 5 s after its first 503 (deploy/app/serve.mjs).
 		handle {
 			reverse_proxy app-blue:3000 app-green:3000 {
 				lb_policy least_conn
@@ -96,7 +99,7 @@
 				health_uri /__health
 				health_interval 1s
 				health_timeout 2s
-				health_fails 1
+				health_fails 2
 				health_passes 1
 			}
 		}

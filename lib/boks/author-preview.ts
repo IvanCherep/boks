@@ -67,28 +67,36 @@ export function authorPreviewDescription(author: SharedAuthor) {
 
 type RpcOptions = { url?: string; key?: string; timeoutMs?: number; fetchImpl?: typeof fetch };
 
-/** One anon RPC, bounded; null on any failure. Server side it goes over the private network. */
+/**
+ * One anon RPC, bounded; null on any failure. Server side it goes over the
+ * private network. A timeout or a server error is tried once more, so a
+ * database blip does not leave a shared link with a bare preview.
+ */
 async function publicRpc<T>(name: string, body: Record<string, unknown>, options: RpcOptions): Promise<T | null> {
   const url = options.url ?? (import.meta.env.VITE_SUPABASE_URL as string | undefined);
   const key = options.key ?? (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
   if (!url || !key) return null;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
-  try {
-    const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
-    const response = await (options.fetchImpl ?? fetch)(`${restBase}/rpc/${name}`, {
-      method: "POST",
-      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
+  const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
+    try {
+      const response = await (options.fetchImpl ?? fetch)(`${restBase}/rpc/${name}`, {
+        method: "POST",
+        headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      if (response.status >= 500) continue;
+      if (!response.ok) return null;
+      return (await response.json()) as T;
+    } catch {
+      // timeout or network: try again
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return null;
 }
 
 export function bareHandle(handle: string) {

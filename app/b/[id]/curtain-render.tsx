@@ -72,14 +72,50 @@ const memory = new Map<string, { bytes: Uint8Array<ArrayBuffer>; at: number }>()
 const memoryLimit = 300;
 const memoryTtlMs = 6 * 60 * 60 * 1000;
 
+/**
+ * Drawing a card holds the event loop for a good part of a second (resvg, then
+ * the pure-JavaScript JPEG encoder). Messengers fetch a new link's image from
+ * several crawlers at once, and a busy loop also delays the copy's /__health,
+ * which takes it out of rotation. So: one render at a time per process, the
+ * same card is drawn once however many ask for it, and past a short queue a
+ * request gets 503 (the route says Retry-After) instead of waiting.
+ */
+const inFlight = new Map<string, Promise<Uint8Array<ArrayBuffer>>>();
+const queueLimit = 12;
+let queued = 0;
+let tail: Promise<unknown> = Promise.resolve();
+
+export class CurtainBusyError extends Error {
+  constructor() {
+    super("Curtain render queue is full");
+  }
+}
+
+function oneAtATime<T>(work: () => Promise<T>): Promise<T> {
+  if (queued >= queueLimit) return Promise.reject(new CurtainBusyError());
+  queued += 1;
+  const run = tail.then(work).finally(() => {
+    queued -= 1;
+  });
+  tail = run.catch(() => undefined);
+  return run;
+}
+
 async function remembered(key: string, render: () => Promise<Uint8Array<ArrayBuffer>>) {
   const hit = memory.get(key);
   if (hit && Date.now() - hit.at < memoryTtlMs) return hit.bytes;
-  const bytes = await render();
-  memory.delete(key);
-  memory.set(key, { bytes, at: Date.now() });
-  while (memory.size > memoryLimit) memory.delete(memory.keys().next().value!);
-  return bytes;
+  const pending = inFlight.get(key);
+  if (pending) return pending;
+  const drawing = oneAtATime(render)
+    .then((bytes) => {
+      memory.delete(key);
+      memory.set(key, { bytes, at: Date.now() });
+      while (memory.size > memoryLimit) memory.delete(memory.keys().next().value!);
+      return bytes;
+    })
+    .finally(() => inFlight.delete(key));
+  inFlight.set(key, drawing);
+  return drawing;
 }
 
 /** The 1200x630 JPEG for og:image. */

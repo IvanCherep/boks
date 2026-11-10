@@ -163,8 +163,8 @@ export function sharedBokRefFrom(segment: string): { id: string } | { slug: stri
  * Reads one published boks with the publishable key, for the preview only.
  *
  * `published_boks` is what `anon` may read, so a draft or a hidden piece cannot
- * reach a preview by construction rather than by a filter here. Bounded at two
- * seconds and swallowing every failure: a messenger waiting on us is a link
+ * reach a preview by construction rather than by a filter here. Two tries of
+ * two seconds each, and swallowing every failure: a messenger waiting on us is a link
  * that previews as nothing, and a reader waiting on us is worse - the page has
  * to render either way.
  */
@@ -177,21 +177,52 @@ export async function loadBokForShare(
   const filter = /^[0-9a-f-]{36}$/i.test(id) ? `id=eq.${id}` : /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) && id.length <= 80 ? `slug=eq.${id}` : null;
   if (!url || !key || !filter) return null;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
-  try {
-    const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
-    const request = `${restBase}/published_boks?${filter}&select=id,title,author_name,text,minutes,language,slug&limit=1`;
-    const response = await (options.fetchImpl ?? fetch)(request, {
-      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!response.ok) return null;
-    const rows = (await response.json()) as PreviewRow[];
-    return sharedBokFromRow(Array.isArray(rows) ? rows[0] : null);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
+  const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
+  const request = `${restBase}/published_boks?${filter}&select=id,title,author_name,text,minutes,language,slug&limit=1`;
+  const lookup = async (): Promise<SharedBok | null | undefined> => {
+    // A second try after a blip: a link preview that a messenger fetched while
+    // the database hiccuped would otherwise say "boks" and nothing else, and
+    // messengers keep a preview for days.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 2000);
+      try {
+        const response = await (options.fetchImpl ?? fetch)(request, {
+          headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+          signal: controller.signal,
+        });
+        if (response.status >= 500) continue;
+        if (!response.ok) return null;
+        const rows = (await response.json()) as PreviewRow[];
+        return sharedBokFromRow(Array.isArray(rows) ? rows[0] : null);
+      } catch {
+        // timeout or network: try again
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    return undefined;
+  };
+  // The page, its metadata and its image each look the bok up; on the server
+  // they share one answer for a few seconds. Tests (options.fetchImpl) do not.
+  const answer = options.fetchImpl || options.url ? await lookup() : await briefly(filter, lookup);
+  return answer ?? null;
+}
+
+const briefMs = 15_000;
+const brief = new Map<string, { at: number; answer: Promise<SharedBok | null | undefined> }>();
+
+/** A lookup shared for briefMs; a failed one (undefined) is not kept. */
+function briefly(key: string, lookup: () => Promise<SharedBok | null | undefined>) {
+  const now = Date.now();
+  const hit = brief.get(key);
+  if (hit && now - hit.at < briefMs) return hit.answer;
+  const answer = lookup().then((result) => {
+    if (result === undefined) brief.delete(key);
+    return result;
+  });
+  brief.delete(key);
+  brief.set(key, { at: now, answer });
+  while (brief.size > 500) brief.delete(brief.keys().next().value!);
+  return answer;
 }

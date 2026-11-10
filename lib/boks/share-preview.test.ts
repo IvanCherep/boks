@@ -94,6 +94,28 @@ describe("reading a bok for a preview", () => {
     ).resolves.toBeNull();
   });
 
+  it("asks once more after a server error, so a blip does not cost the preview", async () => {
+    const row = { id: chekhov.id, title: "Тоска", author_name: "Антон Чехов", text: chekhov.text, minutes: 7, language: "ru" };
+    let calls = 0;
+    const flaky = (async () => {
+      calls += 1;
+      return calls === 1 ? new Response("busy", { status: 503 }) : new Response(JSON.stringify([row]), { status: 200 });
+    }) as typeof fetch;
+    const bok = await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: flaky });
+    expect(bok?.title).toBe("Тоска");
+    expect(calls).toBe(2);
+  });
+
+  it("does not ask again when the bok is simply not there", async () => {
+    let calls = 0;
+    const missing = (async () => {
+      calls += 1;
+      return new Response("[]", { status: 200 });
+    }) as typeof fetch;
+    await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: missing });
+    expect(calls).toBe(1);
+  });
+
   it("returns null for an empty answer, which is what a hidden or missing bok gives", async () => {
     const empty = (async () => new Response("[]", { status: 200 })) as typeof fetch;
     await expect(

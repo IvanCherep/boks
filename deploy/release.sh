@@ -8,8 +8,9 @@
 #   bash deploy/release.sh --rollback   back to the release that was live before
 #   bash deploy/release.sh --rollback <id>
 #
-# Server configuration (compose.yml, Caddyfile, ops/, mailer/) is not part of
-# a release: it changes rarely and is copied by hand (docs/hosting.md -> Deploy).
+# deploy/ops/ (the server's scripts) is copied with every release. Other server
+# configuration (compose.yml, Caddyfile, mailer/) is not part of a release: it
+# changes rarely and is copied by hand (docs/hosting.md -> Deploy).
 # Migrations are not part of it either: deploy/migrate.sh, before the release.
 #
 # Refuses a commit that does not contain everything on GitHub's main branch:
@@ -97,13 +98,36 @@ live=$(remote 'cat releases/CURRENT 2>/dev/null' || true)
 link=(); [ -n "$live" ] && link=(--checksum --link-dest="$REMOTE/releases/$live")
 rsync -rlpz ${link[@]+"${link[@]}"} "$out/" "$HOST:$REMOTE/releases/$id/" -e "ssh -o LogLevel=ERROR"
 
+# The server's scripts (switch.sh among them) travel with the release, so the
+# switch below is always the one this commit expects. Each file is replaced
+# whole (written aside, then renamed), so a script running from cron finishes
+# on the version it started with.
+say "Server scripts"
+rsync -rlpz --checksum --itemize-changes deploy/ops/ "$HOST:$REMOTE/ops/" -e "ssh -o LogLevel=ERROR" \
+  | sed -n 's/^[<>]f[^ ]* /  updated ops\//p'
+
 say "Switch"
 remote "ops/switch.sh $id"
 
 say "Check $ORIGIN"
+# From outside, through Caddy. Three tries per page, so a blip on this
+# machine's network does not undo a good release; a page that keeps failing
+# puts the previous release back.
 for path in / /series /api/geo; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' "$ORIGIN$path")
+  for try in 1 2 3; do
+    code=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$ORIGIN$path" || true)
+    [ "$code" = 200 ] && break
+    sleep 3
+  done
   echo "$path $code"
-  [ "$code" = 200 ] || { echo "Not 200. Look, then: bash deploy/release.sh --rollback" >&2; exit 1; }
+  if [ "$code" != 200 ]; then
+    if [ -n "$live" ] && [ "$live" != "$id" ]; then
+      echo "$path answers $code. Putting $live back." >&2
+      remote "ops/switch.sh $live" || echo "Rollback failed too. Look at the server." >&2
+    else
+      echo "$path answers $code, and there is no earlier release to go back to." >&2
+    fi
+    exit 1
+  fi
 done
 say "Live: $id"

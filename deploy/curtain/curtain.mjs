@@ -158,14 +158,23 @@ async function main() {
           if (!(await makeLoop(id, key, work))) continue;
           made += 1;
         } else current += 1;
-        for (const file of old) await rm(join(out, file), { force: true }), (removed += 1);
+        for (const file of old) {
+          await rm(join(out, file), { force: true });
+          removed += 1;
+        }
       } catch (error) {
         failed += 1;
         console.error(id, error instanceof Error ? error.message : error);
       }
     }
     // Loops of boks that are no longer published.
-    for (const [id, files] of stored) if (!published.has(id)) for (const file of files) await rm(join(out, file), { force: true }), (removed += 1);
+    for (const [id, files] of stored) {
+      if (published.has(id)) continue;
+      for (const file of files) {
+        await rm(join(out, file), { force: true });
+        removed += 1;
+      }
+    }
   } finally {
     await rm(work, { recursive: true, force: true });
   }

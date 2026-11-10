@@ -102,8 +102,12 @@ git push origin main            # right away: the next release is built from mai
    `deploy/app/serve.mjs` and `release.json`;
 4. uploads it to `/opt/boks/releases/<id>` (`<id>` = time + commit; files
    unchanged since the live release become hard links, so it is quick);
-5. runs `ops/switch.sh <id>` on the server;
-6. checks that `/`, `/series` and `/api/geo` answer 200.
+5. copies `deploy/ops/` to the server (only changed files), so the switch is
+   the one this commit expects;
+6. runs `ops/switch.sh <id>` on the server;
+7. checks from outside that `/`, `/series` and `/api/geo` answer 200 (three
+   tries each); if one keeps failing, it puts the previous release back by
+   itself and fails.
 
 How `ops/switch.sh` keeps the site up:
 
@@ -114,8 +118,18 @@ How `ops/switch.sh` keeps the site up:
   it finishes the ones in flight and exits; the new one starts on the new
   release and gets traffic once its health check passes. Then the other copy.
   A request that cannot reach one copy is retried on the other;
-- if a copy does not become healthy, both are put back on the previous
-  release and the command fails;
+- a new copy warms up before its first 200 (`deploy/app/serve.mjs`): it asks
+  itself for `/`, `/series`, `/api/geo`, one bok page and that bok's preview
+  image, so the first readers do not get cold code. That is also the
+  release's self-check: if any of them answered 5xx or timed out, the switch
+  stops before touching the second copy (its log line `warm-up:` lists each
+  page with its status and time);
+- if a copy does not become healthy or fails the self-check, both are put
+  back on the previous release and the command fails (`NO_SELF_CHECK=1
+  ops/switch.sh <id>` skips the self-check, for an urgent rollback while the
+  database itself is down);
+- a stopping copy answers 503 for 5 s (Caddy needs two failed checks to take it
+  out), then finishes its requests and exits as soon as they are done;
 - `alerts.sh` stays quiet about the copies while `flags/deploying` exists.
 
 **Open tabs.** A reload always gets the new release. A tab that is not
@@ -129,21 +143,24 @@ database is shared by both copies and by every open tab during and after a
 release.
 
 **Not part of a release:** `deploy/compose.yml`, `deploy/Caddyfile`,
-`deploy/ops/`, `deploy/mailer/`, `deploy/busy/`. They change rarely; copy the
-changed file and apply it deliberately:
+`deploy/mailer/`, `deploy/busy/` (`deploy/ops/` is: step 5 above). They change
+rarely; copy the changed file and apply it deliberately:
 
 ```bash
-rsync -a deploy/ops/ boks-app:/opt/boks/ops/                          # scripts: nothing to restart
+rsync -a deploy/ops/ boks-app:/opt/boks/ops/                          # scripts, between releases: nothing to restart
 rsync -a deploy/busy/ boks-app:/opt/boks/busy/                        # waiting page: nothing to restart
 rsync -a supabase/templates/ boks-app:/opt/boks/templates/            # email templates: read on every send
-rsync -a deploy/Caddyfile boks-app:/opt/boks/Caddyfile && \
-  ssh boks-app 'cd /opt/boks && docker compose restart caddy'          # a bind-mounted file: reload does not see it
+rsync --inplace deploy/Caddyfile boks-app:/opt/boks/Caddyfile        # --inplace: the bind mount keeps seeing the same file
+ssh boks-app 'cd /opt/boks && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile'
+                                                                     # a graceful reload: no connection is dropped
 rsync -a deploy/compose.yml boks-app:/opt/boks/compose.yml && \
   ssh boks-app 'cd /opt/boks && docker compose up -d <service>'        # only the service you changed
 ```
 
 Restarting `caddy`, `auth`, `rest` or `db` is a short outage (seconds for
-Caddy); do it deliberately, not as part of a release. Never `docker compose up
+Caddy); do it deliberately, not as part of a release. A Caddyfile change never
+needs a restart: copy it with `--inplace` and reload, as above (without
+`--inplace` rsync replaces the file and the container keeps the old one). Never `docker compose up
 -d` the app copies by hand to release: use `npm run deploy`.
 
 ## Verify Production
