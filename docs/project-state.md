@@ -228,6 +228,23 @@ and of the last two days stay, so open tabs keep working; an older tab reloads
 itself once (`lib/boks/stale-release.ts`). Migrations: `deploy/migrate.sh`.
 The Cloudflare `wrangler deploy` script is gone; `docs/hosting.md` -> Deploy.
 
+**Every bok link previews with the curtain (2026-11-10).** `/b/<id>` gives
+messengers the approved curtain card: its cover behind the boks curtain, the
+title and byline (`lib/boks/curtain.tsx`), a 1200x630 JPEG drawn by the app on
+the first request, so a bok has it the moment it is published, with no work by
+anyone. Beside it, as og:video, a 10 s loop of the curtain closing and opening
+(`/b/<id>/loop.mp4`, 960x504, about 0.4-0.6 MB): every 15 minutes
+`deploy/ops/curtain.sh` (cron in `/etc/cron.d/boks-ops`) runs a one-off
+`curtain` container (`deploy/curtain`, Node and ffmpeg, compose profile
+`jobs`) that makes the loop of each published bok that has none for its
+current card, from the two layers the app draws (`/b/<id>/curtain/art.png`,
+`text.png`) and the 85 shared phases (`public/share/curtain/`), into
+`link-only/curtain/`; the app serves it after its publication check. A bok
+without a loop yet previews with the poster alone. Optional hand-set windows
+on a cover: `curtainPosition` in `lib/boks/curtain.tsx`. Author cards with a
+portrait are made offline (`scripts/curtain-preview.py`): Алексей Прохоров's
+is his night portrait behind the curtain, with its loop (`shareLoop`).
+
 **Embeddings are automatic (2026-11-08).** Every 15 minutes the server runs
 `deploy/ops/embed.sh` (cron in `/etc/cron.d/boks-ops`): a one-off `embedder`
 container (`deploy/embedder`, compose profile `jobs`) gives each published

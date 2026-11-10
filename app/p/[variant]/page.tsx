@@ -3,6 +3,7 @@ import { boksOrigin } from "@/app/layout";
 import { OpeningAuthor } from "../../a/[handle]/opening-author";
 import { OpenSharedBok, OpeningSharedBok } from "../../b/[id]/open-shared-bok";
 import { sharedBokRedirectScript } from "@/lib/boks/shared-bok-redirect";
+import { OgVideo } from "@/components/boks/og-video";
 import { previewLabAuthor, previewLabFilePath, previewLabVariant } from "@/lib/boks/preview-lab";
 
 /**
@@ -47,27 +48,13 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   };
 }
 
-/**
- * The video's tags, written here because the metadata API of this build drops
- * `og:video:type` and `og:video:secure_url`, and Telegram and Facebook want
- * the type to play it. In order, the details right after `og:video`; React
- * hoists them into the head.
- */
 export default async function PreviewLabPage({ params }: { params: RouteParams | Promise<RouteParams> }) {
   const { variant: slug } = await params;
   const variant = previewLabVariant(String(slug ?? "").toLowerCase());
   const videoPath = variant?.video ? previewLabFilePath(variant.video.file) : null;
   return (
     <>
-      {variant?.video && videoPath && (
-        <>
-          <meta property="og:video" content={`${boksOrigin}${videoPath}`} />
-          <meta property="og:video:secure_url" content={`${boksOrigin}${videoPath}`} />
-          <meta property="og:video:type" content={variant.video.type} />
-          <meta property="og:video:width" content={String(variant.video.width)} />
-          <meta property="og:video:height" content={String(variant.video.height)} />
-        </>
-      )}
+      {variant?.video && videoPath && <OgVideo url={`${boksOrigin}${videoPath}`} width={variant.video.width} height={variant.video.height} />}
       {variant?.bok ? (
         <>
           {/* A person goes straight to the reader; a crawler, which runs no script, keeps the page. */}

@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
-"""Link previews with the curtain: a still poster and a short loop per card.
+"""Curtain link previews, offline: a still poster and a short loop per card.
 
     python3 scripts/curtain-preview.py cards.json --out DIR [--video]
 
-`cards.json` is a list of descriptors built from trusted data (the catalogue,
-an author's own portrait), never from a request:
+Every published bok gets its curtain card from the app itself
+(`lib/boks/curtain.tsx`, `/b/<id>/image`) and its loop from the server job
+(`deploy/curtain/`). This script is for cards outside the catalogue, such as
+an author's portrait card (`authorPortraits[].share` and `shareLoop`), and for
+trying a design. `cards.json` is a list of descriptors:
 
-    {"key": "kosa", "title": "коса", "byline": "Алексей Прохоров",
-     "art": "/path/cover.webp", "cropTop": 0.525, "titleSize": 106}
+    {"key": "prokhorov-curtain-share", "title": "Алексей Прохоров",
+     "byline": "@prokhorov", "art": "/path/portrait.png", "focus": [1, 0.5]}
 
 `art` may be missing (a neutral background), `byline` may be missing (no line),
-`focus` [x, y] places the art when there is no `cropTop`. For each card it
-writes `<key>.jpg` (1200x630, for og:image) and with `--video` `<key>.mp4`
-(960x504, 10 s, 30 fps, silent, for og:video).
-
-What is shared by every card - the curtain, the yellow bar, the knob and the
-word boks - is baked once into `assets/curtain/`: one transparent overlay for
-the poster and 85 phases of the curtain closing and opening for the loop. A
-card only adds its art below and its title above, so a new bok needs no design
-work and a run is a few seconds. Encoding happens here, in a job, never in a
-request. Design and numbers: the curtain handoff (2026-11-10), scene 1920x1008.
+`cropTop` (a share of the scaled art's height) or `focus` [x, y] places the
+art. It writes `<key>.jpg` (1200x630) and with `--video` `<key>.mp4` (960x504,
+10 s, 30 fps, silent). The shared layers - curtain, yellow bar, knob, the word
+boks - are in `public/share/curtain/`.
 """
 
 from __future__ import annotations
@@ -33,8 +30,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
-LAYERS = ROOT / "assets/curtain"
-TITLE_FONT = LAYERS / "boks-preview-serif-450.ttf"
+LAYERS = ROOT / "public/share/curtain"
+TITLE_FONT = ROOT / "public/share/fonts/boks-preview-serif-450.ttf"
 BYLINE_FONT = ROOT / "public/share/fonts/noto-sans.ttf"
 STAGE = 1920
 ART_LEFT = 352  # the art starts here, always under the curtain

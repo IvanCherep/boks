@@ -223,6 +223,21 @@ services:
       db:
         condition: service_healthy
 
+  # Background job, not a service: run every 15 minutes by deploy/ops/curtain.sh
+  # (`docker compose --profile jobs run --rm curtain`). Gives every published
+  # bok its curtain link-preview loop (deploy/curtain/curtain.mjs), written to
+  # ./link-only/curtain, which the app reads through Caddy :8082. The shared
+  # curtain phases come from the live release's static files.
+  curtain:
+    build: ./curtain
+    image: boks-curtain
+    profiles: ["jobs"]
+    volumes:
+      - ./link-only/curtain:/out
+      - ./static:/static:ro
+    mem_limit: 1g
+    cpus: 2
+
 volumes:
   dbdata:
   caddydata:

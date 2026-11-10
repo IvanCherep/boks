@@ -3,6 +3,7 @@ import { boksOrigin } from "@/app/layout";
 import { authorSharePitch, loadAuthorForShare } from "@/lib/boks/author-preview";
 import { OpeningAuthor } from "./opening-author";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
+import { OgVideo } from "@/components/boks/og-video";
 
 /**
  * A shareable link to one author: `/a/<handle>`, shared as `/@<handle>`
@@ -49,6 +50,13 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   };
 }
 
-export default function SharedAuthorPage() {
-  return <OpeningAuthor />;
+export default async function SharedAuthorPage({ params }: { params: RouteParams | Promise<RouteParams> }) {
+  // The curtain loop of a registered portrait; the picture above stays the still for everyone else.
+  const loop = authorPortraitFor(await handleFrom(params))?.shareLoop;
+  return (
+    <>
+      {loop && <OgVideo url={`${boksOrigin}${loop}`} width={960} height={504} />}
+      <OpeningAuthor />
+    </>
+  );
 }

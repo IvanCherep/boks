@@ -11,8 +11,9 @@ import {
 } from "@/lib/boks/share-preview";
 import { sharedBokRedirectScript } from "@/lib/boks/shared-bok-redirect";
 import { OpenSharedBok, OpeningSharedBok } from "./open-shared-bok";
-import { sharePosterVersion } from "@/lib/boks/share-link";
-import { sharePosterSize } from "@/lib/boks/share-poster";
+import { curtainCardFor, curtainLoopSize, curtainPosterSize } from "@/lib/boks/curtain";
+import { curtainLoopReady } from "@/lib/boks/curtain-loop";
+import { OgVideo } from "@/components/boks/og-video";
 
 /**
  * A shareable link to one boks.
@@ -69,7 +70,9 @@ export async function generateMetadata({
 
   const title = shareTitle(bok);
   const description = sharePitchFor(bok);
-  const image = `${boksOrigin}/b/${bok.id}/image?v=${sharePosterVersion}`;
+  // The curtain card (`lib/boks/curtain.tsx`); its key changes with anything drawn, so a
+  // messenger that cached the old card fetches the new one.
+  const image = `${boksOrigin}/b/${bok.id}/image?v=${curtainCardFor(bok).key}`;
 
   return {
     title,
@@ -81,7 +84,7 @@ export async function generateMetadata({
       url,
       title,
       description,
-      images: [{ url: image, ...sharePosterSize, alt: title, type: "image/jpeg" }],
+      images: [{ url: image, ...curtainPosterSize, alt: title, type: "image/jpeg" }],
       authors: bok.authorName ? [bok.authorName] : undefined,
     },
     twitter: { card: "summary_large_image", title, description, images: [image] },
@@ -113,9 +116,15 @@ export default async function SharedBokPage({
   params: RouteParams | Promise<RouteParams>;
 }) {
   const id = await idFor(await refFrom(params));
+  // The curtain loop beside the poster, once the server job has made it
+  // (`deploy/curtain/`); until then the poster alone. Internal and quick.
+  const bok = await loadBokForShare(id);
+  const card = bok ? curtainCardFor(bok) : null;
+  const loop = card && (await curtainLoopReady(card)) ? `${boksOrigin}/b/${card.id}/loop.mp4?v=${card.key}` : null;
 
   return (
     <>
+      {loop && <OgVideo url={loop} {...curtainLoopSize} />}
       {/* Before anything below is painted: a person goes straight to the
           reader, and a crawler, which runs no script, keeps the page. */}
       <script dangerouslySetInnerHTML={{ __html: sharedBokRedirectScript(id) }} />

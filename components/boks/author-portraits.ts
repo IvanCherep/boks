@@ -21,6 +21,8 @@ export type AuthorPortrait = {
   focus?: string;
   /** The link preview card, 1200x630, for messengers (`app/a/[handle]/page.tsx`). */
   share?: string;
+  /** The curtain loop, 960x504 MP4, offered beside `share` as og:video (`scripts/curtain-preview.py`). */
+  shareLoop?: string;
   /**
    * Other addresses that open this author's page, each with a preview of its
    * own: `/veroslov`, named after his book, previews as the book.
@@ -46,7 +48,9 @@ export const authorPortraits: readonly AuthorPortrait[] = [
     photo: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-portrait.webp",
     thumb: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov.webp",
     focus: "52% 15%",
-    share: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-share.jpg",
+    // The curtain card (2026-11-10): his night portrait behind the boks curtain.
+    share: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-curtain-share.jpg",
+    shareLoop: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-curtain-share.mp4",
     aliases: [
       {
         // Named after his book, at the poet's wish; was the series shelf until 2026-11-09.
