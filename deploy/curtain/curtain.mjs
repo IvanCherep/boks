@@ -148,7 +148,9 @@ async function main() {
     console.log(JSON.stringify({ job: "curtain", skipped: reason }));
     return;
   }
-  const listed = await fetch(`${rest}/published_boks?select=id`, { signal: AbortSignal.timeout(20_000) });
+  // Newest first: a bok just published is the one being shared right now, so
+  // its loop is made in the first run after it appears, ahead of any backlog.
+  const listed = await fetch(`${rest}/published_boks?select=id&order=created_at.desc,id`, { signal: AbortSignal.timeout(20_000) });
   if (!listed.ok) throw new Error(`published_boks: ${listed.status}`);
   const published = new Set((await listed.json()).map((row) => row.id).filter((id) => uuid.test(id)));
   await stat(join(phases, "phase-084.webp")); // the shared phases are there
