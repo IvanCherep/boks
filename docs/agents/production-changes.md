@@ -173,7 +173,7 @@ because it is applied before the release and both keep running after it.
 1. Write a new file in `supabase/migrations/` (never edit an applied one),
    additive only: new tables, new nullable columns or columns with defaults,
    new RPCs, new versions of RPCs under the same signature that still return
-   what the old client reads. Grants in the same file (`docs/adr/0011`).
+   what the old client reads. Grants in the same file (`docs/adr/0011-explicit-data-api-grants.md`).
 2. `npm run verify:schema` (a throwaway Postgres).
 3. `bash deploy/migrate.sh` (dry run: lists what production lacks), then
    `bash deploy/migrate.sh --apply`.
