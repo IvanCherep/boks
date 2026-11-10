@@ -235,8 +235,9 @@ services:
     volumes:
       - ./link-only/curtain:/out
       - ./static:/static:ro
+      - ./flags:/flags:ro
     mem_limit: 1g
-    cpus: 2
+    cpus: 1
 
 volumes:
   dbdata:

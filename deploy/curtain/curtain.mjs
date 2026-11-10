@@ -17,15 +17,25 @@
 
 import { spawn } from "node:child_process";
 import { mkdtemp, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { cpus, tmpdir } from "node:os";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const apps = (process.env.APP_URLS ?? "http://app-blue:3000,http://app-green:3000").split(",");
 const rest = process.env.REST_URL ?? "http://rest:3000";
 const out = process.env.OUT_DIR ?? "/out";
 const phases = process.env.PHASES_DIR ?? "/static/share/curtain/phases";
-/** A run makes at most this many loops (about 2 s each); the rest wait fifteen minutes. */
-const perRun = Number(process.env.PER_RUN ?? 60);
+/**
+ * Gentle on purpose: the first run, all 230 boks at once, took the site into
+ * its overload page (2026-11-10). A run makes at most this many loops, one
+ * core, a pause between them, and none while the server is busy; the rest
+ * wait fifteen minutes. A new bok still gets its loop within one run.
+ */
+const perRun = Number(process.env.PER_RUN ?? 8);
+const pauseMs = Number(process.env.PAUSE_MS ?? 4000);
+const busyFlag = process.env.BUSY_FLAG ?? "/flags/busy.on";
+/** Skip the run, or stop making loops, above this one-minute load per core. */
+const maxLoadPerCore = Number(process.env.MAX_LOAD ?? 0.6);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** A response from whichever app copy answers: one may be stopping for a release. */
@@ -55,6 +65,25 @@ function phaseList() {
   return [...runs.flatMap(([phase, frames]) => [file(phase), `duration ${(frames / 30).toFixed(6)}`]), file(0)].join("\n") + "\n";
 }
 
+/** The server's own load (/proc/loadavg is the host's), or the overload page is on. */
+async function busy() {
+  try {
+    await stat(busyFlag);
+    return "overload page is on";
+  } catch {
+    // no flag
+  }
+  try {
+    const load = Number((await readFile("/proc/loadavg", "utf8")).split(" ")[0]);
+    if (load / cpus().length > maxLoadPerCore) return `load ${load}`;
+  } catch {
+    // unknown: go on
+  }
+  return null;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function ffmpeg(args) {
   return new Promise((resolve, reject) => {
     const child = spawn("nice", ["-n", "10", "ffmpeg", ...args], { stdio: ["ignore", "ignore", "pipe"] });
@@ -79,7 +108,7 @@ async function makeLoop(id, key, work) {
     "-loop", "1", "-framerate", "30", "-i", join(work, "text.png"),
     "-filter_complex", "[1:v]fps=30,format=rgba[curtain];[0:v][curtain]overlay=format=auto[covered];[covered][2:v]overlay=format=auto,format=yuv420p",
     "-t", "10", "-r", "30", "-an",
-    "-c:v", "libx264", "-preset", "slow", "-crf", "26",
+    "-c:v", "libx264", "-preset", "slow", "-crf", "26", "-threads", "1", "-filter_threads", "1",
     "-movflags", "+faststart", "-f", "mp4", partial,
   ]);
   // Whole or nothing: the app only ever sees a finished file.
@@ -89,6 +118,11 @@ async function makeLoop(id, key, work) {
 
 async function main() {
   const started = Date.now();
+  const reason = await busy();
+  if (reason) {
+    console.log(JSON.stringify({ job: "curtain", skipped: reason }));
+    return;
+  }
   const listed = await fetch(`${rest}/published_boks?select=id`, { signal: AbortSignal.timeout(20_000) });
   if (!listed.ok) throw new Error(`published_boks: ${listed.status}`);
   const published = new Set((await listed.json()).map((row) => row.id).filter((id) => uuid.test(id)));
@@ -114,7 +148,8 @@ async function main() {
         const name = `${id}-${key}.mp4`;
         const old = (stored.get(id) ?? []).filter((file) => file !== name);
         if (!(stored.get(id) ?? []).includes(name)) {
-          if (made >= perRun) continue;
+          if (made >= perRun || (made > 0 && (await busy()))) continue;
+          if (made > 0) await sleep(pauseMs);
           if (!(await makeLoop(id, key, work))) continue;
           made += 1;
         } else current += 1;
