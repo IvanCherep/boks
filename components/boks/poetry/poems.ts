@@ -94,6 +94,10 @@ const poems: Record<string, string> = {
   "4eb182a0-770e-4b95-9059-07a31b229d78": "/l/uS_BvF9AbsYex07lzuXnVw/f/manifest.json",
   // Алексей Прохоров — полет сквозь сны
   "cc083c1c-ae37-4390-b607-8abd4edd2f31": "/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+  // Алексей Прохоров — сошлись по швам
+  "521c8ccd-83ed-478f-9f77-1eb2d6f8eff4": "/l/OrrNP--o_GduWs1egPhStQ/f/manifest.json",
+  // Алексей Прохоров — наконец-то родился я
+  "3e680406-1683-431a-b18e-4095f9caea2e": "/l/h-WA7D-nUlZjtgFvBwU1_w/f/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

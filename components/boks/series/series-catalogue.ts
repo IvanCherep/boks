@@ -159,6 +159,32 @@ export const seriesPieces: readonly SeriesPiece[] = [
     moments: 0,
     premieredOn: "2026-11-10",
   },
+  {
+    storyId: "521c8ccd-83ed-478f-9f77-1eb2d6f8eff4",
+    format: "poem",
+    language: "ru",
+    title: "сошлись по швам",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-soshlis-po-shvam.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 43,
+    scenes: 3,
+    moments: 0,
+    premieredOn: "2026-11-10",
+  },
+  {
+    storyId: "3e680406-1683-431a-b18e-4095f9caea2e",
+    format: "poem",
+    language: "ru",
+    title: "наконец-то родился я",
+    author: "Алексей Прохоров",
+    cover: "/series/prokhorov-nakonets-to-rodilsya-ya.webp",
+    coverFocus: "60% 60%",
+    durationSeconds: 104,
+    scenes: 7,
+    moments: 0,
+    premieredOn: "2026-11-10",
+  },
   // The Halloween three, in the order they are meant to be heard: Poe for the
   // eye, Dickinson for the hand, Hardy to end on something human.
   {
@@ -641,12 +667,14 @@ export const seriesCollections: readonly SeriesCollection[] = [
     // A poet's own section, read by the poet. Short first, the long roses last.
     id: "prokhorov",
     storyIds: [
+      "521c8ccd-83ed-478f-9f77-1eb2d6f8eff4",
       "cc083c1c-ae37-4390-b607-8abd4edd2f31",
       "cc7e3800-3567-42c1-ba08-8554a345e25c",
       "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07",
       "4c517503-f15f-4602-9d29-e1ac34cbbfad",
       "6c74c9da-dca3-4a16-b238-12c93242dc1f",
       "c79992b0-37ea-41f9-a2c8-cc645a3b43b7",
+      "3e680406-1683-431a-b18e-4095f9caea2e",
       "4eb182a0-770e-4b95-9059-07a31b229d78",
     ],
     from: "2026-11-08",
