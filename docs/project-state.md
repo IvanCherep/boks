@@ -240,7 +240,7 @@ anyone. Beside it, as og:video, a 10 s loop of the curtain closing and opening
 current card, from the two layers the app draws (`/b/<id>/curtain/art.png`,
 `text.png`) and the 85 shared phases (`public/share/curtain/`), into
 `link-only/curtain/`; the app serves it after its publication check. A bok
-without a loop yet previews with the poster alone. The job is gentle on purpose: at most 8 loops a run, one core, a pause between them, and none while the load is high or the overload page is on; the first run, all boks at once, put the site on its waiting page for some minutes (2026-11-10). Optional hand-set windows
+without a loop yet previews with the poster alone. The job is gentle on purpose: at most 8 loops a run, one core, a pause between them, none started while the load is above 0.6 a core, and a stop between loops above 1.0 a core or while the overload page is on; the first run, all boks at once, put the site on its waiting page for some minutes (2026-11-10). Optional hand-set windows
 on a cover: `curtainPosition` in `lib/boks/curtain.tsx`. Author cards with a
 portrait are made offline (`scripts/curtain-preview.py`): Алексей Прохоров's
 is his night portrait behind the curtain, with its loop (`shareLoop`).

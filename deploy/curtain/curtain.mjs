@@ -34,8 +34,13 @@ const phases = process.env.PHASES_DIR ?? "/static/share/curtain/phases";
 const perRun = Number(process.env.PER_RUN ?? 8);
 const pauseMs = Number(process.env.PAUSE_MS ?? 4000);
 const busyFlag = process.env.BUSY_FLAG ?? "/flags/busy.on";
-/** Skip the run, or stop making loops, above this one-minute load per core. */
-const maxLoadPerCore = Number(process.env.MAX_LOAD ?? 0.6);
+/**
+ * One-minute load per core: a run does not start above the first, and stops
+ * between loops above the second. The second is higher because making a loop
+ * itself lifts the load of this two-core server past the first.
+ */
+const startLoadPerCore = Number(process.env.START_LOAD ?? 0.6);
+const stopLoadPerCore = Number(process.env.STOP_LOAD ?? 1.0);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** A response from whichever app copy answers: one may be stopping for a release. */
@@ -66,7 +71,7 @@ function phaseList() {
 }
 
 /** The server's own load (/proc/loadavg is the host's), or the overload page is on. */
-async function busy() {
+async function busy(maxLoadPerCore) {
   try {
     await stat(busyFlag);
     return "overload page is on";
@@ -118,7 +123,7 @@ async function makeLoop(id, key, work) {
 
 async function main() {
   const started = Date.now();
-  const reason = await busy();
+  const reason = await busy(startLoadPerCore);
   if (reason) {
     console.log(JSON.stringify({ job: "curtain", skipped: reason }));
     return;
@@ -148,7 +153,7 @@ async function main() {
         const name = `${id}-${key}.mp4`;
         const old = (stored.get(id) ?? []).filter((file) => file !== name);
         if (!(stored.get(id) ?? []).includes(name)) {
-          if (made >= perRun || (made > 0 && (await busy()))) continue;
+          if (made >= perRun || (made > 0 && (await busy(stopLoadPerCore)))) continue;
           if (made > 0) await sleep(pauseMs);
           if (!(await makeLoop(id, key, work))) continue;
           made += 1;

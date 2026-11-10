@@ -233,6 +233,7 @@ services:
     image: boks-curtain
     profiles: ["jobs"]
     volumes:
+      - ./curtain/curtain.mjs:/curtain/curtain.mjs:ro
       - ./link-only/curtain:/out
       - ./static:/static:ro
       - ./flags:/flags:ro
