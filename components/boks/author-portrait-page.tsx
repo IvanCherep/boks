@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { AuthorProfile } from "@/components/boks/client-types";
-import { authorInitials, mountAuthorRings, splitAuthorName, type RingsController } from "@/components/boks/author-rings";
+import { authorInitials, splitAuthorName } from "@/components/boks/author-rings";
+import { AuthorStage } from "@/components/boks/author-stage/author-stage";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
@@ -11,9 +12,10 @@ import { plural } from "@/lib/i18n/messages";
 /**
  * An author's page (design v49), for every author.
  *
- * The first screen: the portrait - or, with no photo, a paper medallion with
- * the initials - inside living annual rings (`author-rings.ts`), the name set
- * large, the handle, and one action, Follow. A small Share opens the public
+ * The first screen is a stage (`author-stage/`, 2026-11-10): a velvet curtain
+ * the reader can draw opens on the portrait; with no photo it stays closed and
+ * the name stands on the velvet. The name set large, the handle, one action,
+ * Follow, and a link down "To the boks". A small Share opens the public
  * profile link. Below, on the same dark ground, the boks as equal square
  * covers; a publisher of many writers also gets an index of them.
  *
@@ -65,9 +67,6 @@ export function AuthorPortraitPage({
   const [notice, setNotice] = useState("");
   const [copyFallback, setCopyFallback] = useState(false);
   const page = useRef<HTMLDivElement>(null);
-  const field = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const rings = useRef<RingsController | null>(null);
   // An account with no public name is set by its handle, without the @ (the
   // line under it says "@boks"), and its medallion carries one letter.
   const nameless = identity.name.startsWith("@");
@@ -81,17 +80,6 @@ export function AuthorPortraitPage({
     // The layer takes focus, so no button shows a ring before a key is pressed.
     page.current?.focus({ preventScroll: true });
   }, []);
-
-  useEffect(() => {
-    if (!canvas.current || !field.current) return;
-    rings.current = mountAuthorRings(canvas.current, { host: field.current, root: page.current });
-    return () => { rings.current?.destroy(); rings.current = null; };
-  }, []);
-
-  useEffect(() => {
-    if (sharing) rings.current?.pause();
-    else rings.current?.resume();
-  }, [sharing]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -156,42 +144,40 @@ export function AuthorPortraitPage({
 
   return (
     <div ref={page} className="ap" role="dialog" aria-modal="true" aria-label={identity.name} tabIndex={-1}>
-      <section className={`ap-hero${identity.photo ? "" : " ap-hero--initials"}`}>
-        <div className="ap-hero__atmosphere" aria-hidden="true" />
-        <header className="ap-hero__header">
+      <AuthorStage
+        photo={identity.photo}
+        focus={identity.focus}
+        scrollRoot={page}
+        libraryId="ap-library"
+        curtainLabel={t("Curtain", "Занавес")}
+        ribbonHint={t("Drag or press the ribbon", "Потяните за ленту или нажмите на неё")}
+        toWorks={t("To the boks", "К бокам")}
+        header={<>
           <button type="button" className="ap-icon ap-back" onClick={onClose} aria-label={t("Back", "Назад")}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5m6-6-6 6 6 6" /></svg>
           </button>
           <span className="ap-brand" aria-hidden="true">boks</span>
           <button type="button" className="ap-icon" onClick={openShare} aria-label={t("Share this author", "Поделиться автором")}>{shareIcon}</button>
-        </header>
-        <div className="ap-rings">
-          <div ref={field} className="ap-rings__field" aria-hidden="true"><canvas ref={canvas} /></div>
-          <figure className={`ap-portrait${identity.photo ? "" : " ap-portrait--initials"}`} aria-hidden={!identity.photo}>
-            {avatar("large")}
-          </figure>
-        </div>
-        <div className="ap-hero__copy">
+        </>}
+        title={
           <h1 translate="no" style={{ "--ap-fit": fit } as CSSProperties}>
-            {given && <span className="ap-hero__given">{given}</span>}
-            <span className="ap-hero__family">{family}<span className="ap-dot">.</span></span>
+            {given && <span className="as-given">{given}</span>}
+            <span className="as-family">{family}<span className="ap-dot">.</span></span>
           </h1>
-          <span className="ap-handle">
-            {publishedBy && onOpenAccount
-              ? <>{t("Published by", "Публикует")} <button type="button" className="ap-handle__link" onClick={onOpenAccount}>@{publishedBy}</button></>
-              : `@${identity.handle}`}
-          </span>
-          <div className="ap-hero__actions">
-            <button type="button" className={`ap-follow${following ? " is-following" : ""}`} aria-pressed={following}
-              onClick={onToggleFollow} disabled={busy || !author?.authorUserId}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={following ? "m4 12 5 5L20 6" : "M12 4v16M4 12h16"} /></svg>
-              <span>{following ? t("Following", "Вы подписаны") : publishedBy ? t(`Follow @${publishedBy}`, `Подписаться на @${publishedBy}`) : t("Follow", "Подписаться")}</span>
-            </button>
-          </div>
-        </div>
-      </section>
+        }
+        handle={publishedBy && onOpenAccount
+          ? <>{t("Published by", "Публикует")} <button type="button" className="ap-handle__link" onClick={onOpenAccount}>@{publishedBy}</button></>
+          : `@${identity.handle}`}
+        actions={
+          <button type="button" className={`ap-follow${following ? " is-following" : ""}`} aria-pressed={following}
+            onClick={onToggleFollow} disabled={busy || !author?.authorUserId}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={following ? "m4 12 5 5L20 6" : "M12 4v16M4 12h16"} /></svg>
+            <span>{following ? t("Following", "Вы подписаны") : publishedBy ? t(`Follow @${publishedBy}`, `Подписаться на @${publishedBy}`) : t("Follow", "Подписаться")}</span>
+          </button>
+        }
+      />
 
-      <section className="ap-library" aria-labelledby="ap-library-title">
+      <section id="ap-library" className="ap-library" aria-labelledby="ap-library-title" tabIndex={-1}>
         <div className="ap-library__inner">
           <h2 id="ap-library-title" className="ap-library__title">{t("Boks", "Боки")}<span>.</span></h2>
           {(status || !author) && <p className="ap-library__status" role="status">{status || t("Loading…", "Загружаем…")}</p>}

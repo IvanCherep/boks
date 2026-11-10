@@ -10,6 +10,7 @@ import "./reader-v44.css";
 import "./formats-v44.css";
 import "./social-v44.css";
 import "./author-v49.css";
+import "./author-stage.css";
 import "./author-cabinet-v51.css";
 import "./admin-v44.css";
 import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";

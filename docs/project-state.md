@@ -228,6 +228,17 @@ and of the last two days stay, so open tabs keep working; an older tab reloads
 itself once (`lib/boks/stale-release.ts`). Migrations: `deploy/migrate.sh`.
 The Cloudflare `wrangler deploy` script is gone; `docs/hosting.md` -> Deploy.
 
+**The author page opens on a stage (2026-11-10).** The first screen of every
+author's page (`components/boks/author-stage/`, `app/author-stage.css`, design:
+the boks-author-stage handoff) is a red velvet curtain gathered by the yellow
+boks ribbon. With a photo it opens on the black-and-white portrait, and the
+reader can draw it by the ribbon or the cloth, or press the ribbon (keys too);
+without a photo it stays closed and the name stands on the velvet. "To the
+boks" scrolls to the library. Light: a 48 KB velvet and a few KB of ribbon in
+`public/share/curtain/stage/`, one WebGL shader that draws only while the
+curtain moves and loads after first paint, the CSS velvet as its fallback and
+the whole of the closed curtain. Reduced motion: open at once.
+
 **Every bok link previews with the curtain (2026-11-10).** `/b/<id>` gives
 messengers the approved curtain card: its cover behind the boks curtain, the
 title and byline (`lib/boks/curtain.tsx`), a 1200x630 JPEG drawn by the app on
