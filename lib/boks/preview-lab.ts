@@ -21,6 +21,8 @@ export type PreviewLabVariant = {
   image: { file: string; width: number; height: number; type: "image/jpeg" | "image/gif" | "image/webp"; kb: number };
   /** An `og:video` beside the picture: Telegram and a few others play it. */
   video?: { file: string; width: number; height: number; type: "video/mp4"; kb: number };
+  /** Opens this bok in the reader instead of the author's page, previewing with its title. */
+  bok?: { id: string; title: string; description: string; locale?: string };
 };
 
 export const previewLabAuthor = "prokhorov";
@@ -244,7 +246,49 @@ export const previewLabVariants: readonly PreviewLabVariant[] = [
     image: { file: "lab-shtora-kvadrat-poster-share.jpg", width: 1080, height: 1080, type: "image/jpeg", kb: 123 },
     video: { file: "lab-shtora-kvadrat-video-share.mp4", width: 1080, height: 1080, type: "video/mp4", kb: 305 },
   },
+  // Series 5 (2026-11-10): the approved curtain, made by the generator that
+  // would serve every bok - `scripts/curtain-cards.mts` reads the catalogue,
+  // `scripts/curtain-preview.py` lays the shared curtain over the cover. A
+  // poster for every network and a 10 s loop for og:video.
+  curtain("zanaves-avtor", "Curtain: author", "Занавес: автор", 113, 373),
+  curtain("zanaves-kosa", "Curtain: «коса»", "Занавес: «коса»", 148, 437, { id: "cc7e3800-3567-42c1-ba08-8554a345e25c", title: "коса" }),
+  curtain("zanaves-pobeg", "Curtain: «из возвращения в побег»", "Занавес: «из возвращения в побег»", 132, 428, { id: "6c74c9da-dca3-4a16-b238-12c93242dc1f", title: "из возвращения в побег" }),
+  curtain("zanaves-pamyat-shva", "Curtain: «память шва»", "Занавес: «память шва»", 95, 344, { id: "c79992b0-37ea-41f9-a2c8-cc645a3b43b7", title: "память шва" }),
+  curtain("zanaves-azbuka-very", "Curtain: «азбука веры»", "Занавес: «азбука веры»", 91, 338, { id: "4c517503-f15f-4602-9d29-e1ac34cbbfad", title: "азбука веры" }),
+  curtain("zanaves-megiddo", "Curtain: «у горы Мегиддо»", "Занавес: «у горы Мегиддо»", 114, 382, { id: "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07", title: "у горы Мегиддо" }),
+  curtain("zanaves-rozy", "Curtain: «розы Сарагосы»", "Занавес: «розы Сарагосы»", 198, 584, { id: "4eb182a0-770e-4b95-9059-07a31b229d78", title: "розы Сарагосы" }),
+  curtain("zanaves-polet", "Curtain: «полет сквозь сны», no hand crop", "Занавес: «полет сквозь сны», без ручного кадра", 110, 388, { id: "cc083c1c-ae37-4390-b607-8abd4edd2f31", title: "полет сквозь сны" }),
+  curtain("zanaves-poe", "Curtain: another author, Poe", "Занавес: другой автор, По", 125, 410, { id: "0b94e076-f41d-4f81-a2d2-c1e1efe2d9e7", title: "Spirits of the Dead", byline: "Edgar Allan Poe", en: true }),
+  curtain("zanaves-dickinson", "Curtain: another author, Dickinson", "Занавес: другой автор, Дикинсон", 136, 438, { id: "7cf8f28a-3d1a-49df-a4bb-b10a274e5347", title: "There is no Frigate like a Book", byline: "Emily Dickinson", en: true }),
 ];
+
+/** A curtain card: poster 1200x630 and loop 960x504, `lab-<slug>-share.*`. */
+function curtain(
+  slug: string,
+  en: string,
+  ru: string,
+  posterKb: number,
+  loopKb: number,
+  bok?: { id: string; title: string; byline?: string; en?: boolean }
+): PreviewLabVariant {
+  const byline = bok?.byline ?? "Алексей Прохоров";
+  return {
+    slug,
+    name: { en, ru },
+    note: {
+      en: bok ? "Opens the bok in the reader. Poster for every network, a 10 s loop where og:video plays." : "Opens the author's page. Poster for every network, a 10 s loop where og:video plays.",
+      ru: bok ? "Открывает бок в читалке. Постер для всех сетей, 10-секундная петля там, где играет og:video." : "Открывает страницу автора. Постер для всех сетей, 10-секундная петля там, где играет og:video.",
+    },
+    image: { file: `lab-${slug}-share.jpg`, width: 1200, height: 630, type: "image/jpeg", kb: posterKb },
+    video: { file: `lab-${slug}-share.mp4`, width: 960, height: 504, type: "video/mp4", kb: loopKb },
+    bok: bok && {
+      id: bok.id,
+      title: `${bok.title} — ${byline}`,
+      description: bok.en ? `${bok.title}, by ${byline}: read and listen on boks.` : `«${bok.title}», ${byline}: читайте и слушайте на boks.`,
+      locale: bok.en ? "en_US" : "ru_RU",
+    },
+  };
+}
 
 export function previewLabVariant(slug: string | null | undefined) {
   return previewLabVariants.find((variant) => variant.slug === slug) ?? null;

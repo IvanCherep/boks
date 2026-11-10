@@ -1,0 +1,51 @@
+{
+  "revision": "deep-quarter-no-moire-v1",
+  "stage": {
+    "width": 1920,
+    "height": 1008
+  },
+  "poster": {
+    "width": 1200,
+    "height": 630,
+    "overlay": "foreground-open-1200x630.png"
+  },
+  "loop": {
+    "width": 960,
+    "height": 504,
+    "fps": 30,
+    "durationSeconds": 10,
+    "frameCount": 300,
+    "audio": false
+  },
+  "foreground": {
+    "directory": "foreground-960x504",
+    "filePattern": "phase-%03d.webp",
+    "phaseCount": 85,
+    "phaseRange": [
+      0,
+      84
+    ],
+    "sourceFrames": [
+      45,
+      129
+    ],
+    "alpha": "straight, lossless when present; fully opaque phases may decode as RGB",
+    "frameToPhase": "clamp(frame < 141 ? frame - 45 : 225 - frame, 0, 84)"
+  },
+  "motion": {
+    "openHoldEnd": 1.5,
+    "closedHoldStart": 4.3,
+    "closedHoldEnd": 4.7,
+    "openHoldStart": 7.5
+  },
+  "layers": [
+    "cover_or_author_portrait",
+    "foreground",
+    "title_and_byline"
+  ],
+  "coverLeft": 352,
+  "openPuck": {
+    "x": 393.6,
+    "y": 564.48
+  }
+}
