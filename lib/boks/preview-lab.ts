@@ -212,6 +212,38 @@ export const previewLabVariants: readonly PreviewLabVariant[] = [
     note: { en: "1080x1080, the flick: for VK, OK and Instagram-style square previews.", ru: "1080x1080, быстрый щелчок: для квадратных превью ВК, ОК, Instagram." },
     image: { file: "lab-svet-kvadrat-share.gif", width: 1080, height: 1080, type: "image/gif", kb: 211 },
   },
+  // Series 4 (2026-11-10): the curtain. The finger-knob slides in on its yellow
+  // bar, catches a red velvet curtain and draws it aside, and the cloth gathers
+  // into the knob. Video with a still poster only: as a GIF the velvet weighs
+  // over 1 MB, past what WhatsApp and others accept.
+  {
+    slug: "shtora",
+    name: { en: "Curtain: author (video)", ru: "Штора: автор (видео)" },
+    note: { en: "MP4 1200x630, 6.4 s: the knob catches the curtain and drags it aside with a little hesitation. Poster for the rest.", ru: "MP4 1200x630, 6,4 с: шарик цепляет штору и отводит её с заминкой. Остальным постер." },
+    image: { file: "lab-shtora-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 87 },
+    video: { file: "lab-shtora-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 291 },
+  },
+  {
+    slug: "shtora-ryvok",
+    name: { en: "Curtain: one yank (video)", ru: "Штора: рывком (видео)" },
+    note: { en: "MP4 1200x630, 4.8 s: the same in one quick yank.", ru: "MP4 1200x630, 4,8 с: то же одним быстрым рывком." },
+    image: { file: "lab-shtora-ryvok-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 87 },
+    video: { file: "lab-shtora-ryvok-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 228 },
+  },
+  {
+    slug: "shtora-bok",
+    name: { en: "Curtain: «память шва» (video)", ru: "Штора: «память шва» (видео)" },
+    note: { en: "A work card: the curtain opens on the bok's own picture. Leads to the author's page.", ru: "Карточка произведения: штора открывает картину бока. Ведёт на страницу автора." },
+    image: { file: "lab-shtora-bok-poster-share.jpg", width: 1200, height: 630, type: "image/jpeg", kb: 87 },
+    video: { file: "lab-shtora-bok-video-share.mp4", width: 1200, height: 630, type: "video/mp4", kb: 323 },
+  },
+  {
+    slug: "shtora-kvadrat",
+    name: { en: "Curtain: square (video)", ru: "Штора: квадрат (видео)" },
+    note: { en: "MP4 1080x1080, the yank, with a square poster.", ru: "MP4 1080x1080, рывком, с квадратным постером." },
+    image: { file: "lab-shtora-kvadrat-poster-share.jpg", width: 1080, height: 1080, type: "image/jpeg", kb: 123 },
+    video: { file: "lab-shtora-kvadrat-video-share.mp4", width: 1080, height: 1080, type: "video/mp4", kb: 305 },
+  },
 ];
 
 export function previewLabVariant(slug: string | null | undefined) {
