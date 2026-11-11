@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/deploy/ribbon/node_modules
 /.pnp
 .pnp.*
 .yarn/*

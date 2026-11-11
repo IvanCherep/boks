@@ -109,6 +109,9 @@ rsync -rlpz --checksum --itemize-changes deploy/ops/ "$HOST:$REMOTE/ops/" -e "ss
 # The curtain job's script is mounted into its container, read on each run.
 rsync -lpz --checksum --itemize-changes deploy/curtain/curtain.mjs "$HOST:$REMOTE/curtain/curtain.mjs" -e "ssh -o LogLevel=ERROR" \
   | sed -n 's/^[<>]f[^ ]* /  updated curtain\//p'
+# The ribbon job (code, fonts, logo, its compose file); its container mounts it.
+rsync -rlpz --checksum --itemize-changes --exclude node_modules deploy/ribbon/ "$HOST:$REMOTE/ribbon/" -e "ssh -o LogLevel=ERROR" \
+  | sed -n 's/^[<>]f[^ ]* /  updated ribbon\//p'
 
 say "Switch"
 remote "ops/switch.sh $id"

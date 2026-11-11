@@ -24,6 +24,11 @@ export type AuthorPortrait = {
   /** The curtain loop, 960x504 MP4, offered beside `share` as og:video (`scripts/curtain-preview.py`). */
   shareLoop?: string;
   /**
+   * The picture of the ribbon link card (`lib/boks/ribbon.ts`): a wide image,
+   * at least 1200 px across, and where its window sits (object-position, 0..1).
+   */
+  ribbonArt?: { path: string; position: { x: number; y: number } };
+  /**
    * Other addresses that open this author's page, each with a preview of its
    * own: `/veroslov`, named after his book, previews as the book.
    */
@@ -51,6 +56,8 @@ export const authorPortraits: readonly AuthorPortrait[] = [
     // The curtain card (2026-11-10): his night portrait behind the boks curtain.
     share: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-curtain-share.jpg",
     shareLoop: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-curtain-share.mp4",
+    // The ribbon card (2026-11-11, under test at /a/prokhorov/ribbon): his portrait on the dark moiré.
+    ribbonArt: { path: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-ribbon-art.jpg", position: { x: 0.5, y: 0.5 } },
     aliases: [
       {
         // Named after his book, at the poet's wish; was the series shelf until 2026-11-09.

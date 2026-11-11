@@ -1,0 +1,15 @@
+# The ribbon card job, added to the server's compose project by
+# deploy/ops/curtain.sh (`docker compose -f compose.yml -f ribbon/compose.ribbon.yml`),
+# so it travels with every release and needs no edit of compose.yml.
+# Paths are relative to /opt/boks, the project directory.
+services:
+  ribbon:
+    build: ./ribbon
+    image: boks-ribbon
+    profiles: ["jobs"]
+    volumes:
+      - ./ribbon:/app/job:ro
+      - ./link-only/ribbon:/out
+      - ./flags:/flags:ro
+    mem_limit: 1g
+    cpus: 1

@@ -1,0 +1,10 @@
+{
+  "name": "boks-ribbon",
+  "private": true,
+  "type": "module",
+  "description": "The ribbon link-preview job: draws each card with Skia and encodes it with ffmpeg (no browser).",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "@napi-rs/canvas": "1.0.13"
+  }
+}

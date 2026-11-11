@@ -13,7 +13,7 @@ import { join, normalize } from "node:path";
  * server job also relies on when it calls a copy directly, else from this
  * origin.
  */
-async function asset(path: string, request: Request): Promise<ArrayBuffer> {
+export async function asset(path: string, request: Request): Promise<ArrayBuffer> {
   const local = normalize(join(process.cwd(), "public", path));
   if (local.startsWith(join(process.cwd(), "public"))) {
     try {
