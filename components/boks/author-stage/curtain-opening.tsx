@@ -11,6 +11,10 @@ import type { Curtain } from "./curtain-gl";
  * ribbon draws the curtain aside, the cloth fades, and `onOpened` starts the
  * voice. A tap anywhere opens it at once.
  *
+ * `closing` is the end: when the voice has ended the cloth fades in drawn
+ * aside, closes over the last picture with the title coming back on it,
+ * holds a moment, and `onDone` lets the ending follow. A tap closes it at once.
+ *
  * The same cloth as the author page (`curtain-gl.ts`, `curtain-shape.ts`):
  * one velvet texture and a shader drawn only while the curtain moves. Without
  * WebGL the CSS velvet stands in; with reduced motion there is no curtain.
@@ -23,23 +27,40 @@ const waitAtMostMs = 6000;
 const holdMs = 650;
 const openMs = 2350;
 const fadeMs = 600;
+const closeMs = 2200;
+/** The closed curtain with the title, before the ending comes up over it. */
+const closedHoldMs = 1100;
 
-export function CurtainOpening({ title, byline, ready, onOpened }: { title: string; byline: string; ready: boolean; onOpened: () => void }) {
+export function CurtainOpening({
+  title,
+  byline,
+  ready = true,
+  closing = false,
+  onDone,
+}: {
+  title: string;
+  byline: string;
+  /** Opening only: whether the voice can play; the curtain waits for it. */
+  ready?: boolean;
+  closing?: boolean;
+  onDone: () => void;
+}) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [gone, setGone] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const opened = useRef(onOpened);
+  const done = useRef(onDone);
   const start = useRef<((quick: boolean) => void) | null>(null);
   const canStart = useRef(ready);
   useEffect(() => {
-    opened.current = onOpened;
+    done.current = onDone;
     canStart.current = ready;
-  }, [onOpened, ready]);
+  }, [onDone, ready]);
+  const closingRef = useRef(closing);
 
   useLayoutEffect(() => {
     const node = stage.current;
-    if (node) paint(node, 0, node.clientWidth, node.clientHeight);
+    if (node) paint(node, closingRef.current ? 1 : 0, node.clientWidth, node.clientHeight);
   }, []);
 
   useEffect(() => {
@@ -54,7 +75,8 @@ export function CurtainOpening({ title, byline, ready, onOpened }: { title: stri
     const later = (callback: () => void, ms: number) => timers.push(window.setTimeout(callback, ms));
     let width = node.clientWidth;
     let height = node.clientHeight;
-    let opening = 0;
+    const closes = closingRef.current;
+    let opening = closes ? 1 : 0;
     const draw = (open: number, tension = 0) => {
       opening = clip(open);
       paint(node, opening, width, height);
@@ -67,36 +89,57 @@ export function CurtainOpening({ title, byline, ready, onOpened }: { title: stri
     });
     resize.observe(node);
 
+    let finished = false;
     const finish = () => {
-      if (disposed) return;
+      if (disposed || finished) return;
+      finished = true;
+      if (closes) {
+        later(() => !disposed && done.current(), closedHoldMs);
+        return;
+      }
       setLeaving(true);
-      opened.current();
+      done.current();
       later(() => !disposed && setGone(true), fadeMs);
     };
+    let quickened = false;
     const run = (quick: boolean) => {
-      if (begun) return;
+      if (begun && (!quick || quickened || finished)) return;
       begun = true;
-      const duration = quick ? 700 : openMs;
+      quickened = quick;
+      cancelAnimationFrame(animation);
+      const from = opening;
+      const to = closes ? 0 : 1;
+      const duration = quick ? 700 : closes ? closeMs : openMs;
       const started = performance.now();
       const tick = (now: number) => {
         if (disposed) return;
         const t = clip((now - started) / duration);
         const progress = quick ? 1 - (1 - t) ** 3 : t * t * t * (t * (t * 6 - 15) + 10);
-        draw(progress, (quick ? 0.25 : 0.6) * Math.sin(Math.PI * t));
-        // The voice starts as the cloth reaches the wall, not after it has settled.
-        if (t >= 0.86) return finish();
+        draw(from + (to - from) * progress, (quick ? 0.25 : 0.6) * Math.sin(Math.PI * t));
+        // Opening, the voice starts as the cloth reaches the wall, not after it has settled.
+        if (closes ? t >= 1 : t >= 0.86) return finish();
         animation = requestAnimationFrame(tick);
       };
       animation = requestAnimationFrame(tick);
     };
-    start.current = (quick) => {
-      if (quick && begun) return;
-      run(quick);
-    };
+    start.current = run;
 
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
       begun = true;
-      later(finish, 0);
+      finished = true;
+      later(() => {
+        if (disposed) return;
+        done.current();
+        setGone(true);
+      }, 0);
+    } else if (closes) {
+      void import("./curtain-gl").then(({ createCurtain }) => {
+        if (disposed) return;
+        curtain = createCurtain(cloth, node);
+        draw(opening);
+      });
+      // The drawn-aside cloth fades in first (CSS), then closes.
+      later(() => run(false), fadeMs);
     } else {
       const glReady = import("./curtain-gl").then(({ createCurtain }) => {
         if (disposed) return false;
@@ -129,7 +172,7 @@ export function CurtainOpening({ title, byline, ready, onOpened }: { title: stri
   return (
     <div
       ref={stage}
-      className={`as pc${leaving ? " pc--leaving" : ""}`}
+      className={`as pc${closing ? " pc--closing" : ""}${leaving ? " pc--leaving" : ""}`}
       style={{ "--tie": `${CURTAIN_TIE_Y * 100}%`, "--pc-fade": `${fadeMs}ms` } as CSSProperties}
       onPointerDown={() => start.current?.(true)}
       aria-hidden="true"

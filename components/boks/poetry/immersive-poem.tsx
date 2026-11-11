@@ -171,7 +171,10 @@ export function ImmersivePoem({
   const [hasBegun, setHasBegun] = useState(autoPlay || recording);
   const [textPreview, setTextPreview] = useState(false);
   const autoStarted = useRef(false);
-  const [curtainUp, setCurtainUp] = useState(curtain && autoPlay && !recording);
+  const curtained = curtain && autoPlay && !recording;
+  const [curtainUp, setCurtainUp] = useState(curtained);
+  /** The end, with the curtain: it closes first, then the ending comes up. */
+  const [curtainDown, setCurtainDown] = useState(false);
   const rememberTextPosition = useRef(false);
   const lastElapsed = useRef(-1);
   /*
@@ -681,7 +684,7 @@ export function ImmersivePoem({
     // and put up "did not load". "Loading…" is on screen; the next tap plays.
     if (!element.src) return;
     if (element.paused) {
-      if (status === "ended") element.currentTime = 0;
+      if (status === "ended") { element.currentTime = 0; setCurtainDown(false); }
       voiceLevel.current?.resume();
       musicLevel.current?.resume();
       // Ask for both tracks in the same gesture, before either play promise
@@ -721,7 +724,7 @@ export function ImmersivePoem({
       // Back into the poem leaves the ending; onto its very end does not. A
       // "next line" pressed as the last word ends would otherwise take the
       // finale away and leave the player paused on nothing.
-      if (status === "ended" && ms < manifest.durationMs) setStatus("ready");
+      if (status === "ended" && ms < manifest.durationMs) { setStatus("ready"); setCurtainDown(false); }
       revealChrome();
     },
     [manifest.durationMs, revealChrome, status]
@@ -1198,11 +1201,15 @@ export function ImmersivePoem({
         {manifest.title}. {manifest.author}. {manifest.lines.map((l) => l.tokens.map((t) => t.text).join(" ")).join(" ")}
       </p>
 
-      {status === "ended" && <button type="button" className="poem__close" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
+      {status === "ended" && (!curtained || curtainDown) && <button type="button" className="poem__close" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
 
-      {curtain && autoPlay && !recording && <CurtainOpening
+      {curtained && <CurtainOpening
         title={manifest.title} byline={manifest.author} ready={status !== "loading"}
-        onOpened={() => setCurtainUp(false)}
+        onDone={() => setCurtainUp(false)}
+      />}
+      {curtained && status === "ended" && !textPreview && <CurtainOpening
+        closing title={manifest.title} byline={manifest.author}
+        onDone={() => setCurtainDown(true)}
       />}
 
       {status !== "ended" && !recording && !textPreview && <FormatControls
@@ -1242,7 +1249,7 @@ export function ImmersivePoem({
 
       {/* The same ending as every other boks series piece - see
           reading-finale.tsx. The poem draws the reading, never its own end. */}
-      {status === "ended" && !withoutFinale && !textPreview && (
+      {status === "ended" && (!curtained || curtainDown) && !withoutFinale && !textPreview && (
         <ReadingFinale
           actions={finale ? { ...finale, onComments: onComments ?? finale.onComments } : undefined}
           onReadText={readText}

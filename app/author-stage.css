@@ -140,3 +140,5 @@
 /* Before its geometry is painted the curtain is simply closed. */
 .pc:not([data-painted]) .as-fabric{clip-path:none;background-size:cover}
 .pc:not([data-painted]) .as-ribbon{visibility:hidden}
+.as.pc--closing{animation:pc-in var(--pc-fade,600ms) ease both}
+@keyframes pc-in{from{opacity:0}}
