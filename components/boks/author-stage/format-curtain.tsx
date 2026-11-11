@@ -6,7 +6,7 @@ import type { Curtain } from "./curtain-gl";
 
 /**
  * The author stage's curtain around a series piece: one curtain for the whole
- * performance (`curtain` in `series-catalogue.ts`).
+ * performance, for every boks series piece (`reader-feed.tsx`).
  *
  *   start   the piece opens behind the closed velvet, its title on it; once
  *           the recording can play the ribbon draws it aside and `onOpened`

@@ -35,6 +35,7 @@ Paths are from the repository root.
 |---|---|
 | `components/boks/reader-feed.tsx` | the ordinary feed, the button that opens either format, and the one `FinaleActions` both are given |
 | `components/boks/reading-finale.tsx` | the single ending shared with HTML reading: optional aftertaste, like / comments / share / replay / next |
+| `components/boks/author-stage/format-curtain.tsx` | the curtain around every series piece: opens on it, closes at its end with the title, opens again on the finale |
 | `components/boks/cinema/voices.ts` | who reads what: the cast rule, the model, the stability per reading |
 | `components/boks/cinema/voices.test.ts` | holds the cast and the one-credit-per-character rule |
 | `components/boks/reading-music.ts` | lo-fi under ordinary silent reading; nothing to do with either format |
@@ -217,6 +218,19 @@ Words arriving one by one inside a picture is right for sixteen seconds of
 verse and exhausting for ten minutes of prose. That is why there are two
 formats and not one with a setting: what differs is how the words are given,
 and that is the whole of what a format owns.
+
+### Every series piece is performed behind the curtain
+
+A piece opened as boks series (any piece in `series-catalogue.ts`, either
+format) plays behind the author stage's curtain (`format-curtain.tsx`, the
+same cloth as the author page). It opens closed with the title on the velvet;
+when the recording can play the ribbon draws it aside and the voice starts.
+At the end it closes over the last picture, the title returns, the player
+mounts the finale under it, and it opens again on the finale. The feed hears
+"ended" (and shows a sign-in notice, focus moves) only once it has closed.
+One WebGL context for the whole piece; a tap hurries any movement; reduced
+motion, filming and non-autoplay openings have no curtain. Nothing to add per
+piece.
 
 ### What every format shares: the finale
 
