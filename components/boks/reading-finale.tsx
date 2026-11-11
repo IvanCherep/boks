@@ -65,7 +65,7 @@ export function ReadingFinale({ actions, onAgain, onReadText, title, byline, art
           const next = selected.includes(tag) ? selected.filter(value => value !== tag) : [...selected, tag];
           setPicked(next); actions?.onAftertaste(next);
         }}>
-          <img src={`/design/reaction-${tag}-v44.png`} alt="" width="48" height="48" loading="lazy" />
+          <img src={`/design/box-${tag}.webp`} alt="" width="48" height="48" loading="lazy" />
           <span>{labels[tag]}</span>{selected.includes(tag) && <Check className="aftertaste-check" size={14} />}
         </button>)}
       </div>
