@@ -123,3 +123,20 @@
   .as-identity{top:auto;bottom:calc(100% - var(--tie) + var(--band-height) / 2 + 8px)}
 }
 @media(prefers-reduced-motion:reduce){.as *{transition:none!important}}
+
+/* The same curtain as the opening of a series piece (curtain-opening.tsx):
+   over the player's first picture, under its top bar, gone once open. */
+.as.pc{position:absolute;inset:0;z-index:7;height:auto;min-height:0;background:transparent;touch-action:manipulation;transition:opacity var(--pc-fade,600ms) ease}
+.as.pc.pc--leaving{opacity:0;pointer-events:none}
+.pc .as-floor{background:linear-gradient(0deg,#150f0e8c 0%,transparent 22%),linear-gradient(180deg,#0b050566,transparent 18%)}
+.pc-title{
+  position:absolute;z-index:3;left:var(--gutter);right:var(--gutter);
+  top:calc(var(--tie) + var(--band-height) / 2 + clamp(18px,3.5vh,40px));
+  opacity:var(--pc-title,1);text-align:center;pointer-events:none;user-select:none;
+  text-shadow:0 2px 24px #0a0605a8,0 1px 3px #0a060590;color:var(--as-ink)
+}
+.pc-title p{margin:0 0 14px;font:600 11px/1.5 var(--font-serif);letter-spacing:1.6px;text-transform:uppercase;color:#efceb4}
+.pc-title h1{margin:0 auto;max-width:12ch;text-wrap:balance;font:440 clamp(2.6rem,min(9vw,10svh),5.6rem)/.95 var(--font-serif);letter-spacing:-.05em}
+/* Before its geometry is painted the curtain is simply closed. */
+.pc:not([data-painted]) .as-fabric{clip-path:none;background-size:cover}
+.pc:not([data-painted]) .as-ribbon{visibility:hidden}

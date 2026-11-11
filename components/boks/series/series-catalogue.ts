@@ -54,6 +54,11 @@ export type SeriesPiece = {
   moments: number;
   /** The day it opened to readers, `YYYY-MM-DD`. Newest leads the shelf. */
   premieredOn: string;
+  /**
+   * Opens behind the author stage's curtain (`curtain-opening.tsx`). Under
+   * test on one poem, 2026-11-11.
+   */
+  curtain?: true;
 };
 
 /**
@@ -171,6 +176,7 @@ export const seriesPieces: readonly SeriesPiece[] = [
     scenes: 3,
     moments: 0,
     premieredOn: "2026-11-10",
+    curtain: true,
   },
   {
     storyId: "3e680406-1683-431a-b18e-4095f9caea2e",

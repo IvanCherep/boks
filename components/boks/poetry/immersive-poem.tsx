@@ -7,6 +7,7 @@ import { ReaderBackIcon as ArrowLeft } from "@/components/boks/reader/reader-ico
 import { FormatControls, FormatStatus, type FormatPlaybackState } from "@/components/boks/cinema/format-controls";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { gestureHintIn } from "@/components/boks/poetry/gesture-hints";
+import { CurtainOpening } from "@/components/boks/author-stage/curtain-opening";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import {
@@ -115,6 +116,7 @@ export function ImmersivePoem({
   onClose,
   gestureTrace,
   withoutFinale = false,
+  curtain = false,
 }: {
   manifest: PoemManifest;
   coverArtwork?: string;
@@ -146,6 +148,12 @@ export function ImmersivePoem({
    * the same moments of the reading instead.
    */
   gestureTrace?: { mode: "record"; onTrace: (trace: GestureTrace) => void } | { mode: "replay"; trace: GestureTrace };
+  /**
+   * Opens behind the author stage's curtain, which draws aside once the voice
+   * can play; the voice waits for it (`curtain-opening.tsx`). Only with
+   * `autoPlay`, never while filming.
+   */
+  curtain?: boolean;
 }) {
   const words = useMessages(messages);
   const uiLanguage = useUiLanguage();
@@ -163,6 +171,7 @@ export function ImmersivePoem({
   const [hasBegun, setHasBegun] = useState(autoPlay || recording);
   const [textPreview, setTextPreview] = useState(false);
   const autoStarted = useRef(false);
+  const [curtainUp, setCurtainUp] = useState(curtain && autoPlay && !recording);
   const rememberTextPosition = useRef(false);
   const lastElapsed = useRef(-1);
   /*
@@ -729,10 +738,10 @@ export function ImmersivePoem({
   }, [seekMs]);
 
   useEffect(() => {
-    if (!autoPlay || autoStarted.current || suspended || document.hidden || status !== "ready") return;
+    if (!autoPlay || curtainUp || autoStarted.current || suspended || document.hidden || status !== "ready") return;
     autoStarted.current = true;
     toggle();
-  }, [autoPlay, status, suspended, toggle]);
+  }, [autoPlay, curtainUp, status, suspended, toggle]);
 
   useEffect(() => {
     if (!suspended && !menuOpen) return;
@@ -1190,6 +1199,11 @@ export function ImmersivePoem({
       </p>
 
       {status === "ended" && <button type="button" className="poem__close" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
+
+      {curtain && autoPlay && !recording && <CurtainOpening
+        title={manifest.title} byline={manifest.author} ready={status !== "loading"}
+        onOpened={() => setCurtainUp(false)}
+      />}
 
       {status !== "ended" && !recording && !textPreview && <FormatControls
         onShare={finale?.onShare}
