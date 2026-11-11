@@ -117,6 +117,7 @@ export function ImmersivePoem({
   gestureTrace,
   withoutFinale = false,
   curtain = false,
+  curtainExit = "fade",
 }: {
   manifest: PoemManifest;
   coverArtwork?: string;
@@ -154,6 +155,8 @@ export function ImmersivePoem({
    * `autoPlay`, never while filming.
    */
   curtain?: boolean;
+  /** How the drawn-aside curtain goes (`FormatCurtain`'s `exit`). */
+  curtainExit?: "fade" | "slide";
 }) {
   const words = useMessages(messages);
   const uiLanguage = useUiLanguage();
@@ -1210,7 +1213,7 @@ export function ImmersivePoem({
 
       {curtained && <FormatCurtain
         title={manifest.title} byline={manifest.author} ready={status !== "loading"} closed={status === "ended"}
-        onOpened={openedCurtain} onClosed={closedCurtain}
+        onOpened={openedCurtain} onClosed={closedCurtain} exit={curtainExit}
       />}
 
       {status !== "ended" && !recording && !textPreview && <FormatControls

@@ -129,7 +129,10 @@
    and on its ending; the gathered cloth fades in before it closes. */
 .as.pc{position:absolute;inset:0;z-index:7;height:auto;min-height:0;background:transparent;touch-action:manipulation;transition:opacity var(--pc-fade,500ms) ease,visibility 0s}
 .as.pc:is([data-phase="open"],[data-phase="done"]){opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--pc-fade,500ms) ease,visibility 0s linear var(--pc-fade,500ms)}
-.pc .as-floor{background:linear-gradient(0deg,#150f0e8c 0%,transparent 22%),linear-gradient(180deg,#0b050566,transparent 18%)}
+/* Sliding off instead (data-exit="slide"): it is already past the edge when it stops. */
+.as.pc[data-exit="slide"]:is([data-phase="open"],[data-phase="done"]){opacity:1;visibility:hidden;transition:none}
+.as.pc[data-exit="slide"]{will-change:transform}
+.pc .as-floor{opacity:var(--pc-shade,1);background:linear-gradient(0deg,#150f0e8c 0%,transparent 22%),linear-gradient(180deg,#0b050566,transparent 18%)}
 .pc-title{
   position:absolute;z-index:3;left:var(--gutter);right:var(--gutter);
   top:calc(var(--tie) + var(--band-height) / 2 + clamp(18px,3.5vh,40px));

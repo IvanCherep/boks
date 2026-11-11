@@ -16,6 +16,10 @@ import type { Curtain } from "./curtain-gl";
  *           player put its ending under it; after a moment the curtain opens
  *           again on that ending and fades away
  *
+ * `exit="slide"` (under test on one piece, 2026-11-11): instead of fading
+ * once drawn aside, the gathered cloth and its ribbon keep going, off the
+ * left edge, in the same movement; at the end they come back the same way.
+ *
  * One WebGL context and one velvet upload for the whole piece, made at the
  * start, so the end costs nothing but drawing. The shader draws only while the
  * cloth moves. A tap during any movement finishes it quickly. Without WebGL
@@ -40,6 +44,10 @@ export const curtainTiming = {
   quickMs: 650,
 } as const;
 
+/** Slide: how far through the movement the cloth is fully drawn aside, and where it starts to leave. */
+const SLIDE_OPEN_AT = 0.8;
+const SLIDE_FROM = 0.66;
+
 type Phase = "waiting" | "opening" | "open" | "closing" | "closed" | "revealing" | "done";
 
 export function FormatCurtain({
@@ -49,6 +57,7 @@ export function FormatCurtain({
   closed,
   onOpened,
   onClosed,
+  exit = "fade",
 }: {
   title: string;
   byline: string;
@@ -58,12 +67,15 @@ export function FormatCurtain({
   closed: boolean;
   onOpened: () => void;
   onClosed: () => void;
+  /** How the drawn-aside cloth goes: fades where it is, or slides off the edge. */
+  exit?: "fade" | "slide";
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const callbacks = useRef({ onOpened, onClosed });
   const wants = useRef({ ready, closed });
   const control = useRef<{ wake: () => void; hurry: () => void } | null>(null);
+  const slides = useRef(exit === "slide");
 
   useEffect(() => {
     callbacks.current = { onOpened, onClosed };
@@ -87,6 +99,9 @@ export function FormatCurtain({
     let timer = 0;
     let phase: Phase = "waiting";
     let opening = 0;
+    /** Where the movement is, 0 closed to 1 away: the opening alone, or the opening then the slide. */
+    let travel = 0;
+    const sliding = slides.current;
     let width = node.clientWidth;
     let height = node.clientHeight;
     const waitingSince = performance.now();
@@ -96,15 +111,23 @@ export function FormatCurtain({
       phase = next;
       node.dataset.phase = next;
     };
-    const draw = (open: number, tension = 0) => {
-      opening = clip(open);
+    const draw = (at: number, tension = 0) => {
+      travel = clip(at);
+      opening = sliding ? clip(travel / SLIDE_OPEN_AT) : travel;
       paint(node, opening, width, height);
+      if (sliding) {
+        const away = smooth(clip((travel - SLIDE_FROM) / (1 - SLIDE_FROM)));
+        const { edge, upperFlare, lowerFlare } = curtainShape(1, width, height);
+        // Past the widest of the gathered cloth and the ribbon's puck.
+        const distance = edge + Math.max(upperFlare, lowerFlare) + 80;
+        node.style.transform = away > 0 ? `translate3d(${(-away * distance).toFixed(1)}px,0,0)` : "";
+      }
       curtain?.render(opening, tension);
     };
     const resize = new ResizeObserver(() => {
       width = node.clientWidth;
       height = node.clientHeight;
-      draw(opening);
+      draw(travel);
     });
     resize.observe(node);
 
@@ -112,7 +135,7 @@ export function FormatCurtain({
     let current: { to: number; done: () => void; at?: { t: number; then: () => void } } | null = null;
     const move = (to: number, duration: number, done: () => void, at?: { t: number; then: () => void }, swing = 0.6, quick = false) => {
       cancelAnimationFrame(animation);
-      const from = opening;
+      const from = travel;
       const started = performance.now();
       const step = { to, done, at };
       current = step;
@@ -150,23 +173,23 @@ export function FormatCurtain({
       if (phase === "waiting" && clothReady && (canPlay || performance.now() - waitingSince > timing.waitAtMostMs)) {
         setPhase("opening");
         later(() => {
-          move(1, timing.openMs, () => setPhase("open"), {
+          move(1, sliding ? timing.openMs + 500 : timing.openMs, () => setPhase("open"), {
             // The voice starts as the cloth reaches the wall, not after it has settled.
-            t: 0.86,
+            t: sliding ? 0.72 : 0.86,
             then: () => callbacks.current.onOpened(),
           });
         }, timing.titleMs);
       } else if (phase === "open" && ended) {
         setPhase("closing");
-        // The gathered cloth comes back (CSS fades it in), then closes.
-        later(() => move(0, timing.closeMs, () => {
+        // The gathered cloth comes back (fading in, or sliding in as it closes), then closes.
+        later(() => move(0, sliding ? timing.closeMs + 500 : timing.closeMs, () => {
           setPhase("closed");
           callbacks.current.onClosed();
           later(() => {
             setPhase("revealing");
-            move(1, timing.revealMs, () => setPhase("open"));
+            move(1, sliding ? timing.revealMs + 400 : timing.revealMs, () => setPhase("open"));
           }, timing.closedMs);
-        }), timing.fadeMs);
+        }), sliding ? 0 : timing.fadeMs);
       }
     };
     control.current = {
@@ -214,7 +237,7 @@ export function FormatCurtain({
         .then(() => {
           if (disposed) return;
           clothReady = true;
-          draw(opening);
+          draw(travel);
           wake();
         });
     }
@@ -239,6 +262,7 @@ export function FormatCurtain({
     <div
       ref={stage}
       className="as pc"
+      data-exit={exit}
       style={{ "--tie": `${CURTAIN_TIE_Y * 100}%`, "--pc-fade": `${curtainTiming.fadeMs}ms` } as CSSProperties}
       onPointerDown={() => control.current?.hurry()}
       aria-hidden="true"
@@ -272,5 +296,7 @@ function paint(node: HTMLElement, opening: number, width: number, height: number
   node.style.setProperty("--stage-width", `${width}px`);
   node.style.setProperty("--fabric-clip", `polygon(0 0,${points.join(",")},0 100%)`);
   node.style.setProperty("--pc-title", clip(1 - opening * 2.6).toFixed(3));
+  // The shade over the picture belongs to the closed curtain; drawn aside, the picture is clear.
+  node.style.setProperty("--pc-shade", clip(1 - opening * 1.4).toFixed(3));
   node.dataset.painted = "";
 }

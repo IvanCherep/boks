@@ -3096,6 +3096,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             recording={recording}
             autoPlay
             curtain={Boolean(currentSeriesPiece)}
+            curtainExit={currentSeriesPiece?.curtainSlides ? "slide" : "fade"}
             suspended={readerOverlayOpen}
             onPlaybackChange={onFormatPlayback}
             onComments={() => setCommentOpen(true)}
@@ -3108,6 +3109,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         {poem && (
           <div style={{ display: "contents" }} inert={readerOverlayOpen}><ImmersivePoem manifest={poem} finale={finale} recording={recording} autoPlay
             curtain={Boolean(currentSeriesPiece)}
+            curtainExit={currentSeriesPiece?.curtainSlides ? "slide" : "fade"}
             coverArtwork={getBokArtwork(currentStory) ?? undefined}
             suspended={readerOverlayOpen}
             onPlaybackChange={onFormatPlayback} onComments={() => setCommentOpen(true)} onReadText={readText}
