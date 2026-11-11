@@ -55,8 +55,9 @@ export type SeriesPiece = {
   /** The day it opened to readers, `YYYY-MM-DD`. Newest leads the shelf. */
   premieredOn: string;
   /**
-   * Opens behind the author stage's curtain (`curtain-opening.tsx`). Under
-   * test on one poem, 2026-11-11.
+   * Performed behind the author stage's curtain (`format-curtain.tsx`): it
+   * opens on the piece, closes at its end with the title on it, and opens
+   * again on the ending. Either format; under test on one poem, 2026-11-11.
    */
   curtain?: true;
 };

@@ -3095,6 +3095,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             finale={finale}
             recording={recording}
             autoPlay
+            curtain={currentSeriesPiece?.curtain}
             suspended={readerOverlayOpen}
             onPlaybackChange={onFormatPlayback}
             onComments={() => setCommentOpen(true)}

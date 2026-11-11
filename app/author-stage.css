@@ -124,10 +124,11 @@
 }
 @media(prefers-reduced-motion:reduce){.as *{transition:none!important}}
 
-/* The same curtain as the opening of a series piece (curtain-opening.tsx):
-   over the player's first picture, under its top bar, gone once open. */
-.as.pc{position:absolute;inset:0;z-index:7;height:auto;min-height:0;background:transparent;touch-action:manipulation;transition:opacity var(--pc-fade,600ms) ease}
-.as.pc.pc--leaving{opacity:0;pointer-events:none}
+/* The same curtain around a series piece (format-curtain.tsx): over the
+   player, under its top bar. Away (opacity 0, no hits) while the piece plays
+   and on its ending; the gathered cloth fades in before it closes. */
+.as.pc{position:absolute;inset:0;z-index:7;height:auto;min-height:0;background:transparent;touch-action:manipulation;transition:opacity var(--pc-fade,500ms) ease,visibility 0s}
+.as.pc:is([data-phase="open"],[data-phase="done"]){opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--pc-fade,500ms) ease,visibility 0s linear var(--pc-fade,500ms)}
 .pc .as-floor{background:linear-gradient(0deg,#150f0e8c 0%,transparent 22%),linear-gradient(180deg,#0b050566,transparent 18%)}
 .pc-title{
   position:absolute;z-index:3;left:var(--gutter);right:var(--gutter);
@@ -140,5 +141,3 @@
 /* Before its geometry is painted the curtain is simply closed. */
 .pc:not([data-painted]) .as-fabric{clip-path:none;background-size:cover}
 .pc:not([data-painted]) .as-ribbon{visibility:hidden}
-.as.pc--closing{animation:pc-in var(--pc-fade,600ms) ease both}
-@keyframes pc-in{from{opacity:0}}

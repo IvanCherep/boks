@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { ReaderBackIcon as ArrowLeft } from "@/components/boks/reader/reader-icons";
 import { FormatControls, FormatStatus, type FormatPlaybackState } from "@/components/boks/cinema/format-controls";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
+import { FormatCurtain } from "@/components/boks/author-stage/format-curtain";
 import { StoryMomentScene } from "@/components/boks/cinema/story-moment";
 import {
   momentDueAt,
@@ -190,6 +191,7 @@ export function CinemaMode({
   onPlaybackChange,
   onClose,
   withoutFinale = false,
+  curtain = false,
 }: {
   story: Story;
   /** What the ending's buttons do - the same object every format is given. */
@@ -214,9 +216,20 @@ export function CinemaMode({
    * would put the questions' own words in front of one condition only.
    */
   withoutFinale?: boolean;
+  /**
+   * Opens behind the author stage's curtain and closes it again before the
+   * ending (`format-curtain.tsx`). Only with `autoPlay`, never while filming.
+   */
+  curtain?: boolean;
 }) {
   const { t } = useReaderPreferences();
   const words = cinemaWords(t);
+  const curtained = curtain && autoPlay && !recording;
+  const [curtainUp, setCurtainUp] = useState(curtained);
+  const [curtainDown, setCurtainDown] = useState(false);
+  const openedCurtain = useCallback(() => setCurtainUp(false), []);
+  const closedCurtain = useCallback(() => setCurtainDown(true), []);
+
   const language = useMemo(() => languageOf(story.body), [story.body]);
   const plan = useMemo(() => planScenes({ id: story.id, text: story.body }), [story.id, story.body]);
   const totalSeconds = useMemo(
@@ -227,6 +240,8 @@ export function CinemaMode({
   const picture = sceneImageFor(story.id, 0);
 
   const [phase, setPhase] = useState<Phase>(autoPlay ? "playing" : "cover");
+  /** With the curtain the piece has ended once it has closed; the ending comes up under it. */
+  const ended = phase === "ended" && (!curtained || curtainDown);
   const [menuOpen, setMenuOpen] = useState(false);
   const [voice, setVoice] = useState(1);
   const [loadError, setLoadError] = useState(false);
@@ -444,8 +459,8 @@ export function CinemaMode({
 
   useEffect(() => { beginRef.current = begin; });
   useEffect(() => {
-    if (startPending && !suspended && !document.hidden && (!track || lineStarts)) beginRef.current(pendingFrom.current ?? (autoPlay ? textResumeAt : savedAt));
-  }, [startPending, suspended, track, lineStarts, savedAt, autoPlay, textResumeAt]);
+    if (startPending && !curtainUp && !suspended && !document.hidden && (!track || lineStarts)) beginRef.current(pendingFrom.current ?? (autoPlay ? textResumeAt : savedAt));
+  }, [startPending, curtainUp, suspended, track, lineStarts, savedAt, autoPlay, textResumeAt]);
   useEffect(() => { narrator.current?.setVolume(voice); }, [voice]);
   useEffect(() => { if (suspended || menuOpen) narrator.current?.pause(); }, [suspended, menuOpen]);
   useEffect(() => {
@@ -454,8 +469,8 @@ export function CinemaMode({
     return () => document.removeEventListener("visibilitychange", pauseWhenHidden);
   }, []);
   useEffect(() => {
-    onPlaybackChange?.({ playing: progress.speaking && !suspended && !menuOpen && !moment, progress: progress.totalSeconds > 0 ? Math.min(1, progress.elapsedSeconds / progress.totalSeconds) : 0, ended: phase === "ended" });
-  }, [progress, suspended, menuOpen, moment, phase, onPlaybackChange]);
+    onPlaybackChange?.({ playing: progress.speaking && !suspended && !menuOpen && !moment, progress: progress.totalSeconds > 0 ? Math.min(1, progress.elapsedSeconds / progress.totalSeconds) : 0, ended });
+  }, [progress, suspended, menuOpen, moment, ended, onPlaybackChange]);
 
   function readText() {
     // Read after the end: coming back plays it from the start, not the end.
@@ -500,7 +515,7 @@ export function CinemaMode({
       />
 
 
-      {(phase === "ended" || moment) && <button type="button" className="cinema__close" onClick={close} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
+      {(ended || moment) && <button type="button" className="cinema__close" onClick={close} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
 
       {phase === "cover" && recording && (
         <button type="button" className="cinema__peek" onClick={() => begin(0)} aria-label={words.listen} />
@@ -586,7 +601,12 @@ export function CinemaMode({
         />
       )}
 
-      {phase === "ended" && !withoutFinale && (
+      {curtained && <FormatCurtain
+        title={story.title} byline={story.authorName ?? ""} ready={!track || Boolean(lineStarts)} closed={phase === "ended"}
+        onOpened={openedCurtain} onClosed={closedCurtain}
+      />}
+
+      {ended && !withoutFinale && (
         <ReadingFinale
           actions={{
             ...finale,
@@ -606,6 +626,7 @@ export function CinemaMode({
             // and the heart beats again.
             momentsDone.current.clear();
             momentOpen.current = false;
+            setCurtainDown(false);
             setPhase("playing");
             ensureNarrator().restart();
           }}

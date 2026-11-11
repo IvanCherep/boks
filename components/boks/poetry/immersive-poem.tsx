@@ -7,7 +7,7 @@ import { ReaderBackIcon as ArrowLeft } from "@/components/boks/reader/reader-ico
 import { FormatControls, FormatStatus, type FormatPlaybackState } from "@/components/boks/cinema/format-controls";
 import { ReadingFinale, type FinaleActions } from "@/components/boks/reading-finale";
 import { gestureHintIn } from "@/components/boks/poetry/gesture-hints";
-import { CurtainOpening } from "@/components/boks/author-stage/curtain-opening";
+import { FormatCurtain } from "@/components/boks/author-stage/format-curtain";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import {
@@ -150,7 +150,7 @@ export function ImmersivePoem({
   gestureTrace?: { mode: "record"; onTrace: (trace: GestureTrace) => void } | { mode: "replay"; trace: GestureTrace };
   /**
    * Opens behind the author stage's curtain, which draws aside once the voice
-   * can play; the voice waits for it (`curtain-opening.tsx`). Only with
+   * can play, and closes again before the ending (`format-curtain.tsx`). Only with
    * `autoPlay`, never while filming.
    */
   curtain?: boolean;
@@ -173,8 +173,10 @@ export function ImmersivePoem({
   const autoStarted = useRef(false);
   const curtained = curtain && autoPlay && !recording;
   const [curtainUp, setCurtainUp] = useState(curtained);
-  /** The end, with the curtain: it closes first, then the ending comes up. */
+  /** The end, with the curtain: it closes first, then the ending comes up under it. */
   const [curtainDown, setCurtainDown] = useState(false);
+  const openedCurtain = useCallback(() => setCurtainUp(false), []);
+  const closedCurtain = useCallback(() => setCurtainDown(true), []);
   const rememberTextPosition = useRef(false);
   const lastElapsed = useRef(-1);
   /*
@@ -1206,13 +1208,9 @@ export function ImmersivePoem({
 
       {status === "ended" && (!curtained || curtainDown) && <button type="button" className="poem__close" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></button>}
 
-      {curtained && <CurtainOpening
-        title={manifest.title} byline={manifest.author} ready={status !== "loading"}
-        onDone={() => setCurtainUp(false)}
-      />}
-      {curtained && status === "ended" && !textPreview && <CurtainOpening
-        closing title={manifest.title} byline={manifest.author}
-        onDone={() => setCurtainDown(true)}
+      {curtained && <FormatCurtain
+        title={manifest.title} byline={manifest.author} ready={status !== "loading"} closed={status === "ended"}
+        onOpened={openedCurtain} onClosed={closedCurtain}
       />}
 
       {status !== "ended" && !recording && !textPreview && <FormatControls
