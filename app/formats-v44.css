@@ -168,6 +168,12 @@
 .cinema.is-recording .cinema__stage { inset: auto 0 0; padding: 0 .55rem max(1.5rem, env(safe-area-inset-bottom)); }
 .cinema.is-recording .cinema__card { margin: 0 auto 1.1rem; }
 .cinema.is-recording .format-menu-trigger, .poem.is-recording .format-menu-trigger { display: none; }
+/* A wide screen keeps the cinema a centred portrait (globals.css: left 50%,
+   translate -50%). The insets above would leave that half-width shift in place
+   and put the words' card off the left edge, so they are re-centred here. */
+@media (min-width: 900px) {
+  .cinema__stage, .cinema__cover, .cinema.is-recording .cinema__stage { left: 50%; right: auto; width: min(700px, calc(100% - 48px)); translate: -50% 0; }
+}
 .moment__surface { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; border: 0; background: transparent; touch-action: none; }
 .moment__surface:focus-visible { outline: 2px solid #f4d8a6; outline-offset: -6px; }
 .moment__cue { z-index: 3; inset: auto 24px 94px; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 0; background: transparent; box-shadow: none; }
