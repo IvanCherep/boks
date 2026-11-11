@@ -13,7 +13,8 @@ import type { Curtain } from "./curtain-gl";
  *
  * `closing` is the end: when the voice has ended the cloth fades in drawn
  * aside, closes over the last picture with the title coming back on it,
- * holds a moment, and `onDone` lets the ending follow. A tap closes it at once.
+ * holds a moment, and fades as `onDone` brings up the ending under it. A tap
+ * closes it at once.
  *
  * The same cloth as the author page (`curtain-gl.ts`, `curtain-shape.ts`):
  * one velvet texture and a shader drawn only while the curtain moves. Without
@@ -29,7 +30,7 @@ const openMs = 2350;
 const fadeMs = 600;
 const closeMs = 2200;
 /** The closed curtain with the title, before the ending comes up over it. */
-const closedHoldMs = 1100;
+const closedHoldMs = 1500;
 
 export function CurtainOpening({
   title,
@@ -93,13 +94,13 @@ export function CurtainOpening({
     const finish = () => {
       if (disposed || finished) return;
       finished = true;
-      if (closes) {
-        later(() => !disposed && done.current(), closedHoldMs);
-        return;
-      }
-      setLeaving(true);
-      done.current();
-      later(() => !disposed && setGone(true), fadeMs);
+      // Closing, the title stands on the closed curtain a moment first.
+      later(() => {
+        if (disposed) return;
+        setLeaving(true);
+        done.current();
+        later(() => !disposed && setGone(true), fadeMs);
+      }, closes ? closedHoldMs : 0);
     };
     let quickened = false;
     const run = (quick: boolean) => {
