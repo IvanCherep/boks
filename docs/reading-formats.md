@@ -224,9 +224,10 @@ and that is the whole of what a format owns.
 A piece opened as boks series (any piece in `series-catalogue.ts`, either
 format) plays behind the author stage's curtain (`format-curtain.tsx`, the
 same cloth as the author page). It opens closed with the title on the velvet;
-when the recording can play the ribbon draws it aside and the voice starts.
-At the end it closes over the last picture, the title returns, the player
-mounts the finale under it, and it opens again on the finale. The feed hears
+when the recording can play the ribbon draws it aside and carries it off the
+left edge in the same movement, and the voice starts. At the end it slides
+back in and closes over the last picture, the title returns, the player
+mounts the finale under it, and it opens again on the finale and slides away. It never fades. The feed hears
 "ended" (and shows a sign-in notice, focus moves) only once it has closed.
 One WebGL context for the whole piece; a tap hurries any movement; reduced
 motion, filming and non-autoplay openings have no curtain. Nothing to add per

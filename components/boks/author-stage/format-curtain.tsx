@@ -16,9 +16,10 @@ import type { Curtain } from "./curtain-gl";
  *           player put its ending under it; after a moment the curtain opens
  *           again on that ending and fades away
  *
- * `exit="slide"` (under test on one piece, 2026-11-11): instead of fading
- * once drawn aside, the gathered cloth and its ribbon keep going, off the
- * left edge, in the same movement; at the end they come back the same way.
+ * Drawn aside, the gathered cloth and its ribbon keep going off the left
+ * edge in the same movement, and come back the same way at the end: the
+ * curtain never fades in or out (`exit="slide"`, the default; `"fade"` keeps
+ * the first version, where it fades where it is).
  *
  * One WebGL context and one velvet upload for the whole piece, made at the
  * start, so the end costs nothing but drawing. The shader draws only while the
@@ -57,7 +58,7 @@ export function FormatCurtain({
   closed,
   onOpened,
   onClosed,
-  exit = "fade",
+  exit = "slide",
 }: {
   title: string;
   byline: string;

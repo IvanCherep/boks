@@ -192,7 +192,6 @@ export function CinemaMode({
   onClose,
   withoutFinale = false,
   curtain = false,
-  curtainExit = "fade",
 }: {
   story: Story;
   /** What the ending's buttons do - the same object every format is given. */
@@ -222,8 +221,6 @@ export function CinemaMode({
    * ending (`format-curtain.tsx`). Only with `autoPlay`, never while filming.
    */
   curtain?: boolean;
-  /** How the drawn-aside curtain goes (`FormatCurtain`'s `exit`). */
-  curtainExit?: "fade" | "slide";
 }) {
   const { t } = useReaderPreferences();
   const words = cinemaWords(t);
@@ -606,7 +603,7 @@ export function CinemaMode({
 
       {curtained && <FormatCurtain
         title={story.title} byline={story.authorName ?? ""} ready={!track || Boolean(lineStarts)} closed={phase === "ended"}
-        onOpened={openedCurtain} onClosed={closedCurtain} exit={curtainExit}
+        onOpened={openedCurtain} onClosed={closedCurtain}
       />}
 
       {ended && !withoutFinale && (
