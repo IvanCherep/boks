@@ -764,8 +764,11 @@ export function ImmersivePoem({
   useEffect(() => { voiceLevel.current?.set(voice); }, [voice]);
   useEffect(() => { musicLevel.current?.set((manifest.theme?.gain ?? 0) * music); }, [music, manifest.theme]);
   useEffect(() => {
-    onPlaybackChange?.({ playing: playing && !suspended && !menuOpen, progress: Math.min(1, elapsed * 1000 / manifest.durationMs), ended: status === "ended" });
-  }, [playing, suspended, menuOpen, elapsed, manifest.durationMs, status, onPlaybackChange]);
+    // With the curtain the piece has ended once it is closed: only then does the
+    // reader's interface (the ending, a sign-in notice) come up.
+    const ended = status === "ended" && (!curtained || curtainDown);
+    onPlaybackChange?.({ playing: playing && !suspended && !menuOpen, progress: Math.min(1, elapsed * 1000 / manifest.durationMs), ended });
+  }, [playing, suspended, menuOpen, elapsed, manifest.durationMs, status, curtained, curtainDown, onPlaybackChange]);
 
   function readText() {
     rememberTextPosition.current = true;
@@ -802,7 +805,7 @@ export function ImmersivePoem({
   useEffect(() => {
     if (recording || stage.current?.querySelector(".format-menu-layer")) return;
     stage.current?.querySelector<HTMLButtonElement>(textPreview ? ".poem-text-preview button" : status === "ended" ? ".poem__close" : ".format-top__back")?.focus();
-  }, [recording, status, textPreview]);
+  }, [recording, status, textPreview, curtainDown]);
 
   /*
    * The hand lifts: the water ripples again and the landscape goes back to its
