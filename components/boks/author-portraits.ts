@@ -53,9 +53,11 @@ export const authorPortraits: readonly AuthorPortrait[] = [
     photo: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-portrait.webp",
     thumb: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov.webp",
     focus: "52% 15%",
-    // The curtain card (2026-11-10): his night portrait behind the boks curtain.
-    share: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-curtain-share.jpg",
-    shareLoop: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-curtain-share.mp4",
+    // The two-act card (2026-11-13): his portrait on the dark moiré, the boks
+    // ribbon names him, sweeps across and parks. Poster is its 6th second.
+    // Was the curtain card (prokhorov-curtain-share.*, still in storage).
+    share: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-twoact-share.jpg",
+    shareLoop: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-twoact-share.mp4",
     // The ribbon card (2026-11-11, under test at /a/prokhorov/ribbon): his portrait on the dark moiré.
     ribbonArt: { path: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-ribbon-art.jpg", position: { x: 0.5, y: 0.5 } },
     aliases: [
