@@ -63,6 +63,8 @@ fi
 # email code for the first time (guests are anonymous and not counted). The
 # address is masked; the handle is what the team knows them by. The first run
 # only sets the watermark, so nobody is announced twice or all at once.
+# The watermark keeps microseconds: cut to whole seconds, the last reader's
+# own timestamp stays later than it and they are announced every minute.
 mark="$STATE/signups.since"
 if [ ! -f "$mark" ]; then
   date -u +%Y-%m-%dT%H:%M:%SZ > "$mark"
@@ -70,7 +72,7 @@ else
   since=$(cat "$mark")
   rows=$(docker compose exec -T db psql -U postgres -h localhost -qAt -F $'\t' -v since="$since" 2>/dev/null <<'SQL'
 set statement_timeout = '10s';
-select to_char(u.email_confirmed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+select to_char(u.email_confirmed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
        coalesce('@' || p.handle, '—'),
        regexp_replace(coalesce(u.email, ''), '^(.).*(@.*)$', '\1***\2'),
        (select count(*) from auth.users t
