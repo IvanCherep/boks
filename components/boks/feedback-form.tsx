@@ -102,9 +102,6 @@ export function FeedbackForm({
         <Send className="size-4" />
         {busy ? t("Sending…", "Отправляем…") : t("Send feedback", "Отправить отзыв")}
       </Button>
-      <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-        {t("No account or email needed. Your handle is attached only if you are signed in.", "Аккаунт и email не нужны. Ваше @имя добавится, только если вы вошли.")}
-      </p>
     </form>
   );
 }

@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-08.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-14.
 
 > **⚠️ Since 2026-11-07 production is our own server, not Cloudflare/Supabase Cloud.** Release only with
 > `npm run deploy` (no downtime), migrations with `bash deploy/migrate.sh`, rollback with
@@ -14,6 +14,23 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Terms and Privacy, one layout (2026-11-14).**
+`/terms` and `/privacy` share `components/boks/legal/legal-layout.tsx`: way
+back, an explicit RU / EN switch (`?lang=ru|en` opens an edition directly and
+never changes the interface preference), the two documents as tabs, a first
+screen with three highlights, and contents beside the text on a wide screen or
+behind a button on a phone. Light theme follows the legal mock-up; dark is the
+app's own. Privacy (effective 2026-11-14): main database in Moscow, guest
+activity can be matched to an account signed in from the same browser, the
+author's name and photo are public, browser clearing vs server deletion; the
+mail provider and forwarding service are described by role, not by name. Terms
+keep their 22 September effective date with a 14 November clarification
+(sign-in by link and six-digit code, withdrawing a text in "Your boks",
+reporting from the bok menu); every other section and the `#catalogue` and
+`#author-content` anchors unchanged. Open: `currentBoksTermsVersion` is
+`2026-09-11` while the page says 22 September - older than this pass. The
+feedback form lost its "No account or email needed" line.
 
 **Reader returns after sign-in and cancelled audio (2026-11-07).**
 A guest who signs in by entering the email code from a conversation returns
@@ -378,7 +395,7 @@ language*: System / English / Русский, kept on the device
 (`docs/adr/0015-interface-language-follows-the-device.md`). Every reader and
 author string lives in a `defineMessages` table (`lib/i18n/`), Russian plurals
 included; a missing translation is a type error. In Russian a bok is "текст".
-Left English on purpose: the admin console, `/privacy` and `/terms`, the
+Left English on purpose: the admin console, the
 server-rendered `/b/<id>` share page and metadata, and database messages not in
 `lib/boks/errors.ts`'s table. The series shelf no longer follows the reader's
 feed languages: it opens in the interface language (since 2026-11-08; every language before), with a language filter (icon next to

@@ -1,14 +1,15 @@
 "use client";
 
-import { useUiLanguage } from "@/components/boks/ui-language";
-import { TermsEn } from "./terms-en";
-import { TermsRu } from "./terms-ru";
+import { LegalDocument, useLegalLanguage } from "@/components/boks/legal/legal-layout";
+import { termsEn } from "./terms-en";
+import { termsRu } from "./terms-ru";
 
 /**
- * The page in the interface language. The language is a client decision
- * (ADR 0015), so the server renders English and the first client render
- * switches; both texts say the same thing and change together.
+ * The page in the edition the address names (`?lang=ru|en`), else in the
+ * interface language (ADR 0015). The server renders English and the first
+ * client render switches; both texts say the same thing and change together.
  */
 export function TermsDocument() {
-  return useUiLanguage() === "ru" ? <TermsRu /> : <TermsEn />;
+  const { language, explicit } = useLegalLanguage();
+  return <LegalDocument page="terms" language={language} explicit={explicit} {...(language === "ru" ? termsRu : termsEn)} />;
 }

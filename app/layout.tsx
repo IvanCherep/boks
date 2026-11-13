@@ -13,6 +13,7 @@ import "./author-v49.css";
 import "./author-stage.css";
 import "./author-cabinet-v51.css";
 import "./admin-v44.css";
+import "./legal-v45.css";
 import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";
 import { uiLanguageBootScript } from "@/lib/i18n/ui-language";
 import { staleReleaseBootScript } from "@/lib/boks/stale-release";
