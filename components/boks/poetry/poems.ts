@@ -98,6 +98,20 @@ const poems: Record<string, string> = {
   "521c8ccd-83ed-478f-9f77-1eb2d6f8eff4": "/l/OrrNP--o_GduWs1egPhStQ/f/manifest.json",
   // Алексей Прохоров — наконец-то родился я
   "3e680406-1683-431a-b18e-4095f9caea2e": "/l/h-WA7D-nUlZjtgFvBwU1_w/f/manifest.json",
+  // Дарья Мальо-Субботина, in her own voice; published by her from her page
+  // (2026-11-14) with these Series, which go live here.
+  // Дарья Мальо-Субботина — Связь
+  "3a69d8a9-8d92-4f11-bb87-64656657c967": "/l/oXvCucxAPkHMSfD3pJUSIw/f/manifest.json",
+  // Дарья Мальо-Субботина — Нишевые интересы
+  "72a6d484-3963-44b7-bca7-386aee7639dc": "/l/ngg8dsa7hl9pOQjYjdsmrw/f/manifest.json",
+  // Дарья Мальо-Субботина — Всё злое
+  "1064ee72-2234-480a-8a5e-b78b8d02f36f": "/l/hLnShdRBCN5y1njpoBDyBQ/f/manifest.json",
+  // Дарья Мальо-Субботина — Непутёвые
+  "d360fd79-214e-462c-85fd-db7e3b196311": "/l/FBEhSZ_S5I655uX1a816zg/f/manifest.json",
+  // Дарья Мальо-Субботина — Обсессия
+  "084e5032-4aa2-4b32-b1ac-82c9cc4d1555": "/l/hbmrld_Cx0zjykhSNeSbOg/f/manifest.json",
+  // Дарья Мальо-Субботина — Звёздное
+  "9d393761-211d-4675-b001-91d64a834820": "/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
 };
 
 /** Every catalogued boks read as a poem - for the series shelf's test. */

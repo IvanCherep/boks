@@ -239,7 +239,9 @@ describe("seasonal collections", () => {
     const ids = (day: Date) => activeCollections(day).map((collection) => collection.id);
     expect(ids(new Date(2026, 10, 7, 23, 59))).not.toContain("prokhorov");
     expect(ids(new Date(2026, 10, 8, 0, 1))).toEqual(["prokhorov"]);
-    expect(ids(new Date(2030, 0, 1))).toEqual(["prokhorov"]);
+    expect(ids(new Date(2026, 10, 13, 23, 59))).not.toContain("malyo-subbotina");
+    expect(ids(new Date(2026, 10, 14, 0, 1))).toEqual(["prokhorov", "malyo-subbotina"]);
+    expect(ids(new Date(2030, 0, 1))).toEqual(["prokhorov", "malyo-subbotina"]);
   });
 
   it("draws several collections, each piece once, before the rest", () => {

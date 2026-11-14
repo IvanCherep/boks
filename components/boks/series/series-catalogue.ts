@@ -65,6 +65,86 @@ export type SeriesPiece = {
  * The test names what is missing if any of it is not done.
  */
 export const seriesPieces: readonly SeriesPiece[] = [
+  // Дарья Мальо-Субботина, in her own voice (published 2026-11-14). Covers are
+  // frames of our illustrations; the manifests are in storage (`poems.ts`).
+  {
+    storyId: "3a69d8a9-8d92-4f11-bb87-64656657c967",
+    format: "poem",
+    language: "ru",
+    title: "Связь",
+    author: "Дарья Мальо-Субботина",
+    cover: "/series/malyo-subbotina-svyaz.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 75,
+    scenes: 6,
+    moments: 0,
+    premieredOn: "2026-11-14",
+  },
+  {
+    storyId: "72a6d484-3963-44b7-bca7-386aee7639dc",
+    format: "poem",
+    language: "ru",
+    title: "Нишевые интересы",
+    author: "Дарья Мальо-Субботина",
+    cover: "/series/malyo-subbotina-nishevye-interesy.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 64,
+    scenes: 5,
+    moments: 0,
+    premieredOn: "2026-11-14",
+  },
+  {
+    storyId: "1064ee72-2234-480a-8a5e-b78b8d02f36f",
+    format: "poem",
+    language: "ru",
+    title: "Всё злое",
+    author: "Дарья Мальо-Субботина",
+    cover: "/series/malyo-subbotina-vsyo-zloe.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 103,
+    scenes: 7,
+    moments: 0,
+    premieredOn: "2026-11-14",
+  },
+  {
+    storyId: "d360fd79-214e-462c-85fd-db7e3b196311",
+    format: "poem",
+    language: "ru",
+    title: "Непутёвые",
+    author: "Дарья Мальо-Субботина",
+    cover: "/series/malyo-subbotina-neputyovye.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 71,
+    scenes: 6,
+    moments: 0,
+    premieredOn: "2026-11-14",
+  },
+  {
+    storyId: "084e5032-4aa2-4b32-b1ac-82c9cc4d1555",
+    format: "poem",
+    language: "ru",
+    title: "Обсессия",
+    author: "Дарья Мальо-Субботина",
+    cover: "/series/malyo-subbotina-obsessiya.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 89,
+    scenes: 7,
+    moments: 0,
+    premieredOn: "2026-11-14",
+  },
+  {
+    storyId: "9d393761-211d-4675-b001-91d64a834820",
+    format: "poem",
+    language: "ru",
+    title: "Звёздное",
+    author: "Дарья Мальо-Субботина",
+    cover: "/series/malyo-subbotina-zvyozdnoe.webp",
+    coverFocus: "50% 45%",
+    durationSeconds: 69,
+    scenes: 6,
+    moments: 0,
+    premieredOn: "2026-11-14",
+  },
   // Алексей Прохоров, the first living poet on boks, in his own voice. The
   // manifests live in storage (see `components/boks/poetry/poems.ts`); the
   // durations here are the recordings' lengths, music included.
@@ -636,7 +716,7 @@ export function seriesFormatOf(storyId: string): SeriesFormat | null {
  * `series-view.tsx`, under its `id`.
  */
 export type SeriesCollection = {
-  id: "halloween" | "prokhorov";
+  id: "halloween" | "prokhorov" | "malyo-subbotina";
   /** In the order they are meant to be heard. */
   storyIds: readonly string[];
   /** First day shown, and the first day it is no longer shown, `YYYY-MM-DD`, in the reader's own calendar. No `until`: it stays. */
@@ -679,6 +759,20 @@ export const seriesCollections: readonly SeriesCollection[] = [
     ],
     from: "2026-11-08",
     author: { handle: "prokhorov", name: "Алексей Прохоров", photo: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov.webp" },
+  },
+  {
+    // Her own section, in the order of her page.
+    id: "malyo-subbotina",
+    storyIds: [
+      "3a69d8a9-8d92-4f11-bb87-64656657c967",
+      "72a6d484-3963-44b7-bca7-386aee7639dc",
+      "1064ee72-2234-480a-8a5e-b78b8d02f36f",
+      "d360fd79-214e-462c-85fd-db7e3b196311",
+      "084e5032-4aa2-4b32-b1ac-82c9cc4d1555",
+      "9d393761-211d-4675-b001-91d64a834820",
+    ],
+    from: "2026-11-14",
+    author: { handle: "malyo_subbotina", name: "Дарья Мальо-Субботина", photo: "/l/kmp-Mf-f1mysuSN14cB-Hg/f/malyo-subbotina.webp" },
   },
 ];
 

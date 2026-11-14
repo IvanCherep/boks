@@ -56,16 +56,18 @@ const collectionMessages = defineMessages({
   halloween: "Halloween",
   prokhorov: "Алексей Прохоров",
   prokhorovNote: "Read by the poet",
+  "malyo-subbotina": "Дарья Мальо-Субботина",
   position: "of",
   openAuthor: "open the author's page",
 }, { ru: {
   halloween: "Хэллоуин",
   prokhorov: "Алексей Прохоров",
   prokhorovNote: "Читает автор",
+  "malyo-subbotina": "Дарья Мальо-Субботина",
   position: "из",
   openAuthor: "открыть страницу автора",
 } });
-const collectionNotes: Partial<Record<SeriesCollection["id"], "prokhorovNote">> = { prokhorov: "prokhorovNote" };
+const collectionNotes: Partial<Record<SeriesCollection["id"], "prokhorovNote">> = { prokhorov: "prokhorovNote", "malyo-subbotina": "prokhorovNote" };
 
 type CatalogueAnswer = Map<string, { title: string; authorName: string }> | null;
 
