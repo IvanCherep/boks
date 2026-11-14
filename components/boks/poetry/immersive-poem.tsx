@@ -70,6 +70,10 @@ import {
 type Status = "loading" | "ready" | "ended" | "error";
 
 const controlsIdleMs = 2600;
+/** The player's band at the foot of the screen, as a share of its height; no stanza ends inside it. */
+const controlsBand = 0.19;
+/** How high a stanza may be raised to clear the controls. */
+const stanzaTopMargin = 0.08;
 /** The replayed hand of study b1; a real pointer id is never negative. */
 const replayPointerId = -1;
 // Actual media positions for a format/text round trip in this page session.
@@ -632,7 +636,33 @@ export function ImmersivePoem({
         let widest = 0;
         for (const word of zone.querySelectorAll<HTMLElement>(".poem__word")) widest = Math.max(widest, word.offsetWidth);
         if (room > 0 && widest > room) zone.style.setProperty("--poem-fit", (Math.floor((room / widest) * 100) / 100).toString());
+        settle(zone);
       }
+    };
+    /*
+     * No stanza below the player.
+     *
+     * A zone has a top and no bottom: two long lines that wrap, set low in the
+     * picture, ran under the controls and off the screen ("Нишевые интересы",
+     * 2026-11-14). A zone that would end inside the controls' band is raised
+     * just enough to end above it, never past the top margin; one still too
+     * tall for that space is set smaller as well. Zones that fit stay exactly
+     * where the manifest put them.
+     */
+    const settle = (zone: HTMLElement) => {
+      zone.style.removeProperty("margin-top");
+      const frame = zone.offsetParent instanceof HTMLElement ? zone.offsetParent.clientHeight : 0;
+      if (!frame) return;
+      const floor = frame * (1 - controlsBand);
+      const ceiling = Math.min(zone.offsetTop, frame * stanzaTopMargin);
+      if (zone.offsetTop + zone.offsetHeight <= floor) return;
+      const space = floor - ceiling;
+      if (zone.offsetHeight > space && space > 0) {
+        const fit = Number(zone.style.getPropertyValue("--poem-fit") || 1);
+        zone.style.setProperty("--poem-fit", (Math.floor(fit * (space / zone.offsetHeight) * 100) / 100).toString());
+      }
+      const lift = Math.min(zone.offsetTop - ceiling, zone.offsetTop + zone.offsetHeight - floor);
+      if (lift > 0) zone.style.marginTop = `${-lift}px`;
     };
     fit();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
