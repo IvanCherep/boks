@@ -52,18 +52,26 @@ outside the repository. Then:
    at `/l/<token>/f/<file>`, flat (no `scenes/` folder). If a pause was added
    after the last line, set `durationMs` and the last line's `endMs` to the
    recording's length.
-3. A `cover.webp`, 720 px wide, from one of the frames.
-4. A new scene-gesture hint needs its translation in
+3. Fit and check the stanzas - the release refuses a registered poem that
+   fails, and Studio refuses to attach it:
+   `npm run fit:poem -- <folder>/manifest.json --write`, then
+   `npm run check:poems -- <folder>/manifest.json`. No test can read this
+   folder once it is uploaded; this is the check (`reading-formats.md` §4,
+   step 8a).
+4. A `cover.webp`, 720 px wide, from one of the frames.
+5. A new scene-gesture hint needs its translation in
    `components/boks/poetry/gesture-hints.ts`; the hint test only reads
    `public/poetry/`, so it will not catch this one.
-5. Upload the folder to production (the server's link-only folder, which
+6. Upload the folder to production (the server's link-only folder, which
    only the app can read; `docs/agents/production-changes.md`):
 
    ```bash
    rsync -a <folder>/ boks-app:/opt/boks/link-only/<token>/
    ```
 
-6. Open `https://tryboks.com/l/<token>` on a phone and play it through.
+7. Open `https://tryboks.com/l/<token>` on a phone and play it through;
+   after a change to an uploaded manifest, `npm run check:poems -- <token>`
+   reads it back from production.
 
 Keep the link and the scratch folder outside git. To take a piece down,
 delete its folder (`ssh boks-app 'rm -r /opt/boks/link-only/<token>'`); the

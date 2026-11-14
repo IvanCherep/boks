@@ -72,6 +72,11 @@ fi
 if [ "${SKIP_CHECKS:-}" != 1 ]; then
   say "Checks: lint, typecheck, tests"
   npm run check
+  # Every registered poem, the living authors' ones too: those live in
+  # link-only storage, outside the tests, and are read from production here.
+  # Upload a fixed manifest before releasing, not after.
+  say "Series poems: every stanza above the player"
+  npm run --silent check:poems
 fi
 
 say "Build $id"

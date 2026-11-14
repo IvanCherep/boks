@@ -140,8 +140,10 @@ assets plus registry lines, released as code:
 3. Optionally a hand-made link-preview cover: `public/share/art/<name>.jpg`
    and a crop in `lib/boks/curtain.tsx` (`curtainPosition`).
 4. `npm run check` (the series tests catch a missing cover, a wrong duration,
-   an entry that would open as plain text), look at it at phone size, then
-   [Code](#code).
+   an entry that would open as plain text) and `npm run check:poems` (every
+   stanza ends above the player on every phone, link-only manifests read from
+   production; the release runs it too and stops on a failure - upload a fixed
+   manifest first), look at it at phone size, then [Code](#code).
 
 Files under `public/` are served from disk by Caddy and cached for an hour.
 **Do not replace a file that a live page already uses with different content

@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { backdropAt, textPresets, wordReachedAt, type PoemManifest } from "@/lib/boks/poetry/manifest";
 import { poemManifestFor, sandboxPoems } from "@/components/boks/poetry/poems";
 import { isWarpAmbience, isWarpGesture } from "@/lib/boks/poetry/gesture";
+import { stanzaFitProblems } from "@/lib/boks/poetry/stanza-fit";
 
 /*
  * The standard every poem is held to, whichever poem it is.
@@ -97,6 +98,12 @@ describe.each(slugs)("the poem in public/poetry/%s", (slug) => {
         expect(zone.y + zone.height, scene.id).toBeLessThanOrEqual(0.88);
       }
     }
+  });
+
+  // The declared box above is not what the reader sees: a zone has no bottom
+  // and its stanza is as tall as its words. This lays the words out.
+  it("ends every stanza above the player on every phone", () => {
+    expect(stanzaFitProblems(manifest)).toEqual([]);
   });
 
   it("gives every picture time to be looked at, and more of it still than dissolving", () => {

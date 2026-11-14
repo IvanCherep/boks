@@ -516,11 +516,31 @@ check that it works.
 
    It refuses if the word counts disagree rather than cutting the poem in the
    wrong places.
+8a. **Fit the stanzas, then check them** - required, the release refuses a
+   poem that fails:
+
+   ```bash
+   npm run fit:poem -- <manifest.json> --write   # raises only the zones that need it
+   npm run check:poems -- <manifest.json>        # must end "fit every phone"
+   ```
+
+   A zone has a top and **no bottom**: its stanza is as tall as its words, and
+   `safeZones[].height` is not enforced by anything. Several lines on one
+   picture, long lines that wrap, a low `y`, a short phone - any of them puts
+   the words under the player. `lib/boks/poetry/stanza-fit.ts` lays the words
+   out with the face's own widths on five phones down to Safari with its
+   toolbars (390×664) and requires every stanza to end above 81% of the
+   screen, where the controls begin. It matches the browser to a few pixels.
+   When `fit:poem` refuses (a stanza taller than the screen above the
+   player, or a raised zone landing on another zone of the picture), give the
+   picture fewer lines or lay its zones out again; do not lower `textScale`
+   to squeeze it in.
 9. **Register it** in `components/boks/poetry/poems.ts` against the boks id.
    One line. The sandbox lists it, the feed offers it, and the finale is
    shared, so a new poem has nothing to add there.
 10. **Look at it** at phone size in WebKit (§6) - the tests cannot tell whether
-   words sit on a face.
+   words sit on a face. A zone the player had to rescue carries
+   `data-fit="raised"` or `"shrunk"`; on a fitted poem none does.
 
 No new component, ever. If a poem needs something the renderer cannot do, the
 thing to add is a preset or a scene-map field, not a component.
@@ -689,6 +709,46 @@ because a layer sitting at zero opacity may never be rasterised and the first
 dissolve would otherwise pay for the texture upload at the moment it began.
 
 ---
+
+### Why words ran off the screen, and what stops it now
+
+It happened four times before the checks below existed:
+
+| When | What | Why |
+|---|---|---|
+| 2026-11-08 | «рассуждаешь» ran past the right edge | one word wider than its zone; nothing measured words |
+| 2026-11-09 | a long author's name ran off an author-page card | the card's line could not wrap |
+| 2026-11-12 | the cinema words' card sat half off a wide screen | two stylesheets disagreed on the stage's insets |
+| 2026-11-14 | 21 of 37 stanzas of Дарья Мальо-Субботина's six poems ran under the player, down to the screen's edge | zones at `y` 0.7 with up to 14 lines a picture |
+
+The last one had three causes, each of which alone would have let it through:
+
+1. **The rule checked the wrong thing.** `shipped-poems.test.ts` held
+   `y + height ≤ 0.88`, and every one of her zones (0.7 + 0.18) passed it. The
+   renderer never gives a zone a bottom; the words decide its height.
+2. **Living authors' poems were checked by nothing.** Their manifests live in
+   link-only storage, outside the repository, so no test ever read them.
+3. **"Look at it on a phone" was a step, not a gate**, and the pieces were
+   looked at on one tall phone, not in Safari with its toolbars.
+
+What holds now, from authoring to the reader:
+
+- **Authoring:** `npm run fit:poem` and `npm run check:poems` on the manifest
+  (step 8a); `build-poem-manifest.mjs` prints them.
+- **Tests:** every poem under `public/poetry/` is laid out on every phone
+  (`shipped-poems.test.ts`, "ends every stanza above the player").
+- **Studio:** attaching a Series to a work, and sending it to the feed, read
+  its manifest and refuse with the picture and the phone named
+  (`components/boks/author-spaces/series-fit.ts`).
+- **Release:** `deploy/release.sh` runs `check:poems` over every registered
+  poem, the link-only ones read from production; a failing one stops it.
+- **Reader:** the player raises a stanza that would still end in the
+  controls' band, and sets it smaller if it must (`immersive-poem.tsx`,
+  `settle`), so a phone nobody checked still gets whole words.
+
+On 2026-11-14 all 47 poems were fitted this way (35 zones of the classics and
+26 of the living authors' raised, by 7% of the screen on average); the
+manifests as they were are kept in `~/boks-secrets/manifests-before-fit-2026-11-14/`.
 
 ## 5. The series shelf
 

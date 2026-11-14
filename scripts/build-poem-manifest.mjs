@@ -282,3 +282,6 @@ const manifest = {
 const out = `public/poetry/${slug}/manifest.json`;
 writeFileSync(out, `${JSON.stringify(manifest, null, 1)}\n`);
 console.log(`${out}: ${built.length} lines, ${words.length} words, ${(durationMs / 1000).toFixed(2)}s`);
+// A zone has a top and no bottom: whether its stanza ends above the player is
+// only known once the words are laid out (lib/boks/poetry/stanza-fit.ts).
+console.log(`next: npm run fit:poem -- ${out} --write && npm run check:poems -- ${out}`);

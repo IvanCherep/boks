@@ -21,6 +21,8 @@
     "verify:schema": "node scripts/verify-schema-local.mjs",
     "verify:divergence": "tsx --tsconfig tsconfig.json scripts/check-algorithm-divergence.mts",
     "check:deploy-target": "node scripts/check-deploy-target.mjs",
+    "check:poems": "tsx --tsconfig tsconfig.json scripts/check-poem-layout.mts",
+    "fit:poem": "tsx --tsconfig tsconfig.json scripts/fit-poem-zones.mts",
     "fixtures:boks": "node scripts/generate-boks-fixtures.mjs",
     "corpus:fetch": "node scripts/fetch-gutenberg.mjs",
     "corpus:build": "node scripts/build-public-domain-corpus.mjs",

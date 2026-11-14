@@ -38,6 +38,7 @@ import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 import { Conversation, shortDateTime } from "@/components/boks/author-spaces/conversation";
 import { linkOnlyCover, linkOnlyPiecePath } from "@/lib/boks/link-only";
+import { seriesFitProblems } from "@/components/boks/author-spaces/series-fit";
 import { authorShareLabelPrefix } from "@/lib/boks/share-link";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
@@ -168,6 +169,7 @@ const words = defineMessages(
     seriesLive: "Series in the feed and on the shelf",
     seriesGoLive: "Registered in code: to the feed and shelf",
     seriesHold: "Take it off the feed again",
+    seriesNoFit: "This Series is not attached: on {count} stanza(s) the words would run under the player on a phone. First: {first} Fix the manifest (npm run fit:poem), upload it again, then attach.",
     backToPreparing: "Back to preparation",
     remove: "Remove",
     takeDown: "Take down",
@@ -322,6 +324,7 @@ const words = defineMessages(
       seriesLive: "Series в ленте и на полке",
       seriesGoLive: "Зарегистрирована в коде: в ленту и на полку",
       seriesHold: "Снова убрать из ленты",
+      seriesNoFit: "Series не привязана: в {count} строфах текст на телефоне зашёл бы под плеер. Первая: {first} Исправьте манифест (npm run fit:poem), загрузите заново и привяжите.",
       backToPreparing: "Вернуть в подготовку",
       remove: "Удалить",
       takeDown: "Снять",
@@ -781,6 +784,11 @@ function Works({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: bo
   const [rightsNote, setRightsNote] = useState("");
   const [seriesFor, setSeriesFor] = useState<SpaceWork | null>(null);
   const [seriesLink, setSeriesLink] = useState("");
+  /** No Series past here whose words would run under the player (`series-fit.ts`). */
+  async function assertSeriesFits(link: string) {
+    const problems = await seriesFitProblems(link);
+    if (problems.length) throw new Error(t.seriesNoFit.replace("{count}", String(problems.length)).replace("{first}", problems[0]));
+  }
   const visible = space.works.filter((work) => work.status !== "withdrawn");
   const [order, setOrder] = useState<string[]>(() => visible.map((work) => work.id));
   const ids = visible.map((work) => work.id).join(",");
@@ -851,7 +859,10 @@ function Works({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: bo
                   <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setSeriesLink(work.seriesPiece ? linkOnlyPiecePath(work.seriesPiece) : ""); setSeriesFor(work); }}>{t.series}</Button>
                 )}
                 {work.status === "published" && work.seriesPiece && (
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => setSpaceWorkSeries(work.id, work.seriesPiece ?? "", !work.seriesPublished))}>
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(async () => {
+                    if (!work.seriesPublished) await assertSeriesFits(work.seriesPiece ?? "");
+                    return setSpaceWorkSeries(work.id, work.seriesPiece ?? "", !work.seriesPublished);
+                  })}>
                     {work.seriesPublished ? t.seriesHold : t.seriesGoLive}
                   </Button>
                 )}
@@ -871,7 +882,7 @@ function Works({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: bo
                     {work.seriesPiece && (
                       <Button variant="ghost" disabled={busy} onClick={() => void run(async () => { const next = await setSpaceWorkSeries(work.id, ""); setSeriesFor(null); return next; })}>{t.seriesRemove}</Button>
                     )}
-                    <Button disabled={busy || !seriesLink.trim()} onClick={() => void run(async () => { const next = await setSpaceWorkSeries(work.id, seriesLink, work.seriesPublished); setSeriesFor(null); return next; })}>{t.seriesSave}</Button>
+                    <Button disabled={busy || !seriesLink.trim()} onClick={() => void run(async () => { await assertSeriesFits(seriesLink); const next = await setSpaceWorkSeries(work.id, seriesLink, work.seriesPublished); setSeriesFor(null); return next; })}>{t.seriesSave}</Button>
                   </div>
                 </div>
               )}

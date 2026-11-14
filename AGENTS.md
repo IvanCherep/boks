@@ -23,6 +23,10 @@ boks is a focused reading feed of complete short literature - each **bok** fits 
 > 7. **Any change to production** (a release, new boks, a series piece, a data fix, server config): follow
 >    `docs/agents/production-changes.md`. It has one route per kind of change, how readers are kept from noticing,
 >    and what needs the user's approval first. Data on production goes through `bash deploy/sql.sh` (dry run, then `--apply`).
+> 8. **A poem's words must end above the player on every phone.** A text zone has a top and no bottom, and
+>    `safeZones[].height` enforces nothing. Before uploading or registering any immersive poem (a living author's
+>    too - those are outside every test): `npm run fit:poem -- <manifest> --write`, then `npm run check:poems -- <manifest>`.
+>    The release and Studio refuse a poem that fails. Why: `docs/reading-formats.md`, "Why words ran off the screen".
 
 Read in this order, then the focused doc for the task:
 

@@ -41,6 +41,7 @@ import {
   type GestureLayer,
 } from "@/components/boks/poetry/gesture-layer";
 import { createOverlayLayer } from "@/components/boks/poetry/gesture-overlay";
+import { controlsBand, stanzaTopMargin } from "@/lib/boks/poetry/stanza-fit";
 import {
   createTraceRecorder,
   dueSamples,
@@ -70,10 +71,6 @@ import {
 type Status = "loading" | "ready" | "ended" | "error";
 
 const controlsIdleMs = 2600;
-/** The player's band at the foot of the screen, as a share of its height; no stanza ends inside it. */
-const controlsBand = 0.19;
-/** How high a stanza may be raised to clear the controls. */
-const stanzaTopMargin = 0.08;
 /** The replayed hand of study b1; a real pointer id is never negative. */
 const replayPointerId = -1;
 // Actual media positions for a format/text round trip in this page session.
@@ -651,15 +648,21 @@ export function ImmersivePoem({
      */
     const settle = (zone: HTMLElement) => {
       zone.style.removeProperty("margin-top");
+      delete zone.dataset.fit;
       const frame = zone.offsetParent instanceof HTMLElement ? zone.offsetParent.clientHeight : 0;
       if (!frame) return;
       const floor = frame * (1 - controlsBand);
       const ceiling = Math.min(zone.offsetTop, frame * stanzaTopMargin);
       if (zone.offsetTop + zone.offsetHeight <= floor) return;
+      // Marked, so a check in a browser (docs/reading-formats.md, "Before
+      // shipping") can tell a stanza the manifest placed from one the player
+      // had to rescue.
+      zone.dataset.fit = "raised";
       const space = floor - ceiling;
       if (zone.offsetHeight > space && space > 0) {
         const fit = Number(zone.style.getPropertyValue("--poem-fit") || 1);
         zone.style.setProperty("--poem-fit", (Math.floor(fit * (space / zone.offsetHeight) * 100) / 100).toString());
+        zone.dataset.fit = "shrunk";
       }
       const lift = Math.min(zone.offsetTop - ceiling, zone.offsetTop + zone.offsetHeight - floor);
       if (lift > 0) zone.style.marginTop = `${-lift}px`;
