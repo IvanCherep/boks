@@ -57,7 +57,8 @@ export const authorPortraits: readonly AuthorPortrait[] = [
     // ribbon names him, sweeps across and parks. Poster is its 6th second.
     // Was the curtain card (prokhorov-curtain-share.*, still in storage).
     share: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-twoact-share.jpg",
-    shareLoop: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-twoact-share.mp4",
+    // The black loop (2026-11-15); was prokhorov-twoact-share.mp4, still in storage.
+    shareLoop: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-black-share.mp4",
     // The ribbon card (2026-11-11, under test at /a/prokhorov/ribbon): his portrait on the dark moiré.
     ribbonArt: { path: "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-ribbon-art.jpg", position: { x: 0.5, y: 0.5 } },
     aliases: [
