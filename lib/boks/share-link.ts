@@ -27,6 +27,20 @@ export function authorShareUrl(handle: string, origin: string) {
   return new URL(`/@${encodeURIComponent(handle.replace(/^@+/, ""))}`, shareOrigin(origin)).href;
 }
 
+/**
+ * An author's link as people see and send it, without the scheme:
+ * `go.tryboks.com/@prokhorov` on the site, the page's own origin elsewhere.
+ * For text on screen; `authorShareUrl` is what goes on the clipboard.
+ */
+export function authorShareLabel(handle: string, origin = typeof window === "undefined" ? "https://tryboks.com" : window.location.origin) {
+  return authorShareUrl(handle, origin).replace(/^https?:\/\//, "");
+}
+
+/** The same, before the handle: the prefix of an address field. */
+export function authorShareLabelPrefix(origin = typeof window === "undefined" ? "https://tryboks.com" : window.location.origin) {
+  return `${new URL(shareOrigin(origin)).host}/@`;
+}
+
 /** Where `/@handle` is served from: the author page, `/a/handle`. Null for any other path. */
 export function authorPathTarget(url: URL) {
   const handle = /^\/@([A-Za-z0-9_.-]{1,40})\/?$/.exec(url.pathname)?.[1];

@@ -5,6 +5,7 @@ import { acceptAuthorInvite, peekAuthorInvite, type InviteOffer, type InvitePeek
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { pendingInviteKey } from "@/lib/boks/author/invite-link";
+import { authorShareLabel } from "@/lib/boks/share-link";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { Icon, Topbar } from "./ui";
 
@@ -26,7 +27,7 @@ const words = defineMessages(
     newTitle: "Your page in boks is ready",
     newBody: (n: number) => `The team prepared your page and ${n} work${n === 1 ? "" : "s"}. Look at everything first: readers see nothing until you press Publish yourself.`,
     withSeries: (n: number) => `${n} of them also come as Series: your reading, word by word, with illustrations.`,
-    address: (handle: string) => `Address: tryboks.com/@${handle}. You can change it later.`,
+    address: (handle: string) => `Address: ${authorShareLabel(handle)}. You can change it later.`,
     next: "Next you will see your page in the cabinet: every work, the preview, and the Publish button.",
     existingTitle: "You already have a page in boks",
     existingBody: (n: number) => `We will add ${n} draft${n === 1 ? "" : "s"} to your cabinet. Your name, photo, address, followers and published works stay as they are.`,
@@ -54,7 +55,7 @@ const words = defineMessages(
       newTitle: "Ваша страница в boks готова",
       newBody: (n: number) => `Редакция подготовила страницу и ${n} ${plural("ru", n, { one: "произведение", few: "произведения", many: "произведений", other: "произведения" })}. Сначала вы всё посмотрите: читатели ничего не увидят, пока вы сами не нажмёте «Опубликовать».`,
       withSeries: (n: number) => `${n} из них ещё и в Series: ваше чтение, слово в слово, с иллюстрациями.`,
-      address: (handle: string) => `Адрес: tryboks.com/@${handle}. Его можно поменять потом.`,
+      address: (handle: string) => `Адрес: ${authorShareLabel(handle)}. Его можно поменять потом.`,
       next: "Дальше откроется ваша страница в кабинете: все произведения, предпросмотр и кнопка «Опубликовать».",
       existingTitle: "У вас уже есть страница в boks",
       existingBody: (n: number) => `Добавим в кабинет ${n} ${plural("ru", n, { one: "черновик", few: "черновика", many: "черновиков", other: "черновика" })}. Имя, фото, адрес, подписчики и опубликованные работы останутся как есть.`,

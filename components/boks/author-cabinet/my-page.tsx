@@ -29,6 +29,7 @@ import { defineMessages, plural } from "@/lib/i18n/messages";
 import { Icon, Sheet, Thumb, Topbar } from "./ui";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { linkOnlyCover } from "@/lib/boks/link-only";
+import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "@/lib/boks/share-link";
 import { Conversation } from "@/components/boks/author-spaces/conversation";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 
@@ -102,7 +103,7 @@ const words = defineMessages(
     seriesLive: "The Series is on your page, in the feed and on the Series shelf.",
     notYet: "Not in this publication:",
     notYetReason: { preparing: "the team is preparing it", changes_requested: "waiting for the changes you asked for" } as Record<string, string>,
-    pageOpensAt: (handle: string) => `Your page opens at tryboks.com/@${handle}.`,
+    pageOpensAt: (handle: string) => `Your page opens at ${authorShareLabel(handle)}.`,
     waitingChanges: "Nothing to publish right now: the team is making the changes you asked for.",
     doneSeries: "Your page shows them with their Series now; the team adds the Series to the feed and the Series shelf.",
     seriesHeld: "Series in preparation",
@@ -117,9 +118,9 @@ const words = defineMessages(
     changeAddress: "Change address",
     addressLabel: "Page address, also your @name",
     addressRule: "English letters, numbers and underscores; starts with a letter.",
-    addressOldLink: (old: string) => `Links to tryboks.com/@${old} will stop opening.`,
+    addressOldLink: (old: string) => `Links to ${authorShareLabel(old)} will keep leading to your page.`,
     saveAddress: "Save address",
-    addressSaved: (handle: string) => `Your page is now tryboks.com/@${handle}`,
+    addressSaved: (handle: string) => `Your page is now ${authorShareLabel(handle)}`,
     asked: "Sent to the team.",
     takeDownSeries: "Take the Series down",
     takenDown: "The Series is taken down; the text stays published.",
@@ -206,7 +207,7 @@ const words = defineMessages(
       seriesLive: "Series на вашей странице, в ленте и на полке Series.",
       notYet: "Не войдут в эту публикацию:",
       notYetReason: { preparing: "редакция готовит", changes_requested: "ждём правок, которые вы попросили" },
-      pageOpensAt: (handle: string) => `Страница откроется по адресу tryboks.com/@${handle}.`,
+      pageOpensAt: (handle: string) => `Страница откроется по адресу ${authorShareLabel(handle)}.`,
       waitingChanges: "Сейчас публиковать нечего: редакция вносит правки, которые вы попросили.",
       doneSeries: "На вашей странице они уже с Series; в ленту и на полку Series их добавит редакция.",
       seriesHeld: "Series готовится",
@@ -221,9 +222,9 @@ const words = defineMessages(
       changeAddress: "Изменить адрес",
       addressLabel: "Адрес страницы, он же ваше @имя",
       addressRule: "Латинские буквы, цифры и подчёркивание; начинается с буквы.",
-      addressOldLink: (old: string) => `Ссылки на tryboks.com/@${old} перестанут открываться.`,
+      addressOldLink: (old: string) => `Старые ссылки на ${authorShareLabel(old)} будут вести на вашу страницу.`,
       saveAddress: "Сохранить адрес",
-      addressSaved: (handle: string) => `Теперь ваша страница — tryboks.com/@${handle}`,
+      addressSaved: (handle: string) => `Теперь ваша страница — ${authorShareLabel(handle)}`,
       asked: "Отправлено редакции.",
       takeDownSeries: "Снять Series",
       takenDown: "Series снята; текст остаётся опубликованным.",
@@ -372,7 +373,7 @@ export function MyPage({
   async function copyPageLink() {
     if (!data?.handle) return;
     try {
-      await navigator.clipboard.writeText(`https://tryboks.com/@${data.handle}`);
+      await navigator.clipboard.writeText(authorShareUrl(data.handle, window.location.origin));
       toast(w.copied);
     } catch {
       // Clipboard refused (insecure context, permissions): nothing to copy.
@@ -546,7 +547,7 @@ export function MyPage({
         <div>
           <h1 className="serif">{name}</h1>
           <p>
-            tryboks.com/@{data.handle} · <span className={`asp-chip asp-chip--${pageDraft ? "draft" : "published"}`}>{pageDraft ? w.draft : w.open}</span>
+            {authorShareLabel(data.handle ?? "")} · <span className={`asp-chip asp-chip--${pageDraft ? "draft" : "published"}`}>{pageDraft ? w.draft : w.open}</span>
             {" "}<button type="button" className="amp-link" onClick={() => { setAddress(data.handle ?? ""); setAddressProblem(""); setEditingAddress(true); }}>{w.changeAddress}</button>
           </p>
           {editingAddress && (
@@ -554,7 +555,7 @@ export function MyPage({
               <label>
                 <span>{w.addressLabel}</span>
                 <span className="amp-address__field">
-                  <span aria-hidden="true">tryboks.com/@</span>
+                  <span aria-hidden="true">{authorShareLabelPrefix()}</span>
                   <input value={address} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
                     minLength={minHandleLength} maxLength={maxHandleLength}
                     onChange={(event) => { setAddress(event.target.value.trim().replace(/^@+/, "").toLowerCase()); setAddressProblem(""); }} />

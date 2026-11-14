@@ -38,6 +38,7 @@ import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 import { Conversation, shortDateTime } from "@/components/boks/author-spaces/conversation";
 import { linkOnlyCover, linkOnlyPiecePath } from "@/lib/boks/link-only";
+import { authorShareLabelPrefix } from "@/lib/boks/share-link";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -731,7 +732,7 @@ function ProfileForm({
       <label className="asp-field">
         <span>{t.handleLabel}</span>
         <span className="asp-address">
-          <span>tryboks.com/@</span>
+          <span>{authorShareLabelPrefix()}</span>
           <Input value={handle} maxLength={24} disabled={owned} autoCapitalize="off" autoCorrect="off" spellCheck={false}
             onChange={(event) => setHandle(event.target.value.toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9_]/g, ""))} />
         </span>
