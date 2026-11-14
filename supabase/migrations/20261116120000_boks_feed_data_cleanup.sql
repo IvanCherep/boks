@@ -224,7 +224,7 @@ having max(v.created_at) > coalesce((
   from public.recommendation_events e
   where e.user_id = v.user_id
     and e.reel_id = v.reel_id
-    and e.event_type in ('impression', 'start', 'complete')
+    and e.event_type = 'impression'
     and e.surface = 'reader'
 ), '-infinity'::timestamptz);
 
@@ -246,14 +246,14 @@ begin
 
   return coalesce((
     with read_activity as (
-      -- A bok counts as read once the reader saw it in the reader: its latest
-      -- impression, start or complete.
+      -- A bok counts as read once the reader was shown it in the reader: its
+      -- latest impression, the moment the retired views table recorded.
       select reads.reel_id, max(reads.read_at) as read_at
       from (
         select e.reel_id, e.created_at as read_at
         from public.recommendation_events e
         where e.user_id = v_uid
-          and e.event_type in ('impression', 'start', 'complete')
+          and e.event_type = 'impression'
           and e.surface = 'reader'
           and e.reel_id is not null
         union all
