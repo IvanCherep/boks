@@ -772,7 +772,7 @@ export const seriesCollections: readonly SeriesCollection[] = [
       "9d393761-211d-4675-b001-91d64a834820",
     ],
     from: "2026-11-14",
-    author: { handle: "malyo_subbotina", name: "Дарья Мальо-Субботина", photo: "/l/kmp-Mf-f1mysuSN14cB-Hg/f/malyo-subbotina.webp" },
+    author: { handle: "malyo_subbotina", name: "Дарья Мальо-Субботина", photo: "/l/kmp-Mf-f1mysuSN14cB-Hg/f/malyo-subbotina-2.webp" },
   },
 ];
 
