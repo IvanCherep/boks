@@ -33,7 +33,17 @@ type Phase = { kind: "loading" } | { kind: "missing" } | { kind: "failed" } | { 
  * there is no like, comment, share or next, and nothing is recorded as
  * reading - the comparison of algorithms never sees it.
  */
-export function LinkOnlyPoem({ token }: { token: string }) {
+export function LinkOnlyPoem({
+  token,
+  onClose,
+  curtain = false,
+}: {
+  token: string;
+  /** Where Back goes. The link itself has nowhere to return to, so: the feed. */
+  onClose?: () => void;
+  /** Open behind the series curtain, playing at once (an author's page preview). */
+  curtain?: boolean;
+}) {
   const words = useMessages(messages);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
 
@@ -54,7 +64,9 @@ export function LinkOnlyPoem({ token }: { token: string }) {
       <ImmersivePoem
         manifest={phase.manifest}
         coverArtwork={linkOnlyFilePath(token, "cover.webp")}
-        onClose={() => window.location.assign("/")}
+        autoPlay={curtain}
+        curtain={curtain}
+        onClose={onClose ?? (() => window.location.assign("/"))}
       />
     );
   }

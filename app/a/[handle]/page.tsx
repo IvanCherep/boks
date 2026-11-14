@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { boksOrigin } from "@/app/layout";
-import { authorSharePitch, loadAuthorForShare } from "@/lib/boks/author-preview";
+import { authorSharePitch, loadAuthorForShare, loadMovedAuthorHandle } from "@/lib/boks/author-preview";
 import { OpeningAuthor } from "./opening-author";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
 import { OgVideo } from "@/components/boks/og-video";
@@ -25,7 +26,12 @@ async function handleFrom(params: RouteParams | Promise<RouteParams>) {
 
 export async function generateMetadata({ params }: { params: RouteParams | Promise<RouteParams> }): Promise<Metadata> {
   const handle = await handleFrom(params);
-  const author = await loadAuthorForShare(handle);
+  let author = await loadAuthorForShare(handle);
+  // An earlier address previews as the page it now leads to.
+  if (!author) {
+    const moved = await loadMovedAuthorHandle(handle);
+    if (moved) author = await loadAuthorForShare(moved);
+  }
   const url = `${boksOrigin}/@${author?.handle ?? handle}`;
   if (!author) {
     return { title: "boks", alternates: { canonical: url }, openGraph: { type: "website", url, siteName: "boks", title: "boks" } };
@@ -36,8 +42,10 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   // photo in the cabinet, as that photo; anyone else, as boks.
   const portrait = authorPortraitFor(author.handle);
   const photo = author.photoVersion ? `${boksOrigin}/a/${author.handle}/photo?v=${author.photoVersion}` : null;
-  const image = portrait?.share
-    ? { url: `${boksOrigin}${portrait.share}`, width: 1200, height: 630, alt: `${portrait.given} ${portrait.family}`, type: "image/jpeg" }
+  // The page's own card (set in Studio, kept through a rename) before a card registered in code.
+  const card = author.shareCard ?? portrait?.share ?? null;
+  const image = card
+    ? { url: `${boksOrigin}${card}`, width: 1200, height: 630, alt: author.name, type: card.endsWith(".webp") ? "image/webp" : card.endsWith(".gif") ? "image/gif" : "image/jpeg" }
     : photo
       ? { url: photo, width: 640, height: 640, alt: author.name, type: "image/jpeg" }
       : { url: `${boksOrigin}/og-cover.png`, width: 1200, height: 630, alt: "boks" };
@@ -46,13 +54,18 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
     description,
     alternates: { canonical: url },
     openGraph: { type: "profile", siteName: "boks", url, title, description, images: [image] },
-    twitter: { card: photo && !portrait?.share ? "summary" : "summary_large_image", title, description, images: [image.url] },
+    twitter: { card: photo && !card ? "summary" : "summary_large_image", title, description, images: [image.url] },
   };
 }
 
 export default async function SharedAuthorPage({ params }: { params: RouteParams | Promise<RouteParams> }) {
-  // The curtain loop of a registered portrait; the picture above stays the still for everyone else.
-  const loop = authorPortraitFor(await handleFrom(params))?.shareLoop;
+  const handle = await handleFrom(params);
+  // A link from before the author renamed: take the reader to the page.
+  const moved = await loadMovedAuthorHandle(handle);
+  if (moved) redirect(`/@${moved}`);
+  // The page's own moving card (Studio), else a registered portrait's curtain
+  // loop; the picture above stays the still for everyone else.
+  const loop = (await loadAuthorForShare(handle))?.shareVideo ?? authorPortraitFor(handle)?.shareLoop;
   return (
     <>
       {loop && <OgVideo url={`${boksOrigin}${loop}`} width={960} height={504} />}

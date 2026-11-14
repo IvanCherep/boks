@@ -485,3 +485,5 @@
 .author-v44 .author-fan--3 img:nth-child(1){transform:rotate(-9deg)}
 .author-v44 .author-fan--3 img:nth-child(2){left:62px;z-index:2;transform:translateY(-10px)}
 .author-v44 .author-fan--3 img:nth-child(3){left:124px;transform:rotate(8deg)}
+.you-follow-photo{object-fit:cover;filter:grayscale(1);padding:0}
+.you-entry-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:#c44a32;color:#fff;font-size:11px;font-weight:600;vertical-align:middle}

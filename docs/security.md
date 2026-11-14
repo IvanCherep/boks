@@ -73,6 +73,18 @@ browser crops and re-encodes the photo (dropping camera metadata) before
 sending it. `/a/<handle>/photo` serves only those bytes as `image/jpeg` with
 `nosniff`; a suspended account's page name and photo are not served.
 
+- Author spaces (`20261114100000_boks_author_spaces.sql`) have no Data API
+  grants. Studio functions check `is_boks_admin`; the owner's functions check
+  `owner_user_id` and a permanent, non-suspended account (a guest session is
+  `authenticated`, so it is refused explicitly). Public reads
+  (`get_boks_author`, `get_boks_author_page`, `get_boks_author_photo`) skip a
+  space that is still a draft and list only published works. An invitation
+  token travels in the URL fragment, is stored only as SHA-256, expires after
+  14 days, is revoked by a newer one and binds only the account whose own
+  email matches; an accepted link answers `used` to anyone else. A draft's
+  photo and texts reach the browser only through RPCs that check the editor or
+  the owner, never through a cacheable URL.
+
 ## Release Checks
 
 Run before a security-sensitive deployment:

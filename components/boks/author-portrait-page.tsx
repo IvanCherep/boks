@@ -45,6 +45,7 @@ export function AuthorPortraitPage({
   onOpenWriter,
   onOpenAccount,
   onClose,
+  preview,
 }: {
   identity: AuthorPageIdentity;
   author: AuthorProfile | null;
@@ -61,6 +62,12 @@ export function AuthorPortraitPage({
   onOpenWriter?: (name: string) => void;
   onOpenAccount?: () => void;
   onClose: () => void;
+  /**
+   * A closed page shown to the team or its owner: the same page with the
+   * draft's data, marked with who can see it, and with Follow and Share
+   * inert, since there is nothing public to follow or share yet.
+   */
+  preview?: { label: string };
 }) {
   const { t, preferences } = useReaderPreferences();
   const [sharing, setSharing] = useState(false);
@@ -131,7 +138,7 @@ export function AuthorPortraitPage({
     }
   }
 
-  const openShare = () => { setCopyFallback(false); setSharing(true); };
+  const openShare = () => { if (preview) return; setCopyFallback(false); setSharing(true); };
   const boks = author?.boks ?? [];
   const writers = author && !author.byline && author.writers.length > 1 ? author.writers : [];
   const canShareNatively = typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -143,7 +150,8 @@ export function AuthorPortraitPage({
     : <span className={size === "large" ? "ap-portrait__initials" : "ap-sheet__initials"} aria-hidden="true">{initials}</span>;
 
   return (
-    <div ref={page} className="ap" role="dialog" aria-modal="true" aria-label={identity.name} tabIndex={-1}>
+    <div ref={page} className={`ap${preview ? " ap--preview" : ""}`} role="dialog" aria-modal="true" aria-label={identity.name} tabIndex={-1}>
+      {preview && <div className="ap-preview-flag" role="status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>{preview.label}</div>}
       <AuthorStage
         photo={identity.photo}
         focus={identity.focus}
@@ -170,7 +178,7 @@ export function AuthorPortraitPage({
           : `@${identity.handle}`}
         actions={
           <button type="button" className={`ap-follow${following ? " is-following" : ""}`} aria-pressed={following}
-            onClick={onToggleFollow} disabled={busy || !author?.authorUserId}>
+            onClick={preview ? undefined : onToggleFollow} disabled={busy || Boolean(preview) || !(author?.authorUserId || author?.pageId)}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d={following ? "m4 12 5 5L20 6" : "M12 4v16M4 12h16"} /></svg>
             <span>{following ? t("Following", "Вы подписаны") : publishedBy ? t(`Follow @${publishedBy}`, `Подписаться на @${publishedBy}`) : t("Follow", "Подписаться")}</span>
           </button>
@@ -194,8 +202,11 @@ export function AuthorPortraitPage({
           )}
           <ul className="ap-grid" aria-label={t(`All boks by ${identity.name}`, `Все боки: ${identity.name}`)}>
             {boks.map((bok, index) => {
-              const artwork = getBokArtwork({ id: bok.id });
-              const series = Boolean(seriesPieceFor(bok.id));
+              const artwork = bok.artwork ?? getBokArtwork({ id: bok.id });
+              // Series by what the page published, or, for pages from before
+              // that, by the production registered for the bok - unless a
+              // Series version is attached and still closed.
+              const series = bok.format === "series" || (Boolean(seriesPieceFor(bok.id)) && !bok.seriesHeld);
               return (
                 <li key={bok.id}>
                   <button type="button" className={`ap-card ap-reveal${bok.id === currentStoryId ? " is-current" : ""}`}
@@ -209,11 +220,15 @@ export function AuthorPortraitPage({
                           <img className="ap-card__image" src={artwork} alt="" loading="lazy" decoding="async" style={{ objectPosition: bokArtworkFocus(bok.id) }} />
                         </span>
                       </> : <span className="ap-card__window"><span className="ap-card__type">{bok.title.trim().charAt(0).toUpperCase()}</span></span>}
+                      {series && <>
+                        <span className="ap-card__badge">Series</span>
+                        <span className="ap-card__play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" /></svg></span>
+                      </>}
                     </span>
                     <span className="ap-card__label">
                       <span className="ap-card__title">{bok.title}</span>
                       {writers.length > 0 && bok.authorName && <span className="ap-card__byline">{bok.authorName}</span>}
-                      {series && <span className="ap-card__kind">Series</span>}
+                      <span className="ap-card__kind">{series ? "Series" : t("Text", "Текст")}</span>
                     </span>
                   </button>
                 </li>

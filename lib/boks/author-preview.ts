@@ -15,6 +15,10 @@ export type SharedAuthor = {
   titles: string[];
   /** The photo the author set (`author_pages`), as `/a/<handle>/photo?v=<photoVersion>`. */
   photoVersion?: number | null;
+  /** The page's own link preview card, `/l/<token>/f/<name>-share.jpg`; it follows the author through a rename. */
+  shareCard?: string | null;
+  /** Its moving version for og:video, `/l/<token>/f/<name>-share.mp4`. */
+  shareVideo?: string | null;
 };
 
 type AuthorAnswer = {
@@ -109,14 +113,31 @@ export async function loadAuthorForShare(handle: string, options: RpcOptions = {
   if (!bare) return null;
   const [answer, page] = await Promise.all([
     publicRpc<AuthorAnswer>("get_boks_author", { p_handle: bare, p_limit: 3 }, options),
-    publicRpc<{ name?: unknown; photoVersion?: unknown } | null>("get_boks_author_page", { p_handle: bare }, options),
+    publicRpc<{ name?: unknown; photoVersion?: unknown; shareCard?: unknown; shareVideo?: unknown } | null>("get_boks_author_page", { p_handle: bare }, options),
   ]);
   const author = sharedAuthorFromAnswer(bare, answer);
   if (!author) return null;
   // The name the author set for their page outranks a byline guessed from their boks.
   if (page && typeof page.name === "string" && page.name.trim()) author.name = page.name.trim();
   author.photoVersion = page && typeof page.photoVersion === "number" ? page.photoVersion : null;
+  author.shareCard = page && typeof page.shareCard === "string" && /^\/l\/[A-Za-z0-9_-]{22,64}\/f\/[a-z0-9-]+-share\.(jpg|webp|gif)$/.test(page.shareCard)
+    ? page.shareCard
+    : null;
+  author.shareVideo = page && typeof page.shareVideo === "string" && /^\/l\/[A-Za-z0-9_-]{22,64}\/f\/[a-z0-9-]+-share\.mp4$/.test(page.shareVideo)
+    ? page.shareVideo
+    : null;
   return author;
+}
+
+/**
+ * Where an author's earlier address leads now: their current handle, or null.
+ * A link shared before a rename keeps reaching the page.
+ */
+export async function loadMovedAuthorHandle(handle: string, options: RpcOptions = {}): Promise<string | null> {
+  const bare = bareHandle(handle);
+  if (!bare) return null;
+  const moved = await publicRpc<string | null>("get_boks_author_moved", { p_handle: bare }, options);
+  return typeof moved === "string" && bareHandle(moved) === moved.toLowerCase() ? moved : null;
 }
 
 /** The photo an author set, as JPEG bytes and its version; null without one. */

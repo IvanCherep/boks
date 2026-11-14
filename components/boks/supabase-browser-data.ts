@@ -486,11 +486,15 @@ export async function setAuthorFollow(authorUserId: string, following: boolean) 
 }
 
 export type FollowedAuthor = {
+  /** The account followed; `page:<id>` for an editorial page (`get_my_followed_pages`). */
   authorUserId: string;
   authorName: string;
   authorHandle: string;
   followedAt: string;
   published: number;
+  /** An editorial page the team runs for a classic. */
+  pageId?: string;
+  photoVersion?: number | null;
 };
 
 export async function loadFollowedAuthors(): Promise<FollowedAuthor[]> {

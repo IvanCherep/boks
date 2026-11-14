@@ -143,6 +143,63 @@ const russianSentences: Record<string, string> = {
   "That boks is not available.": "Этот бок недоступен.",
   "No published bok has that id.": "Нет опубликованного бока с таким id.",
   "That is not a bok id or a bok link.": "Это не id бока и не ссылка на бок.",
+  // Author pages prepared in Studio (20261114100000).
+  "That nickname is already taken.": "Этот никнейм уже занят.",
+  "This page does not exist.": "Такой страницы нет.",
+  "This page is not available.": "Эта страница недоступна.",
+  "This page was changed in another tab. Reload to see the latest version.":
+    "Страницу изменили в другой вкладке. Обновите, чтобы увидеть последнюю версию.",
+  "The name on the page is required: at most 60 characters, without < or >.":
+    "Нужно имя на странице: не больше 60 символов, без < и >.",
+  "The page address takes 3 to 24 English letters, digits or _, starting with a letter.":
+    "Адрес страницы - от 3 до 24 латинских букв, цифр или _, начинается с буквы.",
+  "An editorial page needs its own address.": "У страницы редакции должен быть свой адрес.",
+  "A work is a text or a Series.": "Произведение - это текст или Series.",
+  "Only a published bok can be attached.": "Привязать можно только опубликованный бок.",
+  "This bok belongs to another account.": "Этот бок принадлежит другому аккаунту.",
+  "A Series version is attached to a published bok.": "Series привязывается к опубликованному боку.",
+  "An editorial page shows boks already in the catalogue: attach one.":
+    "Страница редакции показывает боки из каталога: привяжите бок.",
+  "The text is required.": "Нужен текст.",
+  "The title is required, at most 200 characters.": "Нужно название, не больше 200 символов.",
+  "This work does not exist.": "Такого произведения нет.",
+  "A published work is changed through its bok; withdraw it first.":
+    "Опубликованное произведение меняется через его бок; сначала снимите его.",
+  "A work is marked ready, or back in preparation.": "Произведение можно отметить готовым или вернуть в подготовку.",
+  "This work cannot change state now.": "Сейчас нельзя изменить состояние этого произведения.",
+  "Say what was checked: text, format, files and rights.": "Укажите, что проверено: текст, формат, файлы и права.",
+  "A published work is withdrawn, not removed.": "Опубликованное произведение снимают, а не удаляют.",
+  "An editorial page is not handed over: the team publishes it.":
+    "Страницу редакции не передают автору: её публикует команда.",
+  "The author already has this page.": "Эта страница уже у автора.",
+  "Enter the author's email address.": "Введите почту автора.",
+  "This invitation cannot be revoked.": "Это приглашение нельзя отозвать.",
+  "Sign in with the invited email first.": "Сначала войдите с почты, на которую пришло приглашение.",
+  "This work is not available.": "Это произведение недоступно.",
+  "Changes are asked for before a work is published.": "Правки можно попросить до публикации.",
+  "Say briefly what to change (up to 1000 characters).": "Коротко напишите, что изменить (до 1000 символов).",
+  "Too many works to order at once.": "Слишком много произведений для одного порядка.",
+  "The order was changed in another tab. Reload to see the latest order.":
+    "Порядок изменили в другой вкладке. Обновите, чтобы увидеть последний.",
+  "Unknown item in the order.": "В порядке есть незнакомое произведение.",
+  "Choose the works to publish.": "Выберите произведения для публикации.",
+  "A chosen work is no longer on this page.": "Выбранного произведения больше нет на странице.",
+  "A work changed after you opened the preview. Look at it again before publishing.":
+    "Произведение изменилось после предпросмотра. Посмотрите его снова перед публикацией.",
+  "You have no prepared page.": "У вас нет подготовленной страницы.",
+  "A request id is required.": "Нужен идентификатор запроса.",
+  "This request belongs to another publication.": "Этот запрос относится к другой публикации.",
+  "Accept the publication terms first.": "Сначала примите условия публикации.",
+  "Your page opens together with its first works.": "Страница открывается вместе с первыми произведениями.",
+  "Choose what to publish.": "Выберите, что опубликовать.",
+  "Only an editorial page is published from Studio.": "Из студии публикуется только страница редакции.",
+  "State the basis of the rights and the source of the texts, and confirm the rights to the materials.":
+    "Укажите основание прав и источник текстов и подтвердите права на материалы.",
+  "Only a published work is taken down.": "Снять можно только опубликованное произведение.",
+  "Withdraw this text from your texts.": "Снимите этот текст в разделе «Мои тексты».",
+  "An editorial page is published or taken down.": "Страницу редакции публикуют или снимают.",
+  "This page cannot change state now.": "Сейчас нельзя изменить состояние этой страницы.",
+  "That page is not available.": "Эта страница недоступна.",
   // Studies (`/study/<key>`).
   "A boks session is required.": "Нужна сессия boks. Обновите страницу.",
   "Not a participant of this study.": "Вы не участник этого исследования.",
@@ -211,6 +268,10 @@ const russianPatterns: [RegExp, (...groups: string[]) => string][] = [
     /^A bok must fit inside 15 minutes\. This one is (\d+) characters; the limit is (\d+)\.$/,
     (n, max) => `Бок должен укладываться в 15 минут. В этом тексте ${n} символов, а можно не больше ${max}.`,
   ],
+  [/^The address @(\S+) is already taken\.$/, (h) => `Адрес @${h} уже занят.`],
+  [/^«(.+)» is not ready to publish\.$/, (title) => `«${title}» ещё не готово к публикации.`],
+  [/^«(.+)»: the bok it belongs to is not published\.$/, (title) => `«${title}»: бок, к которому оно относится, не опубликован.`],
+  [/^«(.+)» belongs to another account\.$/, (title) => `«${title}» принадлежит другому аккаунту.`],
 ];
 
 /** A reader-facing English sentence in the interface language, when we know it. */

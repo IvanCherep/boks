@@ -60,6 +60,7 @@ import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { ReaderTabs } from "@/components/boks/series/series-view";
 import { YouSettings } from "@/components/boks/you-settings";
+import { loadFollowedPages, setAuthorPageFollow } from "@/components/boks/author-spaces/data";
 import { bokCoverPalette } from "@/components/boks/reader/bok-cover-palette";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { currentUiLanguage, useMessages } from "./ui-language";
@@ -244,16 +245,19 @@ export function UserAuthPanel({
    */
   async function unfollowAuthor(authorUserId: string) {
     const previous = follows;
+    const accounts = (list: FollowedAuthor[]) => list.filter((author) => !author.pageId).map((author) => author.authorUserId);
+    const followed = follows.find((author) => author.authorUserId === authorUserId);
     setUnfollowing(authorUserId);
     const next = follows.filter((author) => author.authorUserId !== authorUserId);
     setFollows(next);
-    onFollowsChanged?.(next.map((author) => author.authorUserId));
+    onFollowsChanged?.(accounts(next));
 
     try {
-      await setAuthorFollow(authorUserId, false);
+      if (followed?.pageId) await setAuthorPageFollow(followed.pageId, false);
+      else await setAuthorFollow(authorUserId, false);
     } catch {
       setFollows(previous);
-      onFollowsChanged?.(previous.map((author) => author.authorUserId));
+      onFollowsChanged?.(accounts(previous));
     } finally {
       setUnfollowing(null);
     }
@@ -267,9 +271,25 @@ export function UserAuthPanel({
     if (!loadActivity) return context;
 
     if (context && !context.isAnonymous) {
-      const [items, followed] = await Promise.all([loadReaderLibrary(120, context.userId), loadFollowedAuthors()]);
+      const [items, followed, pages] = await Promise.all([
+        loadReaderLibrary(120, context.userId),
+        loadFollowedAuthors(),
+        loadFollowedPages().catch(() => []),
+      ]);
       setLibrary(items);
-      setFollows(followed);
+      // Accounts and the classics' editorial pages, newest follow first.
+      setFollows([
+        ...followed,
+        ...pages.map((page) => ({
+          authorUserId: `page:${page.pageId}`,
+          authorName: page.authorName,
+          authorHandle: page.authorHandle,
+          followedAt: page.followedAt,
+          published: page.published,
+          pageId: page.pageId,
+          photoVersion: page.photoVersion,
+        })),
+      ].sort((a, b) => String(b.followedAt).localeCompare(String(a.followedAt))));
     } else {
       setLibrary([]);
       setFollows([]);
@@ -587,6 +607,7 @@ export function UserAuthPanel({
     : intent === "like" ? t("Sign in to like this bok.", "Войдите, чтобы поставить лайк.")
     : intent === "comment" ? t("Sign in to comment with your @handle.", "Войдите, чтобы комментировать под своим @именем.")
     : intent === "follow" ? t("Sign in to follow this account.", "Войдите, чтобы подписаться.")
+    : surface === "author" ? t("Sign in with your email: we will send a code, and your author cabinet opens.", "Войдите по своей почте: мы пришлём код, и откроется кабинет автора.")
     : t("Sign in to keep your reading history, like boks and comment.", "Войдите, чтобы сохранять историю чтения, ставить лайки и общаться.");
   const authVisible = showAuth || reason !== "manual" || intent !== "general" || surface === "author";
   const title = libraryView === "liked" ? t("Liked boks.", "Понравившиеся боки.") : libraryView === "commented" ? t("My comments.", "Мои комментарии.") : t("Your activity.", "Ваша активность.");

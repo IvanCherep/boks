@@ -10,6 +10,7 @@ import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { currentUiLanguage } from "@/components/boks/ui-language";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
 import { AuthorPortraitPage } from "@/components/boks/author-portrait-page";
+import { setAuthorPageFollow } from "@/components/boks/author-spaces/data";
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -118,7 +119,7 @@ export function AuthorSheet({
 
   const followedOnOpen = useRef(false);
   useEffect(() => {
-    if (!followOnOpen || followedOnOpen.current || !author?.authorUserId || !canFollow) return;
+    if (!followOnOpen || followedOnOpen.current || !(author?.authorUserId || author?.pageId) || !canFollow) return;
     followedOnOpen.current = true;
     if (author.following) return;
     const timer = window.setTimeout(() => void toggleFollow(), 0);
@@ -128,7 +129,7 @@ export function AuthorSheet({
   }, [followOnOpen, author, canFollow]);
 
   async function toggleFollow() {
-    if (!author?.authorUserId) return;
+    if (!author?.authorUserId && !author?.pageId) return;
     if (!canFollow) {
       onRequestAccount();
       return;
@@ -144,11 +145,14 @@ export function AuthorSheet({
     });
 
     try {
-      const saved = await setAuthorFollow(author.authorUserId, next);
+      // A classic's editorial page is followed as a page; everyone else, as an account.
+      const saved = author.pageId && !author.authorUserId
+        ? await setAuthorPageFollow(author.pageId, next)
+        : await setAuthorFollow(author.authorUserId, next);
       setAuthor((current) =>
         current ? { ...current, following: saved.following, followers: saved.followers } : current
       );
-      onFollowChanged?.(author.authorUserId, saved.following);
+      if (author.authorUserId) onFollowChanged?.(author.authorUserId, saved.following);
     } catch (error) {
       setAuthor((current) =>
         current

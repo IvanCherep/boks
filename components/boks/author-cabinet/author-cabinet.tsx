@@ -21,6 +21,11 @@ import { Library, StatsView, statusClass, statusLabel } from "./library";
 import { usePublishing, type PublishingView } from "./publishing";
 import { useProfileEditor, type ProfileView } from "./profile-editor";
 import { Icon, Sheet, SheetAction, Thumb, Topbar, useLatest, useToast } from "./ui";
+import { MyPage, myPageViews, type MyPageView } from "./my-page";
+import { InviteScreen, InviteSignIn } from "./invite";
+import { loadMyAuthorSpace, loadMyInvites, type InviteOffer, type MyAuthorSpace } from "@/components/boks/author-spaces/data";
+import { inviteTokenFromHash, pendingInviteKey } from "@/lib/boks/author/invite-link";
+import { signOutBoksUser } from "@/lib/boks/supabase-client";
 
 /**
  * The author cabinet, `/author` (design v51, 2026-11-09).
@@ -31,7 +36,7 @@ import { Icon, Sheet, SheetAction, Thumb, Topbar, useLatest, useToast } from "./
  * library after a reload.
  */
 
-type View = "library" | `stats/${string}` | PublishingView | ProfileView;
+type View = "library" | `stats/${string}` | PublishingView | ProfileView | MyPageView | "invite";
 
 const publishingViews = new Set<string>(["write", "preview", "review", "upload", "queue", "split", "sending", "result"]);
 const profileViews = new Set<string>(["profile-edit", "profile-photo", "profile-preview"]);
@@ -39,7 +44,8 @@ const profileViews = new Set<string>(["profile-edit", "profile-photo", "profile-
 function viewFromHash(): View {
   const hash = typeof window === "undefined" ? "" : decodeURIComponent(window.location.hash.slice(1));
   if (hash.startsWith("stats/") && hash.length > 6) return hash as View;
-  if (publishingViews.has(hash) || profileViews.has(hash)) return hash as View;
+  if (publishingViews.has(hash) || profileViews.has(hash) || myPageViews.has(hash)) return hash as View;
+  if (hash === "invite" || hash.startsWith("invite=")) return "invite";
   return "library";
 }
 
@@ -48,6 +54,16 @@ type SheetState =
   | { kind: "menu"; item: AuthorBokSubmission }
   | { kind: "confirm"; action: "withdraw" | "restore" | "delete"; item: AuthorBokSubmission }
   | { kind: "info"; title: string; body: string };
+
+/** The line under "My page" in the library: what waits for the author. */
+function myPageHint(page: MyAuthorSpace, w: CabinetWords) {
+  if (page.unread) return w.myPageReply(page.unread);
+  const ready = page.items.filter((item) => item.work?.status === "ready").length;
+  const preparing = page.items.filter((item) => item.work && ["preparing", "changes_requested"].includes(item.work.status)).length;
+  if (ready) return w.myPageReady(ready);
+  if (preparing) return w.myPagePreparing(preparing);
+  return w.myPageOrder;
+}
 
 export function AuthorCabinet() {
   const w = useMessages(cabinetMessages);
@@ -64,6 +80,13 @@ export function AuthorCabinet() {
   const [busy, setBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewAuthor, setPreviewAuthor] = useState<AuthorProfile | null>(null);
+  // An invitation link's token (`#invite=<token>`), kept for this tab while
+  // the person signs in, then forgotten (`invite.tsx`).
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [myPage, setMyPage] = useState<MyAuthorSpace | null>(null);
+  /** Pages the team prepared for this account's email: offered here, no link needed. */
+  const [offers, setOffers] = useState<InviteOffer[]>([]);
+  const [offer, setOffer] = useState<InviteOffer | null>(null);
   const libraryScroll = useRef(0);
 
   const author = user && !user.isAnonymous ? user : null;
@@ -110,11 +133,13 @@ export function AuthorCabinet() {
     toast: toast.show,
   });
 
+  /** Where the page editor's Back leads: My page when it was opened from there. */
+  const profileBack = useRef<View>("library");
   const profile = useProfileEditor({
     w,
     language,
     enabled: Boolean(author),
-    go: (next) => go(next),
+    go: (next) => go(next === "library" ? profileBack.current : next),
     toast: toast.show,
   });
 
@@ -146,6 +171,62 @@ export function AuthorCabinet() {
     return () => window.removeEventListener("popstate", onPop);
   }, [show]);
 
+  // An invitation: take the token out of the address bar and history.
+  useEffect(() => {
+    const fromLink = inviteTokenFromHash(window.location.hash);
+    let token = fromLink;
+    if (fromLink) {
+      try {
+        window.sessionStorage.setItem(pendingInviteKey, fromLink);
+      } catch {
+        // Kept in this tab's state only.
+      }
+      window.history.replaceState(null, "", `${window.location.pathname}#invite`);
+    } else {
+      try {
+        token = window.sessionStorage.getItem(pendingInviteKey);
+      } catch {
+        token = null;
+      }
+    }
+    const timer = token
+      ? window.setTimeout(() => {
+          setInviteToken(token);
+          setView("invite");
+        }, 0)
+      : 0;
+    // A link opened in a tab where the cabinet is already open changes only
+    // the hash: the page does not load again, so listen for it.
+    const onHash = () => {
+      const next = inviteTokenFromHash(window.location.hash);
+      if (!next) return;
+      try {
+        window.sessionStorage.setItem(pendingInviteKey, next);
+      } catch {
+        // Kept in this tab's state only.
+      }
+      window.history.replaceState(null, "", `${window.location.pathname}#invite`);
+      setInviteToken(next);
+      setView("invite");
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", onHash);
+    };
+  }, []);
+
+  // What the "My page" entry in the library says.
+  useEffect(() => {
+    if (!user || user.isAnonymous) return;
+    let active = true;
+    loadMyAuthorSpace().then((answer) => active && setMyPage(answer)).catch(() => undefined);
+    void loadMyInvites().then((answer) => active && setOffers(answer));
+    return () => {
+      active = false;
+    };
+  }, [user, refreshKey]);
+
   // The address the page was opened at.
   useEffect(() => {
     const first = viewFromHash();
@@ -159,6 +240,7 @@ export function AuthorCabinet() {
   const shown: View =
     (publishingViews.has(view) && !publishing.canShow(view as PublishingView)) ||
     (profileViews.has(view) && (!profile.canShow(view as ProfileView) || !author)) ||
+    (view === "invite" && !inviteToken && !offer) ||
     (view !== "library" && !author)
       ? "library"
       : view;
@@ -375,7 +457,7 @@ export function AuthorCabinet() {
   if (!author) {
     return (
       <div className="acab">
-        <main className="page detail-page">
+        {inviteToken ? <InviteSignIn onSignIn={() => setAuthOpen(true)} /> : <main className="page detail-page">
           <Topbar title={w.workspace} backLabel={w.back} languageLabel={w.languageSwitch} onBack={() => (window.location.href = "/")} />
           <section className="empty">
             <div className="empty-letter">b.</div>
@@ -385,7 +467,7 @@ export function AuthorCabinet() {
               {w.emailAction} <Icon name="arrow" />
             </button>
           </section>
-        </main>
+        </main>}
         <UserAuthPanel
           open={authOpen}
           surface="author"
@@ -428,6 +510,52 @@ export function AuthorCabinet() {
         }
       />
     );
+  } else if (shown === "invite" && (inviteToken || offer)) {
+    content = (
+      <InviteScreen
+        key={inviteToken ?? offer?.inviteId}
+        token={inviteToken}
+        offer={inviteToken ? null : offer}
+        email={user?.email ?? null}
+        onAccepted={() => {
+          setInviteToken(null);
+          setOffer(null);
+          setRefreshKey((key) => key + 1);
+          // Accepting can change the account's @name, name and photo: read them again.
+          void refreshUser();
+          profileRef.current.reload();
+          show("my-page", "replace");
+        }}
+        onSwitchAccount={() => {
+          void signOutBoksUser().finally(() => {
+            setUser(null);
+            setAuthOpen(true);
+          });
+        }}
+        onDismiss={() => {
+          setInviteToken(null);
+          setOffer(null);
+          show("library", "replace");
+        }}
+      />
+    );
+  } else if (myPageViews.has(shown)) {
+    content = (
+      <MyPage
+        key={`${shown}-${refreshKey}`}
+        view={shown as MyPageView}
+        go={(next) => go(next)}
+        toast={toast.show}
+        onEditProfile={() => {
+          profileBack.current = "my-page";
+          go("profile-edit");
+        }}
+        onIdentityChanged={() => {
+          void refreshUser();
+          profileRef.current.reload();
+        }}
+      />
+    );
   } else if (publishingViews.has(shown)) {
     content = publishing.render(shown as PublishingView);
   } else if (shown === "profile-edit" || shown === "profile-photo") {
@@ -465,7 +593,44 @@ export function AuthorCabinet() {
           hasDraft={publishing.hasDraft}
           onNew={() => setSheet({ kind: "new" })}
           onContinueDraft={() => publishing.startWriting(false)}
-          onEditPage={() => go("profile-edit")}
+          onEditPage={() => {
+            profileBack.current = "library";
+            go("profile-edit");
+          }}
+          pageEntry={offers.length > 0 || (myPage && (myPage.space || myPage.items.length > 1)) ? (
+            <>
+            {offers.map((item) => (
+              <button key={item.inviteId} type="button" className="draft-strip amp-strip amp-strip--attention" onClick={() => { setOffer(item); setView("invite"); }}>
+                <span className="draft-icon">
+                  <Icon name="book" />
+                </span>
+                <span>
+                  <strong>{item.existingPage ? w.offerExistingTitle : w.offerTitle(item.name ?? "")}</strong>
+                  <small>{w.offerHint(item.works)}</small>
+                </span>
+                <span className="draft-continue">
+                  {w.open}
+                  <Icon name="arrow" />
+                </span>
+              </button>
+            ))}
+            {myPage && (myPage.space || myPage.items.length > 1) && (
+            <button type="button" className={`draft-strip amp-strip${myPage.unread || myPage.items.some((item) => item.work?.status === "ready") ? " amp-strip--attention" : ""}`} onClick={() => go("my-page")}>
+              <span className="draft-icon">
+                <Icon name="book" />
+              </span>
+              <span>
+                <strong>{w.myPage}</strong>
+                <small>{myPageHint(myPage, w)}</small>
+              </span>
+              <span className="draft-continue">
+                {w.open}
+                <Icon name="arrow" />
+              </span>
+            </button>
+            )}
+            </>
+          ) : null}
           onOpen={openItem}
           onMenu={(item) => {
             setSelected(item);

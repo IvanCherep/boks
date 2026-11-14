@@ -418,6 +418,9 @@ export type MyAuthorPage = AuthorPageIdentity & {
 export type AuthorProfile = {
   /** Empty for the seeded catalog, which has a byline but no account. */
   authorUserId: string;
+  /** An editorial page (a classic the team runs, `/@pushkin`): followed by this id, not by an account. */
+  pageId?: string;
+  pageKind?: "editorial";
   authorName: string;
   authorHandle: string;
   /**
@@ -442,6 +445,12 @@ export type AuthorBok = {
   createdAt: string;
   /** The byline on this piece, when the account printed one. */
   authorName?: string | null;
+  /** How the piece shows on its author's page: Series once a Series version of it is published there. */
+  format?: "text" | "series";
+  /** A Series version is attached and not yet published: the page shows the text. */
+  seriesHeld?: boolean;
+  /** A cover for a piece with no registered artwork (a prepared Series in a preview). */
+  artwork?: string;
 };
 
 export type ReaderLibraryItem = {

@@ -2,7 +2,6 @@ const baseDirectives = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "frame-ancestors 'none'",
   "form-action 'self'",
   "img-src 'self' data: blob:",
   // The formats play their recordings from an in-memory copy (an object URL),
@@ -36,18 +35,47 @@ function supabaseConnectSources(supabaseUrl?: string) {
   }
 }
 
-export function contentSecurityPolicy(supabaseUrl?: string) {
+/**
+ * Pages Studio shows inside its own frame: the author-page preview at
+ * desktop and phone width. Only boks itself may frame them; every other page
+ * refuses any frame at all.
+ */
+export function framedBySelf(pathname: string) {
+  return pathname === "/author/preview" || pathname.startsWith("/author/preview/");
+}
+
+/**
+ * A development server on this machine. Safari applies
+ * `upgrade-insecure-requests` to localhost too (Chrome exempts it), so over
+ * plain http every script and stylesheet was asked for over https and failed.
+ */
+export function isLocalHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname.endsWith(".localhost");
+}
+
+export function contentSecurityPolicy(supabaseUrl?: string, options: { framedBySelf?: boolean; local?: boolean } = {}) {
   // The beacon reports to `cloudflareinsights.com/cdn-cgi/rum`, a different
   // host from the one it is served from.
   const connectSources = ["'self'", ...supabaseConnectSources(supabaseUrl), "https://cloudflareinsights.com"];
-  return [...baseDirectives, `connect-src ${connectSources.join(" ")}`, "upgrade-insecure-requests"].join("; ");
+  const frameAncestors = options.framedBySelf ? "frame-ancestors 'self'" : "frame-ancestors 'none'";
+  return [
+    ...baseDirectives.slice(0, 3),
+    frameAncestors,
+    ...baseDirectives.slice(3),
+    `connect-src ${connectSources.join(" ")}`,
+    ...(options.local ? [] : ["upgrade-insecure-requests"]),
+  ].join("; ");
 }
 
 export function applySecurityHeaders(response: Response, requestUrl: URL, supabaseUrl?: string) {
-  response.headers.set("Content-Security-Policy", contentSecurityPolicy(supabaseUrl));
+  const selfFramed = framedBySelf(requestUrl.pathname);
+  response.headers.set(
+    "Content-Security-Policy",
+    contentSecurityPolicy(supabaseUrl, { framedBySelf: selfFramed, local: isLocalHost(requestUrl.hostname) })
+  );
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Frame-Options", selfFramed ? "SAMEORIGIN" : "DENY");
   response.headers.set(
     "Permissions-Policy",
     "browsing-topics=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()"

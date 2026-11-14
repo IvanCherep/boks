@@ -134,6 +134,7 @@ export function Library({
   onOpen,
   onMenu,
   onCounts,
+  pageEntry,
 }: {
   w: CabinetWords;
   identity: LibraryIdentity;
@@ -147,6 +148,8 @@ export function Library({
   onOpen: (item: AuthorBokSubmission) => void;
   onMenu: (item: AuthorBokSubmission) => void;
   onCounts?: (counts: AuthorBokSubmissionsPage["counts"]) => void;
+  /** "My page": prepared works and the page's order (`my-page.tsx`). */
+  pageEntry?: ReactNode;
 }) {
   const [page, setPage] = useState<AuthorBokSubmissionsPage | null>(null);
   const [filter, setFilter] = useState<AuthorBokStatusFilter>("all");
@@ -258,6 +261,7 @@ export function Library({
             <p>{suspendedReason || w.noticeBody}</p>
           </aside>
         )}
+        {!suspended && pageEntry}
         {hasDraft && !suspended && (
           <button type="button" className="draft-strip" onClick={onContinueDraft}>
             <span className="draft-icon">
@@ -273,7 +277,7 @@ export function Library({
             </span>
           </button>
         )}
-        {empty ? (
+        {empty && pageEntry ? null : empty ? (
           <section className="empty">
             <div className="empty-letter">b.</div>
             <h2>{w.emptyTitle}</h2>

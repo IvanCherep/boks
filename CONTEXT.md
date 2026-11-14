@@ -22,6 +22,14 @@ _Avoid_: display name, pen name, author name
 The optional name (at most 60 characters) and photo an author sets for their own page (`/@handle`) in the cabinet; they title that page and its link preview only. Comments keep the @handle and every bok keeps its byline (`author_pages`, 20261110100000).
 _Avoid_: display name, profile name
 
+**Author space**:
+The stable identity of one author page, independent of an account: a living author's page prepared in Studio and handed over by an **invitation** (then owned by their account), or an **editorial page** the team runs for a classic (`/@pushkin`), with its own @handle and followers. Holds **prepared works**, each a new text or a text / Series version attached to an existing bok, with a revision that a publication confirms (`author_spaces`, 20261114100000).
+_Avoid_: draft profile, shadow account, pseudo-user
+
+**Editorial page**:
+An author space of kind `editorial`: a classic's page the team prepares and publishes from Studio, recording the basis of the rights and the source of the texts. Readers follow it as a page; nobody signs in as the classic.
+_Avoid_: classic account, publisher writer page
+
 **Catalogue**:
 Every published bok the feed may draw from.
 _Avoid_: catalog, library, inventory

@@ -587,6 +587,8 @@ export function useProfileEditor({
 
   return {
     saved,
+    /** Read the page again (after an invitation is accepted or the address changes). */
+    reload: load,
     identity,
     unsaved,
     requestLeave,

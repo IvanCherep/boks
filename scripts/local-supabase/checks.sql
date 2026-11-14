@@ -3891,3 +3891,483 @@ begin
   perform public.boks_test_logout();
 end $$;
 rollback;
+
+-- Author spaces (20261114100000): a page prepared in Studio stays closed
+-- until its owner publishes; an invitation binds only the invited address,
+-- once; an existing page keeps everything; a repeat publishes nothing twice;
+-- the order is the page's; a classic's page is followed as a page.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('a5a50000-0000-4000-8000-000000000001', 'editor@boks.test', false),
+  ('a5a50000-0000-4000-8000-000000000002', 'darya@boks.test', false),
+  ('a5a50000-0000-4000-8000-000000000003', 'stranger@boks.test', false),
+  ('a5a50000-0000-4000-8000-000000000004', 'guest-space@boks.test', true),
+  ('a5a50000-0000-4000-8000-000000000005', 'alexey@boks.test', false),
+  ('a5a50000-0000-4000-8000-000000000006', 'reader-space@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('a5a50000-0000-4000-8000-000000000001', 'spaceeditor', 'admin', now(), 'v1'),
+  ('a5a50000-0000-4000-8000-000000000002', 'darya_mail', 'reader', now(), 'v1'),
+  ('a5a50000-0000-4000-8000-000000000003', 'stranger_one', 'reader', now(), 'v1'),
+  ('a5a50000-0000-4000-8000-000000000005', 'alexey_space', 'reader', now(), 'v1'),
+  ('a5a50000-0000-4000-8000-000000000006', 'reader_space', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+insert into public.reels (id, title, text, author_name, status, author_user_id, created_at) values
+  ('a5a50000-0000-4000-8000-0000000000b1', 'Старое', 'Старый текст Алексея.', 'Алексей', 'published', 'a5a50000-0000-4000-8000-000000000005', now() - interval '2 days'),
+  ('a5a50000-0000-4000-8000-0000000000b2', 'Новое', 'Новый текст Алексея.', 'Алексей', 'published', 'a5a50000-0000-4000-8000-000000000005', now() - interval '1 day'),
+  ('a5a50000-0000-4000-8000-0000000000c1', 'Зимнее утро', 'Мороз и солнце; день чудесный!', 'Александр Пушкин', 'published', null, now()),
+  ('a5a50000-0000-4000-8000-0000000000c2', 'Анчар', 'В пустыне чахлой и скупой', 'Александр Пушкин', 'published', null, now());
+insert into public.author_follows (follower_user_id, author_user_id) values
+  ('a5a50000-0000-4000-8000-000000000006', 'a5a50000-0000-4000-8000-000000000005');
+
+do $$
+declare
+  v_jpeg text := encode('\xffd8ffe0'::bytea || convert_to(repeat('x', 200), 'UTF8'), 'base64');
+  v_space jsonb;
+  v_id uuid;
+  v_work uuid;
+  v_invite jsonb;
+  v_token text;
+  v_old_token text;
+  v_answer jsonb;
+  v_error text;
+  v_mine jsonb;
+  v_request uuid := gen_random_uuid();
+  v_bok uuid;
+  v_pushkin uuid;
+begin
+  -- Nobody but the team prepares a page.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  begin
+    perform public.studio_save_author_space(null, 'author', 'Тестовая Поэтесса', 'test_poetess', null, 0);
+    perform public.boks_assert(false, 'a reader cannot prepare a page');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Admin access required%', 'a reader cannot prepare a page: ' || v_error);
+  end;
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_space := public.studio_save_author_space(null, 'author', 'Тестовая Поэтесса', 'test_poetess', v_jpeg, 0);
+  v_id := (v_space ->> 'id')::uuid;
+  perform public.boks_assert(v_space ->> 'status' = 'draft' and v_space ->> 'proposedHandle' = 'test_poetess', 'the team prepares a closed page with a proposed address');
+  v_space := public.studio_save_space_work(v_id, null, 'Тёплый снег', 'Снег шёл тёплый, как молоко.', 'text', null);
+  v_work := ((v_space -> 'works') -> 0 ->> 'id')::uuid;
+  -- One tab saves (version 1 -> 2); the other, still at 1, is refused.
+  v_space := public.studio_save_author_space(v_id, 'author', 'Тестовая Поэтесса', 'test_poetess', 'keep', 1);
+  perform public.boks_assert((v_space ->> 'version')::integer = 2, 'a Studio save bumps the version');
+  begin
+    perform public.studio_save_author_space(v_id, 'author', 'Дарья', 'test_poetess', 'keep', 1);
+    perform public.boks_assert(false, 'a stale Studio tab cannot overwrite the page');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'This page was changed in another tab%', 'a stale Studio save is refused: ' || v_error);
+  end;
+
+  -- The proposed address is reserved: nobody else takes it in settings.
+  begin
+    update public.user_profiles set handle = 'test_poetess' where user_id = 'a5a50000-0000-4000-8000-000000000003';
+    perform public.boks_assert(false, 'a reserved address cannot be taken');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'That nickname is already taken%', 'a reserved address is refused: ' || v_error);
+  end;
+
+  -- Closed: no public read shows the page, its name or its photo.
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author('test_poetess') is null, 'a guest sees no prepared page by its address');
+  perform public.boks_assert(public.get_boks_author_page('test_poetess') is null and public.get_boks_author_photo('test_poetess') is null, 'a guest gets no name or photo of a prepared page');
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000004', true);
+  begin
+    perform public.get_author_space_preview(v_id);
+    perform public.boks_assert(false, 'a guest session cannot preview a prepared page');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'This page is not available%', 'a guest session is refused the preview: ' || v_error);
+  end;
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  begin
+    perform public.get_author_space_preview(v_id);
+    perform public.boks_assert(false, 'another account cannot preview a prepared page');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'This page is not available%', 'a stranger is refused the preview: ' || v_error);
+  end;
+
+  -- The invitation: only a hash is kept, a new one revokes the old.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_invite := public.studio_issue_author_invite(v_id, 'Darya@Boks.test');
+  v_old_token := v_invite ->> 'token';
+  v_invite := public.studio_issue_author_invite(v_id, 'darya@boks.test');
+  v_token := v_invite ->> 'token';
+  perform public.boks_assert(not exists (select 1 from public.author_space_invites where token_hash = convert_to(v_token, 'UTF8')), 'the token itself is not stored');
+  perform public.boks_assert((select count(*) from public.author_space_invites where space_id = v_id and revoked_at is not null) = 1, 'a new invitation revokes the earlier one');
+
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.peek_author_invite(v_token) ->> 'state' = 'sign_in', 'before sign-in the link tells nothing');
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  v_answer := public.accept_author_invite(v_token);
+  perform public.boks_assert(v_answer ->> 'state' = 'wrong_email' and v_answer ->> 'emailHint' = 'd•••@boks.test', 'another address is told which one, masked');
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  perform public.boks_assert(public.accept_author_invite(v_old_token) ->> 'state' = 'revoked', 'a revoked link does not bind');
+  perform public.boks_assert(public.peek_author_invite(v_token) ->> 'state' = 'pending', 'the invited address sees the invitation');
+  v_answer := public.accept_author_invite(v_token);
+  perform public.boks_assert(v_answer ->> 'state' = 'accepted' and (v_answer ->> 'existingPage')::boolean = false, 'the invited address accepts a first page');
+  perform public.boks_assert((select handle from public.user_profiles where user_id = 'a5a50000-0000-4000-8000-000000000002') = 'test_poetess', 'the proposed address becomes the account''s @handle');
+  perform public.boks_assert(public.accept_author_invite(v_token) ->> 'state' = 'accepted', 'accepting twice is the same acceptance');
+  perform public.boks_assert((select count(*) from public.author_spaces where owner_user_id = 'a5a50000-0000-4000-8000-000000000002') = 1, 'a repeat creates no second page');
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.boks_assert(public.accept_author_invite(v_token) ->> 'state' = 'used', 'an accepted link is used for anyone else');
+
+  -- Still closed after accepting.
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author_page('test_poetess') is null, 'an accepted page stays closed until published');
+
+  -- The owner sees, asks, publishes; a changed work is refused.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  v_mine := public.get_my_author_space();
+  perform public.boks_assert(jsonb_array_length(v_mine -> 'items') = 1 and v_mine -> 'space' ->> 'status' = 'draft', 'the owner sees the prepared work');
+  perform public.boks_assert(public.get_author_space_preview(null) ->> 'access' = 'owner', 'the owner previews the page');
+  begin
+    perform public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_work, 'revision', 1)), true, 'test-terms', v_request);
+    perform public.boks_assert(false, 'a work not marked ready is not published');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like '%is not ready to publish%', 'an unchecked work is refused: ' || v_error);
+  end;
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.studio_set_space_work_status(v_work, 'ready', 'Тестовые данные, права подтверждены письмом');
+  perform public.studio_save_space_work(v_id, v_work, 'Тёплый снег', 'Снег шёл тёплый, как парное молоко.', 'text', null);
+  perform public.studio_set_space_work_status(v_work, 'ready', 'Перепроверено');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  begin
+    perform public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_work, 'revision', 1)), true, 'test-terms', v_request);
+    perform public.boks_assert(false, 'an older revision is not published');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'A work changed after you opened the preview%', 'a changed work asks for a new look: ' || v_error);
+  end;
+  v_answer := public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_work, 'revision', 2)), true, 'test-terms', v_request);
+  v_bok := ((v_answer -> 'published') -> 0 ->> 'bokId')::uuid;
+  perform public.boks_assert((v_answer ->> 'pagePublished')::boolean and (select status from public.reels where id = v_bok) = 'published', 'one publication opens the page and the work');
+  perform public.boks_assert((select text from public.reels where id = v_bok) = 'Снег шёл тёплый, как парное молоко.', 'the published text is the confirmed revision');
+  perform public.boks_assert((public.publish_my_author_space('[]'::jsonb, true, 'test-terms', v_request) ->> 'repeat')::boolean, 'a second press returns the first answer');
+  perform public.boks_assert((select count(*) from public.reels where author_user_id = 'a5a50000-0000-4000-8000-000000000002') = 1, 'and publishes nothing twice');
+  perform public.boks_assert((select terms_version from public.author_space_publications where request_id = v_request) = 'test-terms', 'the publication records the terms version');
+
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author_page('test_poetess') ->> 'name' = 'Тестовая Поэтесса', 'published: readers see the name');
+  perform public.boks_assert((public.get_boks_author('test_poetess') ->> 'totalBoks')::integer = 1, 'published: readers see the work');
+
+  -- An author with a page: everything stays, drafts go to the end.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_space := public.studio_save_author_space(null, 'author', 'Алексей Подготовленный', 'alexey_new', null, 0);
+  perform public.studio_save_space_work((v_space ->> 'id')::uuid, null, 'Черновик', 'Подготовленный текст.', 'text', null);
+  v_token := public.studio_issue_author_invite((v_space ->> 'id')::uuid, 'alexey@boks.test') ->> 'token';
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000005');
+  perform public.boks_assert((public.peek_author_invite(v_token) ->> 'existingPage')::boolean, 'an author with boks is told they already have a page');
+  v_answer := public.accept_author_invite(v_token);
+  perform public.boks_assert(v_answer ->> 'state' = 'accepted' and (v_answer ->> 'existingPage')::boolean and (v_answer ->> 'works')::integer = 1, 'their page receives the draft');
+  perform public.boks_assert((select handle from public.user_profiles where user_id = 'a5a50000-0000-4000-8000-000000000005') = 'alexey_space', 'their @handle stays');
+  perform public.boks_assert(exists (select 1 from public.author_follows where author_user_id = 'a5a50000-0000-4000-8000-000000000005'), 'their followers stay');
+  v_mine := public.get_my_author_space();
+  perform public.boks_assert(
+    (v_mine -> 'items' -> 0 ->> 'title') = 'Новое' and (v_mine -> 'items' -> 1 ->> 'title') = 'Старое' and (v_mine -> 'items' -> 2 ->> 'title') = 'Черновик',
+    'their order stays (newest first) and the draft comes last');
+  perform public.boks_test_logout();
+  perform public.boks_assert((public.get_boks_author('alexey_space') -> 'boks' -> 0 ->> 'title') = 'Новое' and (public.get_boks_author('alexey_space') ->> 'totalBoks')::integer = 2, 'readers see the same page, without the draft');
+
+  -- One order, saved by the author; a stale tab is refused; applied before the limit.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000005');
+  v_mine := public.get_my_author_space();
+  perform public.save_author_space_order(
+    (v_mine -> 'space' ->> 'id')::uuid,
+    array[v_mine -> 'items' -> 2 ->> 'key', v_mine -> 'items' -> 1 ->> 'key', v_mine -> 'items' -> 0 ->> 'key'],
+    (v_mine ->> 'orderVersion')::integer);
+  begin
+    perform public.save_author_space_order((v_mine -> 'space' ->> 'id')::uuid, array[v_mine -> 'items' -> 0 ->> 'key'], (v_mine ->> 'orderVersion')::integer);
+    perform public.boks_assert(false, 'a stale order is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'The order was changed in another tab%', 'a stale order is refused: ' || v_error);
+  end;
+  perform public.boks_test_logout();
+  perform public.boks_assert((public.get_boks_author('alexey_space', null, 1) -> 'boks' -> 0 ->> 'title') = 'Старое', 'the saved order is the public order, sorted before the limit');
+  perform public.boks_assert(public.get_boks_author('alexey_space') ? 'followers' and public.get_boks_author('alexey_space') ? 'authorUserId', 'every field an older client reads is still there');
+
+  -- A classic's page: run by the team, followed as a page.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_space := public.studio_save_author_space(null, 'editorial', 'Александр Пушкин', 'pushkin', v_jpeg, 0);
+  v_pushkin := (v_space ->> 'id')::uuid;
+  v_space := public.studio_save_space_work(v_pushkin, null, '', '', 'series', 'a5a50000-0000-4000-8000-0000000000c1');
+  v_space := public.studio_save_space_work(v_pushkin, null, '', '', 'text', 'a5a50000-0000-4000-8000-0000000000c2');
+  perform public.studio_set_space_work_status(w.id, 'ready', 'Общественное достояние, сверено') from public.author_space_works w where w.space_id = v_pushkin;
+  begin
+    perform public.studio_publish_editorial_space(v_pushkin, '[]'::jsonb, 'public_domain', '', true, gen_random_uuid());
+    perform public.boks_assert(false, 'a classic is not published without a source');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'State the basis of the rights%', 'the basis and the source are required: ' || v_error);
+  end;
+  v_answer := public.studio_publish_editorial_space(
+    v_pushkin,
+    (select jsonb_agg(jsonb_build_object('workId', w.id, 'revision', w.revision)) from public.author_space_works w where w.space_id = v_pushkin),
+    'public_domain', 'Викитека', true, gen_random_uuid());
+  perform public.boks_assert(jsonb_array_length(v_answer -> 'published') = 2, 'the team publishes the classic''s page');
+  perform public.boks_assert((select actor_user_id from public.author_space_publications where space_id = v_pushkin) = 'a5a50000-0000-4000-8000-000000000001', 'the editorial basis records the editor');
+
+  perform public.boks_test_logout();
+  v_answer := public.get_boks_author('@Pushkin');
+  perform public.boks_assert(v_answer ->> 'pageId' = v_pushkin::text and (v_answer ->> 'totalBoks')::integer = 2, 'readers open /@pushkin');
+  perform public.boks_assert(exists (select 1 from jsonb_array_elements(v_answer -> 'boks') b where b ->> 'title' = 'Зимнее утро' and b ->> 'format' = 'series'), 'a Series version shows as Series');
+  perform public.boks_assert(public.get_boks_author_photo('pushkin') ->> 'jpeg' = v_jpeg, 'the classic''s photo is served by its address');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000004', true);
+  begin
+    perform public.set_author_page_follow(v_pushkin, true);
+    perform public.boks_assert(false, 'a guest cannot follow a page');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Sign in to follow%', 'a guest is asked to sign in: ' || v_error);
+  end;
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000006');
+  perform public.boks_assert((public.set_author_page_follow(v_pushkin, true) ->> 'following')::boolean, 'a reader follows the classic''s page');
+  perform public.boks_assert(public.get_my_followed_pages() -> 0 ->> 'authorHandle' = 'pushkin', 'You → Following lists it');
+  perform public.boks_assert(jsonb_array_length(public.get_my_followed_authors()) = 1, 'the account follows an older client reads are unchanged');
+
+  -- Taking a Series down keeps the text it was attached to.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.unpublish_space_work(w.id) from public.author_space_works w where w.space_id = v_pushkin and w.format = 'series';
+  perform public.boks_assert((select status from public.reels where id = 'a5a50000-0000-4000-8000-0000000000c1') = 'published', 'the catalogue bok stays published');
+  perform public.boks_test_logout();
+  perform public.boks_assert((public.get_boks_author('pushkin') ->> 'totalBoks')::integer = 1, 'and leaves the classic''s page');
+end $$;
+
+-- A Series prepared in a link-only folder for a new text: seen by the team and
+-- the owner, approved with the text, released by hand after publication.
+do $$
+declare
+  v_space jsonb;
+  v_id uuid;
+  v_work uuid;
+  v_token text;
+  v_error text;
+  v_mine jsonb;
+  v_result jsonb;
+  v_bok uuid;
+  v_piece text := 'AbCdEfGhIjKlMnOpQrStUv';
+begin
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_space := public.studio_save_author_space(null, 'author', 'Поэтесса', 'stranger_poet', null, 0);
+  v_id := (v_space ->> 'id')::uuid;
+  v_space := public.studio_save_space_work(v_id, null, 'Связь', 'Город полнится воющим голосом.', 'text', null);
+  v_work := ((v_space -> 'works') -> 0 ->> 'id')::uuid;
+  perform public.studio_set_space_work_status(v_work, 'ready', 'Текст и запись от автора');
+  v_space := public.studio_set_space_work_series(v_work, 'http://localhost:5173/l/' || v_piece, false);
+  perform public.boks_assert((v_space -> 'works') -> 0 ->> 'seriesPiece' = v_piece, 'a pasted Series link keeps only its token');
+  perform public.boks_assert((v_space -> 'works') -> 0 ->> 'status' = 'preparing' and ((v_space -> 'works') -> 0 ->> 'revision')::integer = 2,
+    'attaching a Series is a new version to check again');
+  begin
+    perform public.studio_set_space_work_series(v_work, v_piece, true);
+    perform public.boks_assert(false, 'a Series cannot go live before its text');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'A Series goes live after its text is published%', 'a Series cannot go live before its text: ' || v_error);
+  end;
+  begin
+    perform public.studio_set_space_work_series(v_work, 'short', false);
+    perform public.boks_assert(false, 'a malformed Series link is refused');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Paste the Series link%', 'a malformed Series link is refused: ' || v_error);
+  end;
+  perform public.studio_set_space_work_status(v_work, 'ready', 'Текст и запись от автора');
+  v_token := public.studio_issue_author_invite(v_id, 'stranger@boks.test') ->> 'token';
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000006');
+  begin
+    perform public.studio_set_space_work_series(v_work, v_piece, false);
+    perform public.boks_assert(false, 'a reader cannot attach a Series');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Admin access required%', 'a reader cannot attach a Series: ' || v_error);
+  end;
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.accept_author_invite(v_token);
+  v_mine := public.get_author_space_preview(null);
+  perform public.boks_assert(v_mine -> 'items' -> 0 ->> 'seriesPiece' = v_piece, 'the owner sees the Series of a work in the preview');
+  v_result := public.publish_my_author_space(
+    jsonb_build_array(jsonb_build_object('workId', v_work::text, 'revision', 2)), true, 'v-test#author-content', gen_random_uuid());
+  perform public.boks_assert((v_result -> 'published' -> 0 ->> 'withSeries')::boolean, 'the publication records that the Series was approved');
+  v_bok := (v_result -> 'published' -> 0 ->> 'bokId')::uuid;
+
+  perform public.boks_test_logout();
+  perform public.boks_assert(position(v_piece in public.get_boks_author('stranger_poet')::text) = 0, 'readers never receive the Series token');
+  perform public.boks_assert(public.get_boks_author('stranger_poet') -> 'boks' -> 0 ->> 'format' = 'text', 'until it is released the work reads as text');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.studio_set_space_work_series(v_work, v_piece, true);
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author('stranger_poet') -> 'boks' -> 0 ->> 'format' = 'series', 'released, it shows as Series');
+  perform public.boks_assert((select status from public.reels where id = v_bok) = 'published', 'the text stays published');
+
+  -- The link preview card belongs to the page, not to its address.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.studio_set_author_space_share(v_id, 'https://tryboks.com/l/' || v_piece || '/f/poet-share.jpg');
+  begin
+    perform public.studio_set_author_space_share(v_id, '/l/' || v_piece || '/f/poet.jpg');
+    perform public.boks_assert(false, 'only a -share card is accepted');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Paste the card%', 'only a -share card is accepted: ' || v_error);
+  end;
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author_page('stranger_poet') ->> 'shareCard' = '/l/' || v_piece || '/f/poet-share.jpg', 'readers'' link previews get the page''s card');
+
+  -- The author may change the address: it is their @name, and the page moves with it.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.update_boks_user_profile('', 'poet_renamed');
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author('poet_renamed') -> 'boks' -> 0 ->> 'format' = 'series', 'a renamed author keeps the page, its works and the Series');
+  perform public.boks_assert(coalesce(jsonb_array_length(public.get_boks_author('stranger_poet') -> 'boks'), 0) = 0, 'the old address no longer opens the page');
+  perform public.boks_assert(public.get_boks_author_page('poet_renamed') ->> 'name' = 'Поэтесса', 'the page name follows the new address');
+  perform public.boks_assert(public.get_boks_author_page('poet_renamed') ->> 'shareCard' = '/l/' || v_piece || '/f/poet-share.jpg', 'the card follows the page to its new address');
+  perform public.boks_assert(public.get_boks_author_moved('@stranger_poet') = 'poet_renamed', 'an old link is sent to the new address');
+  perform public.boks_assert(public.get_boks_author_moved('poet_renamed') is null and public.get_boks_author_moved('nobody_here') is null, 'a current or unknown address is not a move');
+
+  -- Nobody else takes the old address; the author may take it back.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000006');
+  begin
+    perform public.update_boks_user_profile('', 'stranger_poet');
+    perform public.boks_assert(false, 'another account cannot take an author''s old address');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like '%already taken%', 'another account cannot take an author''s old address: ' || v_error);
+  end;
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  begin
+    perform public.studio_save_author_space(null, 'author', 'Другая', 'stranger_poet', null, 0);
+    perform public.boks_assert(false, 'Studio cannot propose an author''s old address');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like '%already taken%', 'Studio cannot propose an author''s old address: ' || v_error);
+  end;
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.update_boks_user_profile('', 'stranger_poet');
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author_moved('stranger_poet') is null and public.get_boks_author_moved('poet_renamed') = 'stranger_poet',
+    'taking the old address back makes it current, and the other one leads to it');
+end $$;
+
+-- The page's conversation: the author's notes, the team's answers, unread on both sides.
+do $$
+declare
+  v_space jsonb;
+  v_id uuid;
+  v_work uuid;
+  v_token text;
+  v_mine jsonb;
+  v_error text;
+begin
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_space := public.studio_save_author_space(null, 'author', 'Переписка', 'msg_poet', null, 0);
+  v_id := (v_space ->> 'id')::uuid;
+  v_space := public.studio_save_space_work(v_id, null, 'Письмо', 'Текст письма.', 'text', null);
+  v_work := ((v_space -> 'works') -> 0 ->> 'id')::uuid;
+  perform public.studio_set_space_work_status(v_work, 'ready', 'Проверено');
+  v_space := public.studio_set_author_space_share(v_id, '/l/AbCdEfGhIjKlMnOpQrStUv/f/msg-share.jpg', 'https://tryboks.com/l/AbCdEfGhIjKlMnOpQrStUv/f/msg-share.mp4');
+  perform public.boks_assert(v_space ->> 'shareVideo' = '/l/AbCdEfGhIjKlMnOpQrStUv/f/msg-share.mp4', 'a page keeps its moving link preview');
+  v_token := public.studio_issue_author_invite(v_id, 'reader-space@boks.test') ->> 'token';
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000006');
+  perform public.accept_author_invite(v_token);
+  v_mine := public.request_author_space_changes(v_work, 'Поменяйте шрифт заголовка');
+  perform public.boks_assert(v_mine -> 'messages' -> 0 ->> 'body' = 'Поменяйте шрифт заголовка' and (v_mine -> 'messages' -> 0 ->> 'fromAuthor')::boolean,
+    'asking for changes is a message to the team');
+  v_mine := public.send_author_space_message('И фото хочется посветлее');
+  perform public.boks_assert(jsonb_array_length(v_mine -> 'messages') = 2 and v_mine -> 'messages' -> 1 ->> 'workId' is null, 'the author writes about the page as a whole');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.boks_assert((public.studio_author_space(v_id) ->> 'unread')::integer = 2, 'the team sees two unread messages');
+  perform public.boks_assert(exists (
+    select 1 from jsonb_array_elements(public.studio_author_spaces('msg_poet', 10, 0) -> 'rows') r where (r ->> 'unread')::integer = 2
+  ), 'and the list of pages says so');
+  perform public.studio_mark_author_space_seen(v_id);
+  perform public.boks_assert((public.studio_author_space(v_id) ->> 'unread')::integer = 0, 'read in Studio, nothing is unread');
+  perform public.studio_set_space_work_status(v_work, 'ready', 'Проверено', 'Шрифт заменили');
+  perform public.studio_send_author_space_message(v_id, 'Фото заменим завтра');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000006');
+  v_mine := public.get_my_author_space();
+  perform public.boks_assert((v_mine ->> 'unread')::integer = 2, 'the author is told the changes are made, and the answer');
+  perform public.boks_assert(v_mine -> 'messages' -> 2 ->> 'body' = 'Шрифт заменили' and v_mine -> 'messages' -> 2 ->> 'workTitle' = 'Письмо',
+    'the fix names its work');
+  perform public.mark_author_space_messages_seen();
+  perform public.boks_assert((public.get_my_author_space() ->> 'unread')::integer = 0, 'read by the author, nothing is unread');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000004');
+  begin
+    perform public.send_author_space_message('чужое');
+    perform public.boks_assert(false, 'a guest writes to nobody');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Sign in required%' or v_error like 'There is no page%', 'a guest writes to nobody: ' || v_error);
+  end;
+  perform public.boks_test_logout();
+end $$;
+
+-- No link needed: signed in with the invited address, the cabinet offers the page.
+do $$
+declare
+  v_id uuid;
+  v_invite uuid;
+  v_mine jsonb;
+begin
+  insert into auth.users (id, email) values ('a5a50000-0000-4000-8000-000000000007', 'nolink@boks.test');
+  insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version)
+  values ('a5a50000-0000-4000-8000-000000000007', 'nolink_reader', 'reader', now(), 'v1')
+  on conflict (user_id) do nothing;
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  v_id := (public.studio_save_author_space(null, 'author', 'Без ссылки', 'nolink_poet', null, 0) ->> 'id')::uuid;
+  perform public.studio_save_space_work(v_id, null, 'Стих', 'Текст.', 'text', null);
+  v_invite := (public.studio_issue_author_invite(v_id, 'NoLink@boks.test') -> 'invite' ->> 'id')::uuid;
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.boks_assert(not exists (
+    select 1 from jsonb_array_elements(public.get_my_author_invites()) x where x ->> 'name' = 'Без ссылки'
+  ), 'another address is not offered the page');
+  perform public.boks_assert(public.accept_author_invite(null, v_invite) ->> 'state' = 'wrong_email', 'nor can it take the page by its id');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000007');
+  v_mine := public.get_my_author_invites();
+  perform public.boks_assert(jsonb_array_length(v_mine) = 1 and v_mine -> 0 ->> 'name' = 'Без ссылки' and v_mine -> 0 ->> 'handle' = 'nolink_poet'
+    and (v_mine -> 0 ->> 'works')::integer = 1, 'the invited address is offered its page without a link');
+  perform public.boks_assert(position('token' in v_mine::text) = 0, 'and is never handed the token');
+  perform public.boks_assert(public.accept_author_invite(null, v_invite) ->> 'state' = 'accepted', 'it accepts the page from the cabinet');
+  perform public.boks_assert(jsonb_array_length(public.get_my_author_invites()) = 0, 'an accepted page is no longer offered');
+  perform public.boks_assert((select handle from public.user_profiles where user_id = 'a5a50000-0000-4000-8000-000000000007') = 'nolink_poet',
+    'the proposed address becomes the account''s @name, as with the link');
+  perform public.boks_test_logout();
+end $$;
+
+do $$
+declare
+  v_table text;
+begin
+  foreach v_table in array array['author_spaces', 'author_space_works', 'author_space_invites', 'author_space_publications', 'author_space_order', 'author_space_follows', 'author_handle_moves', 'author_space_messages'] loop
+    perform public.boks_assert(
+      not has_table_privilege('anon', 'public.' || v_table, 'SELECT') and not has_table_privilege('authenticated', 'public.' || v_table, 'SELECT'),
+      v_table || ' is reached only through its functions');
+  end loop;
+  perform public.boks_assert(
+    not has_function_privilege('anon', 'public.studio_author_space(uuid)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.get_author_space_preview(uuid)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.accept_author_invite(text,uuid)', 'EXECUTE'),
+    'a bare anonymous request reaches no prepared page');
+  perform public.boks_assert(
+    has_function_privilege('anon', 'public.get_boks_author(text,text,integer)', 'EXECUTE'),
+    'the public author page stays open to guests');
+end $$;
+rollback;

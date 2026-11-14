@@ -97,13 +97,14 @@ export function coverLetter(title: string) {
   return Array.from(title).find((character) => /[\p{L}\p{N}]/u.test(character))?.toLocaleUpperCase() ?? "b";
 }
 
-export function Thumb({ id, title, className = "work-thumb" }: { id: string; title: string; className?: string }) {
+export function Thumb({ id, title, image, className = "work-thumb" }: { id: string; title: string; image?: string | null; className?: string }) {
   let hash = 0;
   for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
   const [background, color] = tints[hash % tints.length];
   return (
     <div className={className} style={{ background, color }} aria-hidden="true">
-      {coverLetter(title)}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {image ? <img src={image} alt="" /> : coverLetter(title)}
     </div>
   );
 }
