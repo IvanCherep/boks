@@ -139,6 +139,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       BOKS_INTERNAL_REST_URL: http://rest:3000
+      # GoTrue over the private network: /api/session/restore (lib/boks/session-keeper.ts).
+      BOKS_INTERNAL_AUTH_URL: http://mailer:9999
       # Link-only pieces (living authors): served to the app over the private network only.
       BOKS_LINK_ONLY_BASE_URL: http://caddy:8082
       # Visitor country by address (lib/boks/geoip.ts); refreshed by ops/geoip.sh.

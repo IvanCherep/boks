@@ -176,3 +176,18 @@ the suggested incompatible downgrades to eslint-config-next 14 or Vinext
 4. Never roll back only the Worker when its expected migration is already live.
 5. Record a fixed vulnerability in a migration/test/doc together so a later AI
    agent cannot reopen it accidentally.
+
+## Staying signed in (2026-11-15)
+
+GoTrue never ends a session on its own (refresh tokens do not expire), but the
+session lives in localStorage and browsers empty it: Safari after seven days
+without a visit, in-app browsers between openings, cleaners. So a signed-in
+account's current refresh token is also kept in a first-party cookie set by
+our server (`/api/session`, `lib/boks/session-keeper.ts`): `HttpOnly`,
+`SameSite=Strict`, `Secure`, path `/api/session`, 180 days, renewed with every
+refresh. A page that finds no session asks `/api/session/restore`, which trades
+the cookie with GoTrue (over the private network) for a fresh session and keeps
+the new token. Both routes refuse another origin. Signing out deletes it; a
+token GoTrue refuses clears it. Guests are not kept. Nothing is stored on the
+server and the token is never logged.
+

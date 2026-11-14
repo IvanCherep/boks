@@ -98,9 +98,54 @@ if (supabase) {
     .then((result) => {
       cachedAccessToken = result.data.session?.access_token ?? null;
     });
-  supabase.auth.onAuthStateChange((_event, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
     cachedAccessToken = session?.access_token ?? null;
+    // INITIAL_SESSION too: a reader signed in before this was added gets kept on their next visit.
+    if ((event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session && !session.user.is_anonymous) {
+      keepSession(session.refresh_token);
+    }
   });
+}
+
+/**
+ * Keeping a reader signed in when the browser forgets them
+ * (`lib/boks/session-keeper.ts`): every new refresh token of a signed-in
+ * account is also kept in an HttpOnly cookie by our server, and a page that
+ * finds no session in storage asks for it back before anything else.
+ */
+let keptToken: string | null = null;
+function keepSession(refreshToken: string) {
+  if (typeof window === "undefined" || !refreshToken || refreshToken === keptToken) return;
+  keptToken = refreshToken;
+  void fetch("/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+    keepalive: true,
+  }).catch(() => {
+    keptToken = null;
+  });
+}
+
+let restorePromise: Promise<void> | null = null;
+/** Once per page: a session the browser lost, back from the kept cookie. Bounded. */
+export function restoreKeptSession() {
+  if (!supabase || typeof window === "undefined") return Promise.resolve();
+  restorePromise ??= (async () => {
+    try {
+      const current = await supabase.auth.getSession();
+      if (current.data.session) return;
+      const answer = await fetch("/api/session/restore", { method: "POST", signal: AbortSignal.timeout(4000) });
+      if (!answer.ok) return;
+      const { session } = (await answer.json()) as { session: { access_token: string; refresh_token: string } | null };
+      if (!session) return;
+      keptToken = session.refresh_token;
+      await supabase.auth.setSession(session);
+    } catch {
+      // Unreachable or refused: the reader carries on as they would have.
+    }
+  })();
+  return restorePromise;
 }
 
 export function getCachedAccessToken() {
@@ -245,6 +290,8 @@ export async function getAnonymousSupabaseUserId() {
   if (!supabase) return null;
 
   await settleBoksMagicLinkRedirect();
+  // Before a guest session is made: the reader may only have been forgotten.
+  await restoreKeptSession();
 
   // Bounded, because this is the first thing the app does and a hanging call
   // here is a blank screen for as long as the reader will tolerate one. On a
@@ -270,6 +317,7 @@ export async function getCurrentSupabaseUser() {
   if (!supabase) return null;
 
   await settleBoksMagicLinkRedirect();
+  await restoreKeptSession();
 
   const sessionResult = await withUnreachableTimeout(supabase.auth.getSession(), "the boks session");
   if (sessionResult.error) {
@@ -553,4 +601,7 @@ export async function signOutBoksUser() {
   // global, which also ended the reader's sessions on every other device.
   const result = await supabase.auth.signOut({ scope: "local" });
   if (result.error) throw result.error;
+  // Signing out forgets the kept session too, or the next visit would bring it back.
+  keptToken = null;
+  await fetch("/api/session", { method: "DELETE" }).catch(() => undefined);
 }
