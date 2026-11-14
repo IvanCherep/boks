@@ -169,3 +169,5 @@
 /* A closed page shown to the team or its owner. */
 .ap-preview-flag{position:fixed;left:50%;bottom:calc(16px + var(--ap-safe));z-index:30;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#f3efe7;color:#192523;font:600 13px/1.2 var(--ap-sans);box-shadow:0 10px 30px -12px #000b;white-space:nowrap;pointer-events:none}
 .ap .ap-preview-flag svg{width:17px;height:17px}
+/* A Series played over a page (author page, preview, cabinet): above the page's own layer (260). */
+.ap-series-stage{position:fixed;inset:0;z-index:400}

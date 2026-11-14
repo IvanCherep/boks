@@ -23,11 +23,12 @@ import { currentBoksTermsVersion } from "@/components/boks/user-auth-panel";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { describeBoksHandleProblem, maxHandleLength, minHandleLength } from "@/lib/boks/contracts";
-import { updateBoksProfile } from "@/components/boks/supabase-browser-data";
+import { acceptBoksTerms, restoreMyBok, updateBoksProfile, withdrawMyBok } from "@/components/boks/supabase-browser-data";
 import { moveBy, moveTo, orderChanged } from "@/lib/boks/author/page-order";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { Icon, Sheet, Thumb, Topbar } from "./ui";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { linkOnlyCover } from "@/lib/boks/link-only";
 import { Conversation } from "@/components/boks/author-spaces/conversation";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 
@@ -67,8 +68,12 @@ const words = defineMessages(
       ready: "Ready to publish",
       changes_requested: "You asked for changes",
       published: "Published",
-      withdrawn: "Taken down",
+      withdrawn: "Hidden from the site",
     } as Record<WorkStatus, string>,
+    hide: "Hide from the site",
+    unhide: "Put back on the site",
+    hidden: "Hidden: readers no longer see it. You can put it back here.",
+    unhidden: "It is back on your page.",
     guideTitle: "How it works",
     guideLook: "Open each work: read the text and, where there is one, watch its Series.",
     guideAsk: "Something is off? Press “Ask for changes”: the team fixes it and it comes back here.",
@@ -93,16 +98,16 @@ const words = defineMessages(
     noCard: "The link will preview as your page's photo.",
     reorder: "Change the order",
     allPublished: "Everything here is published. The order is the order readers see on your page; change it whenever you like.",
-    seriesWaiting: "The Series comes out once the team releases it.",
-    seriesLive: "The Series is live.",
+    seriesWaiting: "The Series is on your page; the team adds it to the feed and the Series shelf.",
+    seriesLive: "The Series is on your page, in the feed and on the Series shelf.",
     notYet: "Not in this publication:",
     notYetReason: { preparing: "the team is preparing it", changes_requested: "waiting for the changes you asked for" } as Record<string, string>,
     pageOpensAt: (handle: string) => `Your page opens at tryboks.com/@${handle}.`,
     waitingChanges: "Nothing to publish right now: the team is making the changes you asked for.",
-    doneSeries: "The Series come out once the team releases them; the texts are live now.",
+    doneSeries: "Your page shows them with their Series now; the team adds the Series to the feed and the Series shelf.",
     seriesHeld: "Series in preparation",
     watchSeries: "Watch Series",
-    shownWithSeries: "The text goes to your page and the feed now; the Series follows once the team releases it",
+    shownWithSeries: "The text and its Series go to your page now; the Series reaches the feed and the Series shelf once the team adds it",
     look: "Read the version",
     askChanges: "Ask for changes",
     askTitle: "What should change?",
@@ -133,7 +138,7 @@ const words = defineMessages(
     shownIn: { text: "Your page and the feed", series: "Your page, the feed and the Series shelf" } as Record<string, string>,
     terms: "Publication terms",
     termsSummary: "You keep ownership. boks gets a worldwide, non-exclusive, royalty-free licence to host, show, distribute, recommend and promote the chosen works.",
-    accept: "I accept the terms for the chosen works",
+    accept: "I accept the boks terms for the chosen works",
     publishPage: "Publish the page and works",
     publishWorks: "Publish the chosen works",
     nothingReady: "Nothing is ready to publish yet. The team marks a work ready when it is checked.",
@@ -167,8 +172,12 @@ const words = defineMessages(
         ready: "Можно публиковать",
         changes_requested: "Вы попросили правки",
         published: "Опубликовано",
-        withdrawn: "Снято",
+        withdrawn: "Скрыто с сайта",
       },
+      hide: "Скрыть с сайта",
+      unhide: "Вернуть на сайт",
+      hidden: "Скрыто: читатели его больше не видят. Вернуть можно здесь же.",
+      unhidden: "Снова на вашей странице.",
       guideTitle: "Как это устроено",
       guideLook: "Откройте каждое произведение: прочитайте текст и, если есть, посмотрите Series.",
       guideAsk: "Что-то не так? Нажмите «Попросить правки»: редакция исправит, и произведение вернётся сюда.",
@@ -193,16 +202,16 @@ const words = defineMessages(
       noCard: "Ссылка покажет фото вашей страницы.",
       reorder: "Изменить порядок",
       allPublished: "Всё здесь опубликовано. В этом порядке читатели видят произведения на вашей странице; его можно менять когда угодно.",
-      seriesWaiting: "Series выйдет, когда редакция её выпустит.",
-      seriesLive: "Series уже в ленте.",
+      seriesWaiting: "Series уже на вашей странице; в ленту и на полку Series её добавит редакция.",
+      seriesLive: "Series на вашей странице, в ленте и на полке Series.",
       notYet: "Не войдут в эту публикацию:",
       notYetReason: { preparing: "редакция готовит", changes_requested: "ждём правок, которые вы попросили" },
       pageOpensAt: (handle: string) => `Страница откроется по адресу tryboks.com/@${handle}.`,
       waitingChanges: "Сейчас публиковать нечего: редакция вносит правки, которые вы попросили.",
-      doneSeries: "Series выйдут, когда редакция их выпустит; тексты уже на странице.",
+      doneSeries: "На вашей странице они уже с Series; в ленту и на полку Series их добавит редакция.",
       seriesHeld: "Series готовится",
       watchSeries: "Смотреть Series",
-      shownWithSeries: "Текст сразу появится на странице и в ленте; Series — как только редакция её выпустит",
+      shownWithSeries: "Текст и Series сразу появятся на вашей странице; в ленте и на полке Series она появится, когда редакция её добавит",
       look: "Посмотреть версию",
       askChanges: "Попросить правки",
       askTitle: "Что изменить?",
@@ -233,7 +242,7 @@ const words = defineMessages(
       shownIn: { text: "Ваша страница и лента", series: "Ваша страница, лента и полка Series" },
       terms: "Условия публикации",
       termsSummary: "Права остаются у вас. boks получает всемирную неисключительную безвозмездную лицензию размещать, показывать, распространять, рекомендовать и продвигать выбранные работы.",
-      accept: "Я принимаю условия для выбранных работ",
+      accept: "Я принимаю условия boks для выбранных работ",
       publishPage: "Опубликовать страницу и работы",
       publishWorks: "Опубликовать выбранные работы",
       nothingReady: "Пока нечего публиковать. Редакция отмечает работу готовой, когда проверит её.",
@@ -258,6 +267,7 @@ function newRequestId() {
 
 /** The status a line shows: its work's, or published for a bok readers see. */
 function lineStatus(item: PageItem): WorkStatus {
+  if (item.hidden) return "withdrawn";
   if (item.work && item.work.status !== "published" && item.work.status !== "withdrawn") return item.work.status;
   return item.published ? "published" : item.work?.status ?? "preparing";
 }
@@ -268,7 +278,7 @@ function chipTone(status: WorkStatus) {
 
 /** A cover for a line: its Series' first picture, or the bok's artwork. */
 function coverOf(item: PageItem) {
-  if (item.work?.seriesPiece) return `/l/${item.work.seriesPiece}/f/cover.webp`;
+  if (item.work?.seriesPiece) return linkOnlyCover(item.work.seriesPiece);
   return item.bokId ? getBokArtwork({ id: item.bokId }) : null;
 }
 
@@ -380,6 +390,7 @@ export function MyPage({
     items[0] ??
     null;
   const waiting = items.filter((item) => item.work && (item.work.status === "preparing" || item.work.status === "changes_requested"));
+  const orderable = items.filter((item) => !item.hidden).length;
   const undecided = items.some((item) => item.work && item.work.status !== "published" && item.work.status !== "withdrawn");
 
   function readItem(item: PageItem, series = false) {
@@ -418,6 +429,21 @@ export function MyPage({
       setAsking(null);
       setNote("");
       toast(w.asked);
+    } catch (error) {
+      toast(readableBoksError(error, w.failed, language));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Take a published work off the site, or put it back: the cabinet's own withdraw. */
+  async function setHidden(item: PageItem, hide: boolean) {
+    if (!item.bokId) return;
+    setBusy(true);
+    try {
+      await (hide ? withdrawMyBok(item.bokId) : restoreMyBok(item.bokId));
+      await load();
+      toast(hide ? w.hidden : w.unhidden);
     } catch (error) {
       toast(readableBoksError(error, w.failed, language));
     } finally {
@@ -565,7 +591,7 @@ export function MyPage({
         <section className="amp-works">
           <header className="amp-works__head">
             <h2 className="serif">{w.works}</h2>
-            {items.length > 1 && <button type="button" className="amp-link" onClick={() => go("my-page-order")}>{w.order}</button>}
+            {orderable > 1 && <button type="button" className="amp-link" onClick={() => go("my-page-order")}>{w.order}</button>}
           </header>
           {items.length === 0 && <p className="desk-note">{w.nothing}</p>}
           <ul className="amp-list">
@@ -598,7 +624,7 @@ export function MyPage({
                 <p className="desk-note">{waiting.some((item) => item.work?.status === "changes_requested") ? w.waitingChanges : w.nothingReady}</p>
               )}
             </>
-          ) : items.length > 1 ? (
+          ) : orderable > 1 ? (
             // Everything is published: what the author does here now is arrange the page.
             <>
               <button type="button" className="btn btn-secondary amp-publish" onClick={() => go("my-page-order")}>{w.reorder}</button>
@@ -619,12 +645,19 @@ export function MyPage({
               <p className="amp-detail__series">{current.work.seriesPublished ? w.seriesLive : w.seriesWaiting}</p>
             )}
             <div className="amp-detail__actions">
-              <button type="button" className="btn" onClick={() => readItem(current)}><Icon name="eye" /> {w.look}</button>
+              {preview?.items.some((entry) => entry.key === current.key || (current.bokId && entry.bokId === current.bokId)) && (
+                <button type="button" className="btn" onClick={() => readItem(current)}><Icon name="eye" /> {w.look}</button>
+              )}
               {current.work?.seriesPiece && (
                 <button type="button" className="btn btn-secondary" onClick={() => readItem(current, true)}>▶ {w.watchSeries}</button>
               )}
               {current.work && ["preparing", "ready", "changes_requested"].includes(current.work.status) && (
                 <button type="button" className="btn btn-secondary" onClick={() => { setNote(""); setAsking(current); }}>{w.askChanges}</button>
+              )}
+              {current.bokId && (current.published || current.hidden) && (
+                <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void setHidden(current, !current.hidden)}>
+                  {current.hidden ? w.unhide : w.hide}
+                </button>
               )}
               {current.work?.status === "published" && current.work.format === "series" && (
                 <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void takeDownSeries(current)}>{w.takeDownSeries}</button>
@@ -688,7 +721,8 @@ function AskSheet({ w, item, note, setNote, busy, onSend, onClose }: { w: Words;
 
 function OrderView({ w, data, header, onSaved }: { w: Words; data: MyAuthorSpace; header: React.ReactNode; onSaved: () => Promise<void> }) {
   const language = useUiLanguage();
-  const initial = useMemo(() => data.items.map((item) => item.key), [data.items]);
+  // A hidden work is not on the page readers see, so it has no place to order.
+  const initial = useMemo(() => data.items.filter((item) => !item.hidden).map((item) => item.key), [data.items]);
   const [keys, setKeys] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
@@ -783,13 +817,25 @@ function PublishView({
   async function publish() {
     setBusy(true);
     setProblem("");
-    try {
-      const result = await publishMyAuthorSpace({
+    const send = () =>
+      publishMyAuthorSpace({
         items: picked.map((item) => ({ workId: item.work!.id, revision: item.work!.revision })),
         publishPage: pageDraft,
         termsVersion: `${currentBoksTermsVersion}#author-content`,
         requestId,
       });
+    try {
+      let result;
+      try {
+        result = await send();
+      } catch (error) {
+        // An account that never accepted the boks terms (made before they were
+        // asked for, or outside the sign-in screen): the box just ticked is
+        // that acceptance, so record it and publish.
+        if (!/Accept the boks terms/.test(String((error as { message?: string })?.message ?? ""))) throw error;
+        await acceptBoksTerms(currentBoksTermsVersion);
+        result = await send();
+      }
       onDone(result);
     } catch (error) {
       if ((error as { code?: string })?.code === "40001") {

@@ -57,3 +57,13 @@ export function linkOnlyStorageUrl(supabaseUrl: string, token: string, file: str
 export function linkOnlyFilePath(token: string, file: string) {
   return `/l/${token}/f/${file}`;
 }
+
+/** A piece's own page: the player, at `/l/<token>`. */
+export function linkOnlyPiecePath(token: string) {
+  return `/l/${token}`;
+}
+
+/** A piece's cover, the first frame of its pictures (`docs/link-only-pieces.md`). */
+export function linkOnlyCover(token: string) {
+  return linkOnlyFilePath(token, "cover.webp");
+}

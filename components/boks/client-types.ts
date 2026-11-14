@@ -411,6 +411,8 @@ export type AuthorPageIdentity = {
 /** The author's own page as the cabinet edits it. */
 export type MyAuthorPage = AuthorPageIdentity & {
   handle: string | null;
+  /** The photo itself (base64 JPEG), for its owner: a page not yet open hides its public address. */
+  photo?: string | null;
   /** Grows with every save; a save from a tab holding an older one is refused. */
   version: number;
 };
@@ -449,8 +451,13 @@ export type AuthorBok = {
   format?: "text" | "series";
   /** A Series version is attached and not yet published: the page shows the text. */
   seriesHeld?: boolean;
-  /** A cover for a piece with no registered artwork (a prepared Series in a preview). */
+  /** A cover for a piece with no registered artwork. */
   artwork?: string;
+  /**
+   * A Series made for this text and published by its author, played from its
+   * link-only folder (`docs/link-only-pieces.md`) until it is registered in code.
+   */
+  seriesPiece?: string | null;
 };
 
 export type ReaderLibraryItem = {

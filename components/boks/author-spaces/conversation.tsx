@@ -3,6 +3,11 @@
 import { useState } from "react";
 import type { SpaceMessage } from "./data";
 
+/** "14 нояб., 20:35": when a message or an event happened, in the interface language. */
+export function shortDateTime(iso: string, language: string) {
+  return new Date(iso).toLocaleString(language === "ru" ? "ru-RU" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
 /**
  * A page's conversation, drawn the same for both sides: the author's notes
  * (on the design, the page, a work) and the team's answers, including the
@@ -24,9 +29,6 @@ export function Conversation({
   language: string;
 }) {
   const [draft, setDraft] = useState("");
-  const time = (iso: string) =>
-    new Date(iso).toLocaleString(language === "ru" ? "ru-RU" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-
   return (
     <div className="conv">
       {messages.length === 0 ? (
@@ -38,7 +40,7 @@ export function Conversation({
             return (
               <li key={message.id} className={`conv-msg${own ? " is-own" : ""}${message.fromAuthor ? "" : " is-team"}`}>
                 <span className="conv-meta">
-                  {message.fromAuthor ? labels.author : labels.team} · {time(message.createdAt)}
+                  {message.fromAuthor ? labels.author : labels.team} · {shortDateTime(message.createdAt, language)}
                   {message.workTitle && <> · {labels.about(message.workTitle)}</>}
                 </span>
                 <span className="conv-body">{message.body}</span>

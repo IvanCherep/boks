@@ -123,6 +123,8 @@ export type PageItem = {
   bokId: string | null;
   title: string;
   published: boolean;
+  /** A work the author took off the site themselves; it can be put back. */
+  hidden?: boolean;
   format: WorkFormat;
   seriesHeld?: boolean;
   work: SpaceWork | null;

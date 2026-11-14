@@ -6,6 +6,9 @@ import { authorInitials, splitAuthorName } from "@/components/boks/author-rings"
 import { AuthorStage } from "@/components/boks/author-stage/author-stage";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
+import { poemManifestFor } from "@/components/boks/poetry/poems";
+import { LinkOnlyPoem } from "@/components/boks/link-only/link-only-poem";
+import { linkOnlyCover } from "@/lib/boks/link-only";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { plural } from "@/lib/i18n/messages";
 
@@ -71,6 +74,8 @@ export function AuthorPortraitPage({
 }) {
   const { t, preferences } = useReaderPreferences();
   const [sharing, setSharing] = useState(false);
+  /** A Series played here, from its link-only folder: not yet one the reader can open. */
+  const [playing, setPlaying] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [copyFallback, setCopyFallback] = useState(false);
   const page = useRef<HTMLDivElement>(null);
@@ -202,15 +207,17 @@ export function AuthorPortraitPage({
           )}
           <ul className="ap-grid" aria-label={t(`All boks by ${identity.name}`, `Все боки: ${identity.name}`)}>
             {boks.map((bok, index) => {
-              const artwork = bok.artwork ?? getBokArtwork({ id: bok.id });
+              // A Series the page holds itself, until the reader can open it as one.
+              const ownSeries = bok.seriesPiece && !poemManifestFor(bok.id) ? bok.seriesPiece : null;
+              const artwork = bok.artwork ?? getBokArtwork({ id: bok.id }) ?? (bok.seriesPiece ? linkOnlyCover(bok.seriesPiece) : null);
               // Series by what the page published, or, for pages from before
               // that, by the production registered for the bok - unless a
               // Series version is attached and still closed.
-              const series = bok.format === "series" || (Boolean(seriesPieceFor(bok.id)) && !bok.seriesHeld);
+              const series = bok.format === "series" || Boolean(ownSeries) || (Boolean(seriesPieceFor(bok.id)) && !bok.seriesHeld);
               return (
                 <li key={bok.id}>
                   <button type="button" className={`ap-card ap-reveal${bok.id === currentStoryId ? " is-current" : ""}`}
-                    style={{ "--ap-delay": `${(index % 3) * 55}ms` } as CSSProperties} onClick={() => onOpenBok(bok.id)}>
+                    style={{ "--ap-delay": `${(index % 3) * 55}ms` } as CSSProperties} onClick={() => (ownSeries ? setPlaying(ownSeries) : onOpenBok(bok.id))}>
                     <span className="ap-card__art" aria-hidden="true">
                       {artwork ? <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -284,6 +291,12 @@ export function AuthorPortraitPage({
         </div>
       )}
       <div className={`ap-toast${notice ? " is-visible" : ""}`} role="status" aria-live="polite">{notice}</div>
+      {playing && (
+        // Over the page, behind the series curtain; Back returns to the page.
+        <div className="ap-series-stage">
+          <LinkOnlyPoem token={playing} curtain onClose={() => setPlaying(null)} />
+        </div>
+      )}
     </div>
   );
 }

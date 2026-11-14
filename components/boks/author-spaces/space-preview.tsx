@@ -53,12 +53,11 @@ export function previewAuthor(preview: SpacePreview): { profile: AuthorProfile; 
       minutes: 0,
       readingShape: "",
       createdAt: "",
-      // A text with a Series prepared for it is previewed as it will read
-      // once the team releases that Series.
-      format: item.seriesPiece ? ("series" as const) : item.format,
+      format: item.format,
       // A prepared text never borrows a registered production's look.
-      seriesHeld: item.seriesPiece ? false : (item.seriesHeld ?? item.format !== "series"),
-      ...(item.seriesPiece ? { artwork: `/l/${item.seriesPiece}/f/cover.webp` } : {}),
+      seriesHeld: item.seriesHeld ?? item.format !== "series",
+      // Its Series, cover and player, as the page shows it once published.
+      seriesPiece: item.seriesPiece ?? null,
     };
   });
   return {
@@ -117,8 +116,7 @@ export function SpacePreviewPage() {
         onOpenBok={(id) => setOpen(built.byId.get(id) ?? null)}
         onClose={() => { if (!embedded) window.location.href = "/author#my-page"; }}
       />
-      {/* A Series card plays its Series, behind the curtain, as readers will see it. */}
-      {open && <WorkPreview item={open} t={t} watchFirst={Boolean(open.seriesPiece)} onClose={() => setOpen(null)} />}
+      {open && <WorkPreview item={open} t={t} onClose={() => setOpen(null)} />}
     </>
   );
 }
@@ -148,7 +146,7 @@ export function WorkPreview({
     // Its own layer: the author page (and the cabinet's reader) sit above the
     // player's usual place in the feed.
     return (
-      <div className="asp-series-stage">
+      <div className="ap-series-stage">
         <LinkOnlyPoem token={item.seriesPiece} curtain onClose={() => (watchFirst ? onClose() : setWatching(false))} />
       </div>
     );

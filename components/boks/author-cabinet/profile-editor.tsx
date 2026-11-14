@@ -87,7 +87,8 @@ export function useProfileEditor({
   /** The page as it is saved, or as it would be: for the card, the library and the preview. */
   function identity(useDraft: boolean) {
     const shownName = cleanName(useDraft ? name : savedName);
-    const savedPhoto = photoUrl(handle, saved?.photoVersion);
+    // The owner's own copy (a page not yet open hides its public address), else the public one.
+    const savedPhoto = saved?.photo ? `data:image/jpeg;base64,${saved.photo}` : photoUrl(handle, saved?.photoVersion);
     const shownPhoto = !useDraft
       ? savedPhoto
       : photo.kind === "new"

@@ -4020,6 +4020,11 @@ begin
   -- Still closed after accepting.
   perform public.boks_test_logout();
   perform public.boks_assert(public.get_boks_author_page('test_poetess') is null, 'an accepted page stays closed until published');
+  perform public.boks_assert(public.get_boks_author_photo('test_poetess') is null, 'and so does its photo');
+
+  -- Its owner still sees their own photo in the cabinet.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  perform public.boks_assert(public.get_my_author_page() ->> 'photo' is not null, 'the owner sees their photo while the page is closed');
 
   -- The owner sees, asks, publishes; a changed work is refused.
   perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
@@ -4197,14 +4202,20 @@ begin
   perform public.accept_author_invite(v_token);
   v_mine := public.get_author_space_preview(null);
   perform public.boks_assert(v_mine -> 'items' -> 0 ->> 'seriesPiece' = v_piece, 'the owner sees the Series of a work in the preview');
+  perform public.boks_test_logout();
+  perform public.boks_assert(position(v_piece in coalesce(public.get_boks_author('stranger_poet')::text, '')) = 0
+    and position(v_piece in coalesce(public.get_boks_author_page('stranger_poet')::text, '')) = 0,
+    'before the author publishes, readers never receive the Series token');
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
   v_result := public.publish_my_author_space(
     jsonb_build_array(jsonb_build_object('workId', v_work::text, 'revision', 2)), true, 'v-test#author-content', gen_random_uuid());
   perform public.boks_assert((v_result -> 'published' -> 0 ->> 'withSeries')::boolean, 'the publication records that the Series was approved');
   v_bok := (v_result -> 'published' -> 0 ->> 'bokId')::uuid;
 
   perform public.boks_test_logout();
-  perform public.boks_assert(position(v_piece in public.get_boks_author('stranger_poet')::text) = 0, 'readers never receive the Series token');
-  perform public.boks_assert(public.get_boks_author('stranger_poet') -> 'boks' -> 0 ->> 'format' = 'text', 'until it is released the work reads as text');
+  perform public.boks_assert(public.get_boks_author('stranger_poet') -> 'boks' -> 0 ->> 'format' = 'series'
+    and public.get_boks_author('stranger_poet') -> 'boks' -> 0 ->> 'seriesPiece' = v_piece,
+    'published with its text, the Series plays from the author''s page at once');
 
   perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
   perform public.studio_set_space_work_series(v_work, v_piece, true);
@@ -4258,6 +4269,24 @@ begin
   perform public.boks_test_logout();
   perform public.boks_assert(public.get_boks_author_moved('stranger_poet') is null and public.get_boks_author_moved('poet_renamed') = 'stranger_poet',
     'taking the old address back makes it current, and the other one leads to it');
+
+  -- The author hides a published work and puts it back, from "My page".
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.withdraw_my_bok(v_bok);
+  perform public.boks_assert(exists (
+    select 1 from jsonb_array_elements(public.get_my_author_space() -> 'items') i
+    where i ->> 'bokId' = v_bok::text and (i ->> 'hidden')::boolean and not (i ->> 'published')::boolean
+  ), 'a hidden work stays on My page, marked hidden');
+  perform public.boks_test_logout();
+  perform public.boks_assert(coalesce(jsonb_array_length(public.get_boks_author('stranger_poet') -> 'boks'), 0) = 0, 'readers no longer see a hidden work');
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.restore_my_bok(v_bok);
+  perform public.boks_assert(exists (
+    select 1 from jsonb_array_elements(public.get_my_author_space() -> 'items') i
+    where i ->> 'bokId' = v_bok::text and (i ->> 'published')::boolean and i -> 'hidden' is null
+  ), 'put back, it is published again');
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author('stranger_poet') -> 'boks' -> 0 ->> 'format' = 'series', 'readers see it again, still as Series');
 end $$;
 
 -- The page's conversation: the author's notes, the team's answers, unread on both sides.

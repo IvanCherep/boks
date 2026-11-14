@@ -176,7 +176,6 @@
   .amp-detail{position:sticky;top:20px}
   .amp-publish{width:auto;min-width:260px}
 }
-.asp-series-stage{position:fixed;inset:0;z-index:400}
 .amp-address{display:grid;gap:8px;margin-top:12px;max-width:440px}
 .amp-address label{display:grid;gap:6px;font-size:14px}
 .amp-address__field{display:flex;align-items:center;border:1px solid #d7d2c3;border-radius:8px;background:#fffdf8;padding:0 12px}
@@ -238,3 +237,15 @@
 .amp-section>p{margin:0 0 14px;color:var(--muted);font-size:14px}
 .amp-unread{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:8px;border-radius:11px;background:#c44a32;color:#fff;font:600 12px var(--font-sans,inherit);vertical-align:middle}
 .amp-section__actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.asp-timeline{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:8px}
+.asp-timeline__item{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;font-size:14px;line-height:1.4;padding-left:10px;border-left:3px solid #d7d2c3}
+.asp-timeline__item time{color:#65685e;font-size:12px;padding-top:2px}
+.asp-timeline__item--author_wrote{border-color:#c44a32}
+.asp-timeline__item--published{border-color:#4f7a52}
+.asp-timeline__item--accepted{border-color:#3d6c9e}
+.asp-timeline__item span{overflow-wrap:anywhere}
+/* A page's stage in Studio: grey while waiting, amber when the author asks for something, green once out. */
+.asp-chip--stage-not_invited,.asp-chip--stage-invite_pending,.asp-chip--stage-author_reviewing{background:#ece6d6;color:#5a5240}
+.asp-chip--stage-changes_requested,.asp-chip--stage-invite_expired,.asp-chip--stage-invite_revoked{background:#f4e2bf;color:#7a5410}
+.asp-chip--stage-partly_published,.asp-chip--stage-published{background:#dce1cb;color:#425638}
+.asp-chip--stage-unpublished{background:#eee;color:#666}

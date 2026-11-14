@@ -36,13 +36,15 @@ import {
 } from "@/components/boks/author-spaces/data";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
-import { Conversation } from "@/components/boks/author-spaces/conversation";
+import { Conversation, shortDateTime } from "@/components/boks/author-spaces/conversation";
+import { linkOnlyCover, linkOnlyPiecePath } from "@/lib/boks/link-only";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { clampCrop, cropLayout, encodeCrop, photoProblem, zoomMax, zoomMin, type Crop } from "@/lib/boks/author/author-photo";
 import { inviteLink } from "@/lib/boks/author/invite-link";
 import { moveBy } from "@/lib/boks/author/page-order";
+import { spaceStage, spaceTimeline, type SpaceStage, type StageInput, type TimelineEvent } from "@/lib/boks/author/space-stage";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 
 /**
@@ -112,6 +114,31 @@ const words = defineMessages(
     edit: "Edit",
     markReady: "Mark ready",
     series: "Series",
+    stage: {
+      not_invited: "Author not invited",
+      invite_pending: "Waiting for the author",
+      invite_expired: "Invitation expired",
+      invite_revoked: "Invitation revoked",
+      changes_requested: "Author asked for changes",
+      author_reviewing: "Author is looking",
+      partly_published: "Published, more waiting",
+      published: "Published",
+      unpublished: "Taken down",
+    } as Record<SpaceStage, string>,
+    hiddenByAuthor: "Hidden by the author",
+    historyTitle: "History",
+    historyAll: (n: number) => `All ${n}`,
+    historyLess: "Fewer",
+    historyEvent: (event: TimelineEvent): string => {
+      const about = "workTitle" in event && event.workTitle ? ` (about «${event.workTitle}»)` : "";
+      switch (event.kind) {
+        case "invited": return `Invitation sent to ${event.email}`;
+        case "accepted": return "The author accepted the page";
+        case "author_wrote": return `The author wrote${about}: ${event.body}`;
+        case "team_wrote": return `The team answered${about}: ${event.body}`;
+        case "published": return `${event.pagePublished ? "Page opened; published" : "Published"}: ${event.titles.map((title) => `«${title}»`).join(", ") || "—"}${event.by ? ` (@${event.by})` : ""}`;
+      }
+    },
     shareTitle: "Link preview",
     shareStill: "Still card (VK, WhatsApp, most)",
     shareMoving: "Moving card (Telegram)",
@@ -136,10 +163,10 @@ const words = defineMessages(
     seriesPrompt: "Link to the Series (link-only, /l/<token>). The author sees it in the preview; readers do not.",
     seriesSave: "Attach Series",
     seriesRemove: "Detach",
-    seriesWaiting: "Series with the text · not yet live",
-    seriesLive: "Series live",
-    seriesGoLive: "Series is registered: mark live",
-    seriesHold: "Hide Series again",
+    seriesWaiting: "Series with the text · on the author's page once published, not yet in the feed",
+    seriesLive: "Series in the feed and on the shelf",
+    seriesGoLive: "Registered in code: to the feed and shelf",
+    seriesHold: "Take it off the feed again",
     backToPreparing: "Back to preparation",
     remove: "Remove",
     takeDown: "Take down",
@@ -241,6 +268,31 @@ const words = defineMessages(
       edit: "Изменить",
       markReady: "Готово к просмотру",
       series: "Series",
+      stage: {
+        not_invited: "Автор не приглашён",
+        invite_pending: "Ждём автора",
+        invite_expired: "Приглашение истекло",
+        invite_revoked: "Приглашение отозвано",
+        changes_requested: "Автор просит правки",
+        author_reviewing: "Автор смотрит",
+        partly_published: "Опубликовано, ещё ждут",
+        published: "Опубликовано",
+        unpublished: "Снято",
+      },
+      hiddenByAuthor: "Автор скрыл с сайта",
+      historyTitle: "Ход работы",
+      historyAll: (n: number) => `Все ${n}`,
+      historyLess: "Свернуть",
+      historyEvent: (event: TimelineEvent): string => {
+        const about = "workTitle" in event && event.workTitle ? ` (о «${event.workTitle}»)` : "";
+        switch (event.kind) {
+          case "invited": return `Приглашение на ${event.email}`;
+          case "accepted": return "Автор принял страницу";
+          case "author_wrote": return `Автор написал${about}: ${event.body}`;
+          case "team_wrote": return `Редакция ответила${about}: ${event.body}`;
+          case "published": return `${event.pagePublished ? "Страница открыта; опубликовано" : "Опубликовано"}: ${event.titles.map((title) => `«${title}»`).join(", ") || "—"}${event.by ? ` (@${event.by})` : ""}`;
+        }
+      },
       shareTitle: "Превью ссылки",
       shareStill: "Статичная карточка (VK, WhatsApp и большинство)",
       shareMoving: "Динамичная карточка (Telegram)",
@@ -265,10 +317,10 @@ const words = defineMessages(
       seriesPrompt: "Ссылка на Series (link-only, /l/<токен>). Автор увидит её в предпросмотре, читатели нет.",
       seriesSave: "Привязать Series",
       seriesRemove: "Отвязать",
-      seriesWaiting: "Series к тексту · ещё не в ленте",
-      seriesLive: "Series в ленте",
-      seriesGoLive: "Series зарегистрирована: выпустить",
-      seriesHold: "Снова скрыть Series",
+      seriesWaiting: "Series к тексту · на странице автора после публикации, в ленте ещё нет",
+      seriesLive: "Series в ленте и на полке",
+      seriesGoLive: "Зарегистрирована в коде: в ленту и на полку",
+      seriesHold: "Снова убрать из ленты",
       backToPreparing: "Вернуть в подготовку",
       remove: "Удалить",
       takeDown: "Снять",
@@ -408,12 +460,11 @@ function SpaceList({ onOpen, onCreate }: { onOpen: (id: string) => void; onCreat
               </span>
               <span className="asp-row__state">
                 <StatusChip tone={row.status}>{t.status[row.status]}</StatusChip>
-                {row.invite && !row.owned && <StatusChip tone={`invite-${row.invite.state}`}>{t.invite[row.invite.state]}</StatusChip>}
+                <StatusChip tone={`stage-${spaceStage(row)}`}>{t.stage[spaceStage(row)]}</StatusChip>
               </span>
               <span className="asp-row__works">
                 {t.worksCount(row.works)}
                 {row.ready > 0 && <small>{t.readyCount(row.ready)}</small>}
-                {row.changesRequested > 0 && <small className="asp-warn">{t.workStatus.changes_requested}</small>}
                 {row.unread > 0 && <small className="asp-warn">{t.unreadMessages(row.unread)}</small>}
               </span>
             </button>
@@ -503,6 +554,7 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
   }
 
   const effectiveKind = space?.kind ?? kind;
+  const stage = space ? spaceStage(stageInputOf(space)) : null;
   const shownPhoto = photo.kind === "new" ? photoUrl(photo.base64) : photo.kind === "remove" ? null : photoUrl(space?.photo ?? null);
   const dirty = !space || name !== (space.name ?? "") || (!space.owned && handle !== (space.proposedHandle ?? "")) || photo.kind !== "keep";
 
@@ -512,7 +564,7 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
         <button type="button" onClick={onBack}><ArrowLeft aria-hidden="true" />{t.authors}</button>
         <span aria-hidden="true">/</span>
         <span>{space?.name ?? (effectiveKind === "editorial" ? t.newEditorial : t.newAuthor)}</span>
-        {space && <StatusChip tone={space.status}>{t.status[space.status]}</StatusChip>}
+        {stage && <StatusChip tone={`stage-${stage}`}>{t.stage[stage]}</StatusChip>}
         {space && <StatusChip tone="kind">{t.kind[space.kind]}</StatusChip>}
         <button type="button" className="asp-icon-button" onClick={() => void reload()} aria-label={t.refresh} disabled={!space}><RefreshCw aria-hidden="true" /></button>
       </nav>
@@ -520,6 +572,9 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
 
       <div className="asp-columns">
         <div className="asp-main">
+          {space && space.kind === "author" && (space.invites.length > 0 || space.publications.length > 0) && (
+            <HistoryPanel t={t} space={space} />
+          )}
           <ProfileForm
             t={t}
             name={name}
@@ -758,7 +813,7 @@ function Works({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: bo
       {ordered.length === 0 && !editing && <p className="studio-notice">{t.noWorks}</p>}
       <ol className="asp-works">
         {ordered.map((work, index) => {
-          const artwork = work.bokId ? getBokArtwork({ id: work.bokId }) : null;
+          const artwork = work.seriesPiece ? linkOnlyCover(work.seriesPiece) : work.bokId ? getBokArtwork({ id: work.bokId }) : null;
           return (
             <li key={work.id} className="asp-work">
               <span className="asp-work__thumb" aria-hidden="true">
@@ -774,13 +829,15 @@ function Works({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: bo
                 {work.status === "changes_requested" && work.note && <small className="asp-warn">{t.authorNote} {work.note}</small>}
                 {work.seriesPiece && (
                   <small>
-                    <a href={`/l/${work.seriesPiece}`} target="_blank" rel="noopener noreferrer">▶ {t.seriesWatch}</a>
+                    <a href={linkOnlyPiecePath(work.seriesPiece)} target="_blank" rel="noopener noreferrer">▶ {t.seriesWatch}</a>
                     {" · "}{work.seriesPublished ? t.seriesLive : t.seriesWaiting}
                   </small>
                 )}
               </span>
               <StatusChip tone={work.format === "series" ? "series" : "text"}>{t.format[work.format]}</StatusChip>
-              <StatusChip tone={workTone(work.status)}>{t.workStatus[work.status]}</StatusChip>
+              {work.status === "published" && work.bokStatus === "withdrawn"
+                ? <StatusChip tone="warn">{t.hiddenByAuthor}</StatusChip>
+                : <StatusChip tone={workTone(work.status)}>{t.workStatus[work.status]}</StatusChip>}
               <span className="asp-work__actions">
                 <button type="button" className="asp-icon-button" aria-label={t.up} disabled={busy || index === 0} onClick={() => setOrder(moveBy(order, index, -1))}><ArrowUp aria-hidden="true" /></button>
                 <button type="button" className="asp-icon-button" aria-label={t.down} disabled={busy || index === ordered.length - 1} onClick={() => setOrder(moveBy(order, index, 1))}><ArrowDown aria-hidden="true" /></button>
@@ -790,7 +847,7 @@ function Works({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: bo
                 )}
                 {work.status === "ready" && <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run(() => setSpaceWorkStatus(work.id, "preparing"))}>{t.backToPreparing}</Button>}
                 {work.format === "text" && work.status !== "withdrawn" && (
-                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setSeriesLink(work.seriesPiece ? `/l/${work.seriesPiece}` : ""); setSeriesFor(work); }}>{t.series}</Button>
+                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setSeriesLink(work.seriesPiece ? linkOnlyPiecePath(work.seriesPiece) : ""); setSeriesFor(work); }}>{t.series}</Button>
                 )}
                 {work.status === "published" && work.seriesPiece && (
                   <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => setSpaceWorkSeries(work.id, work.seriesPiece ?? "", !work.seriesPublished))}>
@@ -1002,6 +1059,42 @@ function ShareCardPanel({ t, space, busy, run }: { t: Words; space: StudioSpace;
         {(space.shareCard || space.shareVideo) && <Button variant="ghost" disabled={busy} onClick={() => void run(() => setAuthorSpaceShare(space.id, "", ""))}>{t.shareRemove}</Button>}
         <Button disabled={busy || !changed || (!card.trim() && !video.trim())} onClick={() => void run(() => setAuthorSpaceShare(space.id, card, video))}>{t.shareSave}</Button>
       </div>
+    </section>
+  );
+}
+
+/** The stage's input from a whole page, as the list row gives it for a summary. */
+function stageInputOf(space: StudioSpace): StageInput {
+  return {
+    kind: space.kind,
+    status: space.status,
+    owned: space.owned,
+    invite: space.invites[0] ?? null,
+    ready: space.works.filter((work) => work.status === "ready").length,
+    changesRequested: space.works.filter((work) => work.status === "changes_requested").length,
+  };
+}
+
+/** Where the page has been: invitation, acceptance, the author's notes, the team's answers, publications. */
+function HistoryPanel({ t, space }: { t: Words; space: StudioSpace }) {
+  const language = useUiLanguage();
+  const [all, setAll] = useState(false);
+  const events = spaceTimeline(space);
+  const shown = all ? events : events.slice(0, 6);
+  return (
+    <section className="asp-card">
+      <header className="asp-card__head"><h2>{t.historyTitle}</h2></header>
+      <ol className="asp-timeline">
+        {shown.map((event, index) => (
+          <li key={`${event.at}-${index}`} className={`asp-timeline__item asp-timeline__item--${event.kind}`}>
+            <time dateTime={event.at}>{shortDateTime(event.at, language)}</time>
+            <span>{t.historyEvent(event)}</span>
+          </li>
+        ))}
+      </ol>
+      {events.length > 6 && (
+        <Button variant="ghost" size="sm" onClick={() => setAll(!all)}>{all ? t.historyLess : t.historyAll(events.length)}</Button>
+      )}
     </section>
   );
 }
