@@ -371,12 +371,9 @@ export type BoksUserContext = {
   role: BoksUserRole;
   /** The @nickname. A person has one name, and this is it. */
   handle: string | null;
-  preferredGenre: string;
-  preferredMood: string;
   termsAcceptedAt: string | null;
   termsVersion: string | null;
   hasAnyAdmin: boolean;
-  views: number;
   likes: number;
   /**
    * Languages this reader accepts. Empty means they have not said, and
@@ -398,7 +395,7 @@ export type AuthorProfileWriter = {
 };
 
 /**
- * The name and photo an author set for their own page (`author_pages`).
+ * The name and photo an author set for their own page (on its `author_spaces` row).
  * Both optional: without a name the page is titled by the @handle, without a
  * photo it shows a monogram. Neither touches the handle or any byline.
  */
@@ -544,7 +541,6 @@ export type AdminUserRow = {
   displayName: string;
   createdAt: string;
   lastSignInAt: string;
-  views: number;
   likes: number;
 };
 
@@ -570,8 +566,6 @@ export type LoadOptions = {
   reader?: ReaderSignals;
   /** Reading session this feed belongs to, recorded with its provenance. */
   sessionId?: string;
-  /** The reader profile the ranking saw, stored verbatim so it can be replayed. */
-  profileSnapshot?: Record<string, unknown>;
   /** Languages a guest accepts; a signed-in reader's stored set wins. */
   readingLanguages?: readonly string[];
   /**

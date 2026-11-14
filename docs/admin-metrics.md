@@ -6,10 +6,14 @@ supports. If a field cannot answer the third column, it does not belong here.
 Two rules govern the whole console:
 
 1. **One source per concept.** Reader behaviour comes from
-   `public.recommendation_events`. `views`, `likes` and `comments` are product
-   features (reading history, like state, the comment thread) and are never used
-   as behavioural metrics. Before this rule, the console showed `views` = 406 and
-   impression events = 766 under the same word on the same screen.
+   `public.recommendation_events`. `likes` and `comments` are product features
+   (like state, the comment thread) and are never used as behavioural metrics.
+   Before this rule, the console showed `views` = 406 and impression events =
+   766 under the same word on the same screen; the `views` table is gone since
+   `20261116120000`, and `get_boks_admin_snapshot` now answers only the editorial
+   tally, the moderation queue and like/comment counts. Event metadata carries
+   no `genre`, `mood`, `catalogSize` or `unseenCount`: a metric needing a bok's
+   genre joins `reels`.
 2. **Counts over time; rates only beside their denominator.** A weekly count of
    readers or minutes is honest at any sample size. A weekly *rate* computed from
    a dozen readers moves several points when one person changes their mind, so
@@ -138,7 +142,7 @@ beside its denominator (the devices on the same row).
 | Field | Computed from | Decision it supports |
 |---|---|---|
 | Published / waiting / refused / approved from authors | `reels.status` | Queue state at a glance. |
-| Queue item: status, submitted date, title, author, email, length, genre, mood, hook, full text, previous refusal reason | `get_boks_admin_snapshot` moderation rows | Everything needed to decide without opening another screen. |
+| Queue item: status, submitted date, title, author, email, length, genre, mood, full text, previous refusal reason | `get_boks_admin_snapshot` moderation rows | Everything needed to decide without opening another screen. |
 | Refusal reason | required before refusing | The author sees it, so it cannot be optional. |
 
 ## Content

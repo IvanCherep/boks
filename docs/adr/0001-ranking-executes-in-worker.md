@@ -77,7 +77,9 @@ Easier:
 - interleaving becomes implementable: a slate drafted from two rankers needs
   per-slot provenance, which only the server can honestly record
 - the reader profile used at serve time is captured in `profile_snapshot`, so a
-  ranking can be replayed even after the profile changes
+  ranking can be replayed even after the profile changes. (Superseded on
+  2026-11-16, `20261116120000`: nothing ever replayed a serve, the column was
+  30 of the table's 38 MB, and it was dropped.)
 
 Harder or paid for:
 

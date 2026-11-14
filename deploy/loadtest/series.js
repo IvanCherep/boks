@@ -72,7 +72,7 @@ function arrive(data) {
   const p = encoding.b64encode(JSON.stringify({ sub: st.user, aud: "authenticated", role: "authenticated",
     iat: now, exp: now + 7200, is_anonymous: true, iss: "https://tryboks.ru/auth/v1" }), "rawurl");
   st.token = `${h}.${p}.${crypto.hmac("sha256", JWT_SECRET, `${h}.${p}`, "base64rawurl")}`;
-  const f = req("feed", "POST", "/api/feed", JSON.stringify({ limit: 30, sessionId: st.session, readingLanguages: ["ru"], reader: {}, profileSnapshot: {} }), api());
+  const f = req("feed", "POST", "/api/feed", JSON.stringify({ limit: 30, sessionId: st.session, readingLanguages: ["ru"], reader: {} }), api());
   if (f.status !== 200) return false;
   const d = f.json(); st.exp = d.experiment || {}; st.feedId = d.feedId;
   st.ids = (d.entries || []).map((e) => e.reelId);

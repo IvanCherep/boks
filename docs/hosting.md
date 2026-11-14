@@ -290,7 +290,7 @@ live comment counts or bok images are ever wanted, they cost nothing extra.
 | Spend cap disabled | It is **enabled**, and the dashboard confirms "you are currently not billed for overages". Turning it off is what converts every limit above into a bill. |
 | Branching | The welcome email lists it as a Pro feature. Each preview branch runs its own compute and is billed by the hour, and it eats the same $10 credit Micro already uses. There are no branches; keep it that way. |
 | Point-in-time recovery, dedicated IPv4, custom domain | All three are paid add-ons, all three disabled. `api.tryboks.com` costs $10/mo through this door. |
-| Read replicas, io2 disk, disk above 8 GB | Paid. Nothing to do but watch `served_feed`, which is the fastest-growing table at roughly 10 KB per feed load. |
+| Read replicas, io2 disk, disk above 8 GB | Paid. Nothing to do but watch `served_feed` and `recommendation_events`, the fastest-growing tables (a feed load is under 1 KB since `profile_snapshot` was dropped on 2026-11-16). |
 
 **The dedicated pooler: deliberately not used.** The welcome email recommends
 it, and it is included. It does not apply here: nothing opens a Postgres

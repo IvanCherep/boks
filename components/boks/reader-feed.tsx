@@ -122,7 +122,6 @@ import {
   loadBoksUserContext,
   loadSupabaseStory,
   recordSupabaseReaderEvents,
-  recordSupabaseView,
   loadBokSlug,
   reportBok,
   setMyReadingLanguages,
@@ -606,10 +605,6 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   const lastWheelNavigationAt = useRef(0);
   const readingClock = useRef<ReaderClock>(createReaderClock());
   const currentStoryRef = useRef<Story | null>(null);
-  const catalogContextRef = useRef<{ catalogSize: number; unseenCount: number }>({
-    catalogSize: 0,
-    unseenCount: 0,
-  });
   const recordHeartbeatRef = useRef<(story: Story) => void>(() => undefined);
   const recordTouchRef = useRef<(kind: TouchKind) => void>(() => undefined);
   const recordOutcomeRef = useRef<(reason: ReadOutcomeReason) => void>(() => undefined);
@@ -667,10 +662,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   }, [readerSignals]);
 
   /**
-   * One feed request, for a new feed or the next slate. `profileSnapshot` is
-   * the profile the ranking saw: it changes with every read, so without it a
-   * serve could never be replayed. `readingLanguages` is a guest's filter - a
-   * signed-in reader's stored choice wins inside the RPC.
+   * One feed request, for a new feed or the next slate. `readingLanguages` is
+   * a guest's filter - a signed-in reader's stored choice wins inside the RPC.
    */
   const feedRequest = useCallback(
     (append: boolean): Parameters<typeof load>[0] => ({
@@ -679,7 +672,6 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       visitorId: visitorId.current,
       sessionId: sessionId.current,
       reader: readerSignalsRef.current,
-      profileSnapshot: { ...readerSignalsRef.current },
       readingLanguages: readingLanguagesRef.current,
       ...(append ? { append: true } : {}),
     }),
@@ -1077,14 +1069,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         metadata: { ...metadata, ...(entry ? { entry } : {}), ...(format ? { format } : {}) },
       };
 
+      // The account library's "read" time comes from these events too.
       eventQueue.current?.record(event);
-
-      // `views` stays the reader-facing history table behind "recently read".
-      if (eventType === "impression" && isSupabaseReader) {
-        recordSupabaseView(supabaseUserId, story.id).catch(() => undefined);
-      }
     },
-    [isSupabaseReader, supabaseUserId]
+    []
   );
 
   /**
@@ -1479,7 +1467,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     const timer = window.setInterval(() => {
       const story = currentStoryRef.current;
       if (story && readingClock.current.isRunning() && readingClock.current.activeSeconds() >= 3) {
-        recordReaderEvent("start", story, 1, { genre: story.genre, mood: story.mood });
+        recordReaderEvent("start", story);
       }
     }, 1000);
     return () => window.clearInterval(timer);
@@ -1552,7 +1540,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     const { currentStory: story, recordReaderEvent: record } = arrivalContext.current;
     if (!story || (seriesOpen && !formatOnScreen) || exposedStories.current.has(story.id)) return;
     exposedStories.current.add(story.id);
-    record("impression", story, 1, { genre: story.genre, mood: story.mood, ...catalogContextRef.current });
+    record("impression", story);
   }, [currentStoryId, seriesOpen, formatOnScreen]);
 
   /**
@@ -2021,12 +2009,6 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     recordOutcomeRef.current = recordReadingOutcome;
     openReadBoksRef.current = openReadBoks;
     currentStoryRef.current = currentStory ?? null;
-    catalogContextRef.current = {
-      // The published catalog, as counted by the server that ranked it - not
-      // the slate length, which is capped by the feed limit.
-      catalogSize: provenanceRef.current.catalogSize || rankedStories.length,
-      unseenCount: rankedStories.filter((story) => !profile.completed.includes(story.id)).length,
-    };
     recordHeartbeatRef.current = (story) => {
       updateStoryProgress();
       recordReaderEvent("heartbeat", story);
@@ -2115,8 +2097,6 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       from: reason,
       inferred: true,
       progress: Math.round(progress * 100) / 100,
-      genre: currentStory.genre,
-      mood: currentStory.mood,
     });
   }
 

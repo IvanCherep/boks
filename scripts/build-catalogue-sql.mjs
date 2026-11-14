@@ -362,12 +362,12 @@ with fresh as (
 ),
 inserted as (
   insert into public.reels (
-    title, author_name, hook, text, genre, mood, language, status,
+    title, author_name, text, genre, mood, language, status,
     author_user_id, import_key, is_seed,
     created_at, submitted_at, reviewed_at, reviewed_by, updated_at
   )
   select
-    f.title, f.author_name, '', f.text, f.genre, f.mood, f.language, 'published',
+    f.title, f.author_name, f.text, f.genre, f.mood, f.language, 'published',
     ${sqlString(publisherUserId)}::uuid, f.import_key, false,
     f.created_at, f.created_at, now(), ${sqlString(adminUserId)}::uuid, now()
   from fresh f

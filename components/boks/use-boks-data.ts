@@ -102,7 +102,6 @@ export function useBoksData() {
         visitorId: options.visitorId ?? "anonymous",
         sessionId: options.sessionId ?? "",
         reader: options.reader,
-        profileSnapshot: options.profileSnapshot,
         readingLanguages: options.readingLanguages,
       });
       if (appending) {

@@ -13,7 +13,7 @@ export type SharedAuthor = {
   name: string;
   boks: number;
   titles: string[];
-  /** The photo the author set (`author_pages`), as `/a/<handle>/photo?v=<photoVersion>`. */
+  /** The photo the author set (`author_spaces.photo`), as `/a/<handle>/photo?v=<photoVersion>`. */
   photoVersion?: number | null;
   /** The page's own link preview card, `/l/<token>/f/<name>-share.jpg`; it follows the author through a rename. */
   shareCard?: string | null;

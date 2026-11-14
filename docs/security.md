@@ -29,6 +29,9 @@ Updated 2026-11-05; production includes the current author-cabinet migrations.
 - `record_served_feed` and `record_recommendation_events` enforce batch, row,
   metadata, payload, and per-account hourly limits in PostgreSQL. The unchecked
   implementations are not executable by browser roles.
+- `reader_library_legacy_reads` (old reading history kept for the account
+  library) has row security and no grants; only `get_my_reader_library` reads
+  it. `boks_prune_old_data()` is not executable by browser roles.
 - Social and author writes require a permanent, non-blocked account with
   accepted terms. The write trigger is defense in depth beneath RPC and RLS.
 - Rights complaints are the exception to the permanent-account/Terms requirement:
@@ -64,14 +67,17 @@ Responses use private/no-store so the CDN cannot serve an image past the
 publication check. Unknown or hidden boks return 404; render errors are 503 and
 are not cached. The CPU cap is 3000ms, with 720px rendering to bound PNG work.
 
-Author page name and photo (`author_pages`, 20261110100000) have no Data API
-grants; `save_my_author_page` is the only write: a permanent, unsuspended
-account, its own row, a name of at most 60 characters without `<`, `>` or
+Author page name and photo (on the account's `author_spaces` row since
+20261116100000) have no Data API grants; `save_my_author_page` is the author's
+only write (Studio's is `studio_save_author_space`, editors only): a permanent,
+unsuspended account, its own page, a name of at most 60 characters without `<`, `>` or
 control characters, a photo that starts with the JPEG signature and is under
 700 KB, and a version check so a stale tab cannot overwrite a newer save. The
 browser crops and re-encodes the photo (dropping camera metadata) before
 sending it. `/a/<handle>/photo` serves only those bytes as `image/jpeg` with
-`nosniff`; a suspended account's page name and photo are not served.
+`nosniff`; a suspended account's page name and photo are not served, nor a
+page that is a draft or unpublished. Deleting an account unpublishes its page
+and clears its name and photo.
 
 - Author spaces (`20261114100000_boks_author_spaces.sql`) have no Data API
   grants. Studio functions check `is_boks_admin`; the owner's functions check
@@ -148,7 +154,7 @@ the suggested incompatible downgrades to eslint-config-next 14 or Vinext
 0.0.15. Re-check for a patched braces version before the next release.
 
 
-- `published_boks`, `boks_comments`, and `boks_public_identity` intentionally
+- `published_boks` and `boks_public_identity` intentionally
   remain security-definer views. They are narrow public projections; changing
   them to invoker views would require granting access to wider base tables.
   All view writes are revoked and tested.

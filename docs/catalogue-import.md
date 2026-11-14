@@ -76,7 +76,7 @@ He walked anyway.
 | `rights` | no | Where the right to publish this piece comes from. Admin-only. Overrides the batch note for this file |
 
 The opening hook was retired on 2026-09-19. A `hook`/`teaser`/`summary` field
-in an old file is ignored, and the database keeps `reels.hook` empty.
+in an old file is ignored; `reels` has no hook column since `20261116110000`.
 
 Aliases are accepted, because a publisher's export will not use our words:
 `name`/`headline` for title, `body`/`story`/`content` for text,

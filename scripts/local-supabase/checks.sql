@@ -185,7 +185,8 @@ begin
 
   perform public.boks_assert(
     not exists (
-      select 1 from public.reels where author_user_id is not null and author_handle is not null
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'reels' and column_name in ('author_handle', 'hook')
     ),
     'a handle is never stored on the work - it is always joined from the profile'
   );
@@ -389,14 +390,16 @@ begin
   );
   v_titled := (v_result ->> 'id')::uuid;
   perform public.boks_assert(
-    v_result ->> 'title' = 'Given title' and (select hook from public.reels where id = v_titled) = '',
+    v_result ->> 'title' = 'Given title' and (select hook from public.boks_reels where id = v_titled) = '',
     'a title the author gives is kept, and a hook sent by an old client is not stored'
   );
 
-  update public.reels set hook = 'Sneaked in.' where id = v_titled;
+  -- The column is gone; the views keep a `hook` column, always '', because an
+  -- old tab may still select it.
   perform public.boks_assert(
-    (select hook from public.reels where id = v_titled) = '',
-    'no write path can store a hook'
+    not exists (select 1 from public.published_boks where hook is distinct from '')
+      and (select hook from public.boks_reels where id = v_titled) = '',
+    'the views still answer hook, always empty'
   );
   update public.reels set title = '   ' where id = v_titled;
   perform public.boks_assert(
@@ -404,7 +407,7 @@ begin
     'clearing a title falls back to the first line'
   );
   perform public.boks_assert(
-    not exists (select 1 from public.reels where hook <> ''),
+    not exists (select 1 from public.boks_reels where hook <> ''),
     'no boks carries a hook'
   );
 
@@ -488,9 +491,9 @@ begin
   perform public.boks_assert(true, 'a restored account can interact again');
 
   perform public.boks_test_login(v_admin);
-  insert into public.reels (title, author_name, hook, text, genre, mood, status, author_user_id)
+  insert into public.reels (title, author_name, text, genre, mood, status, author_user_id)
   values (
-    'Lifecycle test bok', null, 'Only for lifecycle checks.',
+    'Lifecycle test bok', null,
     'This boks exists only to prove account and content deletion behavior.',
     'literary', 'quiet', 'published', v_managed
   ) returning id into v_lifecycle;
@@ -515,6 +518,7 @@ begin
       select 1 from public.reels
       where id = v_lifecycle and status = 'archived' and author_user_id is null
         and author_name = 'Deleted author'
+        and archived_from_status = 'published' and review_note is null
     ),
     'an account deletion anonymises and archives authored boks instead of erasing them'
   );
@@ -563,6 +567,66 @@ begin
   exception when others then
     perform public.boks_assert(true, 'refusing without a reason is blocked');
   end;
+
+  -- Removing a refused piece keeps the author's refusal reason: the removal
+  -- reason is its own field, and a restore gives the refusal back.
+  perform public.archive_bok(v_reel, 'Removed while refused.');
+  perform public.boks_assert(
+    (select review_note from public.reels where id = v_reel) = 'Needs a stronger ending.'
+      and (select archive_reason from public.reels where id = v_reel) = 'Removed while refused.',
+    'removing a refused piece keeps its refusal reason'
+  );
+  perform public.boks_test_login(v_author);
+  perform public.boks_assert(
+    (select i ->> 'reviewNote'
+     from jsonb_array_elements(public.get_my_bok_submissions_page('archived', '', 100, 0) -> 'items') i
+     where i ->> 'id' = v_reel::text) = 'Removed while refused.',
+    'the author of a removed piece is told why it was removed'
+  );
+  perform public.boks_test_login(v_admin);
+  perform public.restore_archived_bok(v_reel);
+  perform public.boks_assert(
+    (select status from public.reels where id = v_reel) = 'rejected'
+      and (select review_note from public.reels where id = v_reel) = 'Needs a stronger ending.',
+    'a refused piece restored by an admin comes back with its own refusal reason'
+  );
+
+  -- Status invariants hold whatever writes the row (docs/adr/0017).
+  begin
+    update public.reels set archived_at = now() where id = v_reel;
+    perform public.boks_assert(false, 'a piece that is not removed has no removal time');
+  exception when check_violation then
+    perform public.boks_assert(true, 'a piece that is not removed has no removal time');
+  end;
+  begin
+    update public.reels set status = 'archived' where id = v_reel;
+    perform public.boks_assert(false, 'a removed piece has a removal time');
+  exception when check_violation then
+    perform public.boks_assert(true, 'a removed piece has a removal time');
+  end;
+  begin
+    update public.reels set withdrawn_at = now(), withdrawn_from_status = 'published' where id = v_reel;
+    perform public.boks_assert(false, 'only a withdrawn piece has a withdrawal time');
+  exception when check_violation then
+    perform public.boks_assert(true, 'only a withdrawn piece has a withdrawal time');
+  end;
+  begin
+    update public.reels set status = 'archived', archived_at = now(), archived_from_status = 'archived' where id = v_reel;
+    perform public.boks_assert(false, 'a piece is never removed from being removed');
+  exception when check_violation then
+    perform public.boks_assert(true, 'a piece is never removed from being removed');
+  end;
+  begin
+    update public.reels set withdrawn_from_status = 'gone' where id = v_reel;
+    perform public.boks_assert(false, 'a withdrawal records a real status');
+  exception when check_violation then
+    perform public.boks_assert(true, 'a withdrawal records a real status');
+  end;
+
+  perform public.boks_assert(
+    to_regclass('public.boks_comments') is null,
+    'the boks_comments view is gone; comments are read through get_bok_comments'
+  );
 
   -- A reader must not be able to review or grant admin.
   perform public.boks_test_login(v_reader);
@@ -748,8 +812,22 @@ begin
      where user_id = v_reader and metadata ->> 'probe' = 'claimed'),
     'an event is credited to the reader''s stored arm, with the browser''s claim kept'
   );
+  -- Keys nothing reads are dropped on the way in (20261116120000); a tab
+  -- loaded before that release still sends them.
+  v_count := public.record_recommendation_events(jsonb_build_array(
+    jsonb_build_object('eventType', 'impression', 'storyId', v_reel::text, 'algorithmId', 'for_you',
+      'experimentKey', 'boks-feed-v1', 'sessionId', 's-robust',
+      'metadata', jsonb_build_object('probe', 'unread', 'entry', 'feed', 'genre', 'literary',
+        'mood', 'quiet', 'catalogSize', 9, 'unseenCount', 4))
+  ));
+  perform public.boks_assert(
+    (select metadata = jsonb_build_object('probe', 'unread', 'entry', 'feed')
+     from public.recommendation_events
+     where user_id = v_reader and metadata ->> 'probe' = 'unread'),
+    'event metadata nobody reads is not stored; the rest is kept'
+  );
   delete from public.recommendation_events
-  where user_id = v_reader and metadata ->> 'probe' in ('robust', 'claimed');
+  where user_id = v_reader and metadata ->> 'probe' in ('robust', 'claimed', 'unread');
 
   -- A served feed is credited the same way, and the candidate query refuses
   -- the expensive part to a caller past the hourly feed ceiling. Both probed
@@ -760,9 +838,20 @@ begin
       '[]'::jsonb
     );
     perform public.boks_assert(
-      (select algorithm_id = 'for_you' and profile_snapshot ->> 'claimedAlgorithmId' = 'recency'
+      (select algorithm_id = 'for_you' and claimed_algorithm_id = 'recency'
        from public.served_feed where user_id = v_reader and session_id = 's-probe'),
       'a served feed is credited to the reader''s stored arm, with the claim kept'
+    );
+    -- A caller cannot plant a claim; only the crediting above records one.
+    perform public.record_served_feed(
+      jsonb_build_object('experimentKey', 'boks-feed-v1', 'algorithmId', 'for_you', 'sessionId', 's-planted',
+        'claimedAlgorithmId', 'planted'),
+      '[]'::jsonb
+    );
+    perform public.boks_assert(
+      (select claimed_algorithm_id is null
+       from public.served_feed where user_id = v_reader and session_id = 's-planted'),
+      'a served feed''s claim comes from the crediting, never from the caller'
     );
     insert into public.served_feed (user_id, session_id, experiment_key, algorithm_id, candidate_request_id)
     select v_reader, 's-flood', 'boks-feed-v1', 'for_you', gen_random_uuid() from generate_series(1, 300);
@@ -1022,8 +1111,8 @@ begin
   end;
   -- Enforced by the table too, not only by the RPC that normally writes it.
   begin
-    insert into public.reels (title, author_name, hook, text, genre, mood, minutes, status)
-    values ('Direct and too long', 'Seed', 'A hook.', repeat('b', 20001), 'literary', 'quiet', 1, 'published');
+    insert into public.reels (title, author_name, text, genre, mood, minutes, status)
+    values ('Direct and too long', 'Seed', repeat('b', 20001), 'literary', 'quiet', 1, 'published');
     perform public.boks_assert(false, 'the table refuses an over-long boks whatever writes it');
   exception when check_violation then
     perform public.boks_assert(true, 'the table refuses an over-long boks whatever writes it');
@@ -1057,8 +1146,11 @@ begin
   );
   -- Attribution, not a name: a byline is optional, the @handle is not.
   perform public.boks_assert(
-    not exists (select 1 from public.published_boks where btrim(coalesce(author_handle, '')) = ''),
-    'every published boks is attributed to someone'
+    not exists (
+      select 1 from public.published_boks
+      where btrim(coalesce(author_handle, '')) = '' and btrim(coalesce(author_name, '')) = ''
+    ),
+    'every published boks is attributed to someone: an account''s @handle or a byline'
   );
 
   -- The comment table has no identity columns at all; there is nothing to drift.
@@ -1232,6 +1324,7 @@ begin
       'signalsVersion', 'signals.v1',
       'rankingVersion', 'ranking.v1',
       'labelingVersion', 'labeling.v1',
+      -- Sent by servers released before 20261116120000; accepted and not stored.
       'profileSnapshot', jsonb_build_object('genreAffinity', jsonb_build_object('literary', 3))
     ),
     jsonb_build_array(
@@ -1255,8 +1348,13 @@ begin
     'a served feed keeps one row per delivered slot'
   );
   perform public.boks_assert(
-    (select profile_snapshot -> 'genreAffinity' ->> 'literary' from public.served_feed where id = v_feed_id) = '3',
-    'the reader profile the ranking saw is stored verbatim, so the serve can be replayed'
+    not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'served_feed' and column_name = 'profile_snapshot'
+    )
+      and (select claimed_algorithm_id is null and algorithm_id = 'balanced'
+           from public.served_feed where id = v_feed_id),
+    'a served feed still accepts an old server''s profile snapshot and does not store it'
   );
 
   -- A feed id is a hint from the client, never an authority. One belonging to
@@ -1636,8 +1734,8 @@ begin
   -- Narrowing excludes `und`, so the reader who narrowed nothing has to be the
   -- one who can still reach it. Otherwise an unplaceable piece is unreachable
   -- by anybody, which is a quiet way to delete it.
-  insert into public.reels (title, hook, text, genre, mood, minutes, status, author_user_id, author_name, language)
-  values ('Unplaceable', 'A hook.', 'Zzz qqq xxx vvv zzz qqq xxx vvv.', 'fiction', 'calm', 1, 'published', v_admin, 'Nobody', 'und');
+  insert into public.reels (title, text, genre, mood, minutes, status, author_user_id, author_name, language)
+  values ('Unplaceable', 'Zzz qqq xxx vvv zzz qqq xxx vvv.', 'fiction', 'calm', 1, 'published', v_admin, 'Nobody', 'und');
   perform public.boks_assert(
     exists (
       select 1 from jsonb_array_elements(public.get_recommendation_candidates(400, array[]::text[])) c
@@ -1659,8 +1757,8 @@ begin
   -- to come from an aggregate - never from counting the rows a client can see,
   -- which would give the reader's own 0 or 1.
   perform public.boks_test_logout();
-  insert into public.reels (title, hook, text, genre, mood, minutes, status, author_user_id, author_name, language)
-  values ('Counted', 'A hook.', 'A piece that people react to, long enough to be a piece.', 'literary', 'quiet', 1, 'published', v_admin, 'Counted Author', 'en')
+  insert into public.reels (title, text, genre, mood, minutes, status, author_user_id, author_name, language)
+  values ('Counted', 'A piece that people react to, long enough to be a piece.', 'literary', 'quiet', 1, 'published', v_admin, 'Counted Author', 'en')
   returning id into v_counted;
   insert into public.likes (user_id, reel_id) values (v_reader, v_counted), (v_author, v_counted);
   insert into public.comments (user_id, reel_id, body)
@@ -1678,9 +1776,31 @@ begin
         and (item.value ->> 'commented')::boolean
         and item.value ->> 'readAt' is null
     ),
-    'likes and comments reach their account library even without a view row'
+    'likes and comments reach their account library even without a read'
   );
-  insert into public.views (user_id, reel_id) values (v_reader, v_counted);
+  -- Read time is the reader's own impression in the reader; an admin's
+  -- preview surface or a heartbeat does not make a bok read.
+  insert into public.recommendation_events (user_id, reel_id, event_type, surface, created_at)
+  values (v_reader, v_counted, 'heartbeat', 'reader', now() - interval '1 minute'),
+         (v_reader, v_counted, 'impression', 'admin', now() - interval '1 minute');
+  perform public.boks_assert(
+    (select item.value ->> 'readAt' is null
+     from jsonb_array_elements(public.get_my_reader_library()) item
+     where item.value ->> 'storyId' = v_counted::text),
+    'only a reader impression, start or complete makes a bok read'
+  );
+  insert into public.recommendation_events (user_id, reel_id, event_type, surface, created_at)
+  values (v_reader, v_counted, 'impression', 'reader', now() - interval '2 hours');
+  -- A read kept from the retired views table counts too, and the later time wins.
+  insert into public.reader_library_legacy_reads (user_id, reel_id, read_at)
+  values (v_reader, v_counted, now() - interval '1 hour');
+  perform public.boks_assert(
+    (select (item.value ->> 'readAt')::timestamptz > now() - interval '61 minutes'
+     from jsonb_array_elements(public.get_my_reader_library()) item
+     where item.value ->> 'storyId' = v_counted::text),
+    'the library''s read time is the latest of the reader''s events and the kept views'
+  );
+  delete from public.reader_library_legacy_reads where user_id = v_reader;
   v_result := public.get_my_reader_library();
   perform public.boks_assert(
     exists (
@@ -2056,9 +2176,9 @@ begin
   perform public.boks_test_login(v_reader);
   perform public.ensure_boks_user_profile();
   perform public.boks_test_login(v_admin);
-  insert into public.reels (title, author_name, hook, text, genre, mood, status, author_user_id)
+  insert into public.reels (title, author_name, text, genre, mood, status, author_user_id)
   values (
-    'Inspector test bok', null, 'Only for inspector checks.',
+    'Inspector test bok', null,
     'This boks exists only to prove the admin inspector and the admin hide action.',
     'literary', 'quiet', 'published', v_author
   ) returning id into v_inspected;
@@ -3411,14 +3531,12 @@ declare
   v_expected text[][] := array[
     array['published_boks', 'anon', 'SELECT'],
     array['published_boks', 'authenticated', 'SELECT'],
-    array['boks_comments', 'anon', 'SELECT'],
     array['reels', 'authenticated', 'SELECT'],
     array['comments', 'authenticated', 'SELECT'],
     array['bok_rights', 'authenticated', 'SELECT'],
     array['bok_reports', 'authenticated', 'SELECT'],
     array['likes', 'authenticated', 'INSERT'],
     array['likes', 'authenticated', 'DELETE'],
-    array['views', 'authenticated', 'INSERT'],
     array['comment_likes', 'authenticated', 'INSERT']
   ];
   v_row text[];
@@ -3565,7 +3683,6 @@ end $$;
 create table public.boks_trigger_probe (
   id bigserial primary key,
   text text,
-  author_handle text,
   word_count integer,
   minutes integer,
   reading_shape text,
@@ -3585,12 +3702,11 @@ begin
     not has_function_privilege('authenticated', 'public.boks_set_reel_word_count()', 'EXECUTE'),
     'the writing reader holds no EXECUTE on the trigger function'
   );
-  insert into public.boks_trigger_probe (text, author_handle)
-  values (E'Two short lines here,\nand a second one after the break.', '@someone');
+  insert into public.boks_trigger_probe (text)
+  values (E'Two short lines here,\nand a second one after the break.');
   perform public.boks_assert(
     (select word_count from public.boks_trigger_probe order by id desc limit 1) = 11
       and (select line_break_count from public.boks_trigger_probe order by id desc limit 1) = 1
-      and (select author_handle from public.boks_trigger_probe order by id desc limit 1) = 'someone'
       and (select language from public.boks_trigger_probe order by id desc limit 1) = 'en',
     'the trigger still fires, and still derives, for a reader who cannot call it'
   );
@@ -3793,6 +3909,41 @@ reset role;
 select public.boks_test_logout();
 rollback;
 
+-- Feed data cleanup (20261116120000): the retired views table, the library's
+-- kept reads and the pruning of old job runs.
+begin;
+select public.boks_assert(to_regclass('public.views') is null, 'the views table is gone');
+select public.boks_assert(
+  not exists (
+    select 1 from information_schema.role_table_grants
+    where table_schema = 'public' and table_name = 'reader_library_legacy_reads'
+      and grantee in ('anon', 'authenticated')
+  ),
+  'the library''s kept reads are reachable only through get_my_reader_library'
+);
+select public.boks_assert(
+  not has_function_privilege('anon', 'public.boks_prune_old_data()', 'EXECUTE')
+    and not has_function_privilege('authenticated', 'public.boks_prune_old_data()', 'EXECUTE'),
+  'only the server prunes old data'
+);
+insert into public.background_job_runs (job, status, started_at) values
+  ('prune-probe', 'ok', now() - interval '91 days'),
+  ('prune-probe', 'ok', now() - interval '89 days');
+select public.boks_assert(
+  (public.boks_prune_old_data() ->> 'backgroundJobRuns')::int >= 1,
+  'pruning reports the job runs it removed'
+);
+select public.boks_assert(
+  (select count(*) from public.background_job_runs where job = 'prune-probe') = 1,
+  'pruning removes job runs older than 90 days and keeps the rest'
+);
+select public.boks_test_logout();
+select public.boks_assert(
+  not (public.get_boks_user_context() ? 'views'),
+  'the user context no longer counts views'
+);
+rollback;
+
 -- Bok slugs (20261109100000): a readable address given once on publishing,
 -- unique, never changed; a twin gets the start of its id.
 begin;
@@ -3824,8 +3975,9 @@ begin
 end $$;
 rollback;
 
--- Author page name and photo (20261110100000): the author sets them, readers
--- see them, a stale tab cannot overwrite a newer save.
+-- Author page name and photo (20261110100000, on the page's space since
+-- 20261116100000): the author sets them, readers see them, a stale tab cannot
+-- overwrite a newer save.
 begin;
 insert into auth.users (id, email, is_anonymous) values
   ('a9a90000-0000-4000-8000-000000000001', 'page@boks.test', false),
@@ -3839,6 +3991,7 @@ declare
   v_error text;
   v_jpeg text := encode('\xffd8ffe0'::bytea || convert_to(repeat('x', 200), 'UTF8'), 'base64');
 begin
+  perform public.boks_assert(public.get_boks_author_page('pagewriter') is null, 'an account with no page has no name or photo for readers');
   perform public.boks_test_login('a9a90000-0000-4000-8000-000000000001');
   v_page := public.get_my_author_page();
   perform public.boks_assert((v_page ->> 'version')::integer = 0 and v_page ->> 'name' is null, 'a new author page has no name and version 0');
@@ -3873,7 +4026,12 @@ begin
 
   v_page := public.save_my_author_page('', 'remove', 1);
   perform public.boks_assert(v_page ->> 'name' is null and v_page ->> 'photoVersion' is null and (v_page ->> 'version')::integer = 2, 'an empty name and removed photo bring the monogram back');
-  perform public.save_my_author_page('Мира Вейл', v_jpeg, 2);
+  v_page := public.save_my_author_page('Мира Вейл', v_jpeg, 2);
+  perform public.boks_assert((v_page ->> 'photoVersion')::integer > 1, 'a photo put back gets a new address, not an old one');
+  perform public.boks_assert(
+    (select count(*) from public.author_spaces s
+     where s.owner_user_id = 'a9a90000-0000-4000-8000-000000000001' and s.status = 'published' and s.kind = 'author' and s.name = 'Мира Вейл') = 1,
+    'the name and photo live on the account''s one page, published as they always were');
 
   perform public.boks_test_logout();
   perform public.boks_assert(public.get_boks_author_page('@PageWriter') ->> 'name' = 'Мира Вейл', 'a reader sees the saved name by handle');
@@ -4314,6 +4472,10 @@ begin
   v_mine := public.request_author_space_changes(v_work, 'Поменяйте шрифт заголовка');
   perform public.boks_assert(v_mine -> 'messages' -> 0 ->> 'body' = 'Поменяйте шрифт заголовка' and (v_mine -> 'messages' -> 0 ->> 'fromAuthor')::boolean,
     'asking for changes is a message to the team');
+  perform public.boks_assert(exists (
+    select 1 from jsonb_array_elements(v_mine -> 'items') i
+    where i -> 'work' ->> 'id' = v_work::text and i -> 'work' ->> 'note' = 'Поменяйте шрифт заголовка'
+  ), 'the work''s note is the author''s request, read from the conversation');
   v_mine := public.send_author_space_message('И фото хочется посветлее');
   perform public.boks_assert(jsonb_array_length(v_mine -> 'messages') = 2 and v_mine -> 'messages' -> 1 ->> 'workId' is null, 'the author writes about the page as a whole');
 
@@ -4324,7 +4486,10 @@ begin
   ), 'and the list of pages says so');
   perform public.studio_mark_author_space_seen(v_id);
   perform public.boks_assert((public.studio_author_space(v_id) ->> 'unread')::integer = 0, 'read in Studio, nothing is unread');
+  perform public.boks_assert(public.studio_author_space(v_id) -> 'works' -> 0 ->> 'note' = 'Поменяйте шрифт заголовка', 'the team sees the request on the work');
   perform public.studio_set_space_work_status(v_work, 'ready', 'Проверено', 'Шрифт заменили');
+  perform public.boks_assert(public.studio_author_space(v_id) -> 'works' -> 0 ? 'note'
+    and public.studio_author_space(v_id) -> 'works' -> 0 ->> 'note' is null, 'once the changes are made the work has no open request');
   perform public.studio_send_author_space_message(v_id, 'Фото заменим завтра');
 
   perform public.boks_test_login('a5a50000-0000-4000-8000-000000000006');
@@ -4379,6 +4544,85 @@ begin
   perform public.boks_assert((select handle from public.user_profiles where user_id = 'a5a50000-0000-4000-8000-000000000007') = 'nolink_poet',
     'the proposed address becomes the account''s @name, as with the link');
   perform public.boks_test_logout();
+end $$;
+
+-- One page, one row (20261116100000): Studio edits what readers see, the
+-- preview and the public page agree, a deleted account's page comes down.
+do $$
+declare
+  v_jpeg2 text := encode('\xffd8ffe1'::bytea || convert_to(repeat('y', 200), 'UTF8'), 'base64');
+  v_id uuid;
+  v_version integer;
+  v_photo_version integer;
+  v_page jsonb;
+  v_error text;
+begin
+  select id, version into v_id, v_version from public.author_spaces
+  where owner_user_id = 'a5a50000-0000-4000-8000-000000000002' and status <> 'merged';
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  v_photo_version := (public.get_my_author_page() ->> 'photoVersion')::integer;
+  perform public.boks_assert((public.get_my_author_page() ->> 'version')::integer = v_version, 'the cabinet and Studio hold the same page version');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.studio_save_author_space(v_id, 'author', 'Дарья Мальо', null, v_jpeg2, v_version);
+
+  perform public.boks_test_logout();
+  v_page := public.get_boks_author_page('test_poetess');
+  perform public.boks_assert(v_page ->> 'name' = 'Дарья Мальо', 'Studio''s edit of an owned page is what readers see');
+  perform public.boks_assert((v_page ->> 'photoVersion')::integer > v_photo_version, 'a new photo from Studio is a new photo address');
+  perform public.boks_assert(public.get_boks_author_photo('test_poetess') ->> 'jpeg' = v_jpeg2
+    and (public.get_boks_author_photo('test_poetess') ->> 'version')::integer = (v_page ->> 'photoVersion')::integer,
+    'readers get Studio''s photo under the version the page names');
+
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  perform public.boks_assert(public.get_author_space_preview(null) ->> 'name' = v_page ->> 'name'
+    and public.get_my_author_page() ->> 'name' = v_page ->> 'name'
+    and public.get_my_author_space() ->> 'name' = v_page ->> 'name',
+    'the preview, the cabinet and the public page show the same name');
+  begin
+    perform public.save_my_author_page('Старое имя', 'keep', v_version);
+    perform public.boks_assert(false, 'the author''s tab opened before Studio''s save is stale');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Your page was changed in another tab%', 'a cabinet tab overtaken by Studio is refused: ' || v_error);
+  end;
+  perform public.save_my_author_page('Дарья', 'keep', v_version + 1);
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.boks_assert(public.studio_author_space(v_id) ->> 'name' = 'Дарья', 'Studio sees the author''s own edit');
+  -- The author may clear the name; Studio can still save the page.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000002');
+  perform public.save_my_author_page('', 'keep', v_version + 2);
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.studio_save_author_space(v_id, 'author', '', null, 'keep', v_version + 3);
+
+  -- The author deletes their account: the page comes down with its name and photo.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000003');
+  perform public.delete_my_boks_account('stranger_poet');
+  perform public.boks_test_logout();
+  perform public.boks_assert(
+    not exists (select 1 from public.author_spaces s where s.status = 'published' and s.kind = 'author' and s.owner_user_id is null),
+    'no published page is left without an owner');
+  perform public.boks_assert(
+    exists (select 1 from public.author_spaces s where s.handle is null and s.owner_user_id is null and s.status = 'unpublished'
+            and s.name is null and s.photo is null and s.share_card is not null),
+    'a deleted author''s page is unpublished and keeps no name or photo');
+  perform public.boks_assert(public.get_boks_author_page('stranger_poet') is null, 'readers get nothing for a deleted author''s page');
+
+  -- An admin deletes an account: the same.
+  perform public.boks_test_login('a5a50000-0000-4000-8000-000000000001');
+  perform public.delete_boks_user('a5a50000-0000-4000-8000-000000000002', 'test_poetess');
+  perform public.boks_assert((select status from public.author_spaces where id = v_id) = 'unpublished', 'an account deleted by an admin takes its page down');
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_author_page('test_poetess') is null and public.get_boks_author_photo('test_poetess') is null,
+    'readers get no name or photo for it');
+
+  perform public.boks_assert(to_regclass('public.author_pages') is null, 'author_pages is gone: the space is the page');
+  perform public.boks_assert(not exists (
+    select 1 from information_schema.columns where table_schema = 'public' and table_name = 'author_space_works' and column_name = 'note'
+  ), 'a work keeps no copy of the author''s request');
+  perform public.boks_assert(not exists (
+    select 1 from pg_proc where pronamespace = 'public'::regnamespace and prosrc ilike '%author_pages%'
+  ), 'no function reads author_pages');
 end $$;
 
 do $$

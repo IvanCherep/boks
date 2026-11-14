@@ -61,11 +61,6 @@ export type ServeReaderFeedRequest = {
   /** Admin preview only. Readers never choose an algorithm. */
   requestedAlgorithmId?: string | null;
   servingBackend: ServingBackend;
-  /**
-   * The reader profile the ranking saw. Stored verbatim: the profile changes
-   * with every read, so without a snapshot no serve can be replayed.
-   */
-  profileSnapshot?: Record<string, unknown>;
   buildId?: string | null;
   /**
    * Languages the reader accepts, for a reader with no stored preference -
@@ -165,13 +160,6 @@ export async function serveReaderFeed(
     servingBackend: request.servingBackend,
     degradedMode: candidateSet.degraded || request.servingBackend !== "worker",
     fallbackReason: candidateSet.fallbackReason,
-    // What the ranking actually saw, not what the client claimed. Replay needs
-    // the server-side half or it cannot reconstruct the slate.
-    profileSnapshot: {
-      ...(request.profileSnapshot ?? {}),
-      followedAuthorIds: reader.followedAuthorIds,
-      bokState: reader.bokState,
-    },
     buildId: request.buildId ?? null,
   });
 
@@ -317,7 +305,6 @@ type ProvenanceInput = {
   servingBackend: ServingBackend;
   degradedMode: boolean;
   fallbackReason: string | null;
-  profileSnapshot: Record<string, unknown>;
   buildId: string | null;
 };
 
@@ -339,7 +326,6 @@ async function recordProvenance(transport: FeedTransport, input: ProvenanceInput
         signalsVersion: SIGNALS_VERSION,
         rankingVersion: RANKING_VERSION,
         labelingVersion: LABELING_VERSION,
-        profileSnapshot: input.profileSnapshot,
         seed: input.experiment.experimentKey,
         buildId: input.buildId,
       },

@@ -122,7 +122,6 @@ export type SupabaseFeedRequest = {
   visitorId: string;
   sessionId: string;
   reader?: ReaderSignals;
-  profileSnapshot?: Record<string, unknown>;
   /** The guest's language filter; a signed-in reader's stored one wins. */
   readingLanguages?: readonly string[];
 };
@@ -222,7 +221,6 @@ async function loadWorkerReaderFeed(
         limit: request.limit,
         sessionId: request.sessionId,
         reader: request.reader,
-        profileSnapshot: request.profileSnapshot ?? {},
         // The language filter. It was sent only on the browser fallback path,
         // so the normal Worker feed was unfiltered and the mix of languages
         // changed depending on which path served it.
@@ -273,7 +271,6 @@ async function loadBrowserReaderFeed(
     sessionId: request.sessionId,
     limit: request.limit,
     reader: request.reader,
-    profileSnapshot: request.profileSnapshot ?? {},
     readingLanguages: request.readingLanguages,
     servingBackend: "browser",
   });
@@ -1603,17 +1600,6 @@ export async function loadSupabaseComments(storyId: string): Promise<Comment[]> 
   const result = await supabase.rpc("get_bok_comments", { p_reel_id: storyId });
   if (result.error) throw result.error;
   return (result.data ?? []) as Comment[];
-}
-
-export async function recordSupabaseView(userId: string | null, storyId: string) {
-  if (!supabase || !userId) return;
-
-  const result = await supabase.from("views").insert({
-    user_id: userId,
-    reel_id: storyId,
-  });
-
-  if (result.error) throw result.error;
 }
 
 export async function setSupabaseLike(userId: string | null, storyId: string, liked: boolean) {

@@ -38,7 +38,7 @@ function sample(q) {
 }
 
 const T = {}; const E = {};
-for (const n of ["page", "static", "signup", "feed", "likes", "ctx", "geo", "journey", "views", "events", "image", "media"]) {
+for (const n of ["page", "static", "signup", "feed", "likes", "ctx", "geo", "journey", "events", "image", "media"]) {
   T[n] = new Trend(`t_${n}`, true); E[n] = new Counter(`err_${n}`);
 }
 const busy = new Counter("busy_pages");
@@ -87,7 +87,7 @@ function events(s, bok, types, extra) {
 
 function feed(s) {
   const r = req("feed", "POST", `${BASE}/api/feed`, JSON.stringify({ limit: 30, sessionId: s.session,
-    readingLanguages: [s.lang], reader: {}, profileSnapshot: {} }), api(s));
+    readingLanguages: [s.lang], reader: {} }), api(s));
   if (r.status !== 200) return false;
   const d = r.json(); s.feedId = d.feedId; s.exp = d.experiment || {};
   s.slate = (d.entries || []).map((e) => ({ id: e.reelId, rank: e.rank })); s.pos = 0;
@@ -157,8 +157,6 @@ export default function (data) {
     if (s.pos >= s.slate.length || read >= 25) { if (!feed(s)) return; read = 0; }
     const bok = s.slate[s.pos++];
     if (hasCover[bok.id]) req("image", "GET", `${BASE}/covers/${bok.id}.webp`);  // only boks that have artwork
-    req("views", "POST", `${BASE}/rest/v1/views`, JSON.stringify({ user_id: s.user, reel_id: bok.id }),
-      Object.assign(api(s), { Prefer: "return=minimal" }));
     events(s, bok, ["impression", "start", "touch"]);
     let left = sample(bokQ);
     let active = 0;
@@ -185,7 +183,7 @@ export function handleSummary(d) {
     rps: d.metrics.http_reqs ? +d.metrics.http_reqs.values.rate.toFixed(1) : 0,
     failed_pct: d.metrics.http_req_failed ? +(d.metrics.http_req_failed.values.rate * 100).toFixed(2) : 0,
     busy_pages: v("busy_pages", "count") || 0 };
-  for (const n of ["page", "signup", "feed", "likes", "ctx", "journey", "views", "events", "image", "media"])
+  for (const n of ["page", "signup", "feed", "likes", "ctx", "journey", "events", "image", "media"])
     if (d.metrics[`t_${n}`]) out[n] = `${v(`t_${n}`, "med")}/${v(`t_${n}`, "p(95)")}ms err${v(`err_${n}`, "count") || 0}`;
   return { stdout: JSON.stringify(out) + "\n" };
 }

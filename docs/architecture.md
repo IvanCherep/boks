@@ -103,7 +103,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 ## Reader flow
 
 1. `/` gets or creates the visitor id and an anonymous Supabase session (a guest), or restores the account's session.
-2. The browser asks `/api/feed` for a slate, sending its JWT, its reading languages and a profile snapshot. The Worker loads the experiment config and candidates (`get_recommendation_candidates` - published boks in the reader's languages with behaviour counters and semantic similarity), resolves the reader's stored arm, ranks with `buildReaderFeed`, records `served_feed` + `served_feed_item`, and returns the slate with its `feedId`.
+2. The browser asks `/api/feed` for a slate, sending its JWT, its reading languages and its reader signals. The Worker loads the experiment config and candidates (`get_recommendation_candidates` - published boks in the reader's languages with behaviour counters and semantic similarity), resolves the reader's stored arm, ranks with `buildReaderFeed`, records `served_feed` + `served_feed_item`, and returns the slate with its `feedId`.
 3. If `/api/feed` fails or is slow, `worker-feed-breaker.ts` lets the browser rank the same way for a cool-down; those feeds are recorded with `serving_backend = 'browser'`.
 4. Every behaviour goes through `reader-events.ts` into `record_recommendation_events`, attributed with algorithm, experiment, segment, rank, feed id, foreground seconds and progress. The feed appends the next slate five boks before the end.
 5. A direct Series visit does not expose the background feed: only a bok actually shown in the reader/player emits impression, heartbeat or outcome. Series continuation captures the current published shelf order and keeps `entry: "series"`.

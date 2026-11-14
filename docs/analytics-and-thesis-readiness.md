@@ -72,8 +72,9 @@ events, **cohort week and tenure days**.
   reader property but never feeds the measurement: an instrument that
   recalibrates itself as samples accumulate makes finish rate incomparable
   between readers and drifting for the same one.
-- `views` and `likes` remain product features - history, like state - and are
-  never used as behavioural metrics. Reader behaviour comes from
+- `likes` and `comments` remain product features - like state, the thread - and
+  are never used as behavioural metrics (the `views` table was dropped on
+  2026-11-16; reading history now reads the events). Reader behaviour comes from
   `recommendation_events` only, so there is one source of truth.
 
 ---

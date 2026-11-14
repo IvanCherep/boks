@@ -332,8 +332,9 @@ During a test, verify these signals accumulate:
 
 Supabase now records these in `public.recommendation_events` for both guest and
 signed-in readers, attributed with algorithm, experiment, segment, feed rank,
-elapsed seconds and estimated duration. `public.views`, `likes` and `comments`
-remain the reader-facing tables behind reading history and comment identity.
+elapsed seconds and estimated duration. The account library's reading history
+reads those events too; `likes` and `comments` remain the reader-facing tables
+behind like state and comment identity.
 
 To confirm attribution is flowing during a test session:
 

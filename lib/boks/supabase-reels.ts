@@ -83,8 +83,6 @@ export type SupabaseCandidateRow = {
   readSecondsTotal: number;
   /** `und` when the detector could not tell. */
   language?: string;
-  /** Retired opening line; the database keeps it empty. */
-  hook?: string;
   /** The editorial summary shown on the cover; empty when there is none. */
   summary?: string;
   hasEmbedding?: boolean;

@@ -1144,8 +1144,8 @@ way. See `docs/handover/2026-09-19-admin-inspector-and-feed-hide.md`.
 **A signed-in reader has one account library with Read, Liked, and Comments
 views.** The RPC selects up to 120 recent ids from each activity and returns
 their bounded union, searchable by title or byline and backed by the reader's
-private `views`, `likes`, and `comments` activity through
-`get_my_reader_library`. Opening an item inserts
+own reading events (since `20261116120000`; the `views` table before), `likes`,
+and `comments` activity through `get_my_reader_library`. Opening an item inserts
 that single boks at the reader's current place; the next gesture resumes the
 recommendation slate, so the library cannot become a second selectable feed.
 Guests never see these views. Production QA covered the owner account on
@@ -1309,6 +1309,9 @@ Migration `20261114100000_boks_author_spaces.sql` and its screens; not applied t
 - **A prepared poet's Series, after she publishes** (2026-11-14): Series made for a page's new texts go live in three steps once the author has published them on production: register the pieces against the new bok ids (`poems.ts`, `series-catalogue.ts` with covers in `public/series/`, a poet's section on the shelf), release, then press "Series зарегистрирована: выпустить" in Studio. The registration is prepared outside the repository (tokens are keys to the author's files) and goes in only with production ids.
 - **No link needed** (2026-11-14): an invitation is to an email; signed into `/author` with it, the author is offered the page (`get_my_author_invites`, accepted by invitation id; the address is the check, as with the link). The link stays as a convenience. "Кабинет автора" is an entry in You → Settings, with a badge while a page waits. The page also has a conversation (`author_space_messages`): the author's notes and the team's answers, unread counts on both sides, and an automatic "changes made" message when a work asked about is marked ready again. Link preview: a still card and an og:video per page (Studio), shown as messenger mock-ups in Studio and the cabinet.
 - **Second step** (2026-11-15, `20261115100000`): a Series published by its author with the text plays from the author's page at once (cover and player from the link-only folder; the token reaches readers only after that publication); the feed and the Series shelf still take the code registration. The author hides a published work and puts it back from "My page". The owner sees their own photo in the cabinet while the page is closed. Studio shows each page's stage (waiting for the author, asked for changes, published…) and its history (invitation, acceptance, messages, publications).
+- **One page, one row** (2026-11-16, `20261116100000`, not applied to production): `author_pages` is merged into `author_spaces` and dropped. An account's name and photo live on its space (created, published, on its first save if it has none), so Studio's edit of an owned page is what readers see and the preview shows the same name as the public page; photo versions carried over, so shared photo links stay valid. A work's `note` is now the author's latest message about it while changes are requested (the column is gone). Deleting an account unpublishes its page and clears its name and photo.
+- **Feed data cleanup** (2026-11-16, `20261116120000`, not applied to production): `served_feed.profile_snapshot` is dropped (30 of the table's 38 MB, read by nothing); the arm a client claimed when its stored arm was credited instead is now `served_feed.claimed_algorithm_id`, and `record_served_feed` still accepts and ignores `profileSnapshot` from an older server. The `views` table is dropped: the account library's read time is the reader's latest impression, start or complete event, plus `reader_library_legacy_reads` (views the events never recorded, kept for the library only, never counted as impressions). `get_boks_user_context` no longer answers `views`; `get_boks_admin_snapshot` drops every view-based number and the stale `algorithms`/`algorithmMetrics`. Event metadata `genre`, `mood`, `catalogSize`, `unseenCount` are no longer written and are stripped from stored and incoming events. Dropped `likes_reel_id_idx`, `likes_user_id_idx`, `comments_user_created_idx` (covered). `boks_prune_old_data()` deletes job runs older than 90 days; not scheduled yet (the embedder already drops its own runs after 30 days). After applying: `vacuum full public.served_feed` (34.5 MB to 1.5 MB on the 2026-11-14 copy).
+- **Content cleanup** (2026-11-16, `20261116110000`, not applied to production): dropped `reels.author_handle`, `reels.hook`, `user_profiles.preferred_genre/preferred_mood`, the `boks_comments` view and `reels_mood_genre_idx`; added `bok_reports(reel_id)` index. The views keep `hook` (always '') and `author_handle` (from the identity), RPCs keep their arguments (`p_hook` ignored) and answer keys, except `get_boks_user_context` no longer answers `preferredGenre`/`preferredMood` (no client read them). Removing a piece no longer overwrites its refusal reason (`review_note`); an archived piece shows its `archive_reason`. Status invariants (`archived_at` iff archived, `withdrawn_at` only on a withdrawn piece or one archived from withdrawn, known `*_from_status`) are CHECK constraints.
 - **Still to do before real authors**: Series versions attach only to boks whose production is already registered in the app (`series-catalogue.ts`), so a closed Series is closed on the author page, not in the feed's Play; private runtime-served productions are the next step. The publication terms text is the current `/terms#author-content`; the agreed wording for invited authors is pending. Following an editorial page does not yet raise its boks in the feed.
 
 ---
@@ -1370,9 +1373,9 @@ Worth reading before touching anything that shows a name.
   defaulting to whatever that author used last time. It is a pen name and is
   *supposed* to be independent of the account: changing your nickname moves your
   `@handle` everywhere but never rewrites work you already published.
-- A handle is never stored on the work. `reels.author_handle` is null for any
-  boks with an account behind it, enforced by
-  `reels_handle_is_never_copied`, and joined from `boks_public_identity`.
+- A handle is never stored on the work: `reels` has no handle column (dropped
+  in `20261116110000`); `boks_reels.author_handle` is joined from
+  `boks_public_identity`, '' for a piece with no account behind it.
 - **The profile row is created in exactly one place**:
   `getCurrentBoksUserContext` in `lib/boks/supabase-client.ts`, which calls
   `ensure_boks_user_profile` when a signed-in reader comes back without a
@@ -1493,9 +1496,9 @@ These are decisions, not omissions. Changing one is a product change.
   comments; liking, commenting and following need an account.
 - Every boks needs admin approval before publication. Three submissions per
   author per UTC day.
-- `views` and `likes` are product features (history, like state) and are never
-  used as behavioural metrics. Reader behaviour comes from
-  `recommendation_events` only.
+- `likes` and `comments` are product features (like state, the thread) and are
+  never used as behavioural metrics. Reader behaviour comes from
+  `recommendation_events` only. (The `views` table was dropped on 2026-11-16.)
 
 ---
 
@@ -1630,8 +1633,6 @@ and it is far more meaningful on 457 mixed pieces than it was on 37 demo ones.
 
 Small, real, and written down so they are not rediscovered:
 
-- `boks_comments.visitor_name` is a legacy alias for `visitor_handle`, kept for
-  clients that have not dropped the old field. It should get a removal date.
 - `minimumImpressionsPerArm` is still editable in the experiment editor and
   stored, but nothing reads it — the reader-level minimum replaced it.
 - `boksOpened` is counted per day and summed, so a reader who reopens the same

@@ -35,12 +35,6 @@ if (reelsResult.error) throw reelsResult.error;
 const reel = reelsResult.data?.[0];
 assertOk(reel?.id, "No published reels were readable through RLS.");
 
-const viewResult = await supabase.from("views").insert({
-  user_id: userId,
-  reel_id: reel.id,
-});
-if (viewResult.error) throw viewResult.error;
-
 const likeResult = await supabase.from("likes").upsert(
   {
     user_id: userId,
@@ -49,12 +43,6 @@ const likeResult = await supabase.from("likes").upsert(
   { onConflict: "user_id,reel_id" }
 );
 assertOk(likeResult.error, "Anonymous auth could like a bok.");
-
-const commentsResult = await supabase
-  .from("boks_comments")
-  .select("id,reel_id,visitor_handle,body,created_at")
-  .eq("reel_id", reel.id);
-if (commentsResult.error) throw commentsResult.error;
 
 const conversationResult = await supabase.rpc("get_bok_comments", { p_reel_id: reel.id });
 if (conversationResult.error) throw conversationResult.error;
@@ -68,7 +56,7 @@ assertOk(blockedCommentResult.error, "Anonymous auth could comment on a bok.");
 assertOk(blockedCommentResult.error.code !== "PGRST202", "Bok comment RPC is missing.");
 
 const blockedCommentLikeResult = await supabase.rpc("set_bok_comment_like", {
-  p_comment_id: commentsResult.data?.[0]?.id ?? -1,
+  p_comment_id: conversationResult.data?.[0]?.id ?? -1,
   p_liked: true,
 });
 assertOk(blockedCommentLikeResult.error, "Anonymous auth could like a comment.");
@@ -87,13 +75,6 @@ const blockedProfileUpdateResult = await supabase.rpc("update_boks_user_profile"
 });
 assertOk(blockedProfileUpdateResult.error, "Anonymous auth could update a permanent profile.");
 assertOk(blockedProfileUpdateResult.error.code !== "PGRST202", "Profile update RPC is missing.");
-
-const otherUserId = "00000000-0000-4000-8000-000000000001";
-const blockedViewResult = await supabase.from("views").insert({
-  user_id: otherUserId,
-  reel_id: reel.id,
-});
-assertOk(blockedViewResult.error, "RLS allowed inserting a view for another user.");
 
 const blockedReelResult = await supabase.from("reels").insert({
   title: "Blocked client insert",

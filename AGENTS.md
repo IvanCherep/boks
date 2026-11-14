@@ -46,7 +46,7 @@ Before running anything locally, read `docs/local-environment-runbook.md`: which
 ## Business rules
 
 - Algorithms are compared by attributed behaviour, never opinions.
-- Every admin number is a measurement: no invented composite scores, no rate over a constant denominator, one source of truth per concept. Behaviour comes from `recommendation_events`, never from `views` or `likes` (those are product features).
+- Every admin number is a measurement: no invented composite scores, no rate over a constant denominator, one source of truth per concept. Behaviour comes from `recommendation_events`, never from `likes` or `comments` (those are product features).
 - Reading time means foreground time; a clock running on a locked phone is not a metric.
 - A comparison is only worth reading if the arms produce different feeds and each arm has enough readers - measured with `npm run verify:divergence` and the lab's readiness line, not assumed.
 - Admin access is `user_profiles.role`, granted from `/admin` and enforced by RLS/RPC. Never by local storage, URL flags or `user_metadata`.

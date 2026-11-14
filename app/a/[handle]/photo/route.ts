@@ -1,7 +1,7 @@
 import { loadAuthorPhoto } from "@/lib/boks/author-preview";
 
 /**
- * The photo an author set for their page (`author_pages`), as a JPEG.
+ * The photo an author set for their page (`author_spaces.photo`), as a JPEG.
  *
  * Its address carries the photo's version (`?v=`), and a new photo is a new
  * version, so a versioned address can be cached for good. Without a photo,

@@ -5,7 +5,7 @@
  * square behind the circle, re-encoded as a 640x640 JPEG. Re-encoding drops
  * whatever the camera wrote into the file (location included), and a fixed
  * small size keeps it cheap to store in the database and to send to a
- * messenger as a link preview (`author_pages`, `app/a/[handle]/photo`).
+ * messenger as a link preview (`author_spaces.photo`, `app/a/[handle]/photo`).
  */
 
 export const photoAcceptedTypes = ["image/jpeg", "image/png", "image/webp"] as const;

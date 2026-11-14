@@ -74,7 +74,7 @@ SQL
     ids=$(printf "'%s'," "$@"); ids=${ids%,}
     psql_remote "-v id=$id" <<SQL
 with moved as (
-  update public.reels set author_user_id = :'id', author_handle = null
+  update public.reels set author_user_id = :'id'
   where id in ($ids) and status = 'published'
   returning title, slug
 )

@@ -19,11 +19,11 @@ The author name printed on one bok, chosen when it is published; it does not fol
 _Avoid_: display name, pen name, author name
 
 **Page name**:
-The optional name (at most 60 characters) and photo an author sets for their own page (`/@handle`) in the cabinet; they title that page and its link preview only. Comments keep the @handle and every bok keeps its byline (`author_pages`, 20261110100000).
+The optional name (at most 60 characters) and photo an author sets for their own page (`/@handle`) in the cabinet; they title that page and its link preview only. Comments keep the @handle and every bok keeps its byline. Stored on the account's **author space**, the same row Studio edits (`author_spaces.name` / `photo`, 20261116100000).
 _Avoid_: display name, profile name
 
 **Author space**:
-The stable identity of one author page, independent of an account: a living author's page prepared in Studio and handed over by an **invitation** (then owned by their account), or an **editorial page** the team runs for a classic (`/@pushkin`), with its own @handle and followers. Holds **prepared works**, each a new text or a text / Series version attached to an existing bok, with a revision that a publication confirms (`author_spaces`, 20261114100000).
+The stable identity of one author page, independent of an account: a living author's page prepared in Studio and handed over by an **invitation** (then owned by their account), or an **editorial page** the team runs for a classic (`/@pushkin`), with its own @handle and followers. Holds **prepared works**, each a new text or a text / Series version attached to an existing bok, with a revision that a publication confirms (`author_spaces`, 20261114100000). An account has at most one; it is the only place an author page's name and photo live (20261116100000).
 _Avoid_: draft profile, shadow account, pseudo-user
 
 **Editorial page**:

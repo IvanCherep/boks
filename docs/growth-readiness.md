@@ -10,7 +10,7 @@ How the current build supports a pilot of a few hundred readers and a catalogue 
 - Recommendation algorithms are registered in one module (`lib/boks/recommendations/`), ranked in the Worker, and compared in the admin Recommendation lab.
 - The catalogue is loaded by an idempotent import pipeline (`docs/catalogue-import.md`), not bundled in source.
 - Client helpers are split by concern: formatting, data access, behavior inference, shared UI, constants, and types.
-- Supabase reader/admin/author MVP uses bounded queries, indexed `reels`, `views`, `likes`, `comments`, `user_profiles`, and aggregate RPCs for the business console.
+- Supabase reader/admin/author MVP uses bounded queries, indexed `reels`, `likes`, `comments`, `user_profiles`, and aggregate RPCs for the business console.
 
 ## Current Limits
 

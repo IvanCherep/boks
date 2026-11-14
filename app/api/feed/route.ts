@@ -31,7 +31,7 @@ type FeedRequestBody = {
   limit?: number;
   sessionId?: string;
   reader?: ReaderSignals;
-  profileSnapshot?: Record<string, unknown>;
+  // Tabs loaded before 2026-11-16 still send `profileSnapshot`; it is ignored.
   buildId?: string | null;
   /** The reader's language filter; empty means no filter. */
   readingLanguages?: unknown;
@@ -71,7 +71,6 @@ export async function POST(request: Request) {
     sessionId: String(body.sessionId ?? "").slice(0, 120),
     limit: clampLimit(body.limit),
     reader: body.reader,
-    profileSnapshot: body.profileSnapshot,
     servingBackend: "worker",
     buildId: body.buildId ?? null,
     readingLanguages: languagesFrom(body.readingLanguages),

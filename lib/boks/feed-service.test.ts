@@ -144,24 +144,18 @@ describe("serveReaderFeed", () => {
     expect(feed.candidateCount).toBe(8);
   });
 
-  it("stores the reader profile the ranking actually saw", async () => {
+  it("records the serve without a profile snapshot", async () => {
     const calls: Call[] = [];
-    await serveReaderFeed(createTransport({ calls }), {
-      ...baseRequest,
-      profileSnapshot: { genreAffinity: { drama: 6 } },
-    });
+    await serveReaderFeed(createTransport({ calls }), baseRequest);
 
     const feed = calls.find((call) => call.name === "record_served_feed")?.body.p_feed as Record<
       string,
       unknown
     >;
-    const snapshot = feed.profileSnapshot as Record<string, unknown>;
 
-    // What the client sent, plus the server-side half the ranking actually
-    // used. Replay needs both or it cannot reconstruct the slate.
-    expect(snapshot.genreAffinity).toEqual({ drama: 6 });
-    expect(snapshot.followedAuthorIds).toEqual([]);
-    expect(Object.keys(snapshot.bokState as object)).toHaveLength(8);
+    // Nothing read the snapshot; the database stopped storing it (20261116120000).
+    expect(feed).toBeDefined();
+    expect(feed).not.toHaveProperty("profileSnapshot");
   });
 
   it("serves the reader even when provenance cannot be written", async () => {
