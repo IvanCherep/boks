@@ -79,6 +79,17 @@ sending it. `/a/<handle>/photo` serves only those bytes as `image/jpeg` with
 page that is a draft or unpublished. Deleting an account unpublishes its page
 and clears its name and photo.
 
+- Lines, letters, days and Guess the author (`20261117100000`-`120000`) have no
+  Data API grants. Every write checks a permanent, non-suspended account
+  (`boks_require_reader_account`) and that the words are the bok's own
+  (`boks_checked_passage`), so a "line" can never carry a message of its own.
+  A letter shows the sender's @handle only, never an email; the words only
+  while the bok is published, and an erased bok's words are cleared from
+  letters. A line link's 16-hex code is the only key to its line and is
+  readable by anyone holding it (`get_line_link`, granted to `anon`). The game
+  never returns the title, the bok id or the author before the reader's own
+  answer; Studio's game functions check `is_boks_admin`.
+
 - Author spaces (`20261114100000_boks_author_spaces.sql`) have no Data API
   grants. Studio functions check `is_boks_admin`; the owner's functions check
   `owner_user_id` and a permanent, non-suspended account (a guest session is

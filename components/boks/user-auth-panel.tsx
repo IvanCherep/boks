@@ -59,11 +59,29 @@ import { atHandle } from "@/components/boks/reader/handles";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokArtworkFocus, getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { ReaderTabs } from "@/components/boks/series/series-view";
-import { YouSettings } from "@/components/boks/you-settings";
+import { YouSettings, type DailyLinks, type YouSection } from "@/components/boks/you-settings";
 import { loadFollowedPages, setAuthorPageFollow } from "@/components/boks/author-spaces/data";
 import { bokCoverPalette } from "@/components/boks/reader/bok-cover-palette";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { currentUiLanguage, useMessages } from "./ui-language";
+
+/** The guest's account screens: the limit and the reminders' way in (`lib/boks/daily/days.ts`). */
+const guestGateMessages = defineMessages(
+  {
+    limitReached: (limit: number) => `You have read ${limit} boks without an account. Create one to read on: today's line and Guess the author are waiting.`,
+    booksLeft: (left: number) => `You can read ${left} more ${left === 1 ? "bok" : "boks"} without an account. With one: a line a day, Guess the author and your reading history.`,
+    boksRead: (count: number) => `${count === 1 ? "bok" : "boks"} read.`,
+    readOn: "Read on with an account.",
+  },
+  {
+    ru: {
+      limitReached: (limit: number) => `Вы прочитали ${limit} ${plural("ru", limit, { one: "бок", few: "бока", many: "боков", other: "бока" })} без аккаунта. Создайте аккаунт, чтобы читать дальше: строка дня и «Угадай автора» уже ждут.`,
+      booksLeft: (left: number) => `Без аккаунта можно прочитать ещё ${left} ${plural("ru", left, { one: "бок", few: "бока", many: "боков", other: "бока" })}. С аккаунтом: строка дня, «Угадай автора» и ваша история чтения.`,
+      boksRead: (count: number) => `${plural("ru", count, { one: "бок прочитан", few: "бока прочитано", many: "боков прочитано", other: "бока прочитано" })}.`,
+      readOn: "Дальше с аккаунтом.",
+    },
+  },
+);
 
 const activityMessages = defineMessages({
   likedAt: (time: string) => `Liked at ${time}`,
@@ -161,7 +179,9 @@ type UserAuthPanelProps = {
   onFollowsChanged?: (authorUserIds: string[]) => void;
   onOpenFeed?: () => void;
   onOpenSeries?: () => void;
-  initialSection?: "home" | "typography" | "languages" | "feedback";
+  initialSection?: YouSection;
+  /** The line of the day and the game, in the reader only. */
+  daily?: Omit<DailyLinks, "onStatus">;
 };
 
 export function UserAuthPanel({
@@ -181,9 +201,11 @@ export function UserAuthPanel({
   onOpenFeed,
   onOpenSeries,
   initialSection,
+  daily,
 }: UserAuthPanelProps) {
   const { preferences, t } = useReaderPreferences();
   const activityWords = useMessages(activityMessages);
+  const gateWords = useMessages(guestGateMessages);
   const [showAuth, setShowAuth] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsSection, setSettingsSection] = useState<"feedback" | undefined>();
@@ -602,8 +624,8 @@ export function UserAuthPanel({
   const remainingGuestBoks = Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount);
   const noticeText = required
     ? surface === "author" ? t("Your email, to submit boks for review.", "Войдите, чтобы отправлять боки на проверку.")
-      : t("You have read 15 boks without an account. Sign in to keep reading for free.", "Вы прочитали 15 боков без аккаунта. Войдите, чтобы продолжить читать бесплатно.")
-    : reason === "notice" ? t(`You can read ${remainingGuestBoks} more boks without an account. An account keeps your reading history.`, `Без аккаунта можно прочитать ещё ${remainingGuestBoks} ${plural("ru", remainingGuestBoks, { one: "бок", few: "бока", many: "боков", other: "бока" })}. Аккаунт сохраняет историю чтения.`)
+      : gateWords.limitReached(anonymousReadLimits.requiredSignup)
+    : reason === "notice" ? gateWords.booksLeft(remainingGuestBoks)
     : intent === "like" ? t("Sign in to like this bok.", "Войдите, чтобы поставить лайк.")
     : intent === "comment" ? t("Sign in to comment with your @handle.", "Войдите, чтобы комментировать под своим @именем.")
     : intent === "follow" ? t("Sign in to follow this account.", "Войдите, чтобы подписаться.")
@@ -642,7 +664,7 @@ export function UserAuthPanel({
       onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
       <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
         {settingsVisible ? <>
-          <YouSettings initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={() => setShowSettings(false)} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} />
+          <YouSettings initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={() => setShowSettings(false)} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
           {status && <p className="social-status" role="status">{status}</p>}
         </> : <>
           {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">
@@ -702,8 +724,8 @@ export function UserAuthPanel({
             {!codeRecovery && <button className="auth-resend" type="button" onClick={() => void sendMagicLink()} disabled={busy || waiting}>{waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : t("Send again", "Отправить ещё раз")}</button>}
             <p className="social-note">{t("The email also has a sign-in link. Check spam if it hasn’t arrived.", "В письме также есть ссылка для входа. Если письмо не пришло, проверьте спам.")}</p>
           </> : <>
-            {gate ? <div className="auth-fifteen" aria-hidden="true">15<span>{t("boks read.", "боков прочитано.")}</span></div> : authRequestFailed ? <div className="auth-offline-art" aria-hidden="true"><span>·</span><i>—</i><span>·</span></div> : <div className="auth-signin-art" aria-hidden="true"><span>b</span><i>↗</i></div>}
-            <h1 className="social-display">{authRequestFailed ? t("Couldn’t send the code.", "Не удалось отправить код.") : gate ? t("Sign in to continue.", "Войдите, чтобы продолжить.") : t("Sign in.", "Войти.")}</h1>
+            {gate ? <div className="auth-fifteen" aria-hidden="true">{anonymousReadLimits.requiredSignup}<span>{gateWords.boksRead(anonymousReadLimits.requiredSignup)}</span></div> : authRequestFailed ? <div className="auth-offline-art" aria-hidden="true"><span>·</span><i>—</i><span>·</span></div> : <div className="auth-signin-art" aria-hidden="true"><span>b</span><i>↗</i></div>}
+            <h1 className="social-display">{authRequestFailed ? t("Couldn’t send the code.", "Не удалось отправить код.") : gate ? gateWords.readOn : t("Sign in.", "Войти.")}</h1>
             <p className="social-muted">{gate || intent !== "general" || surface === "author" ? noticeText : authRequestFailed ? t("We couldn’t connect to send it. Your email is still here.", "Не удалось подключиться. Ваш email сохранён здесь.") : t("Enter your email to sign in or create an account. We’ll send you a code.", "Введите email для входа или создания аккаунта. Мы отправим код.")}</p>
             <form className="auth-email-form" autoComplete="on" onSubmit={submitAuth}>
               <label className="you-field" htmlFor={emailInputId}>{t("Email", "Электронная почта")}<Input id={emailInputId} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required placeholder="you@example.com" value={email} onChange={event => { setEmail(event.target.value); setStatus(""); }} /></label>

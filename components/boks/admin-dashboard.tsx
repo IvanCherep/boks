@@ -36,6 +36,7 @@ import {
 import { CatalogueImport } from "@/components/boks/admin/catalogue-import";
 import { RightsReview } from "@/components/boks/admin/rights-review";
 import { AuthorSpaces } from "@/components/boks/admin/author-spaces";
+import { AuthorGameStudio } from "@/components/boks/admin/author-game";
 import { AdminInspectorProvider } from "@/components/boks/admin/admin-inspector";
 import { useBoksData } from "@/components/boks/use-boks-data";
 import {
@@ -61,6 +62,7 @@ export const adminTabs = [
   { id: "links", label: "Links", heading: "Tracked links", group: "Pulse" },
   { id: "growth", label: "Growth", heading: "Growth & retention", group: "Pulse" },
   { id: "authors", label: "Authors", heading: "Author pages", group: "Editorial" },
+  { id: "game", label: "Guess the author", heading: "Guess the author", group: "Editorial" },
   { id: "moderation", label: "Moderation", heading: "Review queue", group: "Editorial" },
   { id: "rights", label: "Rights", heading: "Rights & reports", group: "Editorial" },
   { id: "content", label: "Content", heading: "Content", group: "Editorial" },
@@ -141,6 +143,7 @@ const words = defineMessages(
         catalogue: "Каталог",
         people: "Аккаунты",
         authors: "Авторы",
+        game: "Угадай автора",
         feedback: "Отзывы",
         experiments: "Эксперименты",
         studies: "Исследования",
@@ -154,6 +157,7 @@ const words = defineMessages(
         links: "Отслеживаемые ссылки",
         growth: "Рост и удержание",
         authors: "Страницы авторов",
+        game: "Угадай автора",
         moderation: "Очередь проверки",
         rights: "Права и жалобы",
         content: "Контент",
@@ -525,6 +529,7 @@ export function AdminDashboard() {
 
         {tab === "rights" && <RightsReview />}
         {tab === "authors" && <AuthorSpaces />}
+        {tab === "game" && <AuthorGameStudio />}
 
         {tab === "experiments" && <RecommendationLab />}
         {tab === "studies" && <AdminStudies />}

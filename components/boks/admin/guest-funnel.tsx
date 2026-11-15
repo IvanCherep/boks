@@ -44,7 +44,7 @@ const ruDevices = (n: number) => plural("ru", n, { one: "устройство", 
 const words = defineMessages(
   {
     reasons: {
-      limit: "Hit the 15-bok limit",
+      limit: "Hit the guest limit (15 boks, 10 from 15 November)",
       like: "Tried to like",
       comment: "Tried to comment",
       follow: "Tried to follow",
@@ -98,7 +98,7 @@ const words = defineMessages(
     boksRange: (range: string) => `${range} boks`,
     fifteenPlus: "15 or more",
     limit: (hit: number, requested: number, converted: number) =>
-      `The 15-bok limit: ${hit} hit it, ${requested} asked for a link, ${converted} created an account.`,
+      `The guest limit: ${hit} hit it, ${requested} asked for a link, ${converted} created an account.`,
     wall: "Which wall they met",
     reason: "Reason",
     shown: "Shown",
@@ -143,7 +143,7 @@ const words = defineMessages(
   {
     ru: {
       reasons: {
-        limit: "Упёрлись в лимит 15 боков",
+        limit: "Упёрлись в лимит гостя (15 боков, с 15 ноября 10)",
         like: "Хотели поставить лайк",
         comment: "Хотели прокомментировать",
         follow: "Хотели подписаться",
@@ -197,7 +197,7 @@ const words = defineMessages(
       boksRange: (range: string) => `${range} ${range.endsWith("2") ? "бока" : "боков"}`,
       fifteenPlus: "15 и больше",
       limit: (hit: number, requested: number, converted: number) =>
-        `Лимит 15 боков: упёрлись ${hit}, запросили ссылку ${requested}, создали аккаунт ${converted}.`,
+        `Лимит гостя: упёрлись ${hit}, запросили ссылку ${requested}, создали аккаунт ${converted}.`,
       wall: "В какую стену упёрлись",
       reason: "Причина",
       shown: "Показано",

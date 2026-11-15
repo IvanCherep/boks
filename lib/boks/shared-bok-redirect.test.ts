@@ -33,7 +33,12 @@ describe("the shared-link redirect", () => {
     { search: "?link=msu-philology", referrer: "https://t.me/", hostname: "tryboks.com" },
     { search: "?utm_source=tg&utm_campaign=launch&other=x", referrer: "https://tryboks.com/", hostname: "tryboks.com" },
     { search: "?recording=1", referrer: "not a url", hostname: "tryboks.com" },
+    { search: "?line=0123456789abcdef", referrer: "https://t.me/", hostname: "tryboks.com" },
   ];
+
+  it("carries a sent line to the reader", () => {
+    expect(sharedBokTarget({ id, search: "?line=0123456789abcdef", referrer: "", hostname: "tryboks.com" })).toContain("line=0123456789abcdef");
+  });
 
   it("goes where the React fallback would go, before the bundle loads", () => {
     for (const page of cases) {

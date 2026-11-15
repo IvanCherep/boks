@@ -20,20 +20,50 @@ import { isValidBoksHandle, maxHandleLength, minHandleLength } from "@/lib/boks/
 import { bareHandle } from "./reader/handles";
 import { plural } from "@/lib/i18n/messages";
 import { loadMyInvites } from "./author-spaces/data";
-import { PenLine } from "lucide-react";
+import { Bookmark, CalendarDays, Feather, Mail, PenLine } from "lucide-react";
+import { MyDaysPage } from "./daily/my-days";
+import { welcomeMessages } from "./daily/welcome-messages";
+import { ordinal } from "@/lib/boks/daily/days";
+import { useMessages } from "./ui-language";
+import { dailyMessages } from "./daily/messages";
+import { ReceivedLines, SavedLines } from "./daily/lines-pages";
+import { AuthorGamePage } from "./daily/author-game";
+import type { DailyLetter } from "./daily/data";
 
-type Page = "home" | "app-language" | "typography" | "languages" | "appearance" | "handle" | "following" | "delete" | "feedback" | "feedback-sent" | "about";
+/** Where the line of the day and the game lead out of Settings; the reader owns them. */
+export type DailyLinks = {
+  openToday: () => void;
+  openLetter: (letter: DailyLetter) => void;
+  openPassage: (bokId: string, passage: string) => void;
+  openGameBok: (bokId: string) => void;
+  onGameAnswered: () => void;
+  onStatus: (message: string) => void;
+  /** The reader's day as the reader knows it (`useDailyAccount`): Settings asks nothing itself. */
+  status: { today: string | null; total: number; letterWaiting: boolean; gameNew: boolean };
+};
+
+export type YouSection = "home" | "typography" | "languages" | "feedback" | "letters" | "saved" | "game" | "days";
+
+type Page = "home" | "app-language" | "typography" | "languages" | "appearance" | "handle" | "following" | "delete" | "feedback" | "feedback-sent" | "about" | "letters" | "saved" | "game" | "days";
 
 /** Presentation only: the parent retains every account and language controller. */
-export function YouSettings({ user, busy, handle, setHandle, languages, saveLanguages, saveHandle, follows, unfollowing, unfollow, deleteConfirmation, setDeleteConfirmation, deleteError, deleteAccount, signOut, onSignIn, onActivity, onClose, onFeed, onSeries, initialSection }: {
+export function YouSettings({ user, busy, handle, setHandle, languages, saveLanguages, saveHandle, follows, unfollowing, unfollow, deleteConfirmation, setDeleteConfirmation, deleteError, deleteAccount, signOut, onSignIn, onActivity, onClose, onFeed, onSeries, initialSection, daily }: {
   user: BoksUserContext | null; busy: boolean; handle: string; setHandle: (value: string) => void;
   languages: string[]; saveLanguages: (languages: string[]) => Promise<void>; saveHandle: () => Promise<void>;
   follows: FollowedAuthor[]; unfollowing: string | null; unfollow: (id: string) => Promise<void>;
   deleteConfirmation: string; setDeleteConfirmation: (value: string) => void; deleteError: string; deleteAccount: () => Promise<void>;
   signOut: () => Promise<void>; onSignIn: () => void; onActivity: () => void; onClose: () => void;
   onFeed?: () => void; onSeries?: () => void;
-  initialSection?: "home" | "typography" | "languages" | "feedback";
+  initialSection?: YouSection;
+  /** The line of the day and the game; absent where Settings opens outside the reader. */
+  daily?: DailyLinks;
 }) {
+  const dailyWords = useMessages(dailyMessages);
+  const signedIn = Boolean(user && !user.isAnonymous);
+  const welcomeWords = useMessages(welcomeMessages);
+  const letterWaiting = Boolean(daily?.status.letterWaiting);
+  const gameNew = Boolean(daily?.status.gameNew);
+  const days = daily?.status.today ? { date: daily.status.today, total: daily.status.total } : null;
   // A page the team prepared for this account: say so where the cabinet is reached.
   const [pagesWaiting, setPagesWaiting] = useState(0);
   useEffect(() => {
@@ -55,7 +85,16 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
     languages: t("Reading languages", "Языки чтения"), appearance: t("Appearance", "Оформление"),
     handle: t("Your handle", "Ваше @имя"), following: t("Following", "Подписки"),
     delete: t("Delete account", "Удалить аккаунт"), feedback: t("Feedback", "Обратная связь"), "feedback-sent": t("Feedback", "Обратная связь"), about: t("About", "О boks"),
+    // The daily pages sit inside Settings and are titled by it.
+    letters: dailyWords.settings, saved: dailyWords.settings, game: dailyWords.settings, days: dailyWords.settings,
   };
+  const dailyEntry = (label: string, detail: string, badge: string | null, next: Page, icon: ReactNode) => <button type="button" className="you-entry" onClick={() => setPage(next)}><span><strong>{label}{badge && <span className="you-entry-badge">{badge}</span>}</strong><small>{detail}</small></span>{icon}</button>;
+  const dailyEntries = daily && <>
+    {signedIn && days && dailyEntry(welcomeWords.myDays, welcomeWords.myDaysDetail(ordinal(days.total, preferences.locale === "ru" ? "ru" : "en")), null, "days", <CalendarDays />)}
+    {signedIn && dailyEntry(dailyWords.receivedLines, dailyWords.receivedDetail, letterWaiting ? dailyWords.todayWaiting : null, "letters", <Mail />)}
+    {signedIn && dailyEntry(dailyWords.savedLines, dailyWords.savedDetail, null, "saved", <Bookmark />)}
+    {dailyEntry(dailyWords.guessAuthor, dailyWords.guessDetail, gameNew ? dailyWords.newText : null, "game", <Feather />)}
+  </>;
   const entry = (label: string, detail: string, next: Page, icon: ReactNode) => <button type="button" className="you-entry" onClick={() => setPage(next)}><span><strong>{label}</strong><small>{detail}</small></span>{icon}</button>;
   const bokCount = (count: number) => t(`${count} ${count === 1 ? "bok" : "boks"}`, `${count} ${plural("ru", count, { one: "бок", few: "бока", many: "боков", other: "бока" })}`);
   const backToReading = <Button className="you-wide-button" onClick={onClose}>{t("Back to reading", "Вернуться к чтению")}</Button>;
@@ -63,6 +102,7 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
     <header className="social-page-header"><button type="button" className="social-icon" aria-label={t("Back", "Назад")} onClick={() => page !== "home" ? setPage("home") : user ? onActivity() : onClose()}><ArrowLeft /></button><span>{titles[page]}</span><span /></header>
     {page === "home" && <>
       {user ? <div className="you-settings-identity"><span className="social-monogram" aria-hidden="true">{user.handle?.[0]?.toUpperCase()}</span><div><strong translate="no">@{user.handle}</strong><small>{user.email}</small></div><button type="button" onClick={() => setPage("handle")}>{t("Edit", "Изменить")}</button></div> : <><h1 className="social-display">{t("Settings.", "Настройки.")}</h1><p className="social-muted">{t("Your app and reading preferences.", "Приложение и удобство чтения.")}</p><div className="you-invitation"><h2>{t("Your account.", "Ваш аккаунт.")}</h2><p>{t("Sign in to keep your reading history, like boks and comment.", "Войдите, чтобы сохранять историю чтения, ставить лайки и общаться.")}</p><Button onClick={onSignIn}>{t("Create an account or sign in", "Создать аккаунт или войти")}</Button></div></>}
+      {dailyEntries}
       {user && <span className="social-eyebrow you-section-label">{t("Preferences", "Настройки чтения")}</span>}
       {entry(t("App language", "Язык приложения"), preferences.locale === "ru" ? "Русский" : "English", "app-language", <Globe />)}
       {entry(t("Reading comfort", "Удобство чтения"), t("Text size and line spacing", "Размер текста и интервал"), "typography", <Type />)}
@@ -74,6 +114,10 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
       {!user && onFeed && onSeries && <ReaderTabs className="you-tabs" active="you" seriesIsNew={false} onFeed={onFeed} onSeries={onSeries} onYou={() => contentRef.current?.closest(".social-page")?.scrollTo({ top: 0, behavior: "smooth" })} />}
     </>}
     {(page === "app-language" || page === "typography") && <ReaderPreferenceControls page={page} onDone={onClose} />}
+    {page === "letters" && daily && signedIn && <ReceivedLines todayWaiting={letterWaiting} onOpenToday={daily.openToday} onOpenLetter={daily.openLetter} />}
+    {page === "saved" && daily && signedIn && <SavedLines onOpenPassage={daily.openPassage} onStatus={daily.onStatus} />}
+    {page === "days" && daily && signedIn && days && <MyDaysPage today={days.date} />}
+    {page === "game" && daily && <AuthorGamePage signedIn={signedIn} onSignIn={onSignIn} onOpenWork={daily.openGameBok} onAnswered={daily.onGameAnswered} />}
     {page === "languages" && <><h1 className="social-display">{preferences.locale === "en" ? <>Reading<br />languages.</> : <>Языки<br />чтения.</>}</h1><p className="social-muted">{t("Only boks in languages you read. Choose at least one.", "Только боки на выбранных языках. Оставьте хотя бы один.")}</p><div className="you-reading-languages">{supportedReadingLanguages.map(language => {
       const selected = languages.includes(language); const held = user?.languageCoverage?.[language];
       return <button key={language} type="button" className={selected ? "is-selected" : ""} aria-pressed={selected} disabled={busy || selected && languages.length === 1} onClick={() => void saveLanguages(selected ? languages.filter(value => value !== language) : [...languages, language])}><span>{language === "ru" ? "Аа" : "Aa"}</span><span><strong translate="no">{language === "ru" ? "Русский" : "English"}</strong><small>{selected ? t("Selected", "Выбран") : t("Not selected", "Не выбран")}{held !== undefined ? ` · ${bokCount(held)}` : ""}</small></span><i>{selected && <Check />}</i></button>;

@@ -370,7 +370,7 @@
 .auth-wall-mark span{font:10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:1.5px;color:var(--muted-foreground)}
 .auth-fifteen{font:145px/.8 var(--font-serif),serif;letter-spacing:-10px;color:#aeb79a;margin:15px 0 36px}
 .auth-fifteen span{display:block;letter-spacing:0;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--muted-foreground);margin:20px 0 0}
-.auth-v44-gate .social-display{max-width:8ch}
+.auth-v44-gate .social-display{max-width:10ch;overflow-wrap:normal}
 .activity-date{display:flex;font:11px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.9px;text-transform:uppercase;color:var(--muted-foreground);margin:13px 0 5px}
 .activity-bok-copy{gap:7px}
 .activity-bok-copy small,.activity-bok-copy em{font-size:12px;line-height:1.4;font-style:normal;color:var(--muted-foreground)}

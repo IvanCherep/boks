@@ -58,6 +58,30 @@ _Avoid_: deleted bok (except for permanent erasure)
 A bok its own author took off review or off the feed (status `withdrawn`). Only the author returns, edits or deletes it; an admin removal is an archived bok, and neither side undoes the other's.
 _Avoid_: hidden, unpublished, archived (that is the admin's)
 
+**Line of the day**:
+Words of a bok a reader sends to other readers; each account opens one **letter** a day carrying someone else's line, or an editorial one.
+_Avoid_: quote (in code or copy), message, post
+
+**Letter**:
+One account's line of the day for one date, fixed once opened: the same line on every device.
+_Avoid_: notification, delivery (outside the hand-out SQL)
+
+**Passage**:
+The exact words of a bok a line carries, as the reader selected them (at most 280 characters, always words of that bok). In code and schema, the column and field holding them.
+_Avoid_: quote, excerpt, snippet
+
+**Line link**:
+A line sent to one person: `/b/<bok>?line=<code>`, opened as a letter from the sender. Never part of the line of the day.
+_Avoid_: quote link, share link (that is a bok's)
+
+**Saved line**:
+Words of a bok a reader kept for themselves; private, independent of sending.
+_Avoid_: bookmark, highlight
+
+**Game issue**:
+The day's Guess the author text, chosen from three **candidates** and published once at 00:00 Moscow time; its text and the order of the three names never change after.
+_Avoid_: puzzle, quiz, round
+
 ### People
 
 **Reader**:

@@ -45,6 +45,7 @@ The module map and the data flows. Terms are defined in `CONTEXT.md`; the decisi
 - `theme.ts`, `theme-setting.tsx`: System/Light/Dark, applied before first paint. The status-bar hint is always black. Real fixed edge elements in `app/layout.tsx`, styled in `app/globals.css`, give Safari separate upper black and lower theme surfaces; `reader-feed.tsx` no longer paints native bars from the current bok or player.
 - `reading-music.ts`, `reading-fullscreen.ts`, `home-screen-hint.ts`: ambient music, fullscreen for formats on Android/iPad, the one-time iPhone home-screen hint.
 - `error-boundary.tsx`: the crash screen around every surface.
+- `daily/`: the line of the day and Guess the author (`20261117100000_boks_lines.sql`, `20261117110000_boks_reader_days.sql`, `20261117120000_boks_author_game.sql`). `use-daily-account.ts` (the reader's day, one source for the reader and Settings), `day-card.tsx` (the first bok of the day), `guest-cards.tsx` (a guest's welcome and reminders), `my-days.tsx`, `letter.tsx` + `envelope.tsx` (a letter), `send-line.tsx` (confirming a line), `selection-menu.tsx` (words selected in the text), `lines-pages.tsx` (Received / Saved lines in Settings), `author-game.tsx` (the game in Settings), `data.ts` (the RPCs). Pure rules in `lib/boks/daily/` (passage matching and marking, option labels, shares, the Studio calendar). Studio: `components/boks/admin/author-game.tsx`.
 
 ### Interface language
 

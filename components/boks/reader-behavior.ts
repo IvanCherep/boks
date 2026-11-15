@@ -1,4 +1,5 @@
 import { randomBoksId } from "@/lib/boks/browser-id";
+import { guestBokLimit } from "@/lib/boks/daily/days";
 import { initialProfile } from "@/components/boks/constants";
 import type { ReadOutcome, ReaderProfile, Story } from "@/components/boks/client-types";
 import type { ReaderSignals } from "@/lib/boks/recommendations/signals";
@@ -6,10 +7,9 @@ import type { ReaderSignals } from "@/lib/boks/recommendations/signals";
 const anonymousReadStateKey = "boks-anonymous-read-state";
 const anonymousNoticeStateKey = "boks-anonymous-notice-state";
 
+/** A guest reads ten boks; the reminders on the way are `guestReminderFor`. */
 export const anonymousReadLimits = {
-  firstNotice: 5,
-  secondNotice: 10,
-  requiredSignup: 15,
+  requiredSignup: guestBokLimit,
 };
 
 /**

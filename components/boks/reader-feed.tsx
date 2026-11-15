@@ -135,7 +135,19 @@ import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendatio
 import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
-import { currentUiLanguage, useUiLanguage } from "@/components/boks/ui-language";
+import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
+import { LetterView } from "@/components/boks/daily/letter";
+import { DayCard } from "@/components/boks/daily/day-card";
+import { GuestReminderCard, GuestWelcome } from "@/components/boks/daily/guest-cards";
+import { guestReminderFor, type GuestReminder } from "@/lib/boks/daily/days";
+import { SendLineSheet } from "@/components/boks/daily/send-line";
+import { SelectionMenu, usePassageSelection } from "@/components/boks/daily/selection-menu";
+import { createLineLink, lineCodePattern, loadLineLink, openDailyLetter, saveLine, shareLine, type DailyLetter } from "@/components/boks/daily/data";
+import { useDailyAccount } from "@/components/boks/daily/use-daily-account";
+import type { LineSendMode, LineSendResult } from "@/components/boks/daily/send-line";
+import { dailyMessages } from "@/components/boks/daily/messages";
+import { locatePassage } from "@/lib/boks/daily/passage";
+import type { YouSection } from "@/components/boks/you-settings";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { atHandle, bareHandle } from "@/components/boks/reader/handles";
 import { BokMenuSheet, type BokReportKind, type BokReportOutcome } from "@/components/boks/reader/bok-menu-sheet";
@@ -272,7 +284,7 @@ function wordsNow() {
 type AuthIntent = "general" | "like" | "comment" | "follow";
 
 /** How a reader reached a boks no ranker chose for them. See `entryRef`. */
-type ReaderEntry = "series" | "share" | "library" | "author";
+type ReaderEntry = "series" | "share" | "library" | "author" | "letter" | "game";
 
 /**
  * `exit` is the one that was missing. Until now an outcome was only recorded
@@ -345,6 +357,32 @@ function seriesContextFor(readerLanguages: readonly string[]) {
  * the author again.
  */
 const pendingFollowKey = "boks-pending-follow";
+
+/** A guest's welcome is shown once per browser; the reminders after it are in the notice state. */
+const guestWelcomeKey = "boks-guest-welcome-seen";
+
+function readFlag(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeFlag(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Private mode: a card may come back on the next visit.
+  }
+}
+
+/** Which of the every-two-boks reminders this browser has already shown. */
+function shownGuestReminders() {
+  const state = readAnonymousNoticeState();
+  return new Set(Object.keys(state).filter((key) => /^r\d+$/.test(key) && state[key]).map((key) => Number(key.slice(1))));
+}
+
 
 function rememberPendingFollow(target: { handle: string; authorName?: string }) {
   try { window.sessionStorage.setItem(pendingFollowKey, JSON.stringify({ ...target, at: Date.now() })); } catch { /* storage off: nothing to come back to */ }
@@ -433,11 +471,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   const [identitySettled, setIdentitySettled] = useState(false);
   const [authReason, setAuthReason] = useState<"manual" | "notice" | "required">("manual");
   const [authIntent, setAuthIntent] = useState<AuthIntent>("general");
-  const [authInitialSection, setAuthInitialSection] = useState<"home" | "typography" | "languages" | "feedback" | undefined>();
+  const [authInitialSection, setAuthInitialSection] = useState<YouSection | undefined>();
   const [authNotice, setAuthNotice] = useState("");
   const [pendingCommentStoryId, setPendingCommentStoryId] = useState<string | null>(null);
   const [guestReadCount, setGuestReadCount] = useState(0);
-  const [guestNoticeStep, setGuestNoticeStep] = useState<"first" | "second" | null>(null);
+  const [guestNoticeStep, setGuestNoticeStep] = useState<{ count: number; kind: GuestReminder } | null>(null);
   // A boks opened from account history is a one-item entry into the current
   // recommendation sequence. Keeping only one prevents previously opened
   // library items from becoming an accidental second feed after it.
@@ -519,6 +557,32 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   // The open bok's slug, asked for when its menu opens: "Copy link" has to
   // write in the tap itself, which a lookup in between would cost it.
   const [menuSlug, setMenuSlug] = useState<{ id: string; slug: string | null } | null>(null);
+  /**
+   * Line of the day (20261117100000). Today's letter state for the account,
+   * the letter on screen, the work a letter (or a saved line) opened with its
+   * line marked, and a selected line on its way to being sent.
+   */
+  const dailyWords = useMessages(dailyMessages);
+  const [letterView, setLetterView] = useState<{ letter: DailyLetter | null; status: "opening" | "ready" | "error" | "empty"; firstOpening: boolean; note?: string } | null>(null);
+  /** `?line=<code>` from a shared link: the line someone sent, opened over its bok once the bok is open. */
+  const [pendingLineCode, setPendingLineCode] = useState<string | null>(null);
+  const [letterReturn, setLetterReturn] = useState<DailyLetter | null>(null);
+  const [passageMark, setPassageMark] = useState<{ storyId: string; passage: string; shown: boolean } | null>(null);
+  const [lineDraft, setLineDraft] = useState<{ mode: LineSendMode; storyId: string; passage: string; title: string; authorName: string } | null>(null);
+  /** A card waits a moment after a bok arrives, never comes with it. */
+  const [cardDue, setCardDue] = useState(false);
+  /** Just signed in: the welcome comes now, wherever the reader is in the text. */
+  const [justSignedIn, setJustSignedIn] = useState(false);
+  const [guestWelcomeSeen, setGuestWelcomeSeen] = useState(true);
+  /** A reader who came by a link has moved past the bok it opened (or finished it). */
+  const [movedOn, setMovedOn] = useState(false);
+  const firstStoryId = useRef<string | null>(null);
+  // A reader who came by a link came for that bok: no envelope over it.
+  const [arrivedByLink] = useState(() =>
+    typeof window !== "undefined" && (window.location.pathname !== "/" || /[?&](bok|author)=/.test(window.location.search))
+  );
+  /** The bok a letter or a saved line opened; leaving it puts the mark and "Back to the letter" away. */
+  const dailyTarget = useRef<{ storyId: string; reached: boolean } | null>(null);
   /** The admin-only "listen and read" prototype. See `components/boks/cinema`. */
   const [cinemaOpen, setCinemaOpen] = useState(false);
   /**
@@ -790,6 +854,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     // has been used, so a refresh does not reopen it over the reader's feed.
     const params = new URLSearchParams(window.location.search);
     const shared = params.get("bok");
+    const sharedLine = params.get("line");
     const sharedAuthor = params.get("author");
     // A tracked link on its own (`/?link=…`, `/series?link=…`) is cleaned too:
     // a refresh is a new page load, and it should not arrive through the link twice.
@@ -839,7 +904,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         // quietly opening the feed.
         if (shared && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shared)) {
           setOpenIssue({ kind: "unavailable", storyId: shared, entry: "share" });
-        } else if (shared) await openReadBoksRef.current(shared, "share");
+        } else if (shared) {
+          const opened = await openReadBoksRef.current(shared, "share");
+          if (opened && sharedLine && lineCodePattern.test(sharedLine)) setPendingLineCode(sharedLine);
+        }
         // A shared author link names an account, so it opens the publisher.
         if (sharedAuthor) {
           setAuthorSheet({ handle: bareHandle(sharedAuthor) });
@@ -1191,6 +1259,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     );
   }, [identitySettled]);
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);
+  const day = useDailyAccount({ identitySettled, userId: hasSignedInAccount ? user?.userId ?? null : null });
   // Signed in after tapping Follow as a guest: back to that author, following.
   useEffect(() => {
     if (!hasSignedInAccount) return;
@@ -1303,9 +1372,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       setAftertastes(current => ({ ...current, [currentStory.id]: tags }));
     },
   };
-  const readerOverlayOpen = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null);
+  const readerOverlayOpen = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
   const readerInteractionBlocked = Boolean(
-    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null
+    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
   );
   const coverInspection = useCoverInspection(coverRef, currentStoryId,
     Boolean(currentStory && getBokArtwork(currentStory) && !readerInteractionBlocked && storyTransition.phase === "idle"),
@@ -1315,10 +1384,127 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       clearBoundaryPull(true);
     });
 
-  const guestNoticeVisible = Boolean(guestNoticeStep && isGuestReader && !readerOverlayOpen && (formatOnScreen ? formatEnded : !seriesOpen && readingPhase !== "reading"));
+  const guestNoticeVisible = Boolean(guestNoticeStep && isGuestReader && guestWelcomeSeen && !readerOverlayOpen && (formatOnScreen ? formatEnded : !seriesOpen && readingPhase !== "reading"));
+
+  // A guest who signs in here gets the welcome at once; one who arrived signed in does not.
+  const wasGuest = useRef(false);
+  /** The account panel was opened by the guest's welcome, a reminder or the limit. */
+  const onboardingAuth = useRef(false);
+  useEffect(() => {
+    if (!identitySettled) return;
+    if (isGuestReader) { wasGuest.current = true; return; }
+    if (hasSignedInAccount && wasGuest.current) {
+      wasGuest.current = false;
+      // Signed in from the welcome, a reminder or the limit: straight back to
+      // reading, where the day card is waiting - not to an empty activity page.
+      const leavePanel = onboardingAuth.current;
+      onboardingAuth.current = false;
+      const timer = window.setTimeout(() => {
+        setJustSignedIn(true);
+        if (leavePanel) setAuthPanelOpen(false);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [identitySettled, isGuestReader, hasSignedInAccount]);
+  useEffect(() => {
+    if (!isGuestReader) return;
+    const timer = window.setTimeout(() => setGuestWelcomeSeen(readFlag(guestWelcomeKey) === "1"), 0);
+    return () => window.clearTimeout(timer);
+  }, [isGuestReader]);
+  useEffect(() => {
+    if (!currentStoryId) return;
+    if (!firstStoryId.current) { firstStoryId.current = currentStoryId; return; }
+    if (currentStoryId !== firstStoryId.current) {
+      const timer = window.setTimeout(() => setMovedOn(true), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [currentStoryId]);
+  useEffect(() => {
+    if (readingPhase !== "finale") return;
+    const timer = window.setTimeout(() => setMovedOn(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [readingPhase]);
+  useEffect(() => {
+    const reset = window.setTimeout(() => setCardDue(false), 0);
+    const timer = window.setTimeout(() => setCardDue(true), 1500);
+    return () => { window.clearTimeout(reset); window.clearTimeout(timer); };
+  }, [currentStoryId]);
+
+  // From 1024px the cover stays beside the text, so "on the cover" is always true there.
+  const [coverBesideText, setCoverBesideText] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const read = () => setCoverBesideText(query.matches);
+    const timer = window.setTimeout(read, 0);
+    query.addEventListener("change", read);
+    return () => { window.clearTimeout(timer); query.removeEventListener("change", read); };
+  }, []);
+  const passageSelection = usePassageSelection(textRegion, Boolean(currentStory) && !readerInteractionBlocked && !formatOnScreen, currentStoryId);
+  /**
+   * A moment for a card: a bok on screen and settled, nothing else open, the
+   * reader at its cover or its ending (on a wide screen the cover is always
+   * beside the text), and not the bok a link brought them for.
+   */
+  const cardMoment = Boolean(
+    cardDue && currentStory && !readerOverlayOpen && !formatOnScreen && !seriesOpen
+      && storyTransition.phase === "idle" && !passageSelection.selection
+      && (!arrivedByLink || movedOn)
+  );
+  const atBreak = readingPhase !== "reading" || coverBesideText;
+  const arrivalDate = day.arrival?.date ?? null;
+  const { cardShown } = day;
+  const dayCardVisible = Boolean(
+    day.cardPending && user?.handle
+      && cardMoment && (atBreak || justSignedIn)
+  );
+  const guestWelcomeVisible = Boolean(isGuestReader && !guestWelcomeSeen && cardMoment && atBreak);
+  // Shown is seen: on every device, today.
+  useEffect(() => {
+    if (dayCardVisible && arrivalDate) cardShown(arrivalDate);
+  }, [dayCardVisible, arrivalDate, cardShown]);
+  useEffect(() => {
+    if (guestWelcomeVisible) writeFlag(guestWelcomeKey, "1");
+  }, [guestWelcomeVisible]);
+  function closeDayCard() {
+    day.closeCard();
+    setJustSignedIn(false);
+  }
+  // Where the marked line sits in the bok on screen, block by block.
+  const passageRanges = useMemo(
+    () => passageMark && currentStory?.id === passageMark.storyId
+      ? locatePassage(storyBlocks.map((block) => block.lines.join("\n")), passageMark.passage)
+      : null,
+    [currentStory?.id, passageMark, storyBlocks]
+  );
+  // Arriving at the marked line: into the text, the line in the middle of the screen.
+  useEffect(() => {
+    if (!passageMark || passageMark.shown || currentStoryId !== passageMark.storyId) return;
+    const timer = window.setTimeout(() => {
+      readText();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const mark = textRegion.current?.querySelector(".daily-passage");
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        mark?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+      }));
+      setPassageMark((current) => current && { ...current, shown: true });
+    }, 160);
+    return () => window.clearTimeout(timer);
+    // `readText` is a fresh function every render; the mark decides when this runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passageMark, currentStoryId]);
+  // Leaving that bok for another puts its mark and "Back to the letter" away.
+  useEffect(() => {
+    const target = dailyTarget.current;
+    if (!target || !currentStoryId) return;
+    if (currentStoryId === target.storyId) { target.reached = true; return; }
+    if (!target.reached) return;
+    dailyTarget.current = null;
+    const timer = window.setTimeout(() => { setPassageMark(null); setLetterReturn(null); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [currentStoryId]);
   useEffect(() => {
     if (!guestNoticeVisible || !guestNoticeStep) return;
-    saveAnonymousNoticeState({ ...readAnonymousNoticeState(), [guestNoticeStep]: true });
+    saveAnonymousNoticeState({ ...readAnonymousNoticeState(), [`r${guestNoticeStep.count}`]: true });
   }, [guestNoticeVisible, guestNoticeStep]);
 
   useEffect(() => {
@@ -1557,6 +1743,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       window.setTimeout(() => {
         setGuestReadCount(anonymousState.storyIds.length);
         setAuthReason("required");
+        onboardingAuth.current = true;
         setAuthPanelOpen(true);
         setGuestNoticeStep(null);
       }, 0);
@@ -1572,14 +1759,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       const nextCount = recordAnonymousBoksRead(storyId);
       setGuestReadCount(nextCount);
 
-      const notices = readAnonymousNoticeState();
-      // Prepare the notice after real dwell, but show it only at a reading
-      // break (ending or next cover). Persist it only once actually visible.
-      if (nextCount >= anonymousReadLimits.secondNotice && !notices.second) {
-        setGuestNoticeStep("second");
-      } else if (nextCount >= anonymousReadLimits.firstNotice && !notices.first && nextCount < anonymousReadLimits.secondNotice) {
-        setGuestNoticeStep("first");
-      }
+      // Prepared after real dwell, shown only at a reading break (ending or
+      // next cover), persisted only once actually visible.
+      const due = guestReminderFor(nextCount, shownGuestReminders());
+      if (due) setGuestNoticeStep(due);
     }, 500);
     return () => window.clearInterval(handle);
   }, [currentStoryId, isGuestReader]);
@@ -1744,7 +1927,91 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     }
   }
 
-  function openAccount(reason: "manual" | "notice" | "required" = "manual", intent: AuthIntent = "general", section?: "home" | "typography" | "languages" | "feedback") {
+  /** Today's letter: opened now (the envelope opens itself) or seen again. */
+  async function openTodayLetter() {
+    setAuthPanelOpen(false);
+    passageSelection.clear();
+    const firstOpening = !day.arrival?.letterOpened;
+    setLetterView({ letter: null, status: "opening", firstOpening });
+    try {
+      const letter = await openDailyLetter();
+      if (!letter) {
+        setLetterView((current) => current && { ...current, status: "empty" });
+        return;
+      }
+      day.letterOpened(letter.date);
+      setLetterView((current) => current && { letter, status: "ready", firstOpening });
+    } catch {
+      setLetterView((current) => current && { ...current, status: "error" });
+    }
+  }
+
+  function showLetter(letter: DailyLetter) {
+    setAuthPanelOpen(false);
+    setLetterView({ letter, status: "ready", firstOpening: false });
+  }
+
+  /** A bok opened from a letter or a saved line, with that line marked in it. */
+  function openBokAtPassage(bokId: string, passage: string | null, entry: ReaderEntry, letter: DailyLetter | null) {
+    setAuthPanelOpen(false);
+    setLetterView(null);
+    setLetterReturn(letter);
+    setPassageMark(passage ? { storyId: bokId, passage, shown: false } : null);
+    dailyTarget.current = { storyId: bokId, reached: currentStoryId === bokId };
+    if (seriesOpen) openFeed();
+    void openReadBoks(bokId, entry);
+  }
+
+  // The line from a shared link, as a letter from its sender, over the bok it came from.
+  useEffect(() => {
+    if (!pendingLineCode) return;
+    let active = true;
+    void loadLineLink(pendingLineCode).then((link) => {
+      if (!active) return;
+      setPendingLineCode(null);
+      if (!link) { notify(dailyWords.lineLinkBroken); return; }
+      setLetterView({ letter: link, status: "ready", firstOpening: true, note: dailyWords.linkNote });
+    }, () => { if (active) setPendingLineCode(null); });
+    return () => { active = false; };
+  }, [dailyWords.linkNote, dailyWords.lineLinkBroken, notify, pendingLineCode]);
+
+  async function deliverLine(draft: NonNullable<typeof lineDraft>): Promise<LineSendResult> {
+    if (draft.mode === "world") return shareLine(draft.storyId, draft.passage);
+    const [link, slug] = await Promise.all([createLineLink(draft.storyId, draft.passage), loadBokSlug(draft.storyId).catch(() => null)]);
+    const url = new URL(bokShareUrl({ id: draft.storyId, slug }, window.location.origin));
+    url.searchParams.set("line", link.code);
+    return { created: link.created, url: url.href };
+  }
+
+  function sendSelectedLine(text: string, mode: LineSendMode) {
+    if (!currentStory) return;
+    passageSelection.clear();
+    if (!hasSignedInAccount) {
+      openAccount("manual", "general");
+      setAuthNotice(dailyWords.signInToSend);
+      return;
+    }
+    setLineDraft({ mode, storyId: currentStory.id, passage: text, title: currentStory.title, authorName: currentAuthorLabel });
+  }
+
+  async function saveSelectedLine(text: string) {
+    if (!currentStory) return;
+    passageSelection.clear();
+    if (!hasSignedInAccount) {
+      openAccount("manual", "general");
+      setAuthNotice(dailyWords.signInToSave);
+      return;
+    }
+    try {
+      await saveLine(currentStory.id, text);
+      notify(dailyWords.saved);
+    } catch (error) {
+      notify(readableBoksError(error, dailyWords.saveFailed));
+    }
+  }
+
+  function openAccount(reason: "manual" | "notice" | "required" = "manual", intent: AuthIntent = "general", section?: YouSection) {
+    onboardingAuth.current = reason !== "manual";
     // The moment a guest meets the sign-up, and why - the limit, a like, a
     // follow, a comment, the notice, or their own tap on the account button.
     // An account holder opening Settings is not a sign-up prompt.
@@ -2750,8 +3017,44 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           onReadingLanguagesChanged={adoptReadingLanguages}
           onOpenFeed={() => { setAuthPanelOpen(false); openFeed(); }}
           onOpenSeries={() => { setAuthPanelOpen(false); openSeries(); }}
+          daily={{
+            openToday: () => void openTodayLetter(),
+            openLetter: showLetter,
+            openPassage: (bokId, passage) => openBokAtPassage(bokId, passage, "library", null),
+            openGameBok: (bokId) => openBokAtPassage(bokId, null, "game", null),
+            onGameAnswered: day.gameAnswered,
+            status: {
+              today: day.arrival?.date ?? null,
+              total: day.arrival?.total ?? 0,
+              letterWaiting: Boolean(day.arrival && !day.arrival.letterOpened),
+              gameNew: day.gameNew,
+            },
+          }}
         />
   );
+
+  const dailyOverlays = <>
+    {letterView && <LetterView
+      key={letterView.letter?.date ?? "today"}
+      letter={letterView.letter}
+      status={letterView.status}
+      firstOpening={letterView.firstOpening}
+      note={letterView.note}
+      isToday={Boolean(letterView.letter && !letterView.note && letterView.letter.date === day.arrival?.date)}
+      onOpenWork={(letter) => letter.bokId && openBokAtPassage(letter.bokId, letter.passage, "letter", letter)}
+      onClose={() => setLetterView(null)}
+      onRetry={() => void openTodayLetter()}
+    />}
+    {lineDraft && <SendLineSheet
+      mode={lineDraft.mode}
+      passage={lineDraft.passage}
+      title={lineDraft.title}
+      authorName={lineDraft.authorName}
+      handle={user?.handle ?? null}
+      onSend={() => deliverLine(lineDraft)}
+      onClose={() => setLineDraft(null)}
+    />}
+  </>;
 
   const authorPanel = authorSheet && (
     <AuthorSheet
@@ -2813,6 +3116,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         />}
         {authorPanel}
         {accountPanel}
+        {dailyOverlays}
         {openIssuePanel}
       </main>
     );
@@ -2839,6 +3143,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         {!readerOverlayOpen && <ReaderTabs className="reader-tabs--pinned" active="feed" seriesIsNew={seriesIsNew} onFeed={openFeed} onSeries={openSeries} onYou={() => openAccount("manual")} />}
         {authorPanel}
         {accountPanel}
+        {dailyOverlays}
         {openIssuePanel}
       </div>
     );
@@ -2920,16 +3225,21 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
               </div>
             </div>
             <div className="reader-content">
+              {letterReturn && letterReturn.bokId === currentStory.id && <button type="button" className="daily-back-to-letter" onClick={() => showLetter(letterReturn)}><ReaderBackIcon size={16} />{dailyWords.backToLetter}</button>}
               <div className="reader-text-heading"><span className="reader-text-heading__eyebrow">boks</span><div className="reader-text-heading__desktop-tools"><span>{currentAuthorLabel}</span><button type="button" aria-label={t("Reading settings", "Настройки чтения")} onClick={() => openAccount("manual", "general", "typography")}><ReaderTypeIcon size={23} /></button></div><h2>{currentStory.title}</h2><button type="button" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button></div>
               <div ref={textRegion} className={`story-copy${storyBlocks[0]?.kind !== "verse" ? " story-copy--prose" : ""}`} lang={currentStory.language || "und"} translate="no">
-                {storyBlocks.map((block, index) => (
-                  <p
-                    key={`${currentStory.id}-${index}`}
-                    className={block.kind === "verse" ? "story-verse" : ""}
-                  >
-                    {block.lines.join("\n")}
-                  </p>
-                ))}
+                {storyBlocks.map((block, index) => {
+                  const text = block.lines.join("\n");
+                  const range = passageRanges?.find((candidate) => candidate.block === index);
+                  return (
+                    <p
+                      key={`${currentStory.id}-${index}`}
+                      className={block.kind === "verse" ? "story-verse" : ""}
+                    >
+                      {range ? <>{text.slice(0, range.start)}<mark className="daily-passage">{text.slice(range.start, range.end)}</mark>{text.slice(range.end)}</> : text}
+                    </p>
+                  );
+                })}
               </div>
               <div className="bok-endmark" aria-hidden="true">b.</div>
               <ReadingFinale key={currentStory.id} inline actions={finale} onAgain={() => readText(true)} />
@@ -2979,16 +3289,17 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           />
         )}
 
-        {guestNoticeVisible && (
-          <aside className="reader-guest-notice" role="status" aria-live="polite">
-            <button className="reader-guest-notice__close" type="button" onClick={() => setGuestNoticeStep(null)} aria-label={t("Not now", "Не сейчас")}><X size={21} /></button>
-            <small>{t(`${guestReadCount} OF ${anonymousReadLimits.requiredSignup} GUEST BOKS`, `${guestReadCount} ИЗ ${anonymousReadLimits.requiredSignup} BOKS БЕЗ АККАУНТА`)}</small>
-            <h2>{t(`${Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount)} boks left without an account.`, `Ещё ${Math.max(0, anonymousReadLimits.requiredSignup - guestReadCount)} boks без аккаунта.`)}</h2>
-            <p>{t("Reading is always free. An account keeps your history with you.", "Чтение всегда бесплатно. Аккаунт сохраняет вашу историю.")}</p>
-            <button className="reader-guest-notice__action" type="button" onClick={() => openAccount("notice")}>{t("Create account", "Создать аккаунт")}</button>
-            <button className="reader-guest-notice__keep" type="button" onClick={() => setGuestNoticeStep(null)}>{t("Keep reading", "Продолжить чтение")}</button>
-            <div className="reader-guest-notice__marks" aria-hidden="true">{Array.from({ length: anonymousReadLimits.requiredSignup }, (_, index) => <span key={index} className={index < guestReadCount ? "is-read" : undefined} />)}</div>
-          </aside>
+        {passageSelection.selection && !readerInteractionBlocked && (
+          <SelectionMenu selection={passageSelection.selection} onShareWorld={(text) => sendSelectedLine(text, "world")} onSend={(text) => sendSelectedLine(text, "link")} onSave={(text) => void saveSelectedLine(text)} />
+        )}
+        {dayCardVisible && day.arrival && user?.handle && <DayCard arrival={day.arrival} handle={user.handle} gameNew={day.gameNew}
+          onLetter={() => { closeDayCard(); void openTodayLetter(); }}
+          onGame={() => { closeDayCard(); openAccount("manual", "general", "game"); }}
+          onClose={closeDayCard} />}
+        {guestWelcomeVisible && <GuestWelcome onCreate={() => { setGuestWelcomeSeen(true); openAccount("notice"); }} onClose={() => setGuestWelcomeSeen(true)} />}
+
+        {guestNoticeVisible && guestNoticeStep && (
+          <GuestReminderCard kind={guestNoticeStep.kind} count={guestReadCount} onCreate={() => openAccount("notice")} onClose={() => setGuestNoticeStep(null)} />
         )}
 
         {authorPanel}
@@ -3045,6 +3356,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         )}
 
         {accountPanel}
+        {dailyOverlays}
         {openIssuePanel}
 
         {isAdminReader && (

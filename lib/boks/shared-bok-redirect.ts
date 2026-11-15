@@ -18,9 +18,10 @@
 /**
  * Carried from `/b/<id>?…` to the reader. `link` is a tracked link
  * (`tracked-links.ts`); `recording` is an admin's own link to film the piece
- * (`recording-mode.ts`).
+ * (`recording-mode.ts`); `line` is one line a reader sent from it, which opens
+ * as a letter from them (`get_line_link`).
  */
-export const sharedBokForwardedKeys = ["link", "utm_source", "utm_medium", "utm_campaign", "recording"] as const;
+export const sharedBokForwardedKeys = ["link", "utm_source", "utm_medium", "utm_campaign", "recording", "line"] as const;
 
 /** The attribute the script puts on <html> while it leaves; globals.css hides the page under it. */
 export const openingBokAttribute = "data-opening-bok";

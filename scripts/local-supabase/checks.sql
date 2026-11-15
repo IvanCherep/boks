@@ -4644,3 +4644,449 @@ begin
     'the public author page stays open to guests');
 end $$;
 rollback;
+
+-- Line of the day and Guess the author (20261117100000).
+begin;
+insert into auth.users (id, email, is_anonymous)
+select ('d0000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid, 'daily' || n || '@boks.test', n = 99
+from generate_series(1, 30) n
+union all select 'd0000000-0000-4000-8000-000000000099', null, true;
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version, is_publisher)
+select ('d0000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid, 'daily_' || n,
+  case when n = 30 then 'admin' else 'reader' end, now(), 'v1', n = 29
+from generate_series(1, 30) n;
+
+do $$
+declare
+  v_publisher uuid := 'd0000000-0000-4000-8000-000000000029';
+  v_admin uuid := 'd0000000-0000-4000-8000-000000000030';
+  v_guest uuid := 'd0000000-0000-4000-8000-000000000099';
+  v_bok uuid;
+  v_letter jsonb;
+  v_first jsonb;
+  v_sent jsonb;
+  v_error text;
+  v_counts integer[];
+  v_n integer;
+  v_text text;
+  v_erased record;
+  v_spaced uuid;
+  v_titled uuid;
+begin
+  -- Six catalogue poets, six short poems each: enough that a replacement always has a text by another surname.
+  for v_n in 1..36 loop
+    insert into public.reels (title, author_name, author_user_id, text, status, language, minutes, reading_shape, is_seed)
+    values (
+      'Стихотворение ' || v_n,
+      (array['Александр Пушкин', 'Фёдор Тютчев', 'Афанасий Фет', 'Лев Толстой', 'Алексей Толстой', 'Александр Блок'])[1 + (v_n - 1) % 6],
+      v_publisher,
+      'Мороз и солнце, день чудесный ' || v_n || E'\nЕщё ты дремлешь, друг прелестный\nПора, красавица, проснись\n\n'
+        || E'Вечор, ты помнишь, вьюга злилась\nНа мутном небе мгла носилась\nЛуна, как бледное пятно ' || v_n,
+      'published', 'ru', 1, 'verse', true
+    );
+  end loop;
+  select id into v_bok from public.reels where title = 'Стихотворение 1' and author_user_id = v_publisher;
+
+  -- Sending a line.
+  perform public.boks_test_login(v_guest, true);
+  begin
+    perform public.share_line(v_bok, 'Мороз и солнце');
+    raise exception 'guest sent a line';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'A permanent user account is required.', 'a guest cannot send a line');
+
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000001');
+  begin
+    perform public.share_line(v_bok, 'слова, которых нет в тексте');
+    raise exception 'sent words not in the bok';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Only words from the bok itself can be sent.', 'only words of the bok itself can be sent');
+  v_sent := public.share_line(v_bok, 'день чудесный 1' || E'\n' || 'Ещё ты дремлешь');
+  perform public.boks_assert((v_sent ->> 'created')::boolean, 'a line across two lines of verse is sent');
+  perform public.boks_assert(
+    public.share_line(v_bok, '  ДЕНЬ чудесный  1 ещё ты   дремлешь ') ->> 'id' = v_sent ->> 'id',
+    'the same line again, spaced or cased differently, is one line in the pool');
+  perform public.boks_assert(
+    public.share_line(v_bok, 'день чудесный 1 Еще ты дремлешь') ->> 'id' = v_sent ->> 'id',
+    'ё and е are the same letter for a line');
+
+  -- Alone in the pool: the sender never receives their own line.
+  v_letter := public.open_daily_letter('Europe/Belgrade');
+  perform public.boks_assert(v_letter ->> 'source' = 'editorial' and v_letter ->> 'senderHandle' is null,
+    'with only your own line in the pool the letter is the editorial one');
+  perform public.boks_assert(public.open_daily_letter('Europe/Belgrade') = v_letter, 'opening again shows the same letter');
+  perform public.boks_assert((public.get_daily_arrival('Europe/Belgrade') ->> 'letterOpened')::boolean, 'today is marked opened');
+  perform public.boks_assert(position(v_letter ->> 'passage' in (select text from public.reels where id = (v_letter ->> 'bokId')::uuid)) > 0,
+    'the editorial line is words of its poem');
+
+  -- Five senders, one line each, ten readers open: two letters per line.
+  for v_n in 2..5 loop
+    perform public.boks_test_login(('d0000000-0000-4000-8000-' || lpad(v_n::text, 12, '0'))::uuid);
+    perform public.share_line(
+      (select id from public.reels where title = 'Стихотворение ' || v_n and author_user_id = v_publisher),
+      'Ещё ты дремлешь, друг прелестный');
+  end loop;
+  -- Shared today, received from tomorrow.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000010');
+  perform public.boks_assert(public.open_daily_letter(null) ->> 'source' = 'editorial', 'a line shared today is not handed out today');
+  delete from public.daily_letters where recipient_user_id = 'd0000000-0000-4000-8000-000000000010';
+  update public.shared_lines set created_at = now() - interval '1 day';
+  for v_n in 10..19 loop
+    perform public.boks_test_login(('d0000000-0000-4000-8000-' || lpad(v_n::text, 12, '0'))::uuid);
+    v_letter := public.open_daily_letter(null);
+    perform public.boks_assert(v_letter ->> 'source' = 'reader', 'reader ' || v_n || ' receives a reader''s line');
+  end loop;
+  select array_agg(c order by c) into v_counts from (
+    select count(*)::integer c from public.daily_letters l where l.source = 'reader' group by l.shared_line_id
+  ) x;
+  perform public.boks_assert(v_counts = array[2, 2, 2, 2, 2], 'five lines among ten letters: each line twice');
+  perform public.boks_assert((select count(distinct (recipient_user_id, letter_date)) from public.daily_letters) = (select count(*) from public.daily_letters),
+    'one letter per account and day');
+
+  -- The signature: always the sender's handle.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000010');
+  v_first := public.open_daily_letter(null);
+  perform public.boks_assert(
+    (v_first ->> 'senderHandle') = (
+      select s.handle from public.daily_letters l join public.user_profiles s on s.user_id = l.sender_user_id
+      where l.recipient_user_id = 'd0000000-0000-4000-8000-000000000010'),
+    'the letter is signed with its sender''s handle');
+  perform public.boks_assert(not exists (
+    select 1 from public.daily_letters l where l.source = 'editorial' and (l.sender_user_id is not null or public.boks_daily_letter_json(l) ->> 'senderHandle' is not null)),
+    'an editorial letter carries no handle');
+  perform public.boks_assert(position('daily' in coalesce(v_first ->> 'senderHandle', 'daily_')) = 1 and position('@boks.test' in v_first::text) = 0,
+    'an email never reaches a letter');
+
+  -- A line sent later in the day joins the next openings; nothing is rewritten.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000006');
+  perform public.share_line((select id from public.reels where title = 'Стихотворение 6' and author_user_id = v_publisher), 'Вечор, ты помнишь, вьюга злилась');
+  update public.shared_lines set created_at = now() - interval '1 day' where passage = 'Вечор, ты помнишь, вьюга злилась';
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000020');
+  v_letter := public.open_daily_letter(null);
+  perform public.boks_assert(v_letter ->> 'passage' = 'Вечор, ты помнишь, вьюга злилась', 'a line nobody has received today goes before a repeat');
+  update public.shared_lines set created_at = now() - interval '9 days' where passage = 'Вечор, ты помнишь, вьюга злилась';
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000024');
+  perform public.boks_assert(public.open_daily_letter(null) ->> 'passage' <> 'Вечор, ты помнишь, вьюга злилась', 'a line older than a week leaves the pool');
+  update public.shared_lines set created_at = now() - interval '1 day' where passage = 'Вечор, ты помнишь, вьюга злилась';
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000010');
+  perform public.boks_assert(public.open_daily_letter(null) = v_first, 'a letter already opened does not change');
+
+  -- A suspended sender's lines leave the pool.
+  update public.user_profiles set banned_at = now() where user_id = 'd0000000-0000-4000-8000-000000000006';
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000021');
+  perform public.boks_assert(public.open_daily_letter(null) ->> 'passage' <> 'Вечор, ты помнишь, вьюга злилась', 'a suspended sender''s line is not handed out');
+
+  -- The source taken down: the letter stays, marked unavailable, without the words.
+  update public.reels set status = 'archived', archived_at = now(), archived_from_status = 'published'
+  where id = (v_first ->> 'bokId')::uuid;
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000010');
+  v_letter := public.get_my_daily_letters(null, 30) -> 0;
+  perform public.boks_assert(not (v_letter ->> 'available')::boolean and v_letter ->> 'passage' is null and v_letter ->> 'bokId' is null,
+    'a letter whose bok was taken down is unavailable and shows no words');
+  update public.reels set status = 'published', archived_at = null, archived_from_status = null where id = (v_first ->> 'bokId')::uuid;
+
+  -- A sender who deletes their account: the letter stays, signed as a boks reader.
+  delete from auth.users where id = (select sender_user_id from public.daily_letters where recipient_user_id = 'd0000000-0000-4000-8000-000000000010');
+  v_letter := public.get_my_daily_letters(null, 30) -> 0;
+  perform public.boks_assert(v_letter ->> 'senderHandle' is null and v_letter ->> 'passage' = v_first ->> 'passage',
+    'a deleted sender''s letter keeps its words and loses the handle');
+
+  -- The day follows the account's zone; a nonsense zone falls back to it.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000022');
+  perform public.boks_assert((public.get_daily_arrival('Pacific/Kiritimati') ->> 'date')::date = (now() at time zone 'Pacific/Kiritimati')::date,
+    'the letter''s date is the account''s own day');
+  perform public.boks_assert((public.get_daily_arrival('Not/AZone') ->> 'date')::date = (now() at time zone 'Pacific/Kiritimati')::date,
+    'an invalid zone falls back to the account''s remembered zone');
+  perform public.boks_assert((public.get_daily_arrival('America/Los_Angeles') ->> 'date')::date = (now() at time zone 'Pacific/Kiritimati')::date,
+    'a remembered zone changes at most once a day');
+  update public.reader_time_zones set updated_at = now() - interval '2 days' where user_id = 'd0000000-0000-4000-8000-000000000022';
+  perform public.open_daily_letter(null);
+  perform public.boks_assert((public.get_daily_arrival('America/Los_Angeles') ->> 'date')::date = (now() at time zone 'Pacific/Kiritimati')::date,
+    'nor on a day whose letter is already open');
+
+  -- Imported texts carry no-break spaces; the reader shows them as plain ones.
+  insert into public.reels (title, author_name, author_user_id, text, status, language, minutes, reading_shape, is_seed)
+  values ('Пробелы', 'Иван Пробелов', v_publisher, 'Вот строка с' || chr(160) || 'неразрывным пробелом,' || E'\nи ещё одна —' || chr(160) || 'с тире.', 'published', 'ru', 1, 'verse', true)
+  returning id into v_spaced;
+
+  -- A reader who reads only English gets no Russian reader's line.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000026');
+  perform public.boks_assert(public.save_line(v_spaced, 'с неразрывным пробелом, и ещё одна — с тире') ->> 'id' is not null,
+    'a line across no-break spaces is the bok''s own words');
+  update public.user_profiles set reading_languages = '{en}' where user_id = 'd0000000-0000-4000-8000-000000000026';
+  perform public.boks_assert(public.open_daily_letter(null) ->> 'source' = 'editorial', 'a letter keeps to the reader''s languages');
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000022');
+
+  -- A line sent by link: a letter from its sender, open to anyone with it.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000025');
+  v_sent := public.create_line_link(v_bok, 'Пора, красавица, проснись');
+  perform public.boks_assert((v_sent ->> 'created')::boolean and v_sent ->> 'code' ~ '^[0-9a-f]{16}$', 'a line gets its own link');
+  perform public.boks_assert(public.create_line_link(v_bok, 'пора,  красавица, проснись') ->> 'code' = v_sent ->> 'code', 'the same line keeps its one link');
+  perform public.boks_assert(not exists (select 1 from public.shared_lines where sender_user_id = 'd0000000-0000-4000-8000-000000000025'),
+    'a line sent by link does not join the letters');
+  begin
+    perform public.create_line_link(v_bok, 'чужие слова');
+    raise exception 'linked words not in the bok';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Only words from the bok itself can be sent.', 'only words of the bok get a link');
+  perform public.boks_test_logout();
+  v_letter := public.get_line_link(v_sent ->> 'code');
+  perform public.boks_assert(v_letter ->> 'senderHandle' = 'daily_25' and v_letter ->> 'passage' = 'Пора, красавица, проснись' and v_letter ->> 'bokId' = v_bok::text,
+    'anyone with the link sees the line and who sent it');
+  perform public.boks_assert(public.get_line_link('nope') is null and public.get_line_link('0000000000000000') is null, 'an unknown link opens nothing');
+  perform public.boks_assert(position('@boks.test' in v_letter::text) = 0, 'a link never carries an email');
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000022');
+
+  -- An editorial line is never the poem's own title.
+  begin
+    update public.reels set status = 'archived', archived_at = now(), archived_from_status = 'published' where status = 'published';
+    insert into public.reels (title, author_name, author_user_id, text, status, language, minutes, reading_shape, is_seed)
+    values ('Заглавие', 'Иван Заглавный', v_publisher, E'Заглавие\n\nПервая настоящая строка стиха\nВторая строка стиха\nТретья строка\nЧетвёртая строка', 'published', 'ru', 1, 'verse', true)
+    returning id into v_titled;
+    perform public.boks_assert((public.boks_editorial_line('d0000000-0000-4000-8000-000000000027', current_date, null)).passage = 'Первая настоящая строка стиха',
+      'an editorial line skips the title a text opens with');
+    raise exception 'undo';
+  exception when others then
+    if sqlerrm <> 'undo' then raise; end if;
+  end;
+
+  -- An erased bok: its letters stay, without a copy of its words.
+  select recipient_user_id, bok_id into v_erased from public.daily_letters where bok_id <> v_bok and source = 'reader' limit 1;
+  delete from public.reels where id = v_erased.bok_id;
+  perform public.boks_assert(
+    (select passage = '' and bok_id is null from public.daily_letters where recipient_user_id = v_erased.recipient_user_id),
+    'an erased bok leaves no words in the letters that carried it');
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000022');
+
+  -- Saving a line for yourself.
+  perform public.save_line(v_bok, 'Пора, красавица, проснись');
+  perform public.save_line(v_bok, 'ПОРА,  красавица, проснись');
+  perform public.boks_assert(jsonb_array_length(public.get_saved_lines(null, 30)) = 1, 'a saved line is kept once');
+  begin
+    perform public.save_line(v_bok, 'чужие слова');
+    raise exception 'saved words not in the bok';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Only words from the bok itself can be saved.', 'only words of the bok can be saved');
+  v_text := public.get_saved_lines(null, 30) -> 0 ->> 'id';
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000023');
+  perform public.boks_assert(jsonb_array_length(public.get_saved_lines(null, 30)) = 0, 'saved lines are private to their reader');
+  perform public.delete_saved_line(v_text::uuid);
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000022');
+  perform public.boks_assert(jsonb_array_length(public.get_saved_lines(null, 30)) = 1, 'nobody else can remove them');
+  perform public.delete_saved_line(v_text::uuid);
+  perform public.boks_assert(jsonb_array_length(public.get_saved_lines(null, 30)) = 0, 'their reader removes a saved line');
+end $$;
+
+-- Guess the author.
+do $$
+declare
+  v_admin uuid := 'd0000000-0000-4000-8000-000000000030';
+  v_guest uuid := 'd0000000-0000-4000-8000-000000000099';
+  v_today date := public.boks_game_today();
+  v_game jsonb;
+  v_result jsonb;
+  v_day jsonb;
+  v_issue public.author_game_issues;
+  v_published_at timestamptz;
+  v_error text;
+  v_title text;
+begin
+  -- Not an editor: no Studio.
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000010');
+  begin
+    perform public.studio_author_game_calendar(7);
+    raise exception 'a reader opened the game calendar';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Admin access required.', 'only an editor sees the game calendar');
+
+  perform public.boks_test_login(v_admin);
+  v_day := public.studio_author_game_calendar(7);
+  perform public.boks_assert(jsonb_array_length(v_day -> 'days') = 7, 'the calendar shows seven days');
+  perform public.boks_assert(not exists (
+    select 1 from jsonb_array_elements(v_day -> 'days') d where (d ->> 'available')::integer <> 3
+  ), 'every day of the horizon has three available candidates');
+  perform public.boks_assert(not exists (
+    select c.game_date from public.author_game_candidates c join public.reels b on b.id = c.bok_id
+    group by c.game_date having count(distinct public.boks_surname(b.author_name)) <> 3
+  ), 'a day''s three candidates are by three different authors, never two Tolstoys');
+  perform public.boks_assert(not exists (
+    select 1 from public.author_game_candidates c join public.reels b on b.id = c.bok_id
+    where not (b.author_name = any (c.options))
+      or (select count(distinct public.boks_surname(o)) from unnest(c.options) o) <> 3
+      or c.options[c.correct + 1] <> b.author_name
+  ), 'each candidate''s three names include its author once, with three different surnames');
+  perform public.boks_assert((select count(*) from public.author_game_candidates) = (select count(distinct bok_id) from public.author_game_candidates),
+    'no text is planned twice in the week');
+
+  -- The editor reads tomorrow's second text and chooses it.
+  v_day := public.studio_author_game_day(v_today + 1);
+  perform public.boks_assert((v_day -> 'candidates' -> 1 ->> 'text') is not null, 'the preview has the full text');
+  v_day := public.studio_author_game_day(v_today + 1);
+  perform public.boks_assert(v_day ->> 'chosenPosition' is null, 'opening a preview is not a choice');
+  v_day := public.studio_author_game_choose(v_today + 1, 2);
+  perform public.boks_assert((v_day ->> 'chosenPosition')::integer = 2, 'the editor chooses the second text');
+
+  -- Replacing the chosen text clears the choice; replacing another keeps it.
+  v_day := public.studio_author_game_choose(v_today + 2, 3);
+  v_day := public.studio_author_game_replace(v_today + 2, 3);
+  perform public.boks_assert((v_day ->> 'choiceCleared')::boolean and v_day ->> 'chosenPosition' is null,
+    'replacing the chosen text returns the date to the automatic choice');
+  perform public.boks_assert((v_day -> 'candidates' -> 2 ->> 'replacedAt') is not null, 'the replacement takes the same position');
+
+  -- Today, nobody chose: the first available candidate is published, once.
+  perform public.boks_test_login(v_guest, true);
+  v_game := public.get_author_game();
+  perform public.boks_assert(v_game ->> 'status' = 'open', 'a guest reads today''s text');
+  select * into v_issue from public.author_game_issues where game_date = v_today;
+  perform public.boks_assert(v_issue.published_position = 1, 'without a choice the first candidate is published');
+  select title into v_title from public.reels where id = v_issue.published_bok_id;
+  perform public.boks_assert(
+    position(v_issue.published_bok_id::text in v_game::text) = 0 and position(v_title in v_game::text) = 0
+      and v_game -> 'result' = 'null'::jsonb and not (v_game ? 'bokId') and not (v_game ? 'title'),
+    'the reader gets no id, title or answer before answering');
+  perform public.boks_assert(jsonb_array_length(v_game -> 'options') = 3, 'three names to choose from');
+  perform public.boks_assert(public.get_author_game_status() = 'open', 'the status says today''s text waits');
+  v_published_at := v_issue.published_at;
+  perform public.boks_game_publish(v_today);
+  perform public.boks_assert((select published_at from public.author_game_issues where game_date = v_today) = v_published_at,
+    'publishing again changes nothing');
+  perform public.boks_assert(public.get_author_game() -> 'options' = v_game -> 'options', 'the order of the names is fixed for the day');
+
+  -- Tomorrow with the editor's choice.
+  v_issue := public.boks_game_publish(v_today + 1);
+  perform public.boks_assert(v_issue.published_position = 2, 'the editor''s choice is what is published');
+  perform public.boks_test_login(v_admin);
+  begin
+    perform public.studio_author_game_choose(v_today + 1, 1);
+    raise exception 'changed a published issue';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'This issue is already published and can no longer change.', 'a published issue cannot change');
+
+  -- A chosen text taken down before its day: the next available one goes out.
+  v_day := public.studio_author_game_choose(v_today + 3, 1);
+  update public.reels set status = 'archived', archived_at = now(), archived_from_status = 'published'
+  where id = (v_day -> 'candidates' -> 0 ->> 'bokId')::uuid;
+  v_issue := public.boks_game_publish(v_today + 3);
+  perform public.boks_assert(v_issue.published_position = 2, 'an unavailable choice falls through to the next candidate');
+
+  -- Answers.
+  perform public.boks_test_login(v_guest, true);
+  begin
+    perform public.answer_author_game(v_today, 0);
+    raise exception 'a guest answered';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'A permanent user account is required.', 'answering needs an account');
+  select * into v_issue from public.author_game_issues where game_date = v_today;
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000011');
+  v_result := public.answer_author_game(v_today, v_issue.published_correct);
+  perform public.boks_assert((v_result ->> 'correct')::boolean and v_result ->> 'authorName' = v_issue.published_options[v_issue.published_correct + 1]
+    and v_result ->> 'title' = v_title, 'a right answer opens the name and the title');
+  v_result := public.answer_author_game(v_today, (v_issue.published_correct + 1) % 3);
+  perform public.boks_assert((v_result ->> 'correct')::boolean, 'a second attempt does not replace the first');
+  perform public.boks_test_login('d0000000-0000-4000-8000-000000000012');
+  v_result := public.answer_author_game(v_today, null);
+  perform public.boks_assert((v_result ->> 'revealed')::boolean and not (v_result ->> 'correct')::boolean, 'a reader may reveal the answer');
+  perform public.boks_assert((select sum(x::integer) from jsonb_array_elements_text(v_result -> 'counts') x) = 1,
+    'a revealed answer is not counted among the answers');
+  perform public.boks_assert(public.get_author_game() ->> 'status' = 'answered', 'the reader comes back to their result');
+  perform public.boks_assert(public.get_author_game_status() = 'answered', 'and the status says so, without the text');
+
+  -- Nothing left to publish: readers are told, nothing breaks.
+  begin
+    update public.reels set status = 'archived', archived_at = now(), archived_from_status = 'published'
+    where status = 'published';
+    v_issue := public.boks_game_publish(v_today + 6);
+    perform public.boks_assert(v_issue.published_at is null, 'with an empty catalogue no issue is published');
+    perform public.boks_test_login(v_admin);
+    perform public.boks_assert((public.studio_author_game_day(v_today + 6) ->> 'available')::integer = 0, 'the editor sees the date needs stock');
+    raise exception 'undo';
+  exception when others then
+    if sqlerrm <> 'undo' then raise; end if;
+  end;
+end $$;
+
+do $$
+declare
+  v_table text;
+begin
+  foreach v_table in array array['line_links', 'shared_lines', 'daily_letters', 'reader_time_zones', 'saved_lines', 'author_game_issues', 'author_game_candidates', 'author_game_answers'] loop
+    perform public.boks_assert(
+      not has_table_privilege('anon', 'public.' || v_table, 'SELECT') and not has_table_privilege('authenticated', 'public.' || v_table, 'SELECT'),
+      v_table || ' is reached only through its functions');
+  end loop;
+  perform public.boks_assert(
+    not has_function_privilege('anon', 'public.open_daily_letter(text)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.get_author_game()', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.boks_game_publish(date)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.boks_editorial_line(uuid,date,text[])', 'EXECUTE')
+      and has_function_privilege('anon', 'public.get_line_link(text)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.create_line_link(uuid,text)', 'EXECUTE'),
+    'internal daily functions are not callable from the browser');
+end $$;
+rollback;
+
+-- My days (20261117110000).
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('e0000000-0000-4000-8000-000000000001', 'days1@boks.test', false),
+  ('e0000000-0000-4000-8000-000000000002', 'days2@boks.test', false),
+  ('e0000000-0000-4000-8000-000000000099', null, true);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('e0000000-0000-4000-8000-000000000001', 'days_one', 'reader', now(), 'v1'),
+  ('e0000000-0000-4000-8000-000000000002', 'days_two', 'reader', now(), 'v1');
+do $$
+declare
+  v_arrival jsonb;
+  v_today date;
+  v_error text;
+begin
+  perform public.boks_test_login('e0000000-0000-4000-8000-000000000099', true);
+  begin
+    perform public.get_daily_arrival('Europe/Moscow');
+    raise exception 'a guest got a day';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'A permanent user account is required.', 'a guest keeps no days on the server');
+
+  perform public.boks_test_login('e0000000-0000-4000-8000-000000000001');
+  v_arrival := public.get_daily_arrival('Europe/Moscow');
+  v_today := (v_arrival ->> 'date')::date;
+  perform public.boks_assert(v_today = (now() at time zone 'Europe/Moscow')::date, 'the day is the account''s own day');
+  perform public.boks_assert((v_arrival ->> 'total')::integer = 1 and (v_arrival ->> 'streak')::integer = 1 and not (v_arrival ->> 'cardSeen')::boolean,
+    'a first day: one day, a run of one, the card not yet shown');
+  perform public.boks_assert(jsonb_array_length(v_arrival -> 'week') = 7
+    and extract(isodow from (v_arrival -> 'week' -> 0 ->> 'date')::date) = 1
+    and (select count(*) from jsonb_array_elements(v_arrival -> 'week') w where (w ->> 'visited')::boolean) = 1,
+    'the week runs Monday to Sunday with today marked');
+  perform public.boks_assert(public.get_daily_arrival('Europe/Moscow') ->> 'total' = '1', 'coming back the same day is the same day');
+
+  perform public.mark_daily_card_seen(v_today);
+  perform public.boks_assert((public.get_daily_arrival('Europe/Moscow') ->> 'cardSeen')::boolean, 'the card is shown once a day, on any device');
+
+  insert into public.reader_days (user_id, day) values
+    ('e0000000-0000-4000-8000-000000000001', v_today - 1),
+    ('e0000000-0000-4000-8000-000000000001', v_today - 2),
+    ('e0000000-0000-4000-8000-000000000001', v_today - 4);
+  v_arrival := public.get_daily_arrival('Europe/Moscow');
+  perform public.boks_assert((v_arrival ->> 'total')::integer = 4 and (v_arrival ->> 'streak')::integer = 3, 'four days in all, three of them in a row');
+  perform public.boks_assert((public.get_my_days(v_today) -> 'days') @> jsonb_build_array(jsonb_build_object('date', v_today, 'letter', false)),
+    'the month shows today');
+  perform public.boks_assert((public.get_my_days(v_today) ->> 'since')::date = v_today - 4, 'and since when');
+
+  perform public.boks_test_login('e0000000-0000-4000-8000-000000000002');
+  perform public.boks_assert(jsonb_array_length(public.get_my_days(v_today) -> 'days') = 0 and (public.get_my_days(v_today) ->> 'total')::integer = 0,
+    'nobody sees another account''s days');
+  perform public.mark_daily_card_seen(v_today);
+  perform public.boks_assert(not exists (select 1 from public.reader_days where user_id = 'e0000000-0000-4000-8000-000000000002'),
+    'marking a card does not invent a day');
+  perform public.boks_assert(not has_table_privilege('authenticated', 'public.reader_days', 'SELECT') and not has_table_privilege('anon', 'public.reader_days', 'SELECT'),
+    'reader_days is reached only through its functions');
+end $$;
+rollback;
