@@ -11,6 +11,8 @@ import { Envelope, type EnvelopeState } from "./envelope";
 import { passageSize } from "./letter";
 import { dailyMessages } from "./messages";
 import { useEscape } from "./use-escape";
+import { Postmark } from "./postmark";
+import { stampDate } from "@/lib/boks/daily/days";
 
 /**
  * - `world`: into tomorrow's letters of random readers (`share_line`);
@@ -89,6 +91,7 @@ export function SendLineSheet({ mode, passage, title, authorName, handle, onSend
   }
 
   const heading = mode === "world" ? words.shareWorld : words.sendLine;
+  const stamped = stampDate(new Date().toISOString().slice(0, 10));
   const sealed = phase !== "compose";
   const url = result?.url ?? null;
   return <div className="daily-overlay daily-send" role="dialog" aria-modal="true" aria-label={heading}
@@ -113,23 +116,23 @@ export function SendLineSheet({ mode, passage, title, authorName, handle, onSend
         <p className="daily-send__lead">{mode === "world" ? words.worldLead : words.linkLead}</p>
         {handle && <p className="daily-send__handle" translate="no">{mode === "world" ? words.seenByMany(handle) : words.seenByOne(handle)}</p>}
         {error && <p className="daily-error" role="alert">{error}</p>}
-        <button ref={sendRef} type="button" className="daily-button daily-button--paper" onClick={() => void send()} disabled={sealed}>
+        <button ref={sendRef} type="button" className="daily-button" onClick={() => void send()} disabled={sealed}>
           {phase === "sending" ? words.sealing : mode === "world" ? words.share : words.send}
         </button>
       </div>
     </div> : <div className="daily-send__sent" role="status">
-      <div className="daily-send__mark" aria-hidden="true"><Envelope state="sealed" size="small" /></div>
+      <div className="daily-send__mark" aria-hidden="true"><Envelope state="sealed" size="small" /><Postmark caption={stamped} stamp size="l" /></div>
       {mode === "world" ? <>
         <h2>{result?.created === false ? words.worldAgain : words.worldSent}</h2>
         {result?.created !== false && <p>{words.worldSentLead}</p>}
-        <button ref={doneRef} type="button" className="daily-button daily-button--accent" onClick={onClose}>{words.backToReading}</button>
+        <button ref={doneRef} type="button" className="daily-button" onClick={onClose}>{words.backToReading}</button>
       </> : <>
         <h2>{words.linkReady}</h2>
         <p>{words.linkReadyLead}</p>
         {url && <>
           <input ref={linkRef} className="daily-send__link" readOnly value={url} aria-label={words.copyLink} onFocus={(event) => event.currentTarget.select()} />
-          {canShare && <button ref={doneRef} type="button" className="daily-button daily-button--accent" onClick={() => void shareLink(url)}><Share aria-hidden="true" size={18} />{words.shareLink}</button>}
-          <button ref={canShare ? undefined : doneRef} type="button" className={`daily-button ${canShare ? "daily-button--quiet" : "daily-button--accent"}`} onClick={() => void copy(url)}><Copy aria-hidden="true" size={18} />{copied ? words.copied : words.copyLink}</button>
+          {canShare && <button ref={doneRef} type="button" className="daily-button" onClick={() => void shareLink(url)}><Share aria-hidden="true" size={18} />{words.shareLink}</button>}
+          <button ref={canShare ? undefined : doneRef} type="button" className={`daily-button${canShare ? " daily-button--quiet" : ""}`} onClick={() => void copy(url)}><Copy aria-hidden="true" size={18} />{copied ? words.copied : words.copyLink}</button>
         </>}
         <button type="button" className="daily-link" onClick={onClose}>{words.backToReading}</button>
       </>}

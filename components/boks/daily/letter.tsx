@@ -46,7 +46,6 @@ export function LetterView({ letter, status, firstOpening, isToday, note, onOpen
   const language = useUiLanguage();
   const [envelope, setEnvelope] = useState<EnvelopeState>(firstOpening ? "sealed" : "open");
   const closeRef = useRef<HTMLButtonElement>(null);
-  const actionRef = useRef<HTMLButtonElement>(null);
 
   // Sealed while the letter is on its way; it opens itself once it has arrived.
   useEffect(() => {
@@ -59,9 +58,6 @@ export function LetterView({ letter, status, firstOpening, isToday, note, onOpen
     const timer = window.setTimeout(() => setEnvelope("open"), 1500);
     return () => window.clearTimeout(timer);
   }, [envelope]);
-  useEffect(() => {
-    if (envelope === "open" && status === "ready") actionRef.current?.focus({ preventScroll: true });
-  }, [envelope, status]);
   useEscape(onClose);
   // Focus starts on the way out, once; the open envelope moves it to the work.
   useEffect(() => {
@@ -92,10 +88,10 @@ export function LetterView({ letter, status, firstOpening, isToday, note, onOpen
       </Envelope>
       <div className="daily-letter__actions">
         {status === "opening" && <p className="daily-note" role="status">{words.opening}</p>}
-        {status === "error" && <><p className="daily-note" role="alert">{words.letterFailed}</p><button type="button" className="daily-button daily-button--accent" onClick={onRetry}>{words.tryAgain}</button></>}
+        {status === "error" && <><p className="daily-note" role="alert">{words.letterFailed}</p><button type="button" className="daily-button" onClick={onRetry}>{words.tryAgain}</button></>}
         {status === "empty" && <p className="daily-note" role="status">{words.noLetter}</p>}
         {ready && <div className={`daily-letter__done${shown ? " is-shown" : ""}`}>
-          {letter.available && letter.bokId && <button ref={actionRef} type="button" className="daily-button daily-button--accent" onClick={() => onOpenWork(letter)}>{words.openWork}</button>}
+          {letter.available && letter.bokId && <button type="button" className="daily-button" onClick={() => onOpenWork(letter)}>{words.openWork}</button>}
           <p className="daily-note">{note ?? (isToday ? words.newLineTomorrow : words.receivedOn(calendarDate(letter.date, language)))}</p>
         </div>}
       </div>

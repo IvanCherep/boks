@@ -4950,6 +4950,14 @@ begin
       and v_game -> 'result' = 'null'::jsonb and not (v_game ? 'bokId') and not (v_game ? 'title'),
     'the reader gets no id, title or answer before answering');
   perform public.boks_assert(jsonb_array_length(v_game -> 'options') = 3, 'three names to choose from');
+  perform public.boks_assert(public.boks_game_text(E'Басни. Книга первая\n\nXXII. Орёл и Куры\n\nЖелая светлым днём\nвполне налюбоваться,', 'Орёл и Куры')
+    = E'Желая светлым днём\nвполне налюбоваться,', 'the game drops a heading that names the text');
+  perform public.boks_assert(public.boks_game_text(E'Ночевала тучка золотая\nНа груди утёса-великана;', 'Утёс') = E'Ночевала тучка золотая\nНа груди утёса-великана;',
+    'a title word in the poem itself is not a heading');
+  perform public.boks_assert(public.boks_game_text(E'Утёс\nНочевала тучка золотая', 'Утёс') = E'Утёс\nНочевала тучка золотая',
+    'a first line that is the title but runs into the poem stays');
+  perform public.boks_assert(public.boks_game_text(E'Утёс\n\nНочевала тучка золотая', 'Утёс') = 'Ночевала тучка золотая',
+    'a title standing as a heading goes');
   perform public.boks_assert(public.get_author_game_status() = 'open', 'the status says today''s text waits');
   v_published_at := v_issue.published_at;
   perform public.boks_game_publish(v_today);

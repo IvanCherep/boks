@@ -1,13 +1,13 @@
 "use client";
 
-import { ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import "@/app/daily.css";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
-import { longDate, ordinal, weekdayNames } from "@/lib/boks/daily/days";
-import { Envelope } from "./envelope";
+import { longDate, ordinal, stampDate, weekdayNames } from "@/lib/boks/daily/days";
 import type { DailyArrival } from "./data";
-import { welcomeMessages } from "./welcome-messages";
+import { Postmark } from "./postmark";
 import { useEscape } from "./use-escape";
+import { welcomeMessages } from "./welcome-messages";
 
 /** Stop a press here from reaching the reader underneath (it would turn the page). */
 export const keepToSelf = {
@@ -18,28 +18,28 @@ export const keepToSelf = {
   onWheel: (event: React.WheelEvent) => event.stopPropagation(),
 };
 
-/** Monday to Sunday: the days the account came, today ringed, a dot for a letter opened. */
+/** Monday to Sunday in numerals: a dot under the days the account came, today underlined. */
 export function WeekStrip({ week, today }: { week: DailyArrival["week"]; today: string }) {
   const language = useUiLanguage();
   const names = weekdayNames(language);
   return <ol className="day-week" aria-label={useMessages(welcomeMessages).week}>
-    {week.map((day, index) => <li key={day.date} className={`${day.visited ? "is-visited" : ""}${day.date === today ? " is-today" : ""}${day.date > today ? " is-ahead" : ""}`}
-      style={{ "--day-delay": `${index * 55}ms` } as React.CSSProperties}>
+    {week.map((day, index) => <li key={day.date}
+      className={`${day.visited ? "is-visited" : ""}${day.date === today ? " is-today" : ""}${day.date > today ? " is-ahead" : ""}`}
+      style={{ "--i": index } as React.CSSProperties}>
       <small>{names[index]}</small>
       <span>{Number(day.date.slice(8, 10))}</span>
-      <i aria-hidden="true" className={day.letter ? "has-letter" : ""} />
+      <i aria-hidden="true" />
     </li>)}
   </ol>;
 }
 
 /**
- * The first bok of an account's day: a greeting, which day with boks this is,
- * the week, and the two things the day holds - the letter and the game.
- * Shown once a day across devices; Settings keeps all of it afterwards.
+ * The first bok of an account's day: the date, which day with boks this is,
+ * the week, and what the day holds - the letter and the game - as two lines
+ * of a page, not as buttons. Once a day across devices.
  */
-export function DayCard({ arrival, handle, gameNew, onLetter, onGame, onClose }: {
+export function DayCard({ arrival, gameNew, onLetter, onGame, onClose }: {
   arrival: DailyArrival;
-  handle: string;
   gameNew: boolean;
   onLetter: () => void;
   onGame: () => void;
@@ -49,26 +49,30 @@ export function DayCard({ arrival, handle, gameNew, onLetter, onGame, onClose }:
   const language = useUiLanguage();
   const first = arrival.total <= 1;
   useEscape(onClose);
-  return <aside className="day-card" role="dialog" aria-label={(first ? words.firstDay(handle) : words.newDay(handle)).replace("\n", " ")} {...keepToSelf}>
+  return <aside className="day-card" role="dialog" aria-label={first ? words.firstDay : words.newDay} {...keepToSelf}>
     <button type="button" className="day-card__close" aria-label={words.notNow} onClick={onClose}><X size={20} /></button>
     <p className="day-card__eyebrow">{longDate(arrival.date, language)}</p>
-    <h2 className="day-card__title" translate="no">{first ? words.firstDay(handle) : words.newDay(handle)}</h2>
-    {first
-      ? <p className="day-card__lead">{words.firstDayLead}</p>
-      : <p className="day-card__count"><strong>{words.dayCount(ordinal(arrival.total, language))}</strong>{arrival.streak > 1 && <span>{words.inARow(arrival.streak)}</span>}</p>}
+    <h2 className="day-card__title">{first ? words.firstDay : words.newDay}</h2>
+    <p className="day-card__lead">{first
+      ? words.firstDayLead
+      : <>{words.dayCount(ordinal(arrival.total, language))}{arrival.streak > 1 && <span> · {words.inARow(arrival.streak)}</span>}</>}</p>
     <WeekStrip week={arrival.week} today={arrival.date} />
-    <div className="day-card__tiles">
-      <button type="button" className={`day-tile day-tile--letter${arrival.letterOpened ? "" : " is-new"}`} onClick={onLetter}>
-        <span className="day-tile__art" aria-hidden="true"><Envelope state={arrival.letterOpened ? "open" : "sealed"} size="small" /></span>
-        <span><strong>{arrival.letterOpened ? words.letterSeenTitle : words.letterTitle}</strong><small>{arrival.letterOpened ? words.letterSeenLead : words.letterLead}</small></span>
-        <ChevronRight aria-hidden="true" />
-      </button>
-      <button type="button" className={`day-tile day-tile--game${gameNew ? " is-new" : ""}`} onClick={onGame}>
-        <span className="day-tile__art day-tile__art--game" aria-hidden="true">?</span>
-        <span><strong>{words.gameTitle}</strong><small>{gameNew ? words.gameLead : words.gameDoneLead}</small></span>
-        <ChevronRight aria-hidden="true" />
-      </button>
-    </div>
+    <ul className="day-rows">
+      <li style={{ "--i": 0 } as React.CSSProperties}>
+        <button type="button" className="day-row" onClick={onLetter}>
+          <Postmark caption={stampDate(arrival.date)} sealed={!arrival.letterOpened} />
+          <span className="day-row__text"><strong>{words.letter}</strong><small>{arrival.letterOpened ? words.letterOpened : words.letterSealed}</small></span>
+          <span className="day-row__action">{arrival.letterOpened ? words.reread : words.open}</span>
+        </button>
+      </li>
+      <li style={{ "--i": 1 } as React.CSSProperties}>
+        <button type="button" className="day-row" onClick={onGame}>
+          <span className="day-row__glyph" aria-hidden="true">?</span>
+          <span className="day-row__text"><strong>{words.gameTitle}</strong><small>{gameNew ? words.gameWaiting : words.gameDone}</small></span>
+          <span className="day-row__action">{gameNew ? words.play : words.results}</span>
+        </button>
+      </li>
+    </ul>
     <button type="button" className="day-card__read" onClick={onClose}>{words.read}</button>
   </aside>;
 }

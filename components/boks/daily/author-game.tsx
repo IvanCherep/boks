@@ -114,7 +114,7 @@ export function AuthorGamePage({ signedIn, onSignIn, onOpenWork, onAnswered }: {
       </label>)}
     </fieldset>
     {failed && <p className="daily-error" role="alert">{failed}</p>}
-    <button type="button" className="daily-button daily-button--paper" disabled={busy || (signedIn && choice === null)} onClick={() => void answer(choice)}>
+    <button type="button" className="daily-button" disabled={busy || (signedIn && choice === null)} onClick={() => void answer(choice)}>
       {signedIn ? words.check : words.signInToCheck}
     </button>
     {signedIn && (confirmReveal ? <div className="daily-reveal" role="alertdialog" aria-label={words.reveal}>

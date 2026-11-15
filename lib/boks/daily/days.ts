@@ -71,6 +71,11 @@ export function longDate(date: string, language: "ru" | "en") {
   return utc(date).toLocaleDateString(language === "ru" ? "ru-RU" : "en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 }
 
+/** "15.11": the date a postmark carries. */
+export function stampDate(date: string) {
+  return `${date.slice(8, 10)}.${date.slice(5, 7)}`;
+}
+
 /** "November 2026" / "ноябрь 2026". */
 export function monthTitle(month: string, language: "ru" | "en") {
   return utc(month).toLocaleDateString(language === "ru" ? "ru-RU" : "en-GB", { month: "long", year: "numeric", timeZone: "UTC" });

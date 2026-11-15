@@ -6,7 +6,7 @@ import "@/app/daily.css";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { calendarDate } from "@/lib/boks/daily/game-day";
 import { readableBoksError } from "@/lib/boks/errors";
-import { Envelope } from "./envelope";
+import { Postmark } from "./postmark";
 import { deleteSavedLine, loadMyDailyLetters, loadSavedLines, type DailyLetter, type SavedLine } from "./data";
 import { dailyMessages } from "./messages";
 
@@ -50,7 +50,7 @@ export function ReceivedLines({ todayWaiting, onOpenToday, onOpenLetter }: {
   return <div className="daily-lines">
     <h1 className="social-display">{words.receivedLines}</h1>
     {todayWaiting && <button type="button" className="daily-today-card" onClick={onOpenToday}>
-      <Envelope state="sealed" size="small" />
+      <Postmark caption={words.todayStamp} sealed />
       <span><strong>{words.aLineArrived}</strong><small>{words.todayLetterCard}</small></span>
       <ChevronRight aria-hidden="true" />
     </button>}

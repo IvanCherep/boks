@@ -3292,7 +3292,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         {passageSelection.selection && !readerInteractionBlocked && (
           <SelectionMenu selection={passageSelection.selection} onShareWorld={(text) => sendSelectedLine(text, "world")} onSend={(text) => sendSelectedLine(text, "link")} onSave={(text) => void saveSelectedLine(text)} />
         )}
-        {dayCardVisible && day.arrival && user?.handle && <DayCard arrival={day.arrival} handle={user.handle} gameNew={day.gameNew}
+        {dayCardVisible && day.arrival && user?.handle && <DayCard arrival={day.arrival} gameNew={day.gameNew}
           onLetter={() => { closeDayCard(); void openTodayLetter(); }}
           onGame={() => { closeDayCard(); openAccount("manual", "general", "game"); }}
           onClose={closeDayCard} />}
