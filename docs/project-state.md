@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-14.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-15.
 
 > **⚠️ Since 2026-11-07 production is our own server, not Cloudflare/Supabase Cloud.** Release only with
 > `npm run deploy` (no downtime), migrations with `bash deploy/migrate.sh`, rollback with
@@ -14,6 +14,19 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Line of the day, Guess the author, the day card, a guest's way in (2026-11-15).**
+Selecting words of a bok offers Share with the world (random readers get the
+line in tomorrow's letter), Send a line (a link `/b/<bok>?line=<code>` that
+opens as a letter from the sender) and Save for myself. Each account opens one
+letter a day; the first bok of its day shows a day card (the week, the letter,
+Guess the author); You -> Settings: Received lines, Saved lines, Guess the
+author, My days. Studio -> Guess the author plans the next seven days. Guests:
+a welcome on the first bok, a reminder every two boks, an account after 10
+(was 15). Migrations `20261117100000`-`120000` applied, release
+`20261115-154243-86b7cb6`. Starting lines: 16 classics shared by the service
+account `@lukomorye` (no email, cannot sign in), dated a day back so the first
+letters carry them. See `docs/handover/2026-11-15-line-of-the-day-and-guess-the-author.md`.
 
 **Terms and Privacy, one layout (2026-11-14).**
 `/terms` and `/privacy` share `components/boks/legal/legal-layout.tsx`: way
