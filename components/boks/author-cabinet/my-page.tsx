@@ -19,6 +19,7 @@ import {
   sendMyMessage,
 } from "@/components/boks/author-spaces/data";
 import { WorkPreview, previewWords } from "@/components/boks/author-spaces/space-preview";
+import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { currentBoksTermsVersion } from "@/components/boks/user-auth-panel";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -59,6 +60,9 @@ const words = defineMessages(
     open: "Open to readers",
     photoAndName: "Photo and name",
     previewPage: "Preview the page",
+    orderPreview: "Your page, as readers see it",
+    orderPreviewChanged: "Your page in the new order · not saved yet",
+    orderReset: "Put it back",
     works: "Works",
     order: "Order on the page",
     toPublish: "To publication",
@@ -163,6 +167,9 @@ const words = defineMessages(
       open: "Открыта читателям",
       photoAndName: "Фото и имя",
       previewPage: "Предпросмотр страницы",
+      orderPreview: "Ваша страница, как её видят читатели",
+      orderPreviewChanged: "Страница в новом порядке · ещё не сохранено",
+      orderReset: "Вернуть как было",
       works: "Произведения",
       order: "Порядок на странице",
       toPublish: "К публикации",
@@ -275,6 +282,11 @@ function lineStatus(item: PageItem): WorkStatus {
 
 function chipTone(status: WorkStatus) {
   return status === "changes_requested" ? "warn" : status;
+}
+
+/** Whether readers get this work as a Series: its own recording, or a registered production. */
+function isSeries(item: PageItem) {
+  return item.format === "series" || Boolean(item.work?.seriesPiece) || Boolean(item.bokId && seriesPieceFor(item.bokId) && !item.seriesHeld);
 }
 
 /** A cover for a line: its Series' first picture, or the bok's artwork. */
@@ -480,7 +492,7 @@ export function MyPage({
   }
 
   if (view === "my-page-order") {
-    return <OrderView w={w} data={data} header={header(w.orderTitle, "my-page")} onSaved={async () => { await load(); toast(w.orderSaved); go("my-page"); }} />;
+    return <OrderView w={w} data={data} preview={preview} header={header(w.orderTitle, "my-page")} onSaved={async () => { await load(); toast(w.orderSaved); go("my-page"); }} />;
   }
 
   if (view === "my-page-publish") {
@@ -720,7 +732,12 @@ function AskSheet({ w, item, note, setNote, busy, onSend, onClose }: { w: Words;
 
 // ------------------------------------------------------------------ order
 
-function OrderView({ w, data, header, onSaved }: { w: Words; data: MyAuthorSpace; header: React.ReactNode; onSaved: () => Promise<void> }) {
+/**
+ * The page's order, with the page itself beside it: the list moves by drag or
+ * by arrows, and the phone on the right is the reader's page (`AuthorPortraitPage`,
+ * the same component) laid out in the order on the left, before it is saved.
+ */
+function OrderView({ w, data, preview, header, onSaved }: { w: Words; data: MyAuthorSpace; preview: SpacePreview | null; header: React.ReactNode; onSaved: () => Promise<void> }) {
   const language = useUiLanguage();
   // A hidden work is not on the page readers see, so it has no place to order.
   const initial = useMemo(() => data.items.filter((item) => !item.hidden).map((item) => item.key), [data.items]);
@@ -728,7 +745,23 @@ function OrderView({ w, data, header, onSaved }: { w: Words; data: MyAuthorSpace
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const dragging = useRef<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
   const byKey = new Map(data.items.map((item) => [item.key, item]));
+  const changed = orderChanged(initial, keys);
+  // The reader's page in a phone-sized frame (`/author/preview`, laid out for a
+  // phone because the frame is one), told the order on every move.
+  const frame = useRef<HTMLIFrameElement>(null);
+  const [frameReady, setFrameReady] = useState(false);
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin === window.location.origin && (event.data as { type?: string } | null)?.type === "boks-preview-ready") setFrameReady(true);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+  useEffect(() => {
+    if (frameReady) frame.current?.contentWindow?.postMessage({ type: "boks-preview-order", keys }, window.location.origin);
+  }, [frameReady, keys]);
 
   async function save() {
     setBusy(true);
@@ -744,8 +777,10 @@ function OrderView({ w, data, header, onSaved }: { w: Words; data: MyAuthorSpace
   }
 
   return (
-    <main className="page detail-page amp">
+    <main className="page detail-page amp amp-order-page">
       {header}
+      <div className="amp-order-layout">
+      <div>
       <h1 className="serif amp-h1">{w.orderTitle}</h1>
       <p className="desk-note">{w.orderHint}{data.items.some((item) => !item.published) ? ` ${w.orderDraftHint}` : ""}</p>
       <ol className="amp-order">
@@ -756,21 +791,25 @@ function OrderView({ w, data, header, onSaved }: { w: Words; data: MyAuthorSpace
           return (
             <li
               key={key}
-              className="amp-order__row"
+              className={`amp-order__row${over === index ? " is-over" : ""}`}
               draggable
               onDragStart={(event) => { dragging.current = index; event.dataTransfer.effectAllowed = "move"; }}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => { event.preventDefault(); setOver(index); }}
+              onDragLeave={() => setOver((current) => (current === index ? null : current))}
+              onDragEnd={() => setOver(null)}
               onDrop={(event) => {
                 event.preventDefault();
                 if (dragging.current !== null) setKeys(moveTo(keys, dragging.current, index));
                 dragging.current = null;
+                setOver(null);
               }}
             >
+              <span className="amp-order__num" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
               <span className="amp-order__handle" aria-hidden="true" title={w.drag}>⋮⋮</span>
               <Thumb id={item.bokId ?? item.key} title={item.title} image={coverOf(item)} />
               <span className="amp-row__title">
                 <strong>{item.title}</strong>
-                <small><em>{w.format[item.format]}{item.work?.seriesPiece && " + Series"}</em> · {w.status[status]}</small>
+                <small><em>{isSeries(item) ? w.format.series : w.format[item.format]}</em> · {w.status[status]}</small>
               </span>
               <span className="amp-order__buttons">
                 <button type="button" className="icon-btn" aria-label={`${w.up}: ${item.title}`} disabled={index === 0} onClick={() => setKeys(moveBy(keys, index, -1))}>↑</button>
@@ -781,7 +820,18 @@ function OrderView({ w, data, header, onSaved }: { w: Words; data: MyAuthorSpace
         })}
       </ol>
       {problem && <p className="notice" role="alert">{problem}</p>}
-      <button type="button" className="btn amp-save" disabled={busy || !orderChanged(initial, keys)} onClick={() => void save()}>{w.saveOrder}</button>
+      <div className="amp-order-actions">
+        <button type="button" className="btn amp-save" disabled={busy || !changed} onClick={() => void save()}>{w.saveOrder}</button>
+        {changed && <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setKeys(initial)}>{w.orderReset}</button>}
+      </div>
+      </div>
+      {preview && <aside className="amp-order-preview" aria-label={w.orderPreview}>
+        <p className="amp-order-preview__label">{changed ? w.orderPreviewChanged : w.orderPreview}</p>
+        <div className="amp-order-phone">
+          <iframe ref={frame} src="/author/preview" title={w.orderPreview} />
+        </div>
+      </aside>}
+      </div>
     </main>
   );
 }

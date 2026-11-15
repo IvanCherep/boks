@@ -43,6 +43,9 @@ written to `recommendation_events` or the served feed.
 
 ## Making one
 
+Studio's Series recorder (beta, `docs/series-recorder.md`) does all of this
+for a poem the author reads through its teleprompter. By hand:
+
 Produce the poem as `docs/reading-formats.md` §4 describes (voice, loudness,
 theme, theme gain, scene map, manifest), with every input in a scratch folder
 outside the repository. Then:

@@ -1,9 +1,18 @@
 "use client";
 
+import { SeriesRecorder } from "@/components/boks/admin/series-recorder/series-recorder";
+import { SeriesEntry } from "./series-entry";
+import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
+import { linkOnlyCover } from "@/lib/boks/link-only";
+import { AuthorLanding } from "@/components/boks/author-landing/author-landing";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthorBokSubmission, AuthorProfile, BoksUserContext } from "@/components/boks/client-types";
 import {
   deleteMyBok,
+  loadMyAuthorAccess,
+  loadMySeriesAccess,
+  type SeriesAccess,
+  type AuthorAccess,
   loadBoksAuthor,
   loadBoksUserContext,
   loadMyDefaultAuthorName,
@@ -20,7 +29,7 @@ import { cabinetMessages, type CabinetWords } from "./messages";
 import { Library, StatsView, statusClass, statusLabel } from "./library";
 import { usePublishing, type PublishingView } from "./publishing";
 import { useProfileEditor, type ProfileView } from "./profile-editor";
-import { Icon, Sheet, SheetAction, Thumb, Topbar, useLatest, useToast } from "./ui";
+import { Icon, Sheet, SheetAction, Thumb, useLatest, useToast } from "./ui";
 import { MyPage, myPageViews, type MyPageView } from "./my-page";
 import { InviteScreen, InviteSignIn } from "./invite";
 import { loadMyAuthorSpace, loadMyInvites, type InviteOffer, type MyAuthorSpace } from "@/components/boks/author-spaces/data";
@@ -36,7 +45,7 @@ import { signOutBoksUser } from "@/lib/boks/supabase-client";
  * library after a reload.
  */
 
-type View = "library" | `stats/${string}` | PublishingView | ProfileView | MyPageView | "invite";
+type View = "library" | `stats/${string}` | PublishingView | ProfileView | MyPageView | "invite" | "series";
 
 const publishingViews = new Set<string>(["write", "preview", "review", "upload", "queue", "split", "sending", "result"]);
 const profileViews = new Set<string>(["profile-edit", "profile-photo", "profile-preview"]);
@@ -46,6 +55,7 @@ function viewFromHash(): View {
   if (hash.startsWith("stats/") && hash.length > 6) return hash as View;
   if (publishingViews.has(hash) || profileViews.has(hash) || myPageViews.has(hash)) return hash as View;
   if (hash === "invite" || hash.startsWith("invite=")) return "invite";
+  if (hash === "series") return "series";
   return "library";
 }
 
@@ -87,6 +97,14 @@ export function AuthorCabinet() {
   /** Pages the team prepared for this account's email: offered here, no link needed. */
   const [offers, setOffers] = useState<InviteOffer[]>([]);
   const [offer, setOffer] = useState<InviteOffer | null>(null);
+  /**
+   * Whether this account has a cabinet yet (`get_my_author_access`): null
+   * while asking, and when the question failed - the cabinet is then shown,
+   * as it was before the page for authors existed.
+   */
+  const [access, setAccess] = useState<{ loaded: boolean; value: AuthorAccess | null }>({ loaded: false, value: null });
+  /** Boks Series the team has granted this account (`docs/series-recorder.md`); null when none or unknown. */
+  const [series, setSeries] = useState<SeriesAccess | null>(null);
   const libraryScroll = useRef(0);
 
   const author = user && !user.isAnonymous ? user : null;
@@ -221,7 +239,13 @@ export function AuthorCabinet() {
     if (!user || user.isAnonymous) return;
     let active = true;
     loadMyAuthorSpace().then((answer) => active && setMyPage(answer)).catch(() => undefined);
-    void loadMyInvites().then((answer) => active && setOffers(answer));
+    // Access and invitations together: an account the team has invited never sees the page for authors.
+    void Promise.all([loadMyAuthorAccess().catch(() => null), loadMyInvites().catch(() => [] as InviteOffer[]), loadMySeriesAccess()]).then(([value, invites, seriesAccess]) => {
+      if (!active) return;
+      setSeries(seriesAccess);
+      setOffers(invites);
+      setAccess({ loaded: true, value });
+    });
     return () => {
       active = false;
     };
@@ -455,19 +479,11 @@ export function AuthorCabinet() {
   }
 
   if (!author) {
+    // A guest sees what boks offers an author; signing in comes with the application.
+    // The page stands outside the cabinet's own styles (`.acab`), which restyle every button.
     return (
-      <div className="acab">
-        {inviteToken ? <InviteSignIn onSignIn={() => setAuthOpen(true)} /> : <main className="page detail-page">
-          <Topbar title={w.workspace} backLabel={w.back} languageLabel={w.languageSwitch} onBack={() => (window.location.href = "/")} />
-          <section className="empty">
-            <div className="empty-letter">b.</div>
-            <h1>{w.signInTitle}</h1>
-            <p>{w.signInBody}</p>
-            <button type="button" className="btn" style={{ marginTop: 24 }} onClick={() => setAuthOpen(true)}>
-              {w.emailAction} <Icon name="arrow" />
-            </button>
-          </section>
-        </main>}
+      <div className={inviteToken ? "acab" : undefined}>
+        {inviteToken ? <InviteSignIn onSignIn={() => setAuthOpen(true)} /> : <AuthorLanding access={null} signedIn={false} onSignIn={() => setAuthOpen(true)} />}
         <UserAuthPanel
           open={authOpen}
           surface="author"
@@ -485,7 +501,38 @@ export function AuthorCabinet() {
     );
   }
 
+  // No cabinet yet: nothing published, no author page, no invitation, not Studio (`docs/author-applications.md`).
+  if (!access.loaded && !inviteToken) {
+    return (
+      <div className="acab">
+        <main className="page detail-page">
+          <p className="desk-note">{w.loading}</p>
+        </main>
+      </div>
+    );
+  }
+  const withoutCabinet = access.value && !access.value.admin && access.value.published === 0 && !access.value.hasPage
+    && offers.length === 0 && !inviteToken && !myPage?.space && !series?.allowed;
+  if (withoutCabinet) return <AuthorLanding access={access.value} signedIn onSignIn={() => setAuthOpen(true)} />;
+
+  // The recorder, on its own page: Studio's paper and ink, outside the cabinet's own styles.
+  if (shown === "series" && series?.allowed) {
+    return (
+      <div className="series-host">
+        <div className="series-host__bar">
+          <button type="button" onClick={() => go("library")}><Icon name="back" /> {w.seriesBack}</button>
+          <h1>boks</h1>
+        </div>
+        <SeriesRecorder mode="author" />
+      </div>
+    );
+  }
+
   const savedIdentity = profile.saved ? profile.identity(false) : null;
+  // A bok's cover as the page shows it: its own Series' first picture (a link-only
+  // piece known from My page), else the catalogue's artwork (`getBokArtwork`).
+  const pieces = new Map((myPage?.items ?? []).filter((item) => item.bokId && item.work?.seriesPiece).map((item) => [item.bokId!, item.work!.seriesPiece!]));
+  const bokCover = (bokId: string) => (pieces.has(bokId) ? linkOnlyCover(pieces.get(bokId)!) : getBokArtwork({ id: bokId }));
   const libraryIdentity = {
     handle: author.handle || "",
     initials: savedIdentity?.initials || Array.from(authorInitials("", author.handle)).slice(0, 1).join("") || "b",
@@ -498,6 +545,7 @@ export function AuthorCabinet() {
     const item = selected?.id === id ? selected : null;
     content = (
       <StatsView
+        coverOf={bokCover}
         key={id}
         bokId={id}
         item={item}
@@ -597,8 +645,10 @@ export function AuthorCabinet() {
             profileBack.current = "library";
             go("profile-edit");
           }}
-          pageEntry={offers.length > 0 || (myPage && (myPage.space || myPage.items.length > 1)) ? (
+          coverOf={bokCover}
+          pageEntry={offers.length > 0 || series?.allowed || (myPage && (myPage.space || myPage.items.length > 1)) ? (
             <>
+            {series?.allowed && <SeriesEntry access={series} onOpen={() => go("series")} />}
             {offers.map((item) => (
               <button key={item.inviteId} type="button" className="draft-strip amp-strip amp-strip--attention" onClick={() => { setOffer(item); setView("invite"); }}>
                 <span className="draft-icon">

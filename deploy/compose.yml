@@ -145,9 +145,12 @@ services:
       BOKS_LINK_ONLY_BASE_URL: http://caddy:8082
       # Visitor country by address (lib/boks/geoip.ts); refreshed by ops/geoip.sh.
       BOKS_GEOIP_DB: /geoip/country.mmdb
+      # Series recorder drafts (takes, pictures, the build queue), shared with the series worker.
+      BOKS_SERIES_DIR: /series-drafts
     volumes:
       - ./slots/blue:/app:ro
       - ./geoip:/geoip:ro
+      - ./series-drafts:/series-drafts
     stop_grace_period: 30s
     # Logs go to the host's journal, not to a file inside the container: a
     # release recreates both copies, and Docker's own log file goes with the
@@ -170,6 +173,7 @@ services:
     volumes:
       - ./slots/green:/app:ro
       - ./geoip:/geoip:ro
+      - ./series-drafts:/series-drafts
 
   # GoTrue's send-email hook: Resend from hello@tryboks.com, fallback hello@tryboks.ru.
   mailer:
@@ -249,6 +253,31 @@ services:
       - ./flags:/flags:ro
     mem_limit: 1g
     cpus: 1
+
+  # The Series recorder's worker (docs/series-recorder.md): builds the drafts
+  # Studio and authors queue, one at a time, and draws their pictures. Half a
+  # core and 512 MB, so a build never takes the site's share; most of a build
+  # is waiting for ElevenLabs. worker.mjs is copied by every release.
+  series:
+    build: ./series
+    image: boks-series
+    restart: unless-stopped
+    environment:
+      BOKS_SERIES_DIR: /series-drafts
+      BOKS_LINK_ONLY_DIR: /link-only
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      YANDEX_API_KEY: ${YANDEX_API_KEY:-}
+      YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
+    volumes:
+      - ./series/worker.mjs:/series/worker.mjs:ro
+      - ./series-drafts:/series-drafts
+      - ./link-only:/link-only
+    cpus: 0.5
+    mem_limit: 512m
+    logging:
+      driver: journald
+      options:
+        tag: boks-series
 
 volumes:
   dbdata:

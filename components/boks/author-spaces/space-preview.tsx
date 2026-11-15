@@ -89,7 +89,31 @@ export function SpacePreviewPage() {
       .catch((error) => setStatus(readableBoksError(error, t.unavailable)));
   }, [t.unavailable]);
 
-  const built = useMemo(() => (preview ? previewAuthor(preview) : null), [preview]);
+  // An order not saved yet, sent by the cabinet that frames this page (`my-page.tsx`, OrderView).
+  const [order, setOrder] = useState<string[] | null>(null);
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const message = event.data as { type?: string; keys?: unknown } | null;
+      if (message?.type === "boks-preview-order" && Array.isArray(message.keys)) {
+        setOrder(message.keys.filter((key): key is string => typeof key === "string"));
+        // Ordering is about the list: bring it into view, below the page's curtain.
+        window.requestAnimationFrame(() => document.getElementById("ap-library")?.scrollIntoView({ block: "start" }));
+      }
+    };
+    window.addEventListener("message", onMessage);
+    // Tell the frame's parent the page is here to be ordered.
+    if (window.parent !== window) window.parent.postMessage({ type: "boks-preview-ready" }, window.location.origin);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  const built = useMemo(() => {
+    if (!preview) return null;
+    if (!order) return previewAuthor(preview);
+    const at = new Map(order.map((key, index) => [key, index]));
+    const items = preview.items.filter((item) => at.has(item.key)).sort((a, b) => at.get(a.key)! - at.get(b.key)!);
+    return previewAuthor({ ...preview, items });
+  }, [preview, order]);
 
   if (!preview || !built) {
     return (

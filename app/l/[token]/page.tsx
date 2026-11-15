@@ -47,13 +47,18 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   };
 }
 
-export default async function LinkOnlyRoute({ params }: { params: Promise<RouteParams> }) {
+/**
+ * `?curtain=1` opens the piece behind the series curtain and plays it at once,
+ * as an author's page does: the Series recorder's preview in Studio.
+ */
+export default async function LinkOnlyRoute({ params, searchParams }: { params: Promise<RouteParams>; searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const { token } = await params;
+  const curtain = (await searchParams)?.curtain === "1";
   return (
     <BoksErrorBoundary v44>
       {/* A malformed token goes through as well: its files answer 404 and
           the page says there is nothing here. */}
-      <LinkOnlyPoem token={encodeURIComponent(token)} />
+      <LinkOnlyPoem token={encodeURIComponent(token)} curtain={curtain} />
     </BoksErrorBoundary>
   );
 }

@@ -207,3 +207,56 @@ export function stanzaFitProblems(manifest: PoemManifest, frames = fitFrames): s
 function pct(share: number) {
   return `${Math.round(share * 100)}%`;
 }
+
+/**
+ * Raise the zones whose stanza would run under the player, just enough.
+ *
+ * For each zone it takes the tallest the stanza gets on any phone in
+ * `fitFrames` and moves the zone's top up until that stanza ends above the
+ * controls; zones that fit stay put. It refuses - and says which picture -
+ * when a stanza cannot fit at all, or when raising a zone would put it over
+ * another zone of the same picture. Changes `manifest` in place.
+ */
+export function raiseStanzaZones(manifest: PoemManifest): { moves: string[]; refusals: string[] } {
+  const floor = 1 - controlsBand;
+  // A little under the line, so a rounding in the browser never lands on it.
+  const margin = 0.005;
+  // The tallest each zone gets, over every phone, as a share of that phone's height.
+  const tallest = new Map<SafeZone, number>();
+  for (const frame of fitFrames) {
+    for (const fit of layoutStanzas(manifest, frame)) {
+      tallest.set(fit.zone, Math.max(tallest.get(fit.zone) ?? 0, fit.bottom - fit.top));
+    }
+  }
+
+  const moves: string[] = [];
+  const refusals: string[] = [];
+  manifest.scenes.forEach((scene, index) => {
+    for (const zone of scene.safeZones) {
+      const height = tallest.get(zone);
+      if (height === undefined || zone.y + height <= floor) continue;
+      const y = Math.floor((floor - margin - height) * 1000) / 1000;
+      if (y < stanzaTopMargin) {
+        refusals.push(`picture ${index + 1} (${scene.id}): ${Math.round(height * 100)}% of the screen tall, more than fits above the player; give it fewer lines`);
+        continue;
+      }
+      const others = scene.safeZones.filter((other) => other !== zone);
+      const clash = others.find((other) => {
+        const across = zone.x < other.x + other.width && other.x < zone.x + zone.width;
+        const otherBottom = other.y + (tallest.get(other) ?? other.height);
+        return across && y < otherBottom && other.y < y + height;
+      });
+      if (clash) {
+        refusals.push(`picture ${index + 1} (${scene.id}): raised to ${fitPct(y)} it would sit on its "${clash.role ?? "first"}" zone; lay this picture's zones out by hand`);
+        continue;
+      }
+      moves.push(`picture ${index + 1} (${scene.id}): zone y ${fitPct(zone.y)} -> ${fitPct(y)} (stanza up to ${fitPct(height)} of the screen)`);
+      zone.y = y;
+    }
+  });
+  return { moves, refusals };
+}
+
+function fitPct(share: number) {
+  return `${(share * 100).toFixed(1)}%`;
+}

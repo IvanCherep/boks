@@ -5098,3 +5098,190 @@ begin
     'reader_days is reached only through its functions');
 end $$;
 rollback;
+
+-- Applications from the page for authors (20261117150000) and its feedback (20261117140000).
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f0000000-0000-4000-8000-000000000001', 'apply1@boks.test', false),
+  ('f0000000-0000-4000-8000-000000000002', 'apply2@boks.test', false),
+  ('f0000000-0000-4000-8000-000000000099', null, true);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f0000000-0000-4000-8000-000000000001', 'apply_one', 'reader', now(), 'v1'),
+  ('f0000000-0000-4000-8000-000000000002', 'apply_two', 'reader', now(), 'v1');
+do $$
+declare
+  v_access jsonb;
+  v_error text;
+begin
+  perform public.boks_test_login('f0000000-0000-4000-8000-000000000099', true);
+  begin
+    perform public.submit_author_application('page', 'Гость', 'https://t.me/x', null, '@x', null);
+    raise exception 'a guest applied';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'A permanent user account is required.', 'an application needs an account');
+
+  perform public.boks_test_login('f0000000-0000-4000-8000-000000000001');
+  v_access := public.get_my_author_access();
+  perform public.boks_assert((v_access ->> 'published')::integer = 0 and not (v_access ->> 'admin')::boolean and v_access -> 'application' = 'null'::jsonb,
+    'a reader with nothing published has no cabinet yet');
+  begin
+    perform public.submit_author_application('page', 'Анна', 'x', null, '@anna', null);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Add at least one link: where your readers are.', 'an application needs a link');
+  perform public.submit_author_application('launch', 'Анна', 'https://t.me/anna', '600', '@anna', 'Стихи');
+  perform public.boks_assert(public.get_my_author_access() -> 'application' ->> 'offer' = 'launch', 'the page knows the application was sent');
+  perform public.submit_author_application('nonsense', 'Анна', 'https://t.me/anna', null, '@anna', null);
+  perform public.submit_author_application('page', 'Анна', 'https://t.me/anna', null, '@anna', null);
+  begin
+    perform public.submit_author_application('page', 'Анна', 'https://t.me/anna', null, '@anna', null);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'Three applications a day%', 'three applications a day at most');
+  perform public.boks_assert((select offer from public.author_applications where user_id = 'f0000000-0000-4000-8000-000000000001' order by id limit 1 offset 1) = 'unsure',
+    'an unknown offer is kept as not sure');
+  begin
+    perform public.list_author_applications(10);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Admin access is required.', 'only Studio reads the applications');
+
+  perform public.boks_test_login('f0000000-0000-4000-8000-000000000002');
+  perform public.boks_assert(public.get_my_author_access() -> 'application' = 'null'::jsonb, 'nobody sees another account''s application');
+  perform public.boks_assert(not has_table_privilege('authenticated', 'public.author_applications', 'SELECT') and not has_table_privilege('anon', 'public.author_applications', 'SELECT'),
+    'author_applications is reached only through its functions');
+
+  perform public.submit_boks_feedback('Непонятно про тарифы', 'author_landing', null, null);
+  perform public.submit_boks_feedback('Суфлёр быстрый', 'series_record', null, null);
+  perform public.boks_assert((select array_agg(surface order by id) from public.boks_feedback where user_id = 'f0000000-0000-4000-8000-000000000002') = array['author_landing', 'series_record'],
+    'a note says which page or step it came from');
+end $$;
+rollback;
+
+-- Boks Series granted to authors (20261117160000).
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f1000000-0000-4000-8000-000000000001', 'series1@boks.test', false),
+  ('f1000000-0000-4000-8000-000000000002', 'series2@boks.test', false),
+  ('f1000000-0000-4000-8000-000000000003', 'series-admin@boks.test', false),
+  ('f1000000-0000-4000-8000-000000000099', null, true);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f1000000-0000-4000-8000-000000000001', 'series_one', 'reader', now(), 'v1'),
+  ('f1000000-0000-4000-8000-000000000002', 'series_two', 'reader', now(), 'v1'),
+  ('f1000000-0000-4000-8000-000000000003', 'series_admin', 'admin', now(), 'v1');
+do $$
+declare
+  v_error text;
+begin
+  perform public.boks_test_login('f1000000-0000-4000-8000-000000000099', true);
+  begin
+    perform public.get_my_series_access();
+    raise exception 'a guest got access';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'A permanent user account is required.', 'a guest has no recorder');
+
+  perform public.boks_test_login('f1000000-0000-4000-8000-000000000001');
+  perform public.boks_assert(not (public.get_my_series_access() ->> 'allowed')::boolean, 'no grant, no recorder');
+  begin
+    perform public.spend_series_credit();
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'No Boks Series left%', 'nothing to spend without a grant');
+  begin
+    perform public.set_series_credits('series_one', 100);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Admin access is required.', 'an author cannot grant themselves Series');
+
+  perform public.boks_test_login('f1000000-0000-4000-8000-000000000003');
+  perform public.set_series_credits('@series_one', 2);
+  perform public.boks_assert(exists (select 1 from jsonb_array_elements(public.list_series_credits()) x where x ->> 'handle' = 'series_one' and (x ->> 'granted')::integer = 2),
+    'Studio lists the grant');
+  perform public.boks_assert((public.get_my_series_access() ->> 'allowed')::boolean and (public.spend_series_credit() ->> 'left') is null,
+    'Studio needs no grant and spends nothing');
+
+  perform public.boks_test_login('f1000000-0000-4000-8000-000000000001');
+  perform public.boks_assert((public.get_my_series_access() ->> 'left')::integer = 2, 'the author sees two left');
+  perform public.spend_series_credit();
+  perform public.spend_series_credit();
+  begin
+    perform public.spend_series_credit();
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'No Boks Series left%' and (public.get_my_series_access() ->> 'used')::integer = 2,
+    'the last one cannot be spent twice');
+
+  perform public.boks_test_login('f1000000-0000-4000-8000-000000000002');
+  perform public.boks_assert((public.get_my_series_access() ->> 'granted')::integer = 0, 'another author''s grant is theirs alone');
+
+  perform public.boks_test_login('f1000000-0000-4000-8000-000000000003');
+  begin
+    perform public.set_series_credits('series_one', 1);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'They have already made more than that.', 'a grant never drops below what was made');
+  perform public.boks_assert(not has_table_privilege('authenticated', 'public.series_credits', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.series_credits', 'UPDATE'),
+    'series_credits is reached only through its functions');
+end $$;
+rollback;
+
+-- A recorded Series straight onto the author's page (20261117170000), and the page preview for every author (20261117180000).
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f2000000-0000-4000-8000-000000000001', 'rec1@boks.test', false),
+  ('f2000000-0000-4000-8000-000000000002', 'rec2@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f2000000-0000-4000-8000-000000000001', 'rec_one', 'reader', now(), 'v1'),
+  ('f2000000-0000-4000-8000-000000000002', 'rec_two', 'reader', now(), 'v1');
+insert into public.reels (id, title, author_name, text, status, author_user_id, submitted_at, reviewed_at)
+values ('f2000000-0000-4000-8000-0000000000b2', 'Чужое', 'Второй', 'строка один строка два', 'published', 'f2000000-0000-4000-8000-000000000002', now(), now());
+do $$
+declare
+  v_error text;
+  v_result jsonb;
+  v_preview jsonb;
+begin
+  perform public.boks_test_login('f2000000-0000-4000-8000-000000000001');
+  begin
+    perform public.publish_my_recorded_series(null, 'Т', 'строка', 'AAAAAAAAAAAAAAAAAAAAAA');
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Boks Series are not open to this account.', 'no grant, nothing published');
+
+  insert into public.series_credits (user_id, granted, used) values ('f2000000-0000-4000-8000-000000000001', 3, 1);
+  begin
+    perform public.publish_my_recorded_series(null, 'Т', 'строка', 'not a token');
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'This Series has no recording to publish.', 'a token must be a link-only folder');
+
+  v_result := public.publish_my_recorded_series(null, 'Записанная', 'первая строка' || chr(10) || 'вторая строка', 'AAAAAAAAAAAAAAAAAAAAAA');
+  perform public.boks_assert((select status from public.reels where id = (v_result ->> 'bokId')::uuid) = 'published', 'published at once, no review');
+  perform public.boks_assert(exists (select 1 from public.author_spaces s where s.owner_user_id = 'f2000000-0000-4000-8000-000000000001' and s.status = 'published'),
+    'an author without a page gets one');
+  perform public.boks_assert((public.boks_space_bok_format((select id from public.author_spaces where owner_user_id = 'f2000000-0000-4000-8000-000000000001'), (v_result ->> 'bokId')::uuid) ->> 'seriesPiece') = 'AAAAAAAAAAAAAAAAAAAAAA',
+    'the page plays its recording');
+  begin
+    perform public.publish_my_recorded_series(null, 'Ещё', 'строка', 'BBBBBBBBBBBBBBBBBBBBBB');
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Every Series you made is already on your page.', 'no more on the page than were made');
+  perform public.publish_my_recorded_series((v_result ->> 'bokId')::uuid, 'Записанная', 'первая строка', 'CCCCCCCCCCCCCCCCCCCCCC');
+  perform public.boks_assert((select series_piece from public.author_space_works where bok_id = (v_result ->> 'bokId')::uuid) = 'CCCCCCCCCCCCCCCCCCCCCC',
+    'a kept rebuild replaces it in place');
+  begin
+    perform public.publish_my_recorded_series('f2000000-0000-4000-8000-0000000000b2', 'Подмена', 'строка', 'DDDDDDDDDDDDDDDDDDDDDD');
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'This Series is not one of yours.' and (select title from public.reels where id = 'f2000000-0000-4000-8000-0000000000b2') = 'Чужое',
+    'another author''s bok cannot be overwritten');
+
+  perform public.boks_test_login('f2000000-0000-4000-8000-000000000002');
+  v_preview := public.get_author_space_preview(null);
+  perform public.boks_assert(v_preview ->> 'access' = 'owner' and jsonb_array_length(v_preview -> 'items') = 1 and v_preview -> 'items' -> 0 ->> 'key' = 'b:f2000000-0000-4000-8000-0000000000b2',
+    'an author with no page is previewed from their published boks');
+end $$;
+rollback;

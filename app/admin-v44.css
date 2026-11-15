@@ -529,3 +529,59 @@
 .studio-jobs__row { display:grid; grid-template-columns:minmax(110px,1.4fr) 1fr 1fr 1fr 0.8fr; gap:8px; padding:7px 0; border-bottom:1px solid var(--studio-line); }
 .studio-jobs__row--head { color:var(--studio-muted); font-weight:600; }
 .studio-jobs__titles { grid-column:1 / -1; color:var(--studio-muted); overflow-wrap:anywhere; }
+
+/* Studio → Authors: applications from the page for authors. */
+.author-applications { margin: 0 0 36px; padding-bottom: 28px; border-bottom: 1px solid var(--studio-line); }
+.author-applications > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.author-applications h2 { margin: 0; font: 400 30px/1.1 var(--font-serif, Georgia), serif; }
+.author-applications h2 em { margin-left: 8px; padding: 3px 10px; border-radius: 999px; background: #c44a32; color: #fff; font: 500 12px/1.4 var(--font-sans, system-ui), sans-serif; font-style: normal; vertical-align: 6px; }
+.author-applications > header p { margin: 6px 0 0; font-size: 14px; color: var(--studio-muted); }
+.author-applications__error { color: var(--destructive, #c44a32); font-size: 14px; }
+.author-applications__muted { color: var(--studio-muted); font-size: 14px; }
+.author-applications ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.author-applications li { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) auto; gap: 8px 24px; padding: 16px 18px; border: 1px solid var(--studio-line); border-radius: 4px 14px 4px 4px; background: var(--studio-page); }
+.author-applications li.is-new { border-color: var(--studio-ink); }
+.author-applications li.is-closed { opacity: .6; }
+.author-applications__who { display: grid; gap: 4px; align-content: start; }
+.author-applications__who strong { font: 400 21px/1.15 var(--font-serif, Georgia), serif; }
+.author-applications__who small { font-size: 12px; color: var(--studio-muted); overflow-wrap: anywhere; }
+.author-applications__tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.author-applications__tags b, .author-applications__tags i { padding: 2px 8px; border-radius: 999px; font: 500 11px/1.5 var(--font-sans, system-ui), sans-serif; font-style: normal; }
+.author-applications__tags b { background: var(--studio-selected); color: var(--studio-selected-ink); }
+.author-applications__tags i { border: 1px solid var(--studio-line); }
+.author-applications dl { display: grid; gap: 6px; margin: 0; font-size: 14px; }
+.author-applications dl div { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 10px; }
+.author-applications dt { color: var(--studio-muted); }
+.author-applications dd { display: grid; gap: 2px; margin: 0; overflow-wrap: anywhere; }
+.author-applications__message { grid-column: 2; margin: 4px 0 0; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+.author-applications__actions { grid-column: 3; grid-row: 1; display: flex; gap: 6px; align-items: flex-start; }
+@media (max-width: 860px) {
+  .author-applications li { grid-template-columns: minmax(0, 1fr); }
+  .author-applications__message, .author-applications__actions { grid-column: 1; grid-row: auto; }
+}
+
+/* Studio → Authors: Boks Series granted to authors. */
+.series-credits { margin: 0 0 36px; padding-bottom: 28px; border-bottom: 1px solid var(--studio-line); }
+.series-credits > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.series-credits h2 { margin: 0; font: 400 30px/1.1 var(--font-serif, Georgia), serif; }
+.series-credits > header p { max-width: 720px; margin: 6px 0 0; font-size: 14px; line-height: 1.45; color: var(--studio-muted); }
+.series-credits__error { color: var(--destructive, #c44a32); font-size: 14px; }
+.series-credits__muted { color: var(--studio-muted); font-size: 13px; }
+.series-credits ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--studio-line); }
+.series-credits li { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1.2fr) auto 110px; align-items: center; gap: 16px; padding: 12px 8px; border-bottom: 1px solid var(--studio-line); }
+.series-credits li.is-holder { background: color-mix(in srgb, var(--studio-selected) 40%, transparent); }
+.series-credits__who { display: grid; gap: 2px; }
+.series-credits__who strong { font: 400 19px/1.2 var(--font-serif, Georgia), serif; }
+.series-credits__who small { font-size: 12px; color: var(--studio-muted); }
+.series-credits__status { font-size: 14px; }
+.series-credits__status em { margin-right: 6px; padding: 2px 8px; border-radius: 999px; background: var(--studio-selected-ink); color: #fff; font: 600 11px/1.5 var(--font-sans, system-ui), sans-serif; font-style: normal; }
+.series-credits__edit { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--studio-line); border-radius: 999px; background: var(--studio-page); }
+.series-credits__edit button { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
+.series-credits__edit button:disabled { opacity: .35; cursor: default; }
+.series-credits__edit svg { width: 14px; height: 14px; }
+.series-credits__edit b { min-width: 26px; text-align: center; font: 400 18px/1 var(--font-serif, Georgia), serif; }
+.series-credits__grant { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.series-credits__grant strong { font-size: 14px; }
+.series-credits__grant input { height: 34px; padding: 0 10px; border: 1px solid var(--studio-line); border-radius: 4px; background: var(--studio-page); color: inherit; }
+.series-credits__grant input[type=number] { width: 80px; }
+@media (max-width: 860px) { .series-credits li { grid-template-columns: minmax(0, 1fr) auto; } .series-credits__status { grid-column: 1 / -1; } }

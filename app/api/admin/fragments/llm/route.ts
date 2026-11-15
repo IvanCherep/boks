@@ -1,3 +1,4 @@
+import { adminJsonError as jsonError, refuseUnlessAdmin } from "@/lib/boks/admin-request";
 import { HttpRequestError, readBoundedJsonObject } from "@/lib/boks/http-security";
 import {
   isYandexModel,
@@ -25,9 +26,6 @@ export const dynamic = "force-dynamic";
  * never in the source or the build.
  */
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseApiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-
 /** A scene chunk with a slow model can take a minute; past this the browser retries. */
 const modelTimeoutMs = 110_000;
 
@@ -37,13 +35,8 @@ export async function POST(request: Request) {
   // Worker secrets reach process.env under nodejs_compat; on Node they are plain env vars.
   const { YANDEX_API_KEY: apiKey, YANDEX_FOLDER_ID: folderId } = (globalThis.process?.env ?? {}) as Record<string, string | undefined>;
   if (!apiKey || !folderId) return jsonError("The language model is not configured for this deployment.", 503);
-  if (!supabaseUrl || !supabaseApiKey) return jsonError("Supabase is not configured for this deployment.", 503);
-
-  const token = bearerToken(request.headers.get("authorization"));
-  if (!token) return jsonError("Sign in required.", 401);
-  const admin = await isAdmin(token, request.signal);
-  if (admin === null) return jsonError("Could not check the session.", 502);
-  if (!admin) return jsonError("Only admins may use the fragment cutter.", 403);
+  const refused = await refuseUnlessAdmin(request, "the fragment cutter");
+  if (refused) return refused;
 
   let body: Record<string, unknown>;
   try {
@@ -93,33 +86,4 @@ function readTask(value: unknown): LlmTask | null {
   const maxTokens = Number(task.maxTokens);
   if (!Number.isInteger(maxTokens) || maxTokens < 1 || maxTokens > taskLimits.maxTokens) return null;
   return { stage: task.stage as LlmTask["stage"], system: task.system, user: task.user, schema: task.schema, maxTokens };
-}
-
-/** Asks the database, as the caller, whether the caller is an admin. Null when it could not say. */
-async function isAdmin(token: string, signal: AbortSignal) {
-  try {
-    const restBase = globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${supabaseUrl}/rest/v1`;
-    const response = await fetch(`${restBase}/rpc/is_boks_admin`, {
-      method: "POST",
-      signal,
-      headers: { "Content-Type": "application/json", apikey: supabaseApiKey!, Authorization: `Bearer ${token}` },
-      body: "{}",
-    });
-    if (response.status === 401 || response.status === 403) return false;
-    if (!response.ok) return null;
-    return (await response.json()) === true;
-  } catch {
-    return null;
-  }
-}
-
-function bearerToken(header: string | null) {
-  if (!header) return null;
-  const match = /^Bearer ([^\s]+)$/i.exec(header.trim());
-  if (!match || match[1].length > 16_384) return null;
-  return match[1];
-}
-
-function jsonError(message: string, status: number) {
-  return Response.json({ error: message }, { status, headers: { "Cache-Control": "private, no-store" } });
 }

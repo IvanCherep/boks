@@ -24,7 +24,8 @@ not on Cloudflare Workers and Supabase Cloud.
   the proxy: Cloudflare is throttled in Russia. `tryboks.ru` in Selectel DNS.
 - Curtain loops for link previews: `deploy/ops/curtain.sh` every 15 minutes from `/etc/cron.d/boks-ops` runs the `curtain` job (`deploy/curtain`, image built on the server: `docker compose --profile jobs build curtain`), writing `link-only/curtain/<id>-<key>.mp4`, and the poster `<id>-<key>.jpg` (asked of the app at a calm moment, up to 30 a run), which `/b/<id>/image` serves before drawing one. `curtain.mjs` is copied by every release.
 - Ribbon cards for link previews (under test since 2026-11-11, `lib/boks/ribbon.ts`): right after the curtain job, `curtain.sh` runs the `ribbon` job (`deploy/ribbon`, its own `compose.ribbon.yml` added with `-f`, so compose.yml is untouched; the image is built by `curtain.sh` itself the first time and whenever `Dockerfile` or `package-lock.json` change). It draws each target's poster and 11.4 s loop with Skia (`@napi-rs/canvas`) and ffmpeg, no browser, about 20 s of one core a card, and writes `link-only/ribbon/<b|a>-<ref>-<key>.{jpg,mp4}`. Targets are `RIBBON_TARGETS` in `ribbon.mjs` (`b:<id>`, `a:<handle>`, `b:*` for every published bok); only `/b/<bok>/ribbon` and `/a/<handle>/ribbon` preview with them. The whole folder `deploy/ribbon/` is copied by every release. Log: `docker compose -f compose.yml -f ribbon/compose.ribbon.yml --profile jobs run --rm ribbon`.
-- Ops (cron in `/etc/cron.d/boks-ops`, scripts in `deploy/ops/`): alerts (including every new account, and the Resend daily quota: 60, 80 and 95 of 100 emails),
+- The Series recorder's worker: the `series` service (`deploy/series`), always on, half a core and 512 MB; drafts in `/opt/boks/series-drafts` (shared with the app copies), finished pieces into `link-only/`. Every release bundles the worker into `series/worker.mjs` and restarts it when it changed. Keys `ELEVENLABS_API_KEY`, `YANDEX_API_KEY`, `YANDEX_FOLDER_ID` in `.env` (`docs/series-recorder.md`).
+- Ops (cron in `/etc/cron.d/boks-ops`, scripts in `deploy/ops/`): alerts (including every new account, the Resend daily quota: 60, 80 and 95 of 100 emails, and through `ops/inbox.py` every feedback note, author application and work sent for review),
   daily and weekly reports and trend forecasts to the team Telegram group
   through the `boks-telegram` Worker (Telegram is blocked from the server), and
   an overload guard that shows new visitors a waiting page (`deploy/busy/`).
@@ -187,7 +188,9 @@ ssh boks-app 'journalctl -t boks-app --since "-24h" -o cat | grep -iE "error|fai
 
 Then open `https://tryboks.com/`, `/series` and `/admin` in a browser and check
 the console for errors. HTML responses carry CSP, HSTS, `nosniff`,
-`X-Frame-Options: DENY`, Referrer-Policy and Permissions-Policy.
+`X-Frame-Options: DENY`, Referrer-Policy and Permissions-Policy (the
+microphone allowed on `/admin` only, for the Series recorder; `/l/<token>` and
+`/author/preview` may be framed by boks itself).
 
 ## Rollback
 

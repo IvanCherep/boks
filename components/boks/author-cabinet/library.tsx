@@ -48,11 +48,13 @@ export function formatDate(value: string | null | undefined, language: UiLanguag
 function WorkRow({
   item,
   w,
+  coverOf,
   onOpen,
   onMenu,
 }: {
   item: AuthorBokSubmission;
   w: CabinetWords;
+  coverOf?: (bokId: string) => string | null;
   onOpen: (item: AuthorBokSubmission) => void;
   onMenu: (item: AuthorBokSubmission) => void;
 }) {
@@ -91,7 +93,7 @@ function WorkRow({
   return (
     <article className={`work-row status-${status}`}>
       <button type="button" className="thumb-link" aria-label={item.title} onClick={() => onOpen(item)}>
-        <Thumb id={item.id} title={item.title} />
+        <Thumb id={item.id} title={item.title} image={coverOf?.(item.id)} />
       </button>
       <button type="button" className="work-info" onClick={() => onOpen(item)}>
         <span className={`status ${status}`}>{statusLabel(item.status, w)}</span>
@@ -135,6 +137,7 @@ export function Library({
   onMenu,
   onCounts,
   pageEntry,
+  coverOf,
 }: {
   w: CabinetWords;
   identity: LibraryIdentity;
@@ -150,6 +153,8 @@ export function Library({
   onCounts?: (counts: AuthorBokSubmissionsPage["counts"]) => void;
   /** "My page": prepared works and the page's order (`my-page.tsx`). */
   pageEntry?: ReactNode;
+  /** A bok's cover as readers see it: its Series' first picture, or its artwork (`author-cabinet.tsx`). */
+  coverOf?: (bokId: string) => string | null;
 }) {
   const [page, setPage] = useState<AuthorBokSubmissionsPage | null>(null);
   const [filter, setFilter] = useState<AuthorBokStatusFilter>("all");
@@ -332,7 +337,7 @@ export function Library({
                   <div className="skeleton" />
                 </>
               ) : items.length ? (
-                items.map((item) => <WorkRow key={item.id} item={item} w={w} onOpen={onOpen} onMenu={onMenu} />)
+                items.map((item) => <WorkRow key={item.id} item={item} w={w} coverOf={coverOf} onOpen={onOpen} onMenu={onMenu} />)
               ) : loading ? (
                 <p className="desk-note">{w.loading}</p>
               ) : (
@@ -384,9 +389,11 @@ export function StatsView({
   onBack,
   onMenu,
   onInfo,
+  coverOf,
 }: {
   bokId: string;
   item: AuthorBokSubmission | null;
+  coverOf?: (bokId: string) => string | null;
   w: CabinetWords;
   language: UiLanguage;
   onBack: () => void;
@@ -415,7 +422,7 @@ export function StatsView({
     <main className="page detail-page stats-page">
       <Topbar title={w.bookStats} backLabel={w.back} languageLabel={w.languageSwitch} onBack={onBack} />
       <section className="detail-title">
-        <Thumb id={bokId} title={title || "b"} />
+        <Thumb id={bokId} title={title || "b"} image={coverOf?.(bokId)} />
         <div>
           <span className={`status ${statusClass(status)}`}>{statusLabel(status, w)}</span>
           <h1>{title}</h1>

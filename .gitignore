@@ -54,3 +54,4 @@ tsconfig.tsbuildinfo
 # source lists that say what to download are checked in; the downloads are not.
 /scripts/wikisource/
 /scripts/gutenberg/
+/.boks-local/

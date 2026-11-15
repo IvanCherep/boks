@@ -108,3 +108,7 @@ for threshold in 60 80 95; do
   fi
 done
 find "$STATE" -name 'mail_quota_*' -mtime +3 -delete 2>/dev/null || true
+
+# 9. What people send us, as it arrives: every feedback note, every application
+# from the page for authors, every work sent for review (ops/inbox.py).
+python3 ops/inbox.py || true

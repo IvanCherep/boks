@@ -1,7 +1,7 @@
 # Where boks Stands
 
 The standing summary: what is live, what is not, and what is known to be open,
-newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-15.
+newest first. A new session reads this after `CONTEXT.md`. Updated 2026-11-16.
 
 > **⚠️ Since 2026-11-07 production is our own server, not Cloudflare/Supabase Cloud.** Release only with
 > `npm run deploy` (no downtime), migrations with `bash deploy/migrate.sh`, rollback with
@@ -14,6 +14,22 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 ---
 
 ## Live, every study switched off
+
+**Series recorder, the page for authors, team notifications (2026-11-16).**
+Studio -> Series recorder: a poem read through a full-screen teleprompter (or
+an uploaded recording), pictures uploaded or drawn by Yandex in the house
+look, a Series built by the `series` worker (ElevenLabs alignment) into a
+link-only piece, one rebuild, a curtain preview, a word to the team on every
+step (`docs/series-recorder.md`). Authors the team grants Boks Series in
+Studio -> Authors get it in their cabinet (`/author#series`) and publish the
+result straight onto their page, no review; nobody is granted any at release.
+An account with nothing published sees, at `/author`, the page for authors:
+why boks, three offers, an application and a question (`docs/author-applications.md`);
+applications are in Studio -> Authors. My page's order view shows the
+reader's page beside the list, live, for every author. Feedback notes,
+applications and works sent for review go to the team's Telegram
+(`deploy/ops/inbox.py`). Migrations 20261117140000-180000. Open: whether the
+server in Moscow reaches ElevenLabs directly.
 
 **Line of the day, Guess the author, the day card, a guest's way in (2026-11-15).**
 Selecting words of a bok offers Share with the world (random readers get the

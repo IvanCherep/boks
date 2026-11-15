@@ -36,6 +36,23 @@ describe("security headers", () => {
     expect(local.headers.has("strict-transport-security")).toBe(false);
   });
 
+  it("lets Studio frame a link-only piece it just built, but not the piece's files", () => {
+    const piece = applySecurityHeaders(new Response(), new URL("https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA"));
+    expect(piece.headers.get("content-security-policy")).toContain("frame-ancestors 'self'");
+    expect(piece.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    const file = applySecurityHeaders(new Response(), new URL("https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json"));
+    expect(file.headers.get("x-frame-options")).toBe("DENY");
+  });
+
+  it("lets only Studio and the author cabinet ask for the microphone (the Series recorder)", () => {
+    for (const path of ["/admin", "/author"]) {
+      expect(applySecurityHeaders(new Response(), new URL(`https://tryboks.com${path}`)).headers.get("permissions-policy")).toContain("microphone=(self)");
+    }
+    for (const path of ["/", "/authors", "/administrator", "/@prokhorov", "/l/EKvnI0C1SU4VogDdU5_vwA"]) {
+      expect(applySecurityHeaders(new Response(), new URL(`https://tryboks.com${path}`)).headers.get("permissions-policy")).toContain("microphone=()");
+    }
+  });
+
   it("lets Studio frame the author-page preview, and nothing else", () => {
     // Studio shows `/author/preview` in a frame at desktop and phone width.
     // Only boks itself may frame it; every other page still refuses frames.

@@ -2520,7 +2520,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
    * bok opened from it, a page landed on from a link) replaces the address.
    */
   function closeAuthor(how: "back" | "replace") {
+    const closing = authorSheet?.handle ?? null;
     setAuthorSheet(null);
+    // Opened as the example from the page for authors: Back goes back there (`author-landing.tsx`).
+    if (how === "back" && takeReturnToAuthorLanding(closing)) { window.history.back(); return; }
     const state = window.history.state as { boksView?: string; landed?: boolean } | null;
     if (how === "back" && state?.boksView === "author" && !state.landed) { window.history.back(); return; }
     const base = isSeriesPath(window.location.pathname) || seriesOpen ? "/series" : "/";
@@ -3409,4 +3412,21 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       </section>
     </main>
   );
+}
+
+/**
+ * Set by the page for authors' "See an example" (`author-landing.tsx`): which
+ * author it opened, and when. Read once, by that author page's Back, within
+ * half an hour - never by a page opened later some other way.
+ */
+function takeReturnToAuthorLanding(handle: string | null) {
+  try {
+    const raw = window.sessionStorage.getItem("boks-return-to-author-landing");
+    window.sessionStorage.removeItem("boks-return-to-author-landing");
+    if (!raw || !handle) return false;
+    const mark = JSON.parse(raw) as { handle?: string; at?: number };
+    return mark.handle === bareHandle(handle) && Date.now() - (mark.at ?? 0) < 30 * 60 * 1000;
+  } catch {
+    return false;
+  }
 }

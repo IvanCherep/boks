@@ -316,7 +316,7 @@ async function decorateServedFeed(input: {
   };
 }
 
-async function currentAccessToken() {
+export async function currentAccessToken() {
   const cached = getCachedAccessToken();
   if (cached) return cached;
   if (!supabase) return null;
@@ -1858,4 +1858,94 @@ export async function deleteStudyFragmentBatch(batch: string) {
   const result = await supabase.rpc("delete_boks_study_fragment_batch", { p_batch: batch });
   if (result.error) throw result.error;
   return Number(result.data);
+}
+
+/** An application to become a boks author (`docs/author-applications.md`). */
+export type AuthorApplicationOffer = "page" | "series" | "launch" | "unsure";
+export type AuthorAccess = {
+  published: number;
+  admin: boolean;
+  hasPage: boolean;
+  application: { id: number; offer: AuthorApplicationOffer; status: "new" | "contacted" | "closed"; createdAt: string } | null;
+};
+
+/** Whether this account has a cabinet yet; without one, /author is the page for authors. */
+export async function loadMyAuthorAccess(): Promise<AuthorAccess> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("get_my_author_access");
+  if (result.error) throw result.error;
+  return result.data as AuthorAccess;
+}
+
+export async function submitAuthorApplication(input: {
+  offer: AuthorApplicationOffer;
+  name: string;
+  links: string;
+  audience: string;
+  contact: string;
+  message: string;
+}) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("submit_author_application", {
+    p_offer: input.offer,
+    p_name: input.name,
+    p_links: input.links,
+    p_audience: input.audience,
+    p_contact: input.contact,
+    p_message: input.message,
+  });
+  if (result.error) throw result.error;
+  return result.data as { ok: true; id: number };
+}
+
+export type AuthorApplicationRow = {
+  id: number;
+  offer: AuthorApplicationOffer;
+  name: string;
+  links: string;
+  audience: string | null;
+  contact: string;
+  message: string | null;
+  status: "new" | "contacted" | "closed";
+  createdAt: string;
+  handle: string | null;
+  email: string | null;
+};
+
+/** Studio → Authors: the applications, newest first. Admin-only on the server. */
+export async function listAuthorApplications(): Promise<AuthorApplicationRow[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("list_author_applications", { p_limit: 200 });
+  if (result.error) throw result.error;
+  return (result.data ?? []) as AuthorApplicationRow[];
+}
+
+export async function setAuthorApplicationStatus(id: number, status: AuthorApplicationRow["status"]) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("set_author_application_status", { p_id: id, p_status: status });
+  if (result.error) throw result.error;
+}
+
+/** The recorder for this account: Studio, or how many Boks Series the team has granted (`docs/series-recorder.md`). */
+export type SeriesAccess = { allowed: boolean; admin: boolean; granted: number; used: number; left: number };
+export async function loadMySeriesAccess(): Promise<SeriesAccess | null> {
+  if (!supabase) return null;
+  const result = await supabase.rpc("get_my_series_access");
+  if (result.error) return null;
+  return result.data as SeriesAccess;
+}
+
+export type SeriesCreditRow = { handle: string; userId: string; granted: number; used: number; published: number; updatedAt: string | null };
+/** Studio → Authors: authors and their Boks Series. Admin-only on the server. */
+export async function listSeriesCredits(): Promise<SeriesCreditRow[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("list_series_credits");
+  if (result.error) throw result.error;
+  return (result.data ?? []) as SeriesCreditRow[];
+}
+
+export async function setSeriesCredits(handle: string, granted: number) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("set_series_credits", { p_handle: handle, p_granted: granted });
+  if (result.error) throw result.error;
 }

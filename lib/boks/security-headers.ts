@@ -37,11 +37,21 @@ function supabaseConnectSources(supabaseUrl?: string) {
 
 /**
  * Pages Studio shows inside its own frame: the author-page preview at
- * desktop and phone width. Only boks itself may frame them; every other page
- * refuses any frame at all.
+ * desktop and phone width, and a link-only piece the Series recorder has
+ * just built (`/l/<token>`, at phone width). Only boks itself may frame them;
+ * every other page refuses any frame at all.
  */
 export function framedBySelf(pathname: string) {
-  return pathname === "/author/preview" || pathname.startsWith("/author/preview/");
+  return pathname === "/author/preview" || pathname.startsWith("/author/preview/") || /^\/l\/[^/]+$/.test(pathname);
+}
+
+/**
+ * Studio and the author cabinet record a reading (the Series recorder, for
+ * authors the team has granted Boks Series); no other page may ask for the
+ * microphone.
+ */
+export function mayUseMicrophone(pathname: string) {
+  return ["/admin", "/author"].some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
 /**
@@ -78,7 +88,7 @@ export function applySecurityHeaders(response: Response, requestUrl: URL, supaba
   response.headers.set("X-Frame-Options", selfFramed ? "SAMEORIGIN" : "DENY");
   response.headers.set(
     "Permissions-Policy",
-    "browsing-topics=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()"
+    `browsing-topics=(), camera=(), geolocation=(), microphone=${mayUseMicrophone(requestUrl.pathname) ? "(self)" : "()"}, payment=(), usb=()`
   );
   if (requestUrl.protocol === "https:") {
     response.headers.set("Strict-Transport-Security", "max-age=31536000");

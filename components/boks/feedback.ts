@@ -18,7 +18,18 @@
 
 export const feedbackMilestones = [3, 10, 30] as const;
 
-export type FeedbackSurface = "settings" | "after_3" | "after_10" | "after_30";
+export type FeedbackSurface =
+  | "settings"
+  | "after_3"
+  | "after_10"
+  | "after_30"
+  // The Series recorder's four steps (`docs/series-recorder.md`).
+  | "series_text"
+  | "series_record"
+  | "series_pictures"
+  | "series_build"
+  // The page for authors without a cabinet (`components/boks/author-landing`).
+  | "author_landing";
 
 export type FeedbackState = {
   /** Boks actually read on this device. */

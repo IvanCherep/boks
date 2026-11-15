@@ -14,6 +14,7 @@
  * poem would be cut in the wrong places and this refuses rather than guess.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { buildPoemManifest } from "../lib/boks/poetry/build-manifest.mjs";
 
 const [slug, alignmentPath, linesPath, sceneMapPath] = process.argv.slice(2);
 if (!slug || !alignmentPath || !linesPath || !sceneMapPath) {
@@ -25,263 +26,20 @@ const alignment = JSON.parse(readFileSync(alignmentPath, "utf8"));
 const lines = JSON.parse(readFileSync(linesPath, "utf8"));
 const sceneMap = JSON.parse(readFileSync(sceneMapPath, "utf8"));
 
-/** Words, cut on whitespace, each carrying the time its first letter is spoken. */
-function wordsFrom({ characters, character_start_times_seconds: starts, character_end_times_seconds: ends }) {
-  const words = [];
-  let text = "";
-  let at = 0;
-  let end = 0;
-  // Whether the next word opens a line - a dash there opens dialogue.
-  let lineStart = true;
-  let startsLine = true;
-  characters.forEach((character, index) => {
-    if (/\s/.test(character)) {
-      if (text) words.push({ text, atMs: Math.round(at * 1000), endMs: Math.round(end * 1000), startsLine });
-      text = "";
-      if (character === "\n") lineStart = true;
-      return;
-    }
-    if (!text) {
-      startsLine = lineStart;
-      lineStart = false;
-    }
-    if (!text) at = starts[index];
-    text += character;
-    end = ends[index];
-  });
-  if (text) words.push({ text, atMs: Math.round(at * 1000), endMs: Math.round(end * 1000), startsLine });
-  return words;
-}
-
-/*
- * A dash on its own is not a word.
- *
- * Dickinson's dashes, Blok's "века —": spoken as a pause, written with a space
- * either side, and cut on whitespace they became tokens of their own - which
- * the renderer is free to wrap, so a line ended on a row holding nothing but
- * "–". Each one is joined to the word before it with a no-break space, keeping
- * that word's start and the dash's end, and closes the phrase as a comma would.
- *
- * A dash that opens a line is dialogue - Nekrasov's «— «Уж больно ты грозен» -
- * and belongs to the word after it, never to the end of the line before.
- */
-const isDash = (text) => /^[-–—]+$/.test(text);
-function joinDashes(tokens) {
-  const joined = [];
-  let opening = null;
-  for (const token of tokens) {
-    const previous = joined.at(-1);
-    if (isDash(token.text) && (token.startsLine || !previous)) {
-      opening = token;
-      continue;
-    }
-    if (opening) {
-      joined.push({ ...token, text: `${opening.text}\u00a0${token.text}`, atMs: opening.atMs });
-      opening = null;
-      continue;
-    }
-    if (previous && isDash(token.text)) {
-      previous.text = `${previous.text}\u00a0${token.text}`;
-      previous.endMs = token.endMs;
-    } else joined.push({ ...token });
-  }
-  // `startsLine` was only for this; it is not part of the manifest.
-  for (const word of joined) delete word.startsLine;
-  return joined;
-}
-const wordCount = (line) =>
-  line
-    .split(/\s+/)
-    .filter(Boolean)
-    .filter((word) => !isDash(word)).length;
-
-const words = joinDashes(wordsFrom(alignment));
-const counts = lines.map(wordCount);
-const total = counts.reduce((sum, n) => sum + n, 0);
-if (total !== words.length) {
-  console.error(`The lines hold ${total} words and the recording returned ${words.length}.`);
-  process.exit(1);
-}
-/*
- * A scene may hold more than one line.
- *
- * Eight pictures across seventeen seconds is a change every two seconds, which
- * is too fast to settle into any of them. `lines` on a scene says how many it
- * carries; left out, it carries one.
- */
-const sceneSpans = sceneMap.scenes.map((scene) => scene.lines ?? 1);
-const covered = sceneSpans.reduce((sum, n) => sum + n, 0);
-if (covered !== lines.length) {
-  console.error(`Scenes cover ${covered} lines; the poem has ${lines.length}.`);
-  process.exit(1);
-}
-
-/**
- * Which part of the frame a word belongs in.
- *
- * Only a scene that declares more than one safe zone splits its line, and then
- * the split is down the middle: the first half low, the second high. That is
- * the one scene where the placement is the argument.
- */
-function zoneOf(scene, lineInScene, indexInLine, wordsInLine) {
-  if (scene.safeZones.length < 2) return undefined;
-  // Only the line the scene was composed around is split. Splitting every line
-  // of a shared picture would send "Прощай," low and "Россия," high, which is
-  // not an argument about anything.
-  if ((scene.splitLine ?? 0) !== lineInScene) return undefined;
-  const half = Math.ceil(wordsInLine / 2);
-  return indexInLine < half ? scene.safeZones[0].role : scene.safeZones[1].role;
-}
-
-const durationMs = words.at(-1).endMs;
-
-/** Which scene each line belongs to, and where it sits inside that scene. */
-const sceneOfLine = [];
-sceneSpans.forEach((span, sceneIndex) => {
-  for (let within = 0; within < span; within += 1) sceneOfLine.push({ sceneIndex, within });
-});
-
-let cursor = 0;
-let phraseCursor = 0;
-const built = lines.map((_, index) => {
-  const { sceneIndex, within } = sceneOfLine[index];
-  const scene = sceneMap.scenes[sceneIndex];
-  const chunk = words.slice(cursor, cursor + counts[index]);
-  cursor += counts[index];
-  return {
-    sceneId: scene.id,
-    startMs: chunk[0].atMs,
-    endMs: chunk.at(-1).endMs,
-    tokens: chunk.map((word, n) => {
-      const zone = zoneOf(scene, within, n, counts[index]);
-      /*
-       * Which word carries the line.
-       *
-       * The one that closes a phrase: it ends on punctuation, or it ends the
-       * line. "немытая Россия," puts the weight on Россия; "страна рабов," on
-       * рабов. Set in the data rather than decided while rendering, so the
-       * size of a word never changes and nothing is ever re-laid out.
-       */
-      const lead = /[,.;:!?—–]$/.test(word.text) || n === counts[index] - 1;
-      /*
-       * Which phrase the word belongs to.
-       *
-       * The poet's own punctuation does the grouping: a phrase runs up to and
-       * including the word that closes it. Lighting one word at a time meant
-       * thirty-three handovers in seventeen seconds, each one a word going out
-       * as the next came on, which reads as flicker however well it is timed.
-       * Within a phrase the light only ever grows, and it goes out once.
-       */
-      const phrase = phraseCursor;
-      if (lead) phraseCursor += 1;
-      return {
-        ...word,
-        phrase,
-        ...(zone ? { zone } : {}),
-        ...(lead ? { emphasis: "lead" } : {}),
-      };
-    }),
-  };
-});
-
-// A line owns the screen until the next one begins, so nothing is ever blank.
-built.forEach((line, index) => {
-  line.endMs = built[index + 1]?.startMs ?? durationMs;
-});
-
-/*
- * Long dissolves, deliberately.
- *
- * Eight pictures across seventeen seconds is a change every two seconds, and
- * nothing can make that sparse. What it can be is continuous: a dissolve that
- * takes most of the time until the next one means the frame is always slowly
- * becoming something else rather than being replaced. The scene map's own
- * durations set the relative weight; this sets the scale.
- */
-const round10 = (n) => Math.round(n / 10) * 10;
-const slowest = Math.max(...sceneMap.scenes.map((scene) => scene.transitionMs));
-const ratio = 1500 / slowest;
-
-const manifest = {
-  id: `${slug}-immersive-v1`,
-  title: sceneMap.title ?? slug,
-  author: sceneMap.author ?? "",
-  language: sceneMap.language ?? "ru",
-  timingMode: "forced-alignment",
-  audio: `/poetry/${slug}/narration.mp3`,
-  /*
-   * The theme is part of the reading, not music behind it.
-   *
-   * It starts, stops and seeks with the voice, and it cannot be switched off,
-   * because without it the poem is a different piece. Ten decibels under the
-   * voice: present rather than background, and still clear of the words. The
-   * gain is measured against this recording and has to be re-measured if
-   * either the theme or the reading is replaced.
-   */
-  /*
-   * The gain is measured per poem, not shared: set `themeGain` in the scene
-   * map from the active levels of this theme and this reading, ten decibels
-   * apart. 0.19 is the first poem's, kept as the default so it rebuilds as
-   * it was.
-   */
-  theme: { src: `/poetry/${slug}/theme.mp3`, gain: sceneMap.themeGain ?? 0.19 },
-  durationMs,
-  canvas: sceneMap.canvas,
-  palette: sceneMap.palette,
-  /*
-   * How large the words are against the format's own size. One for short
-   * lines; long ones - Whitman runs to a hundred characters - need less, or a
-   * single line fills the sky. The scene map says, because the poem knows.
-   */
-  ...(sceneMap.textScale ? { textScale: sceneMap.textScale } : {}),
-  // How much darker the sky is made behind the words. Daylight pictures need
-  // more than the night the format was first drawn for.
-  ...(sceneMap.veil ? { veil: sceneMap.veil } : {}),
-  // A dissolve unless the poem asks for the slower, closer cinematic one.
-  ...(sceneMap.transitionStyle ? { transitionStyle: sceneMap.transitionStyle } : {}),
-  playback: {
-    /*
-     * A word appears a little before it is said.
-     *
-     * Its arrival takes about half a second, so beginning it on the syllable
-     * means the word is still forming while the voice has moved on. Starting
-     * it early makes it fully there exactly as it is spoken, and the one
-     * before it dims slowly rather than being cut - which is the difference
-     * between words that flow and words that flick.
-     */
-    tokenLeadMs: 220,
-    /*
-     * The picture changes after the line has landed, not with it.
-     *
-     * It used to begin 260ms before the next line, so the word and the whole
-     * world behind it moved on the same beat - which is what made a short poem
-     * feel cut rather than read. Now the first word of a line arrives in the
-     * picture that belongs to the line before it, that image is held while the
-     * word is still in the air, and only then does the scene begin to turn.
-     * The two rhythms stop coinciding, which is the whole point.
-     */
-    crossfadeOffsetMs: 380,
-    defaultCrossfadeMs: round10(850 * ratio),
-    backgroundScaleFrom: 1,
-    backgroundScaleTo: 1.035,
+const { manifest, words, lines: built } = buildPoemManifest({
+  slug,
+  alignment,
+  lines,
+  sceneMap,
+  files: {
+    audio: `/poetry/${slug}/narration.mp3`,
+    image: (name) => `/poetry/${slug}/scenes/${name.replace(/\.png$/, ".webp")}`,
   },
-  scenes: sceneMap.scenes.map((scene, index) => {
-    // When the scene takes over, so the renderer can work in scenes rather
-    // than inferring their boundaries from where the line ids happen to change.
-    const firstLine = sceneOfLine.findIndex((entry) => entry.sceneIndex === index);
-    return {
-      ...scene,
-      image: `/poetry/${slug}/scenes/${scene.image.replace(/\.png$/, ".webp")}`,
-      startMs: built[firstLine].startMs,
-      transitionMs: round10(scene.transitionMs * ratio),
-    };
-  }),
-  lines: built,
-};
+});
 
 const out = `public/poetry/${slug}/manifest.json`;
 writeFileSync(out, `${JSON.stringify(manifest, null, 1)}\n`);
-console.log(`${out}: ${built.length} lines, ${words.length} words, ${(durationMs / 1000).toFixed(2)}s`);
+console.log(`${out}: ${built} lines, ${words} words, ${(manifest.durationMs / 1000).toFixed(2)}s`);
 // A zone has a top and no bottom: whether its stanza ends above the player is
 // only known once the words are laid out (lib/boks/poetry/stanza-fit.ts).
 console.log(`next: npm run fit:poem -- ${out} --write && npm run check:poems -- ${out}`);

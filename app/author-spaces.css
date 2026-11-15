@@ -249,3 +249,23 @@
 .asp-chip--stage-changes_requested,.asp-chip--stage-invite_expired,.asp-chip--stage-invite_revoked{background:#f4e2bf;color:#7a5410}
 .asp-chip--stage-partly_published,.asp-chip--stage-published{background:#dce1cb;color:#425638}
 .asp-chip--stage-unpublished{background:#eee;color:#666}
+
+/* The page's order, with the reader's page beside it (my-page.tsx, OrderView). */
+.acab .amp-order-page { max-width: 1180px; }
+.amp-order-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+.amp-order__num { font: italic 400 20px/1 var(--serif, Georgia), serif; color: #aeb79a; min-width: 26px; }
+.acab .amp-order__row { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; cursor: grab; }
+.acab .amp-order__row:active { cursor: grabbing; }
+.acab .amp-order__row.is-over { border-color: var(--ink, #222621); box-shadow: 0 0 0 1px var(--ink, #222621) inset; transform: translateY(-1px); }
+.amp-order-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
+.acab .amp-order-actions .amp-save { flex: 1; }
+.amp-order-preview { position: sticky; top: 24px; display: grid; gap: 12px; justify-items: center; }
+.amp-order-preview__label { margin: 0; font: 600 11px/1.3 var(--sans, system-ui), sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted, #65685e); text-align: center; }
+.amp-order-phone { width: 340px; height: 700px; overflow: hidden; border: 10px solid #151815; border-radius: 40px; background: #192321; box-shadow: 0 40px 70px -40px #0009, 0 0 0 1px #00000014; }
+.amp-order-phone iframe { display: block; width: 390px; height: 808px; border: 0; transform: scale(.8205); transform-origin: 0 0; }
+@media (max-width: 980px) {
+  .amp-order-layout { grid-template-columns: minmax(0, 1fr); }
+  .amp-order-preview { position: static; }
+}
+/* With its position number first. */
+.amp-order-page .amp-order__row { grid-template-columns: 26px 22px auto minmax(0, 1fr) auto; }

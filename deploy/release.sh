@@ -92,6 +92,8 @@ mv wrangler.jsonc.release-off wrangler.jsonc
 out=dist/standalone
 BOKS_BACKEND=$ORIGIN node scripts/check-deploy-target.mjs $out/dist/client $out/dist/server
 node deploy/precompress.mjs $out/dist/client
+# The Series recorder's worker, one file: it imports the app's TypeScript (lib/).
+npx esbuild scripts/series-worker.mts --bundle --platform=node --format=esm --target=node22 --log-level=warning --outfile=dist/series/worker.mjs
 cp deploy/app/serve.mjs $out/serve.mjs
 printf '{"id":"%s","commit":"%s","built":"%s"}\n' "$id" "$(git rev-parse HEAD)" "$(date -u +%FT%TZ)" > $out/release.json
 
@@ -117,6 +119,16 @@ rsync -lpz --checksum --itemize-changes deploy/curtain/curtain.mjs "$HOST:$REMOT
 # The ribbon job (code, fonts, logo, its compose file); its container mounts it.
 rsync -rlpz --checksum --itemize-changes --exclude node_modules deploy/ribbon/ "$HOST:$REMOTE/ribbon/" -e "ssh -o LogLevel=ERROR" \
   | sed -n 's/^[<>]f[^ ]* /  updated ribbon\//p'
+
+remote 'mkdir -p series series-drafts'
+# The Series recorder's worker: its Dockerfile, and the bundled worker it mounts.
+# A changed worker is restarted (a build it was in the middle of is queued again).
+series_changed=$( { rsync -lpz --checksum --itemize-changes deploy/series/Dockerfile "$HOST:$REMOTE/series/Dockerfile" -e "ssh -o LogLevel=ERROR";
+  rsync -lpz --checksum --itemize-changes dist/series/worker.mjs "$HOST:$REMOTE/series/worker.mjs" -e "ssh -o LogLevel=ERROR"; } | sed -n 's/^[<>]f[^ ]* /  updated series\//p')
+if [ -n "$series_changed" ]; then
+  echo "$series_changed"
+  remote 'docker compose ps --services --status running | grep -qx series && docker compose restart series >/dev/null && echo "  restarted series" || true'
+fi
 
 say "Switch"
 remote "ops/switch.sh $id"
