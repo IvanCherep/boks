@@ -284,10 +284,15 @@ async function view(id: string): Promise<SeriesDraft> {
   return { ...data, images, status: await statusOf(data), art, artBudget: await budgetOf(data, art) };
 }
 
-export async function listDrafts(actor: SeriesActor): Promise<SeriesDraftSummary[]> {
+/** The caller's drafts; Studio sees everyone's, except in its own cabinet (`mine`). */
+export async function listDrafts(actor: SeriesActor, { mine = false } = {}): Promise<SeriesDraftSummary[]> {
   await mkdir(seriesRoot(), { recursive: true });
   const ids = (await readdir(seriesRoot())).filter(isSeriesDraftId);
-  const drafts = await Promise.all(ids.map((id) => readDraft(actor, id).catch(() => null)));
+  const drafts = await Promise.all(ids.map(async (id) => {
+    const data = await readOwned(actor, id).catch(() => null);
+    if (!data || (mine && (data.ownerId ?? null) !== actor.userId)) return null;
+    return view(id).catch(() => null);
+  }));
   return drafts
     .filter((draft): draft is SeriesDraft => Boolean(draft))
     .map((draft) => ({
@@ -554,17 +559,16 @@ export async function regenerateImage(actor: SeriesActor, id: string, file: unkn
  */
 export async function publicationOf(actor: SeriesActor, id: string) {
   const data = await readOwned(actor, id);
-  if (actor.admin) throw new SeriesStoreError("Studio puts a Series on an author's page through Authors.", 409);
   const status = await statusOf(data);
   if (status.state !== "ready") throw new SeriesStoreError("Build the Series first.", 409);
   if (status.stale) throw new SeriesStoreError("The draft changed after this build. Rebuild it, or put it back as it was.", 409);
   const kept = status.builds[status.kept];
-  return { title: data.title, text: data.text, token: kept.token, bokId: data.published?.bokId ?? null };
+  return { title: data.title, text: data.text, author: data.author, token: kept.token, bokId: data.published?.bokId ?? null, handle: data.published?.handle ?? null };
 }
 
-export async function markPublished(actor: SeriesActor, id: string, bokId: string, token: string) {
+export async function markPublished(actor: SeriesActor, id: string, bokId: string, token: string, handle: string | null = null) {
   const data = await readOwned(actor, id);
-  data.published = { bokId, token, at: new Date().toISOString() };
+  data.published = { bokId, token, at: new Date().toISOString(), ...(handle ? { handle } : {}) };
   await writeJsonAtomically(join(folder(id), "draft.json"), data);
   return view(id);
 }

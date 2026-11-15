@@ -25,7 +25,8 @@ const json = (body: unknown): RequestInit => ({ body: JSON.stringify(body), head
 
 /** How many Boks Series the caller may still make; Studio makes as many as it likes. */
 export type SeriesAllowance = { admin: boolean; granted: number; used: number; left: number };
-export const listSeriesDrafts = () => request<{ drafts: SeriesDraftSummary[]; access: SeriesAllowance }>("");
+/** `mine`: only the caller's own, as the cabinet shows them even to Studio. */
+export const listSeriesDrafts = (mine = false) => request<{ drafts: SeriesDraftSummary[]; access: SeriesAllowance }>(mine ? "?mine" : "");
 export const createSeriesDraft = () => request<{ draft: SeriesDraft }>("", { method: "POST", ...json({}) }).then((r) => r.draft);
 export const loadSeriesDraft = (id: string) => request<{ draft: SeriesDraft }>(`/${id}`).then((r) => r.draft);
 export const updateSeriesDraft = (id: string, patch: Record<string, unknown>) =>
@@ -36,8 +37,12 @@ export const generateSeriesImages = (id: string, count: number) =>
   request<{ draft: SeriesDraft }>(`/${id}`, { method: "POST", ...json({ action: "generate", count }) }).then((r) => r.draft);
 export const regenerateSeriesImage = (id: string, file: string) =>
   request<{ draft: SeriesDraft }>(`/${id}`, { method: "POST", ...json({ action: "regenerate", file }) }).then((r) => r.draft);
-export const publishSeriesDraft = (id: string) =>
-  request<{ draft: SeriesDraft }>(`/${id}`, { method: "POST", ...json({ action: "publish" }) }).then((r) => r.draft);
+/** Onto the caller's own page, or, for Studio, the page of the author `handle` names. */
+export const publishSeriesDraft = (id: string, handle?: string) =>
+  request<{ draft: SeriesDraft }>(`/${id}`, { method: "POST", ...json({ action: "publish", ...(handle ? { handle } : {}) }) }).then((r) => r.draft);
+/** Studio: the author's @handle the draft's byline most likely belongs to. */
+export const suggestSeriesAuthor = (id: string) =>
+  request<{ handle: string | null }>(`/${id}`, { method: "POST", ...json({ action: "author" }) }).then((r) => r.handle);
 export const deleteSeriesFile = (id: string, file: string) =>
   request<{ draft: SeriesDraft }>(`/${id}/${file}`, { method: "DELETE" }).then((r) => r.draft);
 

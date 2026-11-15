@@ -40,22 +40,45 @@ export async function seriesActor(request: Request): Promise<{ actor: SeriesAcce
   return { actor, token };
 }
 
-/** Put a recorded Series on the author's page (`publish_my_recorded_series`); the bok id, or the refusal. */
-export async function publishRecordedSeries(token: string, input: { bokId: string | null; title: string; text: string; piece: string }): Promise<{ bokId: string } | Response> {
+/**
+ * Put a recorded Series on an author's page: the caller's own
+ * (`publish_my_recorded_series`), or, for Studio, the page of the author named
+ * by `handle` (`studio_publish_recorded_series`). The bok id and whose page,
+ * or the refusal.
+ */
+export async function publishRecordedSeries(token: string, input: { bokId: string | null; title: string; text: string; piece: string; handle?: string | null }): Promise<{ bokId: string; handle: string | null } | Response> {
   const restBase = globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${supabaseUrl}/rest/v1`;
+  const own = { p_bok_id: input.bokId, p_title: input.title, p_text: input.text, p_token: input.piece };
   let response: Response;
   try {
-    response = await fetch(`${restBase}/rpc/publish_my_recorded_series`, {
+    response = await fetch(`${restBase}/rpc/${input.handle ? "studio_publish_recorded_series" : "publish_my_recorded_series"}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: supabaseApiKey!, Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ p_bok_id: input.bokId, p_title: input.title, p_text: input.text, p_token: input.piece }),
+      body: JSON.stringify(input.handle ? { p_handle: input.handle, ...own } : own),
     });
   } catch {
     return adminJsonError("Could not reach the database.", 502);
   }
-  const body = (await response.json().catch(() => ({}))) as { bokId?: string; message?: string };
+  const body = (await response.json().catch(() => ({}))) as { bokId?: string; handle?: string; message?: string };
   if (!response.ok || !body.bokId) return adminJsonError(body.message || "The Series could not be published.", response.status >= 500 ? 502 : 409);
-  return { bokId: body.bokId };
+  return { bokId: body.bokId, handle: body.handle ?? null };
+}
+
+/** Studio: the @handle a byline most likely belongs to (`studio_series_author_for`), or null. */
+export async function seriesAuthorFor(token: string, name: string): Promise<string | null> {
+  const restBase = globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${supabaseUrl}/rest/v1`;
+  try {
+    const response = await fetch(`${restBase}/rpc/studio_series_author_for`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: supabaseApiKey!, Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ p_name: name }),
+    });
+    if (!response.ok) return null;
+    const body = (await response.json().catch(() => null)) as { handle?: string } | null;
+    return body?.handle ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Spend one of the author's Boks Series (Studio spends nothing). Null when spent; otherwise the refusal. */

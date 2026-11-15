@@ -49,6 +49,18 @@ shows the reader's page beside the list, live
 preview works for an author without a prepared page too,
 `20261117180000_boks_page_preview_for_every_author.sql`).
 
+**Studio publishes onto the author's page too.** A recording made by a
+Studio account (say the team reading an author's poem) has no page of its
+own to go to: its Series step asks for the author's @handle, suggested from
+the byline (`studio_series_author_for`: the account whose page carries that
+name, else whose published boks do), and publishes there
+(`studio_publish_recorded_series`,
+`20261117190000_boks_studio_publish_recorded_series.sql`), under the author's
+own name and not counted against their grant. Once published, the draft
+remembers whose page it is on, and a kept rebuild replaces it there. In the
+cabinet a Studio account sees only its own recordings; Studio → Запись
+Series sees everyone's.
+
 A recording made elsewhere can be uploaded on the Recording step: mp3, m4a,
 wav, ogg or webm, up to ten minutes; it becomes a take like any other.
 

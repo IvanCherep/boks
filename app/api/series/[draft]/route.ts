@@ -1,4 +1,5 @@
-import { publishRecordedSeries } from "@/lib/boks/series-recorder/actor";
+import { adminJsonError } from "@/lib/boks/admin-request";
+import { publishRecordedSeries, seriesAuthorFor } from "@/lib/boks/series-recorder/actor";
 import { deleteDraft, generateImages, markPublished, publicationOf, queueBuild, readDraft, regenerateImage, updateDraft } from "@/lib/boks/series-recorder/store";
 import { readJsonBody, seriesJson, seriesRoute } from "../respond";
 
@@ -28,10 +29,19 @@ export function POST(request: Request, { params }: Params) {
     const body = await readJsonBody(request);
     if (body.action === "publish") {
       // Straight onto the author's page, no review: the team trusted them when it granted Boks Series.
+      // Studio names whose page; once published, the same page keeps it.
       const what = await publicationOf(actor, draft);
-      const done = await publishRecordedSeries(token, { bokId: what.bokId, title: what.title, text: what.text, piece: what.token });
+      const asked = typeof body.handle === "string" ? body.handle.trim().replace(/^@/, "") : "";
+      const handle = actor.admin ? what.handle ?? (asked || null) : null;
+      if (actor.admin && !handle) return adminJsonError("Name the author whose page this goes on.", 400);
+      const done = await publishRecordedSeries(token, { bokId: what.bokId, title: what.title, text: what.text, piece: what.token, handle });
       if (done instanceof Response) return done;
-      return seriesJson({ draft: await markPublished(actor, draft, done.bokId, what.token) });
+      return seriesJson({ draft: await markPublished(actor, draft, done.bokId, what.token, done.handle) });
+    }
+    if (body.action === "author") {
+      // Studio: whose page the byline points to, to suggest it.
+      const what = await readDraft(actor, draft);
+      return seriesJson({ handle: actor.admin && what.author ? await seriesAuthorFor(token, what.author) : null });
     }
     if (body.action === "generate") return seriesJson({ draft: await generateImages(actor, draft, body.count) }, 202);
     if (body.action === "regenerate") return seriesJson({ draft: await regenerateImage(actor, draft, body.file) }, 202);

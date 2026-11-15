@@ -5285,3 +5285,53 @@ begin
     'an author with no page is previewed from their published boks');
 end $$;
 rollback;
+
+-- Studio publishes a recording onto an author's page (20261117190000).
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f3000000-0000-4000-8000-000000000001', 'srec-admin@boks.test', false),
+  ('f3000000-0000-4000-8000-000000000002', 'srec-author@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f3000000-0000-4000-8000-000000000001', 'srec_admin', 'admin', now(), 'v1'),
+  ('f3000000-0000-4000-8000-000000000002', 'srec_poet', 'reader', now(), 'v1');
+insert into public.reels (id, title, author_name, text, status, author_user_id, submitted_at, reviewed_at)
+values ('f3000000-0000-4000-8000-0000000000b1', 'Старое', 'Поэт Студийный', 'строка', 'published', 'f3000000-0000-4000-8000-000000000002', now(), now());
+do $$
+declare
+  v_error text;
+  v_result jsonb;
+begin
+  perform public.boks_test_login('f3000000-0000-4000-8000-000000000002');
+  begin
+    perform public.studio_publish_recorded_series('srec_poet', null, 'Т', 'строка', 'AAAAAAAAAAAAAAAAAAAAAA');
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Only Studio can publish onto another author''s page.', 'only Studio publishes onto another page');
+
+  perform public.boks_test_login('f3000000-0000-4000-8000-000000000001');
+  perform public.boks_assert(public.studio_series_author_for('  поэт студийный ') ->> 'handle' = 'srec_poet', 'the byline finds its author');
+  perform public.boks_assert(public.studio_series_author_for('Никто Никакой') is null, 'an unknown byline finds nobody');
+  begin
+    perform public.studio_publish_recorded_series('@nobody_here', null, 'Т', 'строка', 'AAAAAAAAAAAAAAAAAAAAAA');
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'There is no account @nobody_here.', 'an unknown handle is refused');
+
+  v_result := public.studio_publish_recorded_series('@srec_poet', null, 'Записанная студией', 'строка', 'EEEEEEEEEEEEEEEEEEEEEE');
+  perform public.boks_assert(v_result ->> 'handle' = 'srec_poet', 'the answer names the page');
+  perform public.boks_assert((select author_user_id from public.reels where id = (v_result ->> 'bokId')::uuid) = 'f3000000-0000-4000-8000-000000000002'
+    and (select author_name from public.reels where id = (v_result ->> 'bokId')::uuid) = 'Поэт Студийный',
+    'it is the author''s bok, under their own name');
+  perform public.boks_assert((select series_piece from public.author_space_works where bok_id = (v_result ->> 'bokId')::uuid) = 'EEEEEEEEEEEEEEEEEEEEEE',
+    'their page plays Studio''s recording');
+  perform public.studio_publish_recorded_series('srec_poet', (v_result ->> 'bokId')::uuid, 'Записанная студией', 'строка', 'FFFFFFFFFFFFFFFFFFFFFF');
+  perform public.boks_assert((select series_piece from public.author_space_works where bok_id = (v_result ->> 'bokId')::uuid) = 'FFFFFFFFFFFFFFFFFFFFFF',
+    'Studio replaces its own recording in place');
+
+  -- Studio's recording is not the author's to account for.
+  perform public.boks_test_login('f3000000-0000-4000-8000-000000000002');
+  insert into public.series_credits (user_id, granted, used) values ('f3000000-0000-4000-8000-000000000002', 2, 1);
+  v_result := public.publish_my_recorded_series(null, 'Своя', 'строка', 'GGGGGGGGGGGGGGGGGGGGGG');
+  perform public.boks_assert(v_result ->> 'bokId' is not null, 'Studio''s publication is not counted against the author''s grant');
+end $$;
+rollback;

@@ -112,8 +112,8 @@ export type SeriesDraftData = {
   /** Who made it: an author's drafts are theirs alone; Studio sees every one. */
   ownerId?: string | null;
   ownerHandle?: string | null;
-  /** On the author's page: the bok it was published as, and which build's recording it plays. */
-  published?: { bokId: string; token: string; at: string } | null;
+  /** On the author's page: the bok it was published as, which build's recording it plays, and (published by Studio) whose page. */
+  published?: { bokId: string; token: string; at: string; handle?: string } | null;
   /** Builds started (author drafts are capped, `seriesLimits.buildAttempts`). */
   buildAttempts?: number;
   /** Takes added in all, deleted ones included (`seriesLimits.takeUploads`). */

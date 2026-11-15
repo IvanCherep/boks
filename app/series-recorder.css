@@ -404,7 +404,14 @@
 .series-rec__published small { font-size: 13px; line-height: 1.45; color: var(--studio-ink); }
 .series-rec__published-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--studio-selected-ink); color: #fff; }
 .series-rec__published-mark svg { width: 18px; height: 18px; }
-@media (max-width: 640px) { .series-rec__publish, .series-rec__published { grid-template-columns: minmax(0, 1fr); } }
+.series-rec__publish.is-studio { grid-template-columns: minmax(0, 260px) auto; justify-content: start; align-items: end; }
+.series-rec__publish.is-studio > span { grid-column: 1 / -1; }
+.series-rec__publish .series-rec__publish-to { display: grid; gap: 6px; }
+.series-rec__publish .series-rec__publish-to > span { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #fff8ef; }
+.series-rec__publish .series-rec__publish-to input { height: 40px; padding: 0 12px; border: 1px solid #fff8ef; border-radius: 4px 12px 4px 4px; background: #fff8ef; color: #2a1a14; font: 500 15px/1 var(--font-sans, system-ui), sans-serif; }
+.series-rec__publish .series-rec__publish-to input::placeholder { color: #8f2f1c80; }
+.series-rec__publish .series-rec__publish-to input:focus { outline: 2px solid #fff8ef; outline-offset: 2px; }
+@media (max-width: 640px) { .series-rec__publish, .series-rec__publish.is-studio, .series-rec__published { grid-template-columns: minmax(0, 1fr); } }
 
 /* Phones: one column that reads top to bottom, nothing overlapping. */
 @media (max-width: 640px) {
@@ -413,7 +420,7 @@
   .series-rec__head h2 { font-size: 24px; line-height: 1.15; padding-top: 4px; }
   .series-rec__head .series-rec__confirm { grid-column: 1 / -1; }
   .series-rec__back { width: 32px; height: 32px; }
-  .series-rec__delete span { display: none; }
+  .series-rec__delete { padding-inline: 8px; font-size: 13px; }
   .series-rec__steps { margin: 14px 0 18px; }
   .series-rec__step { gap: 16px; }
 

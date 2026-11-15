@@ -19,6 +19,7 @@ import {
   listSeriesDrafts,
   loadSeriesDraft,
   publishSeriesDraft,
+  suggestSeriesAuthor,
   regenerateSeriesImage,
   seriesFileUrl,
   updateSeriesDraft,
@@ -54,11 +55,11 @@ export function SeriesRecorder({ mode = "studio" }: {
   const author = mode === "author" && !allowance?.admin;
   const spent = author && (allowance?.left ?? 0) < 1;
 
-  const refresh = useCallback(() => listSeriesDrafts().then((list) => {
+  const refresh = useCallback(() => listSeriesDrafts(mode === "author").then((list) => {
     setDrafts(list.drafts);
     setAllowance(list.access);
     setFailed(false);
-  }, () => setFailed(true)), []);
+  }, () => setFailed(true)), [mode]);
   useEffect(() => void refresh(), [refresh]);
 
   const create = async () => {
@@ -677,7 +678,8 @@ function BuildStep({ draft, ownByline, onSaved, onError, onGo }: StepProps & { o
             <Check className="size-4" />{t.keepThis}
           </Button>)}
         {status.state === "ready" && status.stale && canRebuild && <p className="series-rec__notice">{t.stale}</p>}
-        {ownByline && <PublishOnPage draft={draft} keptToken={builds[kept]?.token ?? null} stale={status.state === "ready" && status.stale} onSaved={onSaved} onError={onError} />}
+        {/* Only Studio records without its own byline: it names the author's page instead. */}
+        <PublishOnPage draft={draft} studio={!ownByline} keptToken={builds[kept]?.token ?? null} stale={status.state === "ready" && status.stale} onSaved={onSaved} onError={onError} />
         <dl>
           <div><dt>{t.duration}</dt><dd>{clock(build.result.durationMs ?? 0)}</dd></div>
           <div><dt>{t.pictures}</dt><dd>{build.result.scenes}</dd></div>
@@ -801,33 +803,49 @@ function StepFeedback({ step }: { step: Step }) {
 }
 
 /**
- * An author's own Series goes straight onto their page: no review, the team
- * trusted them when it granted Boks Series (`publish_my_recorded_series`).
+ * A finished Series goes straight onto an author's page, no review: an
+ * author's onto their own (the team trusted them when it granted Boks
+ * Series, `publish_my_recorded_series`); Studio's onto the page of the author
+ * it names, suggested from the byline (`studio_publish_recorded_series`).
  * Published, it says so and links to the page; a different version kept
- * since can replace it.
+ * since can replace it there.
  */
-function PublishOnPage({ draft, keptToken, stale, onSaved, onError }: StepProps & { keptToken: string | null; stale: boolean }) {
+function PublishOnPage({ draft, studio, keptToken, stale, onSaved, onError }: StepProps & { studio: boolean; keptToken: string | null; stale: boolean }) {
   const t = useMessages(recorderMessages);
   const [busy, setBusy] = useState(false);
+  const [handle, setHandle] = useState("");
   const published = draft.published ?? null;
   const current = Boolean(published && published.token === keptToken);
+  const askAuthor = studio && !published;
+  useEffect(() => {
+    if (!askAuthor) return;
+    let live = true;
+    suggestSeriesAuthor(draft.id).then((found) => { if (live && found) setHandle((typed) => typed || `@${found}`); }, () => {});
+    return () => { live = false; };
+  }, [askAuthor, draft.id]);
+  const target = handle.trim().replace(/^@/, "");
   const publish = () => {
     setBusy(true);
-    publishSeriesDraft(draft.id).then(onSaved, (e) => onError(errorText(e))).finally(() => setBusy(false));
+    publishSeriesDraft(draft.id, studio ? target : undefined).then(onSaved, (e) => onError(errorText(e))).finally(() => setBusy(false));
   };
-  const page = draft.ownerHandle ? `/@${draft.ownerHandle}` : "/author";
+  const owner = studio ? published?.handle : draft.ownerHandle;
+  const page = owner ? `/@${owner}` : "/author";
   if (current) {
     return <div className="series-rec__published" role="status">
       <span className="series-rec__published-mark" aria-hidden="true"><Check /></span>
-      <span><strong>{t.publishedTitle}</strong><small>{t.publishedLead}</small></span>
-      <Button size="sm" variant="outline" asChild><a href={page} target="_blank" rel="noreferrer"><ExternalLink className="size-4" />{t.openMyPage}</a></Button>
+      <span><strong>{studio && owner ? t.publishedOn(owner) : t.publishedTitle}</strong><small>{studio ? t.publishedStudioLead : t.publishedLead}</small></span>
+      <Button size="sm" variant="outline" asChild><a href={page} target="_blank" rel="noreferrer"><ExternalLink className="size-4" />{studio ? t.openPage : t.openMyPage}</a></Button>
     </div>;
   }
-  return <div className="series-rec__publish">
+  return <div className={`series-rec__publish${askAuthor ? " is-studio" : ""}`}>
     <span>
-      <strong>{published ? t.replaceTitle : t.publishTitle}</strong>
-      <small>{stale ? t.publishStale : published ? t.replaceLead : t.publishLead}</small>
+      <strong>{published ? (studio && owner ? t.replaceOn(owner) : t.replaceTitle) : studio ? t.publishStudioTitle : t.publishTitle}</strong>
+      <small>{stale ? t.publishStale : published ? t.replaceLead : studio ? t.publishStudioLead : t.publishLead}</small>
     </span>
-    <Button onClick={publish} disabled={busy || stale || !keptToken}>{busy ? t.publishing : published ? t.replace : t.publish}</Button>
+    {askAuthor && <label className="series-rec__publish-to">
+      <span>{t.publishTo}</span>
+      <input value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="@handle" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+    </label>}
+    <Button onClick={publish} disabled={busy || stale || !keptToken || (askAuthor && !target)}>{busy ? t.publishing : published ? t.replace : studio ? t.publishStudio : t.publish}</Button>
   </div>;
 }

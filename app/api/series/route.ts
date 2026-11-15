@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  */
 export function GET(request: Request) {
   return seriesRoute(request, async (actor) => seriesJson({
-    drafts: await listDrafts(actor),
+    drafts: await listDrafts(actor, { mine: new URL(request.url).searchParams.has("mine") }),
     access: { admin: actor.admin, granted: actor.granted, used: actor.used, left: actor.left },
   }));
 }
