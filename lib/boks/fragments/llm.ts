@@ -15,7 +15,7 @@ export type JsonSchema = Record<string, unknown>;
 
 export type LlmTask = {
   /** Which stage asks: shown in progress and usage, and part of the cache key. */
-  stage: "scenes" | "refine" | "judge" | "tournament";
+  stage: "scenes" | "refine" | "judge" | "tournament" | "facets";
   system: string;
   user: string;
   schema: JsonSchema;
@@ -49,6 +49,8 @@ export const defaultStageModels: Record<LlmTask["stage"], YandexModel> = {
   refine: "aliceai-llm",
   judge: "aliceai-llm",
   tournament: "gpt-oss-120b",
+  // Reading facets (`lib/boks/facets/labeler.ts`), labelled by the server job.
+  facets: "yandexgpt",
 };
 
 /** gpt-oss reasons before it answers, and the reasoning counts against max_tokens. */

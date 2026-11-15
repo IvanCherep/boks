@@ -8,8 +8,8 @@
 #   bash deploy/release.sh --rollback   back to the release that was live before
 #   bash deploy/release.sh --rollback <id>
 #
-# deploy/ops/ and deploy/curtain/curtain.mjs (the server's scripts) are copied
-# with every release. Other server
+# deploy/ops/, deploy/curtain/curtain.mjs and the facet labeller
+# (deploy/embedder/facets.mjs + its bundled library) are copied with every release. Other server
 # configuration (compose.yml, Caddyfile, mailer/) is not part of a release: it
 # changes rarely and is copied by hand (docs/hosting.md -> Deploy).
 # Migrations are not part of it either: deploy/migrate.sh, before the release.
@@ -92,6 +92,8 @@ mv wrangler.jsonc.release-off wrangler.jsonc
 out=dist/standalone
 BOKS_BACKEND=$ORIGIN node scripts/check-deploy-target.mjs $out/dist/client $out/dist/server
 node deploy/precompress.mjs $out/dist/client
+# The facet labeller's library: the rubric and the model calls from lib/, one file.
+npx esbuild lib/boks/facets/job.ts --bundle --platform=node --format=esm --target=node22 --log-level=warning --outfile=dist/embedder/facets-lib.mjs
 # The Series recorder's worker, one file: it imports the app's TypeScript (lib/).
 npx esbuild scripts/series-worker.mts --bundle --platform=node --format=esm --target=node22 --log-level=warning --outfile=dist/series/worker.mjs
 cp deploy/app/serve.mjs $out/serve.mjs
@@ -119,6 +121,11 @@ rsync -lpz --checksum --itemize-changes deploy/curtain/curtain.mjs "$HOST:$REMOT
 # The ribbon job (code, fonts, logo, its compose file); its container mounts it.
 rsync -rlpz --checksum --itemize-changes --exclude node_modules deploy/ribbon/ "$HOST:$REMOTE/ribbon/" -e "ssh -o LogLevel=ERROR" \
   | sed -n 's/^[<>]f[^ ]* /  updated ribbon\//p'
+
+# The facet labeller (run by ops/embed.sh in the embedder's folder, which
+# keeps its node_modules): its script and the library bundled above.
+rsync -lpz --checksum --itemize-changes deploy/embedder/facets.mjs dist/embedder/facets-lib.mjs "$HOST:$REMOTE/embedder/" -e "ssh -o LogLevel=ERROR" \
+  | sed -n 's/^[<>]f[^ ]* /  updated embedder\//p'
 
 remote 'mkdir -p series series-drafts'
 # The Series recorder's worker: its Dockerfile, and the bundled worker it mounts.

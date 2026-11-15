@@ -237,6 +237,28 @@ services:
       db:
         condition: service_healthy
 
+  # Background job, not a service: run by deploy/ops/embed.sh right after the
+  # embedder, skipped while the server is overloaded. Gives published boks
+  # their reading facets (mood, author group) through Alice AI
+  # (deploy/embedder/facets.mjs, docs/reading-facets.md). Shares the embedder's
+  # folder for its `postgres` package; facets-lib.mjs comes with each release.
+  facets:
+    image: node:22-bookworm-slim
+    profiles: ["jobs"]
+    working_dir: /embedder
+    command: ["node", "facets.mjs"]
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      YANDEX_API_KEY: ${YANDEX_API_KEY:-}
+      YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
+    volumes:
+      - ./embedder:/embedder:ro
+    mem_limit: 256m
+    cpus: 0.5
+    depends_on:
+      db:
+        condition: service_healthy
+
   # Background job, not a service: run every 15 minutes by deploy/ops/curtain.sh
   # (`docker compose --profile jobs run --rm curtain`). Gives every published
   # bok its curtain link-preview loop (deploy/curtain/curtain.mjs), written to

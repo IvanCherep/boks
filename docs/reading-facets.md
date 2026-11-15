@@ -98,14 +98,35 @@ contemporary prose finds nothing today. A bok whose dominant feeling is
 horror, heroism, love or plain joy usually has no mood: the three buttons do
 not ask for it. That is the strongest signal for a fourth mood value.
 
-### New boks (next step)
+### New boks: the `facets` job
 
-A background job in the shape of the embedder (`deploy/embedder`,
-`deploy/ops/embed.sh`, a row per run in `background_job_runs`): every
-15 minutes it finds published boks with no `mood` label, a stale hash or an
-old rubric version (model labels only), asks Alice AI (`aliceai-llm`, wired in
-`lib/boks/fragments/llm.ts`) for a JSON answer under the same rubric, cleans it
-with `cleanFacetValues` and writes it with `labeler = 'aliceai-llm'`. A new
-byline without an `author_group` row goes through the same job with
-`authorGroupRubric`. Before it is trusted, run it once over the 238 labelled
-boks and measure agreement with the first labelling per value.
+`deploy/embedder/facets.mjs`, run by `deploy/ops/embed.sh` every 15 minutes
+right after the embedder, in its own container (`facets` in
+`deploy/compose.yml`, half a core, 256 MB) and skipped while
+`flags/busy.on` is up. It labels what is due, at most 40 boks and 20 bylines
+a run: a published bok with no mood, or a model's mood written under an older
+rubric or for a text that has changed; a byline with no author group. Every
+run is a row in `background_job_runs` (job `facets`, details carry the token
+usage and the labels); a failure is reported once to Telegram. The rubric and
+the request code are bundled from `lib/boks/facets/job.ts` by each release
+into `/opt/boks/embedder/facets-lib.mjs`.
+
+`node facets.mjs --calibrate 60` (in the container) asks the model about 60
+already labelled boks, writes nothing and prints the agreement per value;
+`FACETS_MODEL` picks another Yandex model for it.
+
+**Calibration, 2026-11-16** (60 boks, reference = the first labelling):
+
+| Model and question | Exact match | `sad` both / extra / missed | `think` both / extra / missed |
+|---|---|---|---|
+| Alice AI, one list | 24 | 13 / 23 / 1 | 20 / 7 / 5 |
+| YandexGPT, one list | 31 | 10 / 8 / 4 | 21 / 13 / 4 |
+| Alice AI, a verdict per value | 24 | 13 / 16 / 1 | 25 / 20 / 0 |
+| **YandexGPT, a verdict per value** | **35** | 11 / 6 / 3 | 23 / 12 / 2 |
+
+`gpt-oss-120b` is refused (403) for the server's key. Alice AI calls nearly
+every text sad and thoughtful, so the job uses YandexGPT with a verdict per
+value (`labeler = 'yandexgpt'`). It is the weaker labeller: it adds `think`
+too readily. Its labels are told apart by `labeler`; to raise quality, review
+them in Studio (an editor's label is final) or re-label with a stronger model
+when the key allows one. A run of 60 boks costs about 100k input tokens.

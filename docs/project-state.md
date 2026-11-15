@@ -262,8 +262,9 @@ See `docs/studies.md`.
 v1, and every byline (100) an author group (`classics` / `contemporary`);
 form is derived from `reading_shape`. Tables, the merged view
 `bok_reading_facets` and admin coverage: migration 20261118120000, applied.
-The feed does not read them yet, and no job labels new boks yet: new boks stay
-unlabelled (unknown) until it exists. `docs/reading-facets.md`.
+The feed does not read them yet. New boks are labelled within 15 minutes by
+the `facets` job (YandexGPT, after the embedder; calibrated in
+`docs/reading-facets.md`).
 
 **Visitor country is recorded again (2026-11-09).** From the move on
 2026-11-07 until this fix, no visit had a country: Cloudflare used to supply
