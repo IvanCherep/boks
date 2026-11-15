@@ -159,6 +159,8 @@ export type SeriesActor = {
   handle?: string | null;
   /** What an author's Series are signed with (their page, else their byline); Studio types its own. */
   authorName?: string | null;
+  /** The caller's own name (their page, else their only byline), the default byline of a new draft; null when they have none. */
+  ownName?: string | null;
 };
 
 export type SeriesBuild = { token: string; result: SeriesBuildResult; sourceHash: string };

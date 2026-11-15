@@ -5473,3 +5473,25 @@ begin
   perform public.boks_assert((select reading_request ->> 'mood' from public.served_feed where id = v_feed) = 'sad', 'a served feed keeps its reading request');
 end $$;
 rollback;
+
+-- Series recorder (20261118140000): `ownName` is the caller's own name only.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f6000000-0000-4000-8000-000000000001', 'own@boks.test', false),
+  ('f6000000-0000-4000-8000-000000000002', 'catalogue@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f6000000-0000-4000-8000-000000000001', 'own_poet', 'admin', now(), 'v1'),
+  ('f6000000-0000-4000-8000-000000000002', 'own_catalogue', 'admin', now(), 'v1');
+insert into public.reels (id, title, author_name, text, status, author_user_id, submitted_at, reviewed_at) values
+  ('f6000000-0000-4000-8000-0000000000a1', 'Своё', 'Поэт Свой', 'строка', 'published', 'f6000000-0000-4000-8000-000000000001', now(), now()),
+  ('f6000000-0000-4000-8000-0000000000a2', 'Чужое один', 'Классик Первый', 'строка', 'published', 'f6000000-0000-4000-8000-000000000002', now(), now()),
+  ('f6000000-0000-4000-8000-0000000000a3', 'Чужое два', 'Классик Второй', 'строка', 'published', 'f6000000-0000-4000-8000-000000000002', now() + interval '1 minute', now());
+do $$
+begin
+  perform public.boks_test_login('f6000000-0000-4000-8000-000000000001');
+  perform public.boks_assert(public.get_my_series_access() ->> 'ownName' = 'Поэт Свой', 'one byline of one''s own is one''s own name');
+  perform public.boks_test_login('f6000000-0000-4000-8000-000000000002');
+  perform public.boks_assert(public.get_my_series_access() ->> 'ownName' is null, 'a catalogue''s bylines are no one''s own name');
+  perform public.boks_assert(public.get_my_series_access() ->> 'authorName' is not null, 'authorName is unchanged');
+end $$;
+rollback;

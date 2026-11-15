@@ -25,6 +25,13 @@ author can spend:
 | Takes | 5 at a time, 20 in all | recorded or uploaded |
 | A take | 25 MB, 10 minutes | the worker measures the file itself |
 
+An author's draft is signed with their own name and they cannot change it.
+Studio's new draft starts signed with the recorder's own name too, since
+people mostly record their own work: their author page's name, else their
+byline when all their boks carry one (`ownName` in `get_my_series_access`,
+`20261118140000`). The catalogue account has no own name and starts empty;
+Studio can always type another author.
+
 A take is refused unless its bytes are the audio its kind says (WebM, MP4,
 Ogg, WAV, MP3). An author sees and touches only their own drafts; anyone
 else's answers "No such draft". Studio sees every draft, with its owner's

@@ -142,6 +142,23 @@ describe("the builds of a Series", () => {
   });
 });
 
+describe("Studio's new drafts", () => {
+  it("start signed with the recorder's own name, still editable", async () => {
+    const store = await import("@/lib/boks/series-recorder/store");
+    const kurnosov = { ...studio, userId: "kurnosov", ownName: "Андрей Курносов", authorName: "Андрей Курносов" };
+    const draft = await store.createDraft(kurnosov, { title: "Т", text: poem });
+    expect(draft.author).toBe("Андрей Курносов");
+    expect((await store.updateDraft(kurnosov, draft.id, { author: "Другой автор" })).author).toBe("Другой автор");
+    expect((await store.createDraft(kurnosov, { title: "Т", author: "Названный", text: poem })).author).toBe("Названный");
+  });
+
+  it("start empty for an account with no name of its own (the catalogue's borrowed bylines are not one)", async () => {
+    const store = await import("@/lib/boks/series-recorder/store");
+    const catalogue = { ...studio, userId: "boks", ownName: null, authorName: "Thomas Hardy" };
+    expect((await store.createDraft(catalogue, { title: "Т", text: poem })).author).toBe("");
+  });
+});
+
 describe("an author's own drafts", () => {
   it("are signed with the author's own name, whatever is sent", async () => {
     const store = await import("@/lib/boks/series-recorder/store");

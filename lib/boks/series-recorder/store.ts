@@ -326,8 +326,12 @@ export async function createDraft(actor: SeriesActor, input: { title?: unknown; 
   const data: SeriesDraftData = {
     id: randomHex(8),
     title: cleanText(input.title ?? "", seriesLimits.titleChars, "The title").trim(),
-    // An author's Series is signed with their own name; only Studio writes a byline.
-    author: actor.admin ? cleanText(input.author ?? "", seriesLimits.authorChars, "The author").trim() : (actor.authorName ?? "").slice(0, seriesLimits.authorChars),
+    // An author's Series is signed with their own name; only Studio writes a
+    // byline, and it starts as Studio's own name too: people mostly record
+    // their own work. It stays editable.
+    author: actor.admin
+      ? cleanText(input.author ?? actor.ownName ?? "", seriesLimits.authorChars, "The author").trim()
+      : (actor.authorName ?? "").slice(0, seriesLimits.authorChars),
     text: checkText(cleanText(input.text ?? "", seriesLimits.textChars, "The text")),
     takes: [],
     images: [],
