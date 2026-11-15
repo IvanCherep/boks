@@ -5335,3 +5335,86 @@ begin
   perform public.boks_assert(v_result ->> 'bokId' is not null, 'Studio''s publication is not counted against the author''s grant');
 end $$;
 rollback;
+
+-- Reading facets (20261118120000): labels are checked against the registry,
+-- the view merges bok, byline and derived facets, and only admins see coverage.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f4000000-0000-4000-8000-000000000001', 'facets@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f4000000-0000-4000-8000-000000000001', 'facets_reader', 'reader', now(), 'v1');
+insert into public.reels (id, title, author_name, text, status, author_user_id, submitted_at, reviewed_at)
+values ('f4000000-0000-4000-8000-0000000000b1', 'Грустное', 'Поэт Фасетов', E'строка один\nстрока два\nстрока три\nстрока четыре', 'published', 'f4000000-0000-4000-8000-000000000001', now(), now());
+do $$
+declare
+  v_error text;
+  v_facets jsonb;
+  v_bok uuid := 'f4000000-0000-4000-8000-0000000000b1';
+begin
+  insert into public.bok_facet_labels (bok_id, facet, facet_values, source, labeler, rubric_version, text_hash)
+  select v_bok, 'mood', array['sad', 'think'], 'model', 'test', 1, public.boks_bok_text_hash(title, text)
+  from public.reels where id = v_bok;
+  insert into public.byline_facet_labels (byline, facet, facet_values, source, labeler, rubric_version)
+  values ('Поэт Фасетов', 'author_group', array['contemporary'], 'editor', 'test', 1);
+
+  select facets into v_facets from public.bok_reading_facets where bok_id = v_bok;
+  perform public.boks_assert(v_facets -> 'mood' = '["sad", "think"]'::jsonb, 'a bok carries its mood in order');
+  perform public.boks_assert(v_facets -> 'author_group' = '["contemporary"]'::jsonb, 'a bok carries its byline''s group');
+  perform public.boks_assert(v_facets ? 'format', 'a bok with a known shape has a format');
+  perform public.boks_assert(v_facets -> 'mood' ?| array['sad'] and not (v_facets -> 'mood' ?| array['fun']), 'a request matches by shared value');
+
+  begin
+    insert into public.bok_facet_labels (bok_id, facet, facet_values, source, labeler, rubric_version)
+    values (v_bok, 'author_group', array['classics'], 'model', 'test', 1);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Facet author_group is not labelled per bok.', 'a byline facet is refused on a bok');
+  begin
+    update public.bok_facet_labels set facet_values = array['sad', 'angry'] where bok_id = v_bok;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Facet mood has no value angry.', 'an unknown value is refused');
+  begin
+    update public.bok_facet_labels set facet_values = array['sad', 'sad'] where bok_id = v_bok;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Facet mood lists a value twice.', 'a repeated value is refused');
+  begin
+    update public.byline_facet_labels set facet_values = array['classics', 'contemporary'] where byline = 'Поэт Фасетов';
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Facet author_group takes one value.', 'a single-valued facet holds one value');
+  begin
+    insert into public.bok_facet_labels (bok_id, facet, facet_values, source, labeler, rubric_version)
+    values (v_bok, 'format', array['prose'], 'editor', 'test', 1);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Facet format is not labelled per bok.', 'a derived facet is never labelled');
+
+  update public.reels set text = text || E'\nстрока пять' where id = v_bok;
+  perform public.boks_test_login('f4000000-0000-4000-8000-000000000001');
+  begin
+    perform public.get_reading_facet_coverage();
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Only an admin can read facet coverage.', 'a reader cannot read coverage');
+end $$;
+
+set local role anon;
+do $$
+declare v_error text;
+begin
+  begin
+    perform 1 from public.bok_facet_labels limit 1;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'permission denied%', 'anon cannot read labels');
+  v_error := null;
+  begin
+    perform 1 from public.bok_reading_facets limit 1;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'permission denied%', 'anon cannot read the facets view');
+end $$;
+reset role;
+rollback;

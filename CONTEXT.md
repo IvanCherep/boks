@@ -142,6 +142,10 @@ _Avoid_: feed log, provenance row
 A bok judged finished from foreground reading time and scroll progress; there is no "finished" button. The event is named `complete`.
 _Avoid_: finish, completion
 
+**Reading facet**:
+One question a reader can ask the feed about the next bok, with a fixed set of values: mood (`sad`, `fun`, `think`), form (`prose`, `poetry`), author group (`classics`, `contemporary`). Labelled per bok, per byline, or derived from existing columns (`docs/reading-facets.md`). No label means unknown, never a default.
+_Avoid_: tag, category, genre
+
 **Shown**:
 A bok that was on the reader's screen in an earlier visit; the feed serves every unshown bok before any shown one.
 _Avoid_: seen (in prose), viewed

@@ -256,6 +256,15 @@ See `docs/studies.md`.
 
 ## Live
 
+**Reading facets are labelled, not yet used (2026-11-16).** The data for
+"Что почитать": every published bok (238) has a mood label (`sad` /
+`fun` / `think`, or none) read from its text by Claude subagents under rubric
+v1, and every byline (100) an author group (`classics` / `contemporary`);
+form is derived from `reading_shape`. Tables, the merged view
+`bok_reading_facets` and admin coverage: migration 20261118120000, applied.
+The feed does not read them yet, and no job labels new boks yet: new boks stay
+unlabelled (unknown) until it exists. `docs/reading-facets.md`.
+
 **Visitor country is recorded again (2026-11-09).** From the move on
 2026-11-07 until this fix, no visit had a country: Cloudflare used to supply
 it, and nothing on our server did. Now `/api/geo` looks the address up in

@@ -36,6 +36,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 - `docs/link-only-pieces.md`: a living author's piece shown only by its link - why its files stay out of this public repository, the storage bucket, making and taking down one.
 - `docs/copyright.md`: rights attestation on publishing, the per-bok report menu, handling a complaint.
 - `docs/public-domain-corpus.md`, `docs/russian-corpus.md`: where the English and Russian texts come from, why they are free to publish, how the converters work and what they got wrong first.
+- `docs/reading-facets.md`: what a reader can ask the feed for (mood, form, author group) - the facet tables, the rubrics, the rules that keep labels honest, how the catalogue was labelled and how new boks will be.
 - `docs/reading-languages.md`: which language a reader is offered, why the filter lives in retrieval, why an undetermined language is not a yes.
 - `docs/analytics-and-thesis-readiness.md`: what the analytics can and cannot prove, claim by claim, and the ranked gaps.
 - `docs/research/`: the recommender system report and the phased research implementation plan.
