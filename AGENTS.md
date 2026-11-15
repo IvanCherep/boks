@@ -37,6 +37,8 @@ Read in this order, then the focused doc for the task:
 
 Before running anything locally, read `docs/local-environment-runbook.md`: which env file reaches which backend is not visible from the code.
 
+Before shipping anything that calls an outside service, writes files or adds server env, read "What the server does differently from your laptop" in `docs/agents/production-changes.md`: services blocked from Russia (some only for `POST`, answering 200 HTML), Cloudflare relays and the `wrangler -c` trap, `EXDEV` between Docker mounts, hand-kept `compose.yml`/`.env`. A full release is: tests and `npm run verify:schema` → `bash deploy/migrate.sh` then `--apply` → commit → `npm run deploy` → `git push github HEAD:main` → check the logs.
+
 ## Reader rules
 
 - The feed (`/`) is one algorithmic, swipe-first stream. No picker, categories or reader-chosen algorithm. The series shelf (`/series`) is the single exception and lists only series pieces (`docs/adr/0009-series-shelf-is-the-one-shelf.md`).

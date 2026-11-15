@@ -365,6 +365,54 @@ several toggles that would otherwise overwrite hosted settings.
 
 ---
 
+### Phone widths and signed-in pages, reliably: Playwright with system Chrome
+
+Faster and more exact than the extension for a layout check:
+`playwright-core` launched with
+`executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`
+and `newContext({ viewport: { width: 390, height: 844 }, locale: "ru-RU" })`.
+Keep the script outside the repository (scratch folder). To be signed in
+without email, against the **local** stack only: ask local Auth for a magic
+link with the local service key (`npx supabase status`), verify its
+`email_otp`, and put the returned session into the page before it loads:
+
+```js
+await context.addInitScript((v) => localStorage.setItem("sb-127-auth-token", v), JSON.stringify(session));
+```
+
+(`session.expires_at = now + expires_in`.) Read the screenshot before saying
+a layout works.
+
+### A local account that is refused for no visible reason
+
+`Accept the boks terms before using this feature.` comes from
+`boks_require_reader_account()`: the local profile has no `terms_accepted_at`.
+Production accounts have it; set it on the local one
+(`update user_profiles set terms_accepted_at = now(), terms_version = 'v1' where …`).
+
+### Features that need a real filesystem (the Series recorder)
+
+`npm run dev` runs in workerd, whose filesystem is virtual: writing drafts
+fails with "operation not permitted". Run the dev server on Node, as
+production does, and serve the link-only folder yourself:
+
+```bash
+python3 -m http.server 5198 --bind 127.0.0.1 --directory <scratch>/link-only &
+BOKS_PLATFORM=node BOKS_SERIES_DIR=<scratch>/series BOKS_LINK_ONLY_DIR=<scratch>/link-only \
+  BOKS_LINK_ONLY_BASE_URL=http://127.0.0.1:5198 npx vinext dev --port 5174
+npm run series:worker   # same env; ELEVENLABS_API_URL can point at a local stand-in
+```
+
+Locally both folders sit on one disk, so a cross-mount bug (`EXDEV`) and a
+blocked service never show here; see "What the server does differently" in
+`docs/agents/production-changes.md`.
+
+### `supabase migration up --local` refuses an older file
+
+When the local stack's migration history differs from the files ("relation …
+already exists"), apply only the new file with `psql` as in §5; do not reset a
+stack that holds data you are testing with.
+
 ## 9. When something is broken, check these first
 
 | Symptom | Likely cause |
@@ -376,3 +424,6 @@ several toggles that would otherwise overwrite hosted settings.
 | Admin account gone after tests | `test:supabase` reset the database (§5) |
 | Sign-in link "already used or expired" | single use; request another, mind the throttle |
 | Local data looks wrong after a rebase | migrations reapply on reset; fixtures are not migrations |
+| "operation not permitted" writing files in dev | workerd's virtual fs; run on Node (§7, "Features that need a real filesystem") |
+| "Accept the boks terms" for a local admin | local profile without `terms_accepted_at` (§7) |
+| Works locally, fails on production | geo-blocked service, separate Docker mounts, missing server env: `docs/agents/production-changes.md`, "What the server does differently" |

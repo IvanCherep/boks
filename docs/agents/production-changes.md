@@ -252,6 +252,54 @@ by themselves (`deploy/ops/alerts.sh`, `overload.sh`).
 - A living author's text, recording or photo in git.
 - Releasing without pushing to `github/main` right after.
 
+## What the server does differently from your laptop
+
+Each of these passed every local check and then broke on production.
+
+- **Outbound traffic from Russia is filtered per service, and per method.**
+  Telegram is unreachable; ElevenLabs answers `GET` (models, subscription)
+  normally but answers every `POST` with an "Access restricted" HTML page and
+  **HTTP 200**. A reachability probe is not proof: from the server, send the
+  exact request the feature makes (method, path, body shape) and look at the
+  status, the `content-type` and the first bytes. Yandex Cloud works directly.
+- **The way round is a Cloudflare Worker relay** with a shared key, one per
+  service, allowing only the paths the feature uses: `deploy/telegram-relay`
+  (`boks-telegram`), `deploy/elevenlabs-relay` (`boks-elevenlabs`). The real
+  API key stays on the server and travels in its usual header.
+- **Deploy a relay with `npx wrangler deploy -c wrangler.toml` from its own
+  folder, and pass `-c wrangler.toml` to `wrangler secret` too.** Without it,
+  wrangler follows `.wrangler/deploy/config.json` at the repository root to the
+  retired `read` Worker: a secret lands there and the relay answers 404. After
+  a deploy, call the relay without the key and expect 403, not 404.
+- **Treat a 200 that is not JSON as the service failing**, never parse it
+  blindly: a block page, a captcha or a proxy error all come as 200 HTML.
+- **Each Docker bind mount is its own filesystem.** `rename()` from one mount
+  to another fails with `EXDEV` (on the laptop both folders are on one disk and
+  it works). Copy into a temporary name beside the target, inside the target
+  mount, then rename there.
+- **`compose.yml` and `.env` on the server are not in a release.** Change them
+  by hand, keep a backup (`cp compose.yml compose.yml.bak-<what>`), check with
+  `docker compose config -q`, mirror the change in `deploy/compose.yml` in git,
+  then `docker compose up -d <service>` for that service (never the app
+  copies). A container sees a changed `.env` only after it is recreated.
+- **Secrets never pass through your output.** Generate and store a key in one
+  pipeline (`K=$(openssl rand -hex 32); printf %s "$K" | npx wrangler secret put
+  RELAY_KEY -c wrangler.toml; printf 'X=%s\n' "$K" | ssh boks-app 'cat >> /opt/boks/.env'`),
+  and check it arrived by counting lines (`grep -c '^X=' .env`), never by
+  printing it. Do not read the user's key files; the user adds those keys.
+- **Read-only questions to the production database**: put the `select` in a
+  file and run `bash deploy/sql.sh <file>` (it rolls back). Piping SQL into
+  `docker compose exec -T db psql` over SSH returned nothing at all.
+- **Background workers report through log lines.** The Series worker logs
+  `series: ALERT …` for failures that are ours (a service out of money or
+  blocked, an unexpected error); `deploy/ops/alerts.sh` forwards new ones to
+  Telegram each minute. A new worker that can fail for reasons the user cannot
+  fix should log the same way and say on screen that the team already knows.
+- **Git remotes:** `origin` in some checkouts is not GitHub. Push with
+  `git push github HEAD:main`, then `git log github/main -1` to confirm.
+- **SSH sometimes times out once** (`Operation timed out`); retry with
+  `-o ConnectTimeout=15` before suspecting the server.
+
 ## Working as an agent in Claude Code
 
 The auto-mode permission classifier may refuse production commands (SSH
