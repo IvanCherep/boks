@@ -167,7 +167,7 @@ export function Teleprompter({ title, stanzas, stream, level, estimatedMs, onDon
       <span className={`prompter__meter is-${verdict}`} aria-label={t.level}>
         <span style={{ width: `${Math.max(0, Math.min(100, (level.peak + 60) * (100 / 60)))}%` }} />
       </span>
-      <button type="button" className="prompter__ghost" onClick={cancel}><X aria-hidden="true" />{t.cancelTake}</button>
+      <button type="button" className="prompter__ghost" onClick={cancel} aria-label={t.cancelTake}><X aria-hidden="true" /><span className="prompter__label">{t.cancelTake}</span></button>
     </header>
 
     <div className="prompter__stage">
@@ -191,11 +191,11 @@ export function Teleprompter({ title, stanzas, stream, level, estimatedMs, onDon
       <button type="button" className="prompter__stop" onClick={() => void stop()} disabled={!recording}>
         <Square aria-hidden="true" />{t.stop}<kbd>{t.stopHint}</kbd>
       </button>
-      <button type="button" className="prompter__ghost" onClick={() => setHeld((h) => !h)} disabled={!recording}>
-        {held ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}{held ? t.resumeScroll : t.pauseScroll}
+      <button type="button" className="prompter__ghost" onClick={() => setHeld((h) => !h)} disabled={!recording} aria-label={held ? t.resumeScroll : t.pauseScroll}>
+        {held ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}<span className="prompter__label">{held ? t.resumeScroll : t.pauseScroll}</span>
       </button>
-      <button type="button" className="prompter__ghost" onClick={restart} disabled={!recording} title={t.restartHint}>
-        <RotateCcw aria-hidden="true" />{t.restart}
+      <button type="button" className="prompter__ghost" onClick={restart} disabled={!recording} title={t.restartHint} aria-label={t.restart}>
+        <RotateCcw aria-hidden="true" /><span className="prompter__label">{t.restart}</span>
       </button>
     </footer>
   </div>, document.body);

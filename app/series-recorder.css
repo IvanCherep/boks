@@ -405,3 +405,67 @@
 .series-rec__published-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--studio-selected-ink); color: #fff; }
 .series-rec__published-mark svg { width: 18px; height: 18px; }
 @media (max-width: 640px) { .series-rec__publish, .series-rec__published { grid-template-columns: minmax(0, 1fr); } }
+
+/* Phones: one column that reads top to bottom, nothing overlapping. */
+@media (max-width: 640px) {
+  .series-rec h2 { font-size: 26px; }
+  .series-rec__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 6px 8px; }
+  .series-rec__head h2 { font-size: 24px; line-height: 1.15; padding-top: 4px; }
+  .series-rec__head .series-rec__confirm { grid-column: 1 / -1; }
+  .series-rec__back { width: 32px; height: 32px; }
+  .series-rec__delete span { display: none; }
+  .series-rec__steps { margin: 14px 0 18px; }
+  .series-rec__step { gap: 16px; }
+
+  /* Generate: what it is, the allowance, then the count and the action, each on its own line. */
+  .series-rec__generate { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px; }
+  .series-rec__generate-text strong { font-size: 21px; }
+  .series-rec__budget { justify-self: stretch; }
+  .series-rec__generate-go { display: grid; grid-template-columns: auto minmax(0, 1fr); justify-self: stretch; gap: 10px; }
+  .series-rec__generate-go [data-slot="button"] { justify-self: stretch; width: 100%; }
+  .series-rec__generate.is-paused [data-slot="button"], .series-rec__generate.is-paused .series-rec__budget { justify-self: start; }
+  .series-rec__own { padding: 14px 16px; }
+
+  /* Pictures two to a row, their lines short. */
+  .series-rec__frames { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+  .series-rec__frame figcaption { font-size: 18px; left: 8px; top: 6px; }
+  .series-rec__source { right: 6px; top: 6px; padding: 2px 6px; font-size: 9px; }
+  .series-rec__frame-tools { flex-wrap: wrap; }
+  .series-rec__frame-tools [data-variant="outline"] { font-size: 12px; padding-inline: 8px; }
+  .series-rec__frame-lines blockquote { -webkit-line-clamp: 3; font-size: 12px; }
+  .series-rec__versions button img { max-height: 48px; }
+
+  /* Recording: the big button fits, the takes keep their actions on one line. */
+  .series-rec__mic { padding: 16px; }
+  .series-rec__start { padding: 12px 16px 12px 12px; gap: 12px; }
+  .series-rec__start-dot { width: 44px; height: 44px; }
+  .series-rec__start-text strong { font-size: 21px; }
+  .series-rec__take { grid-template-columns: 40px minmax(0, 1fr) auto; padding: 8px 2px; }
+
+  /* The build: the phone preview at its own width. */
+  .series-rec__build { gap: 20px; }
+  .series-rec__result dl { gap: 22px; }
+  .series-rec__result dd { font-size: 26px; }
+  .series-rec__builds button { min-width: 0; flex: 1; }
+  .series-rec__phone { justify-self: center; }
+  .series-rec__phone-screen { width: 260px; height: 562px; }
+  .series-rec__phone iframe { transform: scale(.6205); }
+}
+
+/* The teleprompter on a phone: one row of controls, icons where words do not fit. */
+@media (max-width: 640px) {
+  .prompter { --prompter-top: 58px; --prompter-foot: 96px; }
+  .prompter__top { gap: 10px; padding: 0 12px; flex-wrap: nowrap; }
+  .prompter__state { font-size: 11px; letter-spacing: .06em; white-space: nowrap; }
+  .prompter__meter { width: 64px; flex: none; }
+  .prompter__label, .prompter__pace kbd, .prompter__stop kbd { display: none; }
+  .prompter__ghost { width: 44px; height: 44px; padding: 0; justify-content: center; flex: none; }
+  .prompter__top .prompter__ghost { width: 40px; height: 40px; }
+  .prompter__controls { flex-wrap: nowrap; gap: 8px; padding: 10px 10px calc(14px + env(safe-area-inset-bottom, 0px)); min-height: var(--prompter-foot); }
+  .prompter__pace { padding: 2px; gap: 0; }
+  .prompter__pace span { min-width: 44px; font-size: 13px; }
+  .prompter__pace button { width: 32px; height: 32px; }
+  .prompter__stop { height: 48px; padding: 0 18px; flex: 1; justify-content: center; max-width: 140px; }
+  .prompter__text { font-size: 26px; padding-left: 18px; padding-right: 18px; }
+  .prompter__stanza p { line-height: 1.3; }
+}

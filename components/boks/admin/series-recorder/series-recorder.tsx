@@ -183,7 +183,7 @@ function DraftEditor({ id, ownByline, onChanged, onClose, onDeleted }: {
           <Button size="sm" variant="destructive" onClick={() => deleteSeriesDraft(id).then(onDeleted, (e) => setError(errorText(e)))}>{t.delete}</Button>
           <Button size="sm" variant="outline" onClick={() => setConfirmDelete(false)}>{t.cancel}</Button>
         </span>
-        : <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)} disabled={building}><Trash2 className="size-4" />{t.deleteDraft}</Button>}
+        : <Button size="sm" variant="ghost" className="series-rec__delete" onClick={() => setConfirmDelete(true)} disabled={building} aria-label={t.deleteDraft}><Trash2 className="size-4" /><span>{t.deleteDraft}</span></Button>}
     </header>
     <ol className="series-rec__steps">
       {steps.map((name, index) => <li key={name}>

@@ -68,9 +68,20 @@ async function ffmpeg(args: string[]) {
   return stderr;
 }
 
+/**
+ * A file's length in seconds. A browser's own recording (MediaRecorder's WebM,
+ * Safari's fragmented MP4) carries no duration in its header - ffprobe says
+ * N/A - so then the file is read through once and the last timestamp is its
+ * length.
+ */
 async function durationOf(path: string) {
   const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path]);
-  return Number(stdout.trim());
+  const said = Number(stdout.trim());
+  if (Number.isFinite(said) && said > 0) return said;
+  const log = await ffmpeg(["-i", path, "-f", "null", "-"]);
+  const times = [...log.matchAll(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/g)];
+  const last = times.at(-1);
+  return last ? Number(last[1]) * 3600 + Number(last[2]) * 60 + Number(last[3]) : Number.NaN;
 }
 
 /** Integrated loudness, from ffmpeg's loudnorm analysis. */
