@@ -150,8 +150,8 @@ async function takeBuildResult(id: string) {
   if (!result) return;
   if (!result.ok) {
     await writeJsonAtomically(join(dir, "build-last.json"), result);
-    // The voice service failing is ours, not the author's: that attempt is given back.
-    if (result.errorCode === "quota" || result.errorCode === "service") {
+    // The voice service or the worker failing is ours, not the author's: that attempt is given back.
+    if (result.errorCode === "quota" || result.errorCode === "service" || result.errorCode === "unexpected" || !result.errorCode) {
       const data = await readStored(id);
       data.buildAttempts = Math.max(0, (data.buildAttempts ?? 0) - 1);
       await writeJsonAtomically(join(dir, "draft.json"), data);

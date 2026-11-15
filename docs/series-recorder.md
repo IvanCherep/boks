@@ -155,7 +155,15 @@ the work kept:
   "picture generation is paused for now", upload your own or come back
   later. Pictures are not on the critical path.
 
-Both log a `series: ALERT …` line for the server's alerts.
+A build that breaks on our side for any other reason (`unexpected`) is
+treated the same way: the author reads that the boks team already knows and
+is fixing it, the takes and pictures are kept, and the attempt is given back.
+
+Each of these, and a picture job that failed on our side, logs a
+`series: ALERT …` line with the draft id; `deploy/ops/alerts.sh` forwards new
+ones to the team's Telegram every minute (watermark
+`/var/lib/boks-ops/series_alerts.since`, at most five a minute). A prompt
+Yandex refused is the text's and is not an alert.
 
 ## Running it locally
 

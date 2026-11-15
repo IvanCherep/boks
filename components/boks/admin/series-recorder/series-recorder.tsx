@@ -708,7 +708,7 @@ function BuildStep({ draft, ownByline, onSaved, onError, onGo }: StepProps & { o
 function BuildFailure({ result, canRetry, onRetry, onRecord }: { result: SeriesBuildResult; canRetry: boolean; onRetry: () => void; onRecord: () => void }) {
   const t = useMessages(recorderMessages);
   const code = result.errorCode ?? "unexpected";
-  if (code === "quota" || code === "service") {
+  if (code === "quota" || code === "service" || code === "unexpected") {
     return <section className="series-rec__paused" role="status">
       <span className="series-rec__paused-icon" aria-hidden="true"><CloudOff /></span>
       <div>

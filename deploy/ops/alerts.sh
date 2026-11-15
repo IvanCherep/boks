@@ -109,6 +109,21 @@ for threshold in 60 80 95; do
 done
 find "$STATE" -name 'mail_quota_*' -mtime +3 -delete 2>/dev/null || true
 
-# 9. What people send us, as it arrives: every feedback note, every application
+# 9. The Series worker's own trouble (scripts/series-worker.mts logs "series:
+# ALERT ..."): ElevenLabs or Yandex out of money or blocked, or a build that
+# broke on our side. The author is told the team already knows; this is how it
+# does. Read since the last run (a watermark), at most 5 messages a minute.
+mark="$STATE/series_alerts.since"
+now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+if [ -f "$mark" ]; then
+  docker compose logs --no-log-prefix --since "$(cat "$mark")" --until "$now" series 2>/dev/null \
+    | grep -F 'series: ALERT' | head -5 | while IFS= read -r line; do
+      text=$(sed -e 's/^series: ALERT //' -e 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' <<<"$line" | cut -c1-600)
+      notify "🔴 <b>Boks Series:</b> $text"
+    done
+fi
+echo "$now" > "$mark"
+
+# 10. What people send us, as it arrives: every feedback note, every application
 # from the page for authors, every work sent for review (ops/inbox.py).
 python3 ops/inbox.py || true

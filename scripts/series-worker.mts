@@ -32,7 +32,7 @@
  * BOKS_LINK_ONLY_DIR (where `/l/<token>` reads from).
  */
 import { execFile } from "node:child_process";
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { buildPoemManifest } from "@/lib/boks/poetry/build-manifest.mjs";
@@ -231,8 +231,13 @@ async function build(dir: string, job: SeriesJob, step: (name: SeriesBuildStep) 
   const target = join(linkOnlyRoot, job.token);
   const old = `${target}.old`;
   await rm(old, { recursive: true, force: true });
+  // Drafts and link-only are separate mounts on the server, where a rename
+  // between them fails (EXDEV): copy in beside the target first, then swap.
+  const incoming = `${target}.new`;
+  await rm(incoming, { recursive: true, force: true });
+  await cp(out, incoming, { recursive: true });
   if (await exists(target)) await rename(target, old);
-  await rename(out, target);
+  await rename(incoming, target);
   await rm(old, { recursive: true, force: true });
   await rm(work, { recursive: true, force: true });
 
@@ -280,7 +285,12 @@ async function takeOne(): Promise<boolean> {
         error: error instanceof Error ? error.message : String(error),
         ...detail,
       };
-      if (error instanceof BuildError && (error.code === "quota" || error.code === "service")) console.error(`series: ALERT voice service ${error.code}: ${error.message}`);
+      // ALERT lines go to the team's Telegram (deploy/ops/alerts.sh): these failures are ours, not the author's.
+      const code = error instanceof BuildError ? error.code : "unexpected";
+      if (code === "quota" || code === "service" || code === "unexpected") {
+        const message = (error instanceof Error ? error.message : String(error)).replace(/\s+/g, " ").slice(0, 300);
+        console.error(`series: ALERT build ${code} · ${id} «${job.title}»: ${message}`);
+      }
       console.error(`series: ${id} failed`, error);
     }
     await writeJsonAtomically(join(dir, "result.json"), { ...result, sourceHash: job.sourceHash });
@@ -324,8 +334,12 @@ async function drawOne(): Promise<boolean> {
       result = { jobId: job.jobId, kind: job.kind, ok: true, file: job.kind === "regenerate" ? job.file : undefined, pictures };
       console.log(`series: ${id} drew ${pictures.length} picture(s) in ${((Date.now() - started) / 1000).toFixed(1)}s`);
     } catch (error) {
-      // ALERT lines are what the server's alerts look for: the team has to top up or fix the service.
-      if (error instanceof ArtServiceError && error.code === "unavailable") console.error(`series: ALERT pictures unavailable: ${error.message}`);
+      // ALERT lines go to the team's Telegram (deploy/ops/alerts.sh): top up or fix the service. A refused prompt is the text's, not ours.
+      const artCode = error instanceof ArtServiceError ? error.code : "unexpected";
+      if (artCode === "unavailable" || artCode === "unexpected") {
+        const message = (error instanceof Error ? error.message : String(error)).replace(/\s+/g, " ").slice(0, 300);
+        console.error(`series: ALERT pictures ${artCode} · ${id}: ${message}`);
+      }
       console.error(`series: ${id} could not draw`, error);
       // Whatever was drawn before the failure goes; the job is all or nothing.
       for (const name of await readdir(dir)) if (name.startsWith(`art-${job.jobId}-`)) await rm(join(dir, name), { force: true });
