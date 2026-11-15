@@ -24,6 +24,13 @@ import {
   type SupabaseReelRow,
 } from "@/lib/boks/supabase-reels";
 import type { UserSegment } from "@/lib/boks/contracts";
+import {
+  isEmptyReadingRequest,
+  preferFacetMatches,
+  preferredFacets,
+  strictFacets,
+  type ReadingRequest,
+} from "@/lib/boks/facets/request";
 import { randomBoksId } from "@/lib/boks/browser-id";
 
 /**
@@ -70,8 +77,28 @@ export type ServeReaderFeedRequest = {
    * RPC.
    */
   readingLanguages?: readonly string[];
+  /**
+   * "Что почитать": the reader's conditions for this pause. Form and author
+   * groups limit retrieval; the mood puts matching boks first. Recorded with
+   * the served feed. `docs/reading-facets.md`.
+   */
+  readingRequest?: ReadingRequest | null;
+  /** The bok on screen when the request was applied, so the new feed starts elsewhere. */
+  excludeBokId?: string | null;
   now?: Date;
 };
+
+/**
+ * A strict reading request could not be honoured: the degraded catalogue read
+ * has no facets. Better no new feed (the reader keeps the bok on screen and is
+ * told) than a feed that ignores what they asked for.
+ */
+export class ReadingRequestUnavailableError extends Error {
+  constructor() {
+    super("The reading request cannot be applied while the catalogue is degraded.");
+    this.name = "ReadingRequestUnavailableError";
+  }
+}
 
 export type ServedFeed = {
   /** Null when provenance could not be written. The feed is served anyway. */
@@ -109,10 +136,12 @@ export async function serveReaderFeed(
   // high-latency connection outran the browser's patience for the Worker.
   const [config, candidateSet, publishedCount] = await Promise.all([
     loadExperimentConfig(transport),
-    loadCandidates(transport, limit, request.readingLanguages),
+    loadCandidates(transport, limit, request.readingLanguages, request.readingRequest, request.excludeBokId),
     loadPublishedCount(transport),
   ]);
+  if (candidateSet.degraded && strictFacets(request.readingRequest)) throw new ReadingRequestUnavailableError();
   const activeConfig = candidateSet.degraded ? recencyOnlyConfig : config;
+  const readingRequest = isEmptyReadingRequest(request.readingRequest) ? null : request.readingRequest!;
 
   // The reader is the unit of assignment, so the subject is the Supabase user
   // id: the same person on a second device must land in the same arm, or every
@@ -145,6 +174,14 @@ export async function serveReaderFeed(
     now: request.now,
   });
 
+  // The mood is soft: matching boks go first, each part in the arm's order.
+  // Done before recording, so the served feed is what the reader gets.
+  const entries = preferFacetMatches(
+    feed.entries,
+    (entry) => candidateSet.facetsById.get(entry.candidate.id),
+    preferredFacets(readingRequest)
+  );
+
   // A wrong catalog size would understate how much of it a reader has
   // consumed, so a failed count falls back to what was actually offered.
   const catalogSize = publishedCount ?? candidateSet.candidates.length;
@@ -153,7 +190,7 @@ export async function serveReaderFeed(
   const feedId = await recordProvenance(transport, {
     sessionId: request.sessionId,
     experiment: feed.experiment,
-    entries: feed.entries,
+    entries,
     candidateRequestId,
     candidateCount: candidateSet.candidates.length,
     catalogSize,
@@ -161,13 +198,14 @@ export async function serveReaderFeed(
     degradedMode: candidateSet.degraded || request.servingBackend !== "worker",
     fallbackReason: candidateSet.fallbackReason,
     buildId: request.buildId ?? null,
+    readingRequest,
   });
 
   return {
     feedId,
     experiment: feed.experiment,
-    entries: feed.entries,
-    reels: feed.entries
+    entries,
+    reels: entries
       .map((entry) => candidateSet.reelsById.get(entry.candidate.id))
       .filter((reel): reel is SupabaseReelRow => Boolean(reel)),
     servingBackend: request.servingBackend,
@@ -212,12 +250,21 @@ type LoadedCandidates = CandidateSet & { degraded: boolean; fallbackReason: stri
 async function loadCandidates(
   transport: FeedTransport,
   limit: number,
-  readingLanguages?: readonly string[]
+  readingLanguages?: readonly string[],
+  readingRequest?: ReadingRequest | null,
+  excludeBokId?: string | null
 ): Promise<LoadedCandidates> {
   try {
+    // The new arguments are sent only when used: until the reading-request
+    // migration (20261118130000) is applied, the RPC takes two.
+    const strict = strictFacets(readingRequest);
+    const prefer = preferredFacets(readingRequest);
     const rows = await transport.rpc<SupabaseCandidateRow[]>("get_recommendation_candidates", {
       p_limit: Math.max(limit, 200),
       p_languages: readingLanguages ?? [],
+      ...(strict ? { p_facets: strict } : {}),
+      ...(prefer ? { p_prefer: prefer } : {}),
+      ...(excludeBokId ? { p_exclude: excludeBokId } : {}),
     });
     return { ...candidatesFromRollupRows(rows ?? []), degraded: false, fallbackReason: null };
   } catch (error) {
@@ -306,6 +353,7 @@ type ProvenanceInput = {
   degradedMode: boolean;
   fallbackReason: string | null;
   buildId: string | null;
+  readingRequest: ReadingRequest | null;
 };
 
 async function recordProvenance(transport: FeedTransport, input: ProvenanceInput) {
@@ -328,6 +376,7 @@ async function recordProvenance(transport: FeedTransport, input: ProvenanceInput
         labelingVersion: LABELING_VERSION,
         seed: input.experiment.experimentKey,
         buildId: input.buildId,
+        ...(input.readingRequest ? { readingRequest: input.readingRequest } : {}),
       },
       p_items: input.entries.map((entry) => ({
         reelId: entry.candidate.id,

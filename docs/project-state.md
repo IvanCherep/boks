@@ -256,15 +256,15 @@ See `docs/studies.md`.
 
 ## Live
 
-**Reading facets are labelled, not yet used (2026-11-16).** The data for
-"Что почитать": every published bok (238) has a mood label (`sad` /
-`fun` / `think`, or none) read from its text by Claude subagents under rubric
-v1, and every byline (100) an author group (`classics` / `contemporary`);
-form is derived from `reading_shape`. Tables, the merged view
-`bok_reading_facets` and admin coverage: migration 20261118120000, applied.
-The feed does not read them yet. New boks are labelled within 15 minutes by
-the `facets` job (YandexGPT, after the embedder; calibrated in
-`docs/reading-facets.md`).
+**"Что почитать" (2026-11-16).** A button above Read on the main feed's
+cover: mood (soft, puts matching boks first), form and author groups (strict,
+in retrieval); Apply opens a different bok carried in by the yellow ribbon;
+the request lives in the tab for 30 idle minutes and is recorded with every
+feed served under it (`served_feed.reading_request`). Every published bok
+(238) is labelled: mood by Claude subagents under rubric v1, author group per
+byline; form comes from `reading_shape`. New boks are labelled within 15
+minutes by the `facets` job (YandexGPT, after the embedder). Migrations
+20261118120000, 20261118130000. `docs/reading-facets.md`.
 
 **Visitor country is recorded again (2026-11-09).** From the move on
 2026-11-07 until this fix, no visit had a country: Cloudflare used to supply

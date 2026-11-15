@@ -96,6 +96,8 @@ export type SupabaseCandidateRow = {
   authorFollowers?: number;
   followingAuthor?: boolean;
   mine?: SupabaseCandidateReaderRow;
+  /** Reading facets, e.g. {"mood": ["sad"], "format": ["poetry"]} (`bok_reading_facets`). */
+  facets?: Record<string, unknown>;
 };
 
 export type CandidateSet = {
@@ -111,6 +113,12 @@ export type CandidateSet = {
    */
   readerState: Record<string, ReaderBokState>;
   followedAuthorIds: string[];
+  /**
+   * Each candidate's reading facets, by boks id. Apart from the candidates for
+   * the same reason as `readerState`: the ranker never sees them; only the
+   * reading request's soft preference reorders by them, after ranking.
+   */
+  facetsById: Map<string, Record<string, string[]>>;
 };
 
 const readingShapes = new Set<ReadingShape>(["verse", "short_prose", "long_prose", "unknown"]);
@@ -125,6 +133,16 @@ function toReadingShape(value: unknown): ReadingShape {
   return typeof value === "string" && readingShapes.has(value as ReadingShape)
     ? (value as ReadingShape)
     : "unknown";
+}
+
+/** Only arrays of strings survive: a facet the database sent malformed is no facet. */
+export function toFacets(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const facets: Record<string, string[]> = {};
+  for (const [key, values] of Object.entries(value as Record<string, unknown>)) {
+    if (Array.isArray(values)) facets[key] = values.filter((entry): entry is string => typeof entry === "string");
+  }
+  return facets;
 }
 
 function toReaderBokState(row: SupabaseCandidateReaderRow | undefined): ReaderBokState {
@@ -153,6 +171,7 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
   return {
     readerState,
     followedAuthorIds: [...followedAuthorIds],
+    facetsById: new Map(rows.map((row) => [String(row.id), toFacets(row.facets)])),
     candidates: rows.map(
       (row): StoryCandidate => ({
         id: String(row.id),
@@ -226,6 +245,8 @@ export function candidatesFromReelRows(rows: SupabaseReelRow[]): CandidateSet {
   return {
     readerState: {},
     followedAuthorIds: [],
+    // The degraded read has no facets; a strict reading request is refused there (`feed-service.ts`).
+    facetsById: new Map(),
     candidates: rows.map(
       (reel): StoryCandidate => ({
         id: reel.id,

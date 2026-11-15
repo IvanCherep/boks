@@ -1,10 +1,10 @@
 # Reading facets
 
-The data behind "Что почитать" (What to read): the reader asks for a mood, a
-form and a group of authors, and the feed answers with boks that match. This
-page owns the facet model, the rubrics' rules and how labels are made and
-kept fresh. The reader-facing behaviour (the panel, Apply, the ribbon) is the
-second stage and is not built yet.
+"Что почитать" (What to read): the reader asks for a mood, a form and a group
+of authors, and the feed answers with boks that match. This page owns the
+facet model, the rubrics, how labels are made and kept fresh, and how a
+reader's request reaches the feed. The product rule is in
+`specs/boks-product-spec.md`.
 
 ## The model
 
@@ -130,3 +130,36 @@ value (`labeler = 'yandexgpt'`). It is the weaker labeller: it adds `think`
 too readily. Its labels are told apart by `labeler`; to raise quality, review
 them in Studio (an editor's label is final) or re-label with a stronger model
 when the key allows one. A run of 60 boks costs about 100k input tokens.
+
+## The reader's request
+
+A **reading request** (`lib/boks/facets/request.ts`) is
+`{ mood: sad|fun|think|null, format: any|prose|poetry, authorGroups: [] }`
+for the current pause. It is kept in the tab (`sessionStorage`), forgotten
+after 30 minutes without activity (`components/boks/what-to-read/use-reading-request.ts`),
+never stored on the account.
+
+- **Strict, in retrieval:** form and author groups become `p_facets` of
+  `get_recommendation_candidates` (`20261118130000_boks_reading_request.sql`),
+  applied before the candidate limit, so a filter never answers "nothing"
+  while matches sit further down. The bok on screen is `p_exclude`.
+- **Soft, in ranking:** the mood is `p_prefer`. Retrieval draws matching boks
+  first; after the arm has ranked, `preferFacetMatches` puts the boks that
+  carry the mood first, each part in the arm's order, before the served feed
+  is recorded. Nothing is reordered in the browser.
+- **Recorded:** `served_feed.reading_request` holds the request every such
+  feed was served under, appends included. Analysis must treat these feeds
+  as the arm ranking inside the reader's conditions.
+- **Availability:** `count_reading_request_matches` (capped at 20) disables
+  Apply when nothing fits; the number is never shown.
+- **Degraded path:** the fallback catalogue read has no facets, so a strict
+  request there is refused (`ReadingRequestUnavailableError`, HTTP 409) and the
+  reader keeps the bok on screen, rather than getting a feed that ignores it.
+
+The interface (`components/boks/what-to-read/`): the button above Read on the
+main feed's cover, the sheet portalled into the reader screen, and the yellow
+ribbon (`intent-motion.ts`, a port of the agreed prototype) that reveals the
+new bok after it is committed. Apply in `reader-feed.tsx`
+(`applyReadingRequest`): checks the guest limit, checks availability, reloads
+the feed under the request excluding the bok on screen, and only then commits
+the request; a failure keeps the old bok and conditions.

@@ -1,5 +1,6 @@
 "use client";
 
+import { strictFacets, type ReadingRequest } from "@/lib/boks/facets/request";
 import { initialMetrics } from "@/components/boks/constants";
 import type { LlmReply, LlmTask, YandexModel } from "@/lib/boks/fragments/llm";
 import { analyticsAllowed } from "@/lib/boks/analytics-gate";
@@ -124,6 +125,9 @@ export type SupabaseFeedRequest = {
   reader?: ReaderSignals;
   /** The guest's language filter; a signed-in reader's stored one wins. */
   readingLanguages?: readonly string[];
+  /** "Что почитать" conditions for this pause, and the bok they were applied on. */
+  readingRequest?: ReadingRequest | null;
+  excludeBokId?: string | null;
 };
 
 type WorkerFeedResponse = {
@@ -225,6 +229,8 @@ async function loadWorkerReaderFeed(
         // so the normal Worker feed was unfiltered and the mix of languages
         // changed depending on which path served it.
         readingLanguages: request.readingLanguages ?? [],
+        ...(request.readingRequest ? { readingRequest: request.readingRequest } : {}),
+        ...(request.excludeBokId ? { excludeBokId: request.excludeBokId } : {}),
       }),
     });
     // Cloudflare answers a Worker over its limits with an HTML page, not JSON.
@@ -272,6 +278,8 @@ async function loadBrowserReaderFeed(
     limit: request.limit,
     reader: request.reader,
     readingLanguages: request.readingLanguages,
+    readingRequest: request.readingRequest,
+    excludeBokId: request.excludeBokId,
     servingBackend: "browser",
   });
 
@@ -289,6 +297,28 @@ async function loadBrowserReaderFeed(
       candidateCount: served.candidateCount,
     },
   });
+}
+
+/**
+ * Whether anything published fits these conditions (the reader's languages,
+ * form and author groups, minus the bok on screen): "none" disables Apply.
+ * Capped at 20 by the database; only none-or-some is used, never shown.
+ */
+export async function countReadingRequestMatches(input: {
+  readingLanguages?: readonly string[];
+  readingRequest: ReadingRequest;
+  excludeBokId?: string | null;
+}): Promise<number> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const userId = await getAnonymousSupabaseUserId();
+  if (!userId) throw new Error("Could not create anonymous Supabase user.");
+  const { data, error } = await supabase.rpc("count_reading_request_matches", {
+    p_languages: input.readingLanguages ?? [],
+    p_facets: strictFacets(input.readingRequest),
+    p_exclude: input.excludeBokId ?? null,
+  });
+  if (error) throw error;
+  return Number(data) || 0;
 }
 
 /** Reader-specific reactions for a slate that has already been ranked and recorded. */

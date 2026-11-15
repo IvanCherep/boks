@@ -5418,3 +5418,58 @@ begin
 end $$;
 reset role;
 rollback;
+
+-- Reading requests (20261118130000): strict facets filter retrieval, the
+-- preferred one only orders it, the bok on screen is excluded, availability
+-- answers "none", and a served feed keeps the request it was served under.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('f5000000-0000-4000-8000-000000000001', 'request@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('f5000000-0000-4000-8000-000000000001', 'request_reader', 'reader', now(), 'v1');
+insert into public.reels (id, title, author_name, text, status, author_user_id, submitted_at, reviewed_at) values
+  ('f5000000-0000-4000-8000-0000000000a1', 'Стих грустный', 'Поэт Запросов', E'строка один\nстрока два\nстрока три\nстрока четыре\nстрока пять\nстрока шесть', 'published', 'f5000000-0000-4000-8000-000000000001', now(), now()),
+  ('f5000000-0000-4000-8000-0000000000a2', 'Стих весёлый', 'Поэт Запросов', E'строка раз\nстрока два\nстрока три\nстрока четыре\nстрока пять\nстрока шесть', 'published', 'f5000000-0000-4000-8000-000000000001', now(), now());
+insert into public.bok_facet_labels (bok_id, facet, facet_values, source, labeler, rubric_version) values
+  ('f5000000-0000-4000-8000-0000000000a1', 'mood', array['sad'], 'editor', 'test', 1),
+  ('f5000000-0000-4000-8000-0000000000a2', 'mood', array['fun'], 'editor', 'test', 1);
+insert into public.byline_facet_labels (byline, facet, facet_values, source, labeler, rubric_version) values
+  ('Поэт Запросов', 'author_group', array['contemporary'], 'editor', 'test', 1);
+do $$
+declare
+  v_ids text[];
+  v_error text;
+  v_feed uuid;
+  v_ours text[] := array['f5000000-0000-4000-8000-0000000000a1', 'f5000000-0000-4000-8000-0000000000a2'];
+begin
+  perform public.boks_test_login('f5000000-0000-4000-8000-000000000001');
+  select array_agg(c ->> 'id') into v_ids
+  from jsonb_array_elements(public.get_recommendation_candidates(400, null, '{"author_group": ["contemporary"]}'::jsonb)) c;
+  perform public.boks_assert(v_ids @> v_ours, 'a strict facet keeps the boks that carry it');
+  perform public.boks_assert(not exists (
+    select 1 from jsonb_array_elements(public.get_recommendation_candidates(400, null, '{"author_group": ["contemporary"]}'::jsonb)) c
+    where not (c -> 'facets' -> 'author_group' ? 'contemporary')
+  ), 'a strict facet keeps nothing else, unlabelled included');
+  select array_agg(c ->> 'id') into v_ids
+  from jsonb_array_elements(public.get_recommendation_candidates(400, null, '{"author_group": ["contemporary"]}'::jsonb, '{"mood": ["sad"]}'::jsonb, 'f5000000-0000-4000-8000-0000000000a1')) c;
+  perform public.boks_assert(not ('f5000000-0000-4000-8000-0000000000a1' = any (v_ids)), 'the bok on screen is excluded');
+  perform public.boks_assert('f5000000-0000-4000-8000-0000000000a2' = any (v_ids), 'a preferred mood never removes a bok');
+  perform public.boks_assert(
+    (select c -> 'facets' -> 'mood' from jsonb_array_elements(public.get_recommendation_candidates(400)) c
+     where c ->> 'id' = 'f5000000-0000-4000-8000-0000000000a2') = '["fun"]'::jsonb,
+    'the old two-argument call still answers, now with facets');
+
+  perform public.boks_assert(public.count_reading_request_matches(null, '{"author_group": ["contemporary"], "format": ["poetry"]}'::jsonb) >= 2, 'availability counts matches');
+  perform public.boks_assert(public.count_reading_request_matches(null, '{"author_group": ["contemporary"], "format": ["prose"]}'::jsonb) = 0, 'availability says none');
+  begin
+    perform public.count_reading_request_matches(null, '{"genre": ["poem"]}'::jsonb);
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'The reading request facet genre is not valid.', 'an unknown facet is refused, not ignored');
+
+  v_feed := public.record_served_feed(
+    '{"sessionId": "s", "experimentKey": "k", "algorithmId": "recency", "readingRequest": {"mood": "sad", "format": "poetry", "authorGroups": []}}'::jsonb,
+    '[]'::jsonb);
+  perform public.boks_assert((select reading_request ->> 'mood' from public.served_feed where id = v_feed) = 'sad', 'a served feed keeps its reading request');
+end $$;
+rollback;

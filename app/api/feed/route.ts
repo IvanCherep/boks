@@ -1,7 +1,9 @@
 import {
+  ReadingRequestUnavailableError,
   serveReaderFeed,
   type ServeReaderFeedRequest,
 } from "@/lib/boks/feed-service";
+import { isEmptyReadingRequest, normalizeReadingRequest } from "@/lib/boks/facets/request";
 import {
   createSupabaseRestTransport,
   readerIdFromAccessToken,
@@ -35,7 +37,13 @@ type FeedRequestBody = {
   buildId?: string | null;
   /** The reader's language filter; empty means no filter. */
   readingLanguages?: unknown;
+  /** "Что почитать": { mood, format, authorGroups }; unknown values are dropped. */
+  readingRequest?: unknown;
+  /** The bok on screen when a reading request was applied. */
+  excludeBokId?: unknown;
 };
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   if (!supabaseUrl || !supabaseApiKey) {
@@ -74,6 +82,8 @@ export async function POST(request: Request) {
     servingBackend: "worker",
     buildId: body.buildId ?? null,
     readingLanguages: languagesFrom(body.readingLanguages),
+    readingRequest: readingRequestFrom(body.readingRequest),
+    excludeBokId: typeof body.excludeBokId === "string" && uuidPattern.test(body.excludeBokId) ? body.excludeBokId : null,
   };
 
   try {
@@ -98,6 +108,10 @@ export async function POST(request: Request) {
       labelingVersion: served.labelingVersion,
     });
   } catch (error) {
+    if (error instanceof ReadingRequestUnavailableError) {
+      // 409, not 5xx: it is about this request, and must not trip the browser's Worker breaker.
+      return jsonError("The feed cannot apply these conditions right now. Please try again.", 409);
+    }
     if (error instanceof SupabaseRestError && error.isAuthFailure) {
       // The browser refreshes its session and retries once on a 401
       // (`loadSupabaseReaderFeed`).
@@ -121,6 +135,12 @@ function languagesFrom(value: unknown): string[] {
   return value
     .filter((entry): entry is string => typeof entry === "string" && /^[a-z]{2,3}$/.test(entry))
     .slice(0, 10);
+}
+
+function readingRequestFrom(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const request = normalizeReadingRequest(value);
+  return isEmptyReadingRequest(request) ? null : request;
 }
 
 function clampLimit(value: unknown) {

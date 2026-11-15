@@ -146,6 +146,10 @@ _Avoid_: finish, completion
 One question a reader can ask the feed about the next bok, with a fixed set of values: mood (`sad`, `fun`, `think`), form (`prose`, `poetry`), author group (`classics`, `contemporary`). Labelled per bok, per byline, or derived from existing columns (`docs/reading-facets.md`). No label means unknown, never a default.
 _Avoid_: tag, category, genre
 
+**Reading request**:
+What a reader asked "Что почитать" for during this pause: a mood (soft), a form and author groups (strict). Kept in the tab, forgotten after 30 idle minutes, recorded with each feed served under it; never a stored taste.
+_Avoid_: filter settings, preferences
+
 **Shown**:
 A bok that was on the reader's screen in an earlier visit; the feed serves every unshown bok before any shown one.
 _Avoid_: seen (in prose), viewed

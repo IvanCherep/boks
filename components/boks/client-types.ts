@@ -1,3 +1,4 @@
+import type { ReadingRequest } from "@/lib/boks/facets/request";
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
 import type {
   ReaderSignals,
@@ -568,6 +569,10 @@ export type LoadOptions = {
   sessionId?: string;
   /** Languages a guest accepts; a signed-in reader's stored set wins. */
   readingLanguages?: readonly string[];
+  /** "Что почитать" conditions for this pause; null or absent for an ordinary feed. */
+  readingRequest?: ReadingRequest | null;
+  /** The bok on screen when the conditions were applied: the new feed starts elsewhere. */
+  excludeBokId?: string | null;
   /**
    * Add the new slate after the one on screen instead of replacing it - how
    * the reader keeps going past the end of a slate. Boks already in the feed

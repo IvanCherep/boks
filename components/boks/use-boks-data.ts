@@ -103,6 +103,8 @@ export function useBoksData() {
         sessionId: options.sessionId ?? "",
         reader: options.reader,
         readingLanguages: options.readingLanguages,
+        readingRequest: options.readingRequest,
+        excludeBokId: options.excludeBokId,
       });
       if (appending) {
         setStories((current) => appendNewStories(current, data.stories));

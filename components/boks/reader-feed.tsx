@@ -119,6 +119,7 @@ import {
   type ReaderEventQueue,
 } from "@/components/boks/reader-events";
 import {
+  countReadingRequestMatches,
   loadBoksUserContext,
   loadSupabaseStory,
   recordSupabaseReaderEvents,
@@ -129,6 +130,10 @@ import {
   submitSupabaseComment,
 } from "@/components/boks/supabase-browser-data";
 import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
+import { WhatToRead, type ApplyResult } from "@/components/boks/what-to-read/what-to-read";
+import { useReadingRequest } from "@/components/boks/what-to-read/use-reading-request";
+import { cancelIntentMotion, captureIntentCover, playIntentMotion, ribbonDuration } from "@/components/boks/what-to-read/intent-motion";
+import { isEmptyReadingRequest, normalizeReadingRequest, strictFacets, type ReadingRequest } from "@/lib/boks/facets/request";
 import { bokShareUrl } from "@/lib/boks/share-link";
 import { authorFromPath, authorPath, bokPath, isBokPath } from "@/lib/boks/reader-address";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
@@ -455,6 +460,21 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
    * previous filter after the reader changed it.
    */
   const readingLanguagesRef = useRef<readonly string[]>([]);
+  /**
+   * "Что почитать" (docs/reading-facets.md). `readingRequest.ref` is read by
+   * every feed request, so the next slate and the fallback keep the
+   * conditions; `excludeOnNextLoad` is the bok on screen when they were
+   * applied, left out of that one load only. The sheet and the ribbon are
+   * overlays: the reader is held while either is up.
+   */
+  const excludeOnNextLoad = useRef<string | null>(null);
+  const [whatToReadOpen, setWhatToReadOpen] = useState(false);
+  const [ribbonPlaying, setRibbonPlaying] = useState(false);
+  const pendingRibbon = useRef<{ previousCover: HTMLElement | null; kind: ReadingRequest["mood"]; fromBokId: string } | null>(null);
+  const [readerScreen, setReaderScreen] = useState<HTMLElement | null>(null);
+  /** Forgotten after 30 idle minutes: the next slate comes without conditions, the bok on screen stays. */
+  const onReadingRequestExpired = useRef<() => void>(() => undefined);
+  const readingRequest = useReadingRequest(() => onReadingRequestExpired.current());
   const [user, setUser] = useState<BoksUserContext | null>(null);
   const [authPanelOpen, setAuthPanelOpen] = useState(false);
   const commentAuthOpen = useRef(false);
@@ -737,8 +757,12 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       sessionId: sessionId.current,
       reader: readerSignalsRef.current,
       readingLanguages: readingLanguagesRef.current,
+      readingRequest: isEmptyReadingRequest(readingRequest.ref.current) ? null : readingRequest.ref.current,
+      ...(!append && excludeOnNextLoad.current ? { excludeBokId: excludeOnNextLoad.current } : {}),
       ...(append ? { append: true } : {}),
     }),
+    // `readingRequest.ref` is a stable ref object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -798,6 +822,29 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     setHold((current) => ({ ...current, release: true }));
     return loadFeed();
   }, [loadFeed]);
+
+  useEffect(() => {
+    onReadingRequestExpired.current = () => {
+      // The bok on screen stays; the next slate comes without conditions.
+      void loadFeed().catch(() => undefined);
+    };
+  }, [loadFeed]);
+
+  // Anything the reader does keeps their "Что почитать" request alive.
+  useEffect(() => {
+    const touch = readingRequest.touch;
+    const options = { capture: true, passive: true } as const;
+    window.addEventListener("pointerdown", touch, options);
+    window.addEventListener("keydown", touch, options);
+    window.addEventListener("scroll", touch, options);
+    window.addEventListener("wheel", touch, options);
+    return () => {
+      window.removeEventListener("pointerdown", touch, options);
+      window.removeEventListener("keydown", touch, options);
+      window.removeEventListener("scroll", touch, options);
+      window.removeEventListener("wheel", touch, options);
+    };
+  }, [readingRequest.touch]);
 
   const loadMoreFeed = useCallback(async () => {
     if (loadingMore.current || feedExhausted.current || fullLoadsInFlight.current > 0) return;
@@ -1210,6 +1257,35 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     [currentStory]
   );
   const currentStoryId = currentStory?.id;
+
+  /**
+   * The ribbon, once the bok a reading request brought is on screen. The new
+   * bok is already committed underneath; the ribbon only reveals it, and
+   * gestures and the clock are held while it runs (`ribbonPlaying`).
+   */
+  useEffect(() => {
+    const ribbon = pendingRibbon.current;
+    if (!ribbon || !currentStoryId || currentStoryId === ribbon.fromBokId) return;
+    pendingRibbon.current = null;
+    let fallback = 0;
+    const frame = window.requestAnimationFrame(() => {
+      const anchor = coverRef.current?.querySelector("[data-intent-slot=\"cover\"]") ?? null;
+      if (!readerScreen || !anchor || !ribbon.previousCover) return;
+      setRibbonPlaying(true);
+      const finish = () => {
+        window.clearTimeout(fallback);
+        setRibbonPlaying(false);
+      };
+      // `done` fires only when the ribbon ran to the end; a cancelled one is caught here.
+      fallback = window.setTimeout(finish, ribbonDuration + 400);
+      playIntentMotion(readerScreen, { kind: ribbon.kind, anchor, previousCover: ribbon.previousCover, coverBox: coverRef.current, done: finish });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [currentStoryId, readerScreen]);
+
+  useEffect(() => () => cancelIntentMotion(), []);
   useEffect(() => {
     if (!bokMenuOpen || !currentStoryId) return;
     let live = true;
@@ -1372,9 +1448,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       setAftertastes(current => ({ ...current, [currentStory.id]: tags }));
     },
   };
-  const readerOverlayOpen = Boolean(authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
+  const readerOverlayOpen = Boolean(whatToReadOpen || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
   const readerInteractionBlocked = Boolean(
-    authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
+    whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
   );
   const coverInspection = useCoverInspection(coverRef, currentStoryId,
     Boolean(currentStory && getBokArtwork(currentStory) && !readerInteractionBlocked && storyTransition.phase === "idle"),
@@ -1639,14 +1715,14 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   // Visibility may resume a clock only when its reading surface is eligible.
   // Settings, decorative covers, final actions and paused audio are all holds.
   useEffect(() => {
-    const overlay = authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
+    const overlay = whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
     const reading = formatOnScreen ? formatPlaying : !seriesOpen && readingPhase === "reading";
     if (overlay || !reading) readingClock.current.hold();
     else {
       readingClock.current.release();
       if (document.visibilityState === "visible") readingClock.current.resume();
     }
-  }, [authPanelOpen, commentOpen, authorSheet, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
+  }, [whatToReadOpen, ribbonPlaying, authPanelOpen, commentOpen, authorSheet, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
 
   // Start is measured in foreground reading seconds, never cover dwell.
   useEffect(() => {
@@ -2412,6 +2488,66 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     }
   }
 
+  /**
+   * "Что почитать" -> Apply. A real new feed under the conditions, from the
+   * server, starting on a bok other than the one on screen. Until it has
+   * arrived nothing changes: the bok and the conditions on screen stay, and a
+   * failure or an empty answer leaves them as they were. No read, skip or
+   * like is recorded for pressing it. The ribbon plays after the new bok is
+   * on screen (the effect below).
+   */
+  async function applyReadingRequest(draft: ReadingRequest, signal: AbortSignal): Promise<ApplyResult> {
+    const request = normalizeReadingRequest(draft);
+    const onScreen = currentStory?.id ?? null;
+    // A new bok is the next bok: the guest limit applies as on a swipe.
+    if (isGuestReader && getAnonymousBoksReadCount() >= anonymousReadLimits.requiredSignup) {
+      openAccount("required");
+      return "closed";
+    }
+    if (strictFacets(request)) {
+      try {
+        const matches = await countReadingRequestMatches({ readingLanguages: readingLanguagesRef.current, readingRequest: request, excludeBokId: onScreen });
+        if (signal.aborted) return "error";
+        if (!matches) return "empty";
+      } catch {
+        // A failed check is not an empty catalogue: the real load decides.
+      }
+    }
+    if (signal.aborted) return "error";
+
+    const previous = readingRequest.ref.current;
+    const previousCover = captureIntentCover(coverRef.current);
+    readingRequest.ref.current = isEmptyReadingRequest(request) ? normalizeReadingRequest(null) : request;
+    excludeOnNextLoad.current = onScreen;
+    let served: number;
+    try {
+      const data = await reloadFeedReleasing();
+      served = data?.stories?.length ?? 0;
+    } catch {
+      readingRequest.ref.current = previous;
+      setHold((current) => ({ ...current, release: false }));
+      return "error";
+    } finally {
+      excludeOnNextLoad.current = null;
+    }
+    if (!served) {
+      // Nothing came back after all: the previous conditions, and a feed under them.
+      readingRequest.ref.current = previous;
+      await reloadFeedReleasing().catch(() => undefined);
+      return "empty";
+    }
+    readingRequest.apply(request);
+    pendingRibbon.current = onScreen ? { previousCover, kind: request.mood, fromBokId: onScreen } : null;
+    return "applied";
+  }
+
+  async function checkReadingRequest(draft: ReadingRequest, signal: AbortSignal) {
+    const request = normalizeReadingRequest(draft);
+    if (!strictFacets(request)) return true;
+    const matches = await countReadingRequestMatches({ readingLanguages: readingLanguagesRef.current, readingRequest: request, excludeBokId: currentStory?.id ?? null });
+    return signal.aborted ? true : matches > 0;
+  }
+
   function openBokMenu() {
     setCommentOpen(false);
     setBokMenuOpen(true);
@@ -3160,7 +3296,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       } ${guestNoticeVisible ? "reader-shell--notice" : ""} ${coverInspection ? "reader-shell--artwork" : ""}`}
     >
       <section
-        className="relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden"
+        ref={setReaderScreen}
+        className="reader-request-host relative mx-auto grid h-full min-w-0 w-full max-w-[1120px] grid-cols-1 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -3217,6 +3354,16 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
                 {currentStory.summary && <p className="reader-cover__summary" lang={currentStory.language || "und"} translate="no">{currentStory.summary}</p>}
               </CoverHeading>
               <div className="reader-cover__caption">
+                {isSupabaseReader && (
+                  <WhatToRead
+                    value={readingRequest.request}
+                    screenHost={readerScreen}
+                    onApply={applyReadingRequest}
+                    onOpenChange={setWhatToReadOpen}
+                    checkAvailability={checkReadingRequest}
+                    disabled={!whatToReadOpen && (readerInteractionBlocked || storyTransition.phase !== "idle")}
+                  />
+                )}
                 <div className="reader-cover__buttons">
                   <button type="button" className="reader-read-button" onClick={() => readText(true)}>{t("Read", "Читать")}<ReaderDownIcon size={19} /></button>
                   {currentSeriesPiece && <button type="button" className="reader-play-button" onClick={() => openReadingFormat(currentStory.id)}><ReaderPlayIcon size={18} />{t("Play", "Слушать")}</button>}
