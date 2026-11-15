@@ -47,8 +47,11 @@ import { seriesRoot, writeJsonAtomically, type SeriesArtTask, type SeriesJob } f
 const run = promisify(execFile);
 const linkOnlyRoot = process.env.BOKS_LINK_ONLY_DIR || join(process.cwd(), ".boks-local", "link-only");
 const apiKey = process.env.ELEVENLABS_API_KEY;
-// Only for trying the worker without spending credits: a local stand-in answering the same two endpoints.
+// ElevenLabs refuses POSTs from Russia, so production goes through the
+// Cloudflare relay (`deploy/elevenlabs-relay`) with its key; locally this can
+// also be a stand-in answering the same two endpoints.
 const apiBase = process.env.ELEVENLABS_API_URL || "https://api.elevenlabs.io";
+const relayKey = process.env.ELEVENLABS_RELAY_KEY;
 const once = process.argv.includes("--once");
 const targetLufs = -22;
 /** Silence kept before the first word and after the last. */
@@ -106,7 +109,7 @@ async function elevenlabs<T>(path: string, form: FormData): Promise<T> {
     try {
       response = await fetch(`${apiBase}${path}`, {
         method: "POST",
-        headers: { "xi-api-key": apiKey },
+        headers: { "xi-api-key": apiKey, ...(relayKey ? { "X-Boks-Relay": relayKey } : {}) },
         body: form,
         signal: AbortSignal.timeout(180_000),
       });
@@ -117,8 +120,16 @@ async function elevenlabs<T>(path: string, form: FormData): Promise<T> {
       }
       throw new BuildError("service", `No answer from ElevenLabs to ${path}: ${error instanceof Error ? error.message : error}`);
     }
-    if (response.ok) return (await response.json()) as T;
     const detail = await response.text().catch(() => "");
+    if (response.ok) {
+      // A block page (ElevenLabs from Russia: "Access restricted") comes as 200 HTML.
+      try {
+        return JSON.parse(detail) as T;
+      } catch {
+        const title = /<title>([^<]*)<\/title>/i.exec(detail)?.[1]?.trim();
+        throw new BuildError("service", `ElevenLabs answered ${path} with ${title ? `a page "${title}"` : "something that is not JSON"}: ${detail.slice(0, 120)}`);
+      }
+    }
     if (response.status === 402 || (response.status === 401 && /quota|credit|limit/i.test(detail))) {
       throw new BuildError("quota", `ElevenLabs is out of quota (${response.status}) on ${path}.`);
     }

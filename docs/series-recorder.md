@@ -193,6 +193,14 @@ cwebp must be on the PATH.
   `/opt/boks/.env`; after changing them, `docker compose up -d series`. Without
   them drafts and takes still work; a build says the voice service is paused,
   drawing says pictures are unavailable.
+- **ElevenLabs relay:** ElevenLabs answers POSTs from the server in Russia
+  with an "Access restricted" page (HTTP 200, HTML). So the worker calls it
+  through the Cloudflare Worker `boks-elevenlabs` (`deploy/elevenlabs-relay`,
+  deploy with `npx wrangler deploy -c wrangler.toml` from that folder):
+  `ELEVENLABS_API_URL=https://boks-elevenlabs.tryboks.workers.dev` and
+  `ELEVENLABS_RELAY_KEY` (the Worker's `RELAY_KEY` secret) in `.env`. It passes
+  only the two recorder paths, only with the key; the ElevenLabs key stays on
+  the server. A non-JSON answer is a `service` failure, never a crash.
 - **First start:** `docker compose build series && docker compose up -d series`.
   Logs: `journalctl -t boks-series` or `docker compose logs series`.
 - **Who may use it:** nobody but Studio until an author is granted Boks
