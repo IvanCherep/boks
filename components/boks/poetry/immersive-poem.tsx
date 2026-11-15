@@ -118,6 +118,7 @@ export function ImmersivePoem({
   gestureTrace,
   withoutFinale = false,
   curtain = false,
+  onBegin,
 }: {
   manifest: PoemManifest;
   coverArtwork?: string;
@@ -155,6 +156,12 @@ export function ImmersivePoem({
    * `autoPlay`, never while filming.
    */
   curtain?: boolean;
+  /**
+   * The reader's first Play is handed to the parent instead of playing: a
+   * link-only piece then opens it again behind the curtain, exactly as the
+   * feed's "Слушать" does (the tap is the gesture the browser wants for sound).
+   */
+  onBegin?: () => void;
 }) {
   const words = useMessages(messages);
   const uiLanguage = useUiLanguage();
@@ -710,6 +717,10 @@ export function ImmersivePoem({
   }, [revealChrome]);
 
   const toggle = useCallback(() => {
+    if (onBegin && !autoPlay && !hasBegun) {
+      onBegin();
+      return;
+    }
     const element = audio.current;
     if (!element) return;
     autoStarted.current = true;
@@ -744,7 +755,7 @@ export function ImmersivePoem({
     element.pause();
     theme.current?.pause();
     setPlaying(false);
-  }, [revealChrome, status]);
+  }, [revealChrome, status, onBegin, autoPlay, hasBegun]);
 
   // Seeking restores everything from the timecode, because everything is
   // derived from it. Nothing here has to be rewound by hand.

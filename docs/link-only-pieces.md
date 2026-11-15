@@ -37,7 +37,11 @@ because the content-security policy then needs no storage host.
 ## What the reader gets
 
 The immersive poem exactly as the series plays it: cover, voice, theme,
-pictures, gestures. Its ending has the aftertaste tags and Again, and no like,
+pictures, gestures, and the curtain. The link opens on the cover, because a
+visitor from a messenger has not touched the page and the browser will not
+play sound unasked; their Play opens the piece again behind the curtain, as
+"Слушать" does in the feed (`onBegin` in `immersive-poem.tsx`). `?curtain=1`
+skips the cover (Studio's preview, a tap already made). Its ending has the aftertaste tags and Again, and no like,
 comment, share or next: those need a bok. Close goes to the feed. Nothing is
 written to `recommendation_events` or the served feed.
 

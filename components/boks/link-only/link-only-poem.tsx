@@ -41,11 +41,18 @@ export function LinkOnlyPoem({
   token: string;
   /** Where Back goes. The link itself has nowhere to return to, so: the feed. */
   onClose?: () => void;
-  /** Open behind the series curtain, playing at once (an author's page preview). */
+  /** Open behind the series curtain and play at once (Studio's preview, where a tap already happened). */
   curtain?: boolean;
 }) {
   const words = useMessages(messages);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
+  /**
+   * The curtain is part of the piece, so the link has it too. A visitor from a
+   * messenger has not touched the page yet and the browser will not play sound
+   * on its own, so the piece first shows its cover; their Play opens it behind
+   * the curtain, as "Слушать" does in the feed.
+   */
+  const [started, setStarted] = useState(curtain);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,10 +69,12 @@ export function LinkOnlyPoem({
   if (phase.kind === "ready") {
     return (
       <ImmersivePoem
+        key={started ? "curtain" : "cover"}
         manifest={phase.manifest}
         coverArtwork={linkOnlyFilePath(token, "cover.webp")}
-        autoPlay={curtain}
-        curtain={curtain}
+        autoPlay={started}
+        curtain={started}
+        onBegin={started ? undefined : () => setStarted(true)}
         onClose={onClose ?? (() => window.location.assign("/"))}
       />
     );
