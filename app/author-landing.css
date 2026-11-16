@@ -132,6 +132,7 @@
 
 /* What an author gets: today in ink, "soon" dashed. */
 .alp-features__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 34px; margin-bottom: 0; padding: 0; list-style: none; }
+.alp-features__grid--soon { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
 .alp-features__grid li { position: relative; padding: 24px 22px 26px; border-radius: var(--alp-cut); background: var(--alp-card); box-shadow: 0 0 0 1px var(--alp-line); transition: transform .2s ease, box-shadow .2s ease; }
 .alp-features__grid li:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--alp-ink), 0 20px 40px -30px #0007; }
 .alp-features__grid li.is-soon { background: transparent; box-shadow: none; border: 1px dashed var(--alp-sage); }
@@ -267,6 +268,7 @@
   .alp-journey__path { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 40px; }
   .alp-journey__path li::before { display: none; }
   .alp-features__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .alp-features__grid--soon { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1080px) {
   .alp-offers__list { grid-template-columns: minmax(0, 1fr); }

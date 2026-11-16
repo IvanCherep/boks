@@ -143,13 +143,13 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
         <h2>{t.featuresTitle}</h2>
         <p>{t.featuresLead}</p>
       </div>
-      <ul className="alp-features__grid">
-        {t.features.map((feature) => <li key={feature.title} className={feature.soon ? "is-soon" : ""}>
-          {feature.soon ? <span className="alp-soon">{t.soon}</span> : <Check className="alp-features__mark" aria-hidden="true" />}
+      {[false, true].map((soon) => <ul key={String(soon)} className={soon ? "alp-features__grid alp-features__grid--soon" : "alp-features__grid"}>
+        {t.features.filter((feature) => Boolean(feature.soon) === soon).map((feature) => <li key={feature.title} className={soon ? "is-soon" : ""}>
+          {soon ? <span className="alp-soon">{t.soon}</span> : <Check className="alp-features__mark" aria-hidden="true" />}
           <h3>{feature.title}</h3>
           <p>{feature.lead}</p>
         </li>)}
-      </ul>
+      </ul>)}
     </section>
 
     <section id="recorder" className="alp-recorder">
