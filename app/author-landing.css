@@ -41,7 +41,9 @@
 .alp .alp-button--line { background: transparent; color: var(--alp-ink); box-shadow: inset 0 0 0 1px var(--alp-ink); }
 .alp .alp-button--line:hover { background: var(--alp-ink); color: var(--alp-page); }
 .alp .alp-link { padding: 0 0 3px; border: 0; border-bottom: 1px solid currentColor; background: none; color: inherit; font: 16px/1.2 var(--font-sans, system-ui), sans-serif; text-decoration: none; cursor: pointer; }
-.alp-kicker { margin: 0 0 16px; font: 600 12px/1.2 var(--font-sans, system-ui), sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--alp-glow); }
+/* One kicker everywhere: it outranks the section paragraph styles it sits among. */
+.alp .alp-kicker { max-width: none; margin: 0 0 16px; font: 600 13px/1.2 var(--font-sans, system-ui), sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--alp-accent); animation: none; }
+.alp .alp-hero .alp-kicker, .alp .alp-recorder .alp-kicker { color: var(--alp-glow); }
 
 /* Section heads: a large serif title, its lead to the right, a hairline under. */
 .alp-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 26px; border-bottom: 1px solid var(--alp-line); }
@@ -58,14 +60,13 @@
 .alp-nav > span a:hover { opacity: 1; border-color: var(--alp-glow); }
 .alp-nav > span a.is-strong { opacity: 1; }
 .alp-nav > span a svg { width: 18px; height: 18px; }
-.alp-hero__body { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: center; gap: clamp(28px, 4vw, 64px); max-width: 1340px; margin: 0 auto; padding-top: clamp(40px, 6vw, 72px); }
+.alp-hero__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(28px, 4vw, 64px); max-width: 1340px; margin: 0 auto; padding-top: clamp(40px, 6vw, 72px); }
 .alp-rule { display: block; width: 70px; height: 3px; margin-bottom: 28px; background: var(--alp-glow); border-radius: 2px; }
-.alp-hero h1 { font-size: clamp(44px, 5.2vw, 76px); line-height: 1; font-weight: 600; letter-spacing: -.035em; animation: alp-rise .7s ease-out both; }
+.alp-hero h1 { font-size: clamp(40px, 4.7vw, 68px); line-height: 1; font-weight: 600; letter-spacing: -.035em; animation: alp-rise .7s ease-out both; }
 .alp-hero h1 em { display: block; font-weight: 400; font-style: italic; color: #e6dccb; }
 .alp-hero__text > p { max-width: 480px; margin: 30px 0 0; font-size: clamp(18px, 1.55vw, 21px); line-height: 1.55; color: #e9e1d2; animation: alp-rise .7s .1s ease-out both; }
 .alp-hero__actions { display: flex; align-items: center; gap: 30px; flex-wrap: wrap; margin-top: 44px; animation: alp-rise .7s .2s ease-out both; }
 .alp-hero .alp-link { color: var(--alp-cream); }
-.alp-hero .alp-kicker { margin-bottom: 18px; }
 .alp-hero__note { display: inline-flex; align-items: center; gap: 10px; margin: 28px 0 0; font-size: 15px; color: #cfc6b5; animation: alp-rise .7s .3s ease-out both; }
 .alp-hero__note::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--alp-glow); box-shadow: 0 0 0 4px #e0644a33; }
 
@@ -95,14 +96,12 @@
 /* Shared section frame */
 .alp-about, .alp-journey, .alp-features, .alp-selection, .alp-offers, .alp-apply, .alp-ask { padding: clamp(64px, 8vw, 112px) clamp(16px, 4vw, 56px) 0; }
 .alp-about > *, .alp-journey > *, .alp-features > *, .alp-selection > *, .alp-offers > *, .alp-apply > *, .alp-ask > * { max-width: 1340px; margin-left: auto; margin-right: auto; }
-.alp-section-head .alp-kicker { margin-bottom: 14px; color: var(--alp-accent); }
 .alp-offer__num, .alp-steps b, .alp-journey__path b, .alp-selection b { font: italic 400 22px/1 var(--font-serif, Georgia), serif; color: var(--alp-sage); }
 
 /* What boks is: the synopsis, two ways in, the mission. */
 .alp-about { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(32px, 5vw, 88px); max-width: calc(1340px + 2 * clamp(16px, 4vw, 56px)); margin: 0 auto; }
 .alp-about > * { max-width: none; margin: 0; }
-.alp-about .alp-kicker { color: var(--alp-accent); }
-.alp-about h2 { font-size: clamp(40px, 4.6vw, 66px); font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
+.alp-about h2 { font-size: clamp(36px, 3.9vw, 56px); text-wrap: balance; font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
 .alp-about__text > p:not(.alp-kicker) { max-width: 640px; margin: 22px 0 0; font-size: 19px; line-height: 1.6; color: var(--alp-muted); }
 .alp-about__text > p:not(.alp-kicker):first-of-type { color: var(--alp-ink); }
 .alp-modes { align-self: end; }
@@ -145,7 +144,6 @@
 .alp-readers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); padding: clamp(64px, 8vw, 112px) max(clamp(16px, 4vw, 56px), calc((100vw - 1340px) / 2)); background: var(--alp-page); }
 .alp-letter { position: relative; align-self: start; padding: clamp(28px, 4vw, 52px); border-radius: 4px 28px 4px 4px; background: var(--alp-card); box-shadow: 0 0 0 1px var(--alp-line), 0 40px 70px -50px #0008; transform: rotate(-.6deg); }
 .alp-letter::after { content: "boks."; position: absolute; right: clamp(24px, 3vw, 40px); bottom: 22px; font: italic 400 26px/1 var(--font-serif, Georgia), serif; color: var(--alp-glow); }
-.alp-letter .alp-kicker { color: var(--alp-accent); }
 .alp-letter h2 { font-size: clamp(38px, 4.2vw, 58px); font-style: italic; line-height: 1.05; }
 .alp-letter > p:not(.alp-kicker) { margin: 20px 0 0; font: 400 clamp(19px, 1.6vw, 22px)/1.6 var(--font-serif, Georgia), serif; }
 .alp-letter > p:last-child { padding-bottom: 36px; }
@@ -162,8 +160,7 @@
 /* Selection: how authors are chosen; the free way in carries the accent. */
 .alp-selection { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: clamp(28px, 5vw, 80px); max-width: calc(1340px + 2 * clamp(16px, 4vw, 56px)); margin: 0 auto; }
 .alp-selection > * { max-width: none; margin: 0; }
-.alp-selection .alp-kicker { color: var(--alp-accent); }
-.alp-selection h2 { font-size: clamp(40px, 4.6vw, 66px); font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
+.alp-selection h2 { font-size: clamp(36px, 4.2vw, 60px); text-wrap: balance; font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
 .alp-selection ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
 .alp-selection li { padding: 24px 24px 26px; border-top: 2px solid var(--alp-ink); }
 .alp-selection li.is-free { border-radius: var(--alp-cut); border-top: 0; background: var(--alp-night); color: var(--alp-cream); }
@@ -292,6 +289,16 @@
   .alp-journey__path li b { grid-row: span 2; }
   .alp-journey__path h3 { margin-top: 8px; }
   .alp-features__grid, .alp-readers__now, .alp-selection ol { grid-template-columns: minmax(0, 1fr); }
+  .alp-features__grid { gap: 10px; }
+  .alp-features__grid li { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 12px; padding: 16px 18px; }
+  .alp-features__grid li > :not(.alp-features__mark) { grid-column: 2; }
+  .alp-features__mark { margin-top: 3px; }
+  .alp-features__grid li.is-soon { grid-template-columns: minmax(0, 1fr); }
+  .alp-features__grid li.is-soon > * { grid-column: 1; }
+  .alp-soon { justify-self: start; }
+  .alp-features__grid h3 { margin-top: 0; font-size: 21px; }
+  .alp-features__grid li.is-soon h3 { margin-top: 10px; }
+  .alp-features__grid p { margin-top: 6px; }
   .alp-form__row, .alp-ask__row { grid-template-columns: minmax(0, 1fr); }
   .alp-ask__row .alp-button { justify-self: start; }
 }
