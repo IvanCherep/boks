@@ -45,7 +45,7 @@
 
 /* Section heads: a large serif title, its lead to the right, a hairline under. */
 .alp-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 26px; border-bottom: 1px solid var(--alp-line); }
-.alp-section-head h2, .alp-why > h2 { font-size: clamp(44px, 5.6vw, 78px); font-weight: 600; letter-spacing: -.035em; line-height: 1; }
+.alp-section-head h2 { font-size: clamp(44px, 5.6vw, 78px); font-weight: 600; letter-spacing: -.035em; line-height: 1; }
 .alp-section-head p { max-width: 420px; margin: 0; font-size: 17px; line-height: 1.5; color: var(--alp-muted); }
 
 /* Hero */
@@ -59,12 +59,15 @@
 .alp-nav > span a.is-strong { opacity: 1; }
 .alp-nav > span a svg { width: 18px; height: 18px; }
 .alp-hero__body { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: center; gap: clamp(28px, 4vw, 64px); max-width: 1340px; margin: 0 auto; padding-top: clamp(40px, 6vw, 72px); }
-.alp-rule { display: block; width: 70px; height: 3px; margin-bottom: 40px; background: var(--alp-glow); border-radius: 2px; }
+.alp-rule { display: block; width: 70px; height: 3px; margin-bottom: 28px; background: var(--alp-glow); border-radius: 2px; }
 .alp-hero h1 { font-size: clamp(44px, 5.2vw, 76px); line-height: 1; font-weight: 600; letter-spacing: -.035em; animation: alp-rise .7s ease-out both; }
 .alp-hero h1 em { display: block; font-weight: 400; font-style: italic; color: #e6dccb; }
 .alp-hero__text > p { max-width: 480px; margin: 30px 0 0; font-size: clamp(18px, 1.55vw, 21px); line-height: 1.55; color: #e9e1d2; animation: alp-rise .7s .1s ease-out both; }
 .alp-hero__actions { display: flex; align-items: center; gap: 30px; flex-wrap: wrap; margin-top: 44px; animation: alp-rise .7s .2s ease-out both; }
 .alp-hero .alp-link { color: var(--alp-cream); }
+.alp-hero .alp-kicker { margin-bottom: 18px; }
+.alp-hero__note { display: inline-flex; align-items: center; gap: 10px; margin: 28px 0 0; font-size: 15px; color: #cfc6b5; animation: alp-rise .7s .3s ease-out both; }
+.alp-hero__note::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--alp-glow); box-shadow: 0 0 0 4px #e0644a33; }
 
 /* The collage: a painted landscape, the author's card behind the curtain, a night window. */
 .alp-collage { margin: 0; animation: alp-fade 1s .15s ease-out both; }
@@ -89,16 +92,84 @@
 .alp-card__name i { color: var(--alp-glow); font-style: normal; }
 .alp-card__name small { margin-top: 10px; font: 12px/1 var(--font-sans, system-ui), sans-serif; letter-spacing: .04em; opacity: .75; }
 
-/* Why boks */
-.alp-why, .alp-offers, .alp-apply, .alp-ask { padding: clamp(64px, 8vw, 112px) clamp(16px, 4vw, 56px) 0; }
-.alp-why > *, .alp-offers > *, .alp-apply > *, .alp-ask > * { max-width: 1340px; margin-left: auto; margin-right: auto; }
-.alp-why > h2 { padding-bottom: 26px; border-bottom: 1px solid var(--alp-line); }
-.alp-why ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; margin-bottom: 0; padding: 0; list-style: none; }
-.alp-why li { padding: 32px 32px 8px 0; animation: alp-rise .6s calc(var(--i) * 90ms) ease-out both; }
-.alp-why li + li { padding-left: 32px; border-left: 1px solid var(--alp-line); }
-.alp-why b, .alp-offer__num, .alp-steps b { font: italic 400 22px/1 var(--font-serif, Georgia), serif; color: var(--alp-sage); }
-.alp-why h3 { margin-top: 18px; font-size: clamp(26px, 2.4vw, 32px); line-height: 1.1; }
-.alp-why p { margin: 14px 0 0; font-size: 17px; line-height: 1.55; color: var(--alp-muted); }
+/* Shared section frame */
+.alp-about, .alp-journey, .alp-features, .alp-selection, .alp-offers, .alp-apply, .alp-ask { padding: clamp(64px, 8vw, 112px) clamp(16px, 4vw, 56px) 0; }
+.alp-about > *, .alp-journey > *, .alp-features > *, .alp-selection > *, .alp-offers > *, .alp-apply > *, .alp-ask > * { max-width: 1340px; margin-left: auto; margin-right: auto; }
+.alp-section-head .alp-kicker { margin-bottom: 14px; color: var(--alp-accent); }
+.alp-offer__num, .alp-steps b, .alp-journey__path b, .alp-selection b { font: italic 400 22px/1 var(--font-serif, Georgia), serif; color: var(--alp-sage); }
+
+/* What boks is: the synopsis, two ways in, the mission. */
+.alp-about { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(32px, 5vw, 88px); max-width: calc(1340px + 2 * clamp(16px, 4vw, 56px)); margin: 0 auto; }
+.alp-about > * { max-width: none; margin: 0; }
+.alp-about .alp-kicker { color: var(--alp-accent); }
+.alp-about h2 { font-size: clamp(40px, 4.6vw, 66px); font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
+.alp-about__text > p:not(.alp-kicker) { max-width: 640px; margin: 22px 0 0; font-size: 19px; line-height: 1.6; color: var(--alp-muted); }
+.alp-about__text > p:not(.alp-kicker):first-of-type { color: var(--alp-ink); }
+.alp-modes { align-self: end; }
+.alp-modes h3 { padding-bottom: 14px; border-bottom: 1px solid var(--alp-line); font: 600 12px/1.3 var(--font-sans, system-ui), sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--alp-muted); }
+.alp-modes ol { display: grid; gap: 14px; margin: 18px 0 0; padding: 0; list-style: none; }
+.alp-modes li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; padding: 22px 24px; border-radius: var(--alp-cut); background: var(--alp-card); box-shadow: 0 0 0 1px var(--alp-line); }
+.alp-modes li:last-child { background: var(--alp-night); color: var(--alp-cream); box-shadow: none; }
+.alp-modes__icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 999px; background: var(--alp-sage-bg); color: var(--alp-sage-ink); }
+.alp-modes li:last-child .alp-modes__icon { background: var(--alp-glow); color: #fff; }
+.alp-modes__icon svg { width: 22px; height: 22px; }
+.alp-modes strong { display: block; font: 400 26px/1.1 var(--font-serif, Georgia), serif; }
+.alp-modes small { display: block; margin-top: 6px; font-size: 15px; line-height: 1.5; color: var(--alp-muted); }
+.alp-modes li:last-child small { color: #cfc6b5; }
+.alp-mission { grid-column: 1 / -1; position: relative; margin: clamp(16px, 3vw, 40px) 0 0 !important; padding: clamp(28px, 4vw, 48px) 0 0 clamp(24px, 4vw, 56px); border-top: 1px solid var(--alp-line); }
+.alp-mission::before { content: "“"; position: absolute; left: 0; top: clamp(18px, 3vw, 34px); font: 400 clamp(64px, 7vw, 100px)/1 var(--font-serif, Georgia), serif; color: var(--alp-glow); }
+.alp-mission p { max-width: 1040px; margin: 0; font: italic 400 clamp(26px, 3vw, 40px)/1.3 var(--font-serif, Georgia), serif; letter-spacing: -.015em; }
+.alp-mission footer { margin-top: 18px; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--alp-muted); }
+
+/* The author's path: five steps on one line. */
+.alp-journey__path { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; margin-top: 40px; margin-bottom: 0; padding: 0; list-style: none; }
+.alp-journey__path li:not(:last-child)::before { content: ""; position: absolute; top: 21px; left: 44px; right: -28px; height: 1px; background: var(--alp-sage); }
+.alp-journey__path li { position: relative; animation: alp-rise .6s calc(var(--i) * 90ms) ease-out both; }
+.alp-journey__path b { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 999px; background: var(--alp-paper); box-shadow: inset 0 0 0 1px var(--alp-ink); color: var(--alp-ink); font-size: 18px; }
+.alp-journey__path li:last-child b { background: var(--alp-glow); box-shadow: none; color: #fff; }
+.alp-journey__path h3 { margin-top: 22px; font-size: clamp(24px, 2.1vw, 30px); line-height: 1.1; }
+.alp-journey__path p { margin: 10px 0 0; font-size: 16px; line-height: 1.55; color: var(--alp-muted); }
+
+/* What an author gets: today in ink, "soon" dashed. */
+.alp-features__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 34px; margin-bottom: 0; padding: 0; list-style: none; }
+.alp-features__grid li { position: relative; padding: 24px 22px 26px; border-radius: var(--alp-cut); background: var(--alp-card); box-shadow: 0 0 0 1px var(--alp-line); transition: transform .2s ease, box-shadow .2s ease; }
+.alp-features__grid li:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--alp-ink), 0 20px 40px -30px #0007; }
+.alp-features__grid li.is-soon { background: transparent; box-shadow: none; border: 1px dashed var(--alp-sage); }
+.alp-features__mark { width: 20px; height: 20px; color: var(--alp-accent); }
+.alp-soon { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--alp-sage-bg); color: var(--alp-sage-ink); font: 600 11px/1.4 var(--font-sans, system-ui), sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.alp-features__grid h3 { margin-top: 16px; font-size: 24px; line-height: 1.12; }
+.alp-features__grid p { margin: 10px 0 0; font-size: 15px; line-height: 1.55; color: var(--alp-muted); }
+
+/* For readers: a letter, and what already works. */
+.alp-readers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); padding: clamp(64px, 8vw, 112px) max(clamp(16px, 4vw, 56px), calc((100vw - 1340px) / 2)); background: var(--alp-page); }
+.alp-letter { position: relative; align-self: start; padding: clamp(28px, 4vw, 52px); border-radius: 4px 28px 4px 4px; background: var(--alp-card); box-shadow: 0 0 0 1px var(--alp-line), 0 40px 70px -50px #0008; transform: rotate(-.6deg); }
+.alp-letter::after { content: "boks."; position: absolute; right: clamp(24px, 3vw, 40px); bottom: 22px; font: italic 400 26px/1 var(--font-serif, Georgia), serif; color: var(--alp-glow); }
+.alp-letter .alp-kicker { color: var(--alp-accent); }
+.alp-letter h2 { font-size: clamp(38px, 4.2vw, 58px); font-style: italic; line-height: 1.05; }
+.alp-letter > p:not(.alp-kicker) { margin: 20px 0 0; font: 400 clamp(19px, 1.6vw, 22px)/1.6 var(--font-serif, Georgia), serif; }
+.alp-letter > p:last-child { padding-bottom: 36px; }
+.alp-readers__lists h3 { padding-bottom: 14px; border-bottom: 1px solid var(--alp-line); font: 600 12px/1.3 var(--font-sans, system-ui), sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--alp-muted); }
+.alp-readers__lists h3 + ul { margin: 0 0 40px; padding: 0; list-style: none; }
+.alp-readers__now { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.alp-readers__now li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--alp-line); }
+.alp-readers__now svg { width: 16px; height: 16px; margin-top: 5px; color: var(--alp-accent); }
+.alp-readers__now strong { display: block; font: 400 21px/1.2 var(--font-serif, Georgia), serif; }
+.alp-readers__now small { display: block; margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--alp-muted); }
+.alp-readers__soon { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 18px !important; }
+.alp-readers__soon li { padding: 10px 16px; border: 1px dashed var(--alp-sage); border-radius: 999px; font-size: 15px; color: var(--alp-sage-ink); }
+
+/* Selection: how authors are chosen; the free way in carries the accent. */
+.alp-selection { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: clamp(28px, 5vw, 80px); max-width: calc(1340px + 2 * clamp(16px, 4vw, 56px)); margin: 0 auto; }
+.alp-selection > * { max-width: none; margin: 0; }
+.alp-selection .alp-kicker { color: var(--alp-accent); }
+.alp-selection h2 { font-size: clamp(40px, 4.6vw, 66px); font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
+.alp-selection ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.alp-selection li { padding: 24px 24px 26px; border-top: 2px solid var(--alp-ink); }
+.alp-selection li.is-free { border-radius: var(--alp-cut); border-top: 0; background: var(--alp-night); color: var(--alp-cream); }
+.alp-selection li.is-free b { color: var(--alp-glow); }
+.alp-selection h3 { margin-top: 14px; font-size: clamp(22px, 2vw, 27px); line-height: 1.15; }
+.alp-selection p { margin: 10px 0 0; font-size: 16px; line-height: 1.55; color: var(--alp-muted); }
+.alp-selection li.is-free p { color: #e2d9c8; }
 
 /* Offers */
 .alp-offers__list { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0; margin-top: 0; margin-bottom: 0; padding: 0; list-style: none; }
@@ -192,6 +263,11 @@
 @keyframes alp-word { from { opacity: .75; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .alp *, .alp *::before, .alp *::after { animation: none !important; transition: none !important; } }
 
+@media (max-width: 1180px) {
+  .alp-journey__path { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 40px; }
+  .alp-journey__path li::before { display: none; }
+  .alp-features__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 1080px) {
   .alp-offers__list { grid-template-columns: minmax(0, 1fr); }
   .alp-offer, .alp-offer + .alp-offer { padding: 30px 0; border-left: 0; border-top: 1px solid var(--alp-line); }
@@ -200,8 +276,8 @@
 }
 @media (max-width: 980px) {
   .alp-hero__body, .alp-recorder, .alp-ask__inner { grid-template-columns: minmax(0, 1fr); }
-  .alp-why ol { grid-template-columns: minmax(0, 1fr); }
-  .alp-why li, .alp-why li + li { padding: 26px 0 0; border-left: 0; }
+  .alp-about, .alp-readers, .alp-selection { grid-template-columns: minmax(0, 1fr); }
+  .alp-letter { transform: none; }
 }
 @media (max-width: 640px) {
   .alp-nav > span a:not(.is-strong) { display: none; }
@@ -209,6 +285,11 @@
   .alp-collage__night { display: none; }
   .alp-card { left: 30%; width: 62%; }
   .alp-steps { grid-template-columns: minmax(0, 1fr); }
+  .alp-journey__path { grid-template-columns: minmax(0, 1fr); row-gap: 26px; }
+  .alp-journey__path li { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 18px; }
+  .alp-journey__path li b { grid-row: span 2; }
+  .alp-journey__path h3 { margin-top: 8px; }
+  .alp-features__grid, .alp-readers__now, .alp-selection ol { grid-template-columns: minmax(0, 1fr); }
   .alp-form__row, .alp-ask__row { grid-template-columns: minmax(0, 1fr); }
   .alp-ask__row .alp-button { justify-self: start; }
 }

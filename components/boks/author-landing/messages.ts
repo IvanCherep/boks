@@ -2,35 +2,113 @@ import { defineMessages } from "@/lib/i18n/messages";
 import type { AuthorApplicationOffer } from "@/components/boks/supabase-browser-data";
 
 type Offer = { name: string; tag: string; oldPrice: string; price: string; term: string; points: string[]; badge: string };
+/** A title and its lead; `soon` marks what is being built, not yet on boks. */
+type Feature = { title: string; lead: string; soon?: boolean };
 
-/** The page for authors without a cabinet yet (`docs/author-applications.md`). */
+/**
+ * The page for authors without a cabinet yet (`docs/author-applications.md`).
+ * Only what works today is said plainly; anything still being built is marked
+ * "soon". No long dashes in the copy: commas, colons, full stops.
+ */
 export const landingMessages = defineMessages(
   {
-    navWhy: "Why boks",
-    navOffers: "Offers",
+    navAbout: "What boks is",
+    navAuthors: "For authors",
+    navReaders: "For readers",
+    navOffers: "Terms",
     navApply: "Apply",
     toReading: "Back to reading",
-    heroTitle: "Your writing",
-    heroTitleAccent: "on its own stage.",
-    heroLead: "A new kind of author page, an illustration for every work, and readers who have not found you yet.",
-    choose: "Choose an offer",
+    heroKicker: "An invitation to authors",
+    heroTitle: "We invite you",
+    heroTitleAccent: "to become a boks author.",
+    heroLead: "boks is a home for poets, writers and their readers. We give short literature a modern multimedia setting: the text, an illustration for every work, and the author's own voice.",
+    heroNote: "We choose authors one by one, by application.",
+    heroApply: "Apply",
     example: "See an example",
     collageCaption: "Алексей Прохоров · an author page on boks",
-    whyTitle: "Why boks",
-    why: [
-      ["New readers", "The boks feed shows your writing to people who do not know you yet: a way to grow beyond your own followers."],
-      ["A page of a new kind", "Your portrait, an illustration for every work, the boks curtain, and a link worth sending."],
-      ["Boks Series with a teleprompter", "Record your poems in your own voice right in the cabinet: a teleprompter, pictures in the boks look, an issue in a minute."],
-    ] as [string, string][],
-    startTitle: "How to start",
-    startLead: "Not sure which suits you? Apply anyway - we will suggest one.",
+
+    aboutKicker: "What boks is",
+    aboutTitle: "More than read and like.",
+    aboutLead: [
+      "On boks a poem or a story is read whole, in a few minutes. It reaches the reader through more than one sense at once: the lines, the pictures, the sound and the author's voice. From one work it is a step to the author's others, to following them and answering them.",
+      "We make this setting so that a text holds attention and people want to pass it on. An issue like this is shared far more willingly than a post lost in a feed.",
+    ],
+    modesTitle: "Two ways in",
+    modes: [
+      { title: "Read", lead: "The whole text, in the boks typography, with an illustration. One swipe to the next, like a feed, only with literature instead of posts." },
+      { title: "Listen", lead: "Boks Series: the author's voice with pictures, the words appearing as they are read. For those who like to listen, and for those to whom listening comes easier." },
+    ] as Feature[],
+    mission: "The works we publish are part of world culture. We want a future reader to have both the text and the chance to hear how its author said it.",
+    missionSign: "The boks team",
+
+    journeyKicker: "The author's path",
+    journeyTitle: "How your story starts its life",
+    journeyLead: "From the application to the first readers who did not know you yet.",
+    journey: [
+      { title: "Application", lead: "Tell us about yourself and send links to your writing. The editors read every application themselves." },
+      { title: "Your page", lead: "A page that is a pleasure to open and that you will want to post to your own channel: portrait, illustrations, the boks curtain." },
+      { title: "Texts", lead: "Upload poems and short prose. No recordings? Read the text from the teleprompter, right from your phone." },
+      { title: "Publication", lead: "After review the work goes into the boks feed, where people who have never heard of you meet it." },
+      { title: "Readers", lead: "Readers you know and new ones follow you, comment, save your lines and send them on." },
+    ] as Feature[],
+
+    featuresTitle: "What an author gets",
+    featuresLead: "What works today, and what we are building next.",
+    soon: "Soon",
+    features: [
+      { title: "A personal page", lead: "An address like tryboks.com/@name, all your works in one place, a link you will be glad to share." },
+      { title: "Followers", lead: "A reader follows you from any of your works and comes back to the new ones." },
+      { title: "Comments and replies", lead: "A conversation under every text, with replies and likes." },
+      { title: "Lines that travel", lead: "A reader selects your line and sends it to a friend or into the line of the day. The link leads back to the whole text." },
+      { title: "Statistics", lead: "How many opened the text and read it to the end, how long they stayed, likes, comments and shares." },
+      { title: "Boks Series with a teleprompter", lead: "Your voice beside the text: an issue with pictures in a couple of minutes." },
+      { title: "A game for readers", lead: "Readers who comment and share will earn boks coins and unlock premium extras. A way to bring short forms to more people.", soon: true },
+      { title: "Books and events", lead: "A page for your book, a calendar of events, readings and workshops with your readers.", soon: true },
+    ] as Feature[],
+
+    readersKicker: "For your readers",
+    readersTitle: "Dear reader,",
+    readersLetter: [
+      "this is a place where literature does not drown between memes and ads. On a social network you follow and like, and that is all. On boks you can read a text whole, hear it in the author's voice, mark what stayed with you and come back to it by a single line.",
+      "This world grows before your eyes, and you grow it with us.",
+    ],
+    readersNowTitle: "Already works",
+    readersNow: [
+      { title: "By mood", lead: "\"What to read\": choose a mood, a form, authors, and the feed follows." },
+      { title: "Read or listen", lead: "A text with its illustration, or a Boks Series in the author's voice." },
+      { title: "A swipe away", lead: "A whole work in a few minutes, the next one with one movement." },
+      { title: "What stayed with you", lead: "Made you smile, moved you, surprised you, set you thinking: the text asks, you answer." },
+      { title: "A line a day", lead: "A letter with a line from another reader, and \"Guess the author\"." },
+      { title: "Your library", lead: "What you read, liked and commented on, all in one place." },
+    ] as Feature[],
+    readersSoonTitle: "Coming",
+    readersSoon: [
+      "Rewards for active readers",
+      "A calendar of literary events",
+      "Free books",
+      "Workshops and online meetings with authors",
+      "Reading clubs",
+      "Gifts for bringing friends",
+    ],
+
+    selectionKicker: "Selection",
+    selectionTitle: "We choose authors one by one.",
+    selection: [
+      { title: "The editors read every application", lead: "We look at the writing, the voice and how you talk with your readers. We answer within two working days." },
+      { title: "Not everyone gets in at once", lead: "Sometimes we suggest coming back later, with new texts or after the first publications in the common feed." },
+      { title: "A page cannot be bought with a guarantee", lead: "Payment does not replace selection. We may say no even to an author ready to pay: that is how a page on boks stays a mark of quality for readers." },
+      { title: "A free way in for authors with an audience", lead: "If your posts about boks reach 15 000 views, the year's author page is yours for free." },
+    ] as Feature[],
+
+    startTitle: "Terms",
+    startLead: "Every format opens after your application is approved. Not sure which suits you? Choose \"Not sure yet\" and we will suggest one.",
     offers: {
       page: {
         name: "Author page",
         tag: "",
         oldPrice: "45 000 ₽",
         price: "30 000 ₽",
-        term: "a year",
+        term: "a year, after approval",
         points: [
           "We move up to 50 short works over from other sites",
           "An illustration for every work",
@@ -50,20 +128,20 @@ export const landingMessages = defineMessages(
         term: "a pack",
         points: [
           "Five issues with illustrations and sound",
-          "In your own voice - or recorded yourself with the teleprompter",
+          "In your own voice: send a recording or make one with the teleprompter",
           "The issues appear in the main Boks Series section",
         ],
         badge: "",
       },
       launch: {
         name: "Joint launch",
-        tag: "",
+        tag: "For authors with an audience",
         oldPrice: "",
         price: "Free",
         term: "everything in the Author page",
         points: [
           "The condition: a series of posts about boks on your social networks",
-          "Once they reach 30 000 views in total, the year's pack is yours for free",
+          "Once they reach 15 000 views in total, the year's pack is yours for free",
           "We plan the posts together",
           "You can apply with around 500 followers",
         ],
@@ -73,7 +151,7 @@ export const landingMessages = defineMessages(
     applyFor: "Apply",
     recorderKicker: "Only on boks",
     recorderTitle: "Boks Series, with a teleprompter.",
-    recorderLead: "Read your poem from a full-screen teleprompter, in your own voice. boks matches every word to the recording, draws the pictures in its own look - and in about a minute the issue is ready, the words appearing exactly as you read them.",
+    recorderLead: "No video, no studio? Read your poem from a full-screen teleprompter, in your own voice. boks matches every word to the recording and draws the pictures in its own look, and in about a minute the issue is ready: the words appear exactly as you read them.",
     recorderSteps: [
       ["Text", "Paste the poem."],
       ["Recording", "Read from the teleprompter at your pace; keep the best take."],
@@ -82,7 +160,7 @@ export const landingMessages = defineMessages(
     ] as [string, string][],
     recorderNote: "Part of the author cabinet.",
     applyTitle: "Apply",
-    applyLead: "A few lines about you and where your readers are. We answer within two working days.",
+    applyLead: "A few lines about you and where your readers are. The editors read every application; we answer within two working days.",
     offerLabel: "What interests you",
     offerNames: { page: "Author page", series: "Five Boks Series", launch: "Joint launch", unsure: "Not sure yet" } as Record<AuthorApplicationOffer, string>,
     name: "Name or pen name",
@@ -116,31 +194,103 @@ export const landingMessages = defineMessages(
   },
   {
     ru: {
-      navWhy: "Почему boks",
-      navOffers: "Предложения",
+      navAbout: "Что такое boks",
+      navAuthors: "Авторам",
+      navReaders: "Читателям",
+      navOffers: "Условия",
       navApply: "Заявка",
       toReading: "К чтению",
-      heroTitle: "Ваши тексты",
-      heroTitleAccent: "на своей сцене.",
-      heroLead: "Авторская страница нового формата, иллюстрация к каждой работе и читатели, которые вас ещё не знают.",
-      choose: "Выбрать предложение",
+      heroKicker: "Приглашение для авторов",
+      heroTitle: "Приглашаем вас",
+      heroTitleAccent: "стать автором boks.",
+      heroLead: "boks это экосистема для поэтов, писателей и их читателей. Мы даём короткой литературе современную мультимедийную упаковку: текст, иллюстрацию к каждой работе и живой голос автора.",
+      heroNote: "Авторов отбираем лично, по заявке.",
+      heroApply: "Подать заявку",
       example: "Смотреть пример",
       collageCaption: "Алексей Прохоров · страница автора в boks",
-      whyTitle: "Почему boks",
-      why: [
-        ["Новые читатели", "Лента boks показывает ваши тексты людям, которые вас ещё не знают. Это способ расширить аудиторию за пределы своих соцсетей."],
-        ["Страница нового формата", "Портрет, иллюстрация к каждой работе, шторка boks и ссылка, которую приятно отправить."],
-        ["Boks Series с суфлёром", "Записывайте стихи своим голосом прямо в кабинете: суфлёр, иллюстрации в стиле boks, готовый выпуск за минуту."],
+
+      aboutKicker: "Что такое boks",
+      aboutTitle: "Больше, чем прочитал и поставил лайк.",
+      aboutLead: [
+        "В boks стихотворение или рассказ читают целиком, за несколько минут. Текст приходит к читателю сразу через несколько чувств: строки, иллюстрации, звук и голос автора. Из одного произведения легко перейти к другим, подписаться на автора и ответить ему.",
+        "Мы делаем такую упаковку, чтобы текст удерживал внимание и им хотелось поделиться. Выпуск boks пересылают охотнее, чем пост, потерявшийся в ленте.",
       ],
-      startTitle: "Как начать",
-      startLead: "Не знаете, что выбрать? Оставьте заявку, подскажем.",
+      modesTitle: "Два способа знакомства",
+      modes: [
+        { title: "Читать", lead: "Текст целиком, в типографике boks, с иллюстрацией. Следующий одним свайпом, как в ленте, только вместо постов литература." },
+        { title: "Слушать", lead: "Boks Series: голос автора с визуальным сопровождением, слова появляются в такт чтению. Для тех, кто любит слушать, и для тех, кому так проще." },
+      ],
+      mission: "Произведения, которые мы публикуем, часть мировой культуры. Мы хотим, чтобы у будущего читателя был и текст, и возможность услышать, как его произносил сам автор.",
+      missionSign: "Команда boks",
+
+      journeyKicker: "Путь автора",
+      journeyTitle: "Как ваша история начнёт жизнь",
+      journeyLead: "От заявки до первых читателей, которые раньше вас не знали.",
+      journey: [
+        { title: "Заявка", lead: "Расскажите о себе и пришлите ссылки на тексты. Каждую заявку редакция читает лично." },
+        { title: "Ваша страница", lead: "Страница, которую приятно открыть и хочется отправить в свой паблик: портрет, иллюстрации, шторка boks." },
+        { title: "Тексты", lead: "Загрузите стихи и короткую прозу. Нет записей? Прочитайте текст с суфлёра прямо с телефона." },
+        { title: "Публикация", lead: "После проверки произведение выходит в ленту boks, и его встречают люди, которые о вас ещё не слышали." },
+        { title: "Читатели", lead: "Знакомые и новые читатели подписываются, комментируют, сохраняют ваши строки и пересылают их дальше." },
+      ],
+
+      featuresTitle: "Что получает автор",
+      featuresLead: "Что работает уже сегодня и что мы строим дальше.",
+      soon: "Скоро",
+      features: [
+        { title: "Персональная страница", lead: "Адрес вида tryboks.com/@имя, все работы в одном месте, ссылка, которой приятно поделиться." },
+        { title: "Подписки", lead: "Читатель подписывается на вас из любого произведения и возвращается к новым работам." },
+        { title: "Комментарии и ответы", lead: "Разговор под каждым текстом, с ответами и лайками." },
+        { title: "Строки, которые путешествуют", lead: "Читатель выделяет вашу строку и отправляет другу или в «строку дня». Ссылка ведёт обратно к тексту целиком." },
+        { title: "Статистика", lead: "Сколько человек открыли и дочитали текст, сколько времени с ним провели, лайки, комментарии, репосты." },
+        { title: "Boks Series с суфлёром", lead: "Ваш голос рядом с текстом: выпуск с иллюстрациями за пару минут." },
+        { title: "Игра для читателей", lead: "Читатели, которые комментируют и делятся, будут получать монеты boks и открывать премиальные возможности. Так малые литературные формы находят больше людей.", soon: true },
+        { title: "Книги и афиша", lead: "Страница вашей книги, календарь событий, чтения и мастер-классы с вашими читателями.", soon: true },
+      ],
+
+      readersKicker: "Для ваших читателей",
+      readersTitle: "Дорогой читатель,",
+      readersLetter: [
+        "это место, где литература не тонет между мемами и рекламой. В соцсети вы подписались, поставили лайк, и на этом всё. В boks текст можно прочитать целиком, услышать голосом автора, отметить, что запомнилось, и вернуться к нему по одной строке.",
+        "Эта экосистема растёт на ваших глазах, и вы растите её вместе с нами.",
+      ],
+      readersNowTitle: "Уже работает",
+      readersNow: [
+        { title: "По настроению", lead: "«Что почитать»: выберите настроение, форму, авторов, и лента подстроится." },
+        { title: "Читать или слушать", lead: "Текст с иллюстрацией или Boks Series голосом автора." },
+        { title: "Одним свайпом", lead: "Целое произведение за несколько минут, следующее одним движением." },
+        { title: "Что откликнулось", lead: "Улыбнуло, тронуло, удивило, заставило задуматься: текст спрашивает, вы отвечаете." },
+        { title: "Строка дня", lead: "Письмо со строкой от другого читателя и игра «Угадай автора»." },
+        { title: "Своя библиотека", lead: "Прочитанное, понравившееся и ваши комментарии в одном месте." },
+      ],
+      readersSoonTitle: "Впереди",
+      readersSoon: [
+        "Награды активным читателям",
+        "Календарь литературных событий",
+        "Бесплатные книги",
+        "Мастер-классы и онлайн-встречи с авторами",
+        "Читательские клубы",
+        "Подарки за приглашённых друзей",
+      ],
+
+      selectionKicker: "Отбор",
+      selectionTitle: "Мы отбираем авторов лично.",
+      selection: [
+        { title: "Каждую заявку читает редакция", lead: "Смотрим на тексты, на голос и на то, как вы говорите со своими читателями. Отвечаем в течение двух рабочих дней." },
+        { title: "Не все попадают сразу", lead: "Иногда мы предлагаем вернуться позже: с новыми текстами или после первых публикаций в общей ленте." },
+        { title: "Гарантированную страницу купить нельзя", lead: "Оплата не заменяет отбор. Мы можем отказать и автору, который готов платить: так страница в boks остаётся для читателя знаком качества." },
+        { title: "Бесплатный вход для авторов с аудиторией", lead: "Если ваши посты о boks наберут 15 000 просмотров, годовую авторскую страницу вы получите бесплатно." },
+      ],
+
+      startTitle: "Условия",
+      startLead: "Все форматы открываются после одобрения заявки. Не знаете, что выбрать? Отметьте «Пока не знаю», подскажем.",
       offers: {
         page: {
           name: "Авторская страница",
           tag: "",
           oldPrice: "45 000 ₽",
           price: "30 000 ₽",
-          term: "за год",
+          term: "за год, после одобрения заявки",
           points: [
             "Поможем перенести до 50 коротких работ с других площадок",
             "Иллюстрация к каждой работе",
@@ -150,7 +300,7 @@ export const landingMessages = defineMessages(
             "Кабинет записи Boks Series с суфлёром",
             "Приоритетная поддержка: отвечаем в течение рабочего дня, помогаем с публикациями и оформлением",
           ],
-          badge: "До 1 января 2027 года — пять Boks Series в подарок",
+          badge: "До 1 января 2027 года: пять Boks Series в подарок",
         },
         series: {
           name: "Пять Boks Series",
@@ -160,20 +310,20 @@ export const landingMessages = defineMessages(
           term: "за пакет",
           points: [
             "Пять выпусков с иллюстрациями и аудио",
-            "Вашим голосом — или запишите сами в кабинете с суфлёром",
+            "Вашим голосом: пришлите запись или запишите сами в кабинете с суфлёром",
             "Выпуски появляются в основном разделе Boks Series",
           ],
           badge: "",
         },
         launch: {
           name: "Совместный запуск",
-          tag: "",
+          tag: "Для авторов с аудиторией",
           oldPrice: "",
           price: "Бесплатно",
           term: "всё, что входит в «Авторскую страницу»",
           points: [
             "Условие: серия постов о boks в ваших соцсетях",
-            "Когда посты суммарно наберут 30 000 просмотров — годовой пакет ваш бесплатно",
+            "Когда посты суммарно наберут 15 000 просмотров, годовой пакет ваш бесплатно",
             "Посты согласуем вместе",
             "Подать заявку можно и с аудиторией около 500 подписчиков",
           ],
@@ -183,7 +333,7 @@ export const landingMessages = defineMessages(
       applyFor: "Оставить заявку",
       recorderKicker: "Только в boks",
       recorderTitle: "Boks Series с суфлёром.",
-      recorderLead: "Читайте стихотворение с суфлёра на весь экран, своим голосом. boks сверит каждое слово с записью, нарисует иллюстрации в своём стиле — и примерно через минуту выпуск готов: слова появляются ровно тогда, когда вы их читаете.",
+      recorderLead: "Нет видео и студии? Читайте стихотворение с суфлёра на весь экран, своим голосом. boks сверит каждое слово с записью, нарисует иллюстрации в своём стиле, и примерно через минуту выпуск готов: слова появляются ровно тогда, когда вы их читаете.",
       recorderSteps: [
         ["Текст", "Вставьте стихотворение."],
         ["Запись", "Читайте с суфлёра в своём темпе, лучший дубль остаётся."],
@@ -192,7 +342,7 @@ export const landingMessages = defineMessages(
       ],
       recorderNote: "Входит в кабинет автора.",
       applyTitle: "Оставить заявку",
-      applyLead: "Пара строк о вас и о том, где ваши читатели. Ответим в течение двух рабочих дней.",
+      applyLead: "Пара строк о вас и о том, где ваши читатели. Каждую заявку читает редакция, ответим в течение двух рабочих дней.",
       offerLabel: "Что вам интересно",
       offerNames: { page: "Авторская страница", series: "Пять Boks Series", launch: "Совместный запуск", unsure: "Пока не знаю" },
       name: "Имя или псевдоним",

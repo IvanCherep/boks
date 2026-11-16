@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- the series' own pictures, as everywhere else in boks (no next/image here) */
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Headphones } from "lucide-react";
 import "@/app/author-landing.css";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -22,9 +22,10 @@ const offerOrder = ["page", "series", "launch"] as const;
 const returnKey = "boks-return-to-author-landing";
 
 /**
- * /author for an account with nothing published yet, and for a guest: why
- * boks, what it offers an author, the Series recorder, the application and a
- * question to the team (`docs/author-applications.md`). An account with a
+ * /author for an account with nothing published yet, and for a guest: an
+ * invitation, what boks is, the author's path and tools, what readers get,
+ * how authors are chosen, the terms, the application and a question to the
+ * team (`docs/author-applications.md`). An account with a
  * published work, an author page or Studio sees the cabinet instead.
  */
 export function AuthorLanding({ access, signedIn, onSignIn }: {
@@ -62,7 +63,9 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
       <nav className="alp-nav">
         <a href="/" className="alp-logo" aria-label="boks">boks<i>.</i></a>
         <span>
-          <a href="#why">{t.navWhy}</a>
+          <a href="#about">{t.navAbout}</a>
+          <a href="#authors">{t.navAuthors}</a>
+          <a href="#readers">{t.navReaders}</a>
           <a href="#offers">{t.navOffers}</a>
           <a href="#apply" className="is-strong">{t.navApply} <ArrowRight aria-hidden="true" /></a>
         </span>
@@ -70,12 +73,14 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
       <div className="alp-hero__body">
         <div className="alp-hero__text">
           <i className="alp-rule" aria-hidden="true" />
+          <p className="alp-kicker">{t.heroKicker}</p>
           <h1>{t.heroTitle}<em>{t.heroTitleAccent}</em></h1>
           <p>{t.heroLead}</p>
           <div className="alp-hero__actions">
-            <a href="#offers" className="alp-button">{t.choose}</a>
+            <a href="#apply" className="alp-button">{t.heroApply} <ArrowRight aria-hidden="true" /></a>
             <a href={`/@${exampleHandle}`} className="alp-link" onClick={markReturn}>{t.example}</a>
           </div>
+          <p className="alp-hero__note">{t.heroNote}</p>
         </div>
         <figure className="alp-collage">
           <div className="alp-collage__frame">
@@ -92,13 +97,114 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
       </div>
     </header>
 
-    <section id="why" className="alp-why">
-      <h2>{t.whyTitle}</h2>
-      <ol>
-        {t.why.map(([title, lead], index) => <li key={title} style={{ "--i": index } as React.CSSProperties}>
+    <section id="about" className="alp-about">
+      <div className="alp-about__text">
+        <p className="alp-kicker">{t.aboutKicker}</p>
+        <h2>{t.aboutTitle}</h2>
+        {t.aboutLead.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+      </div>
+      <div className="alp-modes">
+        <h3>{t.modesTitle}</h3>
+        <ol>
+          {t.modes.map((mode, index) => {
+            const Icon = index === 0 ? BookOpen : Headphones;
+            return <li key={mode.title}>
+              <span className="alp-modes__icon" aria-hidden="true"><Icon /></span>
+              <span><strong>{mode.title}</strong><small>{mode.lead}</small></span>
+            </li>;
+          })}
+        </ol>
+      </div>
+      <blockquote className="alp-mission">
+        <p>{t.mission}</p>
+        <footer>{t.missionSign}</footer>
+      </blockquote>
+    </section>
+
+    <section id="authors" className="alp-journey">
+      <div className="alp-section-head">
+        <div>
+          <p className="alp-kicker">{t.journeyKicker}</p>
+          <h2>{t.journeyTitle}</h2>
+        </div>
+        <p>{t.journeyLead}</p>
+      </div>
+      <ol className="alp-journey__path">
+        {t.journey.map((step, index) => <li key={step.title} style={{ "--i": index } as React.CSSProperties}>
           <b>{String(index + 1).padStart(2, "0")}</b>
-          <h3>{title}</h3>
-          <p>{lead}</p>
+          <h3>{step.title}</h3>
+          <p>{step.lead}</p>
+        </li>)}
+      </ol>
+    </section>
+
+    <section className="alp-features">
+      <div className="alp-section-head">
+        <h2>{t.featuresTitle}</h2>
+        <p>{t.featuresLead}</p>
+      </div>
+      <ul className="alp-features__grid">
+        {t.features.map((feature) => <li key={feature.title} className={feature.soon ? "is-soon" : ""}>
+          {feature.soon ? <span className="alp-soon">{t.soon}</span> : <Check className="alp-features__mark" aria-hidden="true" />}
+          <h3>{feature.title}</h3>
+          <p>{feature.lead}</p>
+        </li>)}
+      </ul>
+    </section>
+
+    <section id="recorder" className="alp-recorder">
+      <div className="alp-recorder__text">
+        <p className="alp-kicker">{t.recorderKicker}</p>
+        <h2>{t.recorderTitle}</h2>
+        <p className="alp-recorder__lead">{t.recorderLead}</p>
+        <ol className="alp-steps">
+          {t.recorderSteps.map(([name, lead], index) => <li key={name}>
+            <b>{String(index + 1).padStart(2, "0")}</b>
+            <span><strong>{name}</strong><small>{lead}</small></span>
+          </li>)}
+        </ol>
+        <p className="alp-recorder__note">{t.recorderNote}</p>
+      </div>
+      <div className="alp-phone" aria-hidden="true">
+        <img src="/series/prokhorov-azbuka-very.webp" alt="" />
+        <span className="alp-phone__veil" />
+        <span className="alp-phone__curtain alp-phone__curtain--left" />
+        <span className="alp-phone__curtain alp-phone__curtain--right" />
+        <p className="alp-phone__verse"><span>Люблю грозу в начале мая,</span><b>когда весенний, первый гром</b></p>
+      </div>
+    </section>
+
+    <section id="readers" className="alp-readers">
+      <div className="alp-letter">
+        <p className="alp-kicker">{t.readersKicker}</p>
+        <h2>{t.readersTitle}</h2>
+        {t.readersLetter.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+      </div>
+      <div className="alp-readers__lists">
+        <h3>{t.readersNowTitle}</h3>
+        <ul className="alp-readers__now">
+          {t.readersNow.map((item) => <li key={item.title}>
+            <Check aria-hidden="true" />
+            <span><strong>{item.title}</strong><small>{item.lead}</small></span>
+          </li>)}
+        </ul>
+        <h3>{t.readersSoonTitle}</h3>
+        <ul className="alp-readers__soon">
+          {t.readersSoon.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      </div>
+    </section>
+
+    <section className="alp-selection">
+      <div className="alp-selection__head">
+        <p className="alp-kicker">{t.selectionKicker}</p>
+        <h2>{t.selectionTitle}</h2>
+      </div>
+      <ol>
+        {t.selection.map((item, index) => <li key={item.title} className={index === t.selection.length - 1 ? "is-free" : ""}>
+          <b>{String(index + 1).padStart(2, "0")}</b>
+          <h3>{item.title}</h3>
+          <p>{item.lead}</p>
         </li>)}
       </ol>
     </section>
@@ -130,28 +236,6 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
           </li>;
         })}
       </ol>
-    </section>
-
-    <section id="recorder" className="alp-recorder">
-      <div className="alp-recorder__text">
-        <p className="alp-kicker">{t.recorderKicker}</p>
-        <h2>{t.recorderTitle}</h2>
-        <p className="alp-recorder__lead">{t.recorderLead}</p>
-        <ol className="alp-steps">
-          {t.recorderSteps.map(([name, lead], index) => <li key={name}>
-            <b>{String(index + 1).padStart(2, "0")}</b>
-            <span><strong>{name}</strong><small>{lead}</small></span>
-          </li>)}
-        </ol>
-        <p className="alp-recorder__note">{t.recorderNote}</p>
-      </div>
-      <div className="alp-phone" aria-hidden="true">
-        <img src="/series/prokhorov-azbuka-very.webp" alt="" />
-        <span className="alp-phone__veil" />
-        <span className="alp-phone__curtain alp-phone__curtain--left" />
-        <span className="alp-phone__curtain alp-phone__curtain--right" />
-        <p className="alp-phone__verse"><span>Люблю грозу в начале мая,</span><b>когда весенний, первый гром</b></p>
-      </div>
     </section>
 
     <section id="apply" ref={form} className="alp-apply">

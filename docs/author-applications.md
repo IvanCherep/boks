@@ -15,10 +15,21 @@ the page existed.
 |---|---|---|
 | Author page | ~~45 000 ₽~~ 30 000 ₽ a year | up to 50 short works moved over, an illustration for each, page and cabinet designed, a year in the boks feed after review, the profile in the main Boks Series section for the year, the Series recorder, priority support (answered within a working day); until 1 January 2027 five Boks Series as a gift |
 | Five Boks Series | 10 000 ₽ a pack | an extra for authors with a cabinet: five issues with illustrations and sound, in the author's voice or recorded with the teleprompter |
-| Joint launch | free | everything in the Author page, on one condition: a series of posts about boks that reaches 30 000 views in total; open to authors with around 500 followers |
+| Joint launch | free | everything in the Author page, on one condition: a series of posts about boks that reaches 15 000 views in total (was 30 000 until 2026-11-16); open to authors with around 500 followers |
 
-Above the offers, "Why boks": new readers beyond the author's own followers,
-a page of a new kind, and Boks Series with a teleprompter.
+The page reads top to bottom as an invitation (rewritten 2026-11-16 after the
+team call of 15 November): the hero invites the author and says authors are
+chosen by application; "What boks is" (the synopsis, two ways in: read or
+listen, and the mission line); the author's path in five steps (application,
+page, texts or the teleprompter, publication, readers); what an author gets,
+with what is still being built marked "Soon" (the reader game with boks
+coins, books and events); the Series recorder; a letter to readers ("Dear
+reader") with what already works for them and what is coming (rewards,
+events calendar, free books, workshops, clubs, gifts for invites); selection
+(the editors read every application, not everyone gets in at once, a page
+cannot be bought with a guarantee, the free way in at 15 000 views); then
+the offers. Every format opens only after the application is approved.
+Promises on the page must stay true: anything not yet live carries "Soon".
 
 The texts are in `components/boks/author-landing/messages.ts`; the page also
 shows the Series recorder (`docs/series-recorder.md`) as the new format.
