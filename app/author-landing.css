@@ -101,9 +101,11 @@
 /* What boks is: the synopsis, two ways in, the mission. */
 .alp-about { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(32px, 5vw, 88px); max-width: calc(1340px + 2 * clamp(16px, 4vw, 56px)); margin: 0 auto; }
 .alp-about > * { max-width: none; margin: 0; }
-.alp-about h2 { font-size: clamp(36px, 3.9vw, 56px); text-wrap: balance; font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
+.alp-about h2, .alp-about h2 em { text-wrap: balance; }
+.alp-about h2 { font-size: clamp(34px, 3.5vw, 50px); font-weight: 600; line-height: 1.02; letter-spacing: -.035em; }
+.alp-about h2 em { display: block; font-weight: 400; font-style: italic; color: var(--alp-accent); }
 .alp-about__text > p:not(.alp-kicker) { max-width: 640px; margin: 22px 0 0; font-size: 19px; line-height: 1.6; color: var(--alp-muted); }
-.alp-about__text > p:not(.alp-kicker):first-of-type { color: var(--alp-ink); }
+.alp .alp-about h2 + p { max-width: 560px; margin-top: 26px; font: 400 clamp(21px, 1.8vw, 25px)/1.45 var(--font-serif, Georgia), serif; color: var(--alp-ink); }
 .alp-modes { align-self: end; }
 .alp-modes h3 { padding-bottom: 14px; border-bottom: 1px solid var(--alp-line); font: 600 12px/1.3 var(--font-sans, system-ui), sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--alp-muted); }
 .alp-modes ol { display: grid; gap: 14px; margin: 18px 0 0; padding: 0; list-style: none; }
@@ -170,11 +172,22 @@
 .alp-selection li.is-free p { color: #e2d9c8; }
 
 /* Offers */
-.alp-offers__list { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0; margin-top: 0; margin-bottom: 0; padding: 0; list-style: none; }
+.alp-offers__list { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: start; gap: 0; margin-top: 0; margin-bottom: 0; padding: 0; list-style: none; }
 .alp-offer { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 34px 30px 36px 0; animation: alp-rise .6s calc(var(--i) * 90ms) ease-out both; }
 .alp-offer + .alp-offer { padding-left: 30px; border-left: 1px solid var(--alp-line); }
-.alp-offer.is-lead { margin: 18px 30px 0 0; padding: 30px 30px 32px; border-radius: var(--alp-cut); background: var(--alp-card); box-shadow: 0 0 0 1px var(--alp-ink), 0 30px 60px -44px #0007; }
+/* The free joint launch: the main offer, in the middle, on the night of the hero. */
+.alp-offer.is-lead { z-index: 1; margin: -6px 0 0; padding: 36px 32px 38px; border-left: 0; border-radius: var(--alp-cut); background: var(--alp-night); color: var(--alp-cream); box-shadow: 0 40px 70px -40px #000a; transform: translateY(-10px); }
 .alp-offer.is-lead + .alp-offer { border-left: 0; }
+.alp-offer:has(+ .alp-offer.is-lead) { padding-right: 30px; }
+.alp-offer.is-lead .alp-offer__num { color: var(--alp-glow); }
+.alp-offer.is-lead .alp-offer__tag { background: var(--alp-glow); color: #fff; }
+.alp-offer.is-lead h3 { font-size: clamp(32px, 2.9vw, 42px); }
+.alp-offer.is-lead .alp-offer__price b { color: #fff; }
+.alp-offer.is-lead .alp-offer__price span { color: #cfc6b5; }
+.alp-offer.is-lead .alp-offer__badge { background: #ffffff14; box-shadow: inset 0 0 0 1px #ffffff2a; }
+.alp-offer.is-lead ul { border-top-color: #ffffff22; }
+.alp-offer.is-lead ul svg { color: var(--alp-glow); }
+.alp-offer.is-lead .alp-button:hover { background: #fff; }
 .alp-offer__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 26px; }
 .alp-offer__tag { padding: 4px 10px; border-radius: 999px; background: var(--alp-sage-bg); color: var(--alp-sage-ink); font: 600 11px/1.3 var(--font-sans, system-ui), sans-serif; letter-spacing: .06em; text-transform: uppercase; }
 .alp-offer h3 { font-size: clamp(28px, 2.5vw, 36px); line-height: 1.05; }
@@ -270,7 +283,9 @@
 @media (max-width: 1080px) {
   .alp-offers__list { grid-template-columns: minmax(0, 1fr); }
   .alp-offer, .alp-offer + .alp-offer { padding: 30px 0; border-left: 0; border-top: 1px solid var(--alp-line); }
-  .alp-offer.is-lead { margin: 22px 0 8px; padding: 28px 24px; border-top: 0; }
+  .alp-offer__num { display: none; }
+  .alp-offer.is-lead { order: -1; margin: 22px 0 8px; padding: 28px 24px; border-top: 0; transform: none; }
+  .alp-offer:has(+ .alp-offer.is-lead) { padding-right: 0; }
   .alp-offer.is-lead + .alp-offer { border-top: 0; }
 }
 @media (max-width: 980px) {

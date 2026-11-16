@@ -17,7 +17,9 @@ import { landingMessages } from "./messages";
 /** Прохоров's page: the example the hero shows (`components/boks/author-portraits.ts`). */
 const examplePortrait = "/l/XFKejQcwEa7M_7jI_1T6LA/f/prokhorov-portrait.webp";
 const exampleHandle = "prokhorov";
-const offerOrder = ["page", "series", "launch"] as const;
+const offerOrder = ["page", "launch", "series"] as const;
+/** The free joint launch: the main offer, in the middle and set apart. */
+const leadOffer = "launch";
 /** Read once by the author page's Back, so it returns here (`reader-feed.tsx`). */
 const returnKey = "boks-return-to-author-landing";
 
@@ -100,7 +102,7 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
     <section id="about" className="alp-about">
       <div className="alp-about__text">
         <p className="alp-kicker">{t.aboutKicker}</p>
-        <h2>{t.aboutTitle}</h2>
+        <h2>{t.aboutTitle}<em>{t.aboutTitleAccent}</em></h2>
         {t.aboutLead.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
       </div>
       <div className="alp-modes">
@@ -217,7 +219,7 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
       <ol className="alp-offers__list">
         {offerOrder.map((key, index) => {
           const item = t.offers[key];
-          return <li key={key} className={`alp-offer${index === 0 ? " is-lead" : ""}`} style={{ "--i": index } as React.CSSProperties}>
+          return <li key={key} className={`alp-offer${key === leadOffer ? " is-lead" : ""}`} style={{ "--i": index } as React.CSSProperties}>
             <span className="alp-offer__top">
               <span className="alp-offer__num">{String(index + 1).padStart(2, "0")}</span>
               {item.tag && <span className="alp-offer__tag">{item.tag}</span>}
@@ -230,7 +232,7 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
             </p>
             {item.badge && <p className="alp-offer__badge">{item.badge}</p>}
             <ul>{item.points.map((point) => <li key={point}><Check aria-hidden="true" />{point}</li>)}</ul>
-            <button type="button" className={index === 0 ? "alp-button alp-button--ink" : "alp-button alp-button--line"} onClick={() => apply(key)}>
+            <button type="button" className={key === leadOffer ? "alp-button" : "alp-button alp-button--line"} onClick={() => apply(key)}>
               {t.applyFor}
             </button>
           </li>;
@@ -339,7 +341,7 @@ function ApplicationForm({ access, offer, onOffer, signedIn, onSignIn }: {
   }}>
     <fieldset className="alp-choice">
       <legend>{t.offerLabel}</legend>
-      {(["page", "series", "launch", "unsure"] as const).map((key) => <label key={key} className={offer === key ? "is-on" : ""}>
+      {(["page", "launch", "series", "unsure"] as const).map((key) => <label key={key} className={offer === key ? "is-on" : ""}>
         <input type="radio" name="offer" value={key} checked={offer === key} onChange={() => onOffer(key)} />
         {t.offerNames[key]}
       </label>)}

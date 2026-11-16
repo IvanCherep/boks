@@ -15,7 +15,7 @@ the page existed.
 |---|---|---|
 | Author page | ~~45 000 ₽~~ 30 000 ₽ a year | up to 50 short works moved over, an illustration for each, page and cabinet designed, a year in the boks feed after review, the profile in the main Boks Series section for the year, the Series recorder, priority support (answered within a working day); until 1 January 2027 five Boks Series as a gift |
 | Five Boks Series | 10 000 ₽ a pack | an extra for authors with a cabinet: five issues with illustrations and sound, in the author's voice or recorded with the teleprompter |
-| Joint launch | free | everything in the Author page, on one condition: a series of posts about boks that reaches 15 000 views in total (was 30 000 until 2026-11-16); open to authors with around 500 followers |
+| Joint launch (the main offer, shown in the middle) | free | everything in the Author page, on one condition: a series of posts about boks that reaches 15 000 views in total (was 30 000 until 2026-11-16); open to authors with around 500 followers |
 
 The page reads top to bottom as an invitation (rewritten 2026-11-16 after the
 team call of 15 November): the hero invites the author and says authors are
