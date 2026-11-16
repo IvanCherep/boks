@@ -157,3 +157,14 @@ Recorded here by title only, never with the token.
 | Piece | Author | Since | Format |
 |---|---|---|---|
 | «там где скрипели качели» | Алексей Прохоров | 2026-11-04 | immersive poem, Alex Bell, 5 pictures; rub away the haze in the third, hold the heart in the last |
+| «Так дымно здесь», «Бедный Данечка» («Дочка-дочка, будь добра…»), «Вне цикла» («Кащей») | Дмитрий Воденников | 2026-11-17 | special project, in progress: the author's own sung recordings with music (gain to −22 LUFS, 96 kbps stereo), word times from forced alignment checked against speech to text, the refrains he sings shown as lines; 8 pictures each; interludes in the music: smoke wiped away and a bee swarm (dymno), memory held back into colour and snow flying to the finger's light (dochka), a blizzard led by the finger and the empty duck and hare brought back (vne) |
+
+### Special projects
+
+Pieces that are being prepared for a partner rather than for one author's
+demo are gathered in Studio → Special projects (`components/boks/admin/special-projects.tsx`).
+The links come from the table `boks_special_projects` (migration
+`20261118160000_boks_special_projects.sql`): admin-only, read through
+`boks_admin_special_projects()`, filled from a scratch SQL file on the server,
+never from this repository. A row there publishes nothing; it only lets the
+team find and copy the link.

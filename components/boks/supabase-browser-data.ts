@@ -1456,6 +1456,16 @@ export async function createTrackedLink(input: { label: string; bokId?: string |
   return result.data as { code: string; label: string; bokId: string | null; bokTitle: string | null };
 }
 
+export type SpecialProjectPiece = { project: string; title: string; author: string; token: string; note: string; createdAt: string };
+
+/** Link-only pieces grouped into special projects (Studio -> Special projects). Admin-only on the server. */
+export async function loadSpecialProjects() {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("boks_admin_special_projects");
+  if (result.error) throw result.error;
+  return (result.data ?? []) as SpecialProjectPiece[];
+}
+
 /** Archives or restores a tracked link; an archived one still counts visits. Admin-only on the server. */
 export async function setTrackedLinkArchived(code: string, archived: boolean) {
   if (!supabase) throw new Error("Supabase is not configured.");

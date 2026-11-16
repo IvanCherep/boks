@@ -129,7 +129,21 @@ export type PoemManifest = {
   };
   scenes: PoemScene[];
   lines: PoemLine[];
+  /**
+   * Where the music plays alone. The words step aside, the picture belongs to
+   * the reader's hand, and the hint, if any, says what it does. A scene may
+   * start inside one without carrying a line (its `startMs` set by hand).
+   */
+  interludes?: PoemInterlude[];
 };
+
+export type PoemInterlude = { startMs: number; endMs: number; hint?: string };
+
+/** The interlude playing at this moment, by its index, or -1. */
+export function interludeAt(interludes: readonly PoemInterlude[] | undefined, ms: number): number {
+  if (!interludes) return -1;
+  return interludes.findIndex((interlude) => ms >= interlude.startMs && ms < interlude.endMs);
+}
 
 /** The effects the renderer can draw. Anything else falls back to `quiet-breath`. */
 export const textPresets = [

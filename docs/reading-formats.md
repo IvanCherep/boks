@@ -566,6 +566,8 @@ drawn by one WebGL shader over the scene's own picture
 | `swipe` / `turn-page` | swipe sideways | turns to the next picture (or back), seeking the voice to its first line; no canvas | - |
 | `hold` / `summon-spirits` | press and hold | at rest a drifting fog veils everything but `figure` and the candle's light trembles; held, the flame steadies, the fog thins and moves away from `candle`, and the painted spirits come forward over about a second and a half; released, the fog closes again | `candle`, `figure`, `radius` |
 | `wipe` / `clear-condensation` | rub with a finger | the `glass` rectangle is misted - blurred and greyed, with a bead texture; the finger's path is cleared and stays cleared for the session. The more is cleared, the further back the reflection settles | `glass` (x, y, width, height), `brush` (fraction of the glass's width) |
+| `attract` / `bees` | press, hold, move | bees drawn in the woodcut's manner (gold body, dark stripes, flickering wings) idle round `home`; down, they come to the finger and wind tighter round it the longer it is held, a humming golden ball with trembling rings; let go, the ball bursts and they drift home | `home`, `count` (20-60) |
+| `attract` / `snow` | press, hold, move | snow falls over the whole frame; the finger is a light - flakes near it turn towards it and warm to amber, and fall back into place when it lifts. Near `home`, a painted lamp, they glow on their own | `home` (optional), `count` (80-220) |
 | `drag-x` / `turn-away` | move sideways, either way | the view swings towards `apparition` and she fades into light in proportion; released short of the end she returns, carried all the way (0.55 of the width) she stays gone | `apparition`, `radius` |
 
 `converge-reflections`, `lean-between` and `recall-glory` redraw the picture
@@ -575,7 +577,8 @@ itself in WebGL (`components/boks/poetry/gesture-layer.ts`); the rest are drawn 
 `wind`; Invictus thins it 1 → 0.6 → 0.25 → none so the storm passes) and
 `returning-song` (`from`, `to`; brighter when the reader sent a song away
 earlier), `falling-leaves` (`count`, optional `sun`: a low light that drifts)
-and `candle-glow` (`at`, `radius`). One ambience is itself a warp,
+`candle-glow` (`at`, `radius`) and `snow` (`count`, `wind`, optional
+`light`). One ambience is itself a warp,
 `emerge-shadow` (`shadow`, `radius`, `afterMs`): branch shadows sway, and
 inside `shadow` the painted figure starts filled in by the sun - relit to the
 stone around it, so the grain stays - and gives way over five seconds from
@@ -592,6 +595,19 @@ recording mode. Give a gesture scene room: insert silence after its lines (see
 step 3) so it holds for ten seconds or more - Brennan's has 3.5 s after «each to
 each», O'Dowd's 2.5 s after «Eden ’neath your face». Without WebGL the canvas
 stays empty and the `<img>` beneath it is the scene.
+
+#### Interludes: where the music plays alone
+
+An author's own recording with music under it has stretches with no voice: an
+introduction, a break, a long ending. `interludes` on the manifest
+(`[{ startMs, endMs, hint? }]`, `interludeAt` in `manifest.ts`) marks them: the
+words step aside (`.poem__words.is-over`), the interlude's `hint` replaces the
+scene's own until the reader has tried the gesture, and the picture is the
+reader's. A scene may begin inside one without carrying a line - its `startMs`
+set by hand after the build, as a closing picture that returns to the first
+one does (Воденников's «Бедный Данечка», 2026-11-17). The builder makes a
+manifest's `durationMs` the last word's end, so a piece with an ending in music
+sets `durationMs` and the last line's `endMs` to the recording's length.
 
 `transitionStyle: "cinematic"` on the scene map makes every change of picture
 a settle as well as a dissolve: the arriving picture comes in from 6 % closer,

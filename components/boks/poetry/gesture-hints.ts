@@ -23,6 +23,13 @@ export const gestureHintTranslations: Record<Exclude<UiLanguage, "en">, Record<s
     "Drag sideways to turn around": "Проведите в сторону, чтобы обернуться",
     "Rub to remember": "Протрите, чтобы вспомнить",
     "Hold to warm the heart": "Удерживайте, чтобы согреть сердце",
+    "Wave the smoke away": "Разгоните дым",
+    "Hold, and the bees will come": "Удерживайте - пчёлы прилетят",
+    "Gather the humming ball": "Соберите гудящий шар",
+    "Be the light for the snow": "Станьте светом для снега",
+    "Lead the blizzard": "Ведите метель за пальцем",
+    "Hold to bring them back": "Удерживайте, чтобы вернуть",
+    "Hold, stay a little longer": "Удерживайте - побудьте ещё",
   },
 };
 

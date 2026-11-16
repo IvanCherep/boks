@@ -12,6 +12,7 @@ import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import {
   backdropAt,
+  interludeAt,
   lineIndexAt,
   playedFraction,
   presetFor,
@@ -248,6 +249,8 @@ export function ImmersivePoem({
   const [reduced, setReduced] = useState(false);
   /** Scenes whose gesture the reader has already found; their hint stays away. */
   const [gestureFound, setGestureFound] = useState<Record<string, true>>({});
+  /** The music playing alone (`manifest.interludes`), by index, or -1. */
+  const [interlude, setInterlude] = useState(-1);
 
   const lineIndex = at.line;
   const activeToken = at.token;
@@ -588,6 +591,8 @@ export function ImmersivePoem({
           token = wordReachedAt(current, ms + (manifest.playback.tokenLeadMs ?? 0));
         }
         setAt((shown) => (shown.line === index && shown.token === token ? shown : { line: index, token }));
+        const resting = interludeAt(manifest.interludes, ms);
+        setInterlude((shown) => (shown === resting ? shown : resting));
 
         paintBackdrop(backdropAt(manifest, ms));
 
@@ -871,7 +876,7 @@ export function ImmersivePoem({
     if (!gesture) return false;
     hand.current.swallowClick = false;
     const box = target.getBoundingClientRect();
-    if (gesture.kind === "fling" || gesture.kind === "threads" || gesture.kind === "wipe") {
+    if (gesture.kind === "fling" || gesture.kind === "threads" || gesture.kind === "wipe" || gesture.kind === "attract") {
       const x = clientX - box.left;
       const y = clientY - box.top;
       input.current.drag = { scene: index, x0: x, y0: y, x, y };
@@ -939,6 +944,10 @@ export function ImmersivePoem({
       state.swallowClick = true;
       const found = manifest.scenes[pointer.scene];
       if (found) setGestureFound((seen) => (seen[found.id] ? seen : { ...seen, [found.id]: true }));
+      if (interlude >= 0) {
+        const key = `interlude-${interlude}`;
+        setGestureFound((seen) => (seen[key] ? seen : { ...seen, [key]: true }));
+      }
     }
   }
 
@@ -978,10 +987,15 @@ export function ImmersivePoem({
     return () => cancelAnimationFrame(raf);
   });
 
+  const interludeHint = interlude >= 0 ? manifest.interludes?.[interlude]?.hint : undefined;
   const gestureHint =
-    scene?.gesture && !gestureFound[scene.id] && status !== "ended" && !recording && !replaying
-      ? gestureHintIn(scene.gesture.hint, uiLanguage)
-      : null;
+    status === "ended" || recording || replaying
+      ? null
+      : interludeHint && !gestureFound[`interlude-${interlude}`]
+        ? gestureHintIn(interludeHint, uiLanguage)
+        : interlude < 0 && scene?.gesture && !gestureFound[scene.id]
+          ? gestureHintIn(scene.gesture.hint, uiLanguage)
+          : null;
 
   const preset = scene ? presetFor(scene) : "quiet-breath";
   const stanzas = useMemo(() => stanzasOf(manifest), [manifest]);
@@ -1165,7 +1179,7 @@ export function ImmersivePoem({
       */}
       {/* Cleared when the poem ends. Nobody clears the last line otherwise,
           so it sat over the closing panel. */}
-      <div className={`poem__words ${status === "ended" ? "is-over" : ""}`} aria-hidden="true">
+      <div className={`poem__words ${status === "ended" || interlude >= 0 ? "is-over" : ""}`} aria-hidden="true">
         {stanzas.map((stanza, stanzaIndex) => {
           const state =
             stanzaIndex < currentStanza ? "past" : stanzaIndex === currentStanza ? "now" : "ahead";

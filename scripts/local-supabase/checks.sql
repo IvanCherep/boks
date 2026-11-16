@@ -5495,3 +5495,34 @@ begin
   perform public.boks_assert(public.get_my_series_access() ->> 'authorName' is not null, 'authorName is unchanged');
 end $$;
 rollback;
+
+-- Special projects: tokens of link-only pieces, readable by an admin only.
+begin;
+insert into public.boks_special_projects (project, title, author, token) values
+  ('Проверка', 'Пьеса', 'Автор', 'AAAAAAAAAAAAAAAAAAAAAA');
+do $$
+declare
+  v_rows jsonb;
+begin
+  perform public.boks_test_login('33333333-3333-4333-8333-333333333333');
+  set local role authenticated;
+  begin
+    perform public.boks_admin_special_projects();
+    perform public.boks_assert(false, 'a reader cannot list special projects');
+  exception when sqlstate '42501' then
+    perform public.boks_assert(true, 'a reader cannot list special projects');
+  end;
+  begin
+    perform 1 from public.boks_special_projects;
+    perform public.boks_assert(false, 'a reader cannot read special project tokens');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a reader cannot read special project tokens');
+  end;
+  reset role;
+  perform public.boks_test_login('22222222-2222-4222-8222-222222222222');
+  set local role authenticated;
+  v_rows := public.boks_admin_special_projects();
+  perform public.boks_assert(v_rows -> 0 ->> 'token' = 'AAAAAAAAAAAAAAAAAAAAAA', 'an admin lists special projects with their links');
+  reset role;
+end $$;
+rollback;

@@ -1,4 +1,5 @@
 import {
+  attractTarget,
   coverTransform,
   flameLean,
   flingFrom,
@@ -14,7 +15,8 @@ import type { GestureFrame, GestureInput, GestureLayer } from "@/components/boks
 /**
  * The gestures drawn over a picture rather than into it: an arrow and a song
  * let fly, threads to the lights and the bridge they make, a flame in the
- * wind, rain, the song coming home, falling leaves, a candle's light.
+ * wind, rain, the song coming home, falling leaves, a candle's light, snow,
+ * and bees or flakes drawn to the finger.
  *
  * A transparent 2D canvas over the scene's `<img>`, cleared and drawn whole
  * every frame the scene is on screen. Everything is placed by the picture's
@@ -294,6 +296,181 @@ export function createOverlayLayer(
     glowDot(origin.x, origin.y, 10 + 14 * shot.power, gold, 0.4 + 0.5 * shot.power);
   }
 
+  // ---------------------------------------------------------------- snow
+  /*
+   * Flakes keep their own place in a falling field, the same flake on every
+   * frame. A finger is a light: flakes near it are pulled out of the field
+   * towards it and warm to amber, then fall back into place when it lifts.
+   * Two batched paths a frame (cold and warm), no gradients per flake.
+   */
+  const pulls = new Float32Array(512 * 2);
+  function snow(seconds: number, count: number, wind: number, light: ImagePoint | undefined, finger: { x: number; y: number } | null, heldMs: number, elapsed: number) {
+    const fall = height * 1.1;
+    const lamp = light ? at(light) : null;
+    const reach = Math.max(width, height) * 0.32;
+    const gather = finger ? Math.min(1, heldMs / 1400) : 0;
+    if (finger) glowDot(finger.x, finger.y, reach * (0.35 + 0.25 * gather), gold, 0.18 + 0.2 * gather);
+    if (lamp) glowDot(lamp.x, lamp.y, reach * 0.55, gold, 0.1 + 0.03 * Math.sin(seconds * 1.3));
+    const ease = 1 - Math.exp(-elapsed / 260);
+    const cold: number[] = [];
+    const warm: number[] = [];
+    for (let i = 0; i < Math.min(count, 512); i += 1) {
+      const speed = height * (0.035 + hash(i * 3) * 0.05);
+      const size = 0.8 + hash(i * 7) * 2.2;
+      const y = ((hash(i * 5) * fall + seconds * speed * (0.6 + size * 0.25)) % fall) - height * 0.05;
+      const sway = Math.sin(seconds * (0.5 + hash(i * 11)) + i) * width * 0.02;
+      const x0 = hash(i) * width * 1.2 - width * 0.1 + sway + seconds * width * 0.01 * wind;
+      const x = ((x0 % (width * 1.2)) + width * 1.2) % (width * 1.2) - width * 0.1;
+      // How far the flake has been drawn off its place, eased both ways.
+      let px = pulls[i * 2];
+      let py = pulls[i * 2 + 1];
+      let tx = 0;
+      let ty = 0;
+      let heat = 0;
+      if (finger) {
+        const dx = finger.x - x;
+        const dy = finger.y - y;
+        const d = Math.hypot(dx, dy);
+        if (d < reach) {
+          const k = (1 - d / reach) * (0.55 + 0.4 * gather);
+          tx = dx * k;
+          ty = dy * k;
+          heat = k;
+        }
+      }
+      if (lamp) heat = Math.max(heat, 0.6 * Math.max(0, 1 - Math.hypot(lamp.x - x, lamp.y - y) / (reach * 0.7)));
+      px += (tx - px) * ease;
+      py += (ty - py) * ease;
+      pulls[i * 2] = px;
+      pulls[i * 2 + 1] = py;
+      (heat > 0.25 ? warm : cold).push(x + px, y + py, size * (1 + heat * 0.6));
+    }
+    for (const [list, colour] of [
+      [cold, "rgba(236, 242, 255, 0.78)"],
+      [warm, "rgba(255, 210, 140, 0.92)"],
+    ] as const) {
+      ctx!.fillStyle = colour;
+      ctx!.beginPath();
+      for (let k = 0; k < list.length; k += 3) {
+        ctx!.moveTo(list[k] + list[k + 2], list[k + 1]);
+        ctx!.arc(list[k], list[k + 1], list[k + 2], 0, Math.PI * 2);
+      }
+      ctx!.fill();
+    }
+  }
+
+  // ---------------------------------------------------------------- bees
+  /*
+   * Bees idle round their home, each on its own small loop. Down, they come
+   * to the finger and wind tighter and faster round it: the humming ball,
+   * glowing more the longer it is held. Up, the ball bursts outwards and the
+   * bees find their way home. Positions are eased, never teleported.
+   */
+  const bees = new Float32Array(128 * 4);
+  let beesReady = false;
+  let burstAt = 0;
+  let lastFinger: { x: number; y: number } | null = null;
+  let lastHeld = 0;
+  function swarm(now: number, seconds: number, count: number, home: ImagePoint, finger: { x: number; y: number } | null, heldMs: number, elapsed: number) {
+    const n = Math.min(count, 128);
+    const base = at(home);
+    const scale = Math.min(width, height);
+    if (!beesReady) {
+      for (let i = 0; i < n; i += 1) {
+        bees[i * 4] = base.x + (hash(i) - 0.5) * scale * 0.3;
+        bees[i * 4 + 1] = base.y + (hash(i * 9) - 0.5) * scale * 0.3;
+      }
+      beesReady = true;
+    }
+    if (!finger && lastFinger && lastHeld > 250) {
+      burstAt = now;
+      for (let i = 0; i < n; i += 1) {
+        const a = hash(i * 13) * Math.PI * 2;
+        bees[i * 4 + 2] = Math.cos(a) * scale * (0.6 + hash(i) * 0.8);
+        bees[i * 4 + 3] = Math.sin(a) * scale * (0.6 + hash(i) * 0.8);
+      }
+    }
+    lastFinger = finger;
+    lastHeld = heldMs;
+    const gather = finger ? Math.min(1, heldMs / 1800) : 0;
+    if (finger) {
+      // The ball's own light, and the hum: rings that tremble round it.
+      const breathe = 0.5 + 0.5 * Math.sin(now / 70);
+      glowDot(finger.x, finger.y, scale * (0.2 + 0.28 * gather), gold, 0.25 + 0.45 * gather);
+      glowDot(finger.x, finger.y, scale * (0.05 + 0.05 * gather), (a) => `rgba(255, 246, 214, ${a.toFixed(3)})`, 0.35 + 0.5 * gather * breathe);
+      for (let ring = 0; ring < 3; ring += 1) {
+        const r = scale * (0.1 + 0.05 * ring) * (1 - 0.35 * gather) + Math.sin(now / (40 + ring * 13)) * 2.5;
+        ctx!.beginPath();
+        ctx!.arc(finger.x, finger.y, Math.max(4, r), 0, Math.PI * 2);
+        ctx!.strokeStyle = gold(gather * (0.7 - ring * 0.18));
+        ctx!.lineWidth = 1.6;
+        ctx!.stroke();
+      }
+    }
+    const dt = elapsed / 1000;
+    const bursting = now - burstAt < 900;
+    const follow = 1 - Math.exp(-elapsed / (finger ? 140 : 520));
+    const drawn: number[] = [];
+    for (let i = 0; i < n; i += 1) {
+      const loop = seconds * (0.7 + hash(i * 5) * 0.9) + i;
+      const idle = {
+        x: base.x + Math.cos(loop) * scale * (0.06 + hash(i * 2) * 0.16) + Math.sin(loop * 2.3) * scale * 0.015,
+        y: base.y + Math.sin(loop * 1.3) * scale * (0.05 + hash(i * 4) * 0.1),
+      };
+      const target = attractTarget(idle, finger, heldMs, i, seconds, scale);
+      let x = bees[i * 4];
+      let y = bees[i * 4 + 1];
+      if (bursting) {
+        x += bees[i * 4 + 2] * dt * (1 - (now - burstAt) / 900);
+        y += bees[i * 4 + 3] * dt * (1 - (now - burstAt) / 900);
+      } else {
+        x += (target.x - x) * follow;
+        y += (target.y - y) * follow;
+      }
+      // Facing where it flies.
+      const heading = Math.atan2(y - bees[i * 4 + 1], x - bees[i * 4]) || 0;
+      bees[i * 4] = x;
+      bees[i * 4 + 1] = y;
+      drawn.push(x, y, 3.6 + hash(i * 17) * 2.4, heading);
+    }
+    // Three batched passes - wings, bodies, stripes - like the woodcut's own bees.
+    const flap = (i: number) => 0.55 + 0.45 * Math.abs(Math.sin(now / 18 + i * 1.7));
+    ctx!.fillStyle = "rgba(250, 248, 238, 0.82)";
+    ctx!.beginPath();
+    for (let k = 0, i = 0; k < drawn.length; k += 4, i += 1) {
+      const [x, y, size] = [drawn[k], drawn[k + 1], drawn[k + 2]];
+      const w = size * 0.9 * flap(i);
+      ctx!.moveTo(x - size * 0.2 + w, y - size * 0.75);
+      ctx!.ellipse(x - size * 0.2, y - size * 0.75, w, size * 0.45, -0.5, 0, Math.PI * 2);
+      ctx!.moveTo(x + size * 0.3 + w, y - size * 0.7);
+      ctx!.ellipse(x + size * 0.3, y - size * 0.7, w, size * 0.45, 0.5, 0, Math.PI * 2);
+    }
+    ctx!.fill();
+    ctx!.fillStyle = "rgba(236, 170, 40, 0.98)";
+    ctx!.beginPath();
+    for (let k = 0; k < drawn.length; k += 4) {
+      const [x, y, size, heading] = [drawn[k], drawn[k + 1], drawn[k + 2], drawn[k + 3]];
+      ctx!.moveTo(x + size * 1.25, y);
+      ctx!.ellipse(x, y, size * 1.25, size * 0.75, heading, 0, Math.PI * 2);
+    }
+    ctx!.fill();
+    ctx!.strokeStyle = "rgba(30, 18, 6, 0.95)";
+    ctx!.lineWidth = 1.3;
+    ctx!.beginPath();
+    for (let k = 0; k < drawn.length; k += 4) {
+      const [x, y, size, heading] = [drawn[k], drawn[k + 1], drawn[k + 2], drawn[k + 3]];
+      const c = Math.cos(heading + Math.PI / 2) * size * 0.72;
+      const d = Math.sin(heading + Math.PI / 2) * size * 0.72;
+      for (const t of [-0.35, 0.25]) {
+        const ox = Math.cos(heading) * size * t;
+        const oy = Math.sin(heading) * size * t;
+        ctx!.moveTo(x + ox - c, y + oy - d);
+        ctx!.lineTo(x + ox + c, y + oy + d);
+      }
+    }
+    ctx!.stroke();
+  }
+
   // ------------------------------------------------- the song comes home
   function returningSong(now: number, from: ImagePoint, to: ImagePoint, input: GestureInput) {
     const start = at(from);
@@ -391,15 +568,34 @@ export function createOverlayLayer(
   }
 
   // --------------------------------------------------------------- frame
+  let fingerSince = 0;
+  let lastNow = 0;
   const paint = (frame: GestureFrame, input?: GestureInput) => {
     if (!input || !resize()) return;
     const now = frame.now;
+    const elapsed = lastNow ? Math.min(100, now - lastNow) : 16;
+    lastNow = now;
     ctx.clearRect(0, 0, width, height);
+    const touch = input.drag && input.drag.scene === sceneIndex ? { x: input.drag.x, y: input.drag.y } : null;
+    if (touch && !fingerSince) fingerSince = now;
+    if (!touch) fingerSince = 0;
+    const heldMs = touch ? now - fingerSince : 0;
 
     if (ambience?.effect === "rain" && !frame.still) rain(frame.time, ambience.intensity, ambience.wind);
     if (ambience?.effect === "returning-song" && !frame.still) returningSong(now, ambience.from, ambience.to, input);
     if (ambience?.effect === "falling-leaves" && !frame.still) leaves(frame.time, ambience.count, ambience.sun);
     if (ambience?.effect === "candle-glow") candleGlow(frame.time, ambience.at, ambience.radius);
+    if (ambience?.effect === "snow" && !frame.still) snow(frame.time, ambience.count, ambience.wind, ambience.light, null, 0, elapsed);
+    if (gesture?.kind === "attract") {
+      // Nothing is let go of here: the swarm or the snow follows the finger itself.
+      for (let i = input.releases.length - 1; i >= 0; i -= 1) if (input.releases[i].scene === sceneIndex) input.releases.splice(i, 1);
+    }
+    if (gesture?.kind === "attract" && gesture.effect === "snow") {
+      snow(frame.still ? 0 : frame.time, gesture.count, 0.4, gesture.home, touch, heldMs, elapsed);
+    }
+    if (gesture?.kind === "attract" && gesture.effect === "bees") {
+      swarm(now, frame.still ? 0 : frame.time, gesture.count, gesture.home ?? scene.focalPoint, touch, heldMs, elapsed);
+    }
 
     if (gesture?.kind === "hold" && gesture.effect === "shelter-flame") {
       flame(frame.time, frame.hold, frame.still, gesture.flame, gesture.size);

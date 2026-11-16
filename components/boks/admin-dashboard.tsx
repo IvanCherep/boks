@@ -24,6 +24,7 @@ import { FeedbackInbox } from "@/components/boks/admin/feedback-inbox";
 import { GuestFunnelPanel } from "@/components/boks/admin/guest-funnel";
 import { TrackedLinksPanel } from "@/components/boks/admin/tracked-links";
 import { PreviewLabPanel } from "@/components/boks/admin/preview-lab";
+import { SpecialProjectsPanel } from "@/components/boks/admin/special-projects";
 import { RecommendationLab } from "@/components/boks/admin/recommendation-lab";
 import { InteractionSandbox } from "@/components/boks/admin/interaction-sandbox";
 import { PoetrySandbox } from "@/components/boks/admin/poetry-sandbox";
@@ -67,6 +68,7 @@ export const adminTabs = [
   { id: "authors", label: "Authors", heading: "Author pages", group: "Editorial" },
   { id: "game", label: "Guess the author", heading: "Guess the author", group: "Editorial" },
   { id: "recorder", label: "Series recorder", heading: "Series recorder", group: "Editorial" },
+  { id: "special", label: "Special projects", heading: "Special projects", group: "Editorial" },
   { id: "moderation", label: "Moderation", heading: "Review queue", group: "Editorial" },
   { id: "rights", label: "Rights", heading: "Rights & reports", group: "Editorial" },
   { id: "content", label: "Content", heading: "Content", group: "Editorial" },
@@ -149,6 +151,7 @@ const words = defineMessages(
         authors: "Авторы",
         game: "Угадай автора",
         recorder: "Запись Series",
+        special: "Спецпроекты",
         feedback: "Отзывы",
         experiments: "Эксперименты",
         studies: "Исследования",
@@ -164,6 +167,7 @@ const words = defineMessages(
         authors: "Страницы авторов",
         game: "Угадай автора",
         recorder: "Запись Series",
+        special: "Спецпроекты",
         moderation: "Очередь проверки",
         rights: "Права и жалобы",
         content: "Контент",
@@ -539,6 +543,7 @@ export function AdminDashboard() {
         {tab === "authors" && <AuthorSpaces />}
         {tab === "game" && <AuthorGameStudio />}
         {tab === "recorder" && <SeriesRecorder />}
+        {tab === "special" && <SpecialProjectsPanel />}
 
         {tab === "experiments" && <RecommendationLab />}
         {tab === "studies" && <AdminStudies />}

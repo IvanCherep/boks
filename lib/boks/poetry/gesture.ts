@@ -116,6 +116,23 @@ export type ThreadGesture = {
   bridgeAfter: number;
 };
 
+/**
+ * Something drawn to the reader's finger. Bees idle round `home` and come to
+ * the finger, where they wind into a humming ball that grows the longer it is
+ * held; let go, the ball bursts and they drift home. Snow falls across the
+ * picture and the finger is a light: the flakes near it turn towards it and
+ * warm to amber, as snow flies at a street lamp.
+ */
+export type AttractGesture = {
+  kind: "attract";
+  effect: "bees" | "snow";
+  hint: string;
+  /** Where the bees idle. For snow, a painted light the flakes glow near. */
+  home?: ImagePoint;
+  /** How many: bees 20-60, flakes 80-220. */
+  count: number;
+};
+
 /** A swipe turns the page: to the next picture, or back to the one before. */
 export type SwipeGesture = {
   kind: "swipe";
@@ -131,11 +148,15 @@ export type SceneAmbience =
   | { effect: "rain"; intensity: number; wind: number }
   | { effect: "returning-song"; from: ImagePoint; to: ImagePoint }
   | LeavesAmbience
+  | SnowAmbience
   | CandleAmbience
   | ShadowAmbience;
 
 /** Leaves coming down through the frame, and a low sun that slowly shifts. */
 export type LeavesAmbience = { effect: "falling-leaves"; count: number; sun?: ImagePoint };
+
+/** Snow across the frame; near `light`, a painted lamp, the flakes catch its warmth. */
+export type SnowAmbience = { effect: "snow"; count: number; wind: number; light?: ImagePoint };
 
 /** The light a painted candle throws, never quite still. */
 export type CandleAmbience = { effect: "candle-glow"; at: ImagePoint; radius: number };
@@ -182,7 +203,7 @@ export type LeanDrag = {
   zoom: number;
 };
 
-export type PoemGesture = HoldGesture | DragGesture | FlingGesture | ThreadGesture | SwipeGesture | WipeGesture;
+export type PoemGesture = HoldGesture | DragGesture | FlingGesture | ThreadGesture | SwipeGesture | WipeGesture | AttractGesture;
 
 /** The gestures drawn by redrawing the picture itself, in WebGL. */
 export type WarpGesture = WaterHold | GloryHold | SpiritsHold | DragGesture | WipeGesture;
@@ -388,6 +409,33 @@ export function gestureSceneAt(
 ): number {
   const index = backdrop.to >= 0 && backdrop.progress >= 0.5 ? backdrop.to : backdrop.from;
   return scenes[index]?.gesture ? index : -1;
+}
+
+/**
+ * Where a drawn particle wants to be this frame: its own idle place, or, while
+ * a finger is down, an orbit round the finger whose radius tightens the longer
+ * it is held. Pure, so the swarm is the same swarm on every phone.
+ */
+export function attractTarget(
+  idle: { x: number; y: number },
+  finger: { x: number; y: number } | null,
+  heldMs: number,
+  index: number,
+  seconds: number,
+  scale: number
+) {
+  if (!finger) return idle;
+  const gather = Math.min(1, heldMs / 1800);
+  const radius = scale * (0.2 - 0.1 * gather) * (0.45 + 0.55 * hash01(index * 7.3));
+  const speed = 1.6 + 2.4 * hash01(index * 3.1);
+  const angle = seconds * speed * (index % 2 ? 1 : -1) + index * 2.399;
+  const tilt = 0.55 + 0.45 * Math.sin(index * 1.7);
+  return { x: finger.x + Math.cos(angle) * radius, y: finger.y + Math.sin(angle) * radius * tilt };
+}
+
+function hash01(n: number) {
+  const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return s - Math.floor(s);
 }
 
 /** A press this long, or a finger moved this far, is a gesture rather than a tap. */
