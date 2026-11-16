@@ -466,9 +466,11 @@ export function ImmersivePoem({
      * settles from six percent closer while the leaving one drifts on. Scale
      * and opacity only, both of which the compositor does on its own.
      */
-    const style = manifest.transitionStyle;
-    const cinematic = style === "cinematic" || style === "page-turn";
     const moveDissolve = (pair: { from: number; to: number }, fade: number) => {
+      // A scene may ask for its own change: the second of a before/after
+      // pair dissolves in place, or the two framings would not line up.
+      const style = manifest.scenes[pair.to]?.transitionStyle ?? manifest.transitionStyle;
+      const cinematic = style === "cinematic" || style === "page-turn";
       if (!cinematic || stillRef.current || pair.to < 0) return;
       const settle = 1 - (1 - fade) * (1 - fade);
       const arriving = pictures.current[pair.to];
@@ -517,10 +519,10 @@ export function ImmersivePoem({
         picture.style.zIndex = arriving ? "1" : "0";
         picture.style.visibility =
           index === pair.from || arriving || index === next ? "visible" : "hidden";
-        if (cinematic) {
-          picture.style.transform = "";
-          picture.style.transformOrigin = "";
-        }
+        // Cleared on every change of pair: a dissolving scene must not keep
+        // the tilt or scale a cinematic one before it left behind.
+        picture.style.transform = "";
+        picture.style.transformOrigin = "";
         const side = ambients.current[index];
         if (side) {
           side.style.opacity = picture.style.opacity;

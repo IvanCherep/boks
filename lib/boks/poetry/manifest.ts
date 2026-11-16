@@ -42,6 +42,12 @@ export type PoemScene = {
   gesture?: PoemGesture;
   /** Something the picture does on its own - rain, a song coming home. */
   ambience?: SceneAmbience;
+  /**
+   * How this picture arrives, over the poem's own style. `dissolve` for the
+   * second of a before/after pair: the same framing in a new state, which a
+   * turn or a settle would set visibly askew.
+   */
+  transitionStyle?: "dissolve" | "cinematic" | "page-turn";
 };
 
 export type PoemToken = {

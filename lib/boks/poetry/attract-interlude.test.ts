@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attractTarget, layersOf } from "@/lib/boks/poetry/gesture";
+import { attractTarget, autoFinger, autoHold, layersOf } from "@/lib/boks/poetry/gesture";
 import { interludeAt } from "@/lib/boks/poetry/manifest";
 
 describe("interludeAt", () => {
@@ -46,5 +46,29 @@ describe("attractTarget", () => {
   it("draws an attract gesture over the picture, not into it", () => {
     expect(layersOf({ gesture: { kind: "attract", effect: "bees", hint: "", count: 40 } })).toEqual({ warp: false, overlay: true });
     expect(layersOf({ ambience: { effect: "snow", count: 60, wind: 0.2 } })).toEqual({ warp: false, overlay: true });
+  });
+});
+
+describe("self-playing gestures", () => {
+  const auto = { periodMs: 10_000, delayMs: 1000 };
+
+  it("breathes a hold in and out on the recording's clock", () => {
+    expect(autoHold(undefined, 5000)).toBe(0);
+    expect(autoHold(auto, 500)).toBe(0);
+    expect(autoHold(auto, 1000 + 5000)).toBeCloseTo(0.85);
+    expect(autoHold(auto, 1000 + 10_000)).toBeCloseTo(0);
+  });
+
+  it("puts an invisible hand down for most of a cycle, then lifts it", () => {
+    const home = { x: 0.5, y: 0.5 };
+    expect(autoFinger(undefined, 3000, home)).toBeNull();
+    expect(autoFinger(auto, 500, home)).toBeNull();
+    const down = autoFinger(auto, 1000 + 2000, home);
+    expect(down).not.toBeNull();
+    expect(down!.heldMs).toBe(2000);
+    expect(Math.abs(down!.x - 0.5)).toBeLessThan(0.07);
+    expect(autoFinger(auto, 1000 + 8000, home)).toBeNull();
+    expect(autoFinger({ ...auto, at: { x: 0.2, y: 0.3 } }, 1000, home)).toBeNull();
+    expect(autoFinger({ ...auto, at: { x: 0.2, y: 0.3 } }, 1100, home)!.y).toBeCloseTo(0.3, 1);
   });
 });

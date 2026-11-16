@@ -1,5 +1,6 @@
 import {
   attractTarget,
+  autoFinger,
   coverTransform,
   flameLean,
   flingFrom,
@@ -41,7 +42,7 @@ function hash(n: number) {
 export function createOverlayLayer(
   canvas: HTMLCanvasElement,
   image: HTMLImageElement,
-  scene: { gesture?: PoemGesture; ambience?: SceneAmbience; focalPoint: ImagePoint },
+  scene: { gesture?: PoemGesture; ambience?: SceneAmbience; focalPoint: ImagePoint; startMs?: number },
   sceneIndex: number
 ): GestureLayer | null {
   const ctx = canvas.getContext("2d");
@@ -576,10 +577,19 @@ export function createOverlayLayer(
     const elapsed = lastNow ? Math.min(100, now - lastNow) : 16;
     lastNow = now;
     ctx.clearRect(0, 0, width, height);
-    const touch = input.drag && input.drag.scene === sceneIndex ? { x: input.drag.x, y: input.drag.y } : null;
-    if (touch && !fingerSince) fingerSince = now;
-    if (!touch) fingerSince = 0;
-    const heldMs = touch ? now - fingerSince : 0;
+    const real = input.drag && input.drag.scene === sceneIndex ? { x: input.drag.x, y: input.drag.y } : null;
+    if (real && !fingerSince) fingerSince = now;
+    if (!real) fingerSince = 0;
+    let touch = real;
+    let heldMs = real ? now - fingerSince : 0;
+    // Nobody touching: a self-playing gesture moves its own invisible hand.
+    if (!real && gesture?.kind === "attract" && gesture.auto && frame.ms !== undefined) {
+      const ghost = autoFinger(gesture.auto, frame.ms - (scene.startMs ?? 0), gesture.home ?? scene.focalPoint);
+      if (ghost) {
+        touch = at(ghost);
+        heldMs = ghost.heldMs;
+      }
+    }
 
     if (ambience?.effect === "rain" && !frame.still) rain(frame.time, ambience.intensity, ambience.wind);
     if (ambience?.effect === "returning-song" && !frame.still) returningSong(now, ambience.from, ambience.to, input);

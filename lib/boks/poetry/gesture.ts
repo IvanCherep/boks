@@ -56,6 +56,8 @@ export type GloryHold = {
   vision: ImagePoint;
   /** Its half-width and half-height, in image fractions; the edge is soft. */
   radius: { x: number; y: number };
+  /** Warms by itself, a slow breath, for a reader who does not touch. */
+  auto?: AutoPlay;
 };
 
 /**
@@ -131,7 +133,48 @@ export type AttractGesture = {
   home?: ImagePoint;
   /** How many: bees 20-60, flakes 80-220. */
   count: number;
+  /** Plays itself when no hand is down, on the recording's clock (`autoPlay`). */
+  auto?: AutoPlay;
 };
+
+/**
+ * A gesture that also performs itself, for a reader who never touches the
+ * screen. Driven by the recording's clock, so it pauses with the voice and
+ * lands on the same beat on every phone; a real hand always takes over.
+ */
+export type AutoPlay = {
+  /** One cycle: gather (or warm) and let go. */
+  periodMs: number;
+  /** Where the invisible hand rests; the gesture's own point when left out. */
+  at?: ImagePoint;
+  /** Wait this long into the scene before the first cycle. */
+  delayMs?: number;
+};
+
+/** How far a self-playing hold has got, 0..0.85: a slow breath in and out. */
+export function autoHold(auto: AutoPlay | undefined, msIntoScene: number) {
+  if (!auto) return 0;
+  const t = msIntoScene - (auto.delayMs ?? 1500);
+  if (t <= 0) return 0;
+  const phase = (t % auto.periodMs) / auto.periodMs;
+  return 0.85 * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
+}
+
+/**
+ * The invisible hand of a self-playing attract gesture: down for the first
+ * 70% of each cycle (so the swarm gathers and tightens), lifted for the rest
+ * (so it bursts and drifts home). Null while lifted or before it starts.
+ */
+export function autoFinger(auto: AutoPlay | undefined, msIntoScene: number, home: ImagePoint) {
+  if (!auto) return null;
+  const t = msIntoScene - (auto.delayMs ?? 1500);
+  if (t <= 0) return null;
+  const within = t % auto.periodMs;
+  if (within > auto.periodMs * 0.7) return null;
+  const at = auto.at ?? home;
+  const turn = (t / auto.periodMs) * Math.PI * 2;
+  return { x: at.x + Math.sin(turn) * 0.06, y: at.y + Math.sin(turn * 2) * 0.03, heldMs: within };
+}
 
 /** A swipe turns the page: to the next picture, or back to the one before. */
 export type SwipeGesture = {

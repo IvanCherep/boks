@@ -1,5 +1,6 @@
 import {
   approach,
+  autoHold,
   coverTransform,
   screenToImage,
   turnAmount,
@@ -405,7 +406,9 @@ export function createGestureLayer(
     const elapsed = lastFrame ? Math.min(100, frame.now - lastFrame) : 0;
     lastFrame = frame.now;
     let amount = frame.hold;
-    if (gesture.effect === "summon-spirits") {
+    if (gesture.effect === "recall-glory" && gesture.auto) {
+      amount = Math.max(frame.hold, autoHold(gesture.auto, (frame.ms ?? 0) - scene.startMs));
+    } else if (gesture.effect === "summon-spirits") {
       reveal = approach(reveal, frame.hold, elapsed, frame.hold > reveal ? 1400 : 1900);
       amount = reveal;
     } else if (gesture.effect === "turn-away") {

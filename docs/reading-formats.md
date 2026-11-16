@@ -596,6 +596,23 @@ step 3) so it holds for ten seconds or more - Brennan's has 3.5 s after «each t
 each», O'Dowd's 2.5 s after «Eden ’neath your face». Without WebGL the canvas
 stays empty and the `<img>` beneath it is the scene.
 
+#### For a reader who never touches the screen
+
+Many readers do not touch at all, so a piece must be whole without the hand.
+Two means, both from Воденников's special project (2026-11-17):
+
+- **Before/after pairs.** The same framing in a new state, made by editing the
+  first picture (smoke gone, a needle snapped, a lamp switched on), added as a
+  scene with no line of its own and a hand-set `startMs`; the change is the
+  event. Such a scene sets `transitionStyle: "dissolve"` for itself: a page
+  turn or a cinematic settle would set the two framings visibly askew.
+- **Self-playing gestures.** `auto: { periodMs, at?, delayMs? }` on an
+  `attract` gesture moves an invisible hand (`autoFinger`): down for 70% of a
+  cycle, so the swarm gathers or the snow flies to the light, then lifted. On
+  a `recall-glory` hold it breathes the warmth in and out (`autoHold`, up to
+  0.85). Both run on the recording's clock and pause with it; a real hand
+  always takes over.
+
 #### Interludes: where the music plays alone
 
 An author's own recording with music under it has stretches with no voice: an
