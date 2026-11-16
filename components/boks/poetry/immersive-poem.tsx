@@ -1129,6 +1129,7 @@ export function ImmersivePoem({
             alt=""
             draggable={false}
             decoding="async"
+            fetchPriority="low"
           />
         ))}
       </div>
@@ -1138,6 +1139,7 @@ export function ImmersivePoem({
           <Backdrop
             key={poemScene.id}
             scene={poemScene}
+            early={index < 2}
             ref={(element) => {
               pictures.current[index] = element;
             }}
@@ -1417,12 +1419,19 @@ function stanzasOf(manifest: PoemManifest) {
 
 function Backdrop({
   scene,
+  early,
   ref,
   imageRef,
   canvasRef,
   overlayRef,
 }: {
   scene: PoemScene;
+  /*
+   * The first two pictures are wanted at once; the rest only before their
+   * turn, minutes later on a long piece. Low priority lets the recording and
+   * the opening frames win the connection on a slow phone network.
+   */
+  early: boolean;
   ref: React.Ref<HTMLElement>;
   imageRef: React.Ref<HTMLImageElement>;
   canvasRef: React.Ref<HTMLCanvasElement>;
@@ -1446,6 +1455,7 @@ function Backdrop({
           alt=""
           draggable={false}
           decoding="async"
+          fetchPriority={early ? "high" : "low"}
           style={{ objectPosition }}
         />
         <canvas ref={canvasRef} className="poem__gesture" aria-hidden="true" />
@@ -1464,6 +1474,7 @@ function Backdrop({
       alt=""
       draggable={false}
       decoding="async"
+      fetchPriority={early ? "high" : "low"}
       style={{ objectPosition }}
     />
   );

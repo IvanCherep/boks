@@ -65,7 +65,9 @@ export function createOverlayLayer(
   let bridgeSince = 0;
 
   function resize() {
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    // Soft glows and small particles look the same at 1.5x as at 2x, and a
+    // full-screen canvas at 2x is twice the memory on the phones that have least.
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     if (w === 0 || h === 0) return false;
@@ -583,7 +585,7 @@ export function createOverlayLayer(
     let touch = real;
     let heldMs = real ? now - fingerSince : 0;
     // Nobody touching: a self-playing gesture moves its own invisible hand.
-    if (!real && gesture?.kind === "attract" && gesture.auto && frame.ms !== undefined) {
+    if (!real && !frame.still && gesture?.kind === "attract" && gesture.auto && frame.ms !== undefined) {
       const ghost = autoFinger(gesture.auto, frame.ms - (scene.startMs ?? 0), gesture.home ?? scene.focalPoint);
       if (ghost) {
         touch = at(ghost);

@@ -157,7 +157,7 @@ Recorded here by title only, never with the token.
 | Piece | Author | Since | Format |
 |---|---|---|---|
 | «там где скрипели качели» | Алексей Прохоров | 2026-11-04 | immersive poem, Alex Bell, 5 pictures; rub away the haze in the third, hold the heart in the last |
-| «Так дымно здесь», «Бедный Данечка» («Дочка-дочка, будь добра…»), «Вне цикла» («Кащей») | Дмитрий Воденников | 2026-11-17 | special project, in progress: the author's own sung recordings with music (gain to −22 LUFS, 96 kbps stereo), word times from forced alignment checked against speech to text, the refrains he sings shown as lines; 8 pictures each; interludes in the music: smoke wiped away and a bee swarm (dymno), memory held back into colour and snow flying to the finger's light (dochka), a blizzard led by the finger and the empty duck and hare brought back (vne) |
+| «Так дымно здесь», «Бедный Данечка» («Дочка-дочка, будь добра…»), «Вне цикла» («Кащей») | Дмитрий Воденников | 2026-11-17 | special project, in progress: the author's own sung recordings with music (gain to −22 LUFS, 96 kbps stereo), word times from forced alignment checked against speech to text, the refrains he sings shown as lines; 14 pictures each (before/after pairs and three-picture finales over the music, so the pieces are whole without a touch; effects play themselves); «Бедный Данечка» on the puppet-theatre set v9; interludes in the music: smoke wiped away and a bee swarm (dymno), memory held back into colour and snow flying to the finger's light (dochka), a blizzard led by the finger and the empty duck and hare brought back (vne) |
 
 ### Special projects
 
