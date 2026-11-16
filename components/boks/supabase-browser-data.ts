@@ -1914,6 +1914,8 @@ export async function submitAuthorApplication(input: {
   audience: string;
   contact: string;
   message: string;
+  /** A guest applies without an account; the device id limits how often. */
+  visitorId?: string;
 }) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const result = await supabase.rpc("submit_author_application", {
@@ -1923,6 +1925,7 @@ export async function submitAuthorApplication(input: {
     p_audience: input.audience,
     p_contact: input.contact,
     p_message: input.message,
+    p_visitor_id: input.visitorId ?? null,
   });
   if (result.error) throw result.error;
   return result.data as { ok: true; id: number };

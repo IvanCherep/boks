@@ -13,7 +13,7 @@ the page existed.
 
 | Offer | Price | |
 |---|---|---|
-| Author page | ~~45 000 ₽~~ 30 000 ₽ a year | up to 50 short works moved over, an illustration for each, page and cabinet designed, a year in the boks feed after review, the profile in the main Boks Series section for the year, the Series recorder, priority support (answered within a working day); until 1 January 2027 five Boks Series as a gift |
+| Author page | ~~45 000 ₽~~ 30 000 ₽ a year | up to 50 short works moved over, an illustration for each, page and cabinet designed, publishing in the boks feed after review, the profile in the main Boks Series section for the year, the Series recorder, priority support (answered within a working day); until 1 January 2027 five Boks Series as a gift |
 | Five Boks Series | 10 000 ₽ a pack | an extra for authors with a cabinet: five issues with illustrations and sound, in the author's voice or recorded with the teleprompter |
 | Joint launch (the main offer, shown in the middle) | free | everything in the Author page, on one condition: a series of posts about boks that reaches 15 000 views in total (was 30 000 until 2026-11-16); open to authors with around 500 followers |
 
@@ -36,12 +36,16 @@ shows the Series recorder (`docs/series-recorder.md`) as the new format.
 
 ## Applications
 
-`submit_author_application` (`20261117150000_boks_author_applications.sql`):
-an account, a name, at least one link, a way to reach them, the offer
-(`page`, `series`, `launch` or `unsure`), optionally the audience and a few
-words. Three a day per account. A guest fills the form, signs in by email and
-sends it; the draft waits in this tab's storage meanwhile. The page then says
-the application is in and what became of it.
+`submit_author_application` (`20261117150000_boks_author_applications.sql`,
+open to guests since `20261118150000_boks_author_applications_guests.sql`):
+a name, at least one link, a way to reach them, the offer (`page`, `series`,
+`launch` or `unsure`), optionally the audience and a few words. Nobody has to
+sign in: a guest's application has no account (`user_id` null) and carries the
+device id (`visitor_id`, the reader's `boks-reader` id); the team answers
+through the contact left in the form. Three a day per account or per device,
+and at most sixty guest applications an hour in total. The draft waits in this
+tab's storage until it is sent. A signed-in applicant later sees that the
+application is in and what became of it.
 
 The team reads them in Studio → Authors, newest first, with the applicant's
 @name and email, and marks each as written to or closed

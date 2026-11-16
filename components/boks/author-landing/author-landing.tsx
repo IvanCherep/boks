@@ -6,6 +6,7 @@ import { ArrowRight, BookOpen, Check, Headphones } from "lucide-react";
 import "@/app/author-landing.css";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
+import { getBrowserId } from "@/components/boks/reader-behavior";
 import {
   sendBoksFeedback,
   submitAuthorApplication,
@@ -30,10 +31,9 @@ const returnKey = "boks-return-to-author-landing";
  * team (`docs/author-applications.md`). An account with a
  * published work, an author page or Studio sees the cabinet instead.
  */
-export function AuthorLanding({ access, signedIn, onSignIn }: {
+export function AuthorLanding({ access, signedIn }: {
   access: AuthorAccess | null;
   signedIn: boolean;
-  onSignIn: () => void;
 }) {
   const t = useMessages(landingMessages);
   const [offer, setOffer] = useState<AuthorApplicationOffer>("unsure");
@@ -245,7 +245,7 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
         <h2>{t.applyTitle}</h2>
         <p>{t.applyLead}</p>
       </div>
-      <ApplicationForm key={access?.application?.id ?? "new"} access={access} offer={offer} onOffer={setOffer} signedIn={signedIn} onSignIn={onSignIn} />
+      <ApplicationForm key={access?.application?.id ?? "new"} access={access} offer={offer} onOffer={setOffer} signedIn={signedIn} />
     </section>
 
     <section className="alp-ask">
@@ -259,7 +259,7 @@ export function AuthorLanding({ access, signedIn, onSignIn }: {
   </div>;
 }
 
-/** Kept on this device while the person signs in, so nothing they wrote is lost. */
+/** Kept on this device until it is sent, so nothing they wrote is lost on a reload. */
 const draftKey = "boks-author-application-draft";
 type Fields = { name: string; links: string; audience: string; contact: string; message: string };
 const emptyFields: Fields = { name: "", links: "", audience: "", contact: "", message: "" };
@@ -272,12 +272,11 @@ function readDraft(): Fields {
   }
 }
 
-function ApplicationForm({ access, offer, onOffer, signedIn, onSignIn }: {
+function ApplicationForm({ access, offer, onOffer, signedIn }: {
   access: AuthorAccess | null;
   offer: AuthorApplicationOffer;
   onOffer: (offer: AuthorApplicationOffer) => void;
   signedIn: boolean;
-  onSignIn: () => void;
 }) {
   const t = useMessages(landingMessages);
   const language = useUiLanguage();
@@ -298,15 +297,12 @@ function ApplicationForm({ access, offer, onOffer, signedIn, onSignIn }: {
   const set = (name: keyof Fields) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setFields((f) => ({ ...f, [name]: event.target.value }));
   const ready = fields.name.trim() && fields.links.trim().length >= 3 && fields.contact.trim().length >= 3;
 
+  // A guest applies too: the team answers through the contact, and the device id limits how often.
   const send = async () => {
-    if (!signedIn) {
-      onSignIn();
-      return;
-    }
     setState("sending");
     setError("");
     try {
-      await submitAuthorApplication({ offer, ...fields });
+      await submitAuthorApplication({ offer, ...fields, visitorId: signedIn ? undefined : getBrowserId("boks-reader") });
       setSentAt(new Date().toISOString());
       setState("sent");
       setFields(emptyFields);
@@ -358,9 +354,9 @@ function ApplicationForm({ access, offer, onOffer, signedIn, onSignIn }: {
     {error && <p className="alp-error" role="alert">{error}</p>}
     <div className="alp-form__send">
       <button type="submit" className="alp-button alp-button--ink" disabled={!ready || state === "sending"}>
-        {state === "sending" ? t.sending : signedIn ? t.send : t.signInToSend} <ArrowRight aria-hidden="true" />
+        {state === "sending" ? t.sending : t.send} <ArrowRight aria-hidden="true" />
       </button>
-      {!signedIn && <small>{t.signInNote}</small>}
+      {!signedIn && <small>{t.guestNote}</small>}
     </div>
   </form>;
 }

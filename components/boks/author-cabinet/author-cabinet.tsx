@@ -483,7 +483,7 @@ export function AuthorCabinet() {
     // The page stands outside the cabinet's own styles (`.acab`), which restyle every button.
     return (
       <div className={inviteToken ? "acab" : undefined}>
-        {inviteToken ? <InviteSignIn onSignIn={() => setAuthOpen(true)} /> : <AuthorLanding access={null} signedIn={false} onSignIn={() => setAuthOpen(true)} />}
+        {inviteToken ? <InviteSignIn onSignIn={() => setAuthOpen(true)} /> : <AuthorLanding access={null} signedIn={false} />}
         <UserAuthPanel
           open={authOpen}
           surface="author"
@@ -513,7 +513,7 @@ export function AuthorCabinet() {
   }
   const withoutCabinet = access.value && !access.value.admin && access.value.published === 0 && !access.value.hasPage
     && offers.length === 0 && !inviteToken && !myPage?.space && !series?.allowed;
-  if (withoutCabinet) return <AuthorLanding access={access.value} signedIn onSignIn={() => setAuthOpen(true)} />;
+  if (withoutCabinet) return <AuthorLanding access={access.value} signedIn />;
 
   // The recorder, on its own page: Studio's paper and ink, outside the cabinet's own styles.
   if (shown === "series" && series?.allowed) {

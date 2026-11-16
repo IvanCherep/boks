@@ -53,7 +53,7 @@ FEEDS = {
     "applications": """
         select json_build_object('at', to_char(a.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
           'offer', a.offer, 'name', a.name, 'links', a.links, 'contact', a.contact, 'audience', a.audience,
-          'message', a.message, 'handle', p.handle)
+          'message', a.message, 'handle', p.handle, 'guest', a.user_id is null)
         from public.author_applications a left join public.user_profiles p on p.user_id = a.user_id
         where a.created_at > :'since'::timestamptz order by a.created_at limit {limit};
     """,
