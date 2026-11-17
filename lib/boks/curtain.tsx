@@ -40,6 +40,10 @@ const curtainPosition: Record<string, string> = {
   "4c517503-f15f-4602-9d29-e1ac34cbbfad": "50% 85%", // азбука веры
   "12794275-b2ca-48ea-a1a0-4fa1f3dd0a07": "50% 70%", // у горы Мегиддо
   "4eb182a0-770e-4b95-9059-07a31b229d78": "50% 42%", // розы Сарагосы
+  // Дмитрий Воденников, published from his page 2026-11-17 (covers in the Series folders).
+  "fe869366-784b-456b-96c4-c560f4ef3a1e": "50% 22%", // Бедный Данечка: the two heads and the shawl
+  "bd41a468-73f9-4eb4-9531-b5155add941f": "50% 12%", // Полетели утки-гуси, полетели…: the geese over the city
+  "1ebde7ed-c624-49ce-80c7-050bcb76ce19": "50% 78%", // Снегурочка: her face at the window
 };
 
 export type CurtainCard = {
