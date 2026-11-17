@@ -126,3 +126,24 @@ $$;
 
 revoke all on function public.author_invite_greeting(text, uuid) from public;
 grant execute on function public.author_invite_greeting(text, uuid) to anon, authenticated;
+
+-- A published bok's own Series folder, for its link card: the curtain draws
+-- the Series' cover (`curtain-share.jpg` in that folder). Only for a work its
+-- author published on a published page, as the shelf above.
+create or replace function public.get_boks_bok_series_piece(p_bok_id uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select w.series_piece
+  from public.author_space_works w
+  join public.author_spaces s on s.id = w.space_id and s.status = 'published'
+  join public.published_boks b on b.id = w.bok_id and b.author_user_id = s.owner_user_id
+  where w.bok_id = p_bok_id and w.status = 'published' and w.series_piece is not null
+  limit 1;
+$$;
+
+revoke all on function public.get_boks_bok_series_piece(uuid) from public;
+grant execute on function public.get_boks_bok_series_piece(uuid) to anon, authenticated;

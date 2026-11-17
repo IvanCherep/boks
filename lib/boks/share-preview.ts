@@ -24,6 +24,11 @@ export type SharedBok = {
   language: string | null;
   /** The bok's readable address, `/b/<slug>` (`20261109100000_boks_bok_slugs.sql`). */
   slug: string | null;
+  /**
+   * The link-only folder of a Series its author published from their page
+   * (`get_boks_bok_series_piece`): the link card draws that Series' cover.
+   */
+  seriesPiece?: string | null;
 };
 
 const uuidPrefix = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -194,7 +199,9 @@ export async function loadBokForShare(
         if (response.status >= 500) continue;
         if (!response.ok) return null;
         const rows = (await response.json()) as PreviewRow[];
-        return sharedBokFromRow(Array.isArray(rows) ? rows[0] : null);
+        const bok = sharedBokFromRow(Array.isArray(rows) ? rows[0] : null);
+        if (bok) bok.seriesPiece = await seriesPieceOf(bok.id);
+        return bok;
       } catch {
         // timeout or network: try again
       } finally {
@@ -203,6 +210,27 @@ export async function loadBokForShare(
     }
     return undefined;
   };
+  // An author's own Series, published from their page: its folder, or null.
+  // Best effort - a card without it is the bok's ordinary card.
+  async function seriesPieceOf(bokId: string): Promise<string | null> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1500);
+    try {
+      const response = await (options.fetchImpl ?? fetch)(`${restBase}/rpc/get_boks_bok_series_piece`, {
+        method: "POST",
+        headers: { apikey: key!, Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ p_bok_id: bokId }),
+        signal: controller.signal,
+      });
+      if (!response.ok) return null;
+      const token = await response.json();
+      return typeof token === "string" && /^[A-Za-z0-9_-]{22,64}$/.test(token) ? token : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
   // The page, its metadata and its image each look the bok up; on the server
   // they share one answer for a few seconds. Tests (options.fetchImpl) do not.
   const answer = options.fetchImpl || options.url ? await lookup() : await briefly(filter, lookup);

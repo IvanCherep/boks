@@ -19,6 +19,12 @@ describe("curtain card", () => {
     expect(card.byline).toBeNull();
   });
 
+  it("draws the cover of a Series its author published from their page", () => {
+    const card = curtainCardFor({ id: "00000000-0000-4000-8000-000000000000", title: "Снегурочка", authorName: "Дмитрий Воденников", seriesPiece: "AAAAAAAAAAAAAAAAAAAAAA" });
+    expect(card.art).toBe("/l/AAAAAAAAAAAAAAAAAAAAAA/f/curtain-share.jpg");
+    expect(card.key).not.toBe(curtainCardFor({ id: "00000000-0000-4000-8000-000000000000", title: "Снегурочка", authorName: "Дмитрий Воденников" }).key);
+  });
+
   it("changes its key with anything drawn", () => {
     const key = curtainCardFor(kosa).key;
     expect(curtainCardFor({ ...kosa, title: "коса!" }).key).not.toBe(key);

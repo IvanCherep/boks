@@ -5,7 +5,8 @@
   position:fixed;inset:0;z-index:260;overflow-y:auto;overscroll-behavior:contain;background:var(--ap-ground);color:var(--ap-paper);font-family:var(--ap-sans);font-synthesis:none;font-optical-sizing:none;color-scheme:dark;-webkit-overflow-scrolling:touch}
 .ap *{box-sizing:border-box}
 .ap:focus{outline:none}
-.ap button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+/* Not inside a Series opened over the page: the player styles its own buttons (its play mark is dark on a light bookmark). :where keeps the old weight. */
+.ap button:where(:not(.ap-series-stage *)){font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .ap button:focus-visible,.ap a:focus-visible{outline:2px solid #e3cda6;outline-offset:5px}
 .ap h1,.ap h2{margin:0;font-family:var(--ap-serif);font-weight:500}
 .ap svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex:none}

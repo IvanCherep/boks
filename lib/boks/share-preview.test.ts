@@ -97,7 +97,8 @@ describe("reading a bok for a preview", () => {
   it("asks once more after a server error, so a blip does not cost the preview", async () => {
     const row = { id: chekhov.id, title: "Тоска", author_name: "Антон Чехов", text: chekhov.text, minutes: 7, language: "ru" };
     let calls = 0;
-    const flaky = (async () => {
+    const flaky = (async (input: RequestInfo | URL) => {
+      if (String(input).includes("/rpc/")) return new Response("null", { status: 200 });
       calls += 1;
       return calls === 1 ? new Response("busy", { status: 503 }) : new Response(JSON.stringify([row]), { status: 200 });
     }) as typeof fetch;
@@ -134,7 +135,22 @@ describe("reading a bok for a preview", () => {
     };
     const ok = (async () => new Response(JSON.stringify([row]), { status: 200 })) as typeof fetch;
     const bok = await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: ok });
-    expect(bok).toEqual({ ...chekhov, slug: null });
+    expect(bok).toEqual({ ...chekhov, slug: null, seriesPiece: null });
+  });
+
+  it("carries the Series an author published from their page, for the link card", async () => {
+    const row = { id: chekhov.id, title: "Тоска", author_name: "Антон Чехов", text: chekhov.text, minutes: 7, language: "ru" };
+    const answers = (async (input: RequestInfo | URL) =>
+      String(input).includes("/rpc/get_boks_bok_series_piece")
+        ? new Response(JSON.stringify("AAAAAAAAAAAAAAAAAAAAAA"), { status: 200 })
+        : new Response(JSON.stringify([row]), { status: 200 })) as typeof fetch;
+    const bok = await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: answers });
+    expect(bok?.seriesPiece).toBe("AAAAAAAAAAAAAAAAAAAAAA");
+    const odd = (async (input: RequestInfo | URL) =>
+      String(input).includes("/rpc/")
+        ? new Response(JSON.stringify("../../etc/passwd"), { status: 200 })
+        : new Response(JSON.stringify([row]), { status: 200 })) as typeof fetch;
+    expect((await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: odd }))?.seriesPiece).toBeNull();
   });
 
   it("drops a row with no text, which cannot be previewed", () => {
