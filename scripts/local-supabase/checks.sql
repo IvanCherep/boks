@@ -5586,6 +5586,8 @@ begin
   v_shelf := public.get_boks_series_shelf_authors();
   perform public.boks_assert(jsonb_array_length(v_shelf) = 1 and v_shelf -> 0 ->> 'handle' = 'shelf_poet' and v_shelf -> 0 ->> 'name' = 'Поэт Полки', 'publishing puts the section on the shelf at once');
   perform public.boks_assert(jsonb_array_length(v_shelf -> 0 -> 'pieces') = 1 and v_shelf -> 0 -> 'pieces' -> 0 ->> 'token' = 'BBBBBBBBBBBBBBBBBBBBBB', 'only what was published, never the unpublished token');
+  perform public.boks_assert(public.get_boks_bok_series_piece((select bok_id from public.author_space_works where id = v_two)) = 'BBBBBBBBBBBBBBBBBBBBBB', 'a published bok names its Series folder for its link card');
+  perform public.boks_assert((select bok_id from public.author_space_works where id = v_one) is null, 'an unpublished work has no bok to name');
 
   perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000002');
   v_answer := public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_one, 'revision', (select revision from public.author_space_works where id = v_one))), false, 'test-terms', gen_random_uuid());
