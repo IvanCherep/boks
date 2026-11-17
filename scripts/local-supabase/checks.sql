@@ -5526,3 +5526,80 @@ begin
   reset role;
 end $$;
 rollback;
+
+-- An author's own Series section (20261118170000): nothing on the shelf until
+-- the owner publishes; then their Series in their order; hiding takes one off.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('5e5e0000-0000-4000-8000-000000000001', 'shelf-editor@boks.test', false),
+  ('5e5e0000-0000-4000-8000-000000000002', 'shelf-poet@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('5e5e0000-0000-4000-8000-000000000001', 'shelf_editor', 'admin', now(), 'v1'),
+  ('5e5e0000-0000-4000-8000-000000000002', 'shelf_mail', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_id uuid;
+  v_one uuid;
+  v_two uuid;
+  v_token text;
+  v_shelf jsonb;
+  v_answer jsonb;
+  v_bok uuid;
+  v_error text;
+begin
+  perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000001');
+  v_id := (public.studio_save_author_space(null, 'author', 'Поэт Полки', 'shelf_poet', null, 0) ->> 'id')::uuid;
+  perform public.studio_save_space_work(v_id, null, 'Первая', 'Первая строка.', 'text', null);
+  perform public.studio_save_space_work(v_id, null, 'Вторая', 'Вторая строка.', 'text', null);
+  v_one := (select id from public.author_space_works where space_id = v_id and title = 'Первая');
+  v_two := (select id from public.author_space_works where space_id = v_id and title = 'Вторая');
+  perform public.studio_set_space_work_series(v_one, 'AAAAAAAAAAAAAAAAAAAAAA', false);
+  perform public.studio_set_space_work_series(v_two, 'BBBBBBBBBBBBBBBBBBBBBB', false);
+  perform public.studio_set_space_work_status(v_one, 'ready', 'проверено');
+  perform public.studio_set_space_work_status(v_two, 'ready', 'проверено');
+  update public.author_spaces set series_shelf = true where id = v_id;
+  update public.author_space_works set series_card = '{"seconds": 120, "scenes": 9}' where id = v_one;
+  begin
+    update public.author_space_works set series_card = '{"seconds": "long"}' where id = v_two;
+    perform public.boks_assert(false, 'a card''s length is a number');
+  exception when check_violation then
+    perform public.boks_assert(true, 'a card''s length is a number');
+  end;
+  v_token := public.studio_issue_author_invite(v_id, 'shelf-poet@boks.test') ->> 'token';
+
+  perform public.boks_test_logout();
+  perform public.boks_assert(jsonb_array_length(public.get_boks_series_shelf_authors()) = 0, 'a closed page puts nothing on the shelf');
+
+  perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000002');
+  perform public.boks_assert(public.accept_author_invite(v_token) ->> 'state' = 'accepted', 'the poet accepts the page');
+  perform public.boks_assert(public.my_author_space_on_series_shelf(), 'the cabinet knows the Series go onto the shelf');
+  perform public.boks_assert(jsonb_array_length(public.get_boks_series_shelf_authors()) = 0, 'an accepted page still puts nothing on the shelf');
+
+  -- The poet publishes only the second one: only it reaches the shelf.
+  v_answer := public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_two, 'revision', (select revision from public.author_space_works where id = v_two))), true, 'test-terms', gen_random_uuid());
+  perform public.boks_test_logout();
+  v_shelf := public.get_boks_series_shelf_authors();
+  perform public.boks_assert(jsonb_array_length(v_shelf) = 1 and v_shelf -> 0 ->> 'handle' = 'shelf_poet' and v_shelf -> 0 ->> 'name' = 'Поэт Полки', 'publishing puts the section on the shelf at once');
+  perform public.boks_assert(jsonb_array_length(v_shelf -> 0 -> 'pieces') = 1 and v_shelf -> 0 -> 'pieces' -> 0 ->> 'token' = 'BBBBBBBBBBBBBBBBBBBBBB', 'only what was published, never the unpublished token');
+
+  perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000002');
+  v_answer := public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_one, 'revision', (select revision from public.author_space_works where id = v_one))), false, 'test-terms', gen_random_uuid());
+  v_bok := (select bok_id from public.author_space_works where id = v_one);
+  -- The poet puts the first one first.
+  perform public.save_author_space_order(v_id, array['b:' || v_bok::text, 'b:' || (select bok_id from public.author_space_works where id = v_two)::text], (select order_version from public.author_spaces where id = v_id));
+  perform public.boks_test_logout();
+  v_shelf := public.get_boks_series_shelf_authors();
+  perform public.boks_assert(v_shelf -> 0 -> 'pieces' -> 0 ->> 'title' = 'Первая' and v_shelf -> 0 -> 'pieces' -> 1 ->> 'title' = 'Вторая', 'the shelf keeps the order the poet gave the page');
+  perform public.boks_assert((v_shelf -> 0 -> 'pieces' -> 0 -> 'card' ->> 'seconds')::integer = 120, 'the card the team wrote comes along');
+
+  perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000002');
+  perform public.withdraw_my_bok(v_bok);
+  perform public.boks_test_logout();
+  v_shelf := public.get_boks_series_shelf_authors();
+  perform public.boks_assert(jsonb_array_length(v_shelf -> 0 -> 'pieces') = 1 and v_shelf -> 0 -> 'pieces' -> 0 ->> 'title' = 'Вторая', 'a hidden work leaves the shelf at once');
+
+  update public.author_spaces set series_shelf = false where id = v_id;
+  perform public.boks_assert(jsonb_array_length(public.get_boks_series_shelf_authors()) = 0, 'a page not marked for the shelf stays off it');
+end $$;
+rollback;

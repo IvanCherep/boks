@@ -1,5 +1,6 @@
 import { poemManifestFor } from "@/components/boks/poetry/poems";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
+import { liveSeriesPieceFor } from "@/components/boks/series/live-series";
 import { plural } from "@/lib/i18n/messages";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
 
@@ -688,7 +689,7 @@ export const seriesPieces: readonly SeriesPiece[] = [
 const byStoryId = new Map(seriesPieces.map((piece) => [piece.storyId, piece]));
 
 export function seriesPieceFor(storyId: string | null | undefined): SeriesPiece | null {
-  return storyId ? (byStoryId.get(storyId) ?? null) : null;
+  return storyId ? (byStoryId.get(storyId) ?? liveSeriesPieceFor(storyId)) : null;
 }
 
 /** The format a boks is opened in, from the registries that actually open it. */
@@ -716,7 +717,13 @@ export function seriesFormatOf(storyId: string): SeriesFormat | null {
  * `series-view.tsx`, under its `id`.
  */
 export type SeriesCollection = {
-  id: "halloween" | "prokhorov" | "malyo-subbotina";
+  /**
+   * A section in code (`halloween`, `prokhorov`, `malyo-subbotina`), or an
+   * author's own section from the database, `author-<handle>` (`live-series.ts`).
+   */
+  id: string;
+  /** The section's name when it has no entry in `collectionMessages`: an author's own section. */
+  title?: string;
   /** In the order they are meant to be heard. */
   storyIds: readonly string[];
   /** First day shown, and the first day it is no longer shown, `YYYY-MM-DD`, in the reader's own calendar. No `until`: it stays. */
@@ -728,8 +735,25 @@ export type SeriesCollection = {
    * author's, so it is held in link-only storage like the poems
    * (`docs/link-only-pieces.md`), not in this public repository.
    */
-  author?: { handle: string; name: string; photo: string };
+  author?: { handle: string; name: string; photo: string | null };
 };
+
+/** An author's own sections (`live-series.ts`) as shelf sections, above the ones in code. */
+export function liveCollections(
+  sections: readonly { id: string; handle: string; name: string; photo: string | null; pieces: readonly { storyId: string }[] }[],
+  inCode: readonly SeriesCollection[] = seriesCollections
+): SeriesCollection[] {
+  const codeHandles = new Set(inCode.flatMap((collection) => (collection.author ? [collection.author.handle.toLowerCase()] : [])));
+  return sections
+    .filter((section) => !codeHandles.has(section.handle.toLowerCase()))
+    .map((section) => ({
+      id: section.id,
+      title: section.name,
+      storyIds: section.pieces.map((piece) => piece.storyId),
+      from: "2000-01-01",
+      author: { handle: section.handle, name: section.name, photo: section.photo },
+    }));
+}
 
 export const seriesCollections: readonly SeriesCollection[] = [
   {
@@ -824,13 +848,13 @@ export function arrangeSeriesShelf(
   const byId = new Map(shelf.map((piece) => [piece.storyId, piece]));
   const focusById = new Map((focus?.shelf ?? []).map((piece) => [piece.storyId, piece]));
   const inside = new Set<string>();
-  const drawn: { id: SeriesCollection["id"]; pieces: SeriesPiece[] }[] = [];
+  const drawn: { id: SeriesCollection["id"]; pieces: SeriesPiece[]; collection: SeriesCollection }[] = [];
   for (const collection of list) {
     const source = collection === focused ? focusById : byId;
     const gathered = collection.storyIds.flatMap((storyId) => (inside.has(storyId) ? [] : source.get(storyId) ?? []));
     if (gathered.length < 2) continue;
     for (const piece of gathered) inside.add(piece.storyId);
-    drawn.push({ id: collection.id, pieces: gathered });
+    drawn.push({ id: collection.id, pieces: gathered, collection });
   }
   const [lead = null, ...rest] = shelf.filter((piece) => !inside.has(piece.storyId));
   return {

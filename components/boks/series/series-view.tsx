@@ -15,6 +15,7 @@ import {
   effectiveSeriesFilter, initialSeriesFilter, rememberSeriesFilter, seriesLanguages, storedSeriesFilter,
   activeCollections,
   arrangeSeriesShelf,
+  liveCollections,
   publishedSeriesShelf,
   seriesCollections,
   seriesPieces,
@@ -22,6 +23,7 @@ import {
   type SeriesCollection,
   type SeriesPiece,
 } from "@/components/boks/series/series-catalogue";
+import { loadLiveSeries, useLiveSeries } from "@/components/boks/series/live-series";
 
 /**
  * The series tab: every piece made in the new format, on one shelf.
@@ -67,7 +69,7 @@ const collectionMessages = defineMessages({
   position: "из",
   openAuthor: "открыть страницу автора",
 } });
-const collectionNotes: Partial<Record<SeriesCollection["id"], "prokhorovNote">> = { prokhorov: "prokhorovNote", "malyo-subbotina": "prokhorovNote" };
+const collectionNotes: Partial<Record<string, "prokhorovNote">> = { prokhorov: "prokhorovNote", "malyo-subbotina": "prokhorovNote" };
 
 type CatalogueAnswer = Map<string, { title: string; authorName: string }> | null;
 
@@ -132,21 +134,37 @@ export function SeriesView({
     };
   }, [attempt, languageScope]);
 
-  const currentStatus = catalogue?.scope === languageScope ? catalogueStatus : "loading";
-  const languages = useMemo(() => seriesLanguages(seriesPieces.filter(piece => catalogue?.answer?.has(piece.storyId))), [catalogue]);
+  // Authors' own sections, live from the database (`live-series.ts`): the
+  // shelf waits for them so a section does not jump in under the reader.
+  const live = useLiveSeries();
+  useEffect(() => { void loadLiveSeries(); }, []);
+  const registry = useMemo(() => {
+    const known = new Set(seriesPieces.map((piece) => piece.storyId));
+    return [...seriesPieces, ...live.sections.flatMap((section) => section.pieces).filter((piece) => !known.has(piece.storyId))];
+  }, [live.sections]);
+  // The database answered for the live pieces already: published, with their titles.
+  const answer = useMemo(() => {
+    const base = catalogue?.answer;
+    if (!base) return base ?? null;
+    const merged = new Map(base);
+    for (const section of live.sections) for (const piece of section.pieces) if (!merged.has(piece.storyId)) merged.set(piece.storyId, { title: piece.title, authorName: piece.author });
+    return merged;
+  }, [catalogue, live.sections]);
+  const currentStatus = catalogue?.scope === languageScope && (live.ready || catalogueStatus === "error") ? catalogueStatus : "loading";
+  const languages = useMemo(() => seriesLanguages(registry.filter(piece => answer?.has(piece.storyId))), [answer, registry]);
   const activeFilter = useMemo(() => effectiveSeriesFilter(languageFilter, languages.map(item => item.language)), [languageFilter, languages]);
   const shelf = useMemo(() => {
-    return publishedSeriesShelf(currentStatus === "ready" ? catalogue?.answer ?? null : null, activeFilter, heard);
-  }, [catalogue, currentStatus, heard, activeFilter]);
+    return publishedSeriesShelf(currentStatus === "ready" ? answer : null, activeFilter, heard, registry);
+  }, [answer, currentStatus, heard, activeFilter, registry]);
   // Read once: a shelf left open over midnight keeps the collections it opened with.
   const [today] = useState(() => new Date());
   const focusShelf = useMemo(
-    () => (focusCollection ? publishedSeriesShelf(currentStatus === "ready" ? catalogue?.answer ?? null : null, [], heard) : []),
-    [focusCollection, catalogue, currentStatus, heard]
+    () => (focusCollection ? publishedSeriesShelf(currentStatus === "ready" ? answer : null, [], heard, registry) : []),
+    [focusCollection, answer, currentStatus, heard, registry]
   );
   const arranged = useMemo(
-    () => arrangeSeriesShelf(shelf, activeCollections(today), focusCollection ? { id: focusCollection, shelf: focusShelf } : null),
-    [shelf, today, focusCollection, focusShelf]
+    () => arrangeSeriesShelf(shelf, [...liveCollections(live.sections), ...activeCollections(today)], focusCollection ? { id: focusCollection, shelf: focusShelf } : null),
+    [shelf, today, focusCollection, focusShelf, live.sections]
   );
   function changeFilter(next: string[]) { const value = effectiveSeriesFilter(next, languages.map(item => item.language)); rememberSeriesFilter(value); setLanguageFilter(value); }
   useEffect(() => { onPiecesChanged?.(arranged.order); }, [onPiecesChanged, arranged]);
@@ -190,7 +208,7 @@ export function SeriesView({
         {collections.map((collection) => (
           <SeriesCollectionRow
             key={collection.id}
-            id={collection.id}
+            collection={collection.collection}
             pieces={collection.pieces}
             openingStoryId={openingStoryId}
             onOpenPiece={onOpenPiece}
@@ -248,6 +266,8 @@ function stop(event: React.SyntheticEvent) {
 function SeriesDuration({ seconds }: { seconds: number }) {
   const { preferences } = useReaderPreferences();
   const label = seriesDurationLabel(seconds, preferences.locale);
+  // A live section's card may not know its length: then it says nothing.
+  if (!seconds) return null;
   return <span className="series-duration" aria-hidden="true"><Clock3 />{label}</span>;
 }
 
@@ -308,13 +328,13 @@ function SeriesHero({
 }
 
 function SeriesCollectionRow({
-  id,
+  collection,
   pieces,
   openingStoryId,
   onOpenPiece,
   onOpenAuthor,
 }: {
-  id: SeriesCollection["id"];
+  collection: SeriesCollection;
   pieces: readonly SeriesPiece[];
   openingStoryId: string | null;
   onOpenPiece: (piece: SeriesPiece) => void;
@@ -323,20 +343,23 @@ function SeriesCollectionRow({
   const words = useSeriesWords();
   const collectionWords = useMessages(collectionMessages);
   const { preferences } = useReaderPreferences();
-  const title = collectionWords[id];
+  const id = collection.id;
+  const title = (collectionWords as Record<string, unknown>)[id] as string | undefined ?? collection.title ?? "";
   const noteKey = collectionNotes[id];
   const note = noteKey ? collectionWords[noteKey] : null;
-  const author = seriesCollections.find((collection) => collection.id === id)?.author;
+  const author = collection.author ?? seriesCollections.find((entry) => entry.id === id)?.author;
   // Inside the button only phrasing content is allowed, so no h2 or p there.
   const linked = Boolean(author && onOpenAuthor);
   const Title = linked ? "span" : "h2";
   const Note = linked ? "span" : "p";
   const heading = (
     <>
-      {author && (
+      {author && (author.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="series-collection__photo" src={author.photo} alt="" width={320} height={320} decoding="async" />
-      )}
+      ) : (
+        <span className="series-collection__photo series-collection__photo--initial" aria-hidden="true">{author.name.trim().charAt(0).toUpperCase()}</span>
+      ))}
       <span className="series-collection__name">
         <Title className="series-collection__title">{title}</Title>
         {note && <Note className="series-collection__note">{note}</Note>}
@@ -344,7 +367,7 @@ function SeriesCollectionRow({
     </>
   );
   return (
-    <section className={`series-collection series-collection--${id}`} aria-label={title}>
+    <section className={`series-collection series-collection--${id}${collection.title ? " series-collection--live" : ""}`} aria-label={title}>
       {author && onOpenAuthor && linked ? (
         <header className="series-collection__head series-collection__head--author">
           <button type="button" className="series-collection__author-link" onClick={() => onOpenAuthor(author.handle, author.name)}

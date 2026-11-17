@@ -251,6 +251,28 @@ export function AuthorCabinet() {
     };
   }, [user, refreshKey]);
 
+  // An author the team prepared a page for comes for that page: after the
+  // code from the email, open it straight away - the invitation when there is
+  // one to accept, else My page while something waits for their decision.
+  // Only from the bare cabinet address, once, and never for someone who
+  // already publishes here (their library is what they come for).
+  const steered = useRef(false);
+  useEffect(() => {
+    if (steered.current || !access.loaded || view !== "library" || window.location.hash) return;
+    if (access.value?.admin || (access.value?.published ?? 0) > 0) return;
+    if (offers.length > 0 && !inviteToken) {
+      steered.current = true;
+      const timer = window.setTimeout(() => { setOffer(offers[0]); setView("invite"); }, 0);
+      return () => window.clearTimeout(timer);
+    }
+    const waiting = myPage?.space && myPage.items.some((item) => item.work && item.work.status !== "published" && item.work.status !== "withdrawn");
+    if (waiting) {
+      steered.current = true;
+      const timer = window.setTimeout(() => show("my-page", "replace"), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [access, offers, myPage, view, inviteToken, show]);
+
   // The address the page was opened at.
   useEffect(() => {
     const first = viewFromHash();

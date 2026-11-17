@@ -281,6 +281,9 @@ export const loadSpacePreview = (spaceId: string | null) => call<SpacePreview>("
 
 export const loadMyAuthorSpace = () => call<MyAuthorSpace>("get_my_author_space");
 
+/** Whether this author's published Series go onto the Series shelf at once (`author_spaces.series_shelf`). */
+export const loadMySeriesShelf = () => call<boolean>("my_author_space_on_series_shelf").then(Boolean, () => false);
+
 export const peekAuthorInvite = (token: string) => call<InvitePeek>("peek_author_invite", { p_token: token });
 
 export const acceptAuthorInvite = (token: string | null, inviteId: string | null = null) =>

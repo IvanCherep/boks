@@ -105,6 +105,19 @@ folder whose manifest a bok points at:
    cannot read a manifest in storage, so it checks only the address; check the
    duration and scene count against the manifest when the folder is made.
 
+**Or let the author publish it onto the shelf himself (2026-11-18).** For a
+page the team prepares in Studio, mark it `author_spaces.series_shelf = true`
+and give each work its shelf card (`author_space_works.series_card`:
+`{"seconds", "scenes", "moments", "focus"}` from the manifest), from a scratch
+SQL file. Nothing goes into `poems.ts` or `series-catalogue.ts`: the moment
+the owner presses Publish in the cabinet, `get_boks_series_shelf_authors()`
+(migration `20261118170000`) returns his published works with their Series,
+in his page order, and `components/boks/series/live-series.ts` puts them as
+his own section first on the shelf, above the sections in code, and makes the
+feed open them as Series. Hiding a work in the cabinet takes it off at once.
+Only published works of a published page are returned, so an unpublished
+token never leaves the database. The section photo is the page's photo.
+
 An author who reads the piece himself brings his own recording, usually
 mastered with music under it. Then there is no theme (`theme` is left out of
 the manifest), the recording is only brought down to the series' −22 LUFS by

@@ -269,3 +269,32 @@
 }
 /* With its position number first. */
 .amp-order-page .amp-order__row { grid-template-columns: 26px 22px auto minmax(0, 1fr) auto; }
+/* My page, 2026-11-18: each work a card with its own buttons, one Publish at the bottom. */
+.amp-works{padding-top:22px}
+.amp-cards{gap:12px}
+.amp-card{display:grid;grid-template-columns:112px minmax(0,1fr);gap:16px;padding:14px;border:1px solid var(--amp-line);border-radius:12px;background:#fffdf8}
+.amp-card.is-skipped{background:transparent;border-style:dashed}
+.amp-card.is-skipped .amp-card__cover,.amp-card.is-skipped .amp-card__title{opacity:.55}
+.acab .amp-card__cover{position:relative;align-self:start;padding:0;border-radius:8px;overflow:hidden}
+.acab .amp-card__cover:disabled{opacity:1}
+.acab .amp-card .work-thumb{width:112px;height:160px;font-size:96px;border-radius:8px}
+.amp-card__play{position:absolute;inset:auto auto 8px 8px;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#c44a32;color:#fff7e8;font-size:15px;box-shadow:0 4px 14px #0006;padding-left:3px}
+.amp-card__body{display:grid;gap:8px;align-content:start;min-width:0}
+.amp-card__title{font:500 24px/1.15 var(--serif);overflow-wrap:anywhere}
+.amp-card__chips{display:flex;flex-wrap:wrap;gap:6px}
+.amp-card__note{color:var(--muted);font-size:13px;line-height:1.45}
+.amp-card__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.acab .amp-card__actions .btn{min-height:46px;padding:10px 16px;font-size:15px;flex:0 1 auto}
+.acab .amp-card__actions .btn.amp-card__watch{background:#c44a32;color:#fff7e8;min-width:150px}
+.amp-publish-bar{position:sticky;bottom:0;z-index:5;margin:6px -4px 0;padding:14px 4px 16px;background:linear-gradient(#f3efe700,var(--paper,#f3efe7) 22%)}
+.amp-publish-bar .amp-publish{margin-top:6px;width:100%;min-height:60px;font-size:17px}
+.amp-publish-note{margin:18px 0 0;padding:12px 14px;border-radius:10px;background:#e9efe0;font-size:14px;line-height:1.5;color:#2f3d2f}
+@media (max-width:620px){
+  .amp-card{grid-template-columns:84px minmax(0,1fr);gap:12px;padding:12px}
+  .acab .amp-card .work-thumb{width:84px;height:120px}
+  .amp-card__title{font-size:21px}
+  .amp-card__actions{display:grid;grid-template-columns:1fr 1fr}
+  .acab .amp-card__actions .btn{width:100%;padding:10px 8px;font-size:14px}
+  .acab .amp-card__actions .btn.amp-card__watch{grid-column:1 / -1;min-width:0}
+}
+@media (min-width:900px){ .amp-publish-bar .amp-publish{width:auto;min-width:320px} }

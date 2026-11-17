@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@/app/author-spaces.css";
 import {
   loadMyAuthorSpace,
+  loadMySeriesShelf,
   loadSpacePreview,
   publishMyAuthorSpace,
   requestSpaceChanges,
@@ -79,11 +80,26 @@ const words = defineMessages(
     unhide: "Put back on the site",
     hidden: "Hidden: readers no longer see it. You can put it back here.",
     unhidden: "It is back on your page.",
-    guideTitle: "How it works",
-    guideLook: "Open each work: read the text and, where there is one, watch its Series.",
-    guideAsk: "Something is off? Press “Ask for changes”: the team fixes it and it comes back here.",
-    guidePublish: "All good? “To publication”: choose the works and publish them. Until then only you and the team see them.",
+    guideTitle: "How to publish",
+    stepWatch: "Watch each work: the “▶ Watch” button.",
+    stepFix: "Something to fix? “Suggest changes”, and write what should change. The team fixes it and the work comes back here.",
+    stepSkip: "Not publishing something yet? Press “Don't publish” on that work.",
+    stepPublish: "All set? The big “Publish” button at the bottom. Until then nobody but you and the team sees anything.",
     guideNote: "Your photo, name and page address can be changed at any time.",
+    watch: "Watch",
+    readText: "Text",
+    fix: "Suggest changes",
+    skip: "Don't publish",
+    unskip: "Put back into the publication",
+    skipped: "Not publishing",
+    publishCount: (n: number) => `Publish · ${n}`,
+    publishPageOnly: "Publish the page",
+    shelfNote: "Once published, your Series appear at once on your page, in the feed and first on the boks Series shelf, in the order of your page.",
+    seriesOnShelf: "On your page, in the feed and on the boks Series shelf.",
+    shownOnShelf: "Your page, the feed and the boks Series shelf, at once",
+    doneShelf: "Your Series are already on the boks Series shelf, in the order of your page.",
+    openShelf: "Open the Series shelf",
+    orderShelf: "The boks Series shelf shows your Series in the same order.",
     yourNote: "Your note to the team:",
     messagesTitle: "Conversation with the team",
     messagesHint: "Something about the page, the design or a work you do not like, or a question? Write here: the team answers here, and tells you when a fix is done.",
@@ -114,9 +130,9 @@ const words = defineMessages(
     watchSeries: "Watch Series",
     shownWithSeries: "The text and its Series go to your page now; the Series reaches the feed and the Series shelf once the team adds it",
     look: "Read the version",
-    askChanges: "Ask for changes",
+    askChanges: "Suggest changes",
     askTitle: "What should change?",
-    askHint: "A short note for the team. The work stays unpublished until they prepare it again.",
+    askHint: "Write what should change: a word, a line, a picture, the music. The team fixes it and the work comes back to you here; it stays unpublished until then.",
     send: "Send",
     cancel: "Cancel",
     changeAddress: "Change address",
@@ -186,11 +202,26 @@ const words = defineMessages(
       unhide: "Вернуть на сайт",
       hidden: "Скрыто: читатели его больше не видят. Вернуть можно здесь же.",
       unhidden: "Снова на вашей странице.",
-      guideTitle: "Как это устроено",
-      guideLook: "Откройте каждое произведение: прочитайте текст и, если есть, посмотрите Series.",
-      guideAsk: "Что-то не так? Нажмите «Попросить правки»: редакция исправит, и произведение вернётся сюда.",
-      guidePublish: "Всё нравится? «К публикации»: выберите произведения и опубликуйте. До этого их видите только вы и редакция.",
+      guideTitle: "Как опубликовать",
+      stepWatch: "Посмотрите каждое произведение: кнопка «▶ Смотреть».",
+      stepFix: "Нужно что-то поправить? «Внести правки» — и напишите, что изменить. Редакция исправит, и произведение вернётся сюда.",
+      stepSkip: "Что-то пока не публикуем? Нажмите «Не публиковать» у этого произведения.",
+      stepPublish: "Всё готово? Большая кнопка «Опубликовать» внизу. До этого никто, кроме вас и редакции, ничего не видит.",
       guideNote: "Фото, имя и адрес страницы можно поменять в любой момент.",
+      watch: "Смотреть",
+      readText: "Текст",
+      fix: "Внести правки",
+      skip: "Не публиковать",
+      unskip: "Вернуть в публикацию",
+      skipped: "Не публикуем",
+      publishCount: (n: number) => `Опубликовать · ${n}`,
+      publishPageOnly: "Опубликовать страницу",
+      shelfNote: "После публикации ваши Series сразу появятся на вашей странице, в ленте и первыми на полке boks Series — в порядке вашей страницы.",
+      seriesOnShelf: "На вашей странице, в ленте и на полке boks Series.",
+      shownOnShelf: "Сразу на вашей странице, в ленте и на полке boks Series",
+      doneShelf: "Ваши Series уже на полке boks Series — в порядке вашей страницы.",
+      openShelf: "Открыть полку Series",
+      orderShelf: "В этом же порядке ваши Series стоят на полке boks Series.",
       yourNote: "Ваша заметка редакции:",
       messagesTitle: "Переписка с редакцией",
       messagesHint: "Что-то не нравится в странице, оформлении или произведении, или есть вопрос? Напишите здесь: редакция ответит здесь же и сообщит, когда исправит.",
@@ -221,9 +252,9 @@ const words = defineMessages(
       watchSeries: "Смотреть Series",
       shownWithSeries: "Текст и Series сразу появятся на вашей странице; в ленте и на полке Series она появится, когда редакция её добавит",
       look: "Посмотреть версию",
-      askChanges: "Попросить правки",
+      askChanges: "Внести правки",
       askTitle: "Что изменить?",
-      askHint: "Короткая заметка для редакции. Работа останется неопубликованной, пока её не подготовят снова.",
+      askHint: "Напишите, что изменить: слово, строку, картинку, музыку. Редакция исправит, и произведение вернётся к вам сюда; до этого оно не публикуется.",
       send: "Отправить",
       cancel: "Отмена",
       changeAddress: "Изменить адрес",
@@ -301,6 +332,31 @@ function coverOf(item: PageItem) {
  */
 let lastPublication: PublicationResult | null = null;
 
+/**
+ * Works the author chose not to publish now ("Don't publish"), by line key.
+ * Kept on this device so the choice survives a reload, and read by the
+ * publication step, which mounts as a view of its own.
+ */
+const skipKey = "boks-my-page-skip";
+
+function readSkipped(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(skipKey);
+    const list = raw ? (JSON.parse(raw) as unknown) : [];
+    return new Set(Array.isArray(list) ? list.filter((key): key is string => typeof key === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeSkipped(keys: Set<string>) {
+  try {
+    window.localStorage.setItem(skipKey, JSON.stringify([...keys]));
+  } catch {
+    // Private mode: the choice holds while this page is open.
+  }
+}
+
 /** Works the author may publish now: ready, at the revision they are looking at. */
 export function publishable(items: PageItem[]) {
   return items.filter((item) => item.work?.status === "ready");
@@ -326,7 +382,6 @@ export function MyPage({
   const [data, setData] = useState<MyAuthorSpace | null>(null);
   const [preview, setPreview] = useState<SpacePreview | null>(null);
   const [failed, setFailed] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
   const [reading, setReading] = useState<PreviewItem | null>(null);
   /** The reading opened on its Series (Back then returns to the cabinet). */
   const [readingSeries, setReadingSeries] = useState(false);
@@ -337,21 +392,22 @@ export function MyPage({
   const [editingAddress, setEditingAddress] = useState(false);
   const [address, setAddress] = useState("");
   const [addressProblem, setAddressProblem] = useState("");
-  const detail = useRef<HTMLElement | null>(null);
-
-  /** Choose a line; on a phone the actions sit below the list, so bring them into view. */
-  function choose(key: string) {
-    setSelected(key);
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 899px)").matches) {
-      window.requestAnimationFrame(() => detail.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
+  /** Whether published Series go onto the boks Series shelf at once (`series_shelf`). */
+  const [onShelf, setOnShelf] = useState(false);
+  const [skipped, setSkippedState] = useState<Set<string>>(() => (typeof window === "undefined" ? new Set() : readSkipped()));
+  function toggleSkip(key: string) {
+    const next = new Set(skipped);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    writeSkipped(next);
+    setSkippedState(next);
   }
 
   const load = useCallback(async () => {
     try {
-      const [mine, look] = await Promise.all([loadMyAuthorSpace(), loadSpacePreview(null).catch(() => null)]);
+      const [mine, look, shelf] = await Promise.all([loadMyAuthorSpace(), loadSpacePreview(null).catch(() => null), loadMySeriesShelf()]);
       setData(mine);
       setPreview(look);
+      setOnShelf(shelf);
       setFailed("");
       return mine;
     } catch (error) {
@@ -394,14 +450,8 @@ export function MyPage({
 
   const items = useMemo(() => data?.items ?? [], [data]);
   const ready = publishable(items);
+  const chosen = ready.filter((item) => !skipped.has(item.key));
   const pageDraft = data?.space?.status === "draft";
-  // Something is always open on the right: the chosen line, or the first one
-  // still waiting for the author.
-  const current =
-    items.find((item) => item.key === selected) ??
-    items.find((item) => item.work && item.work.status !== "published") ??
-    items[0] ??
-    null;
   const waiting = items.filter((item) => item.work && (item.work.status === "preparing" || item.work.status === "changes_requested"));
   const orderable = items.filter((item) => !item.hidden).length;
   const undecided = items.some((item) => item.work && item.work.status !== "published" && item.work.status !== "withdrawn");
@@ -492,7 +542,7 @@ export function MyPage({
   }
 
   if (view === "my-page-order") {
-    return <OrderView w={w} data={data} preview={preview} header={header(w.orderTitle, "my-page")} onSaved={async () => { await load(); toast(w.orderSaved); go("my-page"); }} />;
+    return <OrderView w={w} data={data} preview={preview} onShelf={onShelf} header={header(w.orderTitle, "my-page")} onSaved={async () => { await load(); toast(w.orderSaved); go("my-page"); }} />;
   }
 
   if (view === "my-page-publish") {
@@ -500,6 +550,8 @@ export function MyPage({
       <PublishView
         w={w}
         items={ready}
+        skipped={skipped}
+        onShelf={onShelf}
         waiting={waiting}
         handle={data.handle}
         pageDraft={pageDraft}
@@ -507,7 +559,16 @@ export function MyPage({
         onRead={readItem}
         onAsk={(item) => { setNote(""); setAsking(item); }}
         reload={load}
-        onDone={(answer) => { lastPublication = answer; setResult(answer); void load(); go("my-page-done"); }}
+        onDone={(answer) => {
+          lastPublication = answer;
+          setResult(answer);
+          // What was skipped stays skipped; what went out needs no choice any more.
+          const left = new Set([...skipped].filter((key) => !answer.published.some((item) => items.find((entry) => entry.key === key)?.work?.id === item.workId)));
+          writeSkipped(left);
+          setSkippedState(left);
+          void load();
+          go("my-page-done");
+        }}
         reading={reading && <WorkPreview key={`${reading.key}:${readingSeries}`} item={reading} t={pw} watchFirst={readingSeries} onClose={() => setReading(null)} />}
         asking={asking && <AskSheet w={w} item={asking} note={note} setNote={setNote} busy={busy} onSend={() => void sendChanges()} onClose={() => setAsking(null)} />}
       />
@@ -530,14 +591,15 @@ export function MyPage({
               return (
                 <li key={item.workId}>
                   <Thumb id={item.bokId} title={item.title} image={line ? coverOf(line) : null} />
-                  <span><strong>{item.title}</strong><small>{w.format[item.format]}{item.withSeries && " + Series"}</small></span>
+                  <span><strong>{item.title}</strong><small>{item.withSeries ? w.format.series : w.format[item.format]}</small></span>
                 </li>
               );
             })}
           </ul>
-          {result?.published.some((item) => item.withSeries) && <p className="desk-note">{w.doneSeries}</p>}
+          {result?.published.some((item) => item.withSeries) && <p className="desk-note">{onShelf ? w.doneShelf : w.doneSeries}</p>}
           <div className="sheet-buttons">
-            <button type="button" className="btn btn-secondary" onClick={() => go("library")}>{w.toCabinet}</button>
+            <button type="button" className="btn btn-secondary" onClick={() => go("my-page")}>{w.title}</button>
+            {onShelf && result?.published.some((item) => item.withSeries) && <a className="btn btn-secondary" href="/series">{w.openShelf}</a>}
             {handle && <a className="btn btn-red" href={`/@${handle}`}>{w.openPage} <Icon name="arrow" /></a>}
           </div>
         </section>
@@ -592,93 +654,92 @@ export function MyPage({
         <section className="amp-guide">
           <h2 className="serif">{w.guideTitle}</h2>
           <ol>
-            <li>{w.guideLook}</li>
-            <li>{w.guideAsk}</li>
-            <li>{w.guidePublish}</li>
+            <li>{w.stepWatch}</li>
+            <li>{w.stepFix}</li>
+            <li>{w.stepSkip}</li>
+            <li>{w.stepPublish}</li>
           </ol>
           <p>{w.guideNote}</p>
         </section>
       )}
 
-      <div className="amp-columns">
-        <section className="amp-works">
-          <header className="amp-works__head">
-            <h2 className="serif">{w.works}</h2>
-            {orderable > 1 && <button type="button" className="amp-link" onClick={() => go("my-page-order")}>{w.order}</button>}
-          </header>
-          {items.length === 0 && <p className="desk-note">{w.nothing}</p>}
-          <ul className="amp-list">
-            {items.map((item) => {
-              const status = lineStatus(item);
-              return (
-                <li key={item.key}>
-                  <button type="button" className={`amp-row${current?.key === item.key ? " is-selected" : ""}`} onClick={() => choose(item.key)}>
-                    <Thumb id={item.bokId ?? item.key} title={item.title} image={coverOf(item)} />
-                    <span className="amp-row__title">
-                      <strong>{item.title}</strong>
-                      <small>
-                        <em>{w.format[item.format === "series" || item.work?.format === "series" ? "series" : "text"]}</em>
-                        {item.work?.seriesPiece && " + Series"}
-                        {item.seriesHeld && ` · ${w.seriesHeld}`}
-                      </small>
-                    </span>
-                    <span className={`asp-chip asp-chip--${chipTone(status)}`}>{w.status[status]}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {ready.length > 0 || pageDraft || waiting.length > 0 ? (
-            <>
-              <button type="button" className="btn btn-red amp-publish" disabled={ready.length === 0 && !pageDraft} onClick={() => go("my-page-publish")}>
-                {w.toPublish} <Icon name="arrow" />
-              </button>
-              {ready.length === 0 && items.length > 0 && (
-                <p className="desk-note">{waiting.some((item) => item.work?.status === "changes_requested") ? w.waitingChanges : w.nothingReady}</p>
-              )}
-            </>
-          ) : orderable > 1 ? (
-            // Everything is published: what the author does here now is arrange the page.
-            <>
-              <button type="button" className="btn btn-secondary amp-publish" onClick={() => go("my-page-order")}>{w.reorder}</button>
-              <p className="desk-note">{w.allPublished}</p>
-            </>
-          ) : null}
-        </section>
-
-        {current && (
-          <aside className="amp-detail" ref={detail}>
-            <h2 className="serif">{current.title}</h2>
-            <p>
-              <span className={`asp-chip asp-chip--${current.format === "series" || current.work?.format === "series" ? "series" : "text"}`}>{w.format[current.format === "series" || current.work?.format === "series" ? "series" : "text"]}{current.work?.seriesPiece && " + Series"}</span>{" "}
-              <span className={`asp-chip asp-chip--${chipTone(lineStatus(current))}`}>{w.status[lineStatus(current)]}</span>
-            </p>
-            {current.work?.note && current.work.status === "changes_requested" && <p className="notice">{w.yourNote} {current.work.note}</p>}
-            {current.work?.seriesPiece && current.work.status === "published" && (
-              <p className="amp-detail__series">{current.work.seriesPublished ? w.seriesLive : w.seriesWaiting}</p>
-            )}
-            <div className="amp-detail__actions">
-              {preview?.items.some((entry) => entry.key === current.key || (current.bokId && entry.bokId === current.bokId)) && (
-                <button type="button" className="btn" onClick={() => readItem(current)}><Icon name="eye" /> {w.look}</button>
-              )}
-              {current.work?.seriesPiece && (
-                <button type="button" className="btn btn-secondary" onClick={() => readItem(current, true)}>▶ {w.watchSeries}</button>
-              )}
-              {current.work && ["preparing", "ready", "changes_requested"].includes(current.work.status) && (
-                <button type="button" className="btn btn-secondary" onClick={() => { setNote(""); setAsking(current); }}>{w.askChanges}</button>
-              )}
-              {current.bokId && (current.published || current.hidden) && (
-                <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void setHidden(current, !current.hidden)}>
-                  {current.hidden ? w.unhide : w.hide}
+      <section className="amp-works">
+        <header className="amp-works__head">
+          <h2 className="serif">{w.works}</h2>
+          {orderable > 1 && <button type="button" className="amp-link" onClick={() => go("my-page-order")}>{w.order}</button>}
+        </header>
+        {items.length === 0 && <p className="desk-note">{w.nothing}</p>}
+        <ul className="amp-list amp-cards">
+          {items.map((item) => {
+            const status = lineStatus(item);
+            const isSkipped = item.work?.status === "ready" && skipped.has(item.key);
+            const previewed = preview?.items.find((entry) => entry.key === item.key || (item.bokId && entry.bokId === item.bokId));
+            const piece = item.work?.seriesPiece ?? previewed?.seriesPiece ?? null;
+            const series = item.format === "series" || item.work?.format === "series";
+            return (
+              <li key={item.key} className={`amp-card${isSkipped ? " is-skipped" : ""}`}>
+                <button type="button" className="amp-card__cover" disabled={!previewed} onClick={() => readItem(item, Boolean(piece))} aria-label={`${piece ? w.watch : w.readText}: ${item.title}`}>
+                  <Thumb id={item.bokId ?? item.key} title={item.title} image={coverOf(item)} />
+                  {piece && <span className="amp-card__play" aria-hidden="true">▶</span>}
                 </button>
-              )}
-              {current.work?.status === "published" && current.work.format === "series" && (
-                <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void takeDownSeries(current)}>{w.takeDownSeries}</button>
-              )}
-            </div>
-          </aside>
-        )}
-      </div>
+                <div className="amp-card__body">
+                  <strong className="amp-card__title">{item.title}</strong>
+                  <span className="amp-card__chips">
+                    <span className={`asp-chip asp-chip--${series || piece ? "series" : "text"}`}>{w.format[series || piece ? "series" : "text"]}</span>
+                    <span className={`asp-chip asp-chip--${isSkipped ? "withdrawn" : chipTone(status)}`}>{isSkipped ? w.skipped : w.status[status]}</span>
+                  </span>
+                  {item.seriesHeld && <small className="amp-card__note">{w.seriesHeld}</small>}
+                  {item.work?.note && item.work.status === "changes_requested" && <small className="amp-card__note">{w.yourNote} {item.work.note}</small>}
+                  {item.work?.seriesPiece && item.work.status === "published" && !item.hidden && (
+                    <small className="amp-card__note">{onShelf ? w.seriesOnShelf : item.work.seriesPublished ? w.seriesLive : w.seriesWaiting}</small>
+                  )}
+                  <div className="amp-card__actions">
+                    {piece && previewed && (
+                      <button type="button" className="btn amp-card__watch" onClick={() => readItem(item, true)}>▶ {w.watch}</button>
+                    )}
+                    {previewed && (
+                      <button type="button" className="btn btn-secondary" onClick={() => readItem(item)}>{w.readText}</button>
+                    )}
+                    {item.work && ["preparing", "ready", "changes_requested"].includes(item.work.status) && (
+                      <button type="button" className="btn btn-secondary" onClick={() => { setNote(""); setAsking(item); }}>{w.fix}</button>
+                    )}
+                    {item.work?.status === "ready" && (
+                      <button type="button" className="btn btn-secondary" aria-pressed={isSkipped} onClick={() => toggleSkip(item.key)}>{isSkipped ? w.unskip : w.skip}</button>
+                    )}
+                    {item.bokId && (item.published || item.hidden) && (
+                      <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void setHidden(item, !item.hidden)}>
+                        {item.hidden ? w.unhide : w.hide}
+                      </button>
+                    )}
+                    {item.work?.status === "published" && item.work.format === "series" && (
+                      <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void takeDownSeries(item)}>{w.takeDownSeries}</button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        {ready.length > 0 || pageDraft || waiting.length > 0 ? (
+          <>
+          {onShelf && ready.some((item) => item.work?.seriesPiece) && <p className="amp-publish-note">{w.shelfNote}</p>}
+          <div className="amp-publish-bar">
+            <button type="button" className="btn btn-red amp-publish" disabled={chosen.length === 0 && !pageDraft} onClick={() => go("my-page-publish")}>
+              {chosen.length > 0 ? w.publishCount(chosen.length) : pageDraft ? w.publishPageOnly : w.toPublish} <Icon name="arrow" />
+            </button>
+            {ready.length === 0 && items.length > 0 && (
+              <p className="desk-note">{waiting.some((item) => item.work?.status === "changes_requested") ? w.waitingChanges : w.nothingReady}</p>
+            )}
+          </div>
+          </>
+        ) : orderable > 1 ? (
+          // Everything is published: what the author does here now is arrange the page.
+          <>
+            <button type="button" className="btn btn-secondary amp-publish" onClick={() => go("my-page-order")}>{w.reorder}</button>
+            <p className="desk-note">{w.allPublished}</p>
+          </>
+        ) : null}
+      </section>
       {data.space && (
         <section className="amp-section" id="messages">
           <h2 className="serif">{w.messagesTitle}{unread > 0 && <span className="amp-unread">{unread}</span>}</h2>
@@ -737,7 +798,7 @@ function AskSheet({ w, item, note, setNote, busy, onSend, onClose }: { w: Words;
  * by arrows, and the phone on the right is the reader's page (`AuthorPortraitPage`,
  * the same component) laid out in the order on the left, before it is saved.
  */
-function OrderView({ w, data, preview, header, onSaved }: { w: Words; data: MyAuthorSpace; preview: SpacePreview | null; header: React.ReactNode; onSaved: () => Promise<void> }) {
+function OrderView({ w, data, preview, onShelf, header, onSaved }: { w: Words; data: MyAuthorSpace; preview: SpacePreview | null; onShelf: boolean; header: React.ReactNode; onSaved: () => Promise<void> }) {
   const language = useUiLanguage();
   // A hidden work is not on the page readers see, so it has no place to order.
   const initial = useMemo(() => data.items.filter((item) => !item.hidden).map((item) => item.key), [data.items]);
@@ -782,7 +843,7 @@ function OrderView({ w, data, preview, header, onSaved }: { w: Words; data: MyAu
       <div className="amp-order-layout">
       <div>
       <h1 className="serif amp-h1">{w.orderTitle}</h1>
-      <p className="desk-note">{w.orderHint}{data.items.some((item) => !item.published) ? ` ${w.orderDraftHint}` : ""}</p>
+      <p className="desk-note">{w.orderHint}{data.items.some((item) => !item.published) ? ` ${w.orderDraftHint}` : ""}{onShelf ? ` ${w.orderShelf}` : ""}</p>
       <ol className="amp-order">
         {keys.map((key, index) => {
           const item = byKey.get(key);
@@ -839,10 +900,13 @@ function OrderView({ w, data, preview, header, onSaved }: { w: Words; data: MyAu
 // ------------------------------------------------------------------ publication
 
 function PublishView({
-  w, items, waiting, handle, pageDraft, header, onRead, onAsk, reload, onDone, reading, asking,
+  w, items, skipped, onShelf, waiting, handle, pageDraft, header, onRead, onAsk, reload, onDone, reading, asking,
 }: {
   w: Words;
   items: PageItem[];
+  /** Works the author marked "Don't publish" on My page: unticked here. */
+  skipped: ReadonlySet<string>;
+  onShelf: boolean;
   /** Works that will not go out now, and why. */
   waiting: PageItem[];
   handle: string | null;
@@ -856,7 +920,7 @@ function PublishView({
   asking: React.ReactNode;
 }) {
   const language = useUiLanguage();
-  const [chosen, setChosen] = useState<Set<string>>(() => new Set(items.map((item) => item.key)));
+  const [chosen, setChosen] = useState<Set<string>>(() => new Set(items.filter((item) => !skipped.has(item.key)).map((item) => item.key)));
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
@@ -923,8 +987,8 @@ function PublishView({
               <span className="amp-row__title">
                 <strong>{item.title}</strong>
                 <small>
-                  <em>{w.format[item.work?.format ?? item.format]}{item.work?.seriesPiece && " + Series"}</em>
-                  {" · "}{item.work?.seriesPiece ? w.shownWithSeries : w.shownIn[item.work?.format ?? item.format]}
+                  <em>{item.work?.seriesPiece ? w.format.series : w.format[item.work?.format ?? item.format]}</em>
+                  {" · "}{item.work?.seriesPiece ? (onShelf ? w.shownOnShelf : w.shownWithSeries) : w.shownIn[item.work?.format ?? item.format]}
                 </small>
               </span>
             </label>

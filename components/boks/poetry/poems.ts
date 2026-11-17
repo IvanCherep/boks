@@ -1,4 +1,5 @@
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
+import { liveSeriesManifestFor } from "@/components/boks/series/live-series";
 
 /**
  * Which boks are read as immersive poems.
@@ -117,8 +118,12 @@ const poems: Record<string, string> = {
 /** Every catalogued boks read as a poem - for the series shelf's test. */
 export const poemStoryIds: readonly string[] = Object.keys(poems);
 
+/**
+ * The poem's manifest: registered here, or an author's own Series published
+ * from their page onto the shelf (`live-series.ts`), once that has loaded.
+ */
 export function poemManifestFor(storyId: string): string | null {
-  return poems[storyId] ?? null;
+  return poems[storyId] ?? liveSeriesManifestFor(storyId);
 }
 
 /**

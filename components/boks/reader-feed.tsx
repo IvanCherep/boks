@@ -67,6 +67,7 @@ import { giveScreenBack, takeScreen } from "@/components/boks/reading-fullscreen
 import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poems";
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
+import { loadLiveSeries, useLiveSeries } from "@/components/boks/series/live-series";
 import { ReaderTabs, SeriesView } from "@/components/boks/series/series-view";
 import {
   isSeriesPath,
@@ -421,6 +422,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     phase,
     load,
   } = useBoksData();
+  // Authors' own Series published from their pages (`live-series.ts`): the
+  // feed re-renders when they arrive, so such a bok opens as its Series.
+  useLiveSeries();
+  useEffect(() => { void loadLiveSeries(); }, []);
   const uiLanguage = useUiLanguage();
   const { t } = useReaderPreferences();
   const [readingPhase, setReadingPhase] = useState<TextReadingPhase>("cover");

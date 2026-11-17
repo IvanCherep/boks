@@ -22,7 +22,7 @@ const words = defineMessages(
     published: "Published",
     openSeries: "Watch the release",
     seriesNote: "The Series release opens in the reader, with its recording, music and illustrations.",
-    seriesPieceNote: "Prepared for this text: your reading, word by word, with illustrations. Only you and the team can open it; after publication the team releases it with the text.",
+    seriesPieceNote: "Prepared for this text: the recording, word by word, with illustrations. Until you publish, only you and the team can open it.",
   },
   {
     ru: {
@@ -36,7 +36,7 @@ const words = defineMessages(
       published: "Опубликовано",
       openSeries: "Посмотреть выпуск",
       seriesNote: "Выпуск Series откроется в читалке, с записью, музыкой и иллюстрациями.",
-      seriesPieceNote: "Подготовлена к этому тексту: ваше чтение, слово в слово, с иллюстрациями. Открыть её можете только вы и редакция; после публикации редакция выпустит её вместе с текстом.",
+      seriesPieceNote: "Подготовлена к этому тексту: запись, слово в слово, с иллюстрациями. Пока вы не опубликуете, её видите только вы и редакция.",
     },
   }
 );
