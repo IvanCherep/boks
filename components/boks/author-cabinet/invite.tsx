@@ -22,7 +22,7 @@ const words = defineMessages(
   {
     signInTitle: "An author's page is waiting for you",
     signInBody: "The boks team has prepared a page for you. Sign in with your email: we will send a code, and the invitation opens right after.",
-    greetedBody: "the boks team has prepared your author's page and your works. Sign in with your email: we will send you a code.",
+    greetedBody: "The boks team has prepared your author's page and your works. Sign in with your email: we will send you a code.",
     signInAction: "Sign in with email",
     checking: "Checking the invitation…",
     newTitle: "Your page is ready",
@@ -52,7 +52,7 @@ const words = defineMessages(
     ru: {
       signInTitle: "Вас ждёт страница автора",
       signInBody: "Редакция boks подготовила для вас страницу. Войдите по своей почте: мы пришлём код, и приглашение сразу откроется.",
-      greetedBody: "редакция boks подготовила вашу авторскую страницу и ваши произведения. Войдите по своей почте — мы пришлём код.",
+      greetedBody: "Редакция boks подготовила вашу авторскую страницу и ваши произведения. Войдите по своей почте — мы пришлём код.",
       signInAction: "Войти по почте",
       checking: "Проверяем приглашение…",
       newTitle: "Ваша страница готова",
@@ -114,7 +114,7 @@ export function InviteSignIn({ onSignIn, token = null }: { onSignIn: () => void;
         <div className="empty-letter">b.</div>
         {greeting ? (
           <>
-            <h1 className="amp-invite__greeting">{greeting},</h1>
+            <h1 className="amp-invite__greeting">{greeting}!</h1>
             <p>{t.greetedBody}</p>
           </>
         ) : (
