@@ -5,6 +5,8 @@ Three feeds, each with its own watermark in $BOKS_OPS_STATE:
   feedback      every note in Studio -> Feedback, with the page or step it came from
   applications  every application from the page for authors (docs/author-applications.md)
   moderation    every work an author sends for review (not the team's own imports)
+  authors       what an invited author does with their page: opens the invitation,
+                accepts, writes, asks for changes, publishes, hides
 
 The first run of a feed only sets its watermark, so nothing old is announced.
 The watermark keeps microseconds, like the sign-ups in alerts.sh: cut to whole
@@ -66,6 +68,45 @@ FEEDS = {
           and not coalesce(public.is_boks_admin(r.author_user_id), false)
         order by r.submitted_at limit {limit};
     """,
+    # What an invited author does with the page the team prepared: opens the
+    # invitation, accepts it, writes, asks for changes, publishes, hides.
+    "authors": """
+        with ev as (
+          select i.opened_at as at, 'opened' as kind, s.id as space, null::text as work, null::text as body
+            from public.author_space_invites i join public.author_spaces s on s.id = i.space_id
+           where i.opened_at > :'since'::timestamptz
+          union all
+          select i.accepted_at, 'accepted', s.id, null, null
+            from public.author_space_invites i join public.author_spaces s on s.id = i.space_id
+           where i.accepted_at > :'since'::timestamptz
+          union all
+          select m.created_at, case when m.work_id is null then 'message' else 'changes' end, m.space_id, w.title, m.body
+            from public.author_space_messages m left join public.author_space_works w on w.id = m.work_id
+           where m.from_author and m.created_at > :'since'::timestamptz
+          union all
+          select p.created_at, 'published', p.space_id,
+                 (select string_agg('«' || (x ->> 'title') || '»', ', ') from jsonb_array_elements(p.result -> 'published') x), null
+            from public.author_space_publications p
+           where p.basis = 'owner_terms' and p.created_at > :'since'::timestamptz
+          union all
+          select r.withdrawn_at, 'hidden', s.id, r.title, null
+            from public.reels r join public.author_spaces s on s.owner_user_id = r.author_user_id and s.status <> 'merged'
+           where r.status = 'withdrawn' and r.withdrawn_from_status = 'published' and r.withdrawn_at > :'since'::timestamptz
+        )
+        select json_build_object('at', to_char(ev.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+          'kind', ev.kind, 'work', ev.work, 'body', ev.body, 'name', s.name, 'handle', public.boks_space_handle(s))
+        from ev join public.author_spaces s on s.id = ev.space
+        order by ev.at limit {limit};
+    """,
+}
+
+AUTHOR_EVENTS = {
+    "opened": "👀 {who} открыл(а) приглашение и смотрит, что подготовила редакция",
+    "accepted": "✅ {who} принял(а) приглашение: страница в кабинете, идёт просмотр",
+    "changes": "✍️ {who} просит правки к «{work}»",
+    "message": "✉️ {who} пишет редакции",
+    "published": "🎉 {who} опубликовал(а): {work}",
+    "hidden": "🙈 {who} скрыл(а) с сайта «{work}»",
 }
 
 
@@ -97,6 +138,19 @@ def message(feed, row):
         if row.get("message"):
             lines.append(esc(row["message"], 800))
         lines.append(f"Studio → Авторы: {STUDIO}")
+        return "\n".join(lines)
+    if feed == "authors":
+        name = esc(row.get("name"), 120) or "Автор"
+        handle = f" (@{esc(row['handle'])})" if row.get("handle") else ""
+        line = AUTHOR_EVENTS.get(row.get("kind"), "{who}: " + esc(row.get("kind"))).format(
+            who=f"<b>{name}</b>{handle}", work=esc(row.get("work"), 400) if row.get("kind") == "published" else esc(row.get("work"), 160))
+        lines = [line]
+        if row.get("body"):
+            lines.append(f"<i>{esc(row['body'], 1500)}</i>")
+        if row.get("kind") in ("changes", "message"):
+            lines.append(f"Ответить: Studio → Авторы → {name}: {STUDIO}")
+        if row.get("kind") == "published" and row.get("handle"):
+            lines.append(f"Страница: https://go.tryboks.com/@{esc(row['handle'])}")
         return "\n".join(lines)
     words = f", {row['words']} слов" if row.get("words") else ""
     return (f"📝 <b>На модерацию</b>: «{esc(row.get('title'), 160)}» от {who(row)}{words}\n"

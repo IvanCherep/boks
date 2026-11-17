@@ -288,6 +288,10 @@ export const loadMySeriesShelf = () => call<boolean>("my_author_space_on_series_
 export const loadInviteGreeting = (token: string | null, inviteId: string | null = null) =>
   call<string | null>("author_invite_greeting", { p_token: token, p_invite_id: inviteId }).catch(() => null);
 
+/** Tells the team, once, that the invited author has opened their invitation (Telegram, `inbox.py`). */
+export const noteInviteOpened = (token: string | null, inviteId: string | null = null) =>
+  call<void>("note_author_invite_opened", { p_token: token, p_invite_id: inviteId }).catch(() => undefined);
+
 export const peekAuthorInvite = (token: string) => call<InvitePeek>("peek_author_invite", { p_token: token });
 
 export const acceptAuthorInvite = (token: string | null, inviteId: string | null = null) =>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { acceptAuthorInvite, loadInviteGreeting, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
+import { acceptAuthorInvite, loadInviteGreeting, noteInviteOpened, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { pendingInviteKey } from "@/lib/boks/author/invite-link";
@@ -152,6 +152,11 @@ export function InviteScreen({
   const language = useUiLanguage();
   const [peek, setPeek] = useState<InvitePeek | null>(offer ?? null);
   const greeting = useGreeting(token, token ? null : offer?.inviteId ?? null);
+  // The invited author is looking at it: the team hears so once.
+  const pending = peek?.state === "pending";
+  useEffect(() => {
+    if (pending) void noteInviteOpened(token, token ? null : offer?.inviteId ?? null);
+  }, [pending, token, offer?.inviteId]);
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
 

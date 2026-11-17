@@ -5575,6 +5575,8 @@ begin
   perform public.boks_assert(public.author_invite_greeting('not-a-token') is null, 'a wrong link greets nobody');
 
   perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000002');
+  perform public.note_author_invite_opened(v_token, null);
+  perform public.boks_assert((select opened_at from public.author_space_invites where space_id = v_id) is not null, 'opening the invitation is noted for the team');
   perform public.boks_assert(public.accept_author_invite(v_token) ->> 'state' = 'accepted', 'the poet accepts the page');
   perform public.boks_assert(public.my_author_space_on_series_shelf(), 'the cabinet knows the Series go onto the shelf');
   perform public.boks_assert(public.author_invite_greeting(v_token) is null, 'a used link greets nobody');
