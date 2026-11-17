@@ -647,7 +647,9 @@ export function UserAuthPanel({
     if (date.toDateString() === today.toDateString()) return t("Yesterday", "Вчера");
     return date.toLocaleDateString(preferences.locale, { day: "numeric", month: "short" });
   };
-  const terms = <p className="auth-terms-line">{t("By continuing you accept the", "Продолжая, вы принимаете")} <a href="/terms" target="_blank" rel="noreferrer">{t("Terms", "Условия")}</a>{t(", including the author content licence, and the", ", включая лицензию на авторские тексты, и")} <a href="/privacy" target="_blank" rel="noreferrer">{t("Privacy policy", "Политику конфиденциальности")}</a>.</p>;
+  // The author content licence is part of the Terms; an author confirms it
+  // again, for the chosen works, when publishing (`my-page.tsx`).
+  const terms = <p className="auth-terms-line">{t("By continuing you accept the", "Продолжая, вы принимаете")} <a href="/terms" target="_blank" rel="noreferrer">{t("Terms of use", "Условия использования")}</a> {t("and the", "и")} <a href="/privacy" target="_blank" rel="noreferrer">{t("Privacy policy", "Политику конфиденциальности")}</a>.</p>;
 
   return (
     <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("boks account", "Аккаунт boks")}

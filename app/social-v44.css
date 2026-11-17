@@ -354,7 +354,7 @@
 .auth-email-form .you-field{margin:22px 0 10px}
 .auth-email-form .you-wide-button{margin:0}
 .auth-terms-line{font-size:12px;line-height:1.7;color:var(--muted-foreground);margin:12px 0 0}
-.auth-terms-line a{text-decoration:underline;color:var(--foreground);text-underline-offset:2px}
+.auth-terms-line a,.acab .auth-terms-line a{color:var(--foreground);font-weight:600;text-decoration:underline;text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:currentColor}
 .auth-back{display:block;width:100%;text-align:center;padding:15px 0;background:none;font-size:12px;margin-top:12px}
 .auth-support{text-align:center;font-size:11px!important;margin:12px 0 0}
 .auth-support a{text-decoration:underline;text-underline-offset:3px}
