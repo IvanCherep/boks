@@ -84,7 +84,9 @@ const words = defineMessages(
     stepWatch: "“▶ Watch”: look at each work.",
     stepFix: "“Suggest changes”: write what to fix, the team will do it.",
     stepSkip: "“Don't publish”: if something should wait.",
-    stepPublish: "“Publish” at the bottom. Until then only you and the team see the page.",
+    stepPublish: "“Publish” at the bottom. Until then only you and the team see these works.",
+    replied: (n: number) => (n === 1 ? "The team has replied to you" : `The team has replied to you (${n})`),
+    readReply: "Read",
     guideNote: "After publication everything stays in your hands: reorder your boks, hide texts and bring them back, change the photo and name, at any time.",
     watch: "Watch",
     readText: "Text",
@@ -206,7 +208,9 @@ const words = defineMessages(
       stepWatch: "«▶ Смотреть» — посмотрите каждое произведение.",
       stepFix: "«Внести правки» — напишите, что изменить, редакция исправит.",
       stepSkip: "«Не публиковать» — если что-то пока не выкладываем.",
-      stepPublish: "«Опубликовать» — внизу. До этого страницу видите только вы и редакция.",
+      stepPublish: "«Опубликовать» — внизу. До этого эти произведения видите только вы и редакция.",
+      replied: (n: number) => (n === 1 ? "Редакция ответила вам" : `Редакция ответила вам (${n})`),
+      readReply: "Прочитать",
       guideNote: "После публикации всё остаётся в ваших руках: менять порядок боков, скрывать и возвращать тексты, менять фото и имя — в любой момент.",
       watch: "Смотреть",
       readText: "Текст",
@@ -649,6 +653,13 @@ export function MyPage({
           <a className="btn btn-secondary" href="/author/preview">{w.previewPage}</a>
         </div>
       </section>
+
+      {unread > 0 && data.space && (
+        <a className="amp-replied" href="#messages" onClick={(event) => { event.preventDefault(); document.getElementById("messages")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+          <span>✉ {w.replied(unread)}</span>
+          <span className="amp-replied__go">{w.readReply} ↓</span>
+        </a>
+      )}
 
       {undecided && (
         <section className="amp-guide">

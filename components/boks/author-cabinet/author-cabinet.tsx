@@ -259,13 +259,15 @@ export function AuthorCabinet() {
   const steered = useRef(false);
   useEffect(() => {
     if (steered.current || !access.loaded || view !== "library" || window.location.hash) return;
-    if (access.value?.admin || (access.value?.published ?? 0) > 0) return;
-    if (offers.length > 0 && !inviteToken) {
+    if (access.value?.admin) return;
+    const firstTime = (access.value?.published ?? 0) === 0;
+    if (firstTime && offers.length > 0 && !inviteToken) {
       steered.current = true;
       const timer = window.setTimeout(() => { setOffer(offers[0]); setView("invite"); }, 0);
       return () => window.clearTimeout(timer);
     }
-    const waiting = myPage?.space && myPage.items.some((item) => item.work && item.work.status !== "published" && item.work.status !== "withdrawn");
+    // Also later: a reply from the team, or a work back from changes, is what they come for.
+    const waiting = myPage?.space && ((myPage.unread ?? 0) > 0 || myPage.items.some((item) => item.work && ["ready", "changes_requested", "preparing"].includes(item.work.status)));
     if (waiting) {
       steered.current = true;
       const timer = window.setTimeout(() => show("my-page", "replace"), 0);

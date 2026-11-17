@@ -852,7 +852,9 @@ export function arrangeSeriesShelf(
   for (const collection of list) {
     const source = collection === focused ? focusById : byId;
     const gathered = collection.storyIds.flatMap((storyId) => (inside.has(storyId) ? [] : source.get(storyId) ?? []));
-    if (gathered.length < 2) continue;
+    // An author's own section (from the database) stands with one piece too:
+    // the poet published it, and it belongs under his name at the top.
+    if (gathered.length < (collection.title ? 1 : 2)) continue;
     for (const piece of gathered) inside.add(piece.storyId);
     drawn.push({ id: collection.id, pieces: gathered, collection });
   }

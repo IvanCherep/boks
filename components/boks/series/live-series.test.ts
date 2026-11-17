@@ -71,6 +71,16 @@ describe("live Series sections", () => {
     expect(arranged.collections.map((collection) => collection.id)).toContain("prokhorov");
   });
 
+  it("keeps an author's own section with a single published piece", () => {
+    const sections = readLiveSeries([{ ...answer[0], pieces: [answer[0].pieces[0]] }]);
+    setLiveSeries(sections);
+    const registry = [...seriesPieces, ...sections[0].pieces];
+    const catalogue = new Map(registry.map((piece) => [piece.storyId, { title: piece.title, authorName: piece.author }]));
+    const arranged = arrangeSeriesShelf(publishedSeriesShelf(catalogue, [], new Set(), registry), liveCollections(sections), null);
+    expect(arranged.collections[0]?.id).toBe("author-vodennikov");
+    expect(arranged.collections[0]?.pieces).toHaveLength(1);
+  });
+
   it("leaves an author with a section in code to that section", () => {
     const sections = readLiveSeries([{ handle: "prokhorov", name: "Алексей Прохоров", pieces: answer[0].pieces }]);
     expect(liveCollections(sections)).toEqual([]);

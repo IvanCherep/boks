@@ -208,7 +208,8 @@ export function InviteScreen({
         <div className="empty-letter">b.</div>
         {greeting && !peek.existingPage && <p className="amp-invite__hello">{greeting}!</p>}
         <h1>{peek.existingPage ? t.existingTitle : t.newTitle}</h1>
-        {peek.name && !peek.existingPage && <p className="serif amp-invite__name">{peek.name}</p>}
+        {/* The greeting already names the author; without one, the page's name does. */}
+        {peek.name && !peek.existingPage && !greeting && <p className="serif amp-invite__name">{peek.name}</p>}
         {peek.existingPage ? <p>{t.existingBody(peek.works)}</p> : <p className="amp-invite__muted">{t.newLead}</p>}
         {problem && <p className="notice" role="alert">{problem}</p>}
         <button type="button" className="btn btn-red" style={{ marginTop: 24 }} disabled={busy} onClick={() => void accept()}>
