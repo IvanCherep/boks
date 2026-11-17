@@ -100,6 +100,8 @@ uniform vec4 u_water;
 uniform vec4 u_focus;
 uniform float u_zoom;
 uniform vec4 u_glory;
+// recall-glory at rest: how much of its colour the vision loses, and how dark it goes.
+uniform vec2 u_rest;
 uniform vec4 u_point;
 uniform vec4 u_glass;
 uniform sampler2D u_mask;
@@ -237,8 +239,8 @@ void main() {
     memory = 1.0 - smoothstep(0.55, 1.0, length((uv - u_glory.xy) / u_glory.zw));
     uv = mix(uv, u_glory.xy, 0.025 * u_hold * memory);
     float faded = memory * (1.0 - u_hold);
-    drain = 0.85 * faded;
-    light = mix(1.0, 0.68 + 0.04 * sin(u_time * 0.7), faded) * mix(1.0, 0.82, u_hold * (1.0 - memory));
+    drain = u_rest.x * faded;
+    light = mix(1.0, u_rest.y + 0.04 * sin(u_time * 0.7), faded) * mix(1.0, 0.82, u_hold * (1.0 - memory));
     tint = mix(mix(vec3(1.0), vec3(0.86, 0.9, 1.0), faded), vec3(1.14, 1.02, 0.8), u_hold * memory);
   } else if (u_kind == 0) {
     float waterline = u_water.x;
@@ -348,6 +350,10 @@ export function createGestureLayer(
   } else if (gesture.effect === "recall-glory") {
     gl.uniform1i(at("u_kind"), 2);
     gl.uniform4f(at("u_glory"), gesture.vision.x, gesture.vision.y, gesture.radius.x, gesture.radius.y);
+    // A storm cloud at rest by default; a vision painted pale into a light sky
+    // only pales a little more, or it would show as a dark stain (`rest: "pale"`).
+    if (gesture.rest === "pale") gl.uniform2f(at("u_rest"), 0.45, 0.96);
+    else gl.uniform2f(at("u_rest"), 0.85, 0.68);
   } else if (gesture.effect === "summon-spirits") {
     gl.uniform1i(at("u_kind"), 3);
     gl.uniform4f(at("u_point"), gesture.candle.x, gesture.candle.y, 0, 0);

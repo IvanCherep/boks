@@ -58,6 +58,12 @@ export type GloryHold = {
   radius: { x: number; y: number };
   /** Warms by itself, a slow breath, for a reader who does not touch. */
   auto?: AutoPlay;
+  /**
+   * How the vision waits. By default it sinks into storm - grey and darker.
+   * `pale`: it only loses a little colour, for a figure painted faint into a
+   * light sky, where darkening would show as a stain.
+   */
+  rest?: "storm" | "pale";
 };
 
 /**
