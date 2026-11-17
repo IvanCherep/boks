@@ -94,3 +94,35 @@ $$;
 
 revoke all on function public.my_author_space_on_series_shelf() from public, anon;
 grant execute on function public.my_author_space_on_series_shelf() to authenticated;
+
+-- How the invitation addresses the author ("Уважаемый Дмитрий Борисович"),
+-- written by the team. Shown on the invitation page even before sign-in: the
+-- link reaches only the invited address, and the words name nobody else.
+alter table public.author_spaces
+  add column if not exists invite_greeting text
+    check (invite_greeting is null or (char_length(invite_greeting) between 1 and 80 and invite_greeting !~ '[<>[:cntrl:]]'));
+
+-- The greeting of a pending invitation: by its link's token (anyone holding
+-- the link), or by its id for the signed-in address it was sent to (the
+-- cabinet offers it without a link). Nothing for a used, expired or revoked one.
+create or replace function public.author_invite_greeting(p_token text default null, p_invite_id uuid default null)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.invite_greeting
+  from public.author_space_invites i
+  join public.author_spaces s on s.id = i.space_id
+  where public.boks_invite_state(i) = 'pending'
+    and (
+      (p_token is not null and i.token_hash = sha256(convert_to(btrim(p_token), 'UTF8')))
+      or (p_invite_id is not null and i.id = p_invite_id
+          and i.email = (select lower(u.email) from auth.users u where u.id = auth.uid()))
+    )
+  limit 1;
+$$;
+
+revoke all on function public.author_invite_greeting(text, uuid) from public;
+grant execute on function public.author_invite_greeting(text, uuid) to anon, authenticated;

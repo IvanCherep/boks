@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { acceptAuthorInvite, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
+import { acceptAuthorInvite, loadInviteGreeting, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { pendingInviteKey } from "@/lib/boks/author/invite-link";
@@ -22,9 +22,11 @@ const words = defineMessages(
   {
     signInTitle: "An author's page is waiting for you",
     signInBody: "The boks team has prepared a page for you. Sign in with your email: we will send a code, and the invitation opens right after.",
+    greetedBody: "the boks team has prepared your author's page and your works. Sign in with your email: we will send you a code.",
     signInAction: "Sign in with email",
     checking: "Checking the invitation…",
-    newTitle: "Your page in boks is ready",
+    newTitle: "Your page is ready",
+    newLead: "Readers see nothing until you press “Publish” yourself.",
     newBody: (n: number) => `The team prepared your page and ${n} work${n === 1 ? "" : "s"}. Look at everything first: readers see nothing until you press Publish yourself.`,
     withSeries: (n: number) => `${n} of them also come as Series: the recording, word by word, with illustrations.`,
     address: (handle: string) => `Address: ${authorShareLabel(handle)}. You can change it later.`,
@@ -50,9 +52,11 @@ const words = defineMessages(
     ru: {
       signInTitle: "Вас ждёт страница автора",
       signInBody: "Редакция boks подготовила для вас страницу. Войдите по своей почте: мы пришлём код, и приглашение сразу откроется.",
+      greetedBody: "редакция boks подготовила вашу авторскую страницу и ваши произведения. Войдите по своей почте — мы пришлём код.",
       signInAction: "Войти по почте",
       checking: "Проверяем приглашение…",
-      newTitle: "Ваша страница в boks готова",
+      newTitle: "Ваша страница готова",
+      newLead: "Читатели ничего не увидят, пока вы сами не нажмёте «Опубликовать».",
       newBody: (n: number) => `Редакция подготовила страницу и ${n} ${plural("ru", n, { one: "произведение", few: "произведения", many: "произведений", other: "произведения" })}. Сначала вы всё посмотрите: читатели ничего не увидят, пока вы сами не нажмёте «Опубликовать».`,
       withSeries: (n: number) => `${n} из них ещё и в Series: запись, слово в слово, с иллюстрациями.`,
       address: (handle: string) => `Адрес: ${authorShareLabel(handle)}. Его можно поменять потом.`,
@@ -85,16 +89,40 @@ function forget() {
   }
 }
 
-/** Before sign-in: the same words for anyone who holds the link. */
-export function InviteSignIn({ onSignIn }: { onSignIn: () => void }) {
+/** How the team addresses the author on this invitation ("Уважаемый Дмитрий Борисович"), once known. */
+function useGreeting(token: string | null, inviteId: string | null) {
+  const [greeting, setGreeting] = useState<string | null>(null);
+  useEffect(() => {
+    if (!token && !inviteId) return;
+    let live = true;
+    void loadInviteGreeting(token, inviteId).then((value) => live && setGreeting(value ? String(value) : null));
+    return () => {
+      live = false;
+    };
+  }, [token, inviteId]);
+  return greeting;
+}
+
+/** Before sign-in: the general words, or the team's greeting when the page has one. */
+export function InviteSignIn({ onSignIn, token = null }: { onSignIn: () => void; token?: string | null }) {
   const t = useMessages(words);
+  const greeting = useGreeting(token, null);
   return (
     <main className="page detail-page amp-invite">
       <Topbar title={t.workspace} backLabel={t.back} languageLabel={t.language} onBack={() => (window.location.href = "/")} />
       <section className="empty">
         <div className="empty-letter">b.</div>
-        <h1>{t.signInTitle}</h1>
-        <p>{t.signInBody}</p>
+        {greeting ? (
+          <>
+            <h1 className="amp-invite__greeting">{greeting},</h1>
+            <p>{t.greetedBody}</p>
+          </>
+        ) : (
+          <>
+            <h1>{t.signInTitle}</h1>
+            <p>{t.signInBody}</p>
+          </>
+        )}
         <button type="button" className="btn" style={{ marginTop: 24 }} onClick={onSignIn}>
           {t.signInAction} <Icon name="arrow" />
         </button>
@@ -123,6 +151,7 @@ export function InviteScreen({
   const t = useMessages(words);
   const language = useUiLanguage();
   const [peek, setPeek] = useState<InvitePeek | null>(offer ?? null);
+  const greeting = useGreeting(token, token ? null : offer?.inviteId ?? null);
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -177,12 +206,10 @@ export function InviteScreen({
     body = (
       <section className="empty">
         <div className="empty-letter">b.</div>
+        {greeting && !peek.existingPage && <p className="amp-invite__hello">{greeting}!</p>}
         <h1>{peek.existingPage ? t.existingTitle : t.newTitle}</h1>
         {peek.name && !peek.existingPage && <p className="serif amp-invite__name">{peek.name}</p>}
-        <p>{peek.existingPage ? t.existingBody(peek.works) : t.newBody(peek.works)}</p>
-        {Boolean(peek.series) && <p>{t.withSeries(peek.series ?? 0)}</p>}
-        {peek.handle && !peek.existingPage && <p className="amp-invite__muted">{t.address(peek.handle)}</p>}
-        <p className="amp-invite__muted">{t.next}</p>
+        {peek.existingPage ? <p>{t.existingBody(peek.works)}</p> : <p className="amp-invite__muted">{t.newLead}</p>}
         {problem && <p className="notice" role="alert">{problem}</p>}
         <button type="button" className="btn btn-red" style={{ marginTop: 24 }} disabled={busy} onClick={() => void accept()}>
           {t.accept} <Icon name="arrow" />

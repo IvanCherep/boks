@@ -284,6 +284,10 @@ export const loadMyAuthorSpace = () => call<MyAuthorSpace>("get_my_author_space"
 /** Whether this author's published Series go onto the Series shelf at once (`author_spaces.series_shelf`). */
 export const loadMySeriesShelf = () => call<boolean>("my_author_space_on_series_shelf").then(Boolean, () => false);
 
+/** How the invitation addresses the author ("Уважаемый Дмитрий Борисович"), or null. */
+export const loadInviteGreeting = (token: string | null, inviteId: string | null = null) =>
+  call<string | null>("author_invite_greeting", { p_token: token, p_invite_id: inviteId }).catch(() => null);
+
 export const peekAuthorInvite = (token: string) => call<InvitePeek>("peek_author_invite", { p_token: token });
 
 export const acceptAuthorInvite = (token: string | null, inviteId: string | null = null) =>

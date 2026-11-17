@@ -505,7 +505,7 @@ export function AuthorCabinet() {
     // The page stands outside the cabinet's own styles (`.acab`), which restyle every button.
     return (
       <div className={inviteToken ? "acab" : undefined}>
-        {inviteToken ? <InviteSignIn onSignIn={() => setAuthOpen(true)} /> : <AuthorLanding access={null} signedIn={false} />}
+        {inviteToken ? <InviteSignIn token={inviteToken} onSignIn={() => setAuthOpen(true)} /> : <AuthorLanding access={null} signedIn={false} />}
         <UserAuthPanel
           open={authOpen}
           surface="author"

@@ -5568,12 +5568,16 @@ begin
   end;
   v_token := public.studio_issue_author_invite(v_id, 'shelf-poet@boks.test') ->> 'token';
 
+  update public.author_spaces set invite_greeting = 'Уважаемый Поэт Полкович' where id = v_id;
   perform public.boks_test_logout();
   perform public.boks_assert(jsonb_array_length(public.get_boks_series_shelf_authors()) = 0, 'a closed page puts nothing on the shelf');
+  perform public.boks_assert(public.author_invite_greeting(v_token) = 'Уважаемый Поэт Полкович', 'the link greets the author before sign-in');
+  perform public.boks_assert(public.author_invite_greeting('not-a-token') is null, 'a wrong link greets nobody');
 
   perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000002');
   perform public.boks_assert(public.accept_author_invite(v_token) ->> 'state' = 'accepted', 'the poet accepts the page');
   perform public.boks_assert(public.my_author_space_on_series_shelf(), 'the cabinet knows the Series go onto the shelf');
+  perform public.boks_assert(public.author_invite_greeting(v_token) is null, 'a used link greets nobody');
   perform public.boks_assert(jsonb_array_length(public.get_boks_series_shelf_authors()) = 0, 'an accepted page still puts nothing on the shelf');
 
   -- The poet publishes only the second one: only it reaches the shelf.
