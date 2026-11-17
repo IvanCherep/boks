@@ -10,9 +10,17 @@
 // - a person is sent straight on to https://tryboks.com/<path>.
 //
 // Nothing is stored here; the site stays the only source of the page.
+//
+// Bots in Russia (VK, OK, Yandex, Mail.ru - by name, or any bot Cloudflare
+// places in Russia) get the same small page, but with the picture and video
+// left on tryboks.com: Cloudflare is throttled in Russia, so VK read the page
+// through go. and gave up on the picture (2026-11-17). The site in Russia
+// answers them at once. Only the page's own address stays here.
 
 const bots =
   /TelegramBot|WhatsApp|facebookexternalhit|Facebot|Twitterbot|vkShare|Slackbot|Discordbot|LinkedInBot|Viber|SkypeUriPreview|redditbot|Embedly|Pinterest|Applebot|Iframely|YandexBot|Googlebot|bingbot|OdklBot|Mail\.RU_Bot|bot\b|crawler|spider|preview/i;
+
+const russianBots = /vkShare|VKShare|vk\.com|OdklBot|ok\.ru|Yandex|Mail\.RU|Dzen|Zen\b/i;
 
 export default {
   async fetch(request, env) {
@@ -55,6 +63,9 @@ export default {
     // (og:url, canonical) - since the bot cannot reach tryboks.com.
     const here = `${url.protocol}//${url.host}`;
     const local = (value) => (value && value.startsWith(site) ? here + value.slice(site.length) : value);
+    const inRussia = russianBots.test(agent) || request.cf?.country === "RU";
+    // Pictures and video: for a bot in Russia straight from the site, for the rest through here.
+    const media = (key, value) => (inRussia && /^(og:image|og:video|og:audio|twitter:image|twitter:player)/.test(key) ? value : local(value));
     const tags = [];
     let title = "";
     await new HTMLRewriter()
@@ -62,7 +73,7 @@ export default {
         element(element) {
           const key = element.getAttribute("property") || element.getAttribute("name");
           const content = element.getAttribute("content");
-          if (content != null && /^(og:|twitter:|description$)/.test(key)) tags.push([element.hasAttribute("property") ? "property" : "name", key, local(content)]);
+          if (content != null && /^(og:|twitter:|description$)/.test(key)) tags.push([element.hasAttribute("property") ? "property" : "name", key, media(key, content)]);
         },
       })
       .on("title", { text(chunk) { title += chunk.text; } })

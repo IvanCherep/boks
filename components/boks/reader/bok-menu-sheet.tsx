@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Clapperboard, Flag, Link as LinkIcon, Music, Trash2, UserRound, X } from "lucide-react";
+import { ChevronRight, Clapperboard, Flag, Music, Trash2, UserRound, X } from "lucide-react";
 import { ReaderBackIcon, ReaderShareIcon as Share2 } from "./reader-icons";
 import { readableBoksError } from "@/lib/boks/errors";
 import { Button } from "@/components/ui/button";
 import type { Story } from "@/components/boks/client-types";
 import { ReaderSheet } from "@/components/boks/reader-sheet";
 import { atHandle } from "@/components/boks/reader/handles";
+import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 
 import { bokCoverPalette } from "./bok-cover-palette";
 import { bokArtworkFocus, getBokArtwork } from "./bok-artwork";
@@ -25,6 +26,7 @@ export type BokReportOutcome = "received" | "already";
 export function BokMenuSheet({
   story,
   onClose,
+  link,
   onCopyLink,
   onReport,
   onShare, onSettings, onAuthor,
@@ -32,7 +34,9 @@ export function BokMenuSheet({
 }: {
   story: Story;
   onClose: () => void;
-  onCopyLink: () => void;
+  /** The bok's go. link; the menu offers it for Russian and for international networks. */
+  link: string;
+  onCopyLink: (link: string) => boolean | void | Promise<boolean | void>;
   onShare: () => void;
   onSettings: () => void;
   onAuthor: () => void;
@@ -115,7 +119,7 @@ export function BokMenuSheet({
         </div>
         <div className="bok-menu-links">
         {story.authorHandle && <button className="bok-menu-link" type="button" onClick={onAuthor}><UserRound /><span>{story.authorName || atHandle(story.authorHandle)}</span><ChevronRight /></button>}
-        <button className="bok-menu-link" type="button" onClick={onCopyLink}><LinkIcon /><span>{t("Copy link to this bok", "Ссылка на этот бок")}</span><ChevronRight /></button>
+        {link && <div className="bok-menu-share-pair"><span className="bok-menu-share-pair__label">{t("Link to this bok", "Ссылка на этот бок")}</span><ShareLinkPair url={link} onCopy={onCopyLink} caption={false} /></div>}
         {onOpenFormat && formatLabel && <button className="bok-menu-link" type="button" onClick={onOpenFormat}><Clapperboard /><span>{formatLabel}</span><ChevronRight /></button>}
         {onToggleMusic && <button className="bok-menu-link" type="button" onClick={onToggleMusic} aria-pressed={musicOn}><Music /><span>{musicOn ? t("Turn music off", "Выключить музыку") : t("Read with music", "Читать под музыку")}</span><ChevronRight /></button>}
         {onHide && <button className="bok-menu-link bok-menu-link--quiet" type="button" onClick={onHide}><Trash2 /><span>{t("Hide this bok (admin)", "Скрыть бок (администратор)")}</span><ChevronRight /></button>}

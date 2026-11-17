@@ -46,3 +46,21 @@ export function authorPathTarget(url: URL) {
   const handle = /^\/@([A-Za-z0-9_.-]{1,40})\/?$/.exec(url.pathname)?.[1];
   return handle ? new URL(`/a/${handle}${url.search}`, url) : null;
 }
+
+/**
+ * The same link for social networks in Russia: straight to tryboks.com. Their
+ * preview bots work from Russia, where Cloudflare - and with it go. - is
+ * throttled, while the site itself answers them at once. Telegram is the
+ * reverse (it cannot reach the server in Russia), so the go. link is the one
+ * for Telegram and everything abroad. Off production the link is unchanged.
+ */
+export function russianShareUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "go.tryboks.com") return url;
+    parsed.hostname = "tryboks.com";
+    return parsed.href;
+  } catch {
+    return url;
+  }
+}

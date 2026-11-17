@@ -32,6 +32,7 @@ import { Icon, Sheet, Thumb, Topbar } from "./ui";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { linkOnlyCover } from "@/lib/boks/link-only";
 import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "@/lib/boks/share-link";
+import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { Conversation } from "@/components/boks/author-spaces/conversation";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 
@@ -442,13 +443,14 @@ export function MyPage({
     }
   }
 
-  async function copyPageLink() {
+  async function copyPageLink(link: string) {
     if (!data?.handle) return;
     try {
-      await navigator.clipboard.writeText(authorShareUrl(data.handle, window.location.origin));
+      await navigator.clipboard.writeText(link);
       toast(w.copied);
     } catch {
-      // Clipboard refused (insecure context, permissions): nothing to copy.
+      // Clipboard refused (insecure context, permissions): the pair shows the link to copy by hand.
+      return false;
     }
   }
 
@@ -778,7 +780,7 @@ export function MyPage({
             labels={{ still: w.still, moving: w.moving, noCard: w.noCard, site: "boks" }}
           />
           <div className="amp-section__actions">
-            <button type="button" className="btn btn-secondary" onClick={() => void copyPageLink()}>{w.copyLink}</button>
+            <ShareLinkPair url={typeof window === "undefined" ? "" : authorShareUrl(data.handle, window.location.origin)} onCopy={(link) => copyPageLink(link)} className="amp-share-pair" />
           </div>
         </section>
       )}

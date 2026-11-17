@@ -501,3 +501,20 @@
 .invite-nudge__later { min-height: 44px; padding: 0; border: 0; background: none; color: #65685e; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 @keyframes invite-nudge-in { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .invite-nudge, .invite-nudge-scrim { animation: none; } }
+
+/* Copy a link for Russian or international social networks (components/boks/share/share-link-pair.tsx).
+   Colours follow the surrounding sheet: paper share page, dark author page, the daily letter. */
+.share-pair{display:grid;gap:8px;width:100%}
+.share-pair__caption{font-size:12px;font-weight:600;letter-spacing:.2px;opacity:.72}
+.share-pair__row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.share-pair__btn{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;row-gap:2px;align-items:center;text-align:left;min-height:56px;padding:10px 12px;border:1px solid currentColor;border-radius:12px;background:transparent;color:inherit;font:inherit;cursor:pointer;min-width:0;transition:background-color .15s,color .15s}
+.share-pair__btn svg{grid-row:1/3;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.share-pair__btn strong{font-size:13px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.share-pair__btn small{font-size:11px;line-height:1.25;opacity:.68;overflow-wrap:anywhere}
+.share-pair__btn:hover{background:color-mix(in srgb,currentColor 8%,transparent)}
+.share-pair__btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.share-pair__btn.is-done{background:color-mix(in srgb,currentColor 12%,transparent)}
+.share-pair__manual{width:100%;border:1px solid currentColor;border-radius:10px;padding:10px 12px;background:transparent;color:inherit;font-size:13px}
+@media(max-width:340px){.share-pair__row{grid-template-columns:1fr}}
+.bok-menu-share-pair{display:grid;gap:8px;padding:12px 2px;border-top:1px solid var(--menu-line);border-bottom:1px solid var(--menu-line)}
+.bok-menu-share-pair__label{font-size:13px}

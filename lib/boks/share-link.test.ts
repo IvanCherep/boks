@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "./share-link";
+import { authorShareLabel, authorShareLabelPrefix, authorShareUrl, russianShareUrl } from "./share-link";
 
 describe("an author's link as people see and send it", () => {
   it("is on go.tryboks.com on the site, so messengers abroad can preview it", () => {
@@ -12,5 +12,17 @@ describe("an author's link as people see and send it", () => {
   it("stays on the page's own origin anywhere else", () => {
     expect(authorShareLabel("poet", "http://localhost:5173")).toBe("localhost:5173/@poet");
     expect(authorShareLabelPrefix("http://localhost:5173")).toBe("localhost:5173/@");
+  });
+});
+
+describe("russianShareUrl", () => {
+  it("sends Russian networks straight to tryboks.com, path and query kept", () => {
+    expect(russianShareUrl("https://go.tryboks.com/@vodennikov")).toBe("https://tryboks.com/@vodennikov");
+    expect(russianShareUrl("https://go.tryboks.com/b/snegurochka-vodennikov?line=abc")).toBe("https://tryboks.com/b/snegurochka-vodennikov?line=abc");
+  });
+
+  it("leaves other links alone", () => {
+    expect(russianShareUrl("http://localhost:5181/@vodennikov")).toBe("http://localhost:5181/@vodennikov");
+    expect(russianShareUrl("not a url")).toBe("not a url");
   });
 });

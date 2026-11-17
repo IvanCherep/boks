@@ -1,5 +1,6 @@
 "use client";
 
+import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { AuthorProfile } from "@/components/boks/client-types";
 import { authorInitials, splitAuthorName } from "@/components/boks/author-rings";
@@ -124,13 +125,14 @@ export function AuthorPortraitPage({
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  async function copyLink() {
+  async function copyLink(link = profileLink) {
     try {
-      await navigator.clipboard.writeText(profileLink);
+      await navigator.clipboard.writeText(link);
       setNotice(t("Link copied", "Ссылка скопирована"));
       setSharing(false);
     } catch {
       setCopyFallback(true);
+      return false;
     }
   }
 
@@ -276,10 +278,7 @@ export function AuthorPortraitPage({
                 : <a href={profileLink} target="_blank" rel="noopener noreferrer">{displayLink}</a>}
             </div>
             <div className="ap-sheet__actions">
-              <button type="button" className="ap-sheet__primary" onClick={() => void copyLink()}>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V3h12v14h-4M3 7h14v14H3z" /></svg>
-                <span>{t("Copy link", "Скопировать ссылку")}</span>
-              </button>
+              <ShareLinkPair url={profileLink} onCopy={(link) => copyLink(link)} className="ap-sheet__pair" />
               {canShareNatively && (
                 <button type="button" className="ap-sheet__secondary" onClick={() => void shareLink()}>
                   {shareIcon}

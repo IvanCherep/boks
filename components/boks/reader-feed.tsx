@@ -2566,15 +2566,21 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     setFeedbackSent(false);
   }
 
-  async function copyBokLink() {
-    if (!currentStory) return;
+  /** The bok's go. link; the menu turns it into the tryboks.com one for Russian networks. */
+  function currentBokLink() {
+    if (!currentStory || typeof window === "undefined") return "";
     const slug = menuSlug?.id === currentStory.id ? menuSlug.slug : null;
-    const url = bokShareUrl({ id: currentStory.id, slug }, window.location.origin);
+    return bokShareUrl({ id: currentStory.id, slug }, window.location.origin);
+  }
+
+  async function copyBokLink(url: string) {
+    if (!currentStory || !url) return;
     try {
       await navigator.clipboard.writeText(url);
       notify(wordsNow().linkCopied);
     } catch {
       notify(url);
+      return false;
     }
   }
 
@@ -3501,7 +3507,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           <BokMenuSheet
             story={currentStory}
             onClose={() => setBokMenuOpen(false)}
-            onCopyLink={() => void copyBokLink()}
+            link={currentBokLink()}
+            onCopyLink={(url) => copyBokLink(url)}
             onReport={reportCurrentBok}
             onShare={() => { setBokMenuOpen(false); setShareOpen(true); }}
             onSettings={() => { setBokMenuOpen(false); openAccount("manual", "general", "typography"); }}

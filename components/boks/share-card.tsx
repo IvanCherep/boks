@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Copy, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { ReaderBackIcon as ArrowLeft, ReaderShareIcon as Share2 } from "./reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokShareUrl, renderBokPoster, type ShareBok } from "@/components/boks/share-card-export";
 import { loadBokSlug } from "@/components/boks/supabase-browser-data";
+import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 
 import { bokCoverStyle } from "./reader/bok-cover-palette";
 import { bokArtworkFocus } from "./reader/bok-artwork";
@@ -16,6 +17,7 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [showLink, setShowLink] = useState(false);
+  const [fallbackLink, setFallbackLink] = useState<string | null>(null);
   const [artworkFailed, setArtworkFailed] = useState(false);
   const [posterDownloadUrl, setPosterDownloadUrl] = useState<string | null>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -38,14 +40,15 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
 
   useEffect(() => () => { if (posterDownloadUrl) URL.revokeObjectURL(posterDownloadUrl); }, [posterDownloadUrl]);
 
-  async function copyLink() {
+  async function copyLink(text = link) {
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(text);
       onShared?.();
       setStatus(t("Link copied.", "Ссылка скопирована."));
     } catch {
       setShowLink(true);
       setStatus(t("Copy the link below.", "Скопируйте ссылку ниже."));
+      return false;
     }
   }
 
@@ -110,8 +113,8 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
           <div className="bok-share-copy" translate="no"><h1>{story.title}</h1><p>{story.authorName}</p></div>
           <small>{typeof window === "undefined" ? "boks" : window.location.hostname}</small>
         </div>
-        <div className="share-controls"><Button onClick={() => void share()}><Share2 />{t("Share bok", "Поделиться")}</Button><div><Button variant="outline" onClick={() => void copyLink()}><Copy />{t("Copy link", "Ссылка")}</Button><Button variant="outline" onClick={() => void saveCard()} disabled={busy}><Download />{busy ? t("Creating…", "Создаём…") : t("Save card", "Сохранить")}</Button></div></div>
-        {showLink && <input className="share-link-fallback" aria-label={t("Bok link", "Ссылка на бок")} value={link} readOnly onFocus={(event) => event.currentTarget.select()} />}
+        <div className="share-controls"><Button onClick={() => void share()}><Share2 />{t("Share bok", "Поделиться")}</Button><ShareLinkPair url={link} onCopy={async (text) => { const ok = await copyLink(text); if (ok === false) setFallbackLink(text); return ok; }} /><Button variant="outline" onClick={() => void saveCard()} disabled={busy}><Download />{busy ? t("Creating…", "Создаём…") : t("Save card", "Сохранить картинку")}</Button></div>
+        {showLink && <input className="share-link-fallback" aria-label={t("Bok link", "Ссылка на бок")} value={fallbackLink ?? link} readOnly onFocus={(event) => event.currentTarget.select()} />}
         {posterDownloadUrl && <a className="share-download-link" href={posterDownloadUrl} download={`boks-${story.id}.png`} onClick={() => onShared?.()}>{t("Download PNG", "Скачать PNG")}</a>}
         {status && <p className="social-status" role="status">{status}</p>}
       </section>

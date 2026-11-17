@@ -1,7 +1,8 @@
 "use client";
 
+import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share } from "lucide-react";
+import { Share } from "lucide-react";
 import "@/app/daily.css";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
@@ -37,7 +38,6 @@ export function SendLineSheet({ mode, passage, title, authorName, handle, onSend
   const [envelope, setEnvelope] = useState<EnvelopeState>("open");
   const [error, setError] = useState("");
   const [result, setResult] = useState<LineSendResult | null>(null);
-  const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
   const sendRef = useRef<HTMLButtonElement>(null);
   const doneRef = useRef<HTMLButtonElement>(null);
@@ -75,10 +75,10 @@ export function SendLineSheet({ mode, passage, title, authorName, handle, onSend
   async function copy(url: string) {
     try {
       await navigator.clipboard.writeText(url);
-      setCopied(true);
     } catch {
       // No clipboard (an old browser, a denied permission): the link is selected to copy by hand.
       linkRef.current?.select();
+      return false;
     }
   }
 
@@ -132,7 +132,7 @@ export function SendLineSheet({ mode, passage, title, authorName, handle, onSend
         {url && <>
           <input ref={linkRef} className="daily-send__link" readOnly value={url} aria-label={words.copyLink} onFocus={(event) => event.currentTarget.select()} />
           {canShare && <button ref={doneRef} type="button" className="daily-button" onClick={() => void shareLink(url)}><Share aria-hidden="true" size={18} />{words.shareLink}</button>}
-          <button ref={canShare ? undefined : doneRef} type="button" className={`daily-button${canShare ? " daily-button--quiet" : ""}`} onClick={() => void copy(url)}><Copy aria-hidden="true" size={18} />{copied ? words.copied : words.copyLink}</button>
+          <ShareLinkPair url={url} onCopy={(link) => copy(link)} className="daily-send__pair" />
         </>}
         <button type="button" className="daily-link" onClick={onClose}>{words.backToReading}</button>
       </>}

@@ -172,3 +172,8 @@
 .ap .ap-preview-flag svg{width:17px;height:17px}
 /* A Series played over a page (author page, preview, cabinet): above the page's own layer (260). */
 .ap-series-stage{position:fixed;inset:0;z-index:400}
+/* The share sheet's two copy buttons (share-link-pair.tsx) keep their own grid, under the sheet's ink. */
+.ap-sheet__actions .share-pair{color:var(--ap-ink)}
+.ap-sheet__actions .share-pair__btn{display:grid;justify-content:stretch;gap:2px 8px;min-height:58px;padding:10px 12px;border:1px solid #19252355;border-radius:5px 16px 5px 5px;font-weight:400}
+.ap-sheet__actions .share-pair__btn svg{width:16px;height:16px}
+.ap-sheet__actions .share-pair__btn--ru{background:var(--ap-ink);color:var(--ap-paper);border-color:var(--ap-ink)}
