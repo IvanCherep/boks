@@ -317,3 +317,8 @@
   .alp-form__row, .alp-ask__row { grid-template-columns: minmax(0, 1fr); }
   .alp-ask__row .alp-button { justify-self: start; }
 }
+
+/* Sign-in for an author the team invited, or one with a cabinet. */
+.alp-nav__signin { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.alp-hero__invited { margin: 18px 0 0; font-size: 16px; line-height: 1.5; color: var(--alp-cream); animation: alp-rise .7s .35s ease-out both; }
+.alp-hero__invited .alp-link { margin-left: 4px; font-weight: 600; }

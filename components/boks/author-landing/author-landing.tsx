@@ -31,9 +31,14 @@ const returnKey = "boks-return-to-author-landing";
  * team (`docs/author-applications.md`). An account with a
  * published work, an author page or Studio sees the cabinet instead.
  */
-export function AuthorLanding({ access, signedIn }: {
+export function AuthorLanding({ access, signedIn, onSignIn }: {
   access: AuthorAccess | null;
   signedIn: boolean;
+  /**
+   * Opens sign-in, for a guest: an author the team invited, or one with a
+   * cabinet, signs in here and the cabinet opens on their invitation or page.
+   */
+  onSignIn?: () => void;
 }) {
   const t = useMessages(landingMessages);
   const [offer, setOffer] = useState<AuthorApplicationOffer>("unsure");
@@ -69,6 +74,7 @@ export function AuthorLanding({ access, signedIn }: {
           <a href="#authors">{t.navAuthors}</a>
           <a href="#readers">{t.navReaders}</a>
           <a href="#offers">{t.navOffers}</a>
+          {!signedIn && onSignIn && <button type="button" className="alp-nav__signin" onClick={onSignIn}>{t.navSignIn}</button>}
           <a href="#apply" className="is-strong">{t.navApply} <ArrowRight aria-hidden="true" /></a>
         </span>
       </nav>
@@ -83,6 +89,11 @@ export function AuthorLanding({ access, signedIn }: {
             <a href={`/@${exampleHandle}`} className="alp-link" onClick={markReturn}>{t.example}</a>
           </div>
           <p className="alp-hero__note">{t.heroNote}</p>
+          {!signedIn && onSignIn && (
+            <p className="alp-hero__invited">
+              {t.invitedQuestion} <button type="button" className="alp-link" onClick={onSignIn}>{t.invitedSignIn}</button>
+            </p>
+          )}
         </div>
         <figure className="alp-collage">
           <div className="alp-collage__frame">

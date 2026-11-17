@@ -68,6 +68,7 @@ import { loadPoemManifest, poemManifestFor } from "@/components/boks/poetry/poem
 import type { PoemManifest } from "@/lib/boks/poetry/manifest";
 import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 import { loadLiveSeries, useLiveSeries } from "@/components/boks/series/live-series";
+import { InviteNudge } from "@/components/boks/author-spaces/invite-nudge";
 import { ReaderTabs, SeriesView } from "@/components/boks/series/series-view";
 import {
   isSeriesPath,
@@ -3137,6 +3138,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   </ReaderSheet>;
 
   const accountPanel = (
+        <>
         <UserAuthPanel
           open={authPanelOpen}
           intent={authIntent}
@@ -3175,6 +3177,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             },
           }}
         />
+        <InviteNudge userId={hasSignedInAccount ? user?.userId ?? null : null} />
+        </>
   );
 
   const dailyOverlays = <>
