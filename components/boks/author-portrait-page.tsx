@@ -136,19 +136,9 @@ export function AuthorPortraitPage({
     }
   }
 
-  async function shareLink() {
-    try {
-      await navigator.share({ title: `${identity.name} · boks`, url: profileLink });
-      setSharing(false);
-    } catch (error) {
-      if (!(error instanceof Error && error.name === "AbortError")) await copyLink();
-    }
-  }
-
   const openShare = () => { if (preview) return; setCopyFallback(false); setSharing(true); };
   const boks = author?.boks ?? [];
   const writers = author && !author.byline && author.writers.length > 1 ? author.writers : [];
-  const canShareNatively = typeof navigator !== "undefined" && typeof navigator.share === "function";
   const shareIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 4 19 8-19 8 4-8zm4 8h15" /></svg>;
   const avatar = (size: "large" | "small") => identity.photo
     // eslint-disable-next-line @next/next/no-img-element
@@ -278,13 +268,7 @@ export function AuthorPortraitPage({
                 : <a href={profileLink} target="_blank" rel="noopener noreferrer">{displayLink}</a>}
             </div>
             <div className="ap-sheet__actions">
-              <ShareLinkPair url={profileLink} onCopy={(link) => copyLink(link)} className="ap-sheet__pair" />
-              {canShareNatively && (
-                <button type="button" className="ap-sheet__secondary" onClick={() => void shareLink()}>
-                  {shareIcon}
-                  <span>{t("Share link", "Поделиться ссылкой")}</span>
-                </button>
-              )}
+              <ShareLinkPair url={profileLink} share={{ title: `${identity.name} · boks`, onShared: () => setSharing(false) }} onCopy={(link) => copyLink(link)} className="ap-sheet__pair" />
             </div>
           </section>
         </div>

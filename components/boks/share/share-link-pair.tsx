@@ -18,6 +18,7 @@ export type ShareAudience = "ru" | "world";
 const words = defineMessages(
   {
     copyFor: "Copy the link for",
+    sendFor: "Send the link to",
     ru: "Russian social networks",
     ruHint: "VK, OK, Dzen",
     world: "International",
@@ -27,6 +28,7 @@ const words = defineMessages(
   {
     ru: {
       copyFor: "Скопировать ссылку для",
+      sendFor: "Отправить ссылку для",
       ru: "Российских соцсетей",
       ruHint: "ВКонтакте, ОК, Дзен",
       world: "Международных соцсетей",
@@ -45,6 +47,7 @@ export function ShareLinkPair({
   onCopy,
   className,
   caption = true,
+  share,
 }: {
   /** The go. link, as `bokShareUrl` / `authorShareUrl` give it. */
   url: string;
@@ -52,6 +55,11 @@ export function ShareLinkPair({
   onCopy?: (link: string, audience: ShareAudience) => boolean | void | Promise<boolean | void>;
   className?: string;
   caption?: boolean;
+  /**
+   * Where the phone has a share sheet, each button opens it with its own link
+   * (there is no third, neutral "Share": the two links differ); elsewhere it copies.
+   */
+  share?: { title: string; text?: string; onShared?: () => void };
 }) {
   const t = useMessages(words);
   const [done, setDone] = useState<ShareAudience | null>(null);
@@ -60,6 +68,16 @@ export function ShareLinkPair({
 
   async function copy(audience: ShareAudience) {
     const link = shareUrlFor(url, audience);
+    if (share && typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: share.title, text: share.text, url: link });
+        share.onShared?.();
+        return;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        // The sheet failed: copying still works.
+      }
+    }
     if (onCopy) {
       if ((await onCopy(link, audience)) === false) return;
     } else {
@@ -77,15 +95,17 @@ export function ShareLinkPair({
 
   const button = (audience: ShareAudience) => (
     <button type="button" className={`share-pair__btn share-pair__btn--${audience}${done === audience ? " is-done" : ""}`} onClick={() => void copy(audience)}>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V3h12v14h-4M3 7h14v14H3z" /></svg>
+      {share
+        ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 4 19 8-19 8 4-8zm4 8h15" /></svg>
+        : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V3h12v14h-4M3 7h14v14H3z" /></svg>}
       <strong>{done === audience ? t.copied : audience === "ru" ? t.ru : t.world}</strong>
       <small>{audience === "ru" ? t.ruHint : t.worldHint}</small>
     </button>
   );
 
   return (
-    <div className={`share-pair${className ? ` ${className}` : ""}`} role="group" aria-label={t.copyFor}>
-      {caption && <span className="share-pair__caption">{t.copyFor}</span>}
+    <div className={`share-pair${className ? ` ${className}` : ""}`} role="group" aria-label={share ? t.sendFor : t.copyFor}>
+      {caption && <span className="share-pair__caption">{share ? t.sendFor : t.copyFor}</span>}
       <div className="share-pair__row">
         {button("ru")}
         {button("world")}

@@ -518,3 +518,8 @@
 @media(max-width:340px){.share-pair__row{grid-template-columns:1fr}}
 .bok-menu-share-pair{display:grid;gap:8px;padding:12px 2px;border-top:1px solid var(--menu-line);border-bottom:1px solid var(--menu-line)}
 .bok-menu-share-pair__label{font-size:13px}
+/* The share page's controls lay their own child divs out in two columns; the pair keeps its own layout. */
+.share-page .share-controls>div.share-pair{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.share-page .share-pair__btn--ru{background:var(--foreground);color:var(--background);border-color:var(--foreground)}
+.share-pair__btn strong,.share-pair__btn small{overflow-wrap:normal;word-break:normal;hyphens:manual}
+.daily-send__pair{max-width:420px}
