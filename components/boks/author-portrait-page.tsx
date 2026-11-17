@@ -1,6 +1,7 @@
 "use client";
 
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
+import { russianShareUrl } from "@/lib/boks/share-link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { AuthorProfile } from "@/components/boks/client-types";
 import { authorInitials, splitAuthorName } from "@/components/boks/author-rings";
@@ -85,7 +86,8 @@ export function AuthorPortraitPage({
   const nameless = identity.name.startsWith("@");
   const { given, family } = splitAuthorName(nameless ? identity.name.replace(/^@+/, "") : identity.name);
   const initials = nameless ? Array.from(identity.handle.toLocaleUpperCase())[0] ?? "" : authorInitials(identity.name, identity.handle);
-  const displayLink = profileLink.replace(/^https?:\/\//, "");
+  // The address as people read it: the site's own; the two buttons below choose go. or not.
+  const displayLink = russianShareUrl(profileLink).replace(/^https?:\/\//, "");
   // A long family name is set smaller rather than run off the screen.
   const fit = Math.min(1, 9 / Math.max(1, Array.from(family).length));
 
@@ -265,7 +267,7 @@ export function AuthorPortraitPage({
               <span>{t("Profile link", "Ссылка на профиль")}</span>
               {copyFallback
                 ? <input readOnly value={profileLink} aria-label={t("Profile link", "Ссылка на профиль")} onFocus={(event) => event.currentTarget.select()} autoFocus />
-                : <a href={profileLink} target="_blank" rel="noopener noreferrer">{displayLink}</a>}
+                : <a href={russianShareUrl(profileLink)} target="_blank" rel="noopener noreferrer">{displayLink}</a>}
             </div>
             <div className="ap-sheet__actions">
               <ShareLinkPair url={profileLink} share={{ title: `${identity.name} · boks`, onShared: () => setSharing(false) }} onCopy={(link) => copyLink(link)} className="ap-sheet__pair" />

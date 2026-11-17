@@ -29,16 +29,16 @@ export function authorShareUrl(handle: string, origin: string) {
 
 /**
  * An author's link as people see and send it, without the scheme:
- * `go.tryboks.com/@prokhorov` on the site, the page's own origin elsewhere.
+ * `tryboks.com/@prokhorov` on the site (the share buttons choose go. or not), the page's own origin elsewhere.
  * For text on screen; `authorShareUrl` is what goes on the clipboard.
  */
 export function authorShareLabel(handle: string, origin = typeof window === "undefined" ? "https://tryboks.com" : window.location.origin) {
-  return authorShareUrl(handle, origin).replace(/^https?:\/\//, "");
+  return russianShareUrl(authorShareUrl(handle, origin)).replace(/^https?:\/\//, "");
 }
 
 /** The same, before the handle: the prefix of an address field. */
 export function authorShareLabelPrefix(origin = typeof window === "undefined" ? "https://tryboks.com" : window.location.origin) {
-  return `${new URL(shareOrigin(origin)).host}/@`;
+  return `${new URL(russianShareUrl(shareOrigin(origin))).host}/@`;
 }
 
 /** Where `/@handle` is served from: the author page, `/a/handle`. Null for any other path. */

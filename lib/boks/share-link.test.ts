@@ -4,9 +4,10 @@ import { authorShareLabel, authorShareLabelPrefix, authorShareUrl, russianShareU
 describe("an author's link as people see and send it", () => {
   it("is on go.tryboks.com on the site, so messengers abroad can preview it", () => {
     expect(authorShareUrl("malyo_subbotina", "https://tryboks.com")).toBe("https://go.tryboks.com/@malyo_subbotina");
-    expect(authorShareLabel("malyo_subbotina", "https://tryboks.com")).toBe("go.tryboks.com/@malyo_subbotina");
-    expect(authorShareLabel("@malyo_subbotina", "https://www.tryboks.com")).toBe("go.tryboks.com/@malyo_subbotina");
-    expect(authorShareLabelPrefix("https://tryboks.com")).toBe("go.tryboks.com/@");
+    // On screen it is the site's own address; the share buttons pick go. or not.
+    expect(authorShareLabel("malyo_subbotina", "https://tryboks.com")).toBe("tryboks.com/@malyo_subbotina");
+    expect(authorShareLabel("@malyo_subbotina", "https://www.tryboks.com")).toBe("tryboks.com/@malyo_subbotina");
+    expect(authorShareLabelPrefix("https://tryboks.com")).toBe("tryboks.com/@");
   });
 
   it("stays on the page's own origin anywhere else", () => {
