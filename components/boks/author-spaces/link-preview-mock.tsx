@@ -1,7 +1,7 @@
 "use client";
 
 import { sharePitch } from "@/lib/boks/share-preview";
-import { authorShareLabel } from "@/lib/boks/share-link";
+import { authorShareLabel, authorShareTitle } from "@/lib/boks/share-link";
 
 /**
  * How a page's link looks when it is sent: the card a messenger builds from
@@ -23,7 +23,7 @@ export function LinkPreviewMock({
   video: string | null;
   labels: { still: string; moving: string; noCard: string; site: string };
 }) {
-  const title = name && !name.startsWith("@") ? `${name} · @${handle}` : `@${handle} · boks`;
+  const title = authorShareTitle(name, handle);
   // The page's address as people read it; the preview is the same with go. or without.
   const url = authorShareLabel(handle);
   if (!card && !video) return <p className="lpm-empty">{labels.noCard}</p>;

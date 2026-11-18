@@ -64,3 +64,14 @@ export function russianShareUrl(url: string) {
     return url;
   }
 }
+
+/**
+ * The title an author's page previews with: "Дмитрий Воденников · boks".
+ * No "@handle" in it: VK copies the title into the post's text and turns
+ * "@vodennikov" into a link to VK's own profile of that name, so readers
+ * left for VK instead of boks (2026-11-18).
+ */
+export function authorShareTitle(name: string, handle: string) {
+  const clean = name.trim().replace(/^@+/, "");
+  return `${clean || handle.replace(/^@+/, "")} · boks`;
+}

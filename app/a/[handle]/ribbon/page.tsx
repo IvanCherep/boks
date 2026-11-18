@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { boksOrigin } from "@/app/layout";
+import { authorShareTitle } from "@/lib/boks/share-link";
 import { authorSharePitch, bareHandle, loadAuthorForShare } from "@/lib/boks/author-preview";
 import { ribbonCardForAuthor, ribbonPreview } from "@/lib/boks/ribbon";
 import { OgVideo } from "@/components/boks/og-video";
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   const { handle, author, preview } = await load(params);
   if (!author) return { title: "boks", robots };
   const url = `${boksOrigin}/@${author.handle}`;
-  const title = author.name.startsWith("@") ? `${author.name} · boks` : `${author.name} · @${author.handle}`;
+  const title = authorShareTitle(author.name, author.handle);
   const description = authorSharePitch(author);
   const images = preview ? [{ ...preview.image, alt: title }] : [{ url: `${boksOrigin}/og-cover.png`, width: 1200, height: 630, alt: "boks" }];
   return {

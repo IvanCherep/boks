@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { boksOrigin } from "@/app/layout";
+import { authorShareTitle } from "@/lib/boks/share-link";
 import { authorSharePitch, loadAuthorForShare, loadMovedAuthorHandle } from "@/lib/boks/author-preview";
 import { OpeningAuthor } from "./opening-author";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: { params: RouteParams | Promi
   if (!author) {
     return { title: "boks", alternates: { canonical: url }, openGraph: { type: "website", url, siteName: "boks", title: "boks" } };
   }
-  const title = author.name.startsWith("@") ? `${author.name} · boks` : `${author.name} · @${author.handle}`;
+  const title = authorShareTitle(author.name, author.handle);
   const description = authorSharePitch(author);
   // An author with a portrait card previews as it (design v48); one who set a
   // photo in the cabinet, as that photo; anyone else, as boks.

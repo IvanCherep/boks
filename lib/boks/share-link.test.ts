@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorShareLabel, authorShareLabelPrefix, authorShareUrl, russianShareUrl } from "./share-link";
+import { authorShareLabel, authorShareLabelPrefix, authorShareTitle, authorShareUrl, russianShareUrl } from "./share-link";
 
 describe("an author's link as people see and send it", () => {
   it("is on go.tryboks.com on the site, so messengers abroad can preview it", () => {
@@ -25,5 +25,13 @@ describe("russianShareUrl", () => {
   it("leaves other links alone", () => {
     expect(russianShareUrl("http://localhost:5181/@vodennikov")).toBe("http://localhost:5181/@vodennikov");
     expect(russianShareUrl("not a url")).toBe("not a url");
+  });
+});
+
+describe("an author's preview title", () => {
+  it("has no @handle, which VK would turn into a link to its own profile", () => {
+    expect(authorShareTitle("Дмитрий Воденников", "vodennikov")).toBe("Дмитрий Воденников · boks");
+    expect(authorShareTitle("@reader_x", "reader_x")).toBe("reader_x · boks");
+    expect(authorShareTitle("  ", "@prokhorov")).toBe("prokhorov · boks");
   });
 });
