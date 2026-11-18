@@ -333,6 +333,10 @@
 .bok-menu-link>svg:last-child{width:14px;height:14px;opacity:.45}
 .bok-menu-link--quiet{color:var(--muted-foreground)}
 @media(min-width:700px){.social-page.auth-panel,.social-page{padding-top:20px}.reader-v44 .reader-sheet.author-v44{inset:24px 0;height:calc(100dvh - 48px);border-radius:12px}.reader-v44 .reader-sheet.comments-sheet{max-height:780px;top:auto;height:calc(100dvh - 112px)}}
+/* A poem (a Boks Series, an immersive poem) is a 9:16 column in the middle of a wide screen
+   (`.poem`, globals.css): its comments rise over that column like a phone's sheet, not as a
+   narrower card floating over the picture and the player. */
+@media(min-aspect-ratio:3/4){.reader-v44 .reader-request-host:has(.poem) .reader-sheet.comments-sheet{--poem-column:min(100vw,calc(100dvh * 9 / 16));left:calc(50% - var(--poem-column) / 2);right:auto;width:var(--poem-column);max-width:none;margin:0;top:auto;bottom:0;height:min(calc(100dvh - 112px),720px);max-height:none;border-width:0;border-radius:24px 24px 0 0;box-shadow:0 -24px 60px rgb(0 0 0 / .45)}.reader-v44 .reader-request-host:has(.poem) .reader-sheet.comments-sheet.reader-sheet--expanded{top:56px;height:auto}}
 @media(max-width:360px){.social-page.auth-panel,.social-page{padding-inline:20px}.social-page .social-display{font-size:39px}.you-utility-links{gap:18px}.share-page .share-controls>div{grid-template-columns:1fr 1fr}.reader-v44 .reader-sheet.author-v44{padding-inline:20px}.bok-menu-v44 .bok-menu-heading{gap:9px}.bok-menu-v44 .bok-menu-heading strong{font-size:16px}}
 @media(max-width:360px){
   .reader-v44 .reader-sheet.bok-menu-v44{padding-inline:15px}
