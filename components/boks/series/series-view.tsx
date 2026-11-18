@@ -51,7 +51,8 @@ function useSeriesWords() { return useMessages(seriesMessages); }
 
 /**
  * A collection's name, by its id in `seriesCollections`, and a line under it
- * only where the cards cannot say it: a poet's section is read by the poet.
+ * only where the cards cannot say it: a poet's section is read by the poet,
+ * and so is every author's own section from the database.
  * A name keeps its own language.
  */
 const collectionMessages = defineMessages({
@@ -345,7 +346,8 @@ function SeriesCollectionRow({
   const { preferences } = useReaderPreferences();
   const id = collection.id;
   const title = (collectionWords as Record<string, unknown>)[id] as string | undefined ?? collection.title ?? "";
-  const noteKey = collectionNotes[id];
+  // An author's own section (from the database) is recorded in the Series recorder, in the author's voice.
+  const noteKey = collectionNotes[id] ?? (collection.title ? "prokhorovNote" : undefined);
   const note = noteKey ? collectionWords[noteKey] : null;
   const author = collection.author ?? seriesCollections.find((entry) => entry.id === id)?.author;
   // Inside the button only phrasing content is allowed, so no h2 or p there.
