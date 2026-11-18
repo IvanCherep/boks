@@ -5,6 +5,7 @@ import { SeriesEntry } from "./series-entry";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { linkOnlyCover } from "@/lib/boks/link-only";
 import { AuthorLanding } from "@/components/boks/author-landing/author-landing";
+import { dropUnclaimedLandingFrame } from "@/components/boks/author-landing/early-frame";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthorBokSubmission, AuthorProfile, BoksUserContext } from "@/components/boks/client-types";
 import {
@@ -489,6 +490,13 @@ export function AuthorCabinet() {
       </Sheet>
     );
   }
+
+  // A guest's page for authors may have started before the app (early-frame.ts): once this account
+  // is known to see something else, it goes. The page claims its frame first (children's effects run first).
+  useEffect(() => {
+    if (!userLoaded || (author && !access.loaded && !inviteToken)) return;
+    dropUnclaimedLandingFrame();
+  });
 
   // ------------------------------------------------------------ screens
 

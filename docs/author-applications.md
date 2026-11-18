@@ -17,22 +17,51 @@ the page existed.
 | Five Boks Series | 10 000 ₽ a pack | an extra for authors with a cabinet: five issues with illustrations and sound, in the author's voice or recorded with the teleprompter |
 | Joint launch (the main offer, shown in the middle) | free | everything in the Author page, on one condition: a series of posts about boks that reaches 15 000 views in total (was 30 000 until 2026-11-16); open to authors with around 500 followers |
 
-The page reads top to bottom as an invitation (rewritten 2026-11-16 after the
-team call of 15 November): the hero invites the author and says authors are
-chosen by application; "What boks is" (the synopsis, two ways in: read or
-listen, and the mission line); the author's path in five steps (application,
-page, texts or the teleprompter, publication, readers); what an author gets,
-with what is still being built marked "Soon" (the reader game with boks
-coins, books and events); the Series recorder; a letter to readers ("Dear
-reader") with what already works for them and what is coming (rewards,
-events calendar, free books, workshops, clubs, gifts for invites); selection
-(the editors read every application, not everyone gets in at once, a page
-cannot be bought with a guarantee, the free way in at 15 000 views); then
-the offers. Every format opens only after the application is approved.
+## The page
+
+Since 2026-11-18 the page is the designers' own build (version 22 of
+`boks-author-landing`, commit 5c89c84): a static page in
+`public/author-landing/` that `/author` shows in a frame over the whole
+screen (`components/boks/author-landing/author-landing.tsx`). Its styles
+reset the whole document, so it does not share one with the app. It reads:
+the invitation and the collage of classics with Прохоров; what boks is
+(text, design, Boks Series, read or listen); «полет сквозь сны» in a gold
+frame as a published example; the author's path in five steps; what the
+author gets, with what is coming marked "Soon"; selection; the three offers;
+the application. Every format opens only after the application is approved.
 Promises on the page must stay true: anything not yet live carries "Soon".
 
-The texts are in `components/boks/author-landing/messages.ts`; the page also
-shows the Series recorder (`docs/series-recorder.md`) as the new format.
+A new version from the designers comes as a zip: unzip it and run
+`node scripts/author-landing/import.mjs <folder>`. The import copies only
+what the page uses and then:
+- keeps a living author's files out of this public repository: Прохоров's
+  portrait and the whole «полет сквозь сны» (text, recording, pictures) are
+  read from his link-only folders on the server (`docs/link-only-pieces.md`);
+  locally they are blank, which is expected;
+- turns links to tryboks.com into paths and opens them outside the frame;
+- adds `scripts/author-landing/bridge.js`: the application goes through
+  this app (`submit_author_application`, as a guest or with the session), a
+  draft waits in the tab until it is sent, a guest gets "Sign in" (an invited
+  author signs in here and the cabinet opens), a signed-in applicant sees the
+  status of the last application, the page's language switch sets the app's;
+- makes it fast: one minified script and one stylesheet, pictures no wider
+  than they are shown (760 px, WebP), every picture lazy (SVG ones too, through
+  the bridge), the opening collage never loads on a phone, the poem's manifest
+  is asked for in `<head>` and only its frame is filled in when it arrives;
+- prerenders the Russian page into `index.html` and writes
+  `landing-version.ts`, which goes into the frame's address so no cached copy
+  outlives a release.
+
+The frame starts with /author's own HTML, before the app's scripts
+(`early-frame.ts`): unless the browser keeps a signed-in session (every
+guest has an anonymous one, which does not count) or an invitation link,
+an inline script creates it at once; the app adopts it, or drops it when
+the account turns out to have a cabinet. Measured 2026-11-18 on a phone
+profile with a 1.6 Mbit/s, 150 ms connection and brotli: first paint 1.3 s,
+288 KB before scrolling (the designers' hosted copy: 2.5 s, 2.4 MB).
+
+The question to the team and the letter to readers are not in this version
+(removed at the designers' request on 18 November).
 
 ## Applications
 
@@ -51,10 +80,6 @@ The team reads them in Studio → Authors, newest first, with the applicant's
 @name and email, and marks each as written to or closed
 (`list_author_applications`, `set_author_application_status`; admins only).
 
-A question on the page carries where to answer it (Telegram, VK or email;
-not a phone - the team is often abroad) and goes to Studio → Feedback as
-`author_landing`.
-
 ## To the team's Telegram
 
 `deploy/ops/inbox.py`, run every minute by `alerts.sh`, posts each new
@@ -63,5 +88,4 @@ each work an author sends for review (not the team's own imports) to the
 team's group through the Telegram relay (`ops/notify.sh`). Each feed keeps a
 watermark in the ops state folder; the first run only sets it.
 
-"See an example" opens Прохоров's page; its Back returns to this page
-(a mark in this tab's storage, read once by that page within half an hour).
+Прохоров's page and the published example open in a new tab.

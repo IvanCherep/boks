@@ -15,6 +15,13 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**The designers' page for authors (2026-11-18).** `/author` for a guest or an
+account without a cabinet shows version 22 of the designers' page
+(`public/author-landing/`, imported by `scripts/author-landing/import.mjs`) in a
+frame that starts with the page's HTML; applications still go through
+`submit_author_application`; Прохоров's files come from link-only
+(`docs/author-applications.md`, "The page").
+
 **Series recorder, the page for authors, team notifications (2026-11-16).**
 Studio -> Series recorder: a poem read through a full-screen teleprompter (or
 an uploaded recording), pictures uploaded or drawn by Yandex in the house
