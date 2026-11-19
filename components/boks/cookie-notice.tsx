@@ -18,16 +18,16 @@ import { defineMessages } from "@/lib/i18n/messages";
 const words = defineMessages(
   {
     title: "Cookies",
-    body: "boks keeps a little in your browser so you stay signed in and your language and reading settings stay put. No ads, no third-party trackers.",
-    short: "Cookies keep you signed in and your settings.",
+    body: "We use cookies to make the site work: to remember your sign-in and your settings.",
+    short: "We use cookies for sign-in and settings.",
     more: "Privacy",
     ok: "Got it",
   },
   {
     ru: {
       title: "Cookie",
-      body: "boks хранит немного данных в браузере, чтобы вы оставались в аккаунте, а язык и настройки чтения сохранялись. Без рекламы и сторонних трекеров.",
-      short: "Cookie нужны для входа и настроек.",
+      body: "Мы используем cookie, чтобы сайт работал: помнил вход и ваши настройки.",
+      short: "Мы используем cookie для входа и настроек.",
       more: "Подробнее",
       ok: "Понятно",
     },
@@ -81,6 +81,7 @@ export function CookieNotice() {
     <aside className={`cookie-notice${leaving ? " is-leaving" : ""}`} role="region" aria-label={w.title}>
       <span className="cookie-notice__mark" aria-hidden="true">b.</span>
       <p className="cookie-notice__text">
+        {/* A phone gets the same sentence in two lines, clear of Read. */}
         <span className="cookie-notice__long">{w.body}</span>
         <span className="cookie-notice__short">{w.short}</span>{" "}
         <a href="/privacy#storage">{w.more}</a>
