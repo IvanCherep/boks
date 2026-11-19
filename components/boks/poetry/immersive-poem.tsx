@@ -754,6 +754,17 @@ export function ImmersivePoem({
         },
         (reason: unknown) => {
           if (element.paused && reason instanceof Error && reason.name === "AbortError") return;
+          // The browser would not start sound without a tap (a piece opened
+          // straight behind the curtain in a fresh tab, or a start that came
+          // too long after the reader's tap): the recording is fine, so wait
+          // on Play rather than say it did not load.
+          if (audio.current === element && reason instanceof Error && reason.name === "NotAllowedError") {
+            score?.pause();
+            setPlaying(false);
+            setStatus("ready");
+            revealChrome();
+            return;
+          }
           if (audio.current === element) { score?.pause(); setPlaying(false); setStatus("error"); }
         }
       );
