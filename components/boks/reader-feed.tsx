@@ -139,7 +139,7 @@ import { isEmptyReadingRequest, normalizeReadingRequest, strictFacets, type Read
 import { bokShareUrl } from "@/lib/boks/share-link";
 import { authorFromPath, authorPath, bokPath, isBokPath } from "@/lib/boks/reader-address";
 import { emptyReaderSignals, type ReaderSignals } from "@/lib/boks/recommendations";
-import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, supabase } from "@/lib/boks/supabase-client";
+import { completePendingBoksMagicLinkProfile, consumeBoksMagicLinkRedirectNotice, getCurrentSupabaseUser, supabase } from "@/lib/boks/supabase-client";
 import { currentBoksTermsVersion, UserAuthPanel } from "@/components/boks/user-auth-panel";
 import { useBoksData } from "@/components/boks/use-boks-data";
 import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
@@ -393,6 +393,30 @@ function shownGuestReminders() {
 
 function rememberPendingFollow(target: { handle: string; authorName?: string }) {
   try { window.sessionStorage.setItem(pendingFollowKey, JSON.stringify({ ...target, at: Date.now() })); } catch { /* storage off: nothing to come back to */ }
+}
+
+/**
+ * A guest who tapped Like signs up for that like (2026-11-20): it is kept for
+ * the sign-in and put on the same bok after it, instead of leaving them in
+ * their empty account with nothing liked.
+ */
+const pendingLikeKey = "boks-pending-like";
+
+function rememberPendingLike(storyId: string) {
+  try { window.sessionStorage.setItem(pendingLikeKey, JSON.stringify({ storyId, at: Date.now() })); } catch { /* storage off: they like it again */ }
+}
+
+function takePendingLike(): string | null {
+  try {
+    const raw = window.sessionStorage.getItem(pendingLikeKey);
+    if (!raw) return null;
+    window.sessionStorage.removeItem(pendingLikeKey);
+    const value = JSON.parse(raw) as { storyId?: unknown; at?: unknown };
+    if (typeof value.storyId !== "string" || typeof value.at !== "number" || Date.now() - value.at > 30 * 60 * 1000) return null;
+    return value.storyId;
+  } catch {
+    return null;
+  }
 }
 
 function takePendingFollow(): { handle: string; authorName?: string } | null {
@@ -1341,7 +1365,29 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     );
   }, [identitySettled]);
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);
+  /** Why a guest was last asked to sign in: the limit and a reminder send them back to reading after. */
+  const signupReasonRef = useRef<"manual" | "notice" | "required" | null>(null);
   const day = useDailyAccount({ identitySettled, userId: hasSignedInAccount ? user?.userId ?? null : null });
+  // Signed in after tapping Like as a guest, or at the guest limit or a
+  // reminder: back to the bok, with the like on it. Someone who opened the
+  // account themselves stays in it.
+  useEffect(() => {
+    if (!hasSignedInAccount) return;
+    const likedId = takePendingLike();
+    const reason = signupReasonRef.current;
+    signupReasonRef.current = null;
+    if (!likedId && reason !== "required" && reason !== "notice") return;
+    const timer = window.setTimeout(() => {
+      setAuthPanelOpen(false);
+      if (!likedId) return;
+      setLiked((state) => ({ ...state, [likedId]: true }));
+      void getCurrentSupabaseUser()
+        .then((account) => setSupabaseLike(account?.id ?? null, likedId, true))
+        .catch(() => setLiked((state) => ({ ...state, [likedId]: false })));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [hasSignedInAccount]);
+
   // Signed in after tapping Follow as a guest: back to that author, following.
   useEffect(() => {
     if (!hasSignedInAccount) return;
@@ -1824,6 +1870,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     if (!alreadyRead && anonymousState.storyIds.length >= anonymousReadLimits.requiredSignup) {
       window.setTimeout(() => {
         setGuestReadCount(anonymousState.storyIds.length);
+        signupReasonRef.current = "required";
         setAuthReason("required");
         onboardingAuth.current = true;
         setAuthPanelOpen(true);
@@ -2104,6 +2151,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       );
     }
     commentAuthOpen.current = intent === "comment";
+    if (!hasSignedInAccount) signupReasonRef.current = reason;
     setAuthReason(reason);
     setAuthInitialSection(section);
     setAuthIntent(intent);
@@ -2435,7 +2483,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     // A bok actually read is the only thing that moves the feedback count, and
     // the prompt waits for the third, tenth and thirtieth. Asking here rather
     // than on a timer means the question always follows a finished piece.
-    if (outcome === "complete") {
+    // A guest who has just reached the sign-up wall is asked for an account,
+    // not for feedback too: two sheets at once, and the feedback one waiting
+    // under the wall to greet them right after they sign up (2026-11-20).
+    const atGuestWall = isGuestReader && readAnonymousReadState().storyIds.length >= anonymousReadLimits.requiredSignup;
+    if (outcome === "complete" && !atGuestWall) {
       const counted = countRead(feedbackState.current);
       const milestone = dueMilestone(counted);
       feedbackState.current = milestone ? markPrompted(counted, milestone) : counted;
@@ -2604,6 +2656,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     }
     if (!hasSignedInAccount) {
       setCommentOpen(false);
+      rememberPendingLike(currentStory.id);
       openAccount("manual", "like");
       return;
     }
@@ -3457,7 +3510,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         {passageSelection.selection && !readerInteractionBlocked && (
           <SelectionMenu selection={passageSelection.selection} onShareWorld={(text) => sendSelectedLine(text, "world")} onSend={(text) => sendSelectedLine(text, "link")} onSave={(text) => void saveSelectedLine(text)} />
         )}
-        {dayCardVisible && day.arrival && user?.handle && <DayCard arrival={day.arrival} gameNew={day.gameNew}
+        {dayCardVisible && day.arrival && user?.handle && <DayCard arrival={day.arrival} gameNew={day.gameNew} gameToday={day.gameToday}
           onLetter={() => { closeDayCard(); void openTodayLetter(); }}
           onGame={() => { closeDayCard(); openAccount("manual", "general", "game"); }}
           onClose={closeDayCard} />}

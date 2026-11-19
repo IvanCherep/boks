@@ -286,6 +286,18 @@ export async function settleBoksMagicLinkRedirect() {
   return magicLinkRedirectPromise;
 }
 
+/**
+ * A new account's first page load asks for its profile from two places at
+ * once (the sign-in and the account panel). Both derive the same nickname, so
+ * the slower insert trips the nickname's unique index (23505, a 409) although
+ * the row now exists. Asked again, the database finds the row and answers it.
+ */
+async function ensureProfile(displayName: string) {
+  const first = await supabase!.rpc("ensure_boks_user_profile", { p_display_name: displayName });
+  if (first.error?.code !== "23505") return first;
+  return supabase!.rpc("ensure_boks_user_profile", { p_display_name: displayName });
+}
+
 export async function getAnonymousSupabaseUserId() {
   if (!supabase) return null;
 
@@ -349,7 +361,7 @@ export async function getCurrentBoksUserContext(): Promise<BoksUserContext | nul
   // attribute them to, and every surface would call them "@reader". This is
   // the one seam every surface reads identity through, so the row is created
   // here. The RPC derives the nickname from the email and is idempotent.
-  const ensured = await supabase.rpc("ensure_boks_user_profile", { p_display_name: "" });
+  const ensured = await ensureProfile("");
   if (ensured.error) throw ensured.error;
 
   return ensured.data as BoksUserContext;
@@ -563,9 +575,7 @@ export async function completePendingBoksMagicLinkProfile(termsVersion: string):
     return getCurrentBoksUserContext();
   }
 
-  const ensure = await supabase.rpc("ensure_boks_user_profile", {
-    p_display_name: pending.displayName || "Reader",
-  });
+  const ensure = await ensureProfile(pending.displayName || "Reader");
   if (ensure.error) throw ensure.error;
 
   const ensuredContext = ensure.data as BoksUserContext;

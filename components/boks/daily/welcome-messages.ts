@@ -80,7 +80,7 @@ export const welcomeMessages = defineMessages(
       read: "Читать",
       week: "Эта неделя",
       guestTitle: "Короткая литература целиком.",
-      guestLead: "Читайте без аккаунта. С ним откроется ещё три вещи:",
+      guestLead: "Читайте без аккаунта. С ним откроются ещё три вещи:",
       perkLetter: "Строка дня",
       perkLetterLead: "каждый день письмо от другого читателя",
       perkGame: "Угадай автора",

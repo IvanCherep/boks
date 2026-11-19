@@ -35,6 +35,8 @@ export function useDailyAccount({ identitySettled, userId }: { identitySettled: 
   const [arrival, setArrival] = useState<DailyArrival | null>(null);
   const [cardClosed, setCardClosed] = useState(false);
   const [gameNew, setGameNew] = useState(false);
+  /** Whether there is an issue of Guess the author today at all ("none" when the stock ran out). */
+  const [gameToday, setGameToday] = useState(true);
   const shownFor = useRef<string | null>(null);
 
   useEffect(() => {
@@ -47,7 +49,11 @@ export function useDailyAccount({ identitySettled, userId }: { identitySettled: 
         setCardClosed(next.cardSeen || readClosedDay(userId) === next.date);
       }, () => undefined);
     }
-    void loadAuthorGameStatus().then((status) => { if (active) setGameNew(status === "open"); }, () => undefined);
+    void loadAuthorGameStatus().then((status) => {
+      if (!active) return;
+      setGameNew(status === "open");
+      setGameToday(status !== "none");
+    }, () => undefined);
     return () => { active = false; };
   }, [identitySettled, userId]);
 
@@ -73,6 +79,7 @@ export function useDailyAccount({ identitySettled, userId }: { identitySettled: 
     arrival: signedIn ? arrival : null,
     cardPending: Boolean(signedIn && arrival && !cardClosed),
     gameNew,
+    gameToday,
     cardShown,
     closeCard,
     letterOpened,

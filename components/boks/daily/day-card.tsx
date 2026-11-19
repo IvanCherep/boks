@@ -38,9 +38,11 @@ export function WeekStrip({ week, today }: { week: DailyArrival["week"]; today: 
  * the week, and what the day holds - the letter and the game - as two lines
  * of a page, not as buttons. Once a day across devices.
  */
-export function DayCard({ arrival, gameNew, onLetter, onGame, onClose }: {
+export function DayCard({ arrival, gameNew, gameToday = true, onLetter, onGame, onClose }: {
   arrival: DailyArrival;
   gameNew: boolean;
+  /** False when there is no issue today: the row would otherwise say "Answered" to someone who never played. */
+  gameToday?: boolean;
   onLetter: () => void;
   onGame: () => void;
   onClose: () => void;
@@ -65,13 +67,13 @@ export function DayCard({ arrival, gameNew, onLetter, onGame, onClose }: {
           <span className="day-row__action">{arrival.letterOpened ? words.reread : words.open}</span>
         </button>
       </li>
-      <li style={{ "--i": 1 } as React.CSSProperties}>
+      {gameToday && <li style={{ "--i": 1 } as React.CSSProperties}>
         <button type="button" className="day-row" onClick={onGame}>
           <span className="day-row__glyph" aria-hidden="true">?</span>
           <span className="day-row__text"><strong>{words.gameTitle}</strong><small>{gameNew ? words.gameWaiting : words.gameDone}</small></span>
           <span className="day-row__action">{gameNew ? words.play : words.results}</span>
         </button>
-      </li>
+      </li>}
     </ul>
     <button type="button" className="day-card__read" onClick={onClose}>{words.read}</button>
   </aside>;

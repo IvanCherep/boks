@@ -518,3 +518,16 @@
 @media (prefers-reduced-motion: reduce) {
   .day-card, .guest-card, .day-card > *, .guest-card > *, .day-week *, .guest-marks span, .postmark--stamp { animation: none !important; }
 }
+
+/* A short phone (iPhone SE, 667 px): the day card and the guest's cards fit,
+   so "Read without an account" is on the screen, not under its edge. */
+@media (max-height: 700px) and (max-width: 619px) {
+  .day-card, .guest-card { padding-top: 22px; }
+  .guest-card__mark { margin-bottom: 10px; font-size: 28px; }
+  .day-card__title { font-size: 32px; margin-bottom: 6px; }
+  .day-card__lead { margin-bottom: 12px; font-size: 13px; }
+  .day-rows { margin-bottom: 12px; }
+  .day-row { min-height: 58px; padding: 8px 0; }
+  .day-row__text strong { font-size: 19px; }
+  .day-card__read { margin-top: 4px; }
+}
