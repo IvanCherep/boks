@@ -165,6 +165,8 @@ export type SpacePreview = {
   handle: string | null;
   name: string | null;
   photo: string | null;
+  /** The curtain's own portrait, when the team set one (`author_spaces.stage_photo`). */
+  stagePhoto?: string | null;
   items: PreviewItem[];
 };
 

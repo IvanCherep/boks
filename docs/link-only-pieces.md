@@ -118,6 +118,15 @@ feed open them as Series. Hiding a work in the cabinet takes it off at once.
 Only published works of a published page are returned, so an unpublished
 token never leaves the database. The section photo is the page's photo.
 
+**The curtain's own portrait (2026-11-19).** When an author gives two photos,
+a close face for the avatar and a wider portrait for the stage, the avatar is
+the page photo (`author_spaces.photo`) and the portrait goes into one of the
+page's link-only folders as `<name>-stage.jpg`, set as
+`author_spaces.stage_photo` (`/l/<token>/f/<name>-stage.jpg`, migration
+`20261119100000`) from the same scratch SQL file. The reader's page and the
+cabinet's preview open the curtain on it; the shelf, the cabinet and the share
+sheet keep the avatar. Only the team sets it.
+
 An author who reads the piece himself brings his own recording, usually
 mastered with music under it. Then there is no theme (`theme` is left out of
 the manifest), the recording is only brought down to the series' −22 LUFS by

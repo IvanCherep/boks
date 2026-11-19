@@ -404,6 +404,11 @@ export type AuthorPageIdentity = {
   name: string | null;
   /** Set when there is a photo; its address is `/a/<handle>/photo?v=<photoVersion>`. */
   photoVersion: number | null;
+  /**
+   * The picture the page's curtain opens on, when the team set one apart from
+   * the avatar (`author_spaces.stage_photo`, a link-only path). Absent: the photo.
+   */
+  stagePhoto?: string | null;
 };
 
 /** The author's own page as the cabinet edits it. */

@@ -183,8 +183,10 @@ export function AuthorSheet({
     || ownName
     || (!author ? authorName : null)
     || `@${bareHandle}`;
-  const identity = pagePhoto
-    ? { handle: bareHandle, name, photo: pagePhoto, thumb: pagePhoto, focus: "50% 50%" }
+  // The curtain opens on the stage portrait when the page has one; the avatar stays the photo.
+  const stagePhoto = !writerView ? page?.stagePhoto || null : null;
+  const identity = pagePhoto || stagePhoto
+    ? { handle: bareHandle, name, photo: stagePhoto ?? pagePhoto, thumb: pagePhoto ?? stagePhoto, focus: "50% 50%" }
     : { handle: bareHandle, name, photo: portrait?.photo, thumb: portrait?.thumb, focus: portrait?.focus };
 
   return (

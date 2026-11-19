@@ -130,7 +130,7 @@ export function SpacePreviewPage() {
   return (
     <>
       <AuthorPortraitPage
-        identity={{ handle, name: preview.name || `@${handle}`, photo, thumb: photo, focus: "50% 50%" }}
+        identity={{ handle, name: preview.name || `@${handle}`, photo: preview.stagePhoto || photo, thumb: photo ?? preview.stagePhoto ?? null, focus: "50% 50%" }}
         author={built.profile}
         profileLink={typeof window === "undefined" ? "" : authorShareUrl(handle, window.location.origin)}
         following={false}
