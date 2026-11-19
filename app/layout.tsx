@@ -15,7 +15,10 @@ import "./author-cabinet-v51.css";
 import "./admin-v44.css";
 import "./legal-v45.css";
 import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";
-import { uiLanguageBootScript } from "@/lib/i18n/ui-language";
+import { headers } from "next/headers";
+import { uiLanguageBootScript, uiLanguageFromRequest } from "@/lib/i18n/ui-language";
+import { UiLanguageProvider } from "@/components/boks/ui-language";
+import { CookieNotice } from "@/components/boks/cookie-notice";
 import { staleReleaseBootScript } from "@/lib/boks/stale-release";
 
 /**
@@ -97,15 +100,19 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The interface language of this request, so the first paint is already in
+  // it (`uiLanguageFromRequest`); the client agrees and nothing flips.
+  const request = await headers();
+  const language = uiLanguageFromRequest(request.get("cookie"), request.get("accept-language"));
   return (
     // The boot scripts below set `data-theme` and `lang` before React
     // hydrates, so the attributes legitimately differ from the server's markup.
-    <html lang="en" suppressHydrationWarning>
+    <html lang={language} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content={browserStatusBarColor} />
         {/* Before first paint: a reader in dark mode never sees a white flash. */}
@@ -116,7 +123,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: staleReleaseBootScript }} />
       </head>
       <body className="antialiased">
-        {children}
+        <UiLanguageProvider value={language}>{children}<CookieNotice /></UiLanguageProvider>
         {/* Real, fixed edge surfaces let Safari sample each native bar separately. */}
         <div className="browser-edge browser-edge--top" aria-hidden="true" />
         <div className="browser-edge browser-edge--bottom browser-edge--light" aria-hidden="true" />

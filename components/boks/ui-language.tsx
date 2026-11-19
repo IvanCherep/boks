@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 import type { Messages } from "@/lib/i18n/messages";
 import {
   defaultUiLanguage,
@@ -16,11 +16,18 @@ import {
 /**
  * The interface language, shared by every component without a provider.
  *
- * The server does not know the device, so it renders English and the first
- * client render switches; `useSyncExternalStore` makes that the hydration
- * contract rather than a mismatch. The reader's first screen is a loading
- * state, so nothing readable flips.
+ * The server renders in the language of the request (`uiLanguageFromRequest`:
+ * the reader's choice from its cookie, else the device's first language from
+ * `Accept-Language`), handed down by `UiLanguageProvider` from the root
+ * layout. Hydration uses that same value, and the client then reads its own
+ * storage and device; they agree, so nothing flips. Without the provider (a
+ * test, a page outside the layout) the server's value is English, as before.
  */
+const RequestUiLanguage = createContext<UiLanguage>(defaultUiLanguage);
+
+export function UiLanguageProvider({ value, children }: { value: UiLanguage; children: ReactNode }) {
+  return <RequestUiLanguage.Provider value={value}>{children}</RequestUiLanguage.Provider>;
+}
 
 const listeners = new Set<() => void>();
 
@@ -48,7 +55,8 @@ export function currentUiLanguage(): UiLanguage {
 }
 
 export function useUiLanguage(): UiLanguage {
-  return useSyncExternalStore(subscribe, currentUiLanguage, () => defaultUiLanguage);
+  const requested = useContext(RequestUiLanguage);
+  return useSyncExternalStore(subscribe, currentUiLanguage, () => requested);
 }
 
 export function useUiLanguagePreference(): UiLanguagePreference {

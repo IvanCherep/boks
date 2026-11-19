@@ -30,6 +30,34 @@ export const uiLanguageNames: Record<UiLanguage, string> = {
 
 export const uiLanguageStorageKey = "boks-ui-language";
 
+/**
+ * The same choice as a cookie, so the server renders the page in it: without
+ * one the first paint was English on every device until the client switched
+ * (most visible when a phone reloads a tab it had put to sleep). Only the
+ * choice, never anything about the person.
+ */
+export const uiLanguageCookie = "boks-ui-language";
+const uiLanguageCookieMaxAge = 60 * 60 * 24 * 400;
+
+/** `boks-ui-language=ru; path=/; …` for the browser to keep. */
+export function uiLanguageCookieValue(preference: UiLanguagePreference) {
+  return `${uiLanguageCookie}=${preference}; path=/; max-age=${uiLanguageCookieMaxAge}; samesite=lax`;
+}
+
+/**
+ * The interface language of a request, by the device rule on the server:
+ * the reader's choice from the cookie, else the first language the browser
+ * names in `Accept-Language` (the same list as `navigator.languages`, in the
+ * same order), else English.
+ */
+export function uiLanguageFromRequest(cookieHeader: string | null | undefined, acceptLanguage: string | null | undefined): UiLanguage {
+  const chosen = /(?:^|;\s*)boks-ui-language=([^;]*)/.exec(cookieHeader ?? "")?.[1];
+  const preference = parseUiLanguagePreference(chosen ? decodeURIComponent(chosen) : null);
+  if (preference !== "system") return preference;
+  const first = String(acceptLanguage ?? "").split(",")[0]?.split(";")[0] ?? "";
+  return uiLanguageFromDevice([first]);
+}
+
 export function isUiLanguage(value: unknown): value is UiLanguage {
   return typeof value === "string" && (uiLanguages as readonly string[]).includes(value);
 }
@@ -83,6 +111,7 @@ export function writeUiLanguagePreference(
   } catch {
     // Private mode: the language still applies for this visit.
   }
+  if (typeof document !== "undefined") document.cookie = uiLanguageCookieValue(preference);
 }
 
 /**
@@ -102,4 +131,9 @@ export const uiLanguageBootScript = `(function () {
     lang = known.indexOf(first) >= 0 ? first : ${JSON.stringify(defaultUiLanguage)};
   }
   document.documentElement.lang = lang;
+  // A choice made before the cookie existed reaches the server from now on.
+  try {
+    var mark = ${JSON.stringify(uiLanguageCookie)} + "=" + chosen;
+    if (document.cookie.split("; ").indexOf(mark) < 0) document.cookie = mark + "; path=/; max-age=34560000; samesite=lax";
+  } catch (error) {}
 })();`;

@@ -100,7 +100,9 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
         </p>
         <p>
           On your device, boks stores your theme, your reading languages, a local reading profile and, for guests, how
-          many boks were read, in the browser&apos;s own storage. There are no third-party trackers.
+          many boks were read, in the browser&apos;s own storage. boks also sets two cookies the site needs to work:
+          one keeps you signed in when the browser restarts, the other keeps the interface language so a page opens
+          in it straight away. There are no ads and no third-party trackers.
         </p>
       </>,
     },

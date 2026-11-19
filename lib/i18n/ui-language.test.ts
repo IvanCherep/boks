@@ -68,3 +68,22 @@ describe("messages", () => {
     expect(table.en.hi).toBe("Hello");
   });
 });
+
+import { uiLanguageFromRequest } from "./ui-language";
+
+describe("the language of a request", () => {
+  it("follows the reader's choice in the cookie", () => {
+    expect(uiLanguageFromRequest("a=1; boks-ui-language=en; b=2", "ru-RU,ru;q=0.9")).toBe("en");
+    expect(uiLanguageFromRequest("boks-ui-language=ru", "en-US,en;q=0.9")).toBe("ru");
+  });
+  it("else the device's first language, as navigator.languages[0]", () => {
+    expect(uiLanguageFromRequest("boks-ui-language=system", "ru-RU,ru;q=0.9,en;q=0.8")).toBe("ru");
+    expect(uiLanguageFromRequest(null, "ru")).toBe("ru");
+    expect(uiLanguageFromRequest("", "en-GB,ru;q=0.9")).toBe("en");
+    expect(uiLanguageFromRequest(null, "de-DE,ru;q=0.9")).toBe("en");
+  });
+  it("is English with nothing to go on, as for a crawler", () => {
+    expect(uiLanguageFromRequest(null, null)).toBe("en");
+    expect(uiLanguageFromRequest("boks-ui-language=fr", "")).toBe("en");
+  });
+});

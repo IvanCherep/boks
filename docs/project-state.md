@@ -15,6 +15,8 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**The page arrives in the reader's language; a cookie notice (2026-11-20).** The server renders the interface in the request's language (the reader's choice from the `boks-ui-language` cookie, else `Accept-Language`), so a reloaded tab no longer flashes English (ADR 0015, amended). A one-time cookie notice (`components/boks/cookie-notice.tsx`), and the privacy policy names the two cookies.
+
 **Publishing from My page for verified authors (2026-11-20).** A verified author (`author_spaces.verified`: pages the team made, Series shelf pages, Boks Series grants; switched in Studio → Authors) publishes a new bok from My page with no review. My page is their cabinet home. A cover is required: two drawn from the text by Yandex in the house look (the covers worker runs in the `series` process), their own uploaded, or the editors choose it. In that last case the piece waits in Moderation marked "Needs a cover", and a database trigger refuses to publish it without one. Drafts sit in the same list. Covers live in `bok_covers` and reach the feed, the author page, the link card and the curtain loop. The team conversation is behind "Requests and ideas". Migration 20261120100000 (`docs/author-publishing.md`).
 
 **The designers' page for authors (2026-11-18).** `/author` for a guest or an
