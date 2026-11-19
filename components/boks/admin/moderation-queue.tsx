@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Check, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -11,6 +11,8 @@ import { loadAdminBok } from "@/components/boks/supabase-browser-data";
 import { useAdminInspector } from "@/components/boks/admin/inspector-context";
 import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages, plural } from "@/lib/i18n/messages";
+import { loadCoverRequests } from "@/components/boks/author-cabinet/composer-data";
+import { TeamCoverPanel } from "@/components/boks/admin/team-cover";
 
 const words = defineMessages({
   rightsLoadFailed: "Could not load the rights record. Retry or open the complete record.",
@@ -56,6 +58,8 @@ const words = defineMessages({
   authorSeesNote: "The author will see this exact note and can revise the same bok.",
   nothingPublished: "Nothing is published when you send this note.",
   cancel: "Cancel",
+  needsCover: "Needs a cover",
+  coverFirst: "Add the cover first: the author asked us to choose it.",
 }, { ru: {
   rightsLoadFailed: "Не удалось загрузить сведения о правах. Повторите или откройте полную карточку.",
   reasonRequired: "Укажите понятную причину, прежде чем вернуть бок. Автор её увидит.",
@@ -100,6 +104,8 @@ const words = defineMessages({
   authorSeesNote: "Автор увидит именно эту записку и сможет доработать тот же бок.",
   nothingPublished: "Отправка записки ничего не публикует.",
   cancel: "Отмена",
+  needsCover: "Нужна обложка",
+  coverFirst: "Сначала добавьте обложку: автор попросил подобрать её нам.",
 } });
 
 /** One reading room, with the same real review action used by the old queue. */
@@ -119,6 +125,18 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
   const [evidenceError, setEvidenceError] = useState("");
   const [evidenceAttempt, setEvidenceAttempt] = useState(0);
   const { openBok, openPerson } = useAdminInspector();
+  /** Waiting pieces whose author asked us for the cover, and the cover they have now. */
+  const [coverRequests, setCoverRequests] = useState<Map<string, number | null>>(new Map());
+  useEffect(() => {
+    let live = true;
+    void loadCoverRequests().then((rows) => {
+      if (live) setCoverRequests(new Map(rows.map((row) => [row.bokId, row.coverVersion])));
+    }).catch(() => undefined);
+    return () => { live = false; };
+  }, [items]);
+  const onCover = useCallback((bokId: string, version: number) => {
+    setCoverRequests((current) => (current.get(bokId) === version ? current : new Map(current).set(bokId, version)));
+  }, []);
   const t = useMessages(words);
   const language = useUiLanguage();
   const visibleItems = items.filter((item) => item.status === queueStatus);
@@ -138,6 +156,10 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
 
   async function review(item: AdminModerationItem, decision: "approve" | "reject") {
     const reason = reasons[item.id]?.trim() ?? "";
+    if (decision === "approve" && coverRequests.has(item.id) && !coverRequests.get(item.id)) {
+      setStatus(t.coverFirst);
+      return;
+    }
     if (decision === "reject" && !reason) {
       setStatus(t.reasonRequired);
       return;
@@ -165,7 +187,7 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
             onClick={() => { setSelectedId(item.id); setReading(true); setStatus(""); setEvidenceError(""); window.scrollTo({ top: 0, behavior: "instant" }); }}>
             <span>{String(index + 1).padStart(2, "0")} · {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString(language) : t.notSubmitted}</span>
             <h2>{item.title}</h2><p>{[item.authorName, item.authorHandle ? `@${item.authorHandle.replace(/^@+/, "")}` : ""].filter(Boolean).join(" · ")}</p>
-            <small>{t.minutes(item.minutes)} · {item.status === "rejected" ? t.refused : t.privateSubmission}</small>
+            <small>{t.minutes(item.minutes)} · {item.status === "rejected" ? t.refused : t.privateSubmission}{coverRequests.has(item.id) && !coverRequests.get(item.id) ? ` · ${t.needsCover}` : ""}</small>
             <p className="studio-review-excerpt">{item.body.slice(0, 140)}{item.body.length > 140 ? "…" : ""}</p>
             <span className="studio-review-open">{t.readAndReview} <ArrowUpRight /></span>
           </button>
@@ -181,6 +203,9 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
       </article>
       <aside className="studio-review-evidence">
         <h3>{t.beforePublishing}</h3>
+        {coverRequests.has(selected.id) && (
+          <TeamCoverPanel key={selected.id} bokId={selected.id} title={selected.title} text={selected.body} onCover={(version) => onCover(selected.id, version)} />
+        )}
         <div className={`studio-rights-note ${rights?.confirmed ? "is-confirmed" : ""}`}>
           <strong><ShieldCheck /> {rights === undefined ? t.loadingRights : rights?.confirmed ? t.rightsConfirmed : t.rightsNotConfirmed}</strong>
           {rights?.note && <p>{rights.note}</p>}

@@ -33,7 +33,8 @@ import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { linkOnlyCover } from "@/lib/boks/link-only";
 import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "@/lib/boks/share-link";
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
-import { Conversation } from "@/components/boks/author-spaces/conversation";
+import { Composer, openInComposer } from "./composer";
+import { loadPublishing } from "./composer-data";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 
 /**
@@ -47,8 +48,8 @@ import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mo
  * refused, and a second press returns the first answer.
  */
 
-export type MyPageView = "my-page" | "my-page-order" | "my-page-publish" | "my-page-done";
-export const myPageViews = new Set<string>(["my-page", "my-page-order", "my-page-publish", "my-page-done"]);
+export type MyPageView = "my-page" | "my-page-order" | "my-page-publish" | "my-page-done" | "my-page-new";
+export const myPageViews = new Set<string>(["my-page", "my-page-order", "my-page-publish", "my-page-done", "my-page-new"]);
 
 const words = defineMessages(
   {
@@ -173,6 +174,21 @@ const words = defineMessages(
     openPage: "Open my page",
     toCabinet: "Back to the cabinet",
     refresh: "Refresh",
+    newBok: "New bok",
+    newBokHint: "Paste the text, give it a cover, publish. A minute.",
+    draftChip: "Draft",
+    edit: "Edit",
+    continueDraft: "Continue",
+    draftNote: "Only you see it. It goes out when you publish it.",
+    waitingChip: "Waiting for a cover",
+    waitingNote: "The editors are choosing its cover; it goes out once it has one.",
+    requests: "Requests and ideas",
+    requestsTitle: "Requests and ideas",
+    requestsHint: "Something does not work, or you would like something new? Write here: the editors read every note and answer here.",
+    kinds: { problem: "Something doesn't work", idea: "An idea", question: "A question" } as Record<string, string>,
+    kindPrefix: { problem: "Not working", idea: "Idea", question: "Question" } as Record<string, string>,
+    requestPlaceholder: { problem: "What happened, and where? A step or a screen is enough.", idea: "What would make boks better for you?", question: "Ask anything." } as Record<string, string>,
+    history: "Earlier",
   },
   {
     ru: {
@@ -297,6 +313,21 @@ const words = defineMessages(
       openPage: "Открыть мою страницу",
       toCabinet: "Вернуться в кабинет",
       refresh: "Обновить",
+      newBok: "Новый бок",
+      newBokHint: "Вставьте текст, добавьте обложку, опубликуйте. Минута.",
+      draftChip: "Черновик",
+      edit: "Изменить",
+      continueDraft: "Продолжить",
+      draftNote: "Видите только вы. Выйдет, когда опубликуете.",
+      waitingChip: "Ждёт обложку",
+      waitingNote: "Редакция подбирает обложку; бок выйдет, как только она будет готова.",
+      requests: "Просьбы и предложения",
+      requestsTitle: "Просьбы и предложения",
+      requestsHint: "Что-то не работает или хочется чего-то нового? Напишите: редакция читает каждое сообщение и отвечает здесь же.",
+      kinds: { problem: "Что-то не работает", idea: "Есть идея", question: "Вопрос" },
+      kindPrefix: { problem: "Не работает", idea: "Идея", question: "Вопрос" },
+      requestPlaceholder: { problem: "Что случилось и где? Достаточно шага или экрана.", idea: "Что сделало бы boks удобнее для вас?", question: "Спросите что угодно." },
+      history: "Ранее",
     },
   }
 );
@@ -328,7 +359,8 @@ function isSeries(item: PageItem) {
 /** A cover for a line: its Series' first picture, or the bok's artwork. */
 function coverOf(item: PageItem) {
   if (item.work?.seriesPiece) return linkOnlyCover(item.work.seriesPiece);
-  return item.bokId ? getBokArtwork({ id: item.bokId }) : null;
+  // An own picture is served only once the bok is published; a draft shows its letter here.
+  return item.bokId ? getBokArtwork({ id: item.bokId, coverVersion: item.published ? item.coverVersion : null }) : null;
 }
 
 /**
@@ -399,6 +431,8 @@ export function MyPage({
   const [addressProblem, setAddressProblem] = useState("");
   /** Whether published Series go onto the boks Series shelf at once (`series_shelf`). */
   const [onShelf, setOnShelf] = useState(false);
+  /** Whether this author publishes straight away (`boks_publishes_directly`): the composer is theirs. */
+  const [direct, setDirect] = useState(false);
   const [skipped, setSkippedState] = useState<Set<string>>(() => (typeof window === "undefined" ? new Set() : readSkipped()));
   function toggleSkip(key: string) {
     const next = new Set(skipped);
@@ -409,10 +443,16 @@ export function MyPage({
 
   const load = useCallback(async () => {
     try {
-      const [mine, look, shelf] = await Promise.all([loadMyAuthorSpace(), loadSpacePreview(null).catch(() => null), loadMySeriesShelf()]);
+      const [mine, look, shelf, publishing] = await Promise.all([
+        loadMyAuthorSpace(),
+        loadSpacePreview(null).catch(() => null),
+        loadMySeriesShelf(),
+        loadPublishing(null).catch(() => null),
+      ]);
       setData(mine);
       setPreview(look);
       setOnShelf(shelf);
+      setDirect(Boolean(publishing?.direct));
       setFailed("");
       return mine;
     } catch (error) {
@@ -459,7 +499,8 @@ export function MyPage({
   const chosen = ready.filter((item) => !skipped.has(item.key));
   const pageDraft = data?.space?.status === "draft";
   const waiting = items.filter((item) => item.work && (item.work.status === "preparing" || item.work.status === "changes_requested"));
-  const orderable = items.filter((item) => !item.hidden).length;
+  const orderable = items.filter((item) => !item.hidden && !item.draft && !item.coverWaiting).length;
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const undecided = items.some((item) => item.work && item.work.status !== "published" && item.work.status !== "withdrawn");
 
   function readItem(item: PageItem, series = false) {
@@ -537,6 +578,15 @@ export function MyPage({
   const header = (title: string, back: MyPageView | "library") => (
     <Topbar title={title} backLabel={w.back} languageLabel={w.language} onBack={() => go(back)} />
   );
+
+  function compose(bokId: string | null) {
+    openInComposer(bokId);
+    go("my-page-new");
+  }
+
+  if (view === "my-page-new") {
+    return <Composer go={(next) => { void load(); go(next); }} toast={toast} />;
+  }
 
   if (!data) {
     return (
@@ -653,11 +703,16 @@ export function MyPage({
         <div className="amp-identity__actions">
           <button type="button" className="btn btn-secondary" onClick={onEditProfile}>{w.photoAndName}</button>
           <a className="btn btn-secondary" href="/author/preview">{w.previewPage}</a>
+          {data.space && (
+            <button type="button" className="btn btn-secondary amp-requests" onClick={() => setRequestsOpen(true)}>
+              {w.requests}{unread > 0 && <span className="amp-unread">{unread}</span>}
+            </button>
+          )}
         </div>
       </section>
 
       {unread > 0 && data.space && (
-        <a className="amp-replied" href="#messages" onClick={(event) => { event.preventDefault(); document.getElementById("messages")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+        <a className="amp-replied" href="#messages" onClick={(event) => { event.preventDefault(); setRequestsOpen(true); }}>
           <span>✉ {w.replied(unread)}</span>
           <span className="amp-replied__go">{w.readReply} ↓</span>
         </a>
@@ -681,7 +736,13 @@ export function MyPage({
           <h2 className="serif">{w.works}</h2>
           {orderable > 1 && <button type="button" className="amp-link" onClick={() => go("my-page-order")}>{w.order}</button>}
         </header>
-        {items.length === 0 && <p className="desk-note">{w.nothing}</p>}
+        {direct && (
+          <button type="button" className="amp-new" onClick={() => compose(null)}>
+            <span className="amp-new__plus" aria-hidden="true">+</span>
+            <span><strong>{w.newBok}</strong><small>{w.newBokHint}</small></span>
+          </button>
+        )}
+        {items.length === 0 && !direct && <p className="desk-note">{w.nothing}</p>}
         <ul className="amp-list amp-cards">
           {items.map((item) => {
             const status = lineStatus(item);
@@ -690,8 +751,8 @@ export function MyPage({
             const piece = item.work?.seriesPiece ?? previewed?.seriesPiece ?? null;
             const series = item.format === "series" || item.work?.format === "series";
             return (
-              <li key={item.key} className={`amp-card${isSkipped ? " is-skipped" : ""}`}>
-                <button type="button" className="amp-card__cover" disabled={!previewed} onClick={() => readItem(item, Boolean(piece))} aria-label={`${piece ? w.watch : w.readText}: ${item.title}`}>
+              <li key={item.key} className={`amp-card${isSkipped ? " is-skipped" : ""}${item.draft || item.coverWaiting ? " is-draft" : ""}`}>
+                <button type="button" className="amp-card__cover" disabled={!previewed && !item.draft && !item.coverWaiting} onClick={() => ((item.draft || item.coverWaiting) && item.bokId ? compose(item.bokId) : readItem(item, Boolean(piece)))} aria-label={`${item.draft ? w.continueDraft : item.coverWaiting ? w.edit : piece ? w.watch : w.readText}: ${item.title}`}>
                   <Thumb id={item.bokId ?? item.key} title={item.title} image={coverOf(item)} />
                   {piece && <span className="amp-card__play" aria-hidden="true">▶</span>}
                 </button>
@@ -699,14 +760,29 @@ export function MyPage({
                   <strong className="amp-card__title">{item.title}</strong>
                   <span className="amp-card__chips">
                     <span className={`asp-chip asp-chip--${series || piece ? "series" : "text"}`}>{w.format[series || piece ? "series" : "text"]}</span>
-                    <span className={`asp-chip asp-chip--${isSkipped ? "withdrawn" : chipTone(status)}`}>{isSkipped ? w.skipped : w.status[status]}</span>
+                    {item.coverWaiting
+                      ? <span className="asp-chip asp-chip--warn">{w.waitingChip}</span>
+                      : item.draft
+                      ? <span className="asp-chip asp-chip--draft">{w.draftChip}</span>
+                      : <span className={`asp-chip asp-chip--${isSkipped ? "withdrawn" : chipTone(status)}`}>{isSkipped ? w.skipped : w.status[status]}</span>}
                   </span>
+                  {item.draft && <small className="amp-card__note">{w.draftNote}</small>}
+                  {item.coverWaiting && <small className="amp-card__note">{w.waitingNote}</small>}
                   {item.seriesHeld && <small className="amp-card__note">{w.seriesHeld}</small>}
                   {item.work?.note && item.work.status === "changes_requested" && <small className="amp-card__note">{w.yourNote} {item.work.note}</small>}
                   {item.work?.seriesPiece && item.work.status === "published" && !item.hidden && (
                     <small className="amp-card__note">{onShelf ? w.seriesOnShelf : item.work.seriesPublished ? w.seriesLive : w.seriesWaiting}</small>
                   )}
                   <div className="amp-card__actions">
+                    {item.draft && item.bokId && (
+                      <button type="button" className="btn amp-card__watch" onClick={() => compose(item.bokId)}>{w.continueDraft}</button>
+                    )}
+                    {item.coverWaiting && item.bokId && (
+                      <button type="button" className="btn btn-secondary" onClick={() => compose(item.bokId)}>{w.edit}</button>
+                    )}
+                    {direct && !item.draft && item.bokId && !piece && !series && !item.work && (item.published || item.hidden) && (
+                      <button type="button" className="btn btn-secondary" onClick={() => compose(item.bokId)}>{w.edit}</button>
+                    )}
                     {piece && previewed && (
                       <button type="button" className="btn amp-card__watch" onClick={() => readItem(item, true)}>▶ {w.watch}</button>
                     )}
@@ -753,19 +829,8 @@ export function MyPage({
           </>
         ) : null}
       </section>
-      {data.space && (
-        <section className="amp-section" id="messages">
-          <h2 className="serif">{w.messagesTitle}{unread > 0 && <span className="amp-unread">{unread}</span>}</h2>
-          <p>{w.messagesHint}</p>
-          <Conversation
-            messages={data.messages ?? []}
-            mine="author"
-            busy={busy}
-            language={language}
-            labels={{ author: w.fromYou, team: w.fromTeam, about: w.aboutWork, placeholder: w.writePlaceholder, send: w.send, empty: w.noMessages }}
-            onSend={sendMessage}
-          />
-        </section>
+      {requestsOpen && data.space && (
+        <RequestsSheet w={w} messages={data.messages ?? []} language={language} busy={busy} onSend={sendMessage} onClose={() => setRequestsOpen(false)} />
       )}
 
       {data.handle && (
@@ -787,6 +852,53 @@ export function MyPage({
       {reading && <WorkPreview key={`${reading.key}:${readingSeries}`} item={reading} t={pw} watchFirst={readingSeries} onClose={() => setReading(null)} />}
       {asking && <AskSheet w={w} item={asking} note={note} setNote={setNote} busy={busy} onSend={() => void sendChanges()} onClose={() => setAsking(null)} />}
     </main>
+  );
+}
+
+/**
+ * Requests and ideas (2026-11-20): what was the page's conversation with the
+ * team, behind one button. A note says what kind it is - something broken,
+ * an idea, a question - so the team reads it the right way; the answers come
+ * back below, as before (`send_my_author_space_message`).
+ */
+function RequestsSheet({ w, messages, language, busy, onSend, onClose }: {
+  w: Words;
+  messages: NonNullable<MyAuthorSpace["messages"]>;
+  language: string;
+  busy: boolean;
+  onSend: (body: string) => Promise<boolean | undefined>;
+  onClose: () => void;
+}) {
+  const [kind, setKind] = useState<"problem" | "idea" | "question">("problem");
+  const [body, setBody] = useState("");
+  const newestFirst = [...messages].reverse();
+  return (
+    <Sheet title={w.requestsTitle} closeLabel={w.cancel} onClose={onClose}>
+      <p>{w.requestsHint}</p>
+      <div className="amp-kinds" role="radiogroup" aria-label={w.requestsTitle}>
+        {(["problem", "idea", "question"] as const).map((entry) => (
+          <button key={entry} type="button" role="radio" aria-checked={kind === entry} className={`amp-kind${kind === entry ? " is-on" : ""}`} onClick={() => setKind(entry)}>{w.kinds[entry]}</button>
+        ))}
+      </div>
+      <textarea className="asp-textarea amp-note" value={body} maxLength={1900} rows={5} autoFocus placeholder={w.requestPlaceholder[kind]} onChange={(event) => setBody(event.target.value)} />
+      <div className="sheet-buttons">
+        <button type="button" className="btn btn-secondary" onClick={onClose}>{w.cancel}</button>
+        <button type="button" className="btn" disabled={busy || !body.trim()} onClick={() => void onSend(`${w.kindPrefix[kind]}: ${body.trim()}`).then((sent) => { if (sent) setBody(""); })}>{w.send}</button>
+      </div>
+      {newestFirst.length > 0 && (
+        <>
+          <p className="amp-requests__earlier">{w.history}</p>
+          <ol className="conv-list amp-requests__list">
+            {newestFirst.map((message) => (
+              <li key={message.id} className={`conv-msg${message.fromAuthor ? " is-own" : " is-team"}`}>
+                <span className="conv-meta">{message.fromAuthor ? w.fromYou : w.fromTeam} · {new Date(message.createdAt).toLocaleString(language, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{message.workTitle ? ` · ${w.aboutWork(message.workTitle)}` : ""}</span>
+                <span className="conv-body">{message.body}</span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+    </Sheet>
   );
 }
 
@@ -814,7 +926,7 @@ function AskSheet({ w, item, note, setNote, busy, onSend, onClose }: { w: Words;
 function OrderView({ w, data, preview, onShelf, header, onSaved }: { w: Words; data: MyAuthorSpace; preview: SpacePreview | null; onShelf: boolean; header: React.ReactNode; onSaved: () => Promise<void> }) {
   const language = useUiLanguage();
   // A hidden work is not on the page readers see, so it has no place to order.
-  const initial = useMemo(() => data.items.filter((item) => !item.hidden).map((item) => item.key), [data.items]);
+  const initial = useMemo(() => data.items.filter((item) => !item.hidden && !item.draft && !item.coverWaiting).map((item) => item.key), [data.items]);
   const [keys, setKeys] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");

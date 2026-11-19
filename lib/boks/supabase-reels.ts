@@ -20,7 +20,7 @@ import type {
  * places in the browser, and a column added to one silently missed the rest.
  */
 export const publishedReelColumns =
-  "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at,language,summary";
+  "id,title,author_name,author_handle,author_user_id,text,genre,mood,minutes,word_count,created_at,language,summary,cover_version";
 
 export type SupabaseReelRow = {
   id: string;
@@ -38,6 +38,8 @@ export type SupabaseReelRow = {
   language?: string | null;
   /** The editorial summary shown on the cover; empty when there is none. */
   summary?: string | null;
+  /** The bok's own picture's version (`bok_covers`); null without one. */
+  cover_version?: number | null;
   /**
    * Public totals: how many readers liked it and how many replied. Present
    * when the row came through an aggregate - the feed RPC or
@@ -85,6 +87,7 @@ export type SupabaseCandidateRow = {
   language?: string;
   /** The editorial summary shown on the cover; empty when there is none. */
   summary?: string;
+  coverVersion?: number | null;
   hasEmbedding?: boolean;
   tasteSimilarity?: number | string | null;
   tasteSamples?: number;
@@ -223,6 +226,7 @@ export function candidatesFromRollupRows(rows: SupabaseCandidateRow[]): Candidat
           created_at: String(row.createdAt),
           language: row.language ?? null,
           summary: row.summary ?? "",
+          cover_version: Number(row.coverVersion) || null,
           // The feed RPC already returns both totals to every reader. They
           // used to stop here, feeding the ranker only, so the rail could not
           // show a like count at all.
@@ -306,6 +310,7 @@ export function mapSupabaseReelToStory(
     wordCount: Number(reel.word_count) || 0,
     ...(reel.language ? { language: reel.language } : {}),
     ...(reel.summary?.trim() ? { summary: reel.summary.trim() } : {}),
+    ...(Number(reel.cover_version) > 0 ? { coverVersion: Number(reel.cover_version) } : {}),
     likes: reel.likes_count ?? 0,
     shares: 0,
     starts: 0,

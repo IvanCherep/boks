@@ -32,6 +32,8 @@ import { usePublishing, type PublishingView } from "./publishing";
 import { useProfileEditor, type ProfileView } from "./profile-editor";
 import { Icon, Sheet, SheetAction, Thumb, useLatest, useToast } from "./ui";
 import { MyPage, myPageViews, type MyPageView } from "./my-page";
+import { openInComposer } from "./composer";
+import { loadPublishing } from "./composer-data";
 import { InviteScreen, InviteSignIn } from "./invite";
 import { loadMyAuthorSpace, loadMyInvites, type InviteOffer, type MyAuthorSpace } from "@/components/boks/author-spaces/data";
 import { inviteTokenFromHash, pendingInviteKey } from "@/lib/boks/author/invite-link";
@@ -106,6 +108,8 @@ export function AuthorCabinet() {
   const [access, setAccess] = useState<{ loaded: boolean; value: AuthorAccess | null }>({ loaded: false, value: null });
   /** Boks Series the team has granted this account (`docs/series-recorder.md`); null when none or unknown. */
   const [series, setSeries] = useState<SeriesAccess | null>(null);
+  /** An author with an open page publishes from My page, straight away (`docs/author-publishing.md`). */
+  const [direct, setDirect] = useState(false);
   const libraryScroll = useRef(0);
 
   const author = user && !user.isAnonymous ? user : null;
@@ -240,6 +244,7 @@ export function AuthorCabinet() {
     if (!user || user.isAnonymous) return;
     let active = true;
     loadMyAuthorSpace().then((answer) => active && setMyPage(answer)).catch(() => undefined);
+    loadPublishing(null).then((answer) => active && setDirect(answer.direct)).catch(() => undefined);
     // Access and invitations together: an account the team has invited never sees the page for authors.
     void Promise.all([loadMyAuthorAccess().catch(() => null), loadMyInvites().catch(() => [] as InviteOffer[]), loadMySeriesAccess()]).then(([value, invites, seriesAccess]) => {
       if (!active) return;
@@ -267,6 +272,12 @@ export function AuthorCabinet() {
       const timer = window.setTimeout(() => { setOffer(offers[0]); setView("invite"); }, 0);
       return () => window.clearTimeout(timer);
     }
+    // An author who publishes straight away works from My page: it is their home.
+    if (direct) {
+      steered.current = true;
+      const timer = window.setTimeout(() => show("my-page", "replace"), 0);
+      return () => window.clearTimeout(timer);
+    }
     // Also later: a reply from the team, or a work back from changes, is what they come for.
     const waiting = myPage?.space && ((myPage.unread ?? 0) > 0 || myPage.items.some((item) => item.work && ["ready", "changes_requested", "preparing"].includes(item.work.status)));
     if (waiting) {
@@ -274,7 +285,7 @@ export function AuthorCabinet() {
       const timer = window.setTimeout(() => show("my-page", "replace"), 0);
       return () => window.clearTimeout(timer);
     }
-  }, [access, offers, myPage, view, inviteToken, show]);
+  }, [access, offers, myPage, view, inviteToken, show, direct]);
 
   // The address the page was opened at.
   useEffect(() => {
@@ -564,7 +575,9 @@ export function AuthorCabinet() {
   // A bok's cover as the page shows it: its own Series' first picture (a link-only
   // piece known from My page), else the catalogue's artwork (`getBokArtwork`).
   const pieces = new Map((myPage?.items ?? []).filter((item) => item.bokId && item.work?.seriesPiece).map((item) => [item.bokId!, item.work!.seriesPiece!]));
-  const bokCover = (bokId: string) => (pieces.has(bokId) ? linkOnlyCover(pieces.get(bokId)!) : getBokArtwork({ id: bokId }));
+  // A published bok's own picture (`bok_covers`), served once it is published.
+  const ownCovers = new Map((myPage?.items ?? []).filter((item) => item.bokId && item.published && item.coverVersion).map((item) => [item.bokId!, item.coverVersion!]));
+  const bokCover = (bokId: string) => (pieces.has(bokId) ? linkOnlyCover(pieces.get(bokId)!) : getBokArtwork({ id: bokId, coverVersion: ownCovers.get(bokId) }));
   const libraryIdentity = {
     handle: author.handle || "",
     initials: savedIdentity?.initials || Array.from(authorInitials("", author.handle)).slice(0, 1).join("") || "b",
@@ -624,7 +637,8 @@ export function AuthorCabinet() {
       <MyPage
         key={`${shown}-${refreshKey}`}
         view={shown as MyPageView}
-        go={(next) => go(next)}
+        // What was published or hidden on My page shows in the library at once.
+        go={(next) => { if (next === "library") setRefreshKey((key) => key + 1); go(next); }}
         toast={toast.show}
         onEditProfile={() => {
           profileBack.current = "my-page";
@@ -671,7 +685,11 @@ export function AuthorCabinet() {
           suspendedReason={author.banReason ?? null}
           refreshKey={refreshKey}
           hasDraft={publishing.hasDraft}
-          onNew={() => setSheet({ kind: "new" })}
+          onNew={() => {
+            if (!direct) { setSheet({ kind: "new" }); return; }
+            openInComposer(null);
+            go("my-page-new");
+          }}
           onContinueDraft={() => publishing.startWriting(false)}
           onEditPage={() => {
             profileBack.current = "library";

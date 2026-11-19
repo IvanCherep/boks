@@ -125,6 +125,12 @@ export type PageItem = {
   published: boolean;
   /** A work the author took off the site themselves; it can be put back. */
   hidden?: boolean;
+  /** A piece the author wrote on the page and has not published (`save_my_bok`). */
+  draft?: boolean;
+  /** Sent to the team to choose its cover; published once it has one. */
+  coverWaiting?: boolean;
+  /** Its own picture's version (`bok_covers`), when it has one. */
+  coverVersion?: number | null;
   format: WorkFormat;
   seriesHeld?: boolean;
   work: SpaceWork | null;

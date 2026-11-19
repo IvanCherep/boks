@@ -1,5 +1,6 @@
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { catalogueBokArtwork } from "@/lib/boks/catalogue-artwork";
+import { ownCoverPath } from "@/lib/boks/own-cover";
 
 function artworkFor(bokId?: string) {
   if (!bokId) return null;
@@ -11,9 +12,13 @@ function artworkFor(bokId?: string) {
   return artwork ? { cover: `/covers/${bokId}.webp`, ...artwork } : null;
 }
 
-/** Artwork is resolved by exact bok ID; Series always keeps its existing cover. */
-export function getBokArtwork(bok: { id?: string; title?: string; authorName?: string }): string | null {
-  return artworkFor(bok.id)?.cover ?? null;
+/**
+ * Artwork is resolved by exact bok ID; Series always keeps its existing cover.
+ * After the registries, the bok's own picture, uploaded or drawn by its author
+ * (`bok_covers`), when the row says it has one.
+ */
+export function getBokArtwork(bok: { id?: string; title?: string; authorName?: string; coverVersion?: number | null }): string | null {
+  return artworkFor(bok.id)?.cover ?? (bok.id ? ownCoverPath(bok.id, bok.coverVersion, "webp") : null);
 }
 
 /** Only these two covers have motion; thumbnails and posters keep the still artwork. */

@@ -28,7 +28,8 @@
     "corpus:fetch": "node scripts/fetch-gutenberg.mjs",
     "corpus:build": "node scripts/build-public-domain-corpus.mjs",
     "corpus:fetch-ru": "tsx --tsconfig tsconfig.json scripts/fetch-wikisource.mts",
-    "corpus:build-ru": "tsx --tsconfig tsconfig.json scripts/build-russian-corpus.mts"
+    "corpus:build-ru": "tsx --tsconfig tsconfig.json scripts/build-russian-corpus.mts",
+    "covers:worker": "tsx --tsconfig tsconfig.json scripts/cover-worker.mts"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

@@ -25,6 +25,14 @@ describe("curtain card", () => {
     expect(card.key).not.toBe(curtainCardFor({ id: "00000000-0000-4000-8000-000000000000", title: "Снегурочка", authorName: "Дмитрий Воденников" }).key);
   });
 
+  it("draws the bok's own picture, by its version, when it has no other", () => {
+    const own = { id: "00000000-0000-4000-8000-000000000000", title: "Тихий снег", authorName: "Анна", coverVersion: 2 };
+    const card = curtainCardFor(own);
+    expect(card.art).toBe("/b/00000000-0000-4000-8000-000000000000/cover.jpg?v=2");
+    expect(curtainCardFor({ ...own, coverVersion: 3 }).key).not.toBe(card.key);
+    expect(curtainCardFor({ ...own, coverVersion: null }).art).toBeNull();
+  });
+
   it("changes its key with anything drawn", () => {
     const key = curtainCardFor(kosa).key;
     expect(curtainCardFor({ ...kosa, title: "коса!" }).key).not.toBe(key);

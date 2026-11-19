@@ -1,5 +1,6 @@
 "use client";
 
+import { SpaceVerified } from "@/components/boks/admin/space-verified";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, Monitor, Plus, RefreshCw, Search, Smartphone, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -579,6 +580,7 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
           {space && space.kind === "author" && (space.invites.length > 0 || space.publications.length > 0) && (
             <HistoryPanel t={t} space={space} />
           )}
+          {space && space.kind === "author" && space.status !== "merged" && <SpaceVerified spaceId={space.id} />}
           <ProfileForm
             t={t}
             name={name}

@@ -135,7 +135,7 @@ describe("reading a bok for a preview", () => {
     };
     const ok = (async () => new Response(JSON.stringify([row]), { status: 200 })) as typeof fetch;
     const bok = await loadBokForShare(chekhov.id, { url: "https://example.test", key: "key", fetchImpl: ok });
-    expect(bok).toEqual({ ...chekhov, slug: null, seriesPiece: null });
+    expect(bok).toEqual({ ...chekhov, slug: null, seriesPiece: null, coverVersion: null });
   });
 
   it("carries the Series an author published from their page, for the link card", async () => {

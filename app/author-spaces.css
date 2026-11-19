@@ -304,3 +304,9 @@
 .amp-invite .amp-invite__hello{font:italic 22px/1.3 var(--serif);color:var(--muted);margin:0 0 6px}
 .acab .amp-replied{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 0;padding:16px 18px;border:1px solid #c44a32;border-radius:12px;background:#fbefe9;font-size:16px;font-weight:600;color:#3b2a22}
 .amp-replied__go{color:#c44a32;white-space:nowrap}
+.asp-verified{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.asp-verified input{width:20px;height:20px;margin-top:2px;accent-color:#c44a32}
+.asp-verified span{display:grid;gap:4px}
+.asp-verified strong{display:inline-flex;align-items:center;gap:6px;font-size:15px}
+.asp-verified strong svg{width:18px;height:18px;color:#c44a32}
+.asp-verified small{font-size:13px;line-height:1.45;color:var(--asp-muted)}

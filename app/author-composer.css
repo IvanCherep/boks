@@ -1,0 +1,155 @@
+/* The cabinet's composer: a new bok from My page (2026-11-20). Tokens are the
+   cabinet's (author-cabinet-v51.css): --ink, --paper, --red, --gold, --line,
+   --muted, --serif. */
+.acomp-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;grid-template-areas:"writing side" "bar side" "rights side";gap:28px 36px;align-items:start;padding-top:26px}
+.acomp-writing{grid-area:writing;display:grid;gap:10px;min-width:0}
+.acomp-side{grid-area:side;display:grid;gap:12px;position:sticky;top:18px}
+.acomp-bar{grid-area:bar;display:grid;gap:10px;position:sticky;bottom:0;z-index:4;padding:12px 0 18px;background:var(--paper,#f3efe7);box-shadow:0 -16px 16px -4px var(--paper,#f3efe7)}
+.acomp-label{display:block;font-size:12px;font-weight:650;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.acomp-label em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;opacity:.8;margin-left:4px}
+.acomp-title{display:grid;gap:6px}
+.acomp-title input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 0 10px;font-size:34px;line-height:1.15;letter-spacing:-.03em;color:var(--ink)}
+.acomp-title input::placeholder{color:var(--muted);opacity:.55}
+.acomp-title input:focus{outline:none;border-bottom-color:var(--red)}
+.acomp-text{display:grid;gap:6px;margin-top:10px}
+.acomp-text textarea{width:100%;min-height:320px;resize:none;overflow:hidden;border:1px solid var(--line);border-radius:6px 18px 6px 6px;background:#fffdf8;padding:20px 22px;font:400 18px/1.65 var(--serif);color:var(--ink);white-space:pre-wrap}
+.acomp-text textarea:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px #22262110}
+.acomp-text textarea::placeholder{font:italic 17px/1.6 var(--serif);color:var(--muted);opacity:.75}
+.acomp-hint{display:block;min-height:1.2em;font-size:13px;line-height:1.5;color:var(--muted)}
+.acomp-hint.is-warn,.acomp-problem{color:#a33d27}
+.acomp-problem{margin:0;font-size:14px;line-height:1.5}
+
+.acomp-cover{display:grid;gap:8px}
+.acomp-frame{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:9/16;max-height:54svh;margin:0 auto;padding:0;border-radius:14px;overflow:hidden;background:repeating-linear-gradient(135deg,#ebe6d8 0 14px,#e5e0d0 14px 28px);box-shadow:inset 0 0 0 1px var(--line);text-align:center;cursor:pointer;transition:box-shadow .18s,transform .18s}
+.acomp-frame:hover{box-shadow:inset 0 0 0 2px var(--ink)}
+.acomp-frame.is-dropping{box-shadow:inset 0 0 0 3px var(--red);transform:scale(.99)}
+.acomp-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.acomp-frame__shade{position:absolute;inset:auto 0 0;height:46%;background:linear-gradient(#0000,#000a)}
+.acomp-frame:not(.has-image) .acomp-frame__shade{display:none}
+.acomp-frame__title{position:absolute;left:18px;right:18px;bottom:20px;font-size:26px;line-height:1.12;letter-spacing:-.03em;color:#fff8ec;text-align:left;text-shadow:0 1px 12px #0007;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.acomp-frame:not(.has-image) .acomp-frame__title{color:var(--ink);text-shadow:none;opacity:.35}
+.acomp-frame__empty{position:relative;display:grid;gap:6px;max-width:80%;font-size:15px;font-weight:600;color:var(--ink)}
+.acomp-frame__empty small{font-weight:400;font-size:12px;line-height:1.45;color:var(--muted)}
+.acomp-cover-actions{display:grid;grid-template-columns:1fr;gap:8px}
+.acab .acomp-cover-actions .btn{min-height:48px;width:100%}
+.acab .acomp-draw{background:linear-gradient(120deg,#2d3a33,#1d2723);color:#fff8ec}
+.acab .acomp-draw span{color:#e8c27a}
+.acomp-variants{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.acomp-variant{position:relative;display:block;aspect-ratio:9/16;padding:0;border-radius:10px;overflow:hidden;background:#e5e0d0;box-shadow:inset 0 0 0 1px var(--line)}
+.acomp-variant img{width:100%;height:100%;object-fit:cover}
+.acomp-variant span{position:absolute;left:6px;right:6px;bottom:6px;padding:6px 8px;border-radius:8px;background:#f3efe7e6;font-size:12px;font-weight:650;color:var(--ink)}
+.acomp-variant.is-on{box-shadow:0 0 0 3px var(--red)}
+.acomp-variant.is-on span{background:var(--red);color:#fff8ec}
+.acomp-variant.is-loading{background:linear-gradient(100deg,#e5e0d0 30%,#f3efe7 50%,#e5e0d0 70%) 0 0/300% 100%;animation:acomp-shimmer 1.4s linear infinite}
+@keyframes acomp-shimmer{to{background-position:-150% 0}}
+@media (prefers-reduced-motion:reduce){.acomp-variant.is-loading{animation:none}}
+
+.acomp-series{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;margin-top:6px;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#2a211b,#3b2a22);color:#f6ead6}
+.acomp-series__mark{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#c44a32;color:#fff3d6;font-size:15px}
+.acomp-series strong{font:500 18px/1.2 var(--serif);letter-spacing:-.02em}
+.acomp-series p{margin-top:4px;font-size:13px;line-height:1.5;color:#e7d6bb}
+
+.acomp-bar__buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;align-items:center}
+.acab .acomp-bar .btn{min-height:56px}
+.acab .acomp-publish{min-width:220px;font-size:16px}
+.acab .acomp-delete{margin-right:auto;color:#a33d27}
+.acomp-rights{grid-area:rights;display:block;margin-top:-18px;font-size:12px;line-height:1.55;color:var(--muted)}
+.acomp-rights a{text-decoration:underline}
+.acomp-keys{white-space:nowrap}
+
+.acomp-done{display:grid;grid-template-columns:260px minmax(0,1fr);gap:36px;align-items:center;padding:40px 0}
+.acomp-done__cover{position:relative;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:#2b302a;box-shadow:0 20px 50px #18221d30}
+.acomp-done__cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.acomp-done__cover:after{content:"";position:absolute;inset:auto 0 0;height:46%;background:linear-gradient(#0000,#000a)}
+.acomp-done__cover .acomp-frame__title{z-index:1;color:#fff8ec;opacity:1}
+.acomp-done__body{display:grid;gap:14px}
+.acomp-done__body h1{font-size:46px}
+.acomp-video{display:flex;gap:10px;padding:14px 16px;border-radius:10px;background:#e9efe0;color:#2f3d2f;font-size:14px;line-height:1.55}
+.acomp-video span{font-size:18px;line-height:1.2}
+.acomp-done__buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+
+.acab .amp-new{display:flex;align-items:center;gap:16px;width:100%;margin:0 0 14px;padding:16px 18px;border:1.5px dashed var(--ink);border-radius:12px;background:transparent;text-align:left;transition:background .18s,border-color .18s}
+.acab .amp-new:hover{background:#fffdf8;border-color:var(--red)}
+.amp-new__plus{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--red);color:#fff8ec;font-size:28px;line-height:1;flex:none}
+.amp-new strong{display:block;font:500 22px/1.15 var(--serif);letter-spacing:-.02em}
+.amp-new small{display:block;margin-top:3px;font-size:13px;color:var(--muted)}
+
+@media (max-width:860px){
+  .acomp-layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"writing" "side" "bar" "rights";gap:22px}
+  .acomp-side{position:static}
+  .acomp-frame{max-width:300px}
+  .acomp-done{grid-template-columns:1fr;justify-items:center;text-align:center;padding:24px 0}
+  .acomp-done__cover{width:220px}
+  .acomp-done__buttons{justify-content:center}
+  .acomp-video{text-align:left}
+}
+@media (max-width:620px){
+  .acomp-title input{font-size:28px}
+  .acomp-text textarea{padding:16px;font-size:17px}
+  /* Only the buttons stick to a phone's bottom, side by side: the text stays in view. */
+  .acomp-bar{padding:8px 0 max(10px,env(safe-area-inset-bottom));gap:6px}
+  .acomp-bar .acomp-blocker{display:none}
+  .acomp-bar__buttons{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}
+  .acab .acomp-bar .btn{min-height:50px;padding:10px 14px;font-size:14px}
+  .acab .acomp-publish{min-width:0}
+  .acab .acomp-delete{grid-column:1 / -1;margin:0;min-height:36px!important}
+  .acomp-rights{margin-top:-10px}
+  .acomp-keys{display:none}
+}
+
+/* The writing needs room: the composer is wider than the cabinet's other detail pages. */
+.acab .detail-page.acomp{max-width:1120px}
+.acab .acomp-team{display:block;width:100%;padding:10px 4px;font-size:14px;font-weight:550;text-align:center;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.acab .acomp-team:hover{color:var(--ink)}
+.acab .acomp-team.is-on{padding:12px 14px;border-radius:10px;background:#e9efe0;color:#2f3d2f;text-decoration:none}
+.acab .acomp-team.is-on u{color:#2f3d2f}
+.acomp-frame__mark{display:block;font:italic 54px/1 var(--serif);color:var(--red);margin-bottom:8px}
+/* My page: Requests and ideas, behind one button. */
+.acab .amp-requests{position:relative}
+.acab .amp-requests .amp-unread{margin-left:8px}
+.amp-kinds{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 12px}
+.acab .amp-kind{min-height:40px;padding:8px 14px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line);font-size:14px;color:var(--paper)}
+.acab .amp-kind.is-on{background:var(--paper);color:#202a26;box-shadow:none}
+.amp-requests__earlier{margin:26px 0 8px!important;font-size:12px!important;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.acab .sheet .amp-requests__list{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-height:40svh;overflow:auto}
+.acab .sheet .amp-requests__list .conv-msg{display:grid;gap:4px;padding:10px 12px;border-radius:12px;background:#f3efe70d}
+.acab .sheet .amp-requests__list .conv-msg.is-team{background:#e9efe01f}
+.acab .sheet .amp-requests__list .conv-meta{font-size:12px;color:var(--muted)}
+.acab .sheet .amp-requests__list .conv-body{font-size:14px;line-height:1.55;white-space:pre-wrap}
+.acab .sheet textarea.amp-note{width:100%;padding:14px;border-radius:8px;border:1px solid var(--line);background:#f3efe710;color:var(--paper);font-size:16px}
+/* Studio → review queue: the cover the author asked the team to choose. */
+.studio-team-cover{display:grid;gap:10px;margin:0 0 16px;padding:14px;border-radius:12px;border:1px solid #c44a32;background:#fbefe9;color:#3b2a22}
+.studio-team-cover strong{font-size:15px}
+.studio-team-cover p{margin:0;font-size:13px;line-height:1.5}
+.studio-team-cover figure{margin:0;display:grid;gap:4px;justify-items:start}
+.studio-team-cover figure img{width:120px;aspect-ratio:9/16;object-fit:cover;border-radius:8px}
+.studio-team-cover figcaption{font-size:12px;color:#6d5a4f}
+.studio-team-cover__actions{display:flex;flex-wrap:wrap;gap:8px}
+.studio-team-cover__variants{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.studio-team-cover__variants button{position:relative;padding:0;border-radius:8px;overflow:hidden;aspect-ratio:9/16;background:#e5e0d0}
+.studio-team-cover__variants img{width:100%;height:100%;object-fit:cover}
+.studio-team-cover__variants span{position:absolute;left:6px;right:6px;bottom:6px;padding:5px;border-radius:6px;background:#fffdf8e6;font-size:12px;font-weight:600}
+.acab .acomp-heading{justify-self:start;padding:6px 12px;border-radius:999px;background:#f4e2bf;color:#5a3d0c;font-size:13px;font-weight:600;line-height:1.4;text-align:left}
+.acab .acomp-heading:hover{background:#efd6a6}
+
+/* My page on a phone: the page's own buttons in one compact row, so New bok is on the first screen. */
+@media (max-width:620px){
+  .acab .amp .amp-identity__actions{flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:0 -16px;padding:0 16px 2px;scrollbar-width:none}
+  .acab .amp .amp-identity__actions .btn{flex:none;min-height:40px;padding:8px 14px;font-size:13px;white-space:nowrap}
+}
+@media (max-width:620px){
+  /* A card's buttons: two to a row, an odd last one across, never a word wrapped in two. */
+  .acab .amp-card__actions{gap:6px}
+  .acab .amp-card__actions .btn{min-height:42px;padding:8px 10px;font-size:14px;white-space:nowrap}
+  .acab .amp-card__actions .btn:last-child:nth-child(odd){grid-column:1 / -1}
+}
+@media (max-width:620px){
+  /* After publishing, the buttons fit on the first screen with the cover. */
+  .acomp-done{gap:18px;padding:18px 0}
+  .acomp-done__cover{width:150px}
+  .acomp-done__cover .acomp-frame__title{font-size:18px;left:12px;right:12px;bottom:12px}
+  .acomp-done__body h1{font-size:36px}
+  .acomp-done__buttons{display:grid!important;grid-template-columns:1fr 1fr}
+  .acomp-done__buttons .btn-red{grid-column:1 / -1}
+}
+@media (max-width:620px){ .acab .acomp-bar__buttons > .btn:only-child{grid-column:1 / -1} }

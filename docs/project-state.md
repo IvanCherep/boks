@@ -15,6 +15,8 @@ go stale in a day; run the commands in `AGENTS.md` for current numbers.
 
 ## Live, every study switched off
 
+**Publishing from My page for verified authors (2026-11-20).** A verified author (`author_spaces.verified`: pages the team made, Series shelf pages, Boks Series grants; switched in Studio → Authors) publishes a new bok from My page with no review. My page is their cabinet home. A cover is required: two drawn from the text by Yandex in the house look (the covers worker runs in the `series` process), their own uploaded, or the editors choose it. In that last case the piece waits in Moderation marked "Needs a cover", and a database trigger refuses to publish it without one. Drafts sit in the same list. Covers live in `bok_covers` and reach the feed, the author page, the link card and the curtain loop. The team conversation is behind "Requests and ideas". Migration 20261120100000 (`docs/author-publishing.md`).
+
 **The designers' page for authors (2026-11-18).** `/author` for a guest or an
 account without a cabinet shows version 22 of the designers' page
 (`public/author-landing/`, imported by `scripts/author-landing/import.mjs`) in a
@@ -1335,6 +1337,7 @@ To choose a link-preview format, `/p/<slug>` opens Алексей Прохоро
 **Curtain preview generator (2026-11-10, test stage).** `scripts/curtain-cards.mts` turns series pieces (title, author, cover, `coverFocus`, plus hand-set wide crops kept apart from the reader's) into descriptors; `scripts/curtain-preview.py` lays the shared curtain from `assets/curtain/` (one overlay, 85 phases, a 450 serif) over the cover and the title and writes a JPEG 1200x630 (90-200 KB) and an MP4 960x504, 10 s, 30 fps, silent (0.34-0.58 MB at CRF 26), about 3.5 s a card. Encoding runs in a job, never in a request. Not yet on `/b/<id>`: scaling means running it on publish, storing the pair by a key of id, text, art and template version, and pointing `/b/<id>` metadata at it behind the existing public guard. Listed with copy buttons in Studio → Links → Preview lab; never indexed. The cards hold his photo, so they sit in his link-only folder (`lab-*-share.*`). Variants: `lib/boks/preview-lab.ts`. Remove it, `app/p/` and `components/boks/admin/preview-lab.tsx` once a format is chosen.
 
 ## Not in production
+
 
 | Thing | Why |
 |---|---|

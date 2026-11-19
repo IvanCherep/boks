@@ -137,6 +137,29 @@ const russianSentences: Record<string, string> = {
     "Пять сообщений за час - спасибо, правда. Остальное пришлите чуть позже.",
   "Enter your email.": "Введите email.",
   "Supabase is not configured.": "Сервер не настроен.",
+  // Publishing from My page (docs/author-publishing.md).
+  "Publishing straight away is open to verified authors; send the text for review instead.":
+    "Публиковать сразу могут верифицированные авторы; отправьте текст на проверку.",
+  "Pictures are drawn for verified authors.": "Картинки рисуем для верифицированных авторов.",
+  "Which piece is the picture for?": "Для какого бока картинка?",
+  "Which piece is this?": "Какой это бок?",
+  "This piece belongs to another account.": "Этот бок принадлежит другому аккаунту.",
+  "Both pictures for this piece are already drawn. Upload your own to replace them.":
+    "Оба варианта для этого бока уже нарисованы. Чтобы заменить, загрузите свою картинку.",
+  "That is all the pictures for today. Tomorrow there will be more; your own can be uploaded now.":
+    "На сегодня картинки закончились. Завтра будут новые, а свою можно загрузить прямо сейчас.",
+  "The title is longer than 120 characters.": "Название длиннее 120 знаков.",
+  "Where does the picture come from?": "Откуда эта картинка?",
+  "The picture could not be read.": "Не удалось прочитать картинку. Попробуйте другую.",
+  "This piece is with the team; it can be changed from My texts.": "Этот бок у редакции; изменить его можно в «Моих текстах».",
+  "This piece already has its cover; replace it here.": "У этого бока уже есть обложка; замените её здесь.",
+  "You already have this exact text on your page.": "Такой же текст уже есть на вашей странице.",
+  "A bok goes out with a picture: draw one or upload your own.": "Бок выходит с картинкой: нарисуйте её или загрузите свою.",
+  "This piece is not yours or no longer exists.": "Этот бок не ваш или его больше нет.",
+  "Only your own draft can be deleted here.": "Удалить здесь можно только свой черновик.",
+  "Paste the text first: the picture is drawn from it.": "Сначала вставьте текст: картинку рисуем по нему.",
+  "Pictures cannot be drawn right now.": "Сейчас картинки не рисуются. Загрузите свою или попробуйте позже.",
+  "Sign in again.": "Войдите ещё раз.",
   // Writing and reporting a bok.
   "A bok must fit inside 15 minutes.": "Бок должен укладываться в 15 минут.",
   "Confirm you hold the rights to publish this bok.": "Подтвердите, что у вас есть права на публикацию этого бока.",

@@ -203,7 +203,7 @@ export function AuthorPortraitPage({
             {boks.map((bok, index) => {
               // A Series the page holds itself, until the reader can open it as one.
               const ownSeries = bok.seriesPiece && !poemManifestFor(bok.id) ? bok.seriesPiece : null;
-              const artwork = bok.artwork ?? getBokArtwork({ id: bok.id }) ?? (bok.seriesPiece ? linkOnlyCover(bok.seriesPiece) : null);
+              const artwork = bok.artwork ?? getBokArtwork({ id: bok.id, coverVersion: bok.coverVersion }) ?? (bok.seriesPiece ? linkOnlyCover(bok.seriesPiece) : null);
               // Series by what the page published, or, for pages from before
               // that, by the production registered for the bok - unless a
               // Series version is attached and still closed.

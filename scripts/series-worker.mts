@@ -43,6 +43,7 @@ import { minimumMatch, poemLines, seriesLimits, type SeriesBuildErrorCode, type 
 import { planSceneMap } from "@/lib/boks/series-recorder/scene-plan";
 import { ArtServiceError, artPrompt, drawPicture, writeScenes, type YandexKeys } from "@/lib/boks/series-recorder/art";
 import { seriesRoot, writeJsonAtomically, type SeriesArtTask, type SeriesJob } from "@/lib/boks/series-recorder/store";
+import { runCoverWorker } from "@/lib/boks/author/covers/worker";
 
 const run = promisify(execFile);
 const linkOnlyRoot = process.env.BOKS_LINK_ONLY_DIR || join(process.cwd(), ".boks-local", "link-only");
@@ -369,6 +370,8 @@ if (once) {
   while ((await drawOne()) || (await takeOne()));
 } else {
   console.log(`series: watching ${seriesRoot()}, building into ${linkOnlyRoot}${yandex ? ", drawing with Yandex" : ", no Yandex key: pictures cannot be drawn"}`);
+  // Authors' covers (docs/author-publishing.md) share this process, its keys and its folder.
+  void runCoverWorker();
   for (;;) {
     if (!(await drawOne()) && !(await takeOne())) await new Promise((resolve) => setTimeout(resolve, 1500));
   }

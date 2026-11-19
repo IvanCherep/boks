@@ -23,6 +23,8 @@ export type Story = {
   language?: string;
   /** One or two editorial sentences on what it is and why to read it. Absent when there is none. */
   summary?: string;
+  /** The bok's own picture, uploaded or drawn for it (`bok_covers`): its version, absent when it has none. */
+  coverVersion?: number;
   likes: number;
   shares: number;
   starts: number;
@@ -456,6 +458,8 @@ export type AuthorBok = {
   seriesHeld?: boolean;
   /** A cover for a piece with no registered artwork. */
   artwork?: string;
+  /** Its own picture's version (`bok_covers`), when its author gave it one. */
+  coverVersion?: number | null;
   /**
    * A Series made for this text and published by its author, played from its
    * link-only folder (`docs/link-only-pieces.md`) until it is registered in code.

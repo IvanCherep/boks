@@ -11,6 +11,7 @@ The read order is in `AGENTS.md`: `CONTEXT.md` → `docs/project-state.md` → t
 | Module map and data flows | `docs/architecture.md` |
 | Why the system is shaped this way | `docs/adr/` (`NNNN-slug.md`) |
 | Product scope and rules | `specs/boks-product-spec.md` |
+| An author with an open page publishing from My page: composer, covers, drawing | `docs/author-publishing.md` |
 | Algorithms, signals, metrics, experiments | `specs/boks-recommendation-experiments.md` |
 | Every number in `/admin` and the decision it supports | `docs/admin-metrics.md` - read before adding a metric |
 | The thesis studies: protocols, the on/off switch, forms, results | `docs/studies.md` |

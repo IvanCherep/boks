@@ -29,6 +29,8 @@ export type SharedBok = {
    * (`get_boks_bok_series_piece`): the link card draws that Series' cover.
    */
   seriesPiece?: string | null;
+  /** Its own picture's version (`bok_covers`), null without one. */
+  coverVersion?: number | null;
 };
 
 const uuidPrefix = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -133,6 +135,7 @@ type PreviewRow = {
   minutes?: unknown;
   language?: unknown;
   slug?: unknown;
+  cover_version?: unknown;
 };
 
 export function sharedBokFromRow(row: PreviewRow | null | undefined): SharedBok | null {
@@ -147,6 +150,7 @@ export function sharedBokFromRow(row: PreviewRow | null | undefined): SharedBok 
     minutes: Number(row.minutes) || 1,
     language: typeof row.language === "string" ? row.language : null,
     slug: typeof row.slug === "string" && row.slug ? row.slug : null,
+    coverVersion: Number(row.cover_version) > 0 ? Number(row.cover_version) : null,
   };
 }
 
@@ -183,7 +187,7 @@ export async function loadBokForShare(
   if (!url || !key || !filter) return null;
 
   const restBase = options.url ? `${url}/rest/v1` : (globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${url}/rest/v1`);
-  const request = `${restBase}/published_boks?${filter}&select=id,title,author_name,text,minutes,language,slug&limit=1`;
+  const request = `${restBase}/published_boks?${filter}&select=id,title,author_name,text,minutes,language,slug,cover_version&limit=1`;
   const lookup = async (): Promise<SharedBok | null | undefined> => {
     // A second try after a blip: a link preview that a messenger fetched while
     // the database hiccuped would otherwise say "boks" and nothing else, and

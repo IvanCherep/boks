@@ -1,6 +1,7 @@
 import { getBokPosterArtwork, bokArtworkFocus } from "@/components/boks/reader/bok-artwork";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { linkOnlyFilePath } from "@/lib/boks/link-only";
+import { ownCoverPath } from "@/lib/boks/own-cover";
 
 /**
  * The curtain link card (approved 2026-11-10): a bok's cover behind the boks
@@ -58,12 +59,12 @@ export type CurtainCard = {
 };
 
 /** The card for a published bok, from trusted data only (`loadBokForShare`). */
-export function curtainCardFor(bok: { id: string; title: string; authorName?: string | null; seriesPiece?: string | null }): CurtainCard {
+export function curtainCardFor(bok: { id: string; title: string; authorName?: string | null; seriesPiece?: string | null; coverVersion?: number | null }): CurtainCard {
   const title = bok.title.replace(/\s+/g, " ").trim();
   const byline = bok.authorName?.replace(/\s+/g, " ").trim() || null;
   // A cover in the app, else the cover of the Series the author published
   // from their page, kept in its link-only folder as `curtain-share.jpg`.
-  const art = getBokPosterArtwork(bok.id) ?? (bok.seriesPiece ? linkOnlyFilePath(bok.seriesPiece, "curtain-share.jpg") : null);
+  const art = getBokPosterArtwork(bok.id) ?? (bok.seriesPiece ? linkOnlyFilePath(bok.seriesPiece, "curtain-share.jpg") : null) ?? ownCoverPath(bok.id, bok.coverVersion, "jpg");
   const position = curtainPosition[bok.id] ?? seriesPieceFor(bok.id)?.coverFocus ?? bokArtworkFocus(bok.id);
   const key = hash([curtainTemplate, bok.id, title, byline ?? "", art ?? "", position].join("\u0000"));
   return { id: bok.id, title, byline, art, position, key };
