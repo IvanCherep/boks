@@ -50,6 +50,8 @@
   window.BoksBridge = {
     version: "1",
     firstBook: null,
+    /* A reader already signed in to boks (replaying it from Settings): the last room offers no sign-in. */
+    signedIn: new URLSearchParams(window.location.search).get("signed") === "1",
     done: function (state) { post({ type: "boks-onboarding-done", answers: answers(state, Boolean(state.skip)), read: Boolean(state.read) }); },
     signIn: function (state) { post({ type: "boks-onboarding-sign-in", answers: answers(state, false) }); },
     answers: function (state) { post({ type: "boks-onboarding-answers", answers: answers(state, false) }); },
@@ -62,6 +64,6 @@
 })();
 </script>
   <script>window.defineMessages = messages => messages;</script>
-  <script src="onboarding.bundle.js?v=4da56f7321"></script>
+  <script src="onboarding.bundle.js?v=2d04a35188"></script>
 </body>
 </html>

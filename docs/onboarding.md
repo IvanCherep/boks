@@ -11,7 +11,10 @@ mystery mail → afisha → final invitation, landing on the feed's real first b
 record in `localStorage["boks-onboarding"]` sees "Знакомство с boks" on the
 cover, above "Что почитать", and opens it when they want to; finishing or
 skipping writes the record and the invitation goes. Accounts never see the
-invitation. `/?welcome=1` opens it on purpose, for anyone.
+invitation; anyone, signed in or not, can open it again from Settings →
+"Знакомство с boks". A signed-in reader's last room offers no sign-in
+(`&signed=1` to the page), their answers replace the earlier ones, and a skip
+never overwrites answers. `/?welcome=1` opens it on purpose, for anyone.
 
 ## How it is built
 

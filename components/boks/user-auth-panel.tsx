@@ -179,6 +179,8 @@ type UserAuthPanelProps = {
   onFollowsChanged?: (authorUserIds: string[]) => void;
   onOpenFeed?: () => void;
   onOpenSeries?: () => void;
+  /** Settings → "Знакомство с boks": the reader introduction again (docs/onboarding.md). */
+  onOpenIntroduction?: () => void;
   initialSection?: YouSection;
   /** The line of the day and the game, in the reader only. */
   daily?: Omit<DailyLinks, "onStatus">;
@@ -200,6 +202,7 @@ export function UserAuthPanel({
   onFollowsChanged,
   onOpenFeed,
   onOpenSeries,
+  onOpenIntroduction,
   initialSection,
   daily,
 }: UserAuthPanelProps) {
@@ -666,7 +669,7 @@ export function UserAuthPanel({
       onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
       <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
         {settingsVisible ? <>
-          <YouSettings initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={() => setShowSettings(false)} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
+          <YouSettings initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={() => setShowSettings(false)} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
           {status && <p className="social-status" role="status">{status}</p>}
         </> : <>
           {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">

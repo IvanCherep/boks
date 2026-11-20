@@ -2906,9 +2906,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     writeFlag(guestWelcomeKey, "1");
     setGuestWelcomeSeen(true);
     if (answers.status === "completed") applyOnboardingAnswers(answers);
-    else void saveStartingPreferences(answers, { visitorId: visitorId.current }).catch(() => undefined);
+    // A skip is worth keeping only as a first answer: it never replaces what a reader chose before.
+    else if (!hasSignedInAccount && !onboardingRecord) void saveStartingPreferences(answers, { visitorId: visitorId.current }).catch(() => undefined);
     setOnboardingOpen(false);
-  }, [applyOnboardingAnswers]);
+  }, [applyOnboardingAnswers, hasSignedInAccount, onboardingRecord]);
 
   function clearBoundaryPull(immediate = false) {
     pullArmed.current = false;
@@ -3304,6 +3305,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           onReadingLanguagesChanged={adoptReadingLanguages}
           onOpenFeed={() => { setAuthPanelOpen(false); openFeed(); }}
           onOpenSeries={() => { setAuthPanelOpen(false); openSeries(); }}
+          onOpenIntroduction={isSupabaseReader ? () => { setAuthPanelOpen(false); setOnboardingOpen(true); } : undefined}
           daily={{
             openToday: () => void openTodayLetter(),
             openLetter: showLetter,
@@ -3612,11 +3614,12 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         {onboardingOpen && (
           <OnboardingFrame
             language={uiLanguage}
+            signedIn={hasSignedInAccount}
             readingLanguages={readingLanguagesRef.current}
             firstBook={onboardingFirstBook}
             onAnswers={applyOnboardingAnswers}
             onDone={(answers) => finishOnboarding(answers)}
-            onSignIn={(answers) => { finishOnboarding(answers, { signIn: true }); openAccount("notice"); }}
+            onSignIn={(answers) => { if (hasSignedInAccount) { finishOnboarding(answers); return; } finishOnboarding(answers, { signIn: true }); openAccount("notice"); }}
           />
         )}
         {guestWelcomeVisible && <GuestWelcome onCreate={() => { setGuestWelcomeSeen(true); openAccount("notice"); }} onClose={() => setGuestWelcomeSeen(true)} />}

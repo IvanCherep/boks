@@ -112,6 +112,8 @@ patch("app.js", [
   ["function auth(reason){", "function auth(reason){if(window.BoksBridge){window.BoksBridge.signIn({onboarding,profile:p});return;}"],
   // The first cover is boks's real first bok when boks has sent it.
   ["function discoveryFirstBook(){", "function discoveryFirstBook(){if(window.BoksBridge?.firstBook)return window.BoksBridge.firstBook;"],
+  // A reader signed in to boks meets the last room as signed in: no "sign in and save".
+  ["function arrivalOptions(){return {lang,firstBook:discoveryFirstBook(),signedIn:signed()}", "function arrivalOptions(){return {lang,firstBook:discoveryFirstBook(),signedIn:signed()||Boolean(window.BoksBridge?.signedIn)}"],
   // The library is fetched from this folder.
   ["fetch('assets/library.json?request=52-classics',{cache:'no-store'})", "fetch('assets/library.json?v='+(window.BoksBridge?.version||'1'))"],
 ]);

@@ -23,8 +23,10 @@ export type FirstBook = { id: string; title: string; cover: string | null; autho
 
 const frameVersion = "1";
 
-export function OnboardingFrame({ language, readingLanguages, firstBook, onAnswers, onDone, onSignIn }: {
+export function OnboardingFrame({ language, signedIn, readingLanguages, firstBook, onAnswers, onDone, onSignIn }: {
   language: UiLanguage;
+  /** Signed in to boks (opened from Settings): the last room offers no sign-in. */
+  signedIn: boolean;
   /** Where the language bay starts: the reading languages boks has for this reader now. */
   readingLanguages: readonly string[];
   firstBook: FirstBook | null;
@@ -63,7 +65,7 @@ export function OnboardingFrame({ language, readingLanguages, firstBook, onAnswe
   }, []);
 
   // Always from the first room: the reader asked for it (`welcome=1` resets the page's own saved progress).
-  const src = `/onboarding/index.html?lang=${language}&scenario=onboarding&focus=1&reading=${readingLanguages.join(",")}&welcome=1&v=${frameVersion}`;
+  const src = `/onboarding/index.html?lang=${language}&scenario=onboarding&focus=1&reading=${readingLanguages.join(",")}&welcome=1${signedIn ? "&signed=1" : ""}&v=${frameVersion}`;
   return (
     <div className={`onboarding-frame${leaving ? " is-leaving" : ""}${loaded ? " is-loaded" : ""}`} role="dialog" aria-modal="true" aria-label={language === "ru" ? "Знакомство с boks" : "Welcome to boks"}>
       <iframe ref={frame} src={src} title={language === "ru" ? "Знакомство с boks" : "Welcome to boks"} onLoad={() => setLoaded(true)} allow="autoplay" />
