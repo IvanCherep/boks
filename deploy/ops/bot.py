@@ -264,12 +264,17 @@ def pending():
         return [{"text": t} for t in local.split(";") if t.strip()]
     send_url = env("TG_RELAY_URL") or "https://boks-telegram.tryboks.workers.dev/send"
     url = send_url.rsplit("/send", 1)[0] + "/pending"
-    request = urllib.request.Request(url, method="POST", headers={"Authorization": "Bearer " + env("TG_RELAY_KEY")})
+    request = urllib.request.Request(url, method="POST", headers={
+        "Authorization": "Bearer " + env("TG_RELAY_KEY"),
+        # Cloudflare refuses Python's default User-Agent with a 403.
+        "User-Agent": "boks-ops/1 (ops/bot.py)",
+    })
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             return json.loads(response.read().decode()).get("commands", [])
-    except Exception:
+    except Exception as error:
         # An older relay without /pending, or the network: nothing to do this minute.
+        print(f"bot: relay /pending failed: {error}", file=sys.stderr)
         return []
 
 
