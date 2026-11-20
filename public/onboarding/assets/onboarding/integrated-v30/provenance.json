@@ -1,0 +1,88 @@
+{
+  "mode": "built-in imagegen",
+  "purpose": "Remove painted navigation hardware and replace mismatched generated drawer-state morphs with persistent registered fronts.",
+  "assets": [
+    {
+      "file": "drawer-bottom-front.webp",
+      "sha256": "9968009f185127bfa91aa06db56853e5b99533170b0b5e2b020929119bda6283",
+      "size": [
+        484,
+        218
+      ],
+      "preparation": "Original generated cabinet front crop, no painting or synthesized wood/handle."
+    },
+    {
+      "file": "drawer-middle-front.webp",
+      "sha256": "55ed5ed22ff67295da5913ae1613c35f8d8e1f6504ecf59555869cba265de932",
+      "size": [
+        484,
+        211
+      ],
+      "preparation": "Original generated cabinet front crop, no painting or synthesized wood/handle."
+    },
+    {
+      "file": "drawer-top-front.webp",
+      "sha256": "82b35b87c276e5d26ffb4ab50165e678c2f383968aa49261196f29d69c077fbe",
+      "size": [
+        484,
+        219
+      ],
+      "preparation": "Original generated cabinet front crop, no painting or synthesized wood/handle."
+    },
+    {
+      "file": "form-bay.webp",
+      "sha256": "198eefda06659b68ee7c42d69984c654ae600ea0e8ffa3cd254a9f5578c62b48",
+      "size": [
+        640,
+        1335
+      ],
+      "preparation": "Original v28 geometry retained. Built-in imagegen provided local plaque wood replacement and dark drawer interiors. Changes composited only into specified registered regions. All surrounding geometry fixed."
+    },
+    {
+      "file": "form-recess-bay.webp",
+      "sha256": "475f90d8de3897991f3809654e15880a1e4515b7541c5991c79960d7eef47326",
+      "size": [
+        640,
+        1335
+      ],
+      "preparation": "Original v28 geometry retained. Built-in imagegen provided local plaque wood replacement and dark drawer interiors. Changes composited only into specified registered regions. All surrounding geometry fixed."
+    },
+    {
+      "file": "language-bay.webp",
+      "sha256": "4358babf7bcc73046545c368084c4cb2e4cc1360274afec10e4c8bb66e3a9d6c",
+      "size": [
+        640,
+        1335
+      ],
+      "preparation": "Original v28 geometry retained. Built-in imagegen provided local plaque wood replacement and dark drawer interiors. Changes composited only into specified registered regions. All surrounding geometry fixed."
+    }
+  ],
+  "sources": [
+    {
+      "file": "/Users/andrey/.codex/generated_images/01a1e3f9-13a0-7640-9581-252f739fc072/exec-35669ed4-9466-4349-b82d-dfed858189df.png",
+      "sha256": "e6df428880b759d0b2deab85e9625a1ae99353f926d20ff6060a29f068405a5b"
+    },
+    {
+      "file": "/Users/andrey/.codex/generated_images/01a1e3f9-13a0-7640-9581-252f739fc072/exec-20042632-5f89-40f9-ac3c-52e73de6dce4.png",
+      "sha256": "d34d08d16f899fc863f3a61a04e0a56750e5a7508a9f51d7f3a3545cee541366"
+    },
+    {
+      "file": "/Users/andrey/.codex/generated_images/01a1e3f9-13a0-7640-9581-252f739fc072/exec-9b684b81-49a0-4a78-acdf-8e43d8d47e96.png",
+      "sha256": "73f015ca3f1e8d28ff82ffeb55e44e83598c8f44dc86ef37d27c24c091597ca9"
+    }
+  ],
+  "originalFixedGeometry": [
+    {
+      "file": "dist/assets/onboarding/integrated-v28/language-bay.webp",
+      "sha256": "fb88822348e8927fea938885df678c4d0e8b1cb5c3090920ef6664f2b06dc85a"
+    },
+    {
+      "file": "dist/assets/onboarding/integrated-v28/form-bay.webp",
+      "sha256": "116a9c98f9d28035f0b669ad700e3b0761638c47d549dc6ea8aebdf768e50e5e"
+    }
+  ],
+  "originalFrontSource": {
+    "file": "/Users/andrey/.codex/generated_images/01a1e3a3-2848-7091-8bda-9845c358bc3d/exec-5a520141-59a6-43a3-9e2e-68bc2c4a3eef.png",
+    "sha256": "5b34db6e06b8be92af9225f8deca47eed0af265f5160f6a3a533c0335562a4e3"
+  }
+}

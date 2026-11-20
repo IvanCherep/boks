@@ -1,0 +1,16 @@
+{
+  "family": "Playfair Display Variable",
+  "package": "@fontsource-variable/playfair-display",
+  "version": "5.3.0",
+  "source": "Same installed font package used by main app/layout.tsx",
+  "files": [
+    {
+      "file": "playfair-display-latin-wght-normal.woff2",
+      "sha256": "e0c764a8e9e1cce92163c55bac4b2ad6cd4cf8c696ce2289ab5c41565e65b7e2"
+    },
+    {
+      "file": "playfair-display-cyrillic-wght-normal.woff2",
+      "sha256": "c108681cba6a9820bff52f4a1a4a1d9edf356b347bd79b7c61e916028e8a8b54"
+    }
+  ]
+}

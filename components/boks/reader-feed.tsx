@@ -146,6 +146,9 @@ import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks
 import { LetterView } from "@/components/boks/daily/letter";
 import { DayCard } from "@/components/boks/daily/day-card";
 import { GuestReminderCard, GuestWelcome } from "@/components/boks/daily/guest-cards";
+import { OnboardingFrame, type FirstBook, type OnboardingAnswers } from "@/components/boks/onboarding/onboarding-frame";
+import { saveStartingPreferences } from "@/components/boks/onboarding/onboarding-data";
+import { readOnboardingRecord, shouldOfferOnboarding, writeOnboardingRecord } from "@/lib/boks/onboarding/eligibility";
 import { guestReminderFor, type GuestReminder } from "@/lib/boks/daily/days";
 import { SendLineSheet } from "@/components/boks/daily/send-line";
 import { SelectionMenu, usePassageSelection } from "@/components/boks/daily/selection-menu";
@@ -624,6 +627,12 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   /** Just signed in: the welcome comes now, wherever the reader is in the text. */
   const [justSignedIn, setJustSignedIn] = useState(false);
   const [guestWelcomeSeen, setGuestWelcomeSeen] = useState(true);
+  /** The reader introduction is over the reader (docs/onboarding.md). */
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const onboardingChecked = useRef(false);
+  const initialSearch = useRef(typeof window === "undefined" ? "" : window.location.search);
+  /** The introduction's answers were saved and the feed rebuilt with them. */
+  const onboardingApplied = useRef<string | null>(null);
   /** A reader who came by a link has moved past the bok it opened (or finished it). */
   const [movedOn, setMovedOn] = useState(false);
   const firstStoryId = useRef<string | null>(null);
@@ -1388,6 +1397,23 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     return () => window.clearTimeout(timer);
   }, [hasSignedInAccount]);
 
+  // A guest who signed in from the introduction carries its answers into the account,
+  // unless the account already has its own (save_my_starting_preferences, adopt).
+  useEffect(() => {
+    if (!hasSignedInAccount) return;
+    const storage = (() => { try { return window.localStorage; } catch { return null; } })();
+    const record = readOnboardingRecord(storage);
+    if (!record?.adoptPending || !record.answers) return;
+    void saveStartingPreferences(record.answers as OnboardingAnswers, { adopt: true, visitorId: visitorId.current })
+      .then(() => {
+        writeOnboardingRecord(storage, { status: record.status, at: record.at });
+        return reloadFeedReleasing();
+      })
+      .catch(() => undefined);
+    // `reloadFeedReleasing` is stable enough; the adoption runs once per sign-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSignedInAccount]);
+
   // Signed in after tapping Follow as a guest: back to that author, following.
   useEffect(() => {
     if (!hasSignedInAccount) return;
@@ -1500,9 +1526,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       setAftertastes(current => ({ ...current, [currentStory.id]: tags }));
     },
   };
-  const readerOverlayOpen = Boolean(whatToReadOpen || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
+  const readerOverlayOpen = Boolean(onboardingOpen || whatToReadOpen || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
   const readerInteractionBlocked = Boolean(
-    whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
+    onboardingOpen || whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
   );
   const coverInspection = useCoverInspection(coverRef, currentStoryId,
     Boolean(currentStory && getBokArtwork(currentStory) && !readerInteractionBlocked && storyTransition.phase === "idle"),
@@ -1585,7 +1611,14 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     day.cardPending && user?.handle
       && cardMoment && (atBreak || justSignedIn)
   );
-  const guestWelcomeVisible = Boolean(isGuestReader && !guestWelcomeSeen && cardMoment && atBreak);
+  /** The bok the introduction lands on: the feed's real first one, as the reader will see it. */
+  const onboardingFirstBook = useMemo<FirstBook | null>(() => currentStory ? {
+    id: currentStory.id,
+    title: currentStory.title,
+    cover: getBokArtwork(currentStory),
+    author: currentStory.authorName,
+  } : null, [currentStory]);
+  const guestWelcomeVisible = Boolean(isGuestReader && !onboardingOpen && !guestWelcomeSeen && cardMoment && atBreak);
   // Shown is seen: on every device, today.
   useEffect(() => {
     if (dayCardVisible && arrivalDate) cardShown(arrivalDate);
@@ -1767,14 +1800,14 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   // Visibility may resume a clock only when its reading surface is eligible.
   // Settings, decorative covers, final actions and paused audio are all holds.
   useEffect(() => {
-    const overlay = whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
+    const overlay = onboardingOpen || whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
     const reading = formatOnScreen ? formatPlaying : !seriesOpen && readingPhase === "reading";
     if (overlay || !reading) readingClock.current.hold();
     else {
       readingClock.current.release();
       if (document.visibilityState === "visible") readingClock.current.resume();
     }
-  }, [whatToReadOpen, ribbonPlaying, authPanelOpen, commentOpen, authorSheet, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
+  }, [onboardingOpen, whatToReadOpen, ribbonPlaying, authPanelOpen, commentOpen, authorSheet, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
 
   // Start is measured in foreground reading seconds, never cover dwell.
   useEffect(() => {
@@ -2828,6 +2861,54 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     [notify, reloadFeedReleasing]
   );
 
+  // The reader introduction: offered once to a new guest who opened boks itself.
+  useEffect(() => {
+    if (!identitySettled || onboardingChecked.current) return;
+    onboardingChecked.current = true;
+    const storage = (() => { try { return window.localStorage; } catch { return null; } })();
+    const offer = shouldOfferOnboarding({
+      // As the reader arrived: the feed rewrites the address once it opens a shared bok.
+      pathname: arrivedByLink ? "/shared" : window.location.pathname,
+      search: initialSearch.current,
+      signedIn: hasSignedInAccount,
+      record: readOnboardingRecord(storage),
+      guestReads: readAnonymousReadState().storyIds.length,
+      welcomeSeen: readFlag(guestWelcomeKey) === "1",
+    });
+    if (!offer) return;
+    const timer = window.setTimeout(() => setOnboardingOpen(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [identitySettled, hasSignedInAccount, arrivedByLink]);
+
+  /** The answers are known (the shelf is behind): saved, and the feed rebuilt with them while the scenes play. */
+  const applyOnboardingAnswers = useCallback((answers: OnboardingAnswers) => {
+    const key = JSON.stringify([answers.status, answers.form, answers.readingLanguages, answers.classics.map((c) => c.id)]);
+    if (onboardingApplied.current === key) return;
+    onboardingApplied.current = key;
+    const languages = normalizeReadingLanguages(answers.readingLanguages);
+    void saveStartingPreferences(answers, { visitorId: visitorId.current })
+      .catch(() => undefined)
+      .then(() => {
+        if (languages.length && languages.join() !== readingLanguagesRef.current.join()) {
+          rememberReadingLanguages(languages);
+          readingLanguagesRef.current = languages;
+          setSeriesContext(seriesContextFor(languages));
+        }
+        return reloadFeedReleasing();
+      })
+      .catch(() => undefined);
+  }, [reloadFeedReleasing]);
+
+  const finishOnboarding = useCallback((answers: OnboardingAnswers, options: { signIn?: boolean } = {}) => {
+    const storage = (() => { try { return window.localStorage; } catch { return null; } })();
+    writeOnboardingRecord(storage, { status: answers.status, at: Date.now(), ...(options.signIn ? { adoptPending: true, answers } : {}) });
+    writeFlag(guestWelcomeKey, "1");
+    setGuestWelcomeSeen(true);
+    if (answers.status === "completed") applyOnboardingAnswers(answers);
+    else void saveStartingPreferences(answers, { visitorId: visitorId.current }).catch(() => undefined);
+    setOnboardingOpen(false);
+  }, [applyOnboardingAnswers]);
+
   function clearBoundaryPull(immediate = false) {
     pullArmed.current = false;
     if (boundaryPullResetTimer.current !== null) {
@@ -3514,6 +3595,16 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           onLetter={() => { closeDayCard(); void openTodayLetter(); }}
           onGame={() => { closeDayCard(); openAccount("manual", "general", "game"); }}
           onClose={closeDayCard} />}
+        {onboardingOpen && (
+          <OnboardingFrame
+            language={uiLanguage}
+            readingLanguages={readingLanguagesRef.current}
+            firstBook={onboardingFirstBook}
+            onAnswers={applyOnboardingAnswers}
+            onDone={(answers) => finishOnboarding(answers)}
+            onSignIn={(answers) => { finishOnboarding(answers, { signIn: true }); openAccount("notice"); }}
+          />
+        )}
         {guestWelcomeVisible && <GuestWelcome onCreate={() => { setGuestWelcomeSeen(true); openAccount("notice"); }} onClose={() => setGuestWelcomeSeen(true)} />}
 
         {guestNoticeVisible && guestNoticeStep && (

@@ -1,0 +1,28 @@
+{
+  "revision": 33,
+  "mode": "built-in imagegen",
+  "assets": [
+    {
+      "file": "room-panorama.webp",
+      "original": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-3c7e580c-d97c-4782-bb51-5684f9046e2b.png",
+      "prompt": "Use case: precise-object-edit\nAsset type: one continuous illustrated ROOM PANORAMA for a mobile camera journey, no UI.\nInput1 is the approved left-hand scene. Input2 is a STYLE AND RIGHT-DESK reference. Extend/recompose the room as ONE continuous front-on wall across a wider canvas, ideally2160×1792. This must be a SINGLE coherent room with consistent floorline, furniture scale, warm light and vanishing points, NOT two cards, a collage, a diptych or a hinged cube.\nLEFT approximately45% of panorama: preserve the exact visual identity of input1: the large VERTICAL walnut frame with sea painting, low walnut console beneath, open book on right end and small brass lamp entirely to LEFT of the frame. Preserve the frame's vertical aspect, with all corners visible; keep lamp OUTSIDE picture. The upper24% is quiet warm ochre wall. Frame aroundx10–42% andy26–76%. Console aroundx2–46%, topy81%, feetonfloory95%.\nRIGHT approximately45%: the matching walnut WRITING DESK from input2, placed naturally along the SAME wall and at the SAME physical floorline y95%. Desk top aroundy73%, desk width40% ofcanvas. Olive upholstered wooden chair tucked under it, compact stack of3realclosedbooks at LEFT ofdesk, closedcream envelope withterracottawax nearCENTER ofdesk, compact blank cream paper standing calendar atRIGHT. These props all rest on actual desk surface. Above desk quiet wall, no hanging sheets or portraits. Desk a little tallerthanlowconsole as actualwritingfurniture. Bothwallzones join invisibly across a small barewallarea; no vertical divider, pillar or seam.\nStyle: mature warm tactile painterly realism matching reference, extraordinary natural afternoon sunlight fromupperleft, fine walnut grain, elegant simple modernwoodfurniture, subtleleafshadows atfarleft, honeyplaster andwarmwoodenfloor. Straight level viewpoint, believable perspective, no fisheyedistortion. Rich natural materials, NOT cartoon or toy.\nNo text, labels, logos, numbers, UI, people, faces, floatingobjects or detachedbookplanes. Keep the WHOLE composition and room continuous, not two pictures overlaid.",
+      "role": "Continuous room prototype; superseded by tall outpaint for active camera",
+      "sha256": "da369dcfe302400788b2d41765ce73a48a6166d93a47d285b194e9b17a4946b6",
+      "dimensions": [
+        1377,
+        1142
+      ]
+    },
+    {
+      "file": "room-panorama-tall.webp",
+      "original": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-974154f7-5ba1-4d19-8597-edd7856a5d30.png",
+      "prompt": "Use case: precise-object-edit\nInput image is EDIT TARGET, the approved1377×1142continuous room panorama. Extend the canvas UPWARD by approximately235px so finalimage is SQUARE1377×1377. Preserve EVERY existing object, furniture relationship, frame size/aspect, lamp, calendar, envelope, desk, chair, sea painting, floor, grain and light exactly. Existing image content should simply occupy the LOWER1142px of the newcanvas; all objects shift DOWN by235px. Fill only the new235px headroom with continuous matching warm ochre wall and the same gentle upper-left daylight. This is OUTPAINTING ABOVE ONLY. No added furniture, no moving objects independently, no new decoration, no borders or flat coloured bands. The upper wall must retain natural subtle plaster texture and light, not a UI panel. No text, numbers or logos.",
+      "role": "Active single room panorama, translated and scaled by room camera",
+      "sha256": "b874662857a24de4a02d59402b0b0bb0f075ae2b0020b340c1c2c7a2543d6171",
+      "dimensions": [
+        1254,
+        1254
+      ]
+    }
+  ]
+}

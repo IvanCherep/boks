@@ -1,0 +1,20 @@
+{
+  "version": 33,
+  "createdOn": "2026-11-16",
+  "mode": "built-in image_gen",
+  "assets": [
+    {
+      "file": "post-box.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e508-bb04-72a1-a8b2-bbb56970218e/exec-42727a01-7d00-4023-9d33-6b9ce38975aa.png",
+      "prompt": "Use case: product-mockup\nAsset type: one transparent prop for an interactive literary desk.\nInput image is material and lighting reference only: refined warm walnut desk, afternoon sunlight from upper LEFT. Generate a compact, real walnut POST BOX lying on that desk, seen from almost directly ABOVE, no perspective skew. It is a low heavy rectangular wooden box about 3 times wider than deep, with softly rounded real corners. Near the upper third of its TOP surface is one long horizontal brushed-brass LETTER SLOT, dark open slit with a tiny natural shadow. A cream envelope can slide straight into that slit from below. The lower half of the top surface is uninterrupted beautiful walnut with a small flat blank brass nameplate area for HTML lettering later. No lid sticking out, no handle, no envelope, no paper, no person. The opening must be visibly a real dark slot, not a line painted on. Natural tactile walnut grain, subtle rubbed brass, calm mature painterly realism matching the input, not antique fantasy, not a toy or UI button. Tiny attached contact shadow lower right, genuine transparent background around full object with small margin. No desktop or floor, no detached shadow, text, logos, numbers, symbols, words, handwriting or extra objects.",
+      "editPrompt": "Use case: precise-object-edit\nInput image is the edit target. Change ONLY the small blank brass nameplate on the lower half of the wooden postal box: make that nameplate about 3.5 times WIDER, centred in the same position, retaining its original height and exact brushed brass style. It should span around 60% of the box width, providing a generous blank area for a 20-character live HTML label. Preserve every other pixel/geometry: walnut box silhouette, slot size and location, woodgrain, lighting, perspective, transparent background, shadows, overall framing. No text, letters, symbols or logos. No other changes.",
+      "purpose": "Visible physical destination for the example selected lines; nameplate remains live translated text.",
+      "dimensions": {
+        "width": 900,
+        "height": 300
+      },
+      "bytes": 47576,
+      "sha256": "45c832e77b839007c04eebf6016df34d34622ce14ec59da53e9183c467e0fd25"
+    }
+  ]
+}

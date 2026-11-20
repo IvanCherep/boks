@@ -1,0 +1,1684 @@
+{
+  "version": "v52",
+  "verifiedOn": "2026-11-18",
+  "purpose": "Archive-backed classical starting affinities for the isolated Boks onboarding prototype. Selecting an author creates no work, follow, read, like, or measured chart position.",
+  "sourceArchive": {
+    "name": "boks-avatars-98-web (1).zip",
+    "sha256": "05c4ddd71b3b792a7d5c62dbdbb8a5728e4ae63b0a7115107e69d1b0dc1c4bc8",
+    "metadataMember": "boks-avatars-web/authors.json",
+    "metadataFile": "supplied-authors.json",
+    "metadataSha256": "aa06806ac9ddb398cd606f59aa19414cfbd98ff9f6e5161a92c837f8f829492e",
+    "availablePortraits": 98,
+    "importedPortraits": 42,
+    "sourcePolicy": "Use the corrected user-supplied archive as requested. Its status and identity fields are recorded as supplied, not independently verified. Many files are labelled generated in that metadata; they are not represented as unchanged historical photographs.",
+    "transformations": "None: exact supplied 512×512 WebP bytes. No new images were generated in this revision."
+  },
+  "activeChoices": {
+    "ru": [
+      "pushkin",
+      "lermontov",
+      "tolstoy",
+      "chekhov",
+      "dostoevsky",
+      "yesenin",
+      "gorky",
+      "tsvetaeva",
+      "mayakovsky",
+      "nekrasov",
+      "blok",
+      "grin",
+      "kuprin",
+      "fet",
+      "tyutchev",
+      "gumilyov",
+      "andreyev",
+      "turgenev",
+      "saltykov-shchedrin",
+      "garshin",
+      "krylov",
+      "balmont",
+      "mandelstam",
+      "bryusov",
+      "averchenko",
+      "mamin-sibiryak",
+      "odoyevsky",
+      "annensky",
+      "bely",
+      "apukhtin"
+    ],
+    "en": [
+      "shakespeare",
+      "poe",
+      "twain",
+      "wilde",
+      "dickinson",
+      "byron",
+      "ohenry",
+      "yeats",
+      "saki",
+      "whitman",
+      "mansfield",
+      "hardy"
+    ]
+  },
+  "faceOutAuthorIds": [
+    "pushkin",
+    "lermontov",
+    "tolstoy",
+    "chekhov",
+    "dostoevsky",
+    "shakespeare",
+    "twain"
+  ],
+  "newAuthorIds": [
+    "dostoevsky",
+    "gorky",
+    "nekrasov",
+    "grin",
+    "turgenev",
+    "saltykov-shchedrin",
+    "garshin",
+    "krylov",
+    "balmont",
+    "mandelstam",
+    "bryusov",
+    "averchenko",
+    "mamin-sibiryak",
+    "odoyevsky",
+    "annensky",
+    "bely",
+    "apukhtin",
+    "shakespeare",
+    "twain"
+  ],
+  "retainedLegacyClassicIds": [
+    "akhmatova",
+    "bunin",
+    "teffi",
+    "prishvin",
+    "zoshchenko",
+    "keats",
+    "wordsworth"
+  ],
+  "catalogueInvariant": {
+    "readableBoks": 14,
+    "newReadableBoks": 0,
+    "booksSha256": "4ebe3d50a9c73874ef4eb654842e7fe62923993c67d6fe103d17469a378cda2a"
+  },
+  "assets": [
+    {
+      "id": "pushkin",
+      "name": {
+        "ru": "Александр Пушкин",
+        "en": "Alexander Pushkin"
+      },
+      "language": "ru",
+      "file": "pushkin.webp",
+      "portrait": "authors/classics-v52/pushkin.webp",
+      "archiveMember": "boks-avatars-web/webp/004-alexander-pushkin.webp",
+      "sha256": "a801824eb23b25e991192a6c55b621f9c5fee01fcf233aa281640ec5f1dfd8bb",
+      "source_sha256": "a801824eb23b25e991192a6c55b621f9c5fee01fcf233aa281640ec5f1dfd8bb",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 18336,
+      "suppliedStatus": "original",
+      "suppliedMetadata": {
+        "number": 4,
+        "name": "Александр Пушкин",
+        "slug": "alexander-pushkin",
+        "identity": "Александр Пушкин",
+        "status": "original",
+        "png": "png/004-alexander-pushkin.png",
+        "webp": "webp/004-alexander-pushkin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 3025773,
+        "webp_bytes": 18336,
+        "sha256_png": "c4ffd2d0649d2f909560324a1814da32a84e846c266911586565c320439ae408",
+        "sources": [],
+        "original_uploaded_name": "pushkin.png"
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "lermontov",
+      "name": {
+        "ru": "Михаил Лермонтов",
+        "en": "Mikhail Lermontov"
+      },
+      "language": "ru",
+      "file": "lermontov.webp",
+      "portrait": "authors/classics-v52/lermontov.webp",
+      "archiveMember": "boks-avatars-web/webp/029-mikhail-lermontov.webp",
+      "sha256": "f3a164a403f08ea35198febd45533dbb4ea4cc9b2d92ce064a4457e3e2580137",
+      "source_sha256": "f3a164a403f08ea35198febd45533dbb4ea4cc9b2d92ce064a4457e3e2580137",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 25590,
+      "suppliedStatus": "original",
+      "suppliedMetadata": {
+        "number": 29,
+        "name": "Михаил Лермонтов",
+        "slug": "mikhail-lermontov",
+        "identity": "Михаил Лермонтов",
+        "status": "original",
+        "png": "png/029-mikhail-lermontov.png",
+        "webp": "webp/029-mikhail-lermontov.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 3030100,
+        "webp_bytes": 25590,
+        "sha256_png": "fc786d828d885e77d884cddedfc1515e54f5e60481912727e64eece2b6008c70",
+        "sources": [],
+        "original_uploaded_name": "lermontov.png"
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "tolstoy",
+      "name": {
+        "ru": "Лев Толстой",
+        "en": "Leo Tolstoy"
+      },
+      "language": "ru",
+      "file": "tolstoy.webp",
+      "portrait": "authors/classics-v52/tolstoy.webp",
+      "archiveMember": "boks-avatars-web/webp/024-leo-tolstoy.webp",
+      "sha256": "2a8df2199ee0fe08318029493a86407504d7ea9217d1104dc1234189a295a770",
+      "source_sha256": "2a8df2199ee0fe08318029493a86407504d7ea9217d1104dc1234189a295a770",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 46368,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 24,
+        "name": "Лев Толстой",
+        "slug": "leo-tolstoy",
+        "identity": "Lev Nikolayevich Tolstoy (1828–1910)",
+        "status": "generated",
+        "png": "png/024-leo-tolstoy.png",
+        "webp": "webp/024-leo-tolstoy.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2790684,
+        "webp_bytes": 46368,
+        "sha256_png": "7cfc9aba4c3caa6ffa2329a8778402f5b44fb1588a46e5bf421575cde564ac0a",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "chekhov",
+      "name": {
+        "ru": "Антон Чехов",
+        "en": "Anton Chekhov"
+      },
+      "language": "ru",
+      "file": "chekhov.webp",
+      "portrait": "authors/classics-v52/chekhov.webp",
+      "archiveMember": "boks-avatars-web/webp/008-anton-chekhov.webp",
+      "sha256": "31b788934aa67e9cb1bc031797c2d8f51973abb535bd0608e63a8184597c773b",
+      "source_sha256": "31b788934aa67e9cb1bc031797c2d8f51973abb535bd0608e63a8184597c773b",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 27148,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 8,
+        "name": "Антон Чехов",
+        "slug": "anton-chekhov",
+        "identity": "Anton Pavlovich Chekhov (1860–1904)",
+        "status": "generated",
+        "png": "png/008-anton-chekhov.png",
+        "webp": "webp/008-anton-chekhov.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2254661,
+        "webp_bytes": 27148,
+        "sha256_png": "9c865e248b522d70cc0ddc2f01df9d3a90fac913e78f6dcc6a19f9ec5dd28413",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "dostoevsky",
+      "name": {
+        "ru": "Фёдор Достоевский",
+        "en": "Fyodor Dostoevsky"
+      },
+      "language": "ru",
+      "file": "dostoevsky.webp",
+      "portrait": "authors/classics-v52/dostoevsky.webp",
+      "archiveMember": "boks-avatars-web/webp/040-fyodor-dostoevsky.webp",
+      "sha256": "c60149780332f72419da775a46e602f943486bc48d594c33d67b86ebe6595765",
+      "source_sha256": "c60149780332f72419da775a46e602f943486bc48d594c33d67b86ebe6595765",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 30628,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 40,
+        "name": "Фёдор Достоевский",
+        "slug": "fyodor-dostoevsky",
+        "identity": "Fyodor Mikhailovich Dostoevsky (1821–1881)",
+        "status": "generated",
+        "png": "png/040-fyodor-dostoevsky.png",
+        "webp": "webp/040-fyodor-dostoevsky.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2537907,
+        "webp_bytes": 30628,
+        "sha256_png": "9abc011a00265953059ea891b3c133d21976375e47c6c07ce9ba17afcbe46fa2",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "yesenin",
+      "name": {
+        "ru": "Сергей Есенин",
+        "en": "Sergey Yesenin"
+      },
+      "language": "ru",
+      "file": "yesenin.webp",
+      "portrait": "authors/classics-v52/yesenin.webp",
+      "archiveMember": "boks-avatars-web/webp/038-sergei-yesenin.webp",
+      "sha256": "d683685bfd96bf0784629318f529ca3c8cc9994eb1c8eef8cf29ea35524a9dfa",
+      "source_sha256": "d683685bfd96bf0784629318f529ca3c8cc9994eb1c8eef8cf29ea35524a9dfa",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 22288,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 38,
+        "name": "Сергей Есенин",
+        "slug": "sergei-yesenin",
+        "identity": "Sergei Alexandrovich Yesenin (1895–1925)",
+        "status": "generated",
+        "png": "png/038-sergei-yesenin.png",
+        "webp": "webp/038-sergei-yesenin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2271996,
+        "webp_bytes": 22288,
+        "sha256_png": "5641cf06cfa1136bc8d7be3d8bcf04aa22af458287285c2c204402b3e8b93cac",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "gorky",
+      "name": {
+        "ru": "Максим Горький",
+        "en": "Maxim Gorky"
+      },
+      "language": "ru",
+      "file": "gorky.webp",
+      "portrait": "authors/classics-v52/gorky.webp",
+      "archiveMember": "boks-avatars-web/webp/026-maxim-gorky.webp",
+      "sha256": "7e912a2b307d3a3294884c4fae716df40d28f00f7abe7d35f4fea3a5302f9d38",
+      "source_sha256": "7e912a2b307d3a3294884c4fae716df40d28f00f7abe7d35f4fea3a5302f9d38",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 25190,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 26,
+        "name": "Максим Горький",
+        "slug": "maxim-gorky",
+        "identity": "Maxim Gorky, born Alexey Maximovich Peshkov (1868–1936)",
+        "status": "generated",
+        "png": "png/026-maxim-gorky.png",
+        "webp": "webp/026-maxim-gorky.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2316642,
+        "webp_bytes": 25190,
+        "sha256_png": "8c0cceb366db737ee03f1695022745ccb4614ac7a3b668ac37a0331e97143158",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "tsvetaeva",
+      "name": {
+        "ru": "Марина Цветаева",
+        "en": "Marina Tsvetaeva"
+      },
+      "language": "ru",
+      "file": "tsvetaeva.webp",
+      "portrait": "authors/classics-v52/tsvetaeva.webp",
+      "archiveMember": "boks-avatars-web/webp/028-marina-tsvetaeva.webp",
+      "sha256": "0c450bcdbeadaecda397ce42ab671be27176605e25bef8d9db2602d74bc9e395",
+      "source_sha256": "0c450bcdbeadaecda397ce42ab671be27176605e25bef8d9db2602d74bc9e395",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 23526,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 28,
+        "name": "Марина Цветаева",
+        "slug": "marina-tsvetaeva",
+        "identity": "Marina Ivanovna Tsvetaeva (1892–1941)",
+        "status": "generated",
+        "png": "png/028-marina-tsvetaeva.png",
+        "webp": "webp/028-marina-tsvetaeva.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2257531,
+        "webp_bytes": 23526,
+        "sha256_png": "7fd8b5ffabb5206f51e7a8a2069f141fb8e0fe2376154cfeb768d784e1514612",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mayakovsky",
+      "name": {
+        "ru": "Владимир Маяковский",
+        "en": "Vladimir Mayakovsky"
+      },
+      "language": "ru",
+      "file": "mayakovsky.webp",
+      "portrait": "authors/classics-v52/mayakovsky.webp",
+      "archiveMember": "boks-avatars-web/webp/012-vladimir-mayakovsky.webp",
+      "sha256": "a60f04845551792237b85ce48df226f721b0eb5cd27789e384dda401c4ae4cac",
+      "source_sha256": "a60f04845551792237b85ce48df226f721b0eb5cd27789e384dda401c4ae4cac",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 25672,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 12,
+        "name": "Владимир Маяковский",
+        "slug": "vladimir-mayakovsky",
+        "identity": "Vladimir Vladimirovich Mayakovsky (1893–1930)",
+        "status": "generated",
+        "png": "png/012-vladimir-mayakovsky.png",
+        "webp": "webp/012-vladimir-mayakovsky.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2358833,
+        "webp_bytes": 25672,
+        "sha256_png": "08e3f16287d98821c3667a73c7d278961053a1b506e876b0445d8434c6db8bc2",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "nekrasov",
+      "name": {
+        "ru": "Николай Некрасов",
+        "en": "Nikolai Nekrasov"
+      },
+      "language": "ru",
+      "file": "nekrasov.webp",
+      "portrait": "authors/classics-v52/nekrasov.webp",
+      "archiveMember": "boks-avatars-web/webp/034-nikolay-nekrasov.webp",
+      "sha256": "b8d93c1717286478ce74586017dfcd3c2940b89465da2853f27148e1313fe6e9",
+      "source_sha256": "b8d93c1717286478ce74586017dfcd3c2940b89465da2853f27148e1313fe6e9",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 27544,
+      "suppliedStatus": "original",
+      "suppliedMetadata": {
+        "number": 34,
+        "name": "Николай Некрасов",
+        "slug": "nikolay-nekrasov",
+        "identity": "Николай Некрасов",
+        "status": "original",
+        "png": "png/034-nikolay-nekrasov.png",
+        "webp": "webp/034-nikolay-nekrasov.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 3147378,
+        "webp_bytes": 27544,
+        "sha256_png": "c0359d4fcfd386dea5704876118a132d94cf42060ec2bffc47111b446adfc059",
+        "sources": [],
+        "original_uploaded_name": "nekrasov.png"
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "blok",
+      "name": {
+        "ru": "Александр Блок",
+        "en": "Alexander Blok"
+      },
+      "language": "ru",
+      "file": "blok.webp",
+      "portrait": "authors/classics-v52/blok.webp",
+      "archiveMember": "boks-avatars-web/webp/001-alexander-blok.webp",
+      "sha256": "93fd441e0c51cabc73eddaad9936b74bba27984581a4a5991d61b01b54a17dcb",
+      "source_sha256": "93fd441e0c51cabc73eddaad9936b74bba27984581a4a5991d61b01b54a17dcb",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 26596,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 1,
+        "name": "Александр Блок",
+        "slug": "alexander-blok",
+        "identity": "Alexander Alexandrovich Blok (1880–1921)",
+        "status": "generated",
+        "png": "png/001-alexander-blok.png",
+        "webp": "webp/001-alexander-blok.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2259396,
+        "webp_bytes": 26596,
+        "sha256_png": "f2851cbfc54a08fa258117c016db82823b58f7fba9893d7cb1f7a4933bef3bfe",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "grin",
+      "name": {
+        "ru": "Александр Грин",
+        "en": "Alexander Grin"
+      },
+      "language": "ru",
+      "file": "grin.webp",
+      "portrait": "authors/classics-v52/grin.webp",
+      "archiveMember": "boks-avatars-web/webp/002-alexander-grin.webp",
+      "sha256": "753f085b7c6a98a9125259967ca924f9ad746dd49227cb217cfaefebbb3b4750",
+      "source_sha256": "753f085b7c6a98a9125259967ca924f9ad746dd49227cb217cfaefebbb3b4750",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 23988,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 2,
+        "name": "Александр Грин",
+        "slug": "alexander-grin",
+        "identity": "Alexander Stepanovich Grin (1880–1932)",
+        "status": "generated",
+        "png": "png/002-alexander-grin.png",
+        "webp": "webp/002-alexander-grin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2197509,
+        "webp_bytes": 23988,
+        "sha256_png": "92a5a90f242e4438c1db0aa0948bcc00a662bcf7b184cf801b10d5092ce07b72",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "kuprin",
+      "name": {
+        "ru": "Александр Куприн",
+        "en": "Alexander Kuprin"
+      },
+      "language": "ru",
+      "file": "kuprin.webp",
+      "portrait": "authors/classics-v52/kuprin.webp",
+      "archiveMember": "boks-avatars-web/webp/003-alexander-kuprin.webp",
+      "sha256": "26e2d874a3ca325f7afadff6e20d5b0c45e48a8ed63d41bfe7e09f32b3a44110",
+      "source_sha256": "26e2d874a3ca325f7afadff6e20d5b0c45e48a8ed63d41bfe7e09f32b3a44110",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 29786,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 3,
+        "name": "Александр Куприн",
+        "slug": "alexander-kuprin",
+        "identity": "Alexander Ivanovich Kuprin (1870–1938)",
+        "status": "generated",
+        "png": "png/003-alexander-kuprin.png",
+        "webp": "webp/003-alexander-kuprin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2350923,
+        "webp_bytes": 29786,
+        "sha256_png": "0a9cc4f3b3eb0b527315c3c6dc2748b87f3d80c0659981929ebb5cb934e5f8da",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "fet",
+      "name": {
+        "ru": "Афанасий Фет",
+        "en": "Afanasy Fet"
+      },
+      "language": "ru",
+      "file": "fet.webp",
+      "portrait": "authors/classics-v52/fet.webp",
+      "archiveMember": "boks-avatars-web/webp/010-afanasy-fet.webp",
+      "sha256": "70f86cc9d4e5ecf321f1baed161a1692b6df8480ffbae49f0d9762c2020dfc9c",
+      "source_sha256": "70f86cc9d4e5ecf321f1baed161a1692b6df8480ffbae49f0d9762c2020dfc9c",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 33088,
+      "suppliedStatus": "original",
+      "suppliedMetadata": {
+        "number": 10,
+        "name": "Афанасий Фет",
+        "slug": "afanasy-fet",
+        "identity": "Афанасий Фет",
+        "status": "original",
+        "png": "png/010-afanasy-fet.png",
+        "webp": "webp/010-afanasy-fet.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 3258922,
+        "webp_bytes": 33088,
+        "sha256_png": "a0dd0ee7ee5faa5f3dade3b856a7261e658a3291498e6e9cc2ab56f213c5714a",
+        "sources": [],
+        "original_uploaded_name": "fet.png"
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "tyutchev",
+      "name": {
+        "ru": "Фёдор Тютчев",
+        "en": "Fyodor Tyutchev"
+      },
+      "language": "ru",
+      "file": "tyutchev.webp",
+      "portrait": "authors/classics-v52/tyutchev.webp",
+      "archiveMember": "boks-avatars-web/webp/042-fyodor-tyutchev.webp",
+      "sha256": "fe55994783c9b878082030ea7d60bd0ec7c2628c1607eb0ad1181b545653a425",
+      "source_sha256": "fe55994783c9b878082030ea7d60bd0ec7c2628c1607eb0ad1181b545653a425",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 21740,
+      "suppliedStatus": "original",
+      "suppliedMetadata": {
+        "number": 42,
+        "name": "Фёдор Тютчев",
+        "slug": "fyodor-tyutchev",
+        "identity": "Фёдор Тютчев",
+        "status": "original",
+        "png": "png/042-fyodor-tyutchev.png",
+        "webp": "webp/042-fyodor-tyutchev.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 3039693,
+        "webp_bytes": 21740,
+        "sha256_png": "4b5d90884c6b7c910731f29807f71275aa1c30697bb2ab9276a26801a442de18",
+        "sources": [],
+        "original_uploaded_name": "tyutchev.png"
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "gumilyov",
+      "name": {
+        "ru": "Николай Гумилёв",
+        "en": "Nikolay Gumilyov"
+      },
+      "language": "ru",
+      "file": "gumilyov.webp",
+      "portrait": "authors/classics-v52/gumilyov.webp",
+      "archiveMember": "boks-avatars-web/webp/032-nikolay-gumilyov.webp",
+      "sha256": "b2f7d3fd4fabf1829be07d681545b7717fbe6f038f52371513e396cb999ce302",
+      "source_sha256": "b2f7d3fd4fabf1829be07d681545b7717fbe6f038f52371513e396cb999ce302",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 16316,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 32,
+        "name": "Николай Гумилёв",
+        "slug": "nikolay-gumilyov",
+        "identity": "Nikolay Stepanovich Gumilyov (1886–1921)",
+        "status": "generated",
+        "png": "png/032-nikolay-gumilyov.png",
+        "webp": "webp/032-nikolay-gumilyov.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2121605,
+        "webp_bytes": 16316,
+        "sha256_png": "0174fc59bf513b7379a6e57e6784f36e803cd60f36de2b6b125c977c078bd8c0",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "andreyev",
+      "name": {
+        "ru": "Леонид Андреев",
+        "en": "Leonid Andreyev"
+      },
+      "language": "ru",
+      "file": "andreyev.webp",
+      "portrait": "authors/classics-v52/andreyev.webp",
+      "archiveMember": "boks-avatars-web/webp/025-leonid-andreyev.webp",
+      "sha256": "e69dcbae80a2384408241d024a227263587c3d25665d75b2229fbce9dce3bf2f",
+      "source_sha256": "e69dcbae80a2384408241d024a227263587c3d25665d75b2229fbce9dce3bf2f",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 26526,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 25,
+        "name": "Леонид Андреев",
+        "slug": "leonid-andreyev",
+        "identity": "Leonid Nikolayevich Andreyev (1871–1919)",
+        "status": "generated",
+        "png": "png/025-leonid-andreyev.png",
+        "webp": "webp/025-leonid-andreyev.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2351704,
+        "webp_bytes": 26526,
+        "sha256_png": "bb8c66a040a6891505a947ba99b79cf99cb3e2711785129f43a57489b71fd2ec",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "turgenev",
+      "name": {
+        "ru": "Иван Тургенев",
+        "en": "Ivan Turgenev"
+      },
+      "language": "ru",
+      "file": "turgenev.webp",
+      "portrait": "authors/classics-v52/turgenev.webp",
+      "archiveMember": "boks-avatars-web/webp/021-ivan-turgenev.webp",
+      "sha256": "fe554b7748a2d3b9d4eace260e5ff89227df6e489c2584371f1728520bc79edb",
+      "source_sha256": "fe554b7748a2d3b9d4eace260e5ff89227df6e489c2584371f1728520bc79edb",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 29596,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 21,
+        "name": "Иван Тургенев",
+        "slug": "ivan-turgenev",
+        "identity": "Ivan Sergeyevich Turgenev (1818–1883)",
+        "status": "generated",
+        "png": "png/021-ivan-turgenev.png",
+        "webp": "webp/021-ivan-turgenev.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2524413,
+        "webp_bytes": 29596,
+        "sha256_png": "a520b5703c4321c2b2f477ca5eb7f0fb09ce11e0503ab3c09187c1e124f2702e",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "saltykov-shchedrin",
+      "name": {
+        "ru": "Михаил Салтыков-Щедрин",
+        "en": "Mikhail Saltykov-Shchedrin"
+      },
+      "language": "ru",
+      "file": "saltykov-shchedrin.webp",
+      "portrait": "authors/classics-v52/saltykov-shchedrin.webp",
+      "archiveMember": "boks-avatars-web/webp/030-mikhail-saltykov-shchedrin.webp",
+      "sha256": "42355dce0c0843d0fc0f8e07a0f80771ac062b1145b7edc2587a2fbf919e9513",
+      "source_sha256": "42355dce0c0843d0fc0f8e07a0f80771ac062b1145b7edc2587a2fbf919e9513",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 30846,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 30,
+        "name": "Михаил Салтыков-Щедрин",
+        "slug": "mikhail-saltykov-shchedrin",
+        "identity": "Mikhail Yevgrafovich Saltykov-Shchedrin (1826–1889)",
+        "status": "generated",
+        "png": "png/030-mikhail-saltykov-shchedrin.png",
+        "webp": "webp/030-mikhail-saltykov-shchedrin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2499320,
+        "webp_bytes": 30846,
+        "sha256_png": "58b056d596b6043861fc9c5dd44576f7fd9bf8a2c506a92612dbe85ad4ffb4ca",
+        "sources": [
+          "https://commons.wikimedia.org/wiki/File:Kramskoj_-_saltykov-schedrin.jpg"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "garshin",
+      "name": {
+        "ru": "Всеволод Гаршин",
+        "en": "Vsevolod Garshin"
+      },
+      "language": "ru",
+      "file": "garshin.webp",
+      "portrait": "authors/classics-v52/garshin.webp",
+      "archiveMember": "boks-avatars-web/webp/016-vsevolod-garshin.webp",
+      "sha256": "1fd32c6b26e638f54de591e6b46c2dfa8fc6b6c00e768ba43081919bf39110f4",
+      "source_sha256": "1fd32c6b26e638f54de591e6b46c2dfa8fc6b6c00e768ba43081919bf39110f4",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 27062,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 16,
+        "name": "Всеволод Гаршин",
+        "slug": "vsevolod-garshin",
+        "identity": "Vsevolod Mikhailovich Garshin (1855–1888)",
+        "status": "generated",
+        "png": "png/016-vsevolod-garshin.png",
+        "webp": "webp/016-vsevolod-garshin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2447362,
+        "webp_bytes": 27062,
+        "sha256_png": "61b9abda7589da7705c428e3797ab380b7654dc0912350193242a6a5016e40c2",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "krylov",
+      "name": {
+        "ru": "Иван Крылов",
+        "en": "Ivan Krylov"
+      },
+      "language": "ru",
+      "file": "krylov.webp",
+      "portrait": "authors/classics-v52/krylov.webp",
+      "archiveMember": "boks-avatars-web/webp/020-ivan-krylov.webp",
+      "sha256": "d928ffb7998d2d73965b1928a5b1a15eb2a3899d3f7cdc274d45ec9695b79c0f",
+      "source_sha256": "d928ffb7998d2d73965b1928a5b1a15eb2a3899d3f7cdc274d45ec9695b79c0f",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 30502,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 20,
+        "name": "Иван Крылов",
+        "slug": "ivan-krylov",
+        "identity": "Ivan Andreyevich Krylov (1769–1844)",
+        "status": "generated",
+        "png": "png/020-ivan-krylov.png",
+        "webp": "webp/020-ivan-krylov.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2501336,
+        "webp_bytes": 30502,
+        "sha256_png": "3c03bf685dc2f325b24e20b2c37e49e03b482d5ff20f575b8669eec9923c2d2e",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "balmont",
+      "name": {
+        "ru": "Константин Бальмонт",
+        "en": "Konstantin Balmont"
+      },
+      "language": "ru",
+      "file": "balmont.webp",
+      "portrait": "authors/classics-v52/balmont.webp",
+      "archiveMember": "boks-avatars-web/webp/023-konstantin-balmont.webp",
+      "sha256": "e5d7274dd0a7b8ad964c521053132794a2433d20f2d595e21cc8fe5b219a2c0f",
+      "source_sha256": "e5d7274dd0a7b8ad964c521053132794a2433d20f2d595e21cc8fe5b219a2c0f",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 27704,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 23,
+        "name": "Константин Бальмонт",
+        "slug": "konstantin-balmont",
+        "identity": "Konstantin Dmitriyevich Balmont (1867–1942)",
+        "status": "generated",
+        "png": "png/023-konstantin-balmont.png",
+        "webp": "webp/023-konstantin-balmont.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2405606,
+        "webp_bytes": 27704,
+        "sha256_png": "eaee7e03c82a42e53e819571887072bcc88cb47af9f2ea47087d48dae7a3fc36",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mandelstam",
+      "name": {
+        "ru": "Осип Мандельштам",
+        "en": "Osip Mandelstam"
+      },
+      "language": "ru",
+      "file": "mandelstam.webp",
+      "portrait": "authors/classics-v52/mandelstam.webp",
+      "archiveMember": "boks-avatars-web/webp/035-osip-mandelstam.webp",
+      "sha256": "14fbf116d2934f4ae57495ed9d0fec14e11d84c92c210fd8c7598ff04bae28a0",
+      "source_sha256": "14fbf116d2934f4ae57495ed9d0fec14e11d84c92c210fd8c7598ff04bae28a0",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 26430,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 35,
+        "name": "Осип Мандельштам",
+        "slug": "osip-mandelstam",
+        "identity": "Osip Emilyevich Mandelstam (1891–1938)",
+        "status": "generated",
+        "png": "png/035-osip-mandelstam.png",
+        "webp": "webp/035-osip-mandelstam.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2304793,
+        "webp_bytes": 26430,
+        "sha256_png": "a8aadb137053046ced0840bc1c5ea40924a42294a3f9fe21d5a3925be1f6bab5",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "bryusov",
+      "name": {
+        "ru": "Валерий Брюсов",
+        "en": "Valery Bryusov"
+      },
+      "language": "ru",
+      "file": "bryusov.webp",
+      "portrait": "authors/classics-v52/bryusov.webp",
+      "archiveMember": "boks-avatars-web/webp/011-valery-bryusov.webp",
+      "sha256": "73d792ea854981940cfae418f8ef006b04f4fc20f48cadd99021b467daa6412e",
+      "source_sha256": "73d792ea854981940cfae418f8ef006b04f4fc20f48cadd99021b467daa6412e",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 20158,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 11,
+        "name": "Валерий Брюсов",
+        "slug": "valery-bryusov",
+        "identity": "Valery Yakovlevich Bryusov (1873–1924)",
+        "status": "generated",
+        "png": "png/011-valery-bryusov.png",
+        "webp": "webp/011-valery-bryusov.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2326253,
+        "webp_bytes": 20158,
+        "sha256_png": "3889ba1150c91f94988dab9bce5dedf725ad03ce5796fec3448749c72a7aed04",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "averchenko",
+      "name": {
+        "ru": "Аркадий Аверченко",
+        "en": "Arkady Averchenko"
+      },
+      "language": "ru",
+      "file": "averchenko.webp",
+      "portrait": "authors/classics-v52/averchenko.webp",
+      "archiveMember": "boks-avatars-web/webp/009-arkady-averchenko.webp",
+      "sha256": "2f9275e28bb61e57d75dc098a373da4b1123d1845718ded66bf7e5308f344e1e",
+      "source_sha256": "2f9275e28bb61e57d75dc098a373da4b1123d1845718ded66bf7e5308f344e1e",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 28538,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 9,
+        "name": "Аркадий Аверченко",
+        "slug": "arkady-averchenko",
+        "identity": "Arkady Timofeyevich Averchenko (1880–1925)",
+        "status": "generated",
+        "png": "png/009-arkady-averchenko.png",
+        "webp": "webp/009-arkady-averchenko.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2403796,
+        "webp_bytes": 28538,
+        "sha256_png": "020c51dff95fdeb3d5865fce72995875e2d61e85a1b8c6e1c7b40386ed4be206",
+        "sources": [
+          "https://commons.wikimedia.org/wiki/File:Averchenko_AT.jpg"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mamin-sibiryak",
+      "name": {
+        "ru": "Дмитрий Мамин-Сибиряк",
+        "en": "Dmitry Mamin-Sibiryak"
+      },
+      "language": "ru",
+      "file": "mamin-sibiryak.webp",
+      "portrait": "authors/classics-v52/mamin-sibiryak.webp",
+      "archiveMember": "boks-avatars-web/webp/017-dmitry-mamin-sibiryak.webp",
+      "sha256": "e1f7a94839361e60cb3946f3cfdeed5b69595cc940acb55527cad95dcdae778d",
+      "source_sha256": "e1f7a94839361e60cb3946f3cfdeed5b69595cc940acb55527cad95dcdae778d",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 30158,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 17,
+        "name": "Дмитрий Мамин-Сибиряк",
+        "slug": "dmitry-mamin-sibiryak",
+        "identity": "Dmitry Narkisovich Mamin-Sibiryak (1852–1912)",
+        "status": "generated",
+        "png": "png/017-dmitry-mamin-sibiryak.png",
+        "webp": "webp/017-dmitry-mamin-sibiryak.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2500258,
+        "webp_bytes": 30158,
+        "sha256_png": "72ff73ed8f70de0ff0d436b0aaea4829945a4eeaa2b4a9a1f92e0444ccf73e9c",
+        "sources": [
+          "https://commons.wikimedia.org/wiki/File:Dmitry_Narkisovich_Mamin-Sibiryak.jpg"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "odoyevsky",
+      "name": {
+        "ru": "Владимир Одоевский",
+        "en": "Vladimir Odoyevsky"
+      },
+      "language": "ru",
+      "file": "odoyevsky.webp",
+      "portrait": "authors/classics-v52/odoyevsky.webp",
+      "archiveMember": "boks-avatars-web/webp/013-vladimir-odoyevsky.webp",
+      "sha256": "62a910f54e295a4bb444b2fd0b9099495d345fd0b9c40c9930865524d032cfe4",
+      "source_sha256": "62a910f54e295a4bb444b2fd0b9099495d345fd0b9c40c9930865524d032cfe4",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 24966,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 13,
+        "name": "Владимир Одоевский",
+        "slug": "vladimir-odoyevsky",
+        "identity": "Prince Vladimir Fyodorovich Odoyevsky (1803–1869)",
+        "status": "generated",
+        "png": "png/013-vladimir-odoyevsky.png",
+        "webp": "webp/013-vladimir-odoyevsky.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2415887,
+        "webp_bytes": 24966,
+        "sha256_png": "10387e96f7819c8d0a7c7c303f93c126be7fb05e7d21f812ff6f5b59774ba191",
+        "sources": [
+          "https://commons.wikimedia.org/wiki/File:Vladimir_Odoyevsky_1.jpg"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "annensky",
+      "name": {
+        "ru": "Иннокентий Анненский",
+        "en": "Innokenty Annensky"
+      },
+      "language": "ru",
+      "file": "annensky.webp",
+      "portrait": "authors/classics-v52/annensky.webp",
+      "archiveMember": "boks-avatars-web/webp/022-innokenty-annensky.webp",
+      "sha256": "e5132d520f33fb021717ef26a07fce01cb1b001538b28337b0fa539319e72884",
+      "source_sha256": "e5132d520f33fb021717ef26a07fce01cb1b001538b28337b0fa539319e72884",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 21382,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 22,
+        "name": "Иннокентий Анненский",
+        "slug": "innokenty-annensky",
+        "identity": "Innokenty Fyodorovich Annensky (1855–1909)",
+        "status": "generated",
+        "png": "png/022-innokenty-annensky.png",
+        "webp": "webp/022-innokenty-annensky.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2257461,
+        "webp_bytes": 21382,
+        "sha256_png": "a7517d83ca448be8a79c233745550bc040895a55e38873bd89e2e00bfc1b30ca",
+        "sources": [
+          "https://commons.wikimedia.org/wiki/File:Annensky.jpg"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "bely",
+      "name": {
+        "ru": "Андрей Белый",
+        "en": "Andrei Bely"
+      },
+      "language": "ru",
+      "file": "bely.webp",
+      "portrait": "authors/classics-v52/bely.webp",
+      "archiveMember": "boks-avatars-web/webp/007-andrei-bely.webp",
+      "sha256": "3aaf581a096e5a0f63d3d950274117640cc53cb23c86786b6454e3432088b01e",
+      "source_sha256": "3aaf581a096e5a0f63d3d950274117640cc53cb23c86786b6454e3432088b01e",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 25738,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 7,
+        "name": "Андрей Белый",
+        "slug": "andrei-bely",
+        "identity": "Andrei Bely, born Boris Nikolayevich Bugaev (1880–1934)",
+        "status": "generated",
+        "png": "png/007-andrei-bely.png",
+        "webp": "webp/007-andrei-bely.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2290803,
+        "webp_bytes": 25738,
+        "sha256_png": "b0c2b582ebdc786ece14319ee5789a0e5f60783b7e4374f8188c54dc4d109115",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "apukhtin",
+      "name": {
+        "ru": "Алексей Апухтин",
+        "en": "Aleksey Apukhtin"
+      },
+      "language": "ru",
+      "file": "apukhtin.webp",
+      "portrait": "authors/classics-v52/apukhtin.webp",
+      "archiveMember": "boks-avatars-web/webp/005-aleksey-apukhtin.webp",
+      "sha256": "7a2a0e5c6f37fad0f04368f0924e768c44f4723682793aee02b7480604790983",
+      "source_sha256": "7a2a0e5c6f37fad0f04368f0924e768c44f4723682793aee02b7480604790983",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 25092,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 5,
+        "name": "Алексей Апухтин",
+        "slug": "aleksey-apukhtin",
+        "identity": "Aleksey Nikolayevich Apukhtin (1840–1893)",
+        "status": "generated",
+        "png": "png/005-aleksey-apukhtin.png",
+        "webp": "webp/005-aleksey-apukhtin.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2332131,
+        "webp_bytes": 25092,
+        "sha256_png": "67838ff1eefba540325190dd4139187df60ddfdf7e9ef2433e9e4539b0077dcf",
+        "sources": [
+          "https://commons.wikimedia.org/wiki/File:Apukhtin_AN.jpg"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "shakespeare",
+      "name": {
+        "ru": "William Shakespeare",
+        "en": "William Shakespeare"
+      },
+      "language": "en",
+      "file": "shakespeare.webp",
+      "portrait": "authors/classics-v52/shakespeare.webp",
+      "archiveMember": "boks-avatars-web/webp/098-william-shakespeare.webp",
+      "sha256": "7828f339d43a7f78052a42a806b46bd614c7cdb4f4124446341ff3943330bfd8",
+      "source_sha256": "7828f339d43a7f78052a42a806b46bd614c7cdb4f4124446341ff3943330bfd8",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 36214,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 98,
+        "name": "William Shakespeare",
+        "slug": "william-shakespeare",
+        "identity": "William Shakespeare, English playwright and poet, 1564–1616",
+        "status": "generated",
+        "png": "png/098-william-shakespeare.png",
+        "webp": "webp/098-william-shakespeare.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2583475,
+        "webp_bytes": 36214,
+        "sha256_png": "9a154a37d66f80de4cc2b12889130abb014afb3960f6fd92fcf6c4e496447143",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "poe",
+      "name": {
+        "ru": "Эдгар Аллан По",
+        "en": "Edgar Allan Poe"
+      },
+      "language": "en",
+      "file": "poe.webp",
+      "portrait": "authors/classics-v52/poe.webp",
+      "archiveMember": "boks-avatars-web/webp/055-edgar-allan-poe.webp",
+      "sha256": "891ede2a97e979b2928792b3ae75f44f49e044add3faa1f8b835d4c58f02e685",
+      "source_sha256": "891ede2a97e979b2928792b3ae75f44f49e044add3faa1f8b835d4c58f02e685",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 24708,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 55,
+        "name": "Edgar Allan Poe",
+        "slug": "edgar-allan-poe",
+        "identity": "Edgar Allan Poe (1809–1849)",
+        "status": "generated",
+        "png": "png/055-edgar-allan-poe.png",
+        "webp": "webp/055-edgar-allan-poe.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2345299,
+        "webp_bytes": 24708,
+        "sha256_png": "c452abff7b74bd4e863e7ef038c1660e33d1d3d01f32796122c2f17b6870f32f",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "twain",
+      "name": {
+        "ru": "Mark Twain",
+        "en": "Mark Twain"
+      },
+      "language": "en",
+      "file": "twain.webp",
+      "portrait": "authors/classics-v52/twain.webp",
+      "archiveMember": "boks-avatars-web/webp/076-mark-twain.webp",
+      "sha256": "458812eef8966706b87ca4d0c35f3c98f125c0dd9d87b4607179d18bccfac1ad",
+      "source_sha256": "458812eef8966706b87ca4d0c35f3c98f125c0dd9d87b4607179d18bccfac1ad",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 27024,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 76,
+        "name": "Mark Twain",
+        "slug": "mark-twain",
+        "identity": "Samuel Langhorne Clemens (Mark Twain), American author, 1835–1910",
+        "status": "generated",
+        "png": "png/076-mark-twain.png",
+        "webp": "webp/076-mark-twain.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2307998,
+        "webp_bytes": 27024,
+        "sha256_png": "12e61a8e18538c71beee57c3bc86451a6033b406fe2e8d466f0d00623d3d094e",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "wilde",
+      "name": {
+        "ru": "Оскар Уайльд",
+        "en": "Oscar Wilde"
+      },
+      "language": "en",
+      "file": "wilde.webp",
+      "portrait": "authors/classics-v52/wilde.webp",
+      "archiveMember": "boks-avatars-web/webp/079-oscar-wilde.webp",
+      "sha256": "5d994ca06dd4c25338408353027a336388307542d93338341f8a33b028d133b3",
+      "source_sha256": "5d994ca06dd4c25338408353027a336388307542d93338341f8a33b028d133b3",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 19700,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 79,
+        "name": "Oscar Wilde",
+        "slug": "oscar-wilde",
+        "identity": "Oscar Fingal O'Flahertie Wills Wilde, Irish author, 1854–1900",
+        "status": "generated",
+        "png": "png/079-oscar-wilde.png",
+        "webp": "webp/079-oscar-wilde.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2177213,
+        "webp_bytes": 19700,
+        "sha256_png": "6f6023e3ce61f55d8dbe71f6574299a360c4340ee70dc7f43e2494ad9a7f671f",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "dickinson",
+      "name": {
+        "ru": "Эмили Дикинсон",
+        "en": "Emily Dickinson"
+      },
+      "language": "en",
+      "file": "dickinson.webp",
+      "portrait": "authors/classics-v52/dickinson.webp",
+      "archiveMember": "boks-avatars-web/webp/060-emily-dickinson.webp",
+      "sha256": "f84b22d9112e530ee492768bbf3736072637f593a85b1d72540ad547f5f034b4",
+      "source_sha256": "f84b22d9112e530ee492768bbf3736072637f593a85b1d72540ad547f5f034b4",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 15690,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 60,
+        "name": "Emily Dickinson",
+        "slug": "emily-dickinson",
+        "identity": "Emily Elizabeth Dickinson (1830–1886)",
+        "status": "generated",
+        "png": "png/060-emily-dickinson.png",
+        "webp": "webp/060-emily-dickinson.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2044446,
+        "webp_bytes": 15690,
+        "sha256_png": "389a3d642142c77afdb12000a01accf6bd05ffd1fe1b80dccd3300925f6eded8",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "byron",
+      "name": {
+        "ru": "Джордж Гордон Байрон",
+        "en": "Lord Byron"
+      },
+      "language": "en",
+      "file": "byron.webp",
+      "portrait": "authors/classics-v52/byron.webp",
+      "archiveMember": "boks-avatars-web/webp/075-lord-byron.webp",
+      "sha256": "b7517dde428a2f9cc9c69dea78fe4d7b79bf420bd8d3d2837b790c21d59f4775",
+      "source_sha256": "b7517dde428a2f9cc9c69dea78fe4d7b79bf420bd8d3d2837b790c21d59f4775",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 22484,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 75,
+        "name": "Lord Byron",
+        "slug": "lord-byron",
+        "identity": "George Gordon Byron, 6th Baron Byron, English poet, 1788–1824",
+        "status": "generated",
+        "png": "png/075-lord-byron.png",
+        "webp": "webp/075-lord-byron.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2229706,
+        "webp_bytes": 22484,
+        "sha256_png": "41f67f83dc35e7e94eba3bf8e2a19e0b688aef6cb6698c998dd23f990319e4ee",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "ohenry",
+      "name": {
+        "ru": "О. Генри",
+        "en": "O. Henry"
+      },
+      "language": "en",
+      "file": "ohenry.webp",
+      "portrait": "authors/classics-v52/ohenry.webp",
+      "archiveMember": "boks-avatars-web/webp/078-o-henry.webp",
+      "sha256": "6bb86ecc2098166b6b0a9f148c8f9018b685fca3b6571a038d7e948f50eed558",
+      "source_sha256": "6bb86ecc2098166b6b0a9f148c8f9018b685fca3b6571a038d7e948f50eed558",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 27434,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 78,
+        "name": "O. Henry",
+        "slug": "o-henry",
+        "identity": "William Sydney Porter (O. Henry), American author, 1862–1910",
+        "status": "generated",
+        "png": "png/078-o-henry.png",
+        "webp": "webp/078-o-henry.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2300303,
+        "webp_bytes": 27434,
+        "sha256_png": "8cd56d1297d02c9892d96e62a32dd2df2845510713a91cc9906f07a01e5cfbab",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "yeats",
+      "name": {
+        "ru": "Уильям Батлер Йейтс",
+        "en": "W. B. Yeats"
+      },
+      "language": "en",
+      "file": "yeats.webp",
+      "portrait": "authors/classics-v52/yeats.webp",
+      "archiveMember": "boks-avatars-web/webp/093-w-b-yeats.webp",
+      "sha256": "5f81acd2ca359a60aef1795432293c766427559a0069224eb7098d3d5e02d23d",
+      "source_sha256": "5f81acd2ca359a60aef1795432293c766427559a0069224eb7098d3d5e02d23d",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 31674,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 93,
+        "name": "W. B. Yeats",
+        "slug": "w-b-yeats",
+        "identity": "William Butler Yeats, Irish poet, 1865–1939",
+        "status": "generated",
+        "png": "png/093-w-b-yeats.png",
+        "webp": "webp/093-w-b-yeats.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2502545,
+        "webp_bytes": 31674,
+        "sha256_png": "1e0d7f9fa44aff71944943027a9c796334bffcfad99f23f0c8ffa63fa37838e6",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "saki",
+      "name": {
+        "ru": "Саки",
+        "en": "Saki"
+      },
+      "language": "en",
+      "file": "saki.webp",
+      "portrait": "authors/classics-v52/saki.webp",
+      "archiveMember": "boks-avatars-web/webp/087-saki.webp",
+      "sha256": "b49bbdb034fdf64dd94df3c3d812a2f1a7e31b8cd2f92fac01c3ddb1a0a9e675",
+      "source_sha256": "b49bbdb034fdf64dd94df3c3d812a2f1a7e31b8cd2f92fac01c3ddb1a0a9e675",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 22878,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 87,
+        "name": "Saki",
+        "slug": "saki",
+        "identity": "Hector Hugh Munro (Saki), British author, 1870–1916",
+        "status": "generated",
+        "png": "png/087-saki.png",
+        "webp": "webp/087-saki.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2368032,
+        "webp_bytes": 22878,
+        "sha256_png": "96ee6a1e002054351130d1a1d433e71f359a84e6bf89de240b90efb7932ac12a",
+        "sources": [
+          "https://www.npg.org.uk/collections/search/person/mp128029/hector-hugh-munro-saki",
+          "https://www.npg.org.uk/collections/search/portrait/mw207813/HH-Munro-Saki-and-members-of-his-family"
+        ]
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "whitman",
+      "name": {
+        "ru": "Уолт Уитмен",
+        "en": "Walt Whitman"
+      },
+      "language": "en",
+      "file": "whitman.webp",
+      "portrait": "authors/classics-v52/whitman.webp",
+      "archiveMember": "boks-avatars-web/webp/094-walt-whitman.webp",
+      "sha256": "4484e4b7c1f7a8b553926709b9a437c8d93da39769f3b23929301aa6da1968ac",
+      "source_sha256": "4484e4b7c1f7a8b553926709b9a437c8d93da39769f3b23929301aa6da1968ac",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 50370,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 94,
+        "name": "Walt Whitman",
+        "slug": "walt-whitman",
+        "identity": "Walter Whitman Jr. (Walt Whitman), American poet, 1819–1892",
+        "status": "generated",
+        "png": "png/094-walt-whitman.png",
+        "webp": "webp/094-walt-whitman.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2897010,
+        "webp_bytes": 50370,
+        "sha256_png": "953d48e8a5493cdeb41e936c0a6fb6dee461d90d5e2e7fe72eda405029b13272",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mansfield",
+      "name": {
+        "ru": "Кэтрин Мэнсфилд",
+        "en": "Katherine Mansfield"
+      },
+      "language": "en",
+      "file": "mansfield.webp",
+      "portrait": "authors/classics-v52/mansfield.webp",
+      "archiveMember": "boks-avatars-web/webp/073-katherine-mansfield.webp",
+      "sha256": "915002db51152e811c10a1f569b0fc853c8881d3ec442220460aa74010da4efe",
+      "source_sha256": "915002db51152e811c10a1f569b0fc853c8881d3ec442220460aa74010da4efe",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 20438,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 73,
+        "name": "Katherine Mansfield",
+        "slug": "katherine-mansfield",
+        "identity": "Katherine Mansfield (Kathleen Mansfield Murry), New Zealand author, 1888–1923",
+        "status": "generated",
+        "png": "png/073-katherine-mansfield.png",
+        "webp": "webp/073-katherine-mansfield.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2183430,
+        "webp_bytes": 20438,
+        "sha256_png": "03ed4fa6738c71a8e97d0791949867903f618a5a9caa6bd218a1a5f91c7945a7",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "hardy",
+      "name": {
+        "ru": "Томас Харди",
+        "en": "Thomas Hardy"
+      },
+      "language": "en",
+      "file": "hardy.webp",
+      "portrait": "authors/classics-v52/hardy.webp",
+      "archiveMember": "boks-avatars-web/webp/092-thomas-hardy.webp",
+      "sha256": "09e6b40a2407ed19ddb6e7d8eac212cf17861a91ce1d0682902be71510e7955d",
+      "source_sha256": "09e6b40a2407ed19ddb6e7d8eac212cf17861a91ce1d0682902be71510e7955d",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 41652,
+      "suppliedStatus": "generated",
+      "suppliedMetadata": {
+        "number": 92,
+        "name": "Thomas Hardy",
+        "slug": "thomas-hardy",
+        "identity": "Thomas Hardy, English novelist and poet, 1840–1928",
+        "status": "generated",
+        "png": "png/092-thomas-hardy.png",
+        "webp": "webp/092-thomas-hardy.webp",
+        "png_width": 1254,
+        "png_height": 1254,
+        "webp_width": 512,
+        "webp_height": 512,
+        "png_bytes": 2654291,
+        "webp_bytes": 41652,
+        "sha256_png": "8ace2ff45c73f985feab657742a16b9223c1e56a0a7f28ceb835cca95f91a006",
+        "sources": []
+      },
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    }
+  ]
+}

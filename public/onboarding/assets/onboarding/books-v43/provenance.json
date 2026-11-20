@@ -1,0 +1,20 @@
+{
+  "mode": "built-in image_gen",
+  "asset": "neutral-cover.webp",
+  "source": "/Users/andrey/.codex/generated_images/01a1e674-db72-7691-becb-05feca763847/exec-0abb2ff2-f437-43c4-a76e-c029d0f5c688.png",
+  "reference": "../discovery-v32/linen-volume.webp",
+  "prompt": "Use case: precise-object-edit. Asset type: physical book FRONT COVER texture for a 3D reading-room interface. Input image is the edit target and material reference. Recreate ONLY the cloth front board of this navy linen volume, viewed absolutely straight-on and orthographic. All edges and every recessed frame must be perfectly horizontal or vertical, zero perspective, zero tilt, zero lens distortion. Full-bleed portrait rectangle at ratio 112:153: the front board fills the ENTIRE canvas, no transparent padding, no separate spine, no pages, no lower fore-edge, no cast shadow or background. Preserve realistic finely woven dark blue cloth, restrained pressed double-rule border, understated adult contemporary bookbinding. Upper portrait aperture is a perfectly rectangular empty recessed navy cloth panel whose inside edges are exactly at left 23%, right 79%, top 15%, bottom 52% of the image. Subtle 1px bevel around that aperture, no decoration inside it. Lower half is calm blank cloth for live typography. No photograph, no person, no letters, no text, no logos, no numbers, no gold ornate decoration. It must be suitable for a real monochrome portrait to be placed in the clean rectangular aperture with no distortion.",
+  "preparation": "RGB conversion and WebP quality 94 only; no painting, cropping, skewing, or source-photo modification.",
+  "dimensions": [
+    1074,
+    1465
+  ],
+  "aperture": {
+    "left": "22.35%",
+    "right": "22.35%",
+    "top": "14%",
+    "height": "38.7%"
+  },
+  "purpose": "Straight-on front board with one measured rectangular portrait aperture; author photograph retains object-fit cover and no affine transform.",
+  "sha256": "bd11e6b7d1bd6a17bd63d29035594469f6f6c4eff47271b03f46af574b40d3b0"
+}

@@ -36,13 +36,15 @@ function supabaseConnectSources(supabaseUrl?: string) {
 }
 
 /**
- * Pages Studio shows inside its own frame: the author-page preview at
- * desktop and phone width, and a link-only piece the Series recorder has
- * just built (`/l/<token>`, at phone width). Only boks itself may frame them;
+ * Pages boks shows inside its own frame: the author-page preview at desktop
+ * and phone width, a link-only piece the Series recorder has just built
+ * (`/l/<token>`, at phone width), and the reader introduction over the reader
+ * (`/onboarding/`, docs/onboarding.md). Only boks itself may frame them;
  * every other page refuses any frame at all.
  */
 export function framedBySelf(pathname: string) {
-  return pathname === "/author/preview" || pathname.startsWith("/author/preview/") || /^\/l\/[^/]+$/.test(pathname);
+  return pathname === "/author/preview" || pathname.startsWith("/author/preview/") || /^\/l\/[^/]+$/.test(pathname)
+    || pathname === "/onboarding/" || pathname === "/onboarding/index.html";
 }
 
 /**

@@ -1,0 +1,4738 @@
+{
+  "schemaVersion": 1,
+  "id": "boks-onboarding-assets-v54",
+  "revision": 54,
+  "createdOn": "2026-11-19",
+  "purpose": "Concrete production-port inventory for the accepted scene. Metadata only: runtime modules do not fetch or enforce this manifest.",
+  "pathBase": "All files[].path, assetPaths, portraitPath, audioPath and imagePath resolve relative to prototype dist/. sourceFiles resolve relative to prototype root.",
+  "acceptedVisualBaseline": {
+    "revision": 53,
+    "source": "73ffc66c717047f81869873f92547e8eedcc5850",
+    "sitesVersion": 47
+  },
+  "scope": {
+    "classicPortraitCount": 42,
+    "contemporaryShelf": false,
+    "registeredSeriesPieceCount": 4,
+    "registeredSeriesImageCount": 19,
+    "registeredAudioCount": 4,
+    "excludes": "Historical/unreferenced rasters, unavailable classic portraits, unused programme painting, unused Series pieces and a fabricated first-feed cover are excluded. Source provenance can describe historical files without making them dependencies."
+  },
+  "phases": {
+    "welcome-compact": "Only the compact welcome poster at boot; keep a deterministic fallback while selected art settles.",
+    "welcome-desktop": "Only the registered desktop welcome poster at boot; a cold resize into compact first arms the compact poster and keeps a coherent fallback until ready.",
+    "welcome-fonts": "Text remains usable while relevant script/style fonts settle.",
+    "cabinet-entry": "Production target: arm cabinet art after entry intent. The prototype retains its shared cabinet art in the initial readiness set and decodes repeated sources once.",
+    "classics": "Arm only selected-language eligible portrait set when classics is needed.",
+    "discovery-series": "Prepare the same panorama/painting and one selected silent piece.",
+    "discovery-letters": "Prepare room, wood and mail materials only for the current or deliberately next scene.",
+    "discovery-calendar": "Prepare selected live calendar sheet; no separate programme artwork.",
+    "series-current-and-next": "Selected-piece current image plus its next image, not the full catalogue.",
+    "series-sound-gesture": "Reader-initiated audio only; stop/release on leave."
+  },
+  "priorities": {
+    "critical": "Relevant current-branch visible art/text; failures and reduced motion must still expose controls.",
+    "next-scene": "Bounded deliberate handoff; cannot hold an unrelated current scene.",
+    "scene-local": "Load when this scene/selected piece is needed; current+one-next warm window.",
+    "gesture-only": "No audio construction/download before a reader sound gesture."
+  },
+  "policies": {
+    "readiness": "Downloading is not decoding. Resolve success, failure, timeout and route cancellation exactly once. Late completions may not revive an inactive scene.",
+    "currentPrototypeTimeoutMs": {
+      "livingArt": 5000,
+      "discoveryAndSeriesImage": 4000,
+      "arrivalAndExitCover": 1800
+    },
+    "motion": "Keep established v44 flight geometry and endpoints; reduced motion settles the same destination. Cancel owned effects/timers/listeners and recover from missing/stalled WAAPI completion.",
+    "cache": "Deduplicate by exact source URL and share physical cover decode across repeated book nodes; listing an asset does not authorize boot preloading.",
+    "productionDerivatives": "The source inventory is not an optimized responsive delivery set. Generate tested lower-resolution renditions for actual scene sizes, preserve logical geometry, assign sizes/srcset or equivalent and verify decoded/compositor memory on physical devices.",
+    "firstFeedCover": "Resolve the actual first canonical Worker slate, freeze bok identity through flight, and fetch its real cover dynamically; this manifest does not nominate a prototype story."
+  },
+  "geometry": {
+    "units": "Logical CSS scene units unless a field explicitly states normalized values or physical pixels.",
+    "breakpoint": {
+      "desktopMinWidth": 960,
+      "desktopMinHeight": 600,
+      "combination": "AND"
+    },
+    "compactWelcome": {
+      "image": "assets/onboarding/world-v42/room-open.webp",
+      "logicalSize": {
+        "width": 1000,
+        "height": 2050
+      },
+      "world": {
+        "width": 3300,
+        "height": 2050
+      },
+      "cabinetOrigin": {
+        "x": 394,
+        "y": 533
+      },
+      "sectionPitch": 640,
+      "front": {
+        "x": 420,
+        "y": 604,
+        "width": 1567,
+        "height": 1190,
+        "offsets": {
+          "room": 0,
+          "languages": 640,
+          "form": 1280,
+          "classics": 1920
+        },
+        "handle": {
+          "x": 470,
+          "y": 1127,
+          "width": 25,
+          "height": 141
+        },
+        "sourceCrop": [
+          45,
+          45,
+          1375,
+          1065
+        ]
+      },
+      "fixedRails": {
+        "upperY": [
+          551,
+          607
+        ],
+        "lowerY": [
+          1787,
+          1830
+        ]
+      },
+      "foregroundTable": {
+        "worldBounds": [
+          293,
+          1693,
+          530,
+          1994
+        ],
+        "tabletopBounds": [
+          293,
+          1693,
+          530,
+          1772
+        ],
+        "legOcclusionRight": 441,
+        "panelApertureMask": "polygon(0 0,100% 0,100% 100%,22px 100%,22px 1166px,70px 1156px,108px 1138px,108px 1110px,72px 1094px,0 1089px)",
+        "note": "Apply as a fixed aperture in scene coordinates at front x=420, y=604. It reveals the original foreground table above the sliding panel without adding furniture."
+      },
+      "wallTexture": {
+        "image": "assets/onboarding/world-v42/wall.webp",
+        "width": 640,
+        "height": 529
+      },
+      "floorTexture": {
+        "image": "assets/onboarding/wide-v26/floor.webp",
+        "y": 1864,
+        "width": 640,
+        "height": 186
+      }
+    },
+    "desktopWelcome": {
+      "image": "assets/onboarding/desktop-v53/room-matched-walls.webp",
+      "logicalSize": {
+        "width": 1586,
+        "height": 992
+      },
+      "rasterSize": {
+        "width": 1585,
+        "height": 992
+      },
+      "cabinet": {
+        "x": 1247,
+        "y": 232,
+        "width": 339,
+        "height": 692
+      },
+      "glass": {
+        "x": 1279,
+        "y": 273,
+        "width": 307,
+        "height": 595
+      },
+      "native": {
+        "scale": 0.5,
+        "x": 1069,
+        "y": -29
+      },
+      "hintY": 820,
+      "fit": "Cover anchored to right cabinet edge and floor. Moving glass and extension crop the same raster; no second door image.",
+      "world": {
+        "width": 2210,
+        "height": 2050
+      },
+      "selectorPitch": 640,
+      "classicPitch": 390
+    },
+    "selectors": {
+      "baySize": {
+        "width": 640,
+        "height": 1335
+      },
+      "languageButtonCentersY": [
+        234.55,
+        420.41
+      ],
+      "formFronts": [
+        {
+          "id": "top",
+          "file": "drawer-top-front.webp",
+          "nativeRect": [
+            194,
+            170,
+            484,
+            219
+          ],
+          "x": 142.87686996547757,
+          "y": 125.38674033149171,
+          "width": 356.4556962025316,
+          "height": 161.52762430939225
+        },
+        {
+          "id": "middle",
+          "file": "drawer-middle-front.webp",
+          "nativeRect": [
+            194,
+            394,
+            484,
+            211
+          ],
+          "x": 142.87686996547757,
+          "y": 290.6022099447514,
+          "width": 356.4556962025316,
+          "height": 155.62707182320443
+        },
+        {
+          "id": "bottom",
+          "file": "drawer-bottom-front.webp",
+          "nativeRect": [
+            194,
+            610,
+            484,
+            218
+          ],
+          "x": 142.87686996547757,
+          "y": 449.91712707182324,
+          "width": 356.4556962025316,
+          "height": 160.79005524861878
+        }
+      ],
+      "selectionMotion": {
+        "translateY": 7,
+        "scale": 1.025,
+        "origin": "50% 50%",
+        "durationMs": 380,
+        "easing": "cubic-bezier(.22,.7,.2,1)"
+      }
+    },
+    "classicShelf": {
+      "baySize": {
+        "width": 640,
+        "height": 1335
+      },
+      "contacts": [
+        257,
+        439,
+        613,
+        790,
+        971,
+        1215
+      ],
+      "extraRowPitch": 180,
+      "cameraWidth": 355,
+      "minimumScale": 0.6,
+      "portraitAperture": {
+        "left": "22.35%",
+        "right": "22.35%",
+        "top": "14%",
+        "height": "38.7%",
+        "fit": "cover",
+        "affineTransform": false
+      },
+      "layouts": {
+        "ru": {
+          "rowCount": 5,
+          "contentBottom": 993,
+          "rows": [
+            {
+              "row": 0,
+              "top": 88.45999999999998,
+              "bottom": 257,
+              "shelfY": 257,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 1,
+              "top": 270.46,
+              "bottom": 439,
+              "shelfY": 439,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 2,
+              "top": 446.58,
+              "bottom": 613,
+              "shelfY": 613,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 3,
+              "top": 621.46,
+              "bottom": 790,
+              "shelfY": 790,
+              "left": 145,
+              "right": 499
+            },
+            {
+              "row": 4,
+              "top": 802.46,
+              "bottom": 971,
+              "shelfY": 971,
+              "left": 145,
+              "right": 498
+            }
+          ],
+          "placements": [
+            {
+              "id": "yesenin",
+              "row": 0,
+              "x": 145,
+              "y": 102,
+              "width": 36,
+              "height": 155,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 118,
+              "bookHeight": 155,
+              "openX": 145,
+              "openY": 92.69999999999999,
+              "openWidth": 125.08000000000001,
+              "openHeight": 164.3
+            },
+            {
+              "id": "gorky",
+              "row": 0,
+              "x": 182,
+              "y": 111,
+              "width": 39,
+              "height": 146,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 113,
+              "bookHeight": 146,
+              "openX": 145,
+              "openY": 102.23999999999998,
+              "openWidth": 119.78,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "tsvetaeva",
+              "row": 0,
+              "x": 222,
+              "y": 98,
+              "width": 35,
+              "height": 159,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 123,
+              "bookHeight": 159,
+              "openX": 174.31,
+              "openY": 88.45999999999998,
+              "openWidth": 130.38,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "mayakovsky",
+              "row": 0,
+              "x": 262,
+              "y": 225,
+              "width": 118,
+              "height": 32,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 32,
+              "bookWidth": 92.82666666666667,
+              "bookHeight": 118,
+              "openX": 271.8018666666667,
+              "openY": 131.92,
+              "openWidth": 98.39626666666668,
+              "openHeight": 125.08000000000001
+            },
+            {
+              "id": "nekrasov",
+              "row": 0,
+              "x": 265,
+              "y": 195,
+              "width": 113,
+              "height": 30,
+              "shelfY": 257,
+              "supportY": 225,
+              "supportId": "mayakovsky",
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 89.9225352112676,
+              "bookHeight": 113,
+              "openX": 273.8410563380282,
+              "openY": 137.22,
+              "openWidth": 95.31788732394367,
+              "openHeight": 119.78
+            },
+            {
+              "id": "pushkin",
+              "row": 0,
+              "x": 386,
+              "y": 104,
+              "width": 112,
+              "height": 153,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 31,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 380.28,
+              "openY": 94.82,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            },
+            {
+              "id": "blok",
+              "row": 1,
+              "x": 145,
+              "y": 409,
+              "width": 119,
+              "height": 30,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 95.68243243243244,
+              "bookHeight": 119,
+              "openX": 153.7883108108108,
+              "openY": 312.86,
+              "openWidth": 101.42337837837839,
+              "openHeight": 126.14
+            },
+            {
+              "id": "grin",
+              "row": 1,
+              "x": 149,
+              "y": 376,
+              "width": 113,
+              "height": 33,
+              "shelfY": 439,
+              "supportY": 409,
+              "supportId": "blok",
+              "presentation": "lying",
+              "depth": 33,
+              "bookWidth": 81.3312101910828,
+              "bookHeight": 113,
+              "openX": 162.39445859872612,
+              "openY": 319.22,
+              "openWidth": 86.21108280254778,
+              "openHeight": 119.78
+            },
+            {
+              "id": "lermontov",
+              "row": 1,
+              "x": 270,
+              "y": 284,
+              "width": 113,
+              "height": 155,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 24,
+              "bookWidth": 113,
+              "bookHeight": 155,
+              "openX": 266.61,
+              "openY": 274.7,
+              "openWidth": 119.78,
+              "openHeight": 164.3
+            },
+            {
+              "id": "kuprin",
+              "row": 1,
+              "x": 389,
+              "y": 293,
+              "width": 36,
+              "height": 146,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 121,
+              "bookHeight": 146,
+              "openX": 342.87,
+              "openY": 284.24,
+              "openWidth": 128.26000000000002,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "fet",
+              "row": 1,
+              "x": 426,
+              "y": 280,
+              "width": 34,
+              "height": 159,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 34,
+              "bookWidth": 118,
+              "bookHeight": 159,
+              "openX": 373.91999999999996,
+              "openY": 270.46,
+              "openWidth": 125.08000000000001,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "tyutchev",
+              "row": 1,
+              "x": 461,
+              "y": 289,
+              "width": 37,
+              "height": 150,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 37,
+              "bookWidth": 113,
+              "bookHeight": 150,
+              "openX": 379.22,
+              "openY": 280,
+              "openWidth": 119.78,
+              "openHeight": 159
+            },
+            {
+              "id": "tolstoy",
+              "row": 2,
+              "x": 145,
+              "y": 471,
+              "width": 114,
+              "height": 142,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 26,
+              "bookWidth": 114,
+              "bookHeight": 142,
+              "openX": 145,
+              "openY": 462.48,
+              "openWidth": 120.84,
+              "openHeight": 150.52
+            },
+            {
+              "id": "gumilyov",
+              "row": 2,
+              "x": 265,
+              "y": 460,
+              "width": 38,
+              "height": 153,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 116,
+              "bookHeight": 153,
+              "openX": 222.51999999999998,
+              "openY": 450.82,
+              "openWidth": 122.96000000000001,
+              "openHeight": 162.18
+            },
+            {
+              "id": "andreyev",
+              "row": 2,
+              "x": 304,
+              "y": 465,
+              "width": 35,
+              "height": 148,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 121,
+              "bookHeight": 148,
+              "openX": 257.37,
+              "openY": 456.12,
+              "openWidth": 128.26000000000002,
+              "openHeight": 156.88
+            },
+            {
+              "id": "turgenev",
+              "row": 2,
+              "x": 340,
+              "y": 456,
+              "width": 38,
+              "height": 157,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 118,
+              "bookHeight": 157,
+              "openX": 296.46,
+              "openY": 446.58,
+              "openWidth": 125.08000000000001,
+              "openHeight": 166.42000000000002
+            },
+            {
+              "id": "saltykov-shchedrin",
+              "row": 2,
+              "x": 384,
+              "y": 583,
+              "width": 114,
+              "height": 30,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 83.84516129032258,
+              "bookHeight": 114,
+              "openX": 396.56206451612906,
+              "openY": 492.15999999999997,
+              "openWidth": 88.87587096774193,
+              "openHeight": 120.84
+            },
+            {
+              "id": "garshin",
+              "row": 2,
+              "x": 389,
+              "y": 549,
+              "width": 107,
+              "height": 34,
+              "shelfY": 613,
+              "supportY": 583,
+              "supportId": "saltykov-shchedrin",
+              "presentation": "lying",
+              "depth": 34,
+              "bookWidth": 78.41780821917808,
+              "bookHeight": 107,
+              "openX": 400.9385616438356,
+              "openY": 499.58,
+              "openWidth": 83.12287671232878,
+              "openHeight": 113.42
+            },
+            {
+              "id": "krylov",
+              "row": 3,
+              "x": 145,
+              "y": 631,
+              "width": 39,
+              "height": 159,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 116,
+              "bookHeight": 159,
+              "openX": 145,
+              "openY": 621.46,
+              "openWidth": 122.96000000000001,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "balmont",
+              "row": 3,
+              "x": 185,
+              "y": 640,
+              "width": 35,
+              "height": 150,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 121,
+              "bookHeight": 150,
+              "openX": 145,
+              "openY": 631,
+              "openWidth": 128.26000000000002,
+              "openHeight": 159
+            },
+            {
+              "id": "mandelstam",
+              "row": 3,
+              "x": 221,
+              "y": 648,
+              "width": 38,
+              "height": 142,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 118,
+              "bookHeight": 142,
+              "openX": 177.45999999999998,
+              "openY": 639.48,
+              "openWidth": 125.08000000000001,
+              "openHeight": 150.52
+            },
+            {
+              "id": "chekhov",
+              "row": 3,
+              "x": 265,
+              "y": 637,
+              "width": 112,
+              "height": 153,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 29,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 261.64,
+              "openY": 627.8199999999999,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            },
+            {
+              "id": "bryusov",
+              "row": 3,
+              "x": 383,
+              "y": 760,
+              "width": 116,
+              "height": 30,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 90.91891891891892,
+              "bookHeight": 116,
+              "openX": 392.81297297297294,
+              "openY": 667.04,
+              "openWidth": 96.37405405405406,
+              "openHeight": 122.96000000000001
+            },
+            {
+              "id": "averchenko",
+              "row": 3,
+              "x": 386,
+              "y": 726,
+              "width": 111,
+              "height": 34,
+              "shelfY": 790,
+              "supportY": 760,
+              "supportId": "bryusov",
+              "presentation": "lying",
+              "depth": 34,
+              "bookWidth": 78.47770700636943,
+              "bookHeight": 111,
+              "openX": 399.9068152866242,
+              "openY": 672.34,
+              "openWidth": 83.1863694267516,
+              "openHeight": 117.66000000000001
+            },
+            {
+              "id": "mamin-sibiryak",
+              "row": 4,
+              "x": 145,
+              "y": 816,
+              "width": 36,
+              "height": 155,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 121,
+              "bookHeight": 155,
+              "openX": 145,
+              "openY": 806.7,
+              "openWidth": 128.26000000000002,
+              "openHeight": 164.3
+            },
+            {
+              "id": "odoyevsky",
+              "row": 4,
+              "x": 182,
+              "y": 825,
+              "width": 39,
+              "height": 146,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 118,
+              "bookHeight": 146,
+              "openX": 145,
+              "openY": 816.24,
+              "openWidth": 125.08000000000001,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "annensky",
+              "row": 4,
+              "x": 222,
+              "y": 812,
+              "width": 35,
+              "height": 159,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 113,
+              "bookHeight": 159,
+              "openX": 179.61,
+              "openY": 802.46,
+              "openWidth": 119.78,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "bely",
+              "row": 4,
+              "x": 262,
+              "y": 939,
+              "width": 118,
+              "height": 32,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 32,
+              "bookWidth": 92.82666666666667,
+              "bookHeight": 118,
+              "openX": 271.8018666666667,
+              "openY": 845.92,
+              "openWidth": 98.39626666666668,
+              "openHeight": 125.08000000000001
+            },
+            {
+              "id": "apukhtin",
+              "row": 4,
+              "x": 266,
+              "y": 909,
+              "width": 112,
+              "height": 30,
+              "shelfY": 971,
+              "supportY": 939,
+              "supportId": "bely",
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 88.33802816901408,
+              "bookHeight": 112,
+              "openX": 275.18084507042255,
+              "openY": 852.28,
+              "openWidth": 93.63830985915493,
+              "openHeight": 118.72
+            },
+            {
+              "id": "dostoevsky",
+              "row": 4,
+              "x": 386,
+              "y": 818,
+              "width": 112,
+              "height": 153,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 31,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 380.28,
+              "openY": 808.8199999999999,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            }
+          ]
+        },
+        "en": {
+          "rowCount": 2,
+          "contentBottom": 461,
+          "rows": [
+            {
+              "row": 0,
+              "top": 88.45999999999998,
+              "bottom": 257,
+              "shelfY": 257,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 1,
+              "top": 270.46,
+              "bottom": 439,
+              "shelfY": 439,
+              "left": 145,
+              "right": 498
+            }
+          ],
+          "placements": [
+            {
+              "id": "poe",
+              "row": 0,
+              "x": 145,
+              "y": 102,
+              "width": 36,
+              "height": 155,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 118,
+              "bookHeight": 155,
+              "openX": 145,
+              "openY": 92.69999999999999,
+              "openWidth": 125.08000000000001,
+              "openHeight": 164.3
+            },
+            {
+              "id": "wilde",
+              "row": 0,
+              "x": 182,
+              "y": 111,
+              "width": 39,
+              "height": 146,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 113,
+              "bookHeight": 146,
+              "openX": 145,
+              "openY": 102.23999999999998,
+              "openWidth": 119.78,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "dickinson",
+              "row": 0,
+              "x": 222,
+              "y": 98,
+              "width": 35,
+              "height": 159,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 123,
+              "bookHeight": 159,
+              "openX": 174.31,
+              "openY": 88.45999999999998,
+              "openWidth": 130.38,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "byron",
+              "row": 0,
+              "x": 262,
+              "y": 225,
+              "width": 118,
+              "height": 32,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 32,
+              "bookWidth": 92.82666666666667,
+              "bookHeight": 118,
+              "openX": 271.8018666666667,
+              "openY": 131.92,
+              "openWidth": 98.39626666666668,
+              "openHeight": 125.08000000000001
+            },
+            {
+              "id": "ohenry",
+              "row": 0,
+              "x": 265,
+              "y": 195,
+              "width": 113,
+              "height": 30,
+              "shelfY": 257,
+              "supportY": 225,
+              "supportId": "byron",
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 89.9225352112676,
+              "bookHeight": 113,
+              "openX": 273.8410563380282,
+              "openY": 137.22,
+              "openWidth": 95.31788732394367,
+              "openHeight": 119.78
+            },
+            {
+              "id": "shakespeare",
+              "row": 0,
+              "x": 386,
+              "y": 104,
+              "width": 112,
+              "height": 153,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 31,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 380.28,
+              "openY": 94.82,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            },
+            {
+              "id": "yeats",
+              "row": 1,
+              "x": 145,
+              "y": 409,
+              "width": 119,
+              "height": 30,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 95.68243243243244,
+              "bookHeight": 119,
+              "openX": 153.7883108108108,
+              "openY": 312.86,
+              "openWidth": 101.42337837837839,
+              "openHeight": 126.14
+            },
+            {
+              "id": "saki",
+              "row": 1,
+              "x": 149,
+              "y": 376,
+              "width": 113,
+              "height": 33,
+              "shelfY": 439,
+              "supportY": 409,
+              "supportId": "yeats",
+              "presentation": "lying",
+              "depth": 33,
+              "bookWidth": 81.3312101910828,
+              "bookHeight": 113,
+              "openX": 162.39445859872612,
+              "openY": 319.22,
+              "openWidth": 86.21108280254778,
+              "openHeight": 119.78
+            },
+            {
+              "id": "twain",
+              "row": 1,
+              "x": 270,
+              "y": 284,
+              "width": 113,
+              "height": 155,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 24,
+              "bookWidth": 113,
+              "bookHeight": 155,
+              "openX": 266.61,
+              "openY": 274.7,
+              "openWidth": 119.78,
+              "openHeight": 164.3
+            },
+            {
+              "id": "whitman",
+              "row": 1,
+              "x": 389,
+              "y": 293,
+              "width": 36,
+              "height": 146,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 121,
+              "bookHeight": 146,
+              "openX": 342.87,
+              "openY": 284.24,
+              "openWidth": 128.26000000000002,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "mansfield",
+              "row": 1,
+              "x": 426,
+              "y": 280,
+              "width": 34,
+              "height": 159,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 34,
+              "bookWidth": 118,
+              "bookHeight": 159,
+              "openX": 373.91999999999996,
+              "openY": 270.46,
+              "openWidth": 125.08000000000001,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "hardy",
+              "row": 1,
+              "x": 461,
+              "y": 289,
+              "width": 37,
+              "height": 150,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 37,
+              "bookWidth": 113,
+              "bookHeight": 150,
+              "openX": 379.22,
+              "openY": 280,
+              "openWidth": 119.78,
+              "openHeight": 159
+            }
+          ]
+        },
+        "both": {
+          "rowCount": 7,
+          "contentBottom": 1417,
+          "rows": [
+            {
+              "row": 0,
+              "top": 88.45999999999998,
+              "bottom": 257,
+              "shelfY": 257,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 1,
+              "top": 270.46,
+              "bottom": 439,
+              "shelfY": 439,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 2,
+              "top": 446.58,
+              "bottom": 613,
+              "shelfY": 613,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 3,
+              "top": 621.46,
+              "bottom": 790,
+              "shelfY": 790,
+              "left": 145,
+              "right": 499
+            },
+            {
+              "row": 4,
+              "top": 802.46,
+              "bottom": 971,
+              "shelfY": 971,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 5,
+              "top": 1046.46,
+              "bottom": 1215,
+              "shelfY": 1215,
+              "left": 145,
+              "right": 498
+            },
+            {
+              "row": 6,
+              "top": 1228.58,
+              "bottom": 1395,
+              "shelfY": 1395,
+              "left": 145,
+              "right": 498
+            }
+          ],
+          "placements": [
+            {
+              "id": "yesenin",
+              "row": 0,
+              "x": 145,
+              "y": 102,
+              "width": 36,
+              "height": 155,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 118,
+              "bookHeight": 155,
+              "openX": 145,
+              "openY": 92.69999999999999,
+              "openWidth": 125.08000000000001,
+              "openHeight": 164.3
+            },
+            {
+              "id": "gorky",
+              "row": 0,
+              "x": 182,
+              "y": 111,
+              "width": 39,
+              "height": 146,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 113,
+              "bookHeight": 146,
+              "openX": 145,
+              "openY": 102.23999999999998,
+              "openWidth": 119.78,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "tsvetaeva",
+              "row": 0,
+              "x": 222,
+              "y": 98,
+              "width": 35,
+              "height": 159,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 123,
+              "bookHeight": 159,
+              "openX": 174.31,
+              "openY": 88.45999999999998,
+              "openWidth": 130.38,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "mayakovsky",
+              "row": 0,
+              "x": 262,
+              "y": 225,
+              "width": 118,
+              "height": 32,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 32,
+              "bookWidth": 92.82666666666667,
+              "bookHeight": 118,
+              "openX": 271.8018666666667,
+              "openY": 131.92,
+              "openWidth": 98.39626666666668,
+              "openHeight": 125.08000000000001
+            },
+            {
+              "id": "nekrasov",
+              "row": 0,
+              "x": 265,
+              "y": 195,
+              "width": 113,
+              "height": 30,
+              "shelfY": 257,
+              "supportY": 225,
+              "supportId": "mayakovsky",
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 89.9225352112676,
+              "bookHeight": 113,
+              "openX": 273.8410563380282,
+              "openY": 137.22,
+              "openWidth": 95.31788732394367,
+              "openHeight": 119.78
+            },
+            {
+              "id": "pushkin",
+              "row": 0,
+              "x": 386,
+              "y": 104,
+              "width": 112,
+              "height": 153,
+              "shelfY": 257,
+              "supportY": 257,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 31,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 380.28,
+              "openY": 94.82,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            },
+            {
+              "id": "blok",
+              "row": 1,
+              "x": 145,
+              "y": 409,
+              "width": 119,
+              "height": 30,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 95.68243243243244,
+              "bookHeight": 119,
+              "openX": 153.7883108108108,
+              "openY": 312.86,
+              "openWidth": 101.42337837837839,
+              "openHeight": 126.14
+            },
+            {
+              "id": "grin",
+              "row": 1,
+              "x": 149,
+              "y": 376,
+              "width": 113,
+              "height": 33,
+              "shelfY": 439,
+              "supportY": 409,
+              "supportId": "blok",
+              "presentation": "lying",
+              "depth": 33,
+              "bookWidth": 81.3312101910828,
+              "bookHeight": 113,
+              "openX": 162.39445859872612,
+              "openY": 319.22,
+              "openWidth": 86.21108280254778,
+              "openHeight": 119.78
+            },
+            {
+              "id": "lermontov",
+              "row": 1,
+              "x": 270,
+              "y": 284,
+              "width": 113,
+              "height": 155,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 24,
+              "bookWidth": 113,
+              "bookHeight": 155,
+              "openX": 266.61,
+              "openY": 274.7,
+              "openWidth": 119.78,
+              "openHeight": 164.3
+            },
+            {
+              "id": "kuprin",
+              "row": 1,
+              "x": 389,
+              "y": 293,
+              "width": 36,
+              "height": 146,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 121,
+              "bookHeight": 146,
+              "openX": 342.87,
+              "openY": 284.24,
+              "openWidth": 128.26000000000002,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "fet",
+              "row": 1,
+              "x": 426,
+              "y": 280,
+              "width": 34,
+              "height": 159,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 34,
+              "bookWidth": 118,
+              "bookHeight": 159,
+              "openX": 373.91999999999996,
+              "openY": 270.46,
+              "openWidth": 125.08000000000001,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "tyutchev",
+              "row": 1,
+              "x": 461,
+              "y": 289,
+              "width": 37,
+              "height": 150,
+              "shelfY": 439,
+              "supportY": 439,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 37,
+              "bookWidth": 113,
+              "bookHeight": 150,
+              "openX": 379.22,
+              "openY": 280,
+              "openWidth": 119.78,
+              "openHeight": 159
+            },
+            {
+              "id": "tolstoy",
+              "row": 2,
+              "x": 145,
+              "y": 471,
+              "width": 114,
+              "height": 142,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 26,
+              "bookWidth": 114,
+              "bookHeight": 142,
+              "openX": 145,
+              "openY": 462.48,
+              "openWidth": 120.84,
+              "openHeight": 150.52
+            },
+            {
+              "id": "gumilyov",
+              "row": 2,
+              "x": 265,
+              "y": 460,
+              "width": 38,
+              "height": 153,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 116,
+              "bookHeight": 153,
+              "openX": 222.51999999999998,
+              "openY": 450.82,
+              "openWidth": 122.96000000000001,
+              "openHeight": 162.18
+            },
+            {
+              "id": "andreyev",
+              "row": 2,
+              "x": 304,
+              "y": 465,
+              "width": 35,
+              "height": 148,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 121,
+              "bookHeight": 148,
+              "openX": 257.37,
+              "openY": 456.12,
+              "openWidth": 128.26000000000002,
+              "openHeight": 156.88
+            },
+            {
+              "id": "turgenev",
+              "row": 2,
+              "x": 340,
+              "y": 456,
+              "width": 38,
+              "height": 157,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 118,
+              "bookHeight": 157,
+              "openX": 296.46,
+              "openY": 446.58,
+              "openWidth": 125.08000000000001,
+              "openHeight": 166.42000000000002
+            },
+            {
+              "id": "saltykov-shchedrin",
+              "row": 2,
+              "x": 384,
+              "y": 583,
+              "width": 114,
+              "height": 30,
+              "shelfY": 613,
+              "supportY": 613,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 83.84516129032258,
+              "bookHeight": 114,
+              "openX": 396.56206451612906,
+              "openY": 492.15999999999997,
+              "openWidth": 88.87587096774193,
+              "openHeight": 120.84
+            },
+            {
+              "id": "garshin",
+              "row": 2,
+              "x": 389,
+              "y": 549,
+              "width": 107,
+              "height": 34,
+              "shelfY": 613,
+              "supportY": 583,
+              "supportId": "saltykov-shchedrin",
+              "presentation": "lying",
+              "depth": 34,
+              "bookWidth": 78.41780821917808,
+              "bookHeight": 107,
+              "openX": 400.9385616438356,
+              "openY": 499.58,
+              "openWidth": 83.12287671232878,
+              "openHeight": 113.42
+            },
+            {
+              "id": "krylov",
+              "row": 3,
+              "x": 145,
+              "y": 631,
+              "width": 39,
+              "height": 159,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 116,
+              "bookHeight": 159,
+              "openX": 145,
+              "openY": 621.46,
+              "openWidth": 122.96000000000001,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "balmont",
+              "row": 3,
+              "x": 185,
+              "y": 640,
+              "width": 35,
+              "height": 150,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 121,
+              "bookHeight": 150,
+              "openX": 145,
+              "openY": 631,
+              "openWidth": 128.26000000000002,
+              "openHeight": 159
+            },
+            {
+              "id": "mandelstam",
+              "row": 3,
+              "x": 221,
+              "y": 648,
+              "width": 38,
+              "height": 142,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 118,
+              "bookHeight": 142,
+              "openX": 177.45999999999998,
+              "openY": 639.48,
+              "openWidth": 125.08000000000001,
+              "openHeight": 150.52
+            },
+            {
+              "id": "chekhov",
+              "row": 3,
+              "x": 265,
+              "y": 637,
+              "width": 112,
+              "height": 153,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 29,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 261.64,
+              "openY": 627.8199999999999,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            },
+            {
+              "id": "bryusov",
+              "row": 3,
+              "x": 383,
+              "y": 760,
+              "width": 116,
+              "height": 30,
+              "shelfY": 790,
+              "supportY": 790,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 90.91891891891892,
+              "bookHeight": 116,
+              "openX": 392.81297297297294,
+              "openY": 667.04,
+              "openWidth": 96.37405405405406,
+              "openHeight": 122.96000000000001
+            },
+            {
+              "id": "averchenko",
+              "row": 3,
+              "x": 386,
+              "y": 726,
+              "width": 111,
+              "height": 34,
+              "shelfY": 790,
+              "supportY": 760,
+              "supportId": "bryusov",
+              "presentation": "lying",
+              "depth": 34,
+              "bookWidth": 78.47770700636943,
+              "bookHeight": 111,
+              "openX": 399.9068152866242,
+              "openY": 672.34,
+              "openWidth": 83.1863694267516,
+              "openHeight": 117.66000000000001
+            },
+            {
+              "id": "mamin-sibiryak",
+              "row": 4,
+              "x": 145,
+              "y": 816,
+              "width": 36,
+              "height": 155,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 121,
+              "bookHeight": 155,
+              "openX": 145,
+              "openY": 806.7,
+              "openWidth": 128.26000000000002,
+              "openHeight": 164.3
+            },
+            {
+              "id": "odoyevsky",
+              "row": 4,
+              "x": 182,
+              "y": 825,
+              "width": 39,
+              "height": 146,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 39,
+              "bookWidth": 118,
+              "bookHeight": 146,
+              "openX": 145,
+              "openY": 816.24,
+              "openWidth": 125.08000000000001,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "annensky",
+              "row": 4,
+              "x": 222,
+              "y": 812,
+              "width": 35,
+              "height": 159,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 113,
+              "bookHeight": 159,
+              "openX": 179.61,
+              "openY": 802.46,
+              "openWidth": 119.78,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "bely",
+              "row": 4,
+              "x": 262,
+              "y": 939,
+              "width": 118,
+              "height": 32,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 32,
+              "bookWidth": 92.82666666666667,
+              "bookHeight": 118,
+              "openX": 271.8018666666667,
+              "openY": 845.92,
+              "openWidth": 98.39626666666668,
+              "openHeight": 125.08000000000001
+            },
+            {
+              "id": "apukhtin",
+              "row": 4,
+              "x": 266,
+              "y": 909,
+              "width": 112,
+              "height": 30,
+              "shelfY": 971,
+              "supportY": 939,
+              "supportId": "bely",
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 88.33802816901408,
+              "bookHeight": 112,
+              "openX": 275.18084507042255,
+              "openY": 852.28,
+              "openWidth": 93.63830985915493,
+              "openHeight": 118.72
+            },
+            {
+              "id": "dostoevsky",
+              "row": 4,
+              "x": 386,
+              "y": 818,
+              "width": 112,
+              "height": 153,
+              "shelfY": 971,
+              "supportY": 971,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 31,
+              "bookWidth": 112,
+              "bookHeight": 153,
+              "openX": 380.28,
+              "openY": 808.8199999999999,
+              "openWidth": 118.72,
+              "openHeight": 162.18
+            },
+            {
+              "id": "poe",
+              "row": 5,
+              "x": 145,
+              "y": 1185,
+              "width": 119,
+              "height": 30,
+              "shelfY": 1215,
+              "supportY": 1215,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 95.68243243243244,
+              "bookHeight": 119,
+              "openX": 153.7883108108108,
+              "openY": 1088.86,
+              "openWidth": 101.42337837837839,
+              "openHeight": 126.14
+            },
+            {
+              "id": "wilde",
+              "row": 5,
+              "x": 150,
+              "y": 1152,
+              "width": 112,
+              "height": 33,
+              "shelfY": 1215,
+              "supportY": 1185,
+              "supportId": "poe",
+              "presentation": "lying",
+              "depth": 33,
+              "bookWidth": 79.89808917197452,
+              "bookHeight": 112,
+              "openX": 163.6540127388535,
+              "openY": 1096.28,
+              "openWidth": 84.691974522293,
+              "openHeight": 118.72
+            },
+            {
+              "id": "shakespeare",
+              "row": 5,
+              "x": 270,
+              "y": 1060,
+              "width": 113,
+              "height": 155,
+              "shelfY": 1215,
+              "supportY": 1215,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 24,
+              "bookWidth": 113,
+              "bookHeight": 155,
+              "openX": 266.61,
+              "openY": 1050.7,
+              "openWidth": 119.78,
+              "openHeight": 164.3
+            },
+            {
+              "id": "dickinson",
+              "row": 5,
+              "x": 389,
+              "y": 1069,
+              "width": 36,
+              "height": 146,
+              "shelfY": 1215,
+              "supportY": 1215,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 36,
+              "bookWidth": 116,
+              "bookHeight": 146,
+              "openX": 345.52,
+              "openY": 1060.24,
+              "openWidth": 122.96000000000001,
+              "openHeight": 154.76000000000002
+            },
+            {
+              "id": "byron",
+              "row": 5,
+              "x": 426,
+              "y": 1056,
+              "width": 34,
+              "height": 159,
+              "shelfY": 1215,
+              "supportY": 1215,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 34,
+              "bookWidth": 121,
+              "bookHeight": 159,
+              "openX": 370.74,
+              "openY": 1046.46,
+              "openWidth": 128.26000000000002,
+              "openHeight": 168.54000000000002
+            },
+            {
+              "id": "ohenry",
+              "row": 5,
+              "x": 461,
+              "y": 1065,
+              "width": 37,
+              "height": 150,
+              "shelfY": 1215,
+              "supportY": 1215,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 37,
+              "bookWidth": 118,
+              "bookHeight": 150,
+              "openX": 373.91999999999996,
+              "openY": 1056,
+              "openWidth": 125.08000000000001,
+              "openHeight": 159
+            },
+            {
+              "id": "twain",
+              "row": 6,
+              "x": 145,
+              "y": 1253,
+              "width": 114,
+              "height": 142,
+              "shelfY": 1395,
+              "supportY": 1395,
+              "supportId": null,
+              "presentation": "front",
+              "depth": 26,
+              "bookWidth": 114,
+              "bookHeight": 142,
+              "openX": 145,
+              "openY": 1244.48,
+              "openWidth": 120.84,
+              "openHeight": 150.52
+            },
+            {
+              "id": "yeats",
+              "row": 6,
+              "x": 265,
+              "y": 1242,
+              "width": 38,
+              "height": 153,
+              "shelfY": 1395,
+              "supportY": 1395,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 123,
+              "bookHeight": 153,
+              "openX": 218.81,
+              "openY": 1232.82,
+              "openWidth": 130.38,
+              "openHeight": 162.18
+            },
+            {
+              "id": "saki",
+              "row": 6,
+              "x": 304,
+              "y": 1247,
+              "width": 35,
+              "height": 148,
+              "shelfY": 1395,
+              "supportY": 1395,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 35,
+              "bookWidth": 116,
+              "bookHeight": 148,
+              "openX": 260.02,
+              "openY": 1238.12,
+              "openWidth": 122.96000000000001,
+              "openHeight": 156.88
+            },
+            {
+              "id": "whitman",
+              "row": 6,
+              "x": 340,
+              "y": 1238,
+              "width": 38,
+              "height": 157,
+              "shelfY": 1395,
+              "supportY": 1395,
+              "supportId": null,
+              "presentation": "spine",
+              "depth": 38,
+              "bookWidth": 121,
+              "bookHeight": 157,
+              "openX": 294.87,
+              "openY": 1228.58,
+              "openWidth": 128.26000000000002,
+              "openHeight": 166.42000000000002
+            },
+            {
+              "id": "mansfield",
+              "row": 6,
+              "x": 384,
+              "y": 1365,
+              "width": 114,
+              "height": 30,
+              "shelfY": 1395,
+              "supportY": 1395,
+              "supportId": null,
+              "presentation": "lying",
+              "depth": 30,
+              "bookWidth": 83.84516129032258,
+              "bookHeight": 114,
+              "openX": 396.56206451612906,
+              "openY": 1274.16,
+              "openWidth": 88.87587096774193,
+              "openHeight": 120.84
+            },
+            {
+              "id": "hardy",
+              "row": 6,
+              "x": 387,
+              "y": 1331,
+              "width": 109,
+              "height": 34,
+              "shelfY": 1395,
+              "supportY": 1365,
+              "supportId": "mansfield",
+              "presentation": "lying",
+              "depth": 34,
+              "bookWidth": 81.37671232876713,
+              "bookHeight": 109,
+              "openX": 398.3703424657534,
+              "openY": 1279.46,
+              "openWidth": 86.25931506849317,
+              "openHeight": 115.54
+            }
+          ]
+        }
+      }
+    },
+    "discoveryRoom": {
+      "src": "assets/onboarding/discovery-v33/room-panorama-tall.webp",
+      "width": 1254,
+      "height": 1254,
+      "frame": {
+        "x": 136,
+        "y": 406,
+        "width": 430,
+        "height": 542
+      },
+      "opening": {
+        "x": 155,
+        "y": 425,
+        "width": 391,
+        "height": 503
+      },
+      "series": {
+        "x": 38,
+        "y": 0,
+        "width": 628,
+        "height": 1254
+      },
+      "desk": {
+        "x": 628,
+        "y": 470,
+        "width": 626,
+        "height": 784
+      },
+      "surface": {
+        "x": 842,
+        "y": 742,
+        "width": 235,
+        "height": 306
+      }
+    },
+    "calendar": {
+      "image": "assets/onboarding/afisha-v40/selected-calendar.webp",
+      "logicalSize": {
+        "width": 1070,
+        "height": 1470
+      },
+      "columns": [
+        144,
+        260,
+        375,
+        490,
+        607,
+        726,
+        842,
+        959
+      ],
+      "rows": [
+        394,
+        530,
+        655,
+        949,
+        1064,
+        1205,
+        1332
+      ],
+      "surfaces": {
+        "theatre": {
+          "width": 600,
+          "height": 250,
+          "quad": [
+            [
+              128,
+              732
+            ],
+            [
+              690,
+              667
+            ],
+            [
+              728,
+              916
+            ],
+            [
+              159,
+              971
+            ]
+          ]
+        },
+        "poetry": {
+          "width": 500,
+          "height": 200,
+          "quad": [
+            [
+              444,
+              1110
+            ],
+            [
+              928,
+              1159
+            ],
+            [
+              906,
+              1353
+            ],
+            [
+              421,
+              1304
+            ]
+          ]
+        },
+        "poster": {
+          "width": 280,
+          "height": 400,
+          "quad": [
+            [
+              677,
+              450
+            ],
+            [
+              949,
+              489
+            ],
+            [
+              888,
+              874
+            ],
+            [
+              609,
+              835
+            ]
+          ]
+        }
+      }
+    },
+    "series": {
+      "virtualWidth": 390,
+      "canvas": "Per-piece logical canvas, crop focal points, normalized safeZones and timing below. Preserve original manifest text/timing outside this metadata inventory."
+    }
+  },
+  "groups": [
+    {
+      "id": "welcome-compact",
+      "phase": "welcome-compact",
+      "priority": "critical",
+      "assetPaths": [
+        "assets/onboarding/world-v42/room-open.webp",
+        "assets/onboarding/world-v42/wall.webp",
+        "assets/onboarding/wide-v26/floor.webp"
+      ],
+      "condition": "width < 960 OR height < 600; request the compact poster only for this branch",
+      "geometryRef": "geometry.compactWelcome",
+      "provenancePaths": [
+        "assets/onboarding/world-v42/provenance.json",
+        "assets/onboarding/wide-v26/provenance.json"
+      ],
+      "fallback": "Keep native welcome and Open cabinet controls usable after bounded readiness failure."
+    },
+    {
+      "id": "welcome-desktop",
+      "phase": "welcome-desktop",
+      "priority": "critical",
+      "assetPaths": [
+        "assets/onboarding/desktop-v53/room-matched-walls.webp"
+      ],
+      "condition": "width >= 960 AND height >= 600",
+      "geometryRef": "geometry.desktopWelcome",
+      "provenancePaths": [
+        "assets/onboarding/desktop-v53/provenance.json",
+        "assets/onboarding/desktop-v53/prompt.txt"
+      ],
+      "fallback": "Offer native Open cabinet fallback; no permanent inert cover."
+    },
+    {
+      "id": "cabinet-selectors",
+      "phase": "cabinet-entry",
+      "priority": "next-scene",
+      "assetPaths": [
+        "assets/onboarding/integrated-v28/front-panel.webp",
+        "assets/onboarding/integrated-v30/language-bay.webp",
+        "assets/onboarding/integrated-v30/form-bay.webp",
+        "assets/onboarding/integrated-v30/form-recess-bay.webp",
+        "assets/onboarding/integrated-v30/drawer-top-front.webp",
+        "assets/onboarding/integrated-v30/drawer-middle-front.webp",
+        "assets/onboarding/integrated-v30/drawer-bottom-front.webp"
+      ],
+      "geometryRef": "geometry.selectors",
+      "provenancePaths": [
+        "assets/onboarding/integrated-v28/opening-provenance.json",
+        "assets/onboarding/integrated-v28/opening-geometry.json",
+        "assets/onboarding/integrated-v30/provenance.json",
+        "assets/onboarding/integrated-v30/geometry.json"
+      ],
+      "fallback": "Keep semantic language/form choices and navigation available; do not wait forever for decoration."
+    },
+    {
+      "id": "classic-bindings",
+      "phase": "cabinet-entry",
+      "priority": "next-scene",
+      "assetPaths": [
+        "assets/onboarding/wide-v26/bay.webp",
+        "assets/onboarding/books-v43/neutral-cover.webp",
+        "assets/onboarding/discovery-v32/linen-spine.webp",
+        "assets/onboarding/discovery-v32/walnut-desktop.webp"
+      ],
+      "geometryRef": "geometry.classicShelf",
+      "provenancePaths": [
+        "assets/onboarding/wide-v26/provenance.json",
+        "assets/onboarding/books-v43/provenance.json",
+        "assets/onboarding/discovery-v32/provenance.json"
+      ],
+      "fallback": "Native author names/selection remain usable; repeated cover nodes share one decoded source."
+    },
+    {
+      "id": "classic-portraits",
+      "phase": "classics",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/authors/classics-v52/pushkin.webp",
+        "assets/authors/classics-v52/lermontov.webp",
+        "assets/authors/classics-v52/tolstoy.webp",
+        "assets/authors/classics-v52/chekhov.webp",
+        "assets/authors/classics-v52/dostoevsky.webp",
+        "assets/authors/classics-v52/yesenin.webp",
+        "assets/authors/classics-v52/gorky.webp",
+        "assets/authors/classics-v52/tsvetaeva.webp",
+        "assets/authors/classics-v52/mayakovsky.webp",
+        "assets/authors/classics-v52/nekrasov.webp",
+        "assets/authors/classics-v52/blok.webp",
+        "assets/authors/classics-v52/grin.webp",
+        "assets/authors/classics-v52/kuprin.webp",
+        "assets/authors/classics-v52/fet.webp",
+        "assets/authors/classics-v52/tyutchev.webp",
+        "assets/authors/classics-v52/gumilyov.webp",
+        "assets/authors/classics-v52/andreyev.webp",
+        "assets/authors/classics-v52/turgenev.webp",
+        "assets/authors/classics-v52/saltykov-shchedrin.webp",
+        "assets/authors/classics-v52/garshin.webp",
+        "assets/authors/classics-v52/krylov.webp",
+        "assets/authors/classics-v52/balmont.webp",
+        "assets/authors/classics-v52/mandelstam.webp",
+        "assets/authors/classics-v52/bryusov.webp",
+        "assets/authors/classics-v52/averchenko.webp",
+        "assets/authors/classics-v52/mamin-sibiryak.webp",
+        "assets/authors/classics-v52/odoyevsky.webp",
+        "assets/authors/classics-v52/annensky.webp",
+        "assets/authors/classics-v52/bely.webp",
+        "assets/authors/classics-v52/apukhtin.webp",
+        "assets/authors/classics-v52/shakespeare.webp",
+        "assets/authors/classics-v52/poe.webp",
+        "assets/authors/classics-v52/twain.webp",
+        "assets/authors/classics-v52/wilde.webp",
+        "assets/authors/classics-v52/dickinson.webp",
+        "assets/authors/classics-v52/byron.webp",
+        "assets/authors/classics-v52/ohenry.webp",
+        "assets/authors/classics-v52/yeats.webp",
+        "assets/authors/classics-v52/saki.webp",
+        "assets/authors/classics-v52/whitman.webp",
+        "assets/authors/classics-v52/mansfield.webp",
+        "assets/authors/classics-v52/hardy.webp"
+      ],
+      "condition": "Only eligible classics in selected reading languages; never arm all portraits on welcome",
+      "geometryRef": "geometry.classicShelf.portraitAperture",
+      "provenancePaths": [
+        "assets/authors/classics-v52/provenance.json",
+        "assets/authors/classics-v52/supplied-authors.json"
+      ],
+      "fallback": "Keep live author name, book shape and explicit choose/remove control when portrait fails."
+    },
+    {
+      "id": "discovery-room-and-finale",
+      "phase": "discovery-series",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/onboarding/discovery-v33/room-panorama-tall.webp"
+      ],
+      "geometryRef": "geometry.discoveryRoom",
+      "provenancePaths": [
+        "assets/onboarding/discovery-v33/room-provenance.json"
+      ],
+      "fallback": "Native scene navigation and final guest/account actions remain usable; do not introduce a replacement room."
+    },
+    {
+      "id": "discovery-mail",
+      "phase": "discovery-letters",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/onboarding/discovery-v33/room-panorama-tall.webp",
+        "assets/onboarding/discovery-v32/walnut-desktop.webp",
+        "assets/onboarding/discovery-v32/opened-letter.webp",
+        "assets/onboarding/discovery-v32/desk-envelope.webp",
+        "assets/onboarding/discovery-v33/post-box.webp"
+      ],
+      "geometryRef": "geometry.discoveryRoom",
+      "provenancePaths": [
+        "assets/onboarding/discovery-v32/provenance.json",
+        "assets/onboarding/discovery-v33/post-box-provenance.json"
+      ],
+      "fallback": "Keep native example text and navigation. This local demonstration sends no message."
+    },
+    {
+      "id": "discovery-calendar",
+      "phase": "discovery-calendar",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/onboarding/discovery-v33/room-panorama-tall.webp",
+        "assets/onboarding/discovery-v32/walnut-desktop.webp",
+        "assets/onboarding/afisha-v40/selected-calendar.webp"
+      ],
+      "geometryRef": "geometry.calendar",
+      "provenancePaths": [
+        "assets/onboarding/afisha-v40/provenance.json"
+      ],
+      "fallback": "Keep live calendar/scene labels and navigation. Do not load the unused programme painting."
+    },
+    {
+      "id": "series-curtain",
+      "phase": "discovery-series",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/onboarding/discovery-v32/series/curtain-velvet.webp"
+      ],
+      "provenancePaths": [
+        "assets/onboarding/discovery-v32/series/provenance.json"
+      ],
+      "fallback": "CSS/still preview if WebGL is unavailable or context is lost."
+    },
+    {
+      "id": "series-images:prokhorov-polet-skvoz-sny",
+      "phase": "series-current-and-next",
+      "priority": "scene-local",
+      "assetPaths": [
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/tightrope.webp",
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/aluminium-wings.webp",
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/golden-collar.webp",
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/new-year-backstage.webp",
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/beam-over-abyss.webp"
+      ],
+      "condition": "Only the selected piece; warm current scene and one following scene. Listing all registered scenes is inventory, not preload permission.",
+      "pieceId": "prokhorov-polet-skvoz-sny",
+      "provenancePaths": [
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/source-manifest.json",
+        "assets/onboarding/discovery-v33/series-modern/PROVENANCE.md",
+        "assets/onboarding/discovery-v33/series-modern/index.json"
+      ],
+      "fallback": "Keep settled still and transport/navigation after bounded image/decode failure."
+    },
+    {
+      "id": "series-audio:prokhorov-polet-skvoz-sny",
+      "phase": "series-sound-gesture",
+      "priority": "gesture-only",
+      "assetPaths": [
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/narration.mp3"
+      ],
+      "condition": "Create/load audio only after an explicit reader sound gesture; never on welcome or silent scene preparation.",
+      "pieceId": "prokhorov-polet-skvoz-sny",
+      "provenancePaths": [
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+        "/l/jgycmR8G0ml0YoXbTeHqxA/f/source-manifest.json",
+        "assets/onboarding/discovery-v33/series-modern/PROVENANCE.md",
+        "assets/onboarding/discovery-v33/series-modern/index.json"
+      ],
+      "fallback": "Remain silent with usable preview and controls if play fails; release on leave."
+    },
+    {
+      "id": "series-images:malyo-subbotina-zvyozdnoe",
+      "phase": "series-current-and-next",
+      "priority": "scene-local",
+      "assetPaths": [
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-01.webp",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-02.webp",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-03.webp",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-05.webp",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-04.webp",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-06.webp"
+      ],
+      "condition": "Only the selected piece; warm current scene and one following scene. Listing all registered scenes is inventory, not preload permission.",
+      "pieceId": "malyo-subbotina-zvyozdnoe",
+      "provenancePaths": [
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/source-manifest.json",
+        "assets/onboarding/discovery-v33/series-modern/PROVENANCE.md",
+        "assets/onboarding/discovery-v33/series-modern/index.json"
+      ],
+      "fallback": "Keep settled still and transport/navigation after bounded image/decode failure."
+    },
+    {
+      "id": "series-audio:malyo-subbotina-zvyozdnoe",
+      "phase": "series-sound-gesture",
+      "priority": "gesture-only",
+      "assetPaths": [
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/narration.mp3"
+      ],
+      "condition": "Create/load audio only after an explicit reader sound gesture; never on welcome or silent scene preparation.",
+      "pieceId": "malyo-subbotina-zvyozdnoe",
+      "provenancePaths": [
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
+        "/l/EKvnI0C1SU4VogDdU5_vwA/f/source-manifest.json",
+        "assets/onboarding/discovery-v33/series-modern/PROVENANCE.md",
+        "assets/onboarding/discovery-v33/series-modern/index.json"
+      ],
+      "fallback": "Remain silent with usable preview and controls if play fails; release on leave."
+    },
+    {
+      "id": "series-images:no-frigate",
+      "phase": "series-current-and-next",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/onboarding/discovery-v32/series/no-frigate/scenes/01_book_opens.webp",
+        "assets/onboarding/discovery-v32/series/no-frigate/scenes/02_frigate.webp",
+        "assets/onboarding/discovery-v32/series/no-frigate/scenes/03_coursers.webp",
+        "assets/onboarding/discovery-v32/series/no-frigate/scenes/04_human_soul.webp"
+      ],
+      "condition": "Only the selected piece; warm current scene and one following scene. Listing all registered scenes is inventory, not preload permission.",
+      "pieceId": "no-frigate",
+      "provenancePaths": [
+        "assets/onboarding/discovery-v32/series/no-frigate/manifest.json",
+        "assets/onboarding/discovery-v32/series/provenance.json"
+      ],
+      "fallback": "Keep settled still and transport/navigation after bounded image/decode failure."
+    },
+    {
+      "id": "series-audio:no-frigate",
+      "phase": "series-sound-gesture",
+      "priority": "gesture-only",
+      "assetPaths": [
+        "assets/onboarding/discovery-v32/series/no-frigate/narration.mp3"
+      ],
+      "condition": "Create/load audio only after an explicit reader sound gesture; never on welcome or silent scene preparation.",
+      "pieceId": "no-frigate",
+      "provenancePaths": [
+        "assets/onboarding/discovery-v32/series/no-frigate/manifest.json",
+        "assets/onboarding/discovery-v32/series/provenance.json"
+      ],
+      "fallback": "Remain silent with usable preview and controls if play fails; release on leave."
+    },
+    {
+      "id": "series-images:dream-within-dream",
+      "phase": "series-current-and-next",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/01-parting-kiss.webp",
+        "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/02-hope-flown-away.webp",
+        "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/03-golden-sand.webp",
+        "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/04-dream-within-a-dream.webp"
+      ],
+      "condition": "Only the selected piece; warm current scene and one following scene. Listing all registered scenes is inventory, not preload permission.",
+      "pieceId": "dream-within-dream",
+      "provenancePaths": [
+        "assets/onboarding/discovery-v32/series/dream-within-dream/manifest.json",
+        "assets/onboarding/discovery-v32/series/provenance.json"
+      ],
+      "fallback": "Keep settled still and transport/navigation after bounded image/decode failure."
+    },
+    {
+      "id": "series-audio:dream-within-dream",
+      "phase": "series-sound-gesture",
+      "priority": "gesture-only",
+      "assetPaths": [
+        "assets/onboarding/discovery-v32/series/dream-within-dream/narration.mp3"
+      ],
+      "condition": "Create/load audio only after an explicit reader sound gesture; never on welcome or silent scene preparation.",
+      "pieceId": "dream-within-dream",
+      "provenancePaths": [
+        "assets/onboarding/discovery-v32/series/dream-within-dream/manifest.json",
+        "assets/onboarding/discovery-v32/series/provenance.json"
+      ],
+      "fallback": "Remain silent with usable preview and controls if play fails; release on leave."
+    },
+    {
+      "id": "fonts-literary",
+      "phase": "welcome-fonts",
+      "priority": "critical",
+      "assetPaths": [
+        "assets/serif-latin.woff2",
+        "assets/serif-cyrillic.woff2",
+        "assets/serif-italic.woff2",
+        "assets/serif-italic-cyrillic.woff2"
+      ],
+      "condition": "Use actual interface-script subsets; font-display:swap. Inventory does not require all four fonts to block controls.",
+      "licensePaths": [
+        "assets/font-license.txt"
+      ],
+      "fallback": "System serif; remeasure once fonts settle."
+    },
+    {
+      "id": "fonts-series-and-calendar",
+      "phase": "discovery-series",
+      "priority": "scene-local",
+      "assetPaths": [
+        "assets/series-fonts/playfair-display-latin-wght-normal.woff2",
+        "assets/series-fonts/playfair-display-cyrillic-wght-normal.woff2"
+      ],
+      "condition": "Shared physical files serve Boks Series Display and AfishaPrintDisplay aliases; font-display:swap.",
+      "licensePaths": [
+        "assets/series-fonts/LICENSE.txt"
+      ],
+      "provenancePaths": [
+        "assets/series-fonts/provenance.json"
+      ],
+      "fallback": "System serif; reserve caption/print zones and re-typeset once fonts settle."
+    }
+  ],
+  "classicArchive": {
+    "name": "boks-avatars-98-web (1).zip",
+    "sha256": "05c4ddd71b3b792a7d5c62dbdbb8a5728e4ae63b0a7115107e69d1b0dc1c4bc8",
+    "metadataMember": "boks-avatars-web/authors.json",
+    "metadataFile": "assets/authors/classics-v52/supplied-authors.json",
+    "metadataSha256": "aa06806ac9ddb398cd606f59aa19414cfbd98ff9f6e5161a92c837f8f829492e",
+    "availablePortraits": 98,
+    "importedPortraits": 42,
+    "sourcePolicy": "Use the corrected user-supplied archive as requested. Its status and identity fields are recorded as supplied, not independently verified. Many files are labelled generated in that metadata; they are not represented as unchanged historical photographs.",
+    "transformations": "None: exact supplied 512×512 WebP bytes. No new images were generated in this revision.",
+    "eligibilityProvenance": "assets/authors/classics-v52/provenance.json",
+    "verification": "Each of the 42 eligible portrait files matches the supplied archive hash and byte count; archive status/identity is supplied metadata, not independent historical or rights verification."
+  },
+  "classicAuthors": [
+    {
+      "id": "pushkin",
+      "name": {
+        "ru": "Александр Пушкин",
+        "en": "Alexander Pushkin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/pushkin.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/004-alexander-pushkin.webp",
+      "archiveSha256": "a801824eb23b25e991192a6c55b621f9c5fee01fcf233aa281640ec5f1dfd8bb",
+      "suppliedStatus": "original",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "lermontov",
+      "name": {
+        "ru": "Михаил Лермонтов",
+        "en": "Mikhail Lermontov"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/lermontov.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/029-mikhail-lermontov.webp",
+      "archiveSha256": "f3a164a403f08ea35198febd45533dbb4ea4cc9b2d92ce064a4457e3e2580137",
+      "suppliedStatus": "original",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "tolstoy",
+      "name": {
+        "ru": "Лев Толстой",
+        "en": "Leo Tolstoy"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/tolstoy.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/024-leo-tolstoy.webp",
+      "archiveSha256": "2a8df2199ee0fe08318029493a86407504d7ea9217d1104dc1234189a295a770",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "chekhov",
+      "name": {
+        "ru": "Антон Чехов",
+        "en": "Anton Chekhov"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/chekhov.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/008-anton-chekhov.webp",
+      "archiveSha256": "31b788934aa67e9cb1bc031797c2d8f51973abb535bd0608e63a8184597c773b",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "dostoevsky",
+      "name": {
+        "ru": "Фёдор Достоевский",
+        "en": "Fyodor Dostoevsky"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/dostoevsky.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/040-fyodor-dostoevsky.webp",
+      "archiveSha256": "c60149780332f72419da775a46e602f943486bc48d594c33d67b86ebe6595765",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "yesenin",
+      "name": {
+        "ru": "Сергей Есенин",
+        "en": "Sergey Yesenin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/yesenin.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/038-sergei-yesenin.webp",
+      "archiveSha256": "d683685bfd96bf0784629318f529ca3c8cc9994eb1c8eef8cf29ea35524a9dfa",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "gorky",
+      "name": {
+        "ru": "Максим Горький",
+        "en": "Maxim Gorky"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/gorky.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/026-maxim-gorky.webp",
+      "archiveSha256": "7e912a2b307d3a3294884c4fae716df40d28f00f7abe7d35f4fea3a5302f9d38",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "tsvetaeva",
+      "name": {
+        "ru": "Марина Цветаева",
+        "en": "Marina Tsvetaeva"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/tsvetaeva.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/028-marina-tsvetaeva.webp",
+      "archiveSha256": "0c450bcdbeadaecda397ce42ab671be27176605e25bef8d9db2602d74bc9e395",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mayakovsky",
+      "name": {
+        "ru": "Владимир Маяковский",
+        "en": "Vladimir Mayakovsky"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/mayakovsky.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/012-vladimir-mayakovsky.webp",
+      "archiveSha256": "a60f04845551792237b85ce48df226f721b0eb5cd27789e384dda401c4ae4cac",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "nekrasov",
+      "name": {
+        "ru": "Николай Некрасов",
+        "en": "Nikolai Nekrasov"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/nekrasov.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/034-nikolay-nekrasov.webp",
+      "archiveSha256": "b8d93c1717286478ce74586017dfcd3c2940b89465da2853f27148e1313fe6e9",
+      "suppliedStatus": "original",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "blok",
+      "name": {
+        "ru": "Александр Блок",
+        "en": "Alexander Blok"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/blok.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/001-alexander-blok.webp",
+      "archiveSha256": "93fd441e0c51cabc73eddaad9936b74bba27984581a4a5991d61b01b54a17dcb",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "grin",
+      "name": {
+        "ru": "Александр Грин",
+        "en": "Alexander Grin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/grin.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/002-alexander-grin.webp",
+      "archiveSha256": "753f085b7c6a98a9125259967ca924f9ad746dd49227cb217cfaefebbb3b4750",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "kuprin",
+      "name": {
+        "ru": "Александр Куприн",
+        "en": "Alexander Kuprin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/kuprin.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/003-alexander-kuprin.webp",
+      "archiveSha256": "26e2d874a3ca325f7afadff6e20d5b0c45e48a8ed63d41bfe7e09f32b3a44110",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "fet",
+      "name": {
+        "ru": "Афанасий Фет",
+        "en": "Afanasy Fet"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/fet.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/010-afanasy-fet.webp",
+      "archiveSha256": "70f86cc9d4e5ecf321f1baed161a1692b6df8480ffbae49f0d9762c2020dfc9c",
+      "suppliedStatus": "original",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "tyutchev",
+      "name": {
+        "ru": "Фёдор Тютчев",
+        "en": "Fyodor Tyutchev"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/tyutchev.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/042-fyodor-tyutchev.webp",
+      "archiveSha256": "fe55994783c9b878082030ea7d60bd0ec7c2628c1607eb0ad1181b545653a425",
+      "suppliedStatus": "original",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "gumilyov",
+      "name": {
+        "ru": "Николай Гумилёв",
+        "en": "Nikolay Gumilyov"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/gumilyov.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/032-nikolay-gumilyov.webp",
+      "archiveSha256": "b2f7d3fd4fabf1829be07d681545b7717fbe6f038f52371513e396cb999ce302",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "andreyev",
+      "name": {
+        "ru": "Леонид Андреев",
+        "en": "Leonid Andreyev"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/andreyev.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/025-leonid-andreyev.webp",
+      "archiveSha256": "e69dcbae80a2384408241d024a227263587c3d25665d75b2229fbce9dce3bf2f",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "turgenev",
+      "name": {
+        "ru": "Иван Тургенев",
+        "en": "Ivan Turgenev"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/turgenev.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/021-ivan-turgenev.webp",
+      "archiveSha256": "fe554b7748a2d3b9d4eace260e5ff89227df6e489c2584371f1728520bc79edb",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "saltykov-shchedrin",
+      "name": {
+        "ru": "Михаил Салтыков-Щедрин",
+        "en": "Mikhail Saltykov-Shchedrin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/saltykov-shchedrin.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/030-mikhail-saltykov-shchedrin.webp",
+      "archiveSha256": "42355dce0c0843d0fc0f8e07a0f80771ac062b1145b7edc2587a2fbf919e9513",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "garshin",
+      "name": {
+        "ru": "Всеволод Гаршин",
+        "en": "Vsevolod Garshin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/garshin.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/016-vsevolod-garshin.webp",
+      "archiveSha256": "1fd32c6b26e638f54de591e6b46c2dfa8fc6b6c00e768ba43081919bf39110f4",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "krylov",
+      "name": {
+        "ru": "Иван Крылов",
+        "en": "Ivan Krylov"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/krylov.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/020-ivan-krylov.webp",
+      "archiveSha256": "d928ffb7998d2d73965b1928a5b1a15eb2a3899d3f7cdc274d45ec9695b79c0f",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "balmont",
+      "name": {
+        "ru": "Константин Бальмонт",
+        "en": "Konstantin Balmont"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/balmont.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/023-konstantin-balmont.webp",
+      "archiveSha256": "e5d7274dd0a7b8ad964c521053132794a2433d20f2d595e21cc8fe5b219a2c0f",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mandelstam",
+      "name": {
+        "ru": "Осип Мандельштам",
+        "en": "Osip Mandelstam"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/mandelstam.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/035-osip-mandelstam.webp",
+      "archiveSha256": "14fbf116d2934f4ae57495ed9d0fec14e11d84c92c210fd8c7598ff04bae28a0",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "bryusov",
+      "name": {
+        "ru": "Валерий Брюсов",
+        "en": "Valery Bryusov"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/bryusov.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/011-valery-bryusov.webp",
+      "archiveSha256": "73d792ea854981940cfae418f8ef006b04f4fc20f48cadd99021b467daa6412e",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "averchenko",
+      "name": {
+        "ru": "Аркадий Аверченко",
+        "en": "Arkady Averchenko"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/averchenko.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/009-arkady-averchenko.webp",
+      "archiveSha256": "2f9275e28bb61e57d75dc098a373da4b1123d1845718ded66bf7e5308f344e1e",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mamin-sibiryak",
+      "name": {
+        "ru": "Дмитрий Мамин-Сибиряк",
+        "en": "Dmitry Mamin-Sibiryak"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/mamin-sibiryak.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/017-dmitry-mamin-sibiryak.webp",
+      "archiveSha256": "e1f7a94839361e60cb3946f3cfdeed5b69595cc940acb55527cad95dcdae778d",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "odoyevsky",
+      "name": {
+        "ru": "Владимир Одоевский",
+        "en": "Vladimir Odoyevsky"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/odoyevsky.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/013-vladimir-odoyevsky.webp",
+      "archiveSha256": "62a910f54e295a4bb444b2fd0b9099495d345fd0b9c40c9930865524d032cfe4",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "annensky",
+      "name": {
+        "ru": "Иннокентий Анненский",
+        "en": "Innokenty Annensky"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/annensky.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/022-innokenty-annensky.webp",
+      "archiveSha256": "e5132d520f33fb021717ef26a07fce01cb1b001538b28337b0fa539319e72884",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "bely",
+      "name": {
+        "ru": "Андрей Белый",
+        "en": "Andrei Bely"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/bely.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/007-andrei-bely.webp",
+      "archiveSha256": "3aaf581a096e5a0f63d3d950274117640cc53cb23c86786b6454e3432088b01e",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "apukhtin",
+      "name": {
+        "ru": "Алексей Апухтин",
+        "en": "Aleksey Apukhtin"
+      },
+      "language": "ru",
+      "portraitPath": "assets/authors/classics-v52/apukhtin.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/005-aleksey-apukhtin.webp",
+      "archiveSha256": "7a2a0e5c6f37fad0f04368f0924e768c44f4723682793aee02b7480604790983",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "shakespeare",
+      "name": {
+        "ru": "William Shakespeare",
+        "en": "William Shakespeare"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/shakespeare.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/098-william-shakespeare.webp",
+      "archiveSha256": "7828f339d43a7f78052a42a806b46bd614c7cdb4f4124446341ff3943330bfd8",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "poe",
+      "name": {
+        "ru": "Эдгар Аллан По",
+        "en": "Edgar Allan Poe"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/poe.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/055-edgar-allan-poe.webp",
+      "archiveSha256": "891ede2a97e979b2928792b3ae75f44f49e044add3faa1f8b835d4c58f02e685",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "twain",
+      "name": {
+        "ru": "Mark Twain",
+        "en": "Mark Twain"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/twain.webp",
+      "faceOutByDefault": true,
+      "archiveMember": "boks-avatars-web/webp/076-mark-twain.webp",
+      "archiveSha256": "458812eef8966706b87ca4d0c35f3c98f125c0dd9d87b4607179d18bccfac1ad",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "wilde",
+      "name": {
+        "ru": "Оскар Уайльд",
+        "en": "Oscar Wilde"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/wilde.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/079-oscar-wilde.webp",
+      "archiveSha256": "5d994ca06dd4c25338408353027a336388307542d93338341f8a33b028d133b3",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "dickinson",
+      "name": {
+        "ru": "Эмили Дикинсон",
+        "en": "Emily Dickinson"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/dickinson.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/060-emily-dickinson.webp",
+      "archiveSha256": "f84b22d9112e530ee492768bbf3736072637f593a85b1d72540ad547f5f034b4",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "byron",
+      "name": {
+        "ru": "Джордж Гордон Байрон",
+        "en": "Lord Byron"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/byron.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/075-lord-byron.webp",
+      "archiveSha256": "b7517dde428a2f9cc9c69dea78fe4d7b79bf420bd8d3d2837b790c21d59f4775",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "ohenry",
+      "name": {
+        "ru": "О. Генри",
+        "en": "O. Henry"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/ohenry.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/078-o-henry.webp",
+      "archiveSha256": "6bb86ecc2098166b6b0a9f148c8f9018b685fca3b6571a038d7e948f50eed558",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "yeats",
+      "name": {
+        "ru": "Уильям Батлер Йейтс",
+        "en": "W. B. Yeats"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/yeats.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/093-w-b-yeats.webp",
+      "archiveSha256": "5f81acd2ca359a60aef1795432293c766427559a0069224eb7098d3d5e02d23d",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "saki",
+      "name": {
+        "ru": "Саки",
+        "en": "Saki"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/saki.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/087-saki.webp",
+      "archiveSha256": "b49bbdb034fdf64dd94df3c3d812a2f1a7e31b8cd2f92fac01c3ddb1a0a9e675",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "whitman",
+      "name": {
+        "ru": "Уолт Уитмен",
+        "en": "Walt Whitman"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/whitman.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/094-walt-whitman.webp",
+      "archiveSha256": "4484e4b7c1f7a8b553926709b9a437c8d93da39769f3b23929301aa6da1968ac",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "mansfield",
+      "name": {
+        "ru": "Кэтрин Мэнсфилд",
+        "en": "Katherine Mansfield"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/mansfield.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/073-katherine-mansfield.webp",
+      "archiveSha256": "915002db51152e811c10a1f569b0fc853c8881d3ec442220460aa74010da4efe",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    },
+    {
+      "id": "hardy",
+      "name": {
+        "ru": "Томас Харди",
+        "en": "Thomas Hardy"
+      },
+      "language": "en",
+      "portraitPath": "assets/authors/classics-v52/hardy.webp",
+      "faceOutByDefault": false,
+      "archiveMember": "boks-avatars-web/webp/092-thomas-hardy.webp",
+      "archiveSha256": "09e6b40a2407ed19ddb6e7d8eac212cf17861a91ce1d0682902be71510e7955d",
+      "suppliedStatus": "generated",
+      "preparation": "Exact supplied WebP bytes. No cropping, resizing, regeneration or retouching."
+    }
+  ],
+  "seriesPieces": [
+    {
+      "id": "prokhorov-polet-skvoz-sny",
+      "manifestId": "prokhorov-polet-skvoz-sny-immersive-v1",
+      "language": "ru",
+      "audioPath": "/l/jgycmR8G0ml0YoXbTeHqxA/f/narration.mp3",
+      "durationMs": 68571,
+      "canvas": {
+        "width": 941,
+        "height": 1672,
+        "aspectRatio": "9:16",
+        "fit": "cover",
+        "controlsReservedBottom": 0.12
+      },
+      "palette": {
+        "text": "#F7F0E4",
+        "active": "#F4C987",
+        "shadow": "rgba(10, 7, 4, 0.74)"
+      },
+      "textScale": 0.82,
+      "veil": 1.4,
+      "transitionStyle": "cinematic",
+      "playback": {
+        "tokenLeadMs": 220,
+        "crossfadeOffsetMs": 380,
+        "defaultCrossfadeMs": 1060,
+        "backgroundScaleFrom": 1,
+        "backgroundScaleTo": 1.035
+      },
+      "scenes": [
+        {
+          "id": "tightrope",
+          "imagePath": "/l/jgycmR8G0ml0YoXbTeHqxA/f/tightrope.webp",
+          "startMs": 1300,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.3
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.24,
+              "width": 0.84,
+              "height": 0.11
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "50% 30%"
+        },
+        {
+          "id": "aluminium-wings",
+          "imagePath": "/l/jgycmR8G0ml0YoXbTeHqxA/f/aluminium-wings.webp",
+          "startMs": 6620,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.45,
+            "y": 0.35
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.56,
+              "width": 0.6,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "farewell-drift",
+          "position": "45% 35%"
+        },
+        {
+          "id": "golden-collar",
+          "imagePath": "/l/jgycmR8G0ml0YoXbTeHqxA/f/golden-collar.webp",
+          "startMs": 19660,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.55
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.619,
+              "width": 0.84,
+              "height": 0.14
+            }
+          ],
+          "textPreset": "shelter-reveal",
+          "position": "50% 55.00000000000001%"
+        },
+        {
+          "id": "new-year-backstage",
+          "imagePath": "/l/jgycmR8G0ml0YoXbTeHqxA/f/new-year-backstage.webp",
+          "startMs": 34600,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.6,
+            "y": 0.55
+          },
+          "safeZones": [
+            {
+              "x": 0.4,
+              "y": 0.5,
+              "width": 0.52,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "ridge-reveal",
+          "position": "60% 55.00000000000001%"
+        },
+        {
+          "id": "beam-over-abyss",
+          "imagePath": "/l/jgycmR8G0ml0YoXbTeHqxA/f/beam-over-abyss.webp",
+          "startMs": 43180,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.75,
+            "y": 0.3
+          },
+          "safeZones": [
+            {
+              "x": 0.06,
+              "y": 0.36,
+              "width": 0.56,
+              "height": 0.26
+            }
+          ],
+          "textPreset": "echo-fade",
+          "position": "75% 30%"
+        }
+      ]
+    },
+    {
+      "id": "malyo-subbotina-zvyozdnoe",
+      "manifestId": "zvyozdnoe-immersive-v1",
+      "language": "ru",
+      "audioPath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/narration.mp3",
+      "durationMs": 69060,
+      "canvas": {
+        "width": 941,
+        "height": 1672,
+        "aspectRatio": "9:16",
+        "fit": "cover",
+        "controlsReservedBottom": 0.12
+      },
+      "palette": {
+        "text": "#F7F0E4",
+        "active": "#F4C987",
+        "shadow": "rgba(10, 7, 4, 0.74)"
+      },
+      "textScale": 0.82,
+      "veil": 1.4,
+      "transitionStyle": "cinematic",
+      "playback": {
+        "tokenLeadMs": 220,
+        "crossfadeOffsetMs": 380,
+        "defaultCrossfadeMs": 1060,
+        "backgroundScaleFrom": 1,
+        "backgroundScaleTo": 1.035
+      },
+      "scenes": [
+        {
+          "id": "scene-01",
+          "imagePath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-01.webp",
+          "startMs": 2520,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.619,
+              "width": 0.84,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "50% 45%"
+        },
+        {
+          "id": "scene-02",
+          "imagePath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-02.webp",
+          "startMs": 9420,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.1,
+              "width": 0.84,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "farewell-drift",
+          "position": "50% 45%"
+        },
+        {
+          "id": "scene-03",
+          "imagePath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-03.webp",
+          "startMs": 20440,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.603,
+              "width": 0.84,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "echo-fade",
+          "position": "50% 45%"
+        },
+        {
+          "id": "scene-05",
+          "imagePath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-05.webp",
+          "startMs": 31700,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.4,
+              "width": 0.84,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "shelter-reveal",
+          "position": "50% 45%"
+        },
+        {
+          "id": "scene-04",
+          "imagePath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-04.webp",
+          "startMs": 45340,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.619,
+              "width": 0.84,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "50% 45%"
+        },
+        {
+          "id": "scene-06",
+          "imagePath": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-06.webp",
+          "startMs": 54220,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.1,
+              "width": 0.84,
+              "height": 0.18
+            }
+          ],
+          "textPreset": "farewell-drift",
+          "position": "50% 45%"
+        }
+      ]
+    },
+    {
+      "id": "no-frigate",
+      "manifestId": "no-frigate-immersive-v1",
+      "language": "en",
+      "audioPath": "assets/onboarding/discovery-v32/series/no-frigate/narration.mp3",
+      "durationMs": 23000,
+      "canvas": {
+        "width": 941,
+        "height": 1672,
+        "aspectRatio": "9:16",
+        "fit": "cover",
+        "controlsReservedBottom": 0.12
+      },
+      "palette": {
+        "text": "#FFF7EA",
+        "active": "#FFD48A",
+        "shadow": "rgba(14, 12, 18, 0.75)"
+      },
+      "textScale": 0.95,
+      "veil": 1.6,
+      "transitionStyle": "page-turn",
+      "playback": {
+        "tokenLeadMs": 220,
+        "crossfadeOffsetMs": 380,
+        "defaultCrossfadeMs": 1060,
+        "backgroundScaleFrom": 1,
+        "backgroundScaleTo": 1.035
+      },
+      "scenes": [
+        {
+          "id": "book-opens",
+          "imagePath": "assets/onboarding/discovery-v32/series/no-frigate/scenes/01_book_opens.webp",
+          "startMs": 0,
+          "transitionMs": 1250,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "safeZones": [
+            {
+              "x": 0.36,
+              "y": 0.12,
+              "width": 0.56,
+              "height": 0.14
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "50% 50%",
+          "gestureKind": "swipe",
+          "gestureEffect": "turn-page"
+        },
+        {
+          "id": "frigate",
+          "imagePath": "assets/onboarding/discovery-v32/series/no-frigate/scenes/02_frigate.webp",
+          "startMs": 4380,
+          "transitionMs": 1380,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "safeZones": [
+            {
+              "x": 0.5,
+              "y": 0.12,
+              "width": 0.42,
+              "height": 0.14
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "50% 50%",
+          "gestureKind": "swipe",
+          "gestureEffect": "turn-page"
+        },
+        {
+          "id": "coursers",
+          "imagePath": "assets/onboarding/discovery-v32/series/no-frigate/scenes/03_coursers.webp",
+          "startMs": 8680,
+          "transitionMs": 1380,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "safeZones": [
+            {
+              "x": 0.3,
+              "y": 0.1,
+              "width": 0.62,
+              "height": 0.14
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "50% 50%",
+          "gestureKind": "swipe",
+          "gestureEffect": "turn-page"
+        },
+        {
+          "id": "human-soul",
+          "imagePath": "assets/onboarding/discovery-v32/series/no-frigate/scenes/04_human_soul.webp",
+          "startMs": 14840,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.6,
+              "width": 0.84,
+              "height": 0.16
+            }
+          ],
+          "textPreset": "echo-fade",
+          "position": "50% 50%"
+        }
+      ]
+    },
+    {
+      "id": "dream-within-dream",
+      "manifestId": "dream-within-dream-immersive-v1",
+      "language": "en",
+      "audioPath": "assets/onboarding/discovery-v32/series/dream-within-dream/narration.mp3",
+      "durationMs": 55280,
+      "canvas": {
+        "width": 941,
+        "height": 1672,
+        "aspectRatio": "9:16",
+        "fit": "cover",
+        "controlsReservedBottom": 0.12
+      },
+      "palette": {
+        "text": "#F2EADC",
+        "active": "#FFCF85",
+        "shadow": "rgba(6, 8, 16, 0.55)"
+      },
+      "textScale": 0.82,
+      "playback": {
+        "tokenLeadMs": 220,
+        "crossfadeOffsetMs": 380,
+        "defaultCrossfadeMs": 1020,
+        "backgroundScaleFrom": 1,
+        "backgroundScaleTo": 1.035
+      },
+      "scenes": [
+        {
+          "id": "parting-kiss",
+          "imagePath": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/01-parting-kiss.webp",
+          "startMs": 0,
+          "transitionMs": 1320,
+          "focalPoint": {
+            "x": 0.42,
+            "y": 0.4
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.07,
+              "width": 0.84,
+              "height": 0.22
+            }
+          ],
+          "textPreset": "quiet-breath",
+          "position": "42% 40%"
+        },
+        {
+          "id": "hope-flown-away",
+          "imagePath": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/02-hope-flown-away.webp",
+          "startMs": 11920,
+          "transitionMs": 1320,
+          "focalPoint": {
+            "x": 0.35,
+            "y": 0.5
+          },
+          "safeZones": [
+            {
+              "x": 0.1,
+              "y": 0.07,
+              "width": 0.82,
+              "height": 0.24
+            }
+          ],
+          "textPreset": "farewell-drift",
+          "position": "35% 50%"
+        },
+        {
+          "id": "golden-sand",
+          "imagePath": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/03-golden-sand.webp",
+          "startMs": 26160,
+          "transitionMs": 1200,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.55
+          },
+          "safeZones": [
+            {
+              "x": 0.5,
+              "y": 0.08,
+              "width": 0.42,
+              "height": 0.24
+            }
+          ],
+          "textPreset": "searchlight-scan",
+          "position": "50% 55.00000000000001%"
+        },
+        {
+          "id": "dream-within-a-dream",
+          "imagePath": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/04-dream-within-a-dream.webp",
+          "startMs": 42800,
+          "transitionMs": 1500,
+          "focalPoint": {
+            "x": 0.65,
+            "y": 0.4
+          },
+          "safeZones": [
+            {
+              "x": 0.08,
+              "y": 0.08,
+              "width": 0.42,
+              "height": 0.3
+            }
+          ],
+          "textPreset": "echo-fade",
+          "position": "65% 40%"
+        }
+      ]
+    }
+  ],
+  "fonts": {
+    "families": [
+      {
+        "name": "Literary",
+        "weight": "100 900",
+        "fontDisplay": "swap",
+        "files": [
+          "assets/serif-latin.woff2",
+          "assets/serif-cyrillic.woff2",
+          "assets/serif-italic.woff2",
+          "assets/serif-italic-cyrillic.woff2"
+        ]
+      },
+      {
+        "name": "Boks Series Display / AfishaPrintDisplay",
+        "weight": "400 900",
+        "fontDisplay": "swap",
+        "files": [
+          "assets/series-fonts/playfair-display-latin-wght-normal.woff2",
+          "assets/series-fonts/playfair-display-cyrillic-wght-normal.woff2"
+        ]
+      }
+    ]
+  },
+  "sourceFiles": [
+    {
+      "path": "dist/onboarding-model.js",
+      "bytes": 12849,
+      "sha256": "803161f5cf0f0f93089a9403839b9aaccd1314c94ce111843b47c4f0d11e720a"
+    },
+    {
+      "path": "dist/onboarding-living-view.js",
+      "bytes": 14956,
+      "sha256": "71926509cd71884b96eb7eb1a431eab01deafdcc05a1cc29f6e81e2a4d78c130"
+    },
+    {
+      "path": "dist/onboarding-living-motion.js",
+      "bytes": 75639,
+      "sha256": "3c975f0ab896269f0d0d3f8434283a24b1e55b50d1e88d805be0b7b5a591aa55"
+    },
+    {
+      "path": "dist/onboarding-shelf.js",
+      "bytes": 41331,
+      "sha256": "1d955848459e5ecba9fcc586bb690dc93d734ad714c5c0bc6d3c2fe46901cedd"
+    },
+    {
+      "path": "dist/onboarding-room-camera.js",
+      "bytes": 6231,
+      "sha256": "449148bc98487229634f23a52c0540ba2a39cf8a6402b4eb2210123e0ebd8506"
+    },
+    {
+      "path": "dist/onboarding-discovery.js",
+      "bytes": 85316,
+      "sha256": "37dffab4e2b7090fc8e59126f34a977a1dd73cbeef2b5098b9998c57f5d2a4fc"
+    },
+    {
+      "path": "dist/onboarding-series-preview.js",
+      "bytes": 89250,
+      "sha256": "8cf70f0a129673e90b2af4d81756b9fedc9000973add9c060c044d068684946a"
+    },
+    {
+      "path": "dist/afisha-print.js",
+      "bytes": 12360,
+      "sha256": "28873d8a2e655325285e16b6cc155d5c683e80afb5d25fbe140aa3b7d79182dd"
+    },
+    {
+      "path": "dist/assets/library.json",
+      "bytes": 139055,
+      "sha256": "b41492a043ed5edf56817a3031f40a5befdb5ff2599f52752e7f591bac20f5f8"
+    }
+  ],
+  "files": [
+    {
+      "path": "assets/authors/classics-v52/andreyev.webp",
+      "bytes": 26526,
+      "sha256": "e69dcbae80a2384408241d024a227263587c3d25665d75b2229fbce9dce3bf2f",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/annensky.webp",
+      "bytes": 21382,
+      "sha256": "e5132d520f33fb021717ef26a07fce01cb1b001538b28337b0fa539319e72884",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/apukhtin.webp",
+      "bytes": 25092,
+      "sha256": "7a2a0e5c6f37fad0f04368f0924e768c44f4723682793aee02b7480604790983",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/averchenko.webp",
+      "bytes": 28538,
+      "sha256": "2f9275e28bb61e57d75dc098a373da4b1123d1845718ded66bf7e5308f344e1e",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/balmont.webp",
+      "bytes": 27704,
+      "sha256": "e5d7274dd0a7b8ad964c521053132794a2433d20f2d595e21cc8fe5b219a2c0f",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/bely.webp",
+      "bytes": 25738,
+      "sha256": "3aaf581a096e5a0f63d3d950274117640cc53cb23c86786b6454e3432088b01e",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/blok.webp",
+      "bytes": 26596,
+      "sha256": "93fd441e0c51cabc73eddaad9936b74bba27984581a4a5991d61b01b54a17dcb",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/bryusov.webp",
+      "bytes": 20158,
+      "sha256": "73d792ea854981940cfae418f8ef006b04f4fc20f48cadd99021b467daa6412e",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/byron.webp",
+      "bytes": 22484,
+      "sha256": "b7517dde428a2f9cc9c69dea78fe4d7b79bf420bd8d3d2837b790c21d59f4775",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/chekhov.webp",
+      "bytes": 27148,
+      "sha256": "31b788934aa67e9cb1bc031797c2d8f51973abb535bd0608e63a8184597c773b",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/dickinson.webp",
+      "bytes": 15690,
+      "sha256": "f84b22d9112e530ee492768bbf3736072637f593a85b1d72540ad547f5f034b4",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/dostoevsky.webp",
+      "bytes": 30628,
+      "sha256": "c60149780332f72419da775a46e602f943486bc48d594c33d67b86ebe6595765",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/fet.webp",
+      "bytes": 33088,
+      "sha256": "70f86cc9d4e5ecf321f1baed161a1692b6df8480ffbae49f0d9762c2020dfc9c",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/garshin.webp",
+      "bytes": 27062,
+      "sha256": "1fd32c6b26e638f54de591e6b46c2dfa8fc6b6c00e768ba43081919bf39110f4",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/gorky.webp",
+      "bytes": 25190,
+      "sha256": "7e912a2b307d3a3294884c4fae716df40d28f00f7abe7d35f4fea3a5302f9d38",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/grin.webp",
+      "bytes": 23988,
+      "sha256": "753f085b7c6a98a9125259967ca924f9ad746dd49227cb217cfaefebbb3b4750",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/gumilyov.webp",
+      "bytes": 16316,
+      "sha256": "b2f7d3fd4fabf1829be07d681545b7717fbe6f038f52371513e396cb999ce302",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/hardy.webp",
+      "bytes": 41652,
+      "sha256": "09e6b40a2407ed19ddb6e7d8eac212cf17861a91ce1d0682902be71510e7955d",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/krylov.webp",
+      "bytes": 30502,
+      "sha256": "d928ffb7998d2d73965b1928a5b1a15eb2a3899d3f7cdc274d45ec9695b79c0f",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/kuprin.webp",
+      "bytes": 29786,
+      "sha256": "26e2d874a3ca325f7afadff6e20d5b0c45e48a8ed63d41bfe7e09f32b3a44110",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/lermontov.webp",
+      "bytes": 25590,
+      "sha256": "f3a164a403f08ea35198febd45533dbb4ea4cc9b2d92ce064a4457e3e2580137",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/mamin-sibiryak.webp",
+      "bytes": 30158,
+      "sha256": "e1f7a94839361e60cb3946f3cfdeed5b69595cc940acb55527cad95dcdae778d",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/mandelstam.webp",
+      "bytes": 26430,
+      "sha256": "14fbf116d2934f4ae57495ed9d0fec14e11d84c92c210fd8c7598ff04bae28a0",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/mansfield.webp",
+      "bytes": 20438,
+      "sha256": "915002db51152e811c10a1f569b0fc853c8881d3ec442220460aa74010da4efe",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/mayakovsky.webp",
+      "bytes": 25672,
+      "sha256": "a60f04845551792237b85ce48df226f721b0eb5cd27789e384dda401c4ae4cac",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/nekrasov.webp",
+      "bytes": 27544,
+      "sha256": "b8d93c1717286478ce74586017dfcd3c2940b89465da2853f27148e1313fe6e9",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/odoyevsky.webp",
+      "bytes": 24966,
+      "sha256": "62a910f54e295a4bb444b2fd0b9099495d345fd0b9c40c9930865524d032cfe4",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/ohenry.webp",
+      "bytes": 27434,
+      "sha256": "6bb86ecc2098166b6b0a9f148c8f9018b685fca3b6571a038d7e948f50eed558",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/poe.webp",
+      "bytes": 24708,
+      "sha256": "891ede2a97e979b2928792b3ae75f44f49e044add3faa1f8b835d4c58f02e685",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/provenance.json",
+      "bytes": 58983,
+      "sha256": "54d3b679269d050318181fee5dcc261adefc0a8174c5f150f3c7472e65abeacd",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/authors/classics-v52/pushkin.webp",
+      "bytes": 18336,
+      "sha256": "a801824eb23b25e991192a6c55b621f9c5fee01fcf233aa281640ec5f1dfd8bb",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/saki.webp",
+      "bytes": 22878,
+      "sha256": "b49bbdb034fdf64dd94df3c3d812a2f1a7e31b8cd2f92fac01c3ddb1a0a9e675",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/saltykov-shchedrin.webp",
+      "bytes": 30846,
+      "sha256": "42355dce0c0843d0fc0f8e07a0f80771ac062b1145b7edc2587a2fbf919e9513",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/shakespeare.webp",
+      "bytes": 36214,
+      "sha256": "7828f339d43a7f78052a42a806b46bd614c7cdb4f4124446341ff3943330bfd8",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/supplied-authors.json",
+      "bytes": 54283,
+      "sha256": "aa06806ac9ddb398cd606f59aa19414cfbd98ff9f6e5161a92c837f8f829492e",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/authors/classics-v52/tolstoy.webp",
+      "bytes": 46368,
+      "sha256": "2a8df2199ee0fe08318029493a86407504d7ea9217d1104dc1234189a295a770",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/tsvetaeva.webp",
+      "bytes": 23526,
+      "sha256": "0c450bcdbeadaecda397ce42ab671be27176605e25bef8d9db2602d74bc9e395",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/turgenev.webp",
+      "bytes": 29596,
+      "sha256": "fe554b7748a2d3b9d4eace260e5ff89227df6e489c2584371f1728520bc79edb",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/twain.webp",
+      "bytes": 27024,
+      "sha256": "458812eef8966706b87ca4d0c35f3c98f125c0dd9d87b4607179d18bccfac1ad",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/tyutchev.webp",
+      "bytes": 21740,
+      "sha256": "fe55994783c9b878082030ea7d60bd0ec7c2628c1607eb0ad1181b545653a425",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/whitman.webp",
+      "bytes": 50370,
+      "sha256": "4484e4b7c1f7a8b553926709b9a437c8d93da39769f3b23929301aa6da1968ac",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/wilde.webp",
+      "bytes": 19700,
+      "sha256": "5d994ca06dd4c25338408353027a336388307542d93338341f8a33b028d133b3",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/yeats.webp",
+      "bytes": 31674,
+      "sha256": "5f81acd2ca359a60aef1795432293c766427559a0069224eb7098d3d5e02d23d",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/authors/classics-v52/yesenin.webp",
+      "bytes": 22288,
+      "sha256": "d683685bfd96bf0784629318f529ca3c8cc9994eb1c8eef8cf29ea35524a9dfa",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "path": "assets/font-license.txt",
+      "bytes": 4314,
+      "sha256": "97952782cc5fc3b25711b2be51965d4f547d34368d8acb1a396d92844be29123",
+      "mimeType": "text/plain"
+    },
+    {
+      "path": "assets/onboarding/afisha-v40/provenance.json",
+      "bytes": 1368,
+      "sha256": "cbd7a945a2329a108daf72c7f801cce1dbf825c354da47a0fb32335444a2aa83",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/afisha-v40/selected-calendar.webp",
+      "bytes": 1370652,
+      "sha256": "d3e8c683610e4ba4137ca04bf4c33beb20bf34f7c41550727e1dc1bf721644bc",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1070,
+        "height": 1470
+      }
+    },
+    {
+      "path": "assets/onboarding/books-v43/neutral-cover.webp",
+      "bytes": 802196,
+      "sha256": "bd11e6b7d1bd6a17bd63d29035594469f6f6c4eff47271b03f46af574b40d3b0",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1074,
+        "height": 1465
+      }
+    },
+    {
+      "path": "assets/onboarding/books-v43/provenance.json",
+      "bytes": 2010,
+      "sha256": "2a5e264714d5063fd4b029e353202e035f8080ca61de4942e706e721cbe061ef",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/desktop-v53/prompt.txt",
+      "bytes": 1148,
+      "sha256": "ad15dbdc1af79358d1c44bdc2c00b83a4bc2faf1fe9e41a494d747ccb2d49962",
+      "mimeType": "text/plain"
+    },
+    {
+      "path": "assets/onboarding/desktop-v53/provenance.json",
+      "bytes": 909,
+      "sha256": "e3b97e8cc119536803f4f2d69d221bd959f878386cfe13cc19cfcfa173903c30",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/desktop-v53/room-matched-walls.webp",
+      "bytes": 347602,
+      "sha256": "ad61f4996527fe85fb3a0f7eda598ebe89bd9ef8e38a02b3120e46f7280c6fdb",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1585,
+        "height": 992
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/desk-envelope.webp",
+      "bytes": 61702,
+      "sha256": "2ca07a3a2b6cec2fd345b840959e202240f2ddd5b3f65aefd065baecf6a63203",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 720,
+        "height": 465
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/linen-spine.webp",
+      "bytes": 62644,
+      "sha256": "853d132b828dd836b100721326bc73965a52691589ba1b92f0fcf93e645fd0d9",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 300,
+        "height": 900
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/opened-letter.webp",
+      "bytes": 57124,
+      "sha256": "7e612ef8b13842b20025171f72d4b6390d83ccdcc6d31101e0dc2eccd8949b46",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 720,
+        "height": 900
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/provenance.json",
+      "bytes": 19898,
+      "sha256": "92ffaee680b63bec9d052541c0a5e5dd36e4aec234d8c081c2061b5299f3703f",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/curtain-velvet.webp",
+      "bytes": 44828,
+      "sha256": "06c0edb0e1185912a1a69be5fd7ed24efa133f4d9c6dda7ecc3164a81cb36e54",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1024,
+        "height": 683
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/dream-within-dream/manifest.json",
+      "bytes": 24100,
+      "sha256": "feeff6eaa4ce1aadd175b07097b291ebdce4ce3531ee9c76760c7ae62d67e3c1",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/dream-within-dream/narration.mp3",
+      "bytes": 884445,
+      "sha256": "a0351268f78c3d28d6b764fe4f0a4e8982d52752d8f7de65434630d74b3b7ba7",
+      "mimeType": "audio/mpeg"
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/01-parting-kiss.webp",
+      "bytes": 58744,
+      "sha256": "5589d5c8227f7d80fecbb45e86037c5b163b90dec99ae3950b1150567acf42da",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/02-hope-flown-away.webp",
+      "bytes": 72202,
+      "sha256": "ca31d10de1156841c30e01326c3663208e2609d3d615c76e865109f748d2ae1f",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/03-golden-sand.webp",
+      "bytes": 88722,
+      "sha256": "692677048e0837eb7550a4cff70ba1be80cea5c3af9b8b3fbf0e350df12b2c1d",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/dream-within-dream/scenes/04-dream-within-a-dream.webp",
+      "bytes": 136204,
+      "sha256": "5e34d33ad878f51dde0109adda0a00402a1a58ec3f5026bcc0a6c16b43375bfc",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/no-frigate/manifest.json",
+      "bytes": 9200,
+      "sha256": "fde99f3d44a3ee0cc67fc0e267052df8f8534d29cb81b587e65d8ddcd7e7a032",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/no-frigate/narration.mp3",
+      "bytes": 407971,
+      "sha256": "f5ebe5ca1a0aa883e084f0413d0ec07b54c278c11045785a20a2f2032c397458",
+      "mimeType": "audio/mpeg"
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/no-frigate/scenes/01_book_opens.webp",
+      "bytes": 63962,
+      "sha256": "b69cfe1fe2093edf890bd6fb5fc60776a2111a4fcc212252910b0241c3f42778",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/no-frigate/scenes/02_frigate.webp",
+      "bytes": 84986,
+      "sha256": "f6242308eb565ff76f066530992b73eae27211eb977e12b8614ae5af211f21d9",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/no-frigate/scenes/03_coursers.webp",
+      "bytes": 186098,
+      "sha256": "7fe6aea0a598b8e6dbe26de6c229226fdd1e1976b88de21559fba522236176c7",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1137
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/no-frigate/scenes/04_human_soul.webp",
+      "bytes": 135140,
+      "sha256": "ea5362a114981cbc559da940a6325170c8facf56e38a14eab058a9abaa18cab6",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1138
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/series/provenance.json",
+      "bytes": 11100,
+      "sha256": "d267b0f645af862179ad183a48c6cc9d57a7e3a373bf3453fd7e8acfbbef15e1",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/discovery-v32/walnut-desktop.webp",
+      "bytes": 167348,
+      "sha256": "f98acf46be1842f89c68e1152234670795dc0eca2f3426825b5bec90303ab164",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 900,
+        "height": 1350
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v33/post-box-provenance.json",
+      "bytes": 2511,
+      "sha256": "0aeb38534ee7068eebc42bb932a22ad3dbee19884b8fb241b9a06bb96eae2647",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/discovery-v33/post-box.webp",
+      "bytes": 47576,
+      "sha256": "45c832e77b839007c04eebf6016df34d34622ce14ec59da53e9183c467e0fd25",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 900,
+        "height": 300
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v33/room-panorama-tall.webp",
+      "bytes": 113650,
+      "sha256": "b874662857a24de4a02d59402b0b0bb0f075ae2b0020b340c1c2c7a2543d6171",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1254,
+        "height": 1254
+      }
+    },
+    {
+      "path": "assets/onboarding/discovery-v33/room-provenance.json",
+      "bytes": 3879,
+      "sha256": "cfa3bcca658440b0eb1d53d84aeeede3b52f40c54f3506954fcd382512ed597a",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/discovery-v33/series-modern/PROVENANCE.md",
+      "bytes": 1380,
+      "sha256": "c63abee8d22078c0ffd04282d146c550d4cd67b3ba82ddbef224523a374310e9",
+      "mimeType": "text/markdown"
+    },
+    {
+      "path": "assets/onboarding/discovery-v33/series-modern/index.json",
+      "bytes": 10554,
+      "sha256": "3cf3e37f3fecdbc3b913e9e644d59b26b46d99c372fdf5fba1513ae3a956f05e",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
+      "bytes": 24413,
+      "sha256": "0c364f04eefe831cb3702777027881947fb528e5c2f605f59a85ca926158a274",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/narration.mp3",
+      "bytes": 1105963,
+      "sha256": "6a7b00e4ccee7983cd9a81f9d122ab71744dc8dddc587907f7c572b254782298",
+      "mimeType": "audio/mpeg"
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-01.webp",
+      "bytes": 224962,
+      "sha256": "ff23f9eadc83e9bda309057911acbb542a186cf7726295a593de7d2c0302033d",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 941,
+        "height": 1672
+      }
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-02.webp",
+      "bytes": 284480,
+      "sha256": "c5c28e66411a1a45b57ade0c4696812b3024213b15b4d3426dd098c69e3fc4c4",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 941,
+        "height": 1672
+      }
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-03.webp",
+      "bytes": 205762,
+      "sha256": "e72d5f8184b9e03bbabccb422cb9a6cc6468f0420136d3b6cd05e06a3da176f2",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 970,
+        "height": 1622
+      }
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-04.webp",
+      "bytes": 212860,
+      "sha256": "759ed6ef48fb205a78088d55fe3a591d32d2e51ca7c7341d17fe0598510feccc",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 940,
+        "height": 1673
+      }
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-05.webp",
+      "bytes": 223818,
+      "sha256": "376174ff59bcd03fb615a49524092bfe152b7044643d6cb3488f96bfccc6fc3a",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 941,
+        "height": 1672
+      }
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-06.webp",
+      "bytes": 222868,
+      "sha256": "d68d507a6a6e3662fbc51497679a7d1abba96c031970784f49f94a6dbc554b0a",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 969,
+        "height": 1623
+      }
+    },
+    {
+      "path": "/l/EKvnI0C1SU4VogDdU5_vwA/f/source-manifest.json",
+      "bytes": 19652,
+      "sha256": "0a4febc150af587c665013a77f53faec9782dff2e7bfe6323163b2919beacbe2",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/aluminium-wings.webp",
+      "bytes": 311344,
+      "sha256": "da671faf8bfb5fce64be6c426a3e4aa6311b20cbf8f4e19983a6cae988e3aff7",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 981,
+        "height": 1602
+      }
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/beam-over-abyss.webp",
+      "bytes": 267730,
+      "sha256": "6582a77ba7ca62c176cb50eec634e77f97767a4a660273e986d13cb90bf1325a",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 981,
+        "height": 1602
+      }
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/golden-collar.webp",
+      "bytes": 374808,
+      "sha256": "8cbdccd8a6ed436e75846a8210875dddbbf335538f73f4a90ab6d9b4e6ec8e26",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 981,
+        "height": 1602
+      }
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+      "bytes": 18736,
+      "sha256": "fbe9eb6227a83f024fbf5068970a2be5ee7a462ad58c33d7a0de613b60711b53",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/narration.mp3",
+      "bytes": 1098301,
+      "sha256": "5d69bb9b9e944d1fee1492e4c8ee2dd7b0a7115195d103dfe24a7a5038241038",
+      "mimeType": "audio/mpeg"
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/new-year-backstage.webp",
+      "bytes": 304342,
+      "sha256": "d26100bf259e54c21e78999638606cb1247c0b945c23c626692e4d992497bff2",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 992,
+        "height": 1586
+      }
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/source-manifest.json",
+      "bytes": 14993,
+      "sha256": "8a5eef7cde9bd87bfa19c5cc3fd1e25fd09ed26b3a941bc675f6ce2a201ac207",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "/l/jgycmR8G0ml0YoXbTeHqxA/f/tightrope.webp",
+      "bytes": 407730,
+      "sha256": "75727c1f75ec5d0f9e0dda7243d1229bd3c7bb90631d0674c947993f71f2d509",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 981,
+        "height": 1602
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v28/front-panel.webp",
+      "bytes": 102142,
+      "sha256": "e3fba47911ec78782925fb035d860da2ed34a53df2be738430bec0eb23c775f8",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1567,
+        "height": 1190
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v28/opening-geometry.json",
+      "bytes": 1784,
+      "sha256": "d9d9611c148a0ac928da34dbdd92fb65a3af70d981d009d781bfc212cd13834a",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/integrated-v28/opening-provenance.json",
+      "bytes": 1583,
+      "sha256": "7f9f777a60d4c13b9dfcc14a4aad51d2903c9f83b7e3434d9efca8f7d7de55eb",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/drawer-bottom-front.webp",
+      "bytes": 101564,
+      "sha256": "9968009f185127bfa91aa06db56853e5b99533170b0b5e2b020929119bda6283",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 484,
+        "height": 218
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/drawer-middle-front.webp",
+      "bytes": 99168,
+      "sha256": "55ed5ed22ff67295da5913ae1613c35f8d8e1f6504ecf59555869cba265de932",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 484,
+        "height": 211
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/drawer-top-front.webp",
+      "bytes": 103446,
+      "sha256": "82b35b87c276e5d26ffb4ab50165e678c2f383968aa49261196f29d69c077fbe",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 484,
+        "height": 219
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/form-bay.webp",
+      "bytes": 123112,
+      "sha256": "198eefda06659b68ee7c42d69984c654ae600ea0e8ffa3cd254a9f5578c62b48",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1335
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/form-recess-bay.webp",
+      "bytes": 108526,
+      "sha256": "475f90d8de3897991f3809654e15880a1e4515b7541c5991c79960d7eef47326",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1335
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/geometry.json",
+      "bytes": 1379,
+      "sha256": "8f0186f1422acca1781b8faf27b840eb9c03d0f4b9adec275ed65068cfda3d16",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/language-bay.webp",
+      "bytes": 133658,
+      "sha256": "4358babf7bcc73046545c368084c4cb2e4cc1360274afec10e4c8bb66e3a9d6c",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1335
+      }
+    },
+    {
+      "path": "assets/onboarding/integrated-v30/provenance.json",
+      "bytes": 3636,
+      "sha256": "c39d74df2de30a448f4e5e9a5a4d13d5da18318c76edba828cde5767da56e0ef",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/wide-v26/bay.webp",
+      "bytes": 111810,
+      "sha256": "99f02018802cbc8db575388500ab626dae6cd28188706bbff32780d34f5332c3",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 1335
+      }
+    },
+    {
+      "path": "assets/onboarding/wide-v26/floor.webp",
+      "bytes": 20862,
+      "sha256": "303c58040b3873c51b325c091152c1bc63816f4ba5b97c095d8a83d1ed081943",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 186
+      }
+    },
+    {
+      "path": "assets/onboarding/wide-v26/provenance.json",
+      "bytes": 4485,
+      "sha256": "e5aa5e352bbd5ba8bd6d0e1b5d21efaf918b50b22937d6d9bbab0b302123c2ec",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/world-v42/provenance.json",
+      "bytes": 2745,
+      "sha256": "33569657eb072fc620f979396a3f4e848ff1d7a2a6afede6a911b20edddb5490",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/onboarding/world-v42/room-open.webp",
+      "bytes": 224054,
+      "sha256": "e00bc26fba22ccbcc2b5349a05c4638daebc62fe0b2cc46dd0e389910bebb482",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 1000,
+        "height": 2050
+      }
+    },
+    {
+      "path": "assets/onboarding/world-v42/wall.webp",
+      "bytes": 5986,
+      "sha256": "d34d1f8114548edfbd6e9510a8f17c9c917d614c04fdc470dc7e657c43b911f7",
+      "mimeType": "image/webp",
+      "pixelSize": {
+        "width": 640,
+        "height": 529
+      }
+    },
+    {
+      "path": "assets/series-fonts/LICENSE.txt",
+      "bytes": 4630,
+      "sha256": "c052aafd2a71e90bcee6e69f475029d430a10d548c08ffcae350171f0e9668b1",
+      "mimeType": "text/plain"
+    },
+    {
+      "path": "assets/series-fonts/playfair-display-cyrillic-wght-normal.woff2",
+      "bytes": 21152,
+      "sha256": "c108681cba6a9820bff52f4a1a4a1d9edf356b347bd79b7c61e916028e8a8b54",
+      "mimeType": "font/woff2"
+    },
+    {
+      "path": "assets/series-fonts/playfair-display-latin-wght-normal.woff2",
+      "bytes": 38404,
+      "sha256": "e0c764a8e9e1cce92163c55bac4b2ad6cd4cf8c696ce2289ab5c41565e65b7e2",
+      "mimeType": "font/woff2"
+    },
+    {
+      "path": "assets/series-fonts/provenance.json",
+      "bytes": 519,
+      "sha256": "04577035b4bd6896222dcc4a2d0737f3fe4a42e1405c18da4a18e829b38732a6",
+      "mimeType": "application/json"
+    },
+    {
+      "path": "assets/serif-cyrillic.woff2",
+      "bytes": 36468,
+      "sha256": "25e85aef8acff54f91ea7e85c9c2c260caf97101fdef194ed6b8b58bc34ce3eb",
+      "mimeType": "font/woff2"
+    },
+    {
+      "path": "assets/serif-italic-cyrillic.woff2",
+      "bytes": 34972,
+      "sha256": "62faaf044db101ae07f9be3f23424892fa9c792d8d4eadcde3b7a8cd6d27909d",
+      "mimeType": "font/woff2"
+    },
+    {
+      "path": "assets/serif-italic.woff2",
+      "bytes": 51516,
+      "sha256": "663e7ef3037a56dce81dfc33f68c1e6445995ffd8887991b3c0b68a7689c9da5",
+      "mimeType": "font/woff2"
+    },
+    {
+      "path": "assets/serif-latin.woff2",
+      "bytes": 50824,
+      "sha256": "c1df4596be5029233ed2afbb8b2f6ea20784b3fb1aa5d6b5c6519ccd85eb3dfb",
+      "mimeType": "font/woff2"
+    }
+  ],
+  "validation": {
+    "allListedFilesExist": true,
+    "allFileHashesComputedFromLocalBytes": true,
+    "portraitArchiveByteMatches": 42,
+    "activeLivingRenderImagePathsCovered": 53,
+    "eligibleIdsMatchProvenance": true,
+    "faceOutIds": [
+      "pushkin",
+      "lermontov",
+      "tolstoy",
+      "chekhov",
+      "dostoevsky",
+      "shakespeare",
+      "twain"
+    ],
+    "registeredSeriesImageCount": 19,
+    "uniqueAssetFileCount": 92,
+    "uniqueAssetEncodedBytes": 12945196,
+    "meaning": "Inventory/path/hash assertions; not a production loading, rights, accessibility, device smoothness or FPS guarantee."
+  }
+}

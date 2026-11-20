@@ -1,0 +1,82 @@
+{
+  "world": {
+    "width": 3300,
+    "height": 2050
+  },
+  "masterScene": {
+    "width": 2000,
+    "height": 2050
+  },
+  "roomOpen": {
+    "width": 1000,
+    "height": 2050,
+    "leftSlice": [
+      0,
+      0,
+      1000,
+      2050
+    ]
+  },
+  "cabinet": {
+    "left": 394,
+    "top": 533,
+    "continuesOffRight": true
+  },
+  "front": {
+    "x": 420,
+    "y": 604,
+    "width": 1567,
+    "height": 1190,
+    "offsets": {
+      "room": 0,
+      "languages": 640,
+      "form": 1280,
+      "classics": 1920,
+      "contemporary": 2560
+    },
+    "handle": {
+      "x": 470,
+      "y": 1127,
+      "width": 25,
+      "height": 141
+    },
+    "sourceCrop": [
+      45,
+      45,
+      1375,
+      1065
+    ]
+  },
+  "fixedRails": {
+    "upperY": [
+      551,
+      607
+    ],
+    "lowerY": [
+      1787,
+      1830
+    ]
+  },
+  "foregroundTable": {
+    "worldBounds": [
+      293,
+      1693,
+      530,
+      1994
+    ],
+    "tabletopBounds": [
+      293,
+      1693,
+      530,
+      1772
+    ],
+    "legOcclusionRight": 441,
+    "panelApertureMask": "polygon(0 0,100% 0,100% 100%,22px 100%,22px 1166px,70px 1156px,108px 1138px,108px 1110px,72px 1094px,0 1089px)",
+    "note": "Apply as a scene-space fixed clipping aperture atfrontx420y604, notmovingpanelclip. It revealsactualopenroom foregroundtableabove slidingpanel withoutextra furniture."
+  },
+  "sources": {
+    "closed": "/Users/andrey/.codex/generated_images/01a1e3a3-9845-7921-9b2a-0f356a9879f1/exec-38592ded-791e-4c57-b5e3-7b1ad7e734f9.png",
+    "open": "/Users/andrey/.codex/generated_images/01a1e3a3-9845-7921-9b2a-0f356a9879f1/exec-237b6128-246b-47a8-8fe2-90e78acfaa7a.png",
+    "panel": "/Users/andrey/.codex/generated_images/01a1e3a3-9845-7921-9b2a-0f356a9879f1/exec-c356025e-7ca3-4170-880b-785419b8a1c6.png"
+  }
+}

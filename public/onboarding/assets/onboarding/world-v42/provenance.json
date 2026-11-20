@@ -1,0 +1,22 @@
+{
+  "mode": "built-in image_gen",
+  "purpose": "Match welcome room and cabinet extension walls to the existing Series room wall, per user screenshot 2",
+  "room": {
+    "prompt": "Use case: precise-object-edit. Asset type: existing interactive reading room background. Input image 1 is the EDIT TARGET, a tall room with window, chair, table and wooden cabinet; input image 2 is COLOR REFERENCE only. Change ONLY the pale plaster walls in image 1 to exactly the rich saturated golden amber-orange plaster wall color of image 2, so these are recognizably adjoining views of the SAME room. Preserve the first image's precise camera, 1000:2050 portrait canvas ratio, every object position and edge, window arch, greenery, wood tones and cabinet shelves, chair, table, floor, sun patches, and lighting direction. Wall should remain softly textured plaster with warm natural variation, no gradients that look like UI. No additional objects, no text, no graphics. The output must remain the first image's tall composition, not the second image's square layout.",
+    "target": "../integrated-v28/room-open.webp",
+    "reference": "../discovery-v33/room-panorama-tall.webp",
+    "generated": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-b75ccd8e-53aa-496e-9948-a70cfb80d310.png",
+    "saved": "room-open.webp",
+    "preparation": "Lossy WebP quality 93, Lanczos resample to original 1000x2050 geometry; no painted masks or compositing.",
+    "sha256": "e00bc26fba22ccbcc2b5349a05c4638daebc62fe0b2cc46dd0e389910bebb482"
+  },
+  "wall": {
+    "prompt": "Use case: precise-object-edit. Asset type: plaster wall texture for the same reading room. Input image 1 is the EDIT TARGET (plain pale plaster texture). Image 2 is the COLOR REFERENCE: rich saturated amber golden orange wall in a reading room. Recolor only image 1's plaster to the reference wall's exact golden orange character and natural fine surface, matching the center-right upper wall in image 2, with very subtle soft light variation. Full-bleed uninterrupted wall, no furniture, no shadows of objects, no corners, no trim, no lettering. Preserve target landscape aspect 640:529. The left and right edges should blend continuously when repeated horizontally. Not pale yellow, not brown, no dramatic gradient.",
+    "target": "../wide-v26/wall.webp",
+    "reference": "../discovery-v33/room-panorama-tall.webp",
+    "generated": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-2ba478ef-f260-4a1f-b4c5-6991be7e9a16.png",
+    "saved": "wall.webp",
+    "preparation": "Lossy WebP quality 93, Lanczos resample to original 640x529 geometry.",
+    "sha256": "d34d1f8114548edfbd6e9510a8f17c9c917d614c04fdc470dc7e657c43b911f7"
+  }
+}

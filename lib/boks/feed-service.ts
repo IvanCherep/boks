@@ -11,6 +11,7 @@ import {
   type RecommendationExperiment,
   type RecommendationExperimentConfig,
 } from "@/lib/boks/recommendations";
+import { applyStartingPreferences, parseStartingPreferences, type StartingPreferences } from "@/lib/boks/onboarding/starting-preferences";
 import {
   LABELING_VERSION,
   RANKING_VERSION,
@@ -134,10 +135,11 @@ export async function serveReaderFeed(
   // Independent reads go out together. Sequentially they were five round
   // trips to the database before a reader saw anything, which on a
   // high-latency connection outran the browser's patience for the Worker.
-  const [config, candidateSet, publishedCount] = await Promise.all([
+  const [config, candidateSet, publishedCount, startingPreferences] = await Promise.all([
     loadExperimentConfig(transport),
     loadCandidates(transport, limit, request.readingLanguages, request.readingRequest, request.excludeBokId),
     loadPublishedCount(transport),
+    loadStartingPreferences(transport),
   ]);
   if (candidateSet.degraded && strictFacets(request.readingRequest)) throw new ReadingRequestUnavailableError();
   const activeConfig = candidateSet.degraded ? recencyOnlyConfig : config;
@@ -174,10 +176,19 @@ export async function serveReaderFeed(
     now: request.now,
   });
 
+  // The introduction's answers lift a chosen classic or the chosen form a few
+  // places while the reader's own history is thin (docs/onboarding.md); each
+  // lifted entry says so in its explanations, stored with the served feed.
+  const readerEvents = Object.values(candidateSet.readerState).reduce((sum, state) => sum + (state.eventCount || 0), 0);
+  const started = applyStartingPreferences(feed.entries, startingPreferences, {
+    readerEvents,
+    formOf: (entry) => formOfEntry(entry, candidateSet.facetsById.get(entry.candidate.id)),
+  });
+
   // The mood is soft: matching boks go first, each part in the arm's order.
   // Done before recording, so the served feed is what the reader gets.
   const entries = preferFacetMatches(
-    feed.entries,
+    started,
     (entry) => candidateSet.facetsById.get(entry.candidate.id),
     preferredFacets(readingRequest)
   );
@@ -233,6 +244,25 @@ async function resolveExperiment(
     return assignExperimentArm(request.userId, config, request.requestedAlgorithmId);
   }
   return resolveStoredExperiment(transport, request.userId, config);
+}
+
+/** The reader's answers from the introduction, or none; never a reason to fail the feed. */
+async function loadStartingPreferences(transport: FeedTransport): Promise<StartingPreferences | null> {
+  try {
+    return parseStartingPreferences(await transport.rpc<unknown>("get_my_starting_preferences"));
+  } catch {
+    return null;
+  }
+}
+
+/** Prose or poetry, from the labelled facet, else from the text's measured shape. */
+function formOfEntry(entry: RankedStory, facets: Record<string, string[]> | undefined): "prose" | "poetry" | null {
+  const labelled = facets?.format?.find((value) => value === "prose" || value === "poetry");
+  if (labelled === "prose" || labelled === "poetry") return labelled;
+  const shape = entry.candidate.readingShape;
+  if (shape === "verse") return "poetry";
+  if (shape === "short_prose" || shape === "long_prose") return "prose";
+  return null;
 }
 
 async function loadExperimentConfig(transport: FeedTransport) {

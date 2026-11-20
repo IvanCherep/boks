@@ -1,0 +1,22 @@
+{
+  "revision": "v53",
+  "date": "2026-11-19",
+  "tool": "built-in image_gen.imagegen",
+  "target": "desktop-v48/room-leftward-outpaint.webp",
+  "reference": "world-v42/room-open.webp",
+  "purpose": "Match only the desktop plaster walls to the established mobile/house golden ochre. Compact scene and wall assets unchanged.",
+  "generatedSize": [
+    1585,
+    992
+  ],
+  "logicalRenderSize": [
+    1586,
+    992
+  ],
+  "sourceGeneratedFile": "exec-266e1698-8190-438f-9488-3db57864b830.png",
+  "generatedSha256": "0a3ae0fb65f3b62c4831d57966eb51969514781cb6b96a72a92f4dc1d5b06c1f",
+  "output": "room-matched-walls.webp",
+  "outputSha256": "ad61f4996527fe85fb3a0f7eda598ebe89bd9ef8e38a02b3120e46f7280c6fdb",
+  "encoding": "WebP quality94, method6; no manual image edits or crops",
+  "geometry": "Existing logical dimensions, cabinet/glass registration, camera poses, animation and recovery remain unchanged."
+}

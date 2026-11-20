@@ -1,0 +1,140 @@
+{
+  "version": 32,
+  "createdOn": "2026-11-16",
+  "mode": "built-in image_gen",
+  "notes": "Generated environment/materials only; no generated author identities. WebP conversion preserves composition and alpha; cover and letter downscaled for mobile delivery.",
+  "assets": [
+    {
+      "file": "reading-room.webp",
+      "prompt": "Use case: stylized-concept\nAsset type: one continuous room environment for a MOBILE onboarding camera. Overall image must be SQUARE (ideally 2048 x 2048). The camera will see the LEFT HALF as one portrait screen and the RIGHT HALF as the next portrait screen; both halves are 1:2 portrait compositions. This is one physically continuous room, NOT a collage or divided diptych.\nInput image 1 is style/light reference. Input image 2 is the approved furniture/material reference; preserve the same quiet walnut console, landscape frame, writing desk and warm afternoon light, but RECOMPOSE for the square overall framing.\nScene: an adjacent wall of this cosy Boks reading room, warm honey textured plaster, walnut furniture, brass lamp, muted olive chair. Front-on level camera. Mature refined tactile painterly realism, extraordinary natural sunlight from offscreen left. No people, no faces.\nComposition, very important:\nLEFT HALF: upper 30% is empty softly sunlit wall; in the middle (around y38–65%) a large simple walnut-framed sea landscape with teal water and peach sky; below it (around y70–92%) a low walnut console on the floor, ONE open book resting on it and a small brass lamp.\nRIGHT HALF: upper 30% also empty matching wall. Around y42–65%, a wood pin rail with THREE visibly separate BLANK cream papers naturally clipped to it; left paper portrait, two smaller sheets to its right. Around y72–94% a broad walnut writing desk and chair tucked under it. On the desk: a cream standing paper flip calendar with a completely empty unprinted grid, a closed cream envelope with small rust-red wax seal, and a small natural pile of books.\nEverything has real physical support and consistent realistic relative scale. The entire floor line is at the same y94% on both halves. There must be only wall and floor between the zones, no narrow divider or seam. Each portrait half must feel like a complete intentional camera view and fit all its important objects without horizontal clipping. No window needs to be visible. Avoid huge furniture. No furniture hovering.\nAbsolutely no words, logos, letters, numbers, characters, UI buttons or borders. No extra decorations. Rich wood grain and quiet elegant materials, not cartoon/toy furniture.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-f2a5bda6-3019-4f38-8a1c-a023a52d782a.png",
+      "purpose": "Initial room master retained as edit source; not the active room.",
+      "sha256": "98a25a886b87f480c836968fb2aa50d9f25dd562ef63689b4e2bf5b2532a51be",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "bytes": 176472
+    },
+    {
+      "file": "linen-volume.webp",
+      "prompt": "Use case: product-mockup\nAsset type: transparent cutout of ONE sophisticated literary book for an interactive virtual shelf, upright FRONT ELEVATION.\nA single beautifully made contemporary clothbound book, muted midnight blue linen, subtly rounded spine on the LEFT only, very narrow natural cream page edge on the RIGHT only. Completely straight-on eye-level front view, bottom rests flat on a shelf plane. No visible bottom cover thickness or bottom page block because viewer is not looking from below. Cover has a shallow recessed portrait area centred in its upper half (an empty rectangular inset with subtle blind-emboss bevel), and quiet blank cloth in its lower half for HTML author name lettering. No illustration or portrait inside it. Very subtle tactile pressed border around cover, restrained fine bookbinding details, mature beautiful editorial design, not a fancy old fairytale tome, no shiny plastic, no ornate floral corners. Natural soft light from upper left, real textile grain, subtle wear, physically accurate edges. Preserve clear rectangular silhouette.\nTransparent background, no room, no surface, no cast shadow beyond tiny attached contact shading. No text, no letters, no logos, no title, no people, no faces, no extra books. High-resolution carefully finished material asset, ratio about 3:4, complete object visible with small transparent margin.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-33824982-6498-46d0-8fbd-488e916fbac5.png",
+      "purpose": "Blank mature linen cover for new classic author representations; portraits remain historical sources.",
+      "sha256": "60b35a9b125e7d70e60c4c51e37d7a72356bf20531c6a3f42ce4dce393323855",
+      "dimensions": {
+        "width": 540,
+        "height": 720
+      },
+      "bytes": 83728
+    },
+    {
+      "file": "opened-letter.webp",
+      "prompt": "Use case: product-mockup\nAsset type: transparent clean cutout of a single opened letter paper, straight-on from above, to put readable HTML text on it.\nOne warm ivory cotton paper sheet, almost square but slightly portrait 4:5. Previously folded once horizontally, now unfolded and lying almost flat with one very soft horizontal crease through the middle, barely lifted organic corners, delicate paper fibre, small natural edge shadows belonging to paper. Blank clean large central writing area. At the very bottom right edge, a small piece of broken muted terracotta wax from an opened seal, very subtle and tiny, leaving all central content space free. Light falls from upper left. This is contemporary quality stationery in a cosy literary reading room, refined and real, NOT antique parchment, no brown aging, no torn edges, no fantasy ornaments.\nGenuinely transparent background, complete paper visible with small margin, no desk, no envelope, no people, no handwriting, no text, no lines, no letters, no symbols, no border or UI.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-53d257fc-5735-419f-bb9c-0470b96a414d.png",
+      "purpose": "Quiet tactile stationery underneath the mystery-mail explanation.",
+      "sha256": "7e612ef8b13842b20025171f72d4b6390d83ccdcc6d31101e0dc2eccd8949b46",
+      "dimensions": {
+        "width": 720,
+        "height": 900
+      },
+      "bytes": 57124
+    },
+    {
+      "file": "reading-room-v2.webp",
+      "prompt": "Use case: precise-object-edit\nInput image 1 is the EDIT TARGET, the approved square room environment. Change ONLY this: remove the wooden pin rail and its three clipped blank paper sheets from the right-hand wall. Fill their former area with perfectly continuous warm plaster and the existing soft daylight. Do not replace them with any portrait, poster, lettering, calendar, decoration or other object. The right wall should be beautifully quiet and empty.\nCRITICAL invariants: preserve the entire rest of the image exactly — same square framing, same dimensions, same perspective, same painting on the left, same painting interior sea, same furniture position, same envelope and calendar and stack of books, same chair, same shadows, same warm palette, same console and lamp/open book. Do not shift, stretch, resize or rearrange any furniture. No added text, faces or characters. This is a surgical removal of the three wall papers and rail only.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-63e48c07-c546-46b2-bd14-fa74a4b8780b.png",
+      "purpose": "Active continuous room, with quiet wall and physically supported envelope/calendar.",
+      "sha256": "b49a892280f519563af909e5850b89a8e7ee7a3b81d98f31fc07564b40722a9b",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "bytes": 137876
+    },
+    {
+      "file": "linen-spine.webp",
+      "prompt": "Use case: product-mockup\nAsset type: a narrow vertical alpha cutout of ONE real book spine, to use as a sprite on a crowded walnut shelf.\nFront-on straight elevation of the SPINE of one substantial clothbound literary book, not its cover. A tall narrow softly rounded convex spine, about 4.5 times taller than it is wide, deep muted midnight-blue linen with fine tactile textile grain. Very restrained actual bookbinding seams, tiny softened corners, delicate uneven wear at top and bottom. Clean large blank central spine area for live typeset author lettering. It should feel adult and materially real, not a flat colored UI rectangle, not a shiny game object, not a fairytale antique. Grazing warm sunlight from upper LEFT, soft natural shading round the side edges; base sits flat and weighty. The light must belong to a warm honey-plaster/walnut reading room.\nComposition: show only the full narrow spine, almost no visible side/cover, camera at spine centre height, no perspective tilt. Crop close to the object with a very small transparent margin; tall 1:3 canvas if necessary, with the spine taking the complete available height. No floor, shelf, backdrop, detached shadow, type, logo, author name, ornament, people or portrait. Genuine transparent background.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-e026ebaa-ec2d-4e80-b498-b611283e4083.png",
+      "purpose": "Tactile convex binding material for closed upright spines; colour applied separately.",
+      "sha256": "853d132b828dd836b100721326bc73965a52691589ba1b92f0fcf93e645fd0d9",
+      "dimensions": {
+        "width": 300,
+        "height": 900
+      },
+      "bytes": 62644
+    },
+    {
+      "file": "linen-horizontal.webp",
+      "prompt": "Use case: product-mockup\nAsset type: alpha sprite of ONE horizontal closed clothbound literary book, to stack with other books on a walnut shelf.\nShow the long SPINE facing the viewer and the book lying flat, straight-on at shelf height, with only a tiny sliver of the top cloth board and natural compressed cream page edges visible behind. A heavy real book, horizontal front spine about 4 times wider than its thickness, muted deep indigo linen, soft real convex binding and small natural wear, pale pageblock, corners slightly imperfect. No extra books. Upper-left warm sunlight, coherent natural shadows and depth; bottom edge perfectly resting on an implied flat shelf. Mature refined adult bookbinding, no ornamental lines, no fantasy, no fake brass caps, no plastic. Broad clean blank spine area for live HTML author names.\nComplete object, centred close-crop with minimal transparent margins. Wide 3:1 canvas, preserve full silhouette. Genuinely transparent background; no table, floor, detached shadow, typography, title, logos, portrait, people, hands or additional props. It must look like a small photographed physical book, not a UI tile.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-e53f9685-cd20-43bc-88be-03b3fb1ee75a.png",
+      "purpose": "Earlier horizontal binding material retained for revision history; current horizontal books use their real left binding plane and linen-spine material.",
+      "sha256": "db14e98dc60ce1d31206d20a964726bf4acd095f1870bfa87e35ec6be330a059",
+      "dimensions": {
+        "width": 720,
+        "height": 240
+      },
+      "bytes": 34508
+    },
+    {
+      "file": "walnut-desktop.webp",
+      "prompt": "Use case: stylized-concept\nAsset type: continuous tabletop environment for a tactile mobile literary onboarding.\nInput image is STYLE AND ROOM REFERENCE ONLY: the same walnut desk in warm honey afternoon light. Imagine the camera has approached the right-hand writing desk and tilted gently down until it sees its flat top from almost overhead. Generate a PORTRAIT 2:3 close-up of that desktop, filling the entire frame edge to edge with natural walnut wood. Mature refined painterly realism matching the reference, rich fine quiet wood grain, same soft warm sunlight from upper LEFT and a subtle diffuse window-leaf shadow just at far left. Mostly calm medium-dark walnut; upper 28% especially quiet, darker with minimal grain contrast for cream HTML text later. Central 70% and lower area completely clear for physical interactive paper objects. Wood plane is entirely flat, horizontal tabletop, essentially orthographic overhead. A very slim glimpse of a desk rim may show only at far bottom, but no floor, chair, wall or room view. Consistent scale of furniture wood, no magnified rough grain. No gradients that look like UI panels. No books, envelopes, calendar, stationery, lamp, pen, hands, faces, objects or detached shadows. Absolutely NO text, lettering, logos, borders or interface. Beautiful warm real surface, not an abstract texture.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-25deab24-25e5-4fe3-b64f-6863d35948fc.png",
+      "purpose": "Close overhead camera surface in the same room, for physically supported letter/calendar interaction.",
+      "sha256": "f98acf46be1842f89c68e1152234670795dc0eca2f3426825b5bec90303ab164",
+      "dimensions": {
+        "width": 900,
+        "height": 1350
+      },
+      "bytes": 167348
+    },
+    {
+      "file": "desk-envelope.webp",
+      "prompt": "Use case: product-mockup\nAsset type: one physical stationery sprite for a mobile interactive reading room, genuine transparent background.\nOne closed warm ivory cotton paper envelope, landscape format around 1.55:1, seen straight from directly ABOVE with absolutely no perspective skew. Triangular folded flap faces up, sealed with a small muted terracotta-red wax circle. Beautiful real cream paper fibres, fine edge thickness, subtle natural fold lines. Warm afternoon light from upper LEFT, soft attached contact shadow barely extending lower right; matching a refined walnut desk. Complete envelope, tiny transparent margin, no backdrop or surface. No parchment aging, ornate ornaments, text, handwriting, stamps, addresses, people, hands, faces, logos or extra objects. Mature tactile painterly realism, quiet elegant stationery, not an icon or UI rectangle.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-98173651-10e5-41d7-a2d5-2d5e501af0f5.png",
+      "purpose": "Closed envelope in matching overhead light, alpha cutout.",
+      "sha256": "2ca07a3a2b6cec2fd345b840959e202240f2ddd5b3f65aefd065baecf6a63203",
+      "dimensions": {
+        "width": 720,
+        "height": 465
+      },
+      "bytes": 61702
+    },
+    {
+      "file": "desk-calendar.webp",
+      "prompt": "Use case: product-mockup\nAsset type: a complete physical calendar paper pad cutout for an interactive reading scene, genuine transparent background.\nOne real compact FLAT month calendar pad lying flat on a desk, directly OVERHEAD view, rectangular slightly portrait format about4:5. Warm ivory cotton paper, very fine subtle edges of underlying sheets visible only on right edge, a restrained small dark-brass wire binding across the top. Empty large paper writing area. Fine very subtle blank month grid 7 columns by5rows in lower two thirds; NO numbers or words in any cell; upper third completely blank for live HTML month name. Fine real paper fibres, barely perceptible natural curl at bottom right, perfectly legible central area with almost no shadow there. Warm afternoon light from upper LEFT with tiny physically attached contact shadow lower right. Refined real stationery, mature painterly realism matching honey walnut literary reading room, not antique or cartoon. Complete pad visible, tiny transparent margin. No stand, no angled tent, no desk/background, no typography, printed numbers, text, letters, logos, pen, hand, people or other props.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-46bf8db6-8ff6-44a8-aace-c32271f079dd.png",
+      "purpose": "Initial flat calendar master retained as edit source; grid-free version is active.",
+      "sha256": "f4c98fdf4b0c2f03aedb3564e5d9f492f30826169399b2688cf82d3b818da62a",
+      "dimensions": {
+        "width": 720,
+        "height": 900
+      },
+      "bytes": 49290
+    },
+    {
+      "file": "desk-calendar-blank.webp",
+      "prompt": "Use case: precise-object-edit\nEdit target is input image, a transparent overhead calendar pad. Remove ONLY the faint printed grid lines from the paper. Fill every former line with the same continuous warm cotton paper fibre, colour and light. The entire paper must be BLANK. Preserve exactly the same paper silhouette, pad dimensions, top brass wire rings, underlying page edge, transparency, edge shadows, perspective and texture. Do not move or resize anything. No new lines, text, numbers, marks, logos, surfaces or objects. Preserve genuine transparent background.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-500e23b6-990f-4240-9392-79ef519312fc.png",
+      "purpose": "Active flat calendar paper with preserved texture; live accessible grid supports all month lengths.",
+      "sha256": "7fef9aa12fde84a7590eccb7410d0ebb48bcd03075a2b1f7665a4e55f4132b46",
+      "dimensions": {
+        "width": 720,
+        "height": 900
+      },
+      "bytes": 45622
+    },
+    {
+      "file": "series-room-portrait.webp",
+      "prompt": "Use case: stylized-concept\nAsset type: portrait reading-room environment for a MOBILE animated literary picture. Overall image must be PORTRAIT, around1024wide×1792high.\nInput image is STYLE, MATERIAL AND LIGHT REFERENCE ONLY: same warm honey plaster, walnut console, brass lamp, cosy quiet sunlit literary room, mature refined tactile painterly realism. Recompose this wall for a TALL VERTICAL picture instead of the old landscape picture.\nCamera straight-on level front elevation. Upper 25% (y0–440) is empty calm warm sunlit wall for interface copy later. Dominant object is a large beautifully made simple walnut picture frame, VERTICAL 2:3 inside opening, around x190–900 and y500–1500 in a1024×1792canvas. Opening contains a tranquil beautiful teal sea at sunset as a PAINTING. The frame is solid real walnut with fine grain, restrained angular bevel, no ornate gold. It must be perfectly rectangular and allfourcorners visible. Painting should be large enough tobe central hero, like a portal.\nBelow frame, leave a small quiet strip of wall, then a low matching walnut console standing naturally on the floor, its tabletop aroundy1570 andbottomaroundy1770. A single small OPEN BOOK liesflat on the rightpart ofconsole, matchingreference. ONE slender small brass desklamp stands on FAR LEFT ofconsole. CRITICAL: the ENTIRE lamp, including its shade and light, is completely OUTSIDE and LEFT of the picture frame and its opening, with visible air between the lamp and the left vertical frame edge. Nothing crosses infront of picture. Lamp may be lower than picturebottom. No cut-offshade, no picturecuttingalamp, no objects baked insidepictureopening exceptsealandscape.\nThe wall and room lighting come from offscreenupperleft with subtle leaf shadows left. Everyobject physicallysupported, perspective consistent, richbutquietwood andwarmlight. Frame andconsole fitnaturally. No other furniture, chair, rightdesk, calendar,envelope, portraits, faces or people. No words, labels, logos, letters, UI panels or buttons. Absolutely no flatcreamtop/bottom bands. Scene fillsentirecanvas.",
+      "source": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-b8dd5b2e-e8ad-4c67-bcfd-c0adf31bb78c.png",
+      "purpose": "Vertical living picture and physically separate brass lamp, matching the original reading room.",
+      "sha256": "397acb86c36f44331b1f513448e380be06984bd5a8fea447ed2f203e09a843c5",
+      "dimensions": {
+        "width": 948,
+        "height": 1659
+      },
+      "bytes": 138274
+    }
+  ]
+}

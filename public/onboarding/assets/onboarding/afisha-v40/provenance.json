@@ -1,0 +1,16 @@
+{
+  "revision": 40,
+  "role": "Faithful alpha cutout of selected v39 variant 1; no new calendar design",
+  "tool": "image_gen.imagegen",
+  "transparent_background": true,
+  "reference": "../afisha-v39/variant-1.webp",
+  "generated_output": "/Users/andrey/.codex/generated_images/01a1dbba-3744-7993-9607-ce997a94df47/exec-f18391d6-5e06-467d-8c91-ad7c44bdb90e.png",
+  "asset": "selected-calendar.webp",
+  "dimensions": {
+    "width": 1070,
+    "height": 1470
+  },
+  "conversion": "Lossless WebP encoding only, no image retouching",
+  "prompt": "Use case: background-extraction.\nEDIT TARGET: this exact text-free Boks calendar, already approved. Remove ONLY the surrounding brown wooden tabletop, replacing it with true transparency. Keep the entire calendar, cloth backing, metal binding, paper, all date-grid lines, fine borders, ephemera, photographs and their contact shadows unchanged. Retain the original full1070×1470canvas and exact pixel positions/proportions; do not crop, recenter, zoom, rotate, redesign or relight anything. Preserve the subtle outer-board shadow as soft semitransparent pixels so it can sit on a real desktop background. The artwork has NO letters or digits: do not add any. This is a faithful clean cutout of the selected object, not a new art direction.",
+  "sha256": "d3e8c683610e4ba4137ca04bf4c33beb20bf34f7c41550727e1dc1bf721644bc"
+}

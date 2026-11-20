@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     "supabase/functions/**",
     // The designers' page for authors, imported as built (scripts/author-landing/import.mjs).
     "public/author-landing/**",
+    "public/onboarding/**",
   ]),
   {
     // boks navigates between reader, author and admin with plain anchors.

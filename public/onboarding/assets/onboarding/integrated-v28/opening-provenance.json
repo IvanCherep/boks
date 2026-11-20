@@ -1,0 +1,40 @@
+{
+  "mode": "built-in image_gen",
+  "inputs": [
+    "/Users/andrey/.codex/generated_images/01a1e3a3-9845-7921-9b2a-0f356a9879f1/exec-38592ded-791e-4c57-b5e3-7b1ad7e734f9.png",
+    "/Users/andrey/.codex/generated_images/01a1e3a3-9845-7921-9b2a-0f356a9879f1/exec-237b6128-246b-47a8-8fe2-90e78acfaa7a.png",
+    "/Users/andrey/.codex/generated_images/01a1e3a3-9845-7921-9b2a-0f356a9879f1/exec-c356025e-7ca3-4170-880b-785419b8a1c6.png"
+  ],
+  "preparation": [
+    "Room masters resampled to2000×2050 world, then exact1000×2050 left slices",
+    "Panel rectangular physical border crop[45,45,1375,1065], external colored transparency fringe excluded; near-opaqueglasscompositedonwarmwalnutRGB; resampled1567×1190",
+    "Noauthorportraitsorfurnituremodifiedduringassetpreparation"
+  ],
+  "assets": [
+    {
+      "file": "room-open.webp",
+      "sha256": "bca2ac9487a58a6c581073c3ac136792a1edf97910c5f65f93e5ff040f866946",
+      "size": 235442
+    },
+    {
+      "file": "room-open-master.webp",
+      "sha256": "6b66294021e1902da7c9d003e941bf5e8afed428594a2b7b1483d664a23802e1",
+      "size": 336280
+    },
+    {
+      "file": "room-closed-proof.webp",
+      "sha256": "cf9dcdd239e030f369720b138d0a3f6b703d1ea64caf762bb58b8360c4b5d353",
+      "size": 250890
+    },
+    {
+      "file": "room-closed-proof-master.webp",
+      "sha256": "13afb7db39e2e0ac201bee1ad6ac7570ea63440372f286f7e95d2c60d3e2ff3f",
+      "size": 319300
+    },
+    {
+      "file": "front-panel.webp",
+      "sha256": "e3fba47911ec78782925fb035d860da2ed34a53df2be738430bec0eb23c775f8",
+      "size": 102142
+    }
+  ]
+}

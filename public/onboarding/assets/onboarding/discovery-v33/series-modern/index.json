@@ -1,0 +1,283 @@
+{
+  "version": 1,
+  "purpose": "Authentic production Series previews for the onboarding painting only; no additions to the prototype catalogue.",
+  "sourceRegistry": "https://tryboks.com/_next/static/chunks/immersive-poem-C4d8ZCvk.js",
+  "retrievedOn": "2026-11-16",
+  "selectionNote": "Latest production day per author. Several works share each date; the registry does not specify publication order within a day. Selected for visual variety.",
+  "existingEnglishPreviewToKeep": {
+    "title": "There is no Frigate like a Book",
+    "author": "Emily Dickinson",
+    "manifest": "/poetry/no-frigate/manifest.json"
+  },
+  "pieces": [
+    {
+      "slug": "prokhorov-polet-skvoz-sny",
+      "storyId": "cc083c1c-ae37-4390-b607-8abd4edd2f31",
+      "manifestId": "prokhorov-polet-skvoz-sny-immersive-v1",
+      "title": "полет сквозь сны",
+      "author": "Алексей Прохоров",
+      "language": "ru",
+      "premieredOn": "2026-11-10",
+      "durationMs": 68571,
+      "timingMode": "forced-alignment",
+      "lineCount": 17,
+      "tokenCount": 95,
+      "manifest": "/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+      "sourceManifest": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+      "audio": "/l/jgycmR8G0ml0YoXbTeHqxA/f/narration.mp3",
+      "cover": "/l/jgycmR8G0ml0YoXbTeHqxA/f/cover.webp",
+      "scenes": [
+        {
+          "id": "tightrope",
+          "image": "/l/jgycmR8G0ml0YoXbTeHqxA/f/tightrope.webp",
+          "startMs": 1300,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.3
+          }
+        },
+        {
+          "id": "aluminium-wings",
+          "image": "/l/jgycmR8G0ml0YoXbTeHqxA/f/aluminium-wings.webp",
+          "startMs": 6620,
+          "focalPoint": {
+            "x": 0.45,
+            "y": 0.35
+          }
+        },
+        {
+          "id": "golden-collar",
+          "image": "/l/jgycmR8G0ml0YoXbTeHqxA/f/golden-collar.webp",
+          "startMs": 19660,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.55
+          }
+        },
+        {
+          "id": "new-year-backstage",
+          "image": "/l/jgycmR8G0ml0YoXbTeHqxA/f/new-year-backstage.webp",
+          "startMs": 34600,
+          "focalPoint": {
+            "x": 0.6,
+            "y": 0.55
+          }
+        },
+        {
+          "id": "beam-over-abyss",
+          "image": "/l/jgycmR8G0ml0YoXbTeHqxA/f/beam-over-abyss.webp",
+          "startMs": 43180,
+          "focalPoint": {
+            "x": 0.75,
+            "y": 0.3
+          }
+        }
+      ]
+    },
+    {
+      "slug": "malyo-subbotina-zvyozdnoe",
+      "storyId": "9d393761-211d-4675-b001-91d64a834820",
+      "manifestId": "zvyozdnoe-immersive-v1",
+      "title": "Звёздное",
+      "author": "Дарья Мальо-Субботина",
+      "language": "ru",
+      "premieredOn": "2026-11-14",
+      "durationMs": 69060,
+      "timingMode": "forced-alignment",
+      "lineCount": 22,
+      "tokenCount": 122,
+      "manifest": "/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
+      "sourceManifest": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
+      "audio": "/l/EKvnI0C1SU4VogDdU5_vwA/f/narration.mp3",
+      "cover": "/l/EKvnI0C1SU4VogDdU5_vwA/f/cover.webp",
+      "scenes": [
+        {
+          "id": "scene-01",
+          "image": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-01.webp",
+          "startMs": 2520,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          }
+        },
+        {
+          "id": "scene-02",
+          "image": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-02.webp",
+          "startMs": 9420,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          }
+        },
+        {
+          "id": "scene-03",
+          "image": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-03.webp",
+          "startMs": 20440,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          }
+        },
+        {
+          "id": "scene-05",
+          "image": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-05.webp",
+          "startMs": 31700,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          }
+        },
+        {
+          "id": "scene-04",
+          "image": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-04.webp",
+          "startMs": 45340,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          }
+        },
+        {
+          "id": "scene-06",
+          "image": "/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-06.webp",
+          "startMs": 54220,
+          "focalPoint": {
+            "x": 0.5,
+            "y": 0.45
+          }
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "prokhorov-polet-skvoz-sny/narration.mp3",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/narration.mp3",
+      "sha256": "5d69bb9b9e944d1fee1492e4c8ee2dd7b0a7115195d103dfe24a7a5038241038",
+      "bytes": 1098301
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/cover.webp",
+      "source": "https://tryboks.com/series/prokhorov-polet-skvoz-sny.webp",
+      "sha256": "d2f18afcfaf1d6893fc28e5c695119aeffb1613abfe64d1693168fa964757997",
+      "bytes": 86858,
+      "width": 720,
+      "height": 1176
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/tightrope.webp",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/tightrope.webp",
+      "sha256": "75727c1f75ec5d0f9e0dda7243d1229bd3c7bb90631d0674c947993f71f2d509",
+      "bytes": 407730,
+      "width": 981,
+      "height": 1602
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/aluminium-wings.webp",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/aluminium-wings.webp",
+      "sha256": "da671faf8bfb5fce64be6c426a3e4aa6311b20cbf8f4e19983a6cae988e3aff7",
+      "bytes": 311344,
+      "width": 981,
+      "height": 1602
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/golden-collar.webp",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/golden-collar.webp",
+      "sha256": "8cbdccd8a6ed436e75846a8210875dddbbf335538f73f4a90ab6d9b4e6ec8e26",
+      "bytes": 374808,
+      "width": 981,
+      "height": 1602
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/new-year-backstage.webp",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/new-year-backstage.webp",
+      "sha256": "d26100bf259e54c21e78999638606cb1247c0b945c23c626692e4d992497bff2",
+      "bytes": 304342,
+      "width": 992,
+      "height": 1586
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/beam-over-abyss.webp",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/beam-over-abyss.webp",
+      "sha256": "6582a77ba7ca62c176cb50eec634e77f97767a4a660273e986d13cb90bf1325a",
+      "bytes": 267730,
+      "width": 981,
+      "height": 1602
+    },
+    {
+      "file": "prokhorov-polet-skvoz-sny/source-manifest.json",
+      "source": "https://tryboks.com/l/jgycmR8G0ml0YoXbTeHqxA/f/manifest.json",
+      "sha256": "8a5eef7cde9bd87bfa19c5cc3fd1e25fd09ed26b3a941bc675f6ce2a201ac207",
+      "bytes": 14993,
+      "note": "Byte-exact production manifest, preserving original text, token timings and visual treatment."
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/narration.mp3",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/narration.mp3",
+      "sha256": "6a7b00e4ccee7983cd9a81f9d122ab71744dc8dddc587907f7c572b254782298",
+      "bytes": 1105963
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/cover.webp",
+      "source": "https://tryboks.com/series/malyo-subbotina-zvyozdnoe.webp",
+      "sha256": "e96ad8b10237fda1d9210b89333cb19e46e753f20518a77eb7e095a167d8c0a5",
+      "bytes": 109278,
+      "width": 720,
+      "height": 1280
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/scene-01.webp",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-01.webp",
+      "sha256": "ff23f9eadc83e9bda309057911acbb542a186cf7726295a593de7d2c0302033d",
+      "bytes": 224962,
+      "width": 941,
+      "height": 1672
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/scene-02.webp",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-02.webp",
+      "sha256": "c5c28e66411a1a45b57ade0c4696812b3024213b15b4d3426dd098c69e3fc4c4",
+      "bytes": 284480,
+      "width": 941,
+      "height": 1672
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/scene-03.webp",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-03.webp",
+      "sha256": "e72d5f8184b9e03bbabccb422cb9a6cc6468f0420136d3b6cd05e06a3da176f2",
+      "bytes": 205762,
+      "width": 970,
+      "height": 1622
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/scene-05.webp",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-05.webp",
+      "sha256": "376174ff59bcd03fb615a49524092bfe152b7044643d6cb3488f96bfccc6fc3a",
+      "bytes": 223818,
+      "width": 941,
+      "height": 1672
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/scene-04.webp",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-04.webp",
+      "sha256": "759ed6ef48fb205a78088d55fe3a591d32d2e51ca7c7341d17fe0598510feccc",
+      "bytes": 212860,
+      "width": 940,
+      "height": 1673
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/scene-06.webp",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/scene-06.webp",
+      "sha256": "d68d507a6a6e3662fbc51497679a7d1abba96c031970784f49f94a6dbc554b0a",
+      "bytes": 222868,
+      "width": 969,
+      "height": 1623
+    },
+    {
+      "file": "malyo-subbotina-zvyozdnoe/source-manifest.json",
+      "source": "https://tryboks.com/l/EKvnI0C1SU4VogDdU5_vwA/f/manifest.json",
+      "sha256": "0a4febc150af587c665013a77f53faec9782dff2e7bfe6323163b2919beacbe2",
+      "bytes": 19652,
+      "note": "Byte-exact production manifest, preserving original text, token timings and visual treatment."
+    }
+  ]
+}

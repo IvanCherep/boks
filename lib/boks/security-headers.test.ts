@@ -61,7 +61,10 @@ describe("security headers", () => {
     expect(preview.headers.get("content-security-policy")).not.toContain("frame-ancestors 'none'");
     expect(preview.headers.get("x-frame-options")).toBe("SAMEORIGIN");
 
-    for (const path of ["/", "/admin", "/author", "/author/previewer", "/@pushkin"]) {
+    const onboarding = applySecurityHeaders(new Response(), new URL("https://tryboks.com/onboarding/index.html?lang=ru"));
+    expect(onboarding.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    expect(onboarding.headers.get("content-security-policy")).toContain("frame-ancestors 'self'");
+    for (const path of ["/", "/admin", "/author", "/author/previewer", "/@pushkin", "/onboarding/other.html"]) {
       const other = applySecurityHeaders(new Response(), new URL(`https://tryboks.com${path}`));
       expect(other.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
       expect(other.headers.get("x-frame-options")).toBe("DENY");

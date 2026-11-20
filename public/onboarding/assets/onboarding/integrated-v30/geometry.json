@@ -1,0 +1,58 @@
+{
+  "baySize": [
+    640,
+    1335
+  ],
+  "fronts": [
+    {
+      "id": "top",
+      "file": "drawer-top-front.webp",
+      "nativeRect": [
+        194,
+        170,
+        484,
+        219
+      ],
+      "x": 142.87686996547757,
+      "y": 125.38674033149171,
+      "width": 356.4556962025316,
+      "height": 161.52762430939225
+    },
+    {
+      "id": "middle",
+      "file": "drawer-middle-front.webp",
+      "nativeRect": [
+        194,
+        394,
+        484,
+        211
+      ],
+      "x": 142.87686996547757,
+      "y": 290.6022099447514,
+      "width": 356.4556962025316,
+      "height": 155.62707182320443
+    },
+    {
+      "id": "bottom",
+      "file": "drawer-bottom-front.webp",
+      "nativeRect": [
+        194,
+        610,
+        484,
+        218
+      ],
+      "x": 142.87686996547757,
+      "y": 449.91712707182324,
+      "width": 356.4556962025316,
+      "height": 160.79005524861878
+    }
+  ],
+  "selectionMotion": {
+    "translateY": 7,
+    "scale": 1.025,
+    "origin": "50% 50%",
+    "durationMs": 380,
+    "easing": "cubic-bezier(.22,.7,.2,1)"
+  },
+  "notes": "Use fixed form-recess-bay.webp plus the three original full-resolution fronts. Transform front art, handle, live label and selected check together. Do not crossfade whole generated selected-state crops or transform cabinet frame. Fronts must all be rendered before showing recess bay."
+}

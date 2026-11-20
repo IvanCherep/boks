@@ -1,0 +1,160 @@
+{
+  "purpose": "Real local Series preview for onboarding. No generated audio, no tracked reading events.",
+  "sources": [
+    {
+      "manifest": "public/poetry/utyos/manifest.json",
+      "manifestSha256": "116e1161619a0180d77d306dea14fc7f59a8cc92d5b170f3119ffd2a1ba54511",
+      "narration": "public/poetry/utyos/narration.mp3",
+      "narrationSha256": "a90f68a3103ca46337320a357ccbc9d957da2836570687f86f3362727644deec",
+      "audioPreparation": "Exact byte copy of existing owned recording.",
+      "images": [
+        {
+          "source": "public/poetry/utyos/scenes/01-golden-cloud-at-night.webp",
+          "sha256": "d2ef3c5e49a4d79531ea187159b28c40af56e0919500591ae5788e857806e9ef",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/utyos/scenes/01-golden-cloud-at-night.webp",
+          "outputSha256": "c8be89dc730d06e078387b491567b2ad857d72adb50c90da9fffdba7788e2afd",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        },
+        {
+          "source": "public/poetry/utyos/scenes/02-cloud-departs-at-dawn.webp",
+          "sha256": "012c5259b1186ec5aae2e0001d3c87d96db757c4d819dc64d1c349ffa6434643",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/utyos/scenes/02-cloud-departs-at-dawn.webp",
+          "outputSha256": "94b01dabc5da956cbdf644bd55cc1b7eab8f6fb8ed13198f6ea5debc5f34c2eb",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        },
+        {
+          "source": "public/poetry/utyos/scenes/03-playing-in-the-azure.webp",
+          "sha256": "37bd3695acfdfa9083365f1c649db3a1988ccf2cf68e53378a4f1a9ab5681547",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/utyos/scenes/03-playing-in-the-azure.webp",
+          "outputSha256": "d6d850889040a0efe135f0623aca24303400a15c1fee09c5d2f5b6b8bfea9e3f",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        },
+        {
+          "source": "public/poetry/utyos/scenes/04-cliff-alone.webp",
+          "sha256": "b4eeccb86bdaedabab415d8df0c218fb0ab853d68a347c0faf961a20e58467e9",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/utyos/scenes/04-cliff-alone.webp",
+          "outputSha256": "e9793edc4a1c5be1950aa417fcb09c22b35cef0e11fbf0ea4af62f2a9707242e",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        }
+      ]
+    },
+    {
+      "manifest": "public/poetry/dream-within-dream/manifest.json",
+      "manifestSha256": "2601c4c1e4d054fed7bc6aafb08866016d36aaf0d1bcb3e9172bca3519313f34",
+      "narration": "public/poetry/dream-within-dream/narration.mp3",
+      "narrationSha256": "a0351268f78c3d28d6b764fe4f0a4e8982d52752d8f7de65434630d74b3b7ba7",
+      "audioPreparation": "Exact byte copy of existing owned recording.",
+      "images": [
+        {
+          "source": "public/poetry/dream-within-dream/scenes/01-parting-kiss.webp",
+          "sha256": "92b2626a2ffd4803981000ebf6553752fa7885e900c62dd551c56f067760ed7c",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/dream-within-dream/scenes/01-parting-kiss.webp",
+          "outputSha256": "5589d5c8227f7d80fecbb45e86037c5b163b90dec99ae3950b1150567acf42da",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        },
+        {
+          "source": "public/poetry/dream-within-dream/scenes/02-hope-flown-away.webp",
+          "sha256": "c61b0ee7f83d1d4b0be26f50dcf6cbad2e9cbbb5b22ea384087c2cd669ba3142",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/dream-within-dream/scenes/02-hope-flown-away.webp",
+          "outputSha256": "ca31d10de1156841c30e01326c3663208e2609d3d615c76e865109f748d2ae1f",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        },
+        {
+          "source": "public/poetry/dream-within-dream/scenes/03-golden-sand.webp",
+          "sha256": "b9e78ed6fa7b95d2c92ed1c4bdcfdacbff74c0882668e499ec5b6d0733c593f2",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/dream-within-dream/scenes/03-golden-sand.webp",
+          "outputSha256": "692677048e0837eb7550a4cff70ba1be80cea5c3af9b8b3fbf0e350df12b2c1d",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        },
+        {
+          "source": "public/poetry/dream-within-dream/scenes/04-dream-within-a-dream.webp",
+          "sha256": "174d6b85f5630ac807880b67e01a82d58c46e2169a9c2b7b8bb4dcb0e7c5631e",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/dream-within-dream/scenes/04-dream-within-a-dream.webp",
+          "outputSha256": "5e34d33ad878f51dde0109adda0a00402a1a58ec3f5026bcc0a6c16b43375bfc",
+          "preparation": "Resize to maximum 640 × 1138, keep original aspect ratio; WebP quality 82. Crop only by object-fit in player."
+        }
+      ]
+    },
+    {
+      "manifest": "public/poetry/night-street/manifest.json",
+      "manifestSha256": "0255a81327025307972ed4307d83d391aaf9b107b2201170cbe8d809cee06093",
+      "narration": "public/poetry/night-street/narration.mp3",
+      "narrationSha256": "bcaf1b10acde9984688f687f3bf93bcaaedd5cbeb7cf26dc230712c82861882c",
+      "audioPreparation": "Exact byte copy of existing owned recording.",
+      "images": [
+        {
+          "source": "public/poetry/night-street/scenes/01-night-street-lamp-pharmacy.webp",
+          "sha256": "f28bebd853905293497b4f37d1a839cb92f0027dc458440e1a2b25f357a92265",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/night-street/scenes/01-night-street-lamp-pharmacy.webp",
+          "outputSha256": "9c9aeb6942b2c7a8f3c2357e866ad2666ef04de9cb47615fd6faa418d56c4fcf",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        },
+        {
+          "source": "public/poetry/night-street/scenes/02-no-exit.webp",
+          "sha256": "98ec5dc3b98653f0e457d0de05c168b25ae8b859c7e6a3b140b3ee89f2c62931",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/night-street/scenes/02-no-exit.webp",
+          "outputSha256": "37463b5b0bca2e81cc8a25d2c6135df7e2b0d12dba24fb0526ad55053f3851ba",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        },
+        {
+          "source": "public/poetry/night-street/scenes/03-again-from-the-beginning.webp",
+          "sha256": "47ac4ebd21cf534b8db79da235ad804b0a45078628fcb037d857bffb888ab558",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/night-street/scenes/03-again-from-the-beginning.webp",
+          "outputSha256": "ccd07020d8c303a5f64accaa1be895ef07dd4282343ffa6b5ef413ee7948b588",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        },
+        {
+          "source": "public/poetry/night-street/scenes/04-icy-canal-loop.webp",
+          "sha256": "025862f96d60ea015b8d1714a323ebfb5aa28697c7a90fc6222d8ad556a01556",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/night-street/scenes/04-icy-canal-loop.webp",
+          "outputSha256": "81e83821eeb375460f43daabd35aa6b7b4378e5a8c65caabcd80ba5c281eced7",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        }
+      ]
+    },
+    {
+      "manifest": "public/poetry/no-frigate/manifest.json",
+      "manifestSha256": "fb8fe7bf11efd1330fbe1bf241fda3461a8247913b6f03eceec973b8ab624131",
+      "narration": "public/poetry/no-frigate/narration.mp3",
+      "narrationSha256": "f5ebe5ca1a0aa883e084f0413d0ec07b54c278c11045785a20a2f2032c397458",
+      "audioPreparation": "Exact byte copy of existing owned recording.",
+      "images": [
+        {
+          "source": "public/poetry/no-frigate/scenes/01_book_opens.webp",
+          "sha256": "83d644f6944fcb398b3d83072a2c503e567c5859fc38c9bfd92ed2b4c8410df3",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/no-frigate/scenes/01_book_opens.webp",
+          "outputSha256": "b69cfe1fe2093edf890bd6fb5fc60776a2111a4fcc212252910b0241c3f42778",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        },
+        {
+          "source": "public/poetry/no-frigate/scenes/02_frigate.webp",
+          "sha256": "1939437b8badc3157f241622e9b42bf90f84eb5a69545af611f0d899f3989559",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/no-frigate/scenes/02_frigate.webp",
+          "outputSha256": "f6242308eb565ff76f066530992b73eae27211eb977e12b8614ae5af211f21d9",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        },
+        {
+          "source": "public/poetry/no-frigate/scenes/03_coursers.webp",
+          "sha256": "2a0264a162f42d9862f62c9295d49a9a7440e51628cca9dcaa4b3b3dcf916531",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/no-frigate/scenes/03_coursers.webp",
+          "outputSha256": "7fe6aea0a598b8e6dbe26de6c229226fdd1e1976b88de21559fba522236176c7",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        },
+        {
+          "source": "public/poetry/no-frigate/scenes/04_human_soul.webp",
+          "sha256": "ae09dbb6b2ba56ae9b00a2a87211e35301ac58774a04c96598c548e96807a64b",
+          "output": "prototypes/boks-onboarding-2026-11-14/dist/assets/onboarding/discovery-v32/series/no-frigate/scenes/04_human_soul.webp",
+          "outputSha256": "ea5362a114981cbc559da940a6325170c8facf56e38a14eab058a9abaa18cab6",
+          "preparation": "Resize to maximum 640 × 1138, original aspect ratio; WebP quality 82."
+        }
+      ]
+    }
+  ],
+  "curtain": {
+    "source": "User-supplied boks-curtain-backend-handoff.zip; extracted by parent to dist/assets/onboarding/discovery-v32/curtain/supplied-texture.png",
+    "sourceSha256": "8471d8afbd50e8e8c7505aea97ddaaa8975203678c39099cb7b7735a613fe1f7",
+    "output": "curtain-velvet.webp",
+    "outputSha256": "06c0edb0e1185912a1a69be5fd7ed24efa133f4d9c6dda7ecc3164a81cb36e54",
+    "preparation": "Resize source texture to 1024 × 683; WebP quality 86. No foreground puck, ribbon or logos used."
+  }
+}

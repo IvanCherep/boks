@@ -1,0 +1,128 @@
+{
+  "revision": 26,
+  "assets": [
+    {
+      "file": "room.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-e4c561a8-0787-4bfe-9514-32177498b184.png",
+      "width": 1000,
+      "height": 2050,
+      "sha256": "5cc9cc02accf51cd45ab54a815f50acaf2369c314093b6e7b9934e4ff3e175d3",
+      "mode": "built-in image_gen",
+      "preparation": "Full image resize876×1796 →1000×2050; WebP encoding only"
+    },
+    {
+      "file": "bay.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-e4c561a8-0787-4bfe-9514-32177498b184.png",
+      "width": 640,
+      "height": 1335,
+      "sha256": "99f02018802cbc8db575388500ab626dae6cd28188706bbff32780d34f5332c3",
+      "mode": "built-in image_gen",
+      "preparation": "Source crop447,463,876,1633 excludes foreground table and cabinet outer ends; resize640×1335; WebP encoding"
+    },
+    {
+      "file": "wall.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-e4c561a8-0787-4bfe-9514-32177498b184.png",
+      "width": 640,
+      "height": 529,
+      "sha256": "563f0b0f7a175376a882fce3692520cfc802d54f0e2804546c1a412f6ff2e2d1",
+      "mode": "built-in image_gen",
+      "preparation": "Source crop447,0,876,463; resize640×529; WebP encoding"
+    },
+    {
+      "file": "floor.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-e4c561a8-0787-4bfe-9514-32177498b184.png",
+      "width": 640,
+      "height": 186,
+      "sha256": "303c58040b3873c51b325c091152c1bc63816f4ba5b97c095d8a83d1ed081943",
+      "mode": "built-in image_gen",
+      "preparation": "Source crop447,1633,876,1796; resize640×186; WebP encoding"
+    },
+    {
+      "file": "doors.webp",
+      "source": "../living-v25/doors-modern.webp",
+      "width": 800,
+      "height": 1596,
+      "sha256": "32a2e8544c00a4d55935e551468b97fb3b0dcef3a652326160788b0d71c36d78",
+      "mode": "built-in image_gen",
+      "preparation": "Byte-for-byte reuse; matching warm walnut and frosted glass"
+    },
+    {
+      "file": "modern-cream.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-32faecc3-b47c-4358-9a8e-6989780ace09.png",
+      "width": 440,
+      "height": 562,
+      "sha256": "f48b01c699983644263c622d605826152d58499a9a5497f887dfc7ad0b45a350",
+      "mode": "built-in image_gen",
+      "preparation": "Transparent-padding trim66,13,1046,1405; resize440×562; WebP encoding preserving alpha"
+    },
+    {
+      "file": "modern-ink.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-3379530f-e5b5-4a88-b122-530bb7ed7733.png",
+      "width": 440,
+      "height": 562,
+      "sha256": "c170b9d2fc77085a7924f4569af46d1afd2399631f28df8ad4979041e327a8ca",
+      "mode": "built-in image_gen",
+      "preparation": "Transparent-padding trim47,7,1062,1407; resize440×562; WebP encoding preserving alpha"
+    },
+    {
+      "file": "modern-coral.webp",
+      "source": "/Users/andrey/.codex/generated_images/01a1e371-a92d-7fc2-a75f-c0dbb521a1d7/exec-b7bab5b8-9e89-44a4-b270-efc841e5696f.png",
+      "width": 440,
+      "height": 562,
+      "sha256": "3654e97866011d68c42034b64b6b0dc24b3b93c087542a8a5e458735018d91ea",
+      "mode": "built-in image_gen",
+      "preparation": "Transparent-padding trim43,12,1069,1405; resize440×562; WebP encoding preserving alpha"
+    }
+  ],
+  "geometry": {
+    "world": {
+      "width": 3300,
+      "height": 2050
+    },
+    "cabinet": {
+      "x": 385,
+      "y": 529,
+      "bayWidth": 640,
+      "height": 1335,
+      "bayCenters": [
+        705,
+        1345,
+        1985,
+        2625
+      ],
+      "continuesPastRightWorldEdge": true
+    },
+    "shelfContacts": [
+      257,
+      439,
+      613,
+      790,
+      971,
+      1215
+    ],
+    "roomNative": {
+      "width": 876,
+      "height": 1796,
+      "cabinetLeft": 337,
+      "cabinetTop": 463
+    },
+    "moduleCrop": [
+      447,
+      463,
+      876,
+      1633
+    ],
+    "shelfFrontHeight": 26,
+    "foregroundTableOverlap": {
+      "worldX": [
+        286,
+        510
+      ],
+      "worldY": [
+        1660,
+        1960
+      ],
+      "warning": "Do not paint an opaque first-bay module on top of the welcome room foreground table; use the actual first-room raster and begin repeat texture from beyond1000worldX or preserve foreground masking."
+    }
+  }
+}
