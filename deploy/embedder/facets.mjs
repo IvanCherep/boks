@@ -72,14 +72,26 @@ const call = lib.withRetries(lib.withConcurrency(ask, lib.yandexConcurrency), { 
 
 /** One request that failed after its retries does not stop the others; the last error is kept for the run's row. */
 let lastError = null;
+/** The provider's content filter said no (`refused`): `answer` stays null, and it is not a failure of the run. */
 async function askOrNull(request, read) {
   try {
-    return read((await request()).json);
+    const reply = await request();
+    return { answer: reply.refused ? null : read(reply.json), refused: Boolean(reply.refused) };
   } catch (error) {
     lastError = error instanceof Error ? error.message : String(error);
-    return null;
+    return { answer: null, refused: false };
   }
 }
+
+/**
+ * Yandex's content filter refuses some texts outright ("Я не могу обсуждать
+ * эту тему"; the first, 2026-11-21, a poem about a girlhood "мальчишкой в
+ * платьице"). The same text is refused every time, so the bok gets an empty
+ * label marked `refusedNote`: it is not asked again until its text changes, the
+ * run does not fail, and ops/inbox.py tells the team once so an editor sets the
+ * mood by hand (an editor's label is never overwritten).
+ */
+const refusedNote = "refused: content_filter";
 
 const textHash = (title, text) => createHash("md5").update(`${title ?? ""}\n${text ?? ""}`, "utf8").digest("hex");
 
@@ -153,9 +165,23 @@ async function counts() {
 
 async function labelBoks(boks, rubricVersion) {
   const done = [];
+  const refused = [];
   let unusable = 0;
   await Promise.all(boks.map(async (bok) => {
-    const answer = await askOrNull(() => call(lib.moodTask(bok)), lib.readMoodAnswer);
+    const asked = await askOrNull(() => call(lib.moodTask(bok)), lib.readMoodAnswer);
+    if (asked.refused) {
+      await sql`
+        insert into public.bok_facet_labels (bok_id, facet, facet_values, source, labeler, rubric_version, text_hash, note)
+        values (${bok.id}::uuid, 'mood', '{}'::text[], 'model', ${model}, ${rubricVersion}, ${textHash(bok.title, bok.text)}, ${refusedNote})
+        on conflict (bok_id, facet) do update set
+          facet_values = excluded.facet_values, source = excluded.source, labeler = excluded.labeler,
+          rubric_version = excluded.rubric_version, text_hash = excluded.text_hash, note = excluded.note, labeled_at = now()
+        where public.bok_facet_labels.source <> 'editor'
+      `;
+      refused.push(bok.title);
+      return;
+    }
+    const answer = asked.answer;
     if (!answer) {
       unusable += 1;
       return;
@@ -170,14 +196,14 @@ async function labelBoks(boks, rubricVersion) {
     `;
     done.push(`${bok.title}: ${answer.values.join(",") || "-"}`);
   }));
-  return { done, unusable };
+  return { done, unusable, refused };
 }
 
 async function labelBylines(bylines, rubricVersion) {
   const done = [];
   let unusable = 0;
   await Promise.all(bylines.map(async (row) => {
-    const answer = await askOrNull(() => call(lib.authorGroupTask(row.byline, row.titles, row.own_account)), lib.readAuthorGroupAnswer);
+    const { answer } = await askOrNull(() => call(lib.authorGroupTask(row.byline, row.titles, row.own_account)), lib.readAuthorGroupAnswer);
     if (!answer) {
       unusable += 1;
       return;
@@ -212,19 +238,20 @@ async function label() {
     const groups = await labelBylines(bylines, versions.author_group);
     const unusable = moods.unusable + groups.unusable;
     // Every reply unusable is a broken model or prompt, not bad luck.
-    if (boks.length + bylines.length > 0 && moods.done.length + groups.done.length === 0) {
+    if (boks.length + bylines.length > moods.refused.length && moods.done.length + groups.done.length === 0) {
       throw new Error(`The model gave no usable answer for ${unusable} requests.${lastError ? ` Last error: ${lastError}` : ""}`);
     }
     const remaining = await counts();
+    // Refused boks are labelled (empty) above, so they are not counted as remaining.
     await sql`
       update public.background_job_runs
-      set status = 'ok', finished_at = now(), processed = ${moods.done.length + groups.done.length},
+      set status = 'ok', finished_at = now(), processed = ${moods.done.length + groups.done.length + moods.refused.length},
           remaining = ${remaining.boks + remaining.bylines}, duration_ms = ${Date.now() - started},
-          details = ${sql.json({ model, usage, unusable, lastError, boks: moods.done.slice(0, 20), bylines: groups.done.slice(0, 20) })}
+          details = ${sql.json({ model, usage, unusable, lastError, refused: moods.refused, boks: moods.done.slice(0, 20), bylines: groups.done.slice(0, 20) })}
       where id = ${run.id}
     `;
     await sql`delete from public.background_job_runs where job = ${job} and started_at < now() - make_interval(days => ${keepDays})`;
-    console.log(`${new Date().toISOString()} labelled ${moods.done.length} boks, ${groups.done.length} bylines, ${unusable} unusable, ${remaining.boks + remaining.bylines} left`);
+    console.log(`${new Date().toISOString()} labelled ${moods.done.length} boks, ${groups.done.length} bylines, ${moods.refused.length} refused by the filter, ${unusable} unusable, ${remaining.boks + remaining.bylines} left`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await sql`
@@ -251,7 +278,7 @@ async function calibrate(size) {
   const pairs = [];
   let unusable = 0;
   await Promise.all(rows.map(async (bok) => {
-    const answer = await askOrNull(() => call(lib.moodTask(bok)), lib.readMoodAnswer);
+    const { answer } = await askOrNull(() => call(lib.moodTask(bok)), lib.readMoodAnswer);
     if (!answer) unusable += 1;
     else pairs.push({ title: bok.title, reference: bok.reference, candidate: answer.values, note: answer.note });
   }));

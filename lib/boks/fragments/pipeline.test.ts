@@ -204,6 +204,9 @@ describe("model transport", () => {
     expect(readYandexChat({ choices: [{ finish_reason: "stop", message: { content: "{\"a\":1}" } }], usage: { prompt_tokens: 3, completion_tokens: 2 } }))
       .toEqual({ json: { a: 1 }, usage: { promptTokens: 3, completionTokens: 2 } });
     expect(readYandexChat({ choices: [{ finish_reason: "length", message: { content: "{\"a\":" } }] }).json).toBeNull();
+    // Yandex's content filter: a refusal, told apart from a reply that is merely unusable.
+    expect(readYandexChat({ choices: [{ finish_reason: "content_filter", message: { content: "Я не могу обсуждать эту тему." } }] })).toEqual({ json: null, usage: null, refused: true });
+    expect(readYandexChat({ choices: [{ finish_reason: "length", message: { content: "{" } }] }).refused).toBeUndefined();
     expect(parseJsonObject("```json\n{\"b\":2}\n```")).toEqual({ b: 2 });
     expect(intIn("4", 1, 5)).toBe(4);
     expect(intIn(9, 1, 5)).toBeNull();

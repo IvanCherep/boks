@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """What people send us, to the team's Telegram as it arrives (from alerts.sh, every minute).
 
-Three feeds, each with its own watermark in $BOKS_OPS_STATE:
+Feeds, each with its own watermark in $BOKS_OPS_STATE:
   feedback      every note in Studio -> Feedback, with the page or step it came from
   applications  every application from the page for authors (docs/author-applications.md)
   moderation    every work an author sends for review (not the team's own imports)
   authors       what an invited author does with their page: opens the invitation,
                 accepts, writes, asks for changes, publishes, hides
+  refused       a bok Yandex's content filter would not label for «Что почитать»:
+                its mood is the editor's to set by hand
 
 The first run of a feed only sets its watermark, so nothing old is announced.
 The watermark keeps microseconds, like the sign-ups in alerts.sh: cut to whole
@@ -98,6 +100,17 @@ FEEDS = {
         from ev join public.author_spaces s on s.id = ev.space
         order by ev.at limit {limit};
     """,
+    # A bok Yandex's content filter would not label (deploy/embedder/facets.mjs):
+    # an editor sets its mood by hand. Told once, when the refusal is stored.
+    "refused": """
+        select json_build_object('at', to_char(l.labeled_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+          'title', r.title, 'author', coalesce(nullif(btrim(r.author_name), ''), p.handle), 'id', r.id::text, 'slug', r.slug)
+        from public.bok_facet_labels l join public.reels r on r.id = l.bok_id
+        left join public.user_profiles p on p.user_id = r.author_user_id
+        where l.facet = 'mood' and l.source = 'model' and l.note = 'refused: content_filter'
+          and l.labeled_at > :'since'::timestamptz
+        order by l.labeled_at limit {limit};
+    """,
 }
 
 AUTHOR_EVENTS = {
@@ -152,6 +165,12 @@ def message(feed, row):
         if row.get("kind") == "published" and row.get("handle"):
             lines.append(f"Страница: https://go.tryboks.com/@{esc(row['handle'])}")
         return "\n".join(lines)
+    if feed == "refused":
+        link = f"https://tryboks.com/b/{esc(row.get('slug') or row.get('id'))}"
+        return (f"🟡 <b>Яндекс отказался размечать настроение</b>: «{esc(row.get('title'), 160)}» — {esc(row.get('author'), 120)}\n"
+                f"Фильтр содержания YandexGPT («не могу обсуждать эту тему»). Работа на сайте в порядке, её нет только в подборках "
+                f"«Что почитать» по настроению. Нужно поставить настроение вручную (грустное / весёлое / на подумать).\n"
+                f"{link}\nbok id: <code>{esc(row.get('id'))}</code>")
     words = f", {row['words']} слов" if row.get("words") else ""
     return (f"📝 <b>На модерацию</b>: «{esc(row.get('title'), 160)}» от {who(row)}{words}\n"
             f"Ждут проверки: {row.get('waiting')}. Studio → Модерация: {STUDIO}")

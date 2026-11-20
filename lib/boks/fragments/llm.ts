@@ -24,7 +24,12 @@ export type LlmTask = {
 
 export type LlmUsage = { promptTokens: number; completionTokens: number };
 
-export type LlmReply = { json: unknown; usage: LlmUsage | null };
+/**
+ * `refused`: the provider's content filter stopped the model before it answered
+ * (Yandex: finish_reason "content_filter", "Я не могу обсуждать эту тему").
+ * The same text is refused every time, so it is not worth asking again.
+ */
+export type LlmReply = { json: unknown; usage: LlmUsage | null; refused?: boolean };
 
 /** Answers a task, or throws. A null `json` means the model answered with nothing usable. */
 export type LlmCall = (task: LlmTask) => Promise<LlmReply>;
@@ -97,6 +102,7 @@ export function readYandexChat(response: unknown): LlmReply {
     ? { promptTokens: Number(body.usage.prompt_tokens ?? 0), completionTokens: Number(body.usage.completion_tokens ?? 0) }
     : null;
   const choice = body?.choices?.[0];
+  if (choice?.finish_reason === "content_filter") return { json: null, usage, refused: true };
   if (!choice || choice.finish_reason !== "stop" || !choice.message?.content) return { json: null, usage };
   return { json: parseJsonObject(choice.message.content), usage };
 }
