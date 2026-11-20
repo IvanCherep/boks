@@ -79,6 +79,22 @@ async function webhookSecret(env) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+const helpText = [
+  "🤖 <b>Команды бота boks</b>",
+  "",
+  "/stats — статистика за сегодня и вчера: люди, Россия, визиты, чтение, аккаунты, лайки, страны",
+  "/stats week — неделя по дням, таблицей (или /stats 14 — любое число дней до 31)",
+  "/online — сколько людей на сайте за 5 минут, 15 минут и час",
+  "/server — нагрузка, память, диск, база, сервисы, ошибки, скорость сайта, релиз",
+  "/help — этот список",
+  "",
+  "Ответ приходит в течение минуты, время — по Белграду. Команда boks в цифрах не учитывается.",
+  "Если сервер в Москве недоступен, бот так и напишет.",
+].join("\n");
+
+// How long the server may take to collect a command before the group is told it did not.
+const collectWithinMs = 2 * 60_000;
+
 const commandShape = /^\/(stats|stat|server|status|online|help|start)(@\w+)?(\s+[\w\u0400-\u04ff]{1,12})?\s*$/i;
 const queueLimit = 10;
 
@@ -94,12 +110,37 @@ async function takeUpdate(request, env) {
   const message = update?.message;
   const text = typeof message?.text === "string" ? message.text.trim() : "";
   if (!message || String(message.chat?.id) !== String(env.TG_CHAT) || !commandShape.test(text)) return new Response("ok");
+  const command = text.split(/[\s@]/)[0].toLowerCase();
+  // The list of commands needs nothing from the server: answered here, always.
+  if (command === "/help" || command === "/start") {
+    await telegram(env, helpText).catch(() => undefined);
+    return new Response("ok");
+  }
+  // The server cannot be reached from here: say so now instead of leaving the question hanging.
+  const site = await checkSite(env);
+  if (!site.ok) {
+    await telegram(env, `⚠️ <b>Сервер boks в Москве сейчас недоступен</b>, поэтому ${command} не выполнить.\nПроверка из Cloudflare: ${site.detail}. Когда сайт снова ответит, придёт «tryboks.com снова отвечает».`).catch(() => undefined);
+    return new Response("ok");
+  }
   const queue = JSON.parse((await env.STATE.get("commands")) ?? "[]");
   if (queue.length < queueLimit) {
     queue.push({ text, at: Date.now() });
     await env.STATE.put("commands", JSON.stringify(queue));
   }
   return new Response("ok");
+}
+
+// Commands the server has not collected in time: the link from Moscow to
+// Cloudflare is down while the site itself answers. Told once, then dropped.
+async function overdue(env) {
+  const raw = await env.STATE.get("commands");
+  if (!raw || raw === "[]") return;
+  const queue = JSON.parse(raw);
+  const late = queue.filter((item) => Date.now() - item.at >= collectWithinMs);
+  if (!late.length) return;
+  await env.STATE.put("commands", JSON.stringify(queue.filter((item) => Date.now() - item.at < collectWithinMs)));
+  const names = [...new Set(late.map((item) => item.text.split(/[\s@]/)[0]))].join(", ");
+  await telegram(env, `⚠️ <b>Сервер boks не забрал команду</b> ${names} за 2 минуты: связь между сервером в Москве и Cloudflare, похоже, прервалась. Сайт снаружи при этом отвечает. Попробуйте чуть позже.`, true);
 }
 
 // The server's minute: the waiting commands, handed over once.
@@ -157,7 +198,9 @@ export default {
     }
   },
 
-  async scheduled(_event, env, ctx) {
-    ctx.waitUntil(watch(env));
+  // Every minute: overdue commands; every fifth minute also the uptime check, as before.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(overdue(env));
+    if (new Date(event.scheduledTime).getUTCMinutes() % 5 === 0) ctx.waitUntil(watch(env));
   },
 };

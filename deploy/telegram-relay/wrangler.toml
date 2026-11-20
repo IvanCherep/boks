@@ -9,7 +9,7 @@ workers_dev = true
 SITE_URL = "https://tryboks.com"
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *"]
 
 # KV namespace id is filled in after `npx wrangler kv namespace create STATE`.
 [[kv_namespaces]]

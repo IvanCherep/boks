@@ -70,7 +70,12 @@ def sh(command):
 
 
 def notify(text):
-    subprocess.run([*NOTIFY, text[:4000]], cwd=ROOT, timeout=60, check=False)
+    """Sent, or not: the relay being unreachable is never worth more than a line in the log."""
+    try:
+        done = subprocess.run([*NOTIFY, text[:4000]], cwd=ROOT, timeout=60, check=False, capture_output=True, text=True)
+        return done.returncode == 0
+    except subprocess.TimeoutExpired:
+        return False
 
 
 # ------------------------------------------------------------------- numbers
@@ -286,7 +291,8 @@ def main():
         except Exception as error:  # one failed answer must not stop the others
             reply = f"⚠️ Не получилось ответить на {html.escape(text[:40])}: {html.escape(str(error)[:200])}"
         if reply:
-            notify(reply)
+            sent = notify(reply)
+            print(f"bot: {time.strftime('%H:%M:%S')} {text[:40]!r} -> {'sent' if sent else 'NOT sent (relay unreachable)'}", flush=True)
 
 
 if __name__ == "__main__":
