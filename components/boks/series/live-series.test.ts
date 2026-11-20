@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { liveSeriesManifestFor, liveSeriesPieceFor, readLiveSeries, setLiveSeries } from "./live-series";
-import { arrangeSeriesShelf, liveCollections, publishedSeriesShelf, seriesCollections, seriesPieceFor, seriesPieces } from "./series-catalogue";
+import { activeCollections, arrangeSeriesShelf, liveCollections, publishedSeriesShelf, seriesCollections, seriesPieceFor, seriesPieces, shelfSections } from "./series-catalogue";
 import { poemManifestFor } from "@/components/boks/poetry/poems";
 
 const bokA = "11111111-1111-4111-8111-111111111111";
@@ -84,5 +84,29 @@ describe("live Series sections", () => {
   it("leaves an author with a section in code to that section", () => {
     const sections = readLiveSeries([{ handle: "prokhorov", name: "Алексей Прохоров", pieces: answer[0].pieces }]);
     expect(liveCollections(sections)).toEqual([]);
+  });
+
+  it("puts Демидов fourth, under Мальо-Субботина, and a new unlisted author on top", () => {
+    const bokC = "33333333-3333-4333-8333-333333333333";
+    const bokD = "44444444-4444-4444-8444-444444444444";
+    const tokenC = "CCCCCCCCCCCCCCCCCCCCCC";
+    const tokenD = "DDDDDDDDDDDDDDDDDDDDDD";
+    // The database answers newest first: Демидов published after Воденников.
+    const sections = readLiveSeries([
+      { handle: "newcomer", name: "Новый", pieces: [{ bokId: bokD, token: tokenD, title: "Новое" }] },
+      { handle: "demidov", name: "Евгений Демидов", pieces: [{ bokId: bokC, token: tokenC, title: "Гордыня" }] },
+      ...answer,
+    ]);
+    setLiveSeries(sections);
+    const registry = [...seriesPieces, ...sections.flatMap((section) => section.pieces)];
+    const catalogue = new Map(registry.map((piece) => [piece.storyId, { title: piece.title, authorName: piece.author }]));
+    const shelf = publishedSeriesShelf(catalogue, [], new Set(), registry);
+    const arranged = arrangeSeriesShelf(shelf, shelfSections(liveCollections(sections), activeCollections(new Date("2026-11-21T12:00:00Z"))), null);
+    expect(arranged.collections.map((collection) => collection.id).slice(0, 5)).toEqual([
+      "author-newcomer", "author-vodennikov", "prokhorov", "malyo-subbotina", "author-demidov",
+    ]);
+    // Without the newcomer Демидов is the fourth section.
+    const four = arrangeSeriesShelf(shelf, shelfSections(liveCollections(sections.slice(1)), activeCollections(new Date("2026-11-21T12:00:00Z"))), null);
+    expect(four.collections.map((collection) => collection.id).indexOf("author-demidov")).toBe(3);
   });
 });

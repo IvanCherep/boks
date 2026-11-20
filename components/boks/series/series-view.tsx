@@ -16,6 +16,7 @@ import {
   activeCollections,
   arrangeSeriesShelf,
   liveCollections,
+  shelfSections,
   publishedSeriesShelf,
   seriesCollections,
   seriesPieces,
@@ -164,7 +165,7 @@ export function SeriesView({
     [focusCollection, answer, currentStatus, heard, registry]
   );
   const arranged = useMemo(
-    () => arrangeSeriesShelf(shelf, [...liveCollections(live.sections), ...activeCollections(today)], focusCollection ? { id: focusCollection, shelf: focusShelf } : null),
+    () => arrangeSeriesShelf(shelf, shelfSections(liveCollections(live.sections), activeCollections(today)), focusCollection ? { id: focusCollection, shelf: focusShelf } : null),
     [shelf, today, focusCollection, focusShelf, live.sections]
   );
   function changeFilter(next: string[]) { const value = effectiveSeriesFilter(next, languages.map(item => item.language)); rememberSeriesFilter(value); setLanguageFilter(value); }

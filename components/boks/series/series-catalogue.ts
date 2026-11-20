@@ -815,6 +815,32 @@ export function activeCollections(
   return collections.filter((collection) => collection.from <= day && (!collection.until || day < collection.until));
 }
 
+/**
+ * The authors' sections in the order the team set for the shelf, whether a
+ * section comes from the database (`author-<handle>`) or from code. A section
+ * not listed here keeps the old rule: a newly published author's own section
+ * on top, the sections in code after the listed ones.
+ */
+export const seriesShelfOrder: readonly string[] = [
+  "author-vodennikov",
+  "prokhorov",
+  "malyo-subbotina",
+  "author-demidov",
+  "author-komarov",
+  "author-avgust",
+];
+
+/** The shelf's sections: live ones (`liveCollections`) and today's in code, in `seriesShelfOrder`. */
+export function shelfSections(
+  live: readonly SeriesCollection[],
+  inCode: readonly SeriesCollection[],
+  order: readonly string[] = seriesShelfOrder
+): SeriesCollection[] {
+  const rank = (collection: SeriesCollection) => order.indexOf(collection.id);
+  const listed = [...live, ...inCode].filter((collection) => rank(collection) >= 0).sort((a, b) => rank(a) - rank(b));
+  return [...live.filter((collection) => rank(collection) < 0), ...listed, ...inCode.filter((collection) => rank(collection) < 0)];
+}
+
 /** The first collection up today, if any. */
 export function activeCollection(
   today: Date,
