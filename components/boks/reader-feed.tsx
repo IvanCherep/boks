@@ -1,5 +1,6 @@
 "use client";
 
+import { readPendingEmailCode } from "@/components/boks/pending-email-code";
 import { randomBoksId } from "@/lib/boks/browser-id";
 import { useCoverInspection } from "@/components/boks/reader/use-cover-inspection";
 import type React from "react";
@@ -1378,6 +1379,28 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   const hasSignedInAccount = Boolean(user && !user.isAnonymous);
   /** Why a guest was last asked to sign in: the limit and a reminder send them back to reading after. */
   const signupReasonRef = useRef<"manual" | "notice" | "required" | null>(null);
+  // Back from the mail app to a reloaded tab: straight to the code again
+  // (pending-email-code.ts). Not a new prompt, so no journey event.
+  const pendingCodeChecked = useRef(false);
+  useEffect(() => {
+    if (!identitySettled || pendingCodeChecked.current) return;
+    const pending = hasSignedInAccount ? null : readPendingEmailCode("reader");
+    if (!pending || pending.dismissed) {
+      pendingCodeChecked.current = true;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      // Marked here, not above: a re-render that cancels the timer tries again.
+      pendingCodeChecked.current = true;
+      signupReasonRef.current = pending.reason;
+      setAuthReason(pending.reason);
+      setAuthIntent(pending.intent);
+      setAuthInitialSection(undefined);
+      setAuthNotice("");
+      setAuthPanelOpen(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [identitySettled, hasSignedInAccount]);
   const day = useDailyAccount({ identitySettled, userId: hasSignedInAccount ? user?.userId ?? null : null });
   // Signed in after tapping Like as a guest, or at the guest limit or a
   // reminder: back to the bok, with the like on it. Someone who opened the

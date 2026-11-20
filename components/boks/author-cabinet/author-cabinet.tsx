@@ -1,5 +1,6 @@
 "use client";
 
+import { readPendingEmailCode } from "@/components/boks/pending-email-code";
 import { SeriesRecorder } from "@/components/boks/admin/series-recorder/series-recorder";
 import { SeriesEntry } from "./series-entry";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
@@ -113,6 +114,14 @@ export function AuthorCabinet() {
   const libraryScroll = useRef(0);
 
   const author = user && !user.isAnonymous ? user : null;
+  // Back from the mail app to a reloaded tab: straight to the code again (pending-email-code.ts).
+  useEffect(() => {
+    if (!userLoaded || author) return;
+    const pending = readPendingEmailCode("author");
+    if (!pending || pending.dismissed) return;
+    const timer = window.setTimeout(() => setAuthOpen(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [userLoaded, author]);
   const suspended = Boolean(author?.bannedAt);
 
   const refreshUser = useCallback(async () => {

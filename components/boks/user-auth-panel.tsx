@@ -18,6 +18,7 @@ import {
   recordMagicLinkSent,
   useMagicLinkCooldown,
 } from "@/components/boks/magic-link-cooldown";
+import { clearPendingEmailCode, dismissPendingEmailCode, readPendingEmailCode, savePendingEmailCode } from "@/components/boks/pending-email-code";
 import { Input } from "@/components/ui/input";
 import {
   describeBoksHandleProblem,
@@ -327,15 +328,36 @@ export function UserAuthPanel({
     seededHandleFor.current = null;
   }, [open]);
 
+  // Read when the panel opens, without reopening it each time the account changes.
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+  const signedInNow = Boolean(currentUser && !currentUser.isAnonymous);
+  useEffect(() => {
+    // Signed in, here or by the link in another tab: the code is spent.
+    if (signedInNow) clearPendingEmailCode();
+  }, [signedInNow]);
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    // Every way out of the panel ends here: the page stops opening it by itself.
+    if (wasOpen.current && !open) dismissPendingEmailCode();
+    wasOpen.current = open;
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const handle = window.setTimeout(() => {
+      // A code sent before a reload or a close: back to entering it (pending-email-code.ts).
+      const signedIn = Boolean(currentUserRef.current && !currentUserRef.current.isAnonymous);
+      const pending = signedIn ? null : readPendingEmailCode(surface);
       setStatus("");
-      setSentMagicLink(null);
+      setSentMagicLink(pending ? { email: pending.email } : null);
+      if (pending) setEmail(pending.email);
       setAuthRequestFailed(false);
       setCodeRecovery(false);
       setSettingsSection(undefined);
-      setShowAuth(reason !== "manual" || intent !== "general" || surface === "author");
+      setShowAuth(Boolean(pending) || reason !== "manual" || intent !== "general" || surface === "author");
       setShowSettings(Boolean(initialSection));
     }, 0);
     return () => window.clearTimeout(handle);
@@ -424,6 +446,7 @@ export function UserAuthPanel({
       );
       setEmail(cleanEmail);
       setSentMagicLink({ email: cleanEmail });
+      savePendingEmailCode({ email: cleanEmail, surface, reason, intent });
       setCodeRecovery(false);
       setStatus("");
     } catch (error) {
@@ -440,6 +463,7 @@ export function UserAuthPanel({
   }
 
   function editEmail() {
+    clearPendingEmailCode();
     setSentMagicLink(null);
     setCodeRecovery(false);
     setAuthRequestFailed(false);
@@ -468,6 +492,7 @@ export function UserAuthPanel({
       // A reader returning to a conversation needs the account, not its library.
       const context = await refreshUser(!onEmailCodeVerified);
       onUserChanged(context);
+      clearPendingEmailCode();
       setSentMagicLink(null);
       setEmailCode("");
       if (context && !context.isAnonymous && !context.bannedAt) onEmailCodeVerified?.();
@@ -720,6 +745,7 @@ export function UserAuthPanel({
             {codeRecovery ? <div className="auth-recovery-art" aria-hidden="true">↶</div> : <div className="auth-mail-art" aria-hidden="true"><Mail /><span>6</span></div>}
             <h1 className="social-display">{codeRecovery ? t("New code.", "Новый код.") : t("Enter code.", "Введите код.")}</h1>
             <p className="social-muted">{codeRecovery ? t("Request a new one. We’ll bring you back to the same bok.", "Запросите новый код. Вы вернётесь к тому же боку.") : t("Enter the code sent to", "Введите код, отправленный на")}<br /><strong>{sentMagicLink.email}</strong></p>
+            {!codeRecovery && <p className="auth-spam-hint">{t("No email yet? Look in Spam: it sometimes lands there. It can also take a minute or two.", "Письма нет? Загляните в папку «Спам» — иногда оно попадает туда. Ещё оно может идти минуту-другую.")}</p>}
             {codeRecovery ? <Button className="you-wide-button" onClick={() => void sendMagicLink()} disabled={busy || waiting}>{waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : busy ? t("Sending…", "Отправляем…") : t("Send new code", "Новый код")}</Button> : <form onSubmit={submitEmailCode}>
               <label className="auth-code-field"><span className="sr-only">{t("Six-digit email code", "Шестизначный код")}</span><input id={emailCodeInputId} value={emailCode} onChange={event => { setEmailCode(normalizeBoksEmailCode(event.target.value)); setCodeError(""); }} inputMode="numeric" autoComplete="one-time-code" maxLength={boksEmailCodeLength} placeholder="– – – – – –" aria-label={t("Six-digit email code", "Шестизначный код")} autoFocus /></label>
               {codeError && <p className="auth-error-message" role="alert">{codeError}</p>}
@@ -727,7 +753,7 @@ export function UserAuthPanel({
             </form>}
             <div className="auth-links"><button type="button" onClick={editEmail}>{t("Use another email", "Другой email")}</button><button type="button" onClick={() => { setCodeRecovery(!codeRecovery); setCodeError(""); }}>{codeRecovery ? t("Enter code", "Ввести код") : t("Code expired?", "Код истёк?")}</button></div>
             {!codeRecovery && <button className="auth-resend" type="button" onClick={() => void sendMagicLink()} disabled={busy || waiting}>{waiting ? t(`Send again in ${formatCooldown(cooldownSeconds)}`, `Повторить через ${formatCooldown(cooldownSeconds)}`) : t("Send again", "Отправить ещё раз")}</button>}
-            <p className="social-note">{t("The email also has a sign-in link. Check spam if it hasn’t arrived.", "В письме также есть ссылка для входа. Если письмо не пришло, проверьте спам.")}</p>
+            <p className="social-note">{t("The email also has a sign-in link. You can come back here for the code: this screen waits for an hour.", "В письме есть и ссылка для входа. За кодом можно спокойно сходить в почту: этот экран дождётся вас в течение часа.")}</p>
           </> : <>
             {gate ? <div className="auth-fifteen" aria-hidden="true">{anonymousReadLimits.requiredSignup}<span>{gateWords.boksRead(anonymousReadLimits.requiredSignup)}</span></div> : authRequestFailed ? <div className="auth-offline-art" aria-hidden="true"><span>·</span><i>—</i><span>·</span></div> : <div className="auth-signin-art" aria-hidden="true"><span>b</span><i>↗</i></div>}
             <h1 className="social-display">{authRequestFailed ? t("Couldn’t send the code.", "Не удалось отправить код.") : gate ? gateWords.readOn : t("Sign in.", "Войти.")}</h1>

@@ -370,6 +370,7 @@
 .auth-resend{display:block;width:100%;text-align:center;color:var(--muted-foreground)}
 .auth-resend:disabled{opacity:.7}
 .auth-error-message{font-size:13px;line-height:1.65;color:var(--destructive);padding:14px;border:1px solid color-mix(in srgb,var(--destructive) 25%,var(--border));border-radius:8px;margin:14px 0}
+.auth-spam-hint{font-size:13px;line-height:1.6;color:var(--foreground);background:color-mix(in srgb,var(--foreground) 6%,transparent);border-radius:8px;padding:12px 14px;margin:-8px 0 20px}
 .auth-wall-mark{display:flex;align-items:center;justify-content:space-between;font:italic 42px/.9 var(--font-serif),serif;letter-spacing:-2px;margin:4px 0 38px}
 .auth-wall-mark span{font:10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:1.5px;color:var(--muted-foreground)}
 .auth-fifteen{font:145px/.8 var(--font-serif),serif;letter-spacing:-10px;color:#aeb79a;margin:15px 0 36px}
