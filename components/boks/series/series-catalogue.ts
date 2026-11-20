@@ -736,11 +736,13 @@ export type SeriesCollection = {
    * (`docs/link-only-pieces.md`), not in this public repository.
    */
   author?: { handle: string; name: string; photo: string | null };
+  /** An author's own section: `tokenPrint` of each of its link-only folders, which the author cannot change. */
+  prints?: readonly string[];
 };
 
 /** An author's own sections (`live-series.ts`) as shelf sections, above the ones in code. */
 export function liveCollections(
-  sections: readonly { id: string; handle: string; name: string; photo: string | null; pieces: readonly { storyId: string }[] }[],
+  sections: readonly { id: string; handle: string; name: string; photo: string | null; pieces: readonly { storyId: string; token?: string }[] }[],
   inCode: readonly SeriesCollection[] = seriesCollections
 ): SeriesCollection[] {
   const codeHandles = new Set(inCode.flatMap((collection) => (collection.author ? [collection.author.handle.toLowerCase()] : [])));
@@ -752,6 +754,7 @@ export function liveCollections(
       storyIds: section.pieces.map((piece) => piece.storyId),
       from: "2000-01-01",
       author: { handle: section.handle, name: section.name, photo: section.photo },
+      prints: section.pieces.flatMap((piece) => (piece.token ? [tokenPrint(piece.token)] : [])),
     }));
 }
 
@@ -830,13 +833,40 @@ export const seriesShelfOrder: readonly string[] = [
   "author-avgust",
 ];
 
+/**
+ * FNV-1a, 32 bits, as 8 hex digits: a fingerprint of a link-only folder. The
+ * repository is public and the folders of unpublished pieces are not, so the
+ * shelf order names an author's section by these instead of by its links.
+ */
+export function tokenPrint(token: string) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < token.length; i++) hash = Math.imul(hash ^ token.charCodeAt(i), 0x01000193) >>> 0;
+  return hash.toString(16).padStart(8, "0");
+}
+
+/**
+ * An author may change their @handle, and with it the `author-<handle>` id;
+ * their Series folders stay. A section is placed by these first, so a new
+ * nickname does not move it to the top of the shelf.
+ */
+export const seriesShelfPrints: Readonly<Record<string, readonly string[]>> = {
+  "author-vodennikov": ["324e27fd", "02d8ad54", "1936fd81", "97c3733a"],
+  "author-demidov": ["8585f0f1", "2f0b9124", "6547e0c2", "dbec56b6"],
+  "author-komarov": ["ffb2cbd3", "05d2debc", "acfa3075", "2c827b14", "73367c1a"],
+  "author-avgust": ["5dfe29b4", "3c689eb1", "7c0a24db", "15e26909", "67e80ca0"],
+};
+
 /** The shelf's sections: live ones (`liveCollections`) and today's in code, in `seriesShelfOrder`. */
 export function shelfSections(
   live: readonly SeriesCollection[],
   inCode: readonly SeriesCollection[],
-  order: readonly string[] = seriesShelfOrder
+  order: readonly string[] = seriesShelfOrder,
+  prints: Readonly<Record<string, readonly string[]>> = seriesShelfPrints
 ): SeriesCollection[] {
-  const rank = (collection: SeriesCollection) => order.indexOf(collection.id);
+  const rank = (collection: SeriesCollection) => {
+    const byPrint = order.findIndex((id) => collection.prints?.some((print) => prints[id]?.includes(print)));
+    return byPrint >= 0 ? byPrint : order.indexOf(collection.id);
+  };
   const listed = [...live, ...inCode].filter((collection) => rank(collection) >= 0).sort((a, b) => rank(a) - rank(b));
   return [...live.filter((collection) => rank(collection) < 0), ...listed, ...inCode.filter((collection) => rank(collection) < 0)];
 }
