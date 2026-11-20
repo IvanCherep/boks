@@ -679,6 +679,12 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   const seriesScrollOnOpen = useRef(0);
   /** Whether the format on screen was opened from the shelf, so its end leads back there. */
   const formatFromSeries = useRef(false);
+  /**
+   * A Series reading the reader turned into text ("Read text"): its "Next"
+   * opens the next piece as text too, not the player again (2026-11-20).
+   * Any player opening ends it.
+   */
+  const seriesAsText = useRef(false);
   /** Waiting for the feed to land on this boks before opening its format. */
   const pendingSeriesFormat = useRef<string | null>(null);
   /**
@@ -1567,7 +1573,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       flushAftertaste();
       setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
       if (formatFromSeries.current) {
-        if (nextSeriesPiece) void openSeriesPiece(nextSeriesPiece, true);
+        if (nextSeriesPiece && seriesAsText.current) void openSeriesText(nextSeriesPiece);
+        else if (nextSeriesPiece) void openSeriesPiece(nextSeriesPiece, true);
         else { recordReadingOutcome("button"); openSeries(); }
         return;
       }
@@ -2317,6 +2324,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
    * reader - the same rule the rail button has always followed.
    */
   function openReadingFormat(storyId: string) {
+    seriesAsText.current = false;
     setOpenIssue(null);
     setFormatEnded(false);
     const request = ++formatRequest.current;
@@ -2396,6 +2404,12 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     }
   }
 
+  /** The next piece of a Series read as text: its text, still in the Series' order. */
+  async function openSeriesText(piece: SeriesPiece) {
+    const found = await openReadBoks(piece.storyId, "series");
+    if (found) seriesAsText.current = true;
+  }
+
   async function openSeriesPiece(piece: SeriesPiece, continueSequence = false) {
     if (seriesOpening) return;
     const shelfScroll = document.querySelector(".series__scroll");
@@ -2462,6 +2476,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     });
   }
   function readText(fromStart = false) {
+    if (formatFromSeries.current) seriesAsText.current = true;
     closeFormatOpening();
     setCinemaOpen(false); setPoem(null); setFormatPlaying(false);
     if (seriesOpen) openFeed(false);
