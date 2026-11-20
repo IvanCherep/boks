@@ -20,6 +20,7 @@ import {
   sendMyMessage,
 } from "@/components/boks/author-spaces/data";
 import { WorkPreview, previewWords } from "@/components/boks/author-spaces/space-preview";
+import { useLivePoll } from "@/components/boks/author-spaces/live-poll";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { currentBoksTermsVersion } from "@/components/boks/user-auth-panel";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
@@ -501,6 +502,15 @@ export function MyPage({
   const waiting = items.filter((item) => item.work && (item.work.status === "preparing" || item.work.status === "changes_requested"));
   const orderable = items.filter((item) => !item.hidden && !item.draft && !item.coverWaiting).length;
   const [requestsOpen, setRequestsOpen] = useState(false);
+  // The team's answers arrive while the page is open: every 15 seconds with
+  // the conversation open, every minute otherwise, for the badge. Only the
+  // conversation is taken from the answer, so nothing the author is in the
+  // middle of on the page changes under them.
+  const pollMessages = useCallback(async () => {
+    const mine = await loadMyAuthorSpace();
+    setData((current) => (current && mine ? { ...current, messages: mine.messages, unread: mine.unread } : current));
+  }, []);
+  useLivePoll(pollMessages, requestsOpen ? 15_000 : 60_000, Boolean(data?.space));
   const undecided = items.some((item) => item.work && item.work.status !== "published" && item.work.status !== "withdrawn");
 
   function readItem(item: PageItem, series = false) {

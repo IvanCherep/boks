@@ -48,6 +48,7 @@ import { clampCrop, cropLayout, encodeCrop, photoProblem, zoomMax, zoomMin, type
 import { inviteLink } from "@/lib/boks/author/invite-link";
 import { moveBy } from "@/lib/boks/author/page-order";
 import { spaceStage, spaceTimeline, type SpaceStage, type StageInput, type TimelineEvent } from "@/lib/boks/author/space-stage";
+import { useLivePoll } from "@/components/boks/author-spaces/live-poll";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 
 /**
@@ -521,6 +522,15 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
     const timer = window.setTimeout(() => void reload(), 0);
     return () => window.clearTimeout(timer);
   }, [reload]);
+
+  // The author's notes arrive while the page is open in Studio, every 15
+  // seconds. Only the conversation is taken, so an edit in progress here stays.
+  const pollMessages = useCallback(async () => {
+    if (!spaceId) return;
+    const next = await loadStudioSpace(spaceId);
+    setSpace((current) => (current && current.id === next.id ? { ...current, messages: next.messages, unread: next.unread } : current));
+  }, [spaceId]);
+  useLivePoll(pollMessages, 15_000, Boolean(spaceId) && !busy);
 
   /** Every write: busy while it runs, its answer replaces the page, its refusal is said. */
   async function run(action: () => Promise<StudioSpace | void>, done?: string) {
