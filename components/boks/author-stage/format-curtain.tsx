@@ -89,6 +89,32 @@ export function FormatCurtain({
     if (node) paint(node, 0, node.clientWidth, node.clientHeight);
   }, []);
 
+  // A long title («Из дому выйдешь. Сквозь людей…») wraps into four or five
+  // lines and would run past the bottom edge: shrink it until it ends above it.
+  useLayoutEffect(() => {
+    const node = stage.current;
+    const heading = node?.querySelector<HTMLElement>(".pc-title h1");
+    if (!node || !heading) return;
+    const fit = () => {
+      heading.style.fontSize = "";
+      let size = parseFloat(getComputedStyle(heading).fontSize);
+      const limit = node.getBoundingClientRect().bottom - Math.max(24, node.clientHeight * 0.04);
+      for (let i = 0; i < 24 && size > 18 && heading.getBoundingClientRect().bottom > limit; i++) {
+        size *= 0.93;
+        heading.style.fontSize = `${size.toFixed(1)}px`;
+      }
+    };
+    fit();
+    let alive = true;
+    document.fonts?.ready.then(() => alive && fit());
+    const resize = new ResizeObserver(fit);
+    resize.observe(node);
+    return () => {
+      alive = false;
+      resize.disconnect();
+    };
+  }, [title, byline]);
+
   useEffect(() => {
     const node = stage.current;
     const cloth = canvas.current;
