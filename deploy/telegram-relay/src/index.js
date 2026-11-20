@@ -9,6 +9,11 @@
 // that is down cannot report itself. State lives in KV and is written only
 // when it changes, so the free plan's limits are never close.
 //
+// It also takes the team group's commands (/stats, /server, ...): Telegram
+// calls /telegram, the command waits in KV, and the server collects it every
+// minute from /pending (ops/bot.py) and answers through /send. The server is
+// never called from here, and only the team group is listened to.
+//
 // Secrets: TG_TOKEN, TG_CHAT, RELAY_KEY. Vars: SITE_URL. KV: STATE.
 
 const failuresBeforeAlert = 2;
@@ -68,12 +73,79 @@ async function watch(env) {
   }
 }
 
+// What Telegram must send with every update: derived from RELAY_KEY, so no new secret.
+async function webhookSecret(env) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`telegram-webhook:${env.RELAY_KEY}`));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const commandShape = /^\/(stats|stat|server|status|online|help|start)(@\w+)?(\s+[\w\u0400-\u04ff]{1,12})?\s*$/i;
+const queueLimit = 10;
+
+// A command from the team group, kept until the server collects it. Anything
+// else - other chats, ordinary messages - is ignored, and KV is written only
+// for a command.
+async function takeUpdate(request, env) {
+  if (!sameKey(request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "", await webhookSecret(env))) {
+    return new Response("Forbidden", { status: 403 });
+  }
+  let update;
+  try { update = await request.json(); } catch { return new Response("ok"); }
+  const message = update?.message;
+  const text = typeof message?.text === "string" ? message.text.trim() : "";
+  if (!message || String(message.chat?.id) !== String(env.TG_CHAT) || !commandShape.test(text)) return new Response("ok");
+  const queue = JSON.parse((await env.STATE.get("commands")) ?? "[]");
+  if (queue.length < queueLimit) {
+    queue.push({ text, at: Date.now() });
+    await env.STATE.put("commands", JSON.stringify(queue));
+  }
+  return new Response("ok");
+}
+
+// The server's minute: the waiting commands, handed over once.
+async function handOver(env) {
+  const raw = await env.STATE.get("commands");
+  if (!raw || raw === "[]") return Response.json({ commands: [] });
+  await env.STATE.put("commands", "[]");
+  // Older than ten minutes is a question nobody is waiting for any more.
+  const fresh = JSON.parse(raw).filter((item) => Date.now() - item.at < 10 * 60_000);
+  return Response.json({ commands: fresh });
+}
+
+// Once, after deploying: point Telegram at /telegram and list the commands in the group.
+async function setup(env, origin) {
+  const api = (method, body) => fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((response) => response.json());
+  const hook = await api("setWebhook", {
+    url: `${origin}/telegram`,
+    secret_token: await webhookSecret(env),
+    allowed_updates: ["message"],
+    drop_pending_updates: true,
+  });
+  const commands = await api("setMyCommands", {
+    scope: { type: "chat", chat_id: env.TG_CHAT },
+    commands: [
+      { command: "stats", description: "Статистика: сегодня; /stats week — неделя" },
+      { command: "online", description: "Кто на сайте сейчас" },
+      { command: "server", description: "Нагрузка, память, диск, сервисы" },
+      { command: "help", description: "Что умеет бот" },
+    ],
+  });
+  return Response.json({ webhook: hook, commands });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method !== "POST" || url.pathname !== "/send") return new Response("Not found", { status: 404 });
+    if (request.method === "POST" && url.pathname === "/telegram") return takeUpdate(request, env);
+    if (request.method !== "POST" || !["/send", "/pending", "/setup"].includes(url.pathname)) return new Response("Not found", { status: 404 });
     const key = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
     if (!sameKey(key, env.RELAY_KEY)) return new Response("Forbidden", { status: 403 });
+    if (url.pathname === "/pending") return handOver(env);
+    if (url.pathname === "/setup") return setup(env, url.origin);
     let body;
     try { body = await request.json(); } catch { return new Response("Bad JSON", { status: 400 }); }
     if (typeof body.text !== "string" || !body.text.trim()) return new Response("Empty text", { status: 400 });

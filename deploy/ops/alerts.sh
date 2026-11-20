@@ -127,3 +127,7 @@ echo "$now" > "$mark"
 # 10. What people send us, as it arrives: every feedback note, every application
 # from the page for authors, every work sent for review (ops/inbox.py).
 python3 ops/inbox.py || true
+
+# 11. Commands from the team group (/stats, /online, /server): collected from
+# the relay and answered (ops/bot.py). Before the relay knows /pending, nothing.
+python3 ops/bot.py || true
