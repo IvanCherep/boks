@@ -1341,15 +1341,21 @@ export function ImmersivePoem({
 }
 
 /**
- * Hands `use` an in-memory copy of a recording, or its address if the
- * download fails.
+ * Hands `use` a playable source for a recording: its own address when the
+ * server streams it, an in-memory copy otherwise.
  *
- * A streamed file can only be seeked if the server answers range requests,
- * and ours answers one with the whole file and a 200. The element then
- * reports an empty `seekable` range and clamps every seek to zero: the bar,
- * the line steps and "again" all did nothing, which on a six-minute poem is
- * the whole transport. A blob is seekable whatever the server does - the
- * cinema's fix too (`cinema-mode.tsx`).
+ * Streaming lets the voice start after its first few kilobytes; the copy
+ * waited for the whole file, which on a slow phone network kept "Loading…"
+ * up for ten seconds and more. But a streamed file can only be seeked if the
+ * server answers range requests: one that answers with the whole file and a
+ * 200 leaves the element an empty `seekable` range and every seek clamped to
+ * zero - the bar, the line steps and "again" all dead. So a two-byte range
+ * request asks first: a 206 means stream; a 200 already carries the file,
+ * which becomes the copy (the cinema's fix too, `cinema-mode.tsx`).
+ *
+ * Only a same-origin address streams: the voice meter reads the element
+ * through Web Audio, which hears silence from a cross-origin stream; a blob is
+ * always same-origin.
  *
  * Given before the first play rather than swapped in during it: changing the
  * source of a playing element interrupts its `play()`, and the theme, which
@@ -1360,13 +1366,28 @@ function inMemoryCopy(url: string, use: (src: string) => void) {
   // Closed before the download finished: nobody would be left to revoke the
   // URL made afterwards, and it pins the whole recording in memory.
   let cancelled = false;
-  void fetch(url)
-    .then((response) => (response.ok ? response.blob() : null))
-    .then((blob) => {
+  const sameOrigin = (() => {
+    try {
+      return new URL(url, window.location.href).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  })();
+  const copy = (response: Response) =>
+    response.blob().then((blob) => {
       if (cancelled) return;
-      if (!blob) return use(url);
       objectUrl = URL.createObjectURL(blob);
       use(objectUrl);
+    });
+  void fetch(url, sameOrigin ? { headers: { Range: "bytes=0-1" } } : undefined)
+    .then((response) => {
+      if (cancelled) return;
+      if (sameOrigin && response.status === 206) {
+        void response.body?.cancel();
+        return use(url);
+      }
+      if (!response.ok) return use(url);
+      return copy(response);
     })
     .catch(() => {
       // Playable, if not seekable: better than a poem that never starts.
