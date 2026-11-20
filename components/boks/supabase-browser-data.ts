@@ -1634,6 +1634,22 @@ async function loadBokReactions(reelIds: string[]) {
   return counts;
 }
 
+/**
+ * The totals for one bok as they are now, for the bok on screen: the feed's
+ * copy is as old as the slate, and a like someone else gave meanwhile did not
+ * show until a reload (2026-11-20). `othersLikes` leaves this reader's own like
+ * out, so the screen adds it from its own state and a tap in flight stays right.
+ */
+export async function loadLiveBokReactions(storyId: string, accountUserId: string | null) {
+  const [reactions, mine] = await Promise.all([
+    loadBokReactions([storyId]),
+    accountUserId ? loadLikedStoryIds(accountUserId, [storyId]) : Promise.resolve([] as string[]),
+  ]);
+  const counts = reactions.get(storyId) ?? { likes: 0, comments: 0 };
+  const likedByMe = mine.includes(storyId);
+  return { othersLikes: Math.max(0, counts.likes - (likedByMe ? 1 : 0)), comments: counts.comments, likedByMe };
+}
+
 export async function loadSupabaseComments(storyId: string): Promise<Comment[]> {
   if (!supabase) return [];
 

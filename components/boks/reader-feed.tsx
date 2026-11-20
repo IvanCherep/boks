@@ -131,6 +131,7 @@ import {
   setMyReadingLanguages,
   setSupabaseLike,
   submitSupabaseComment,
+  loadLiveBokReactions,
 } from "@/components/boks/supabase-browser-data";
 import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
 import { WhatToRead, type ApplyResult } from "@/components/boks/what-to-read/what-to-read";
@@ -558,6 +559,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   /** A poem opens in its own renderer behind the same button. */
   const [poem, setPoem] = useState<PoemManifest | null>(null);
   const likesInFlight = useRef<Set<string>>(new Set());
+  /** The bok on screen's totals as the server has them now (`loadLiveBokReactions`). */
+  const [liveReactions, setLiveReactions] = useState<Record<string, { othersLikes: number; comments: number }>>({});
   // The one-time "how this works" line - see the effect near the render.
   /*
    * A reader who had it on last time gets it back - but only after they touch
@@ -1340,7 +1343,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     ? Math.max(
         0,
         currentStory.commentsCount +
-          (currentCommentDelta && currentCommentDelta.base === currentStory.commentsCount ? currentCommentDelta.added : 0)
+          (currentCommentDelta && currentCommentDelta.base === currentStory.commentsCount ? currentCommentDelta.added : 0),
+        // Comments others wrote since the slate (`liveReactions`).
+        liveReactions[currentStory.id]?.comments ?? 0
       )
     : 0;
   const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || wordsNow().bokAuthor);
@@ -1353,8 +1358,11 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     void loadMoreFeed();
   }, [isSupabaseReader, loadMoreFeed, rankedStories, selectedIndex]);
   const isCurrentStoryLiked = currentStory ? liked[currentStory.id] ?? persistedLikedStoryIds.has(currentStory.id) : false;
+  const currentLive = currentStory ? liveReactions[currentStory.id] : undefined;
   const currentLikeCount = currentStory
-    ? displayedLikeCount(currentStory.likes, persistedLikedStoryIds.has(currentStory.id), isCurrentStoryLiked)
+    ? currentLive
+      ? currentLive.othersLikes + (isCurrentStoryLiked ? 1 : 0)
+      : displayedLikeCount(currentStory.likes, persistedLikedStoryIds.has(currentStory.id), isCurrentStoryLiked)
     : 0;
   // Nobody is a guest before the account lookup has answered.
   const isGuestReader = identitySettled && isSupabaseReader && (!user || user.isAnonymous);
@@ -1402,6 +1410,33 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     return () => window.clearTimeout(timer);
   }, [identitySettled, hasSignedInAccount]);
   const day = useDailyAccount({ identitySettled, userId: hasSignedInAccount ? user?.userId ?? null : null });
+  // The bok on screen asks for its totals again when it arrives and when the
+  // reader comes back to the tab, so likes given elsewhere meanwhile show.
+  // One small request per bok; nothing while the tab is hidden.
+  const liveStoryId = currentStory?.id ?? null;
+  const liveAccountId = isSupabaseReader && hasSignedInAccount ? user?.userId ?? null : null;
+  useEffect(() => {
+    if (!isSupabaseReader || !identitySettled || !liveStoryId) return;
+    let cancelled = false;
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      void loadLiveBokReactions(liveStoryId, liveAccountId)
+        .then((live) => {
+          // A tap still on its way decides the heart; the server's answer would be older.
+          if (cancelled || likesInFlight.current.has(liveStoryId)) return;
+          setLiveReactions((state) => ({ ...state, [liveStoryId]: { othersLikes: live.othersLikes, comments: live.comments } }));
+          if (liveAccountId) setLiked((state) => (state[liveStoryId] === live.likedByMe ? state : { ...state, [liveStoryId]: live.likedByMe }));
+        })
+        .catch(() => undefined);
+    };
+    const timer = window.setTimeout(refresh, 400);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [isSupabaseReader, identitySettled, liveStoryId, liveAccountId]);
   // Signed in after tapping Like as a guest, or at the guest limit or a
   // reminder: back to the bok, with the like on it. Someone who opened the
   // account themselves stays in it.
