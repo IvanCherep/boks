@@ -148,7 +148,7 @@ import { DayCard } from "@/components/boks/daily/day-card";
 import { GuestReminderCard, GuestWelcome } from "@/components/boks/daily/guest-cards";
 import { OnboardingFrame, type FirstBook, type OnboardingAnswers } from "@/components/boks/onboarding/onboarding-frame";
 import { saveStartingPreferences } from "@/components/boks/onboarding/onboarding-data";
-import { readOnboardingRecord, shouldOfferOnboarding, writeOnboardingRecord } from "@/lib/boks/onboarding/eligibility";
+import { readOnboardingRecord, shouldInviteToOnboarding, shouldOpenOnboarding, writeOnboardingRecord, type OnboardingRecord } from "@/lib/boks/onboarding/eligibility";
 import { guestReminderFor, type GuestReminder } from "@/lib/boks/daily/days";
 import { SendLineSheet } from "@/components/boks/daily/send-line";
 import { SelectionMenu, usePassageSelection } from "@/components/boks/daily/selection-menu";
@@ -629,6 +629,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   const [guestWelcomeSeen, setGuestWelcomeSeen] = useState(true);
   /** The reader introduction is over the reader (docs/onboarding.md). */
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  /** Finished or skipped in this browser; undefined until read, so the cover never flashes the invitation. */
+  const [onboardingRecord, setOnboardingRecord] = useState<OnboardingRecord | null | undefined>(undefined);
   const onboardingChecked = useRef(false);
   const initialSearch = useRef(typeof window === "undefined" ? "" : window.location.search);
   /** The introduction's answers were saved and the feed rebuilt with them. */
@@ -2861,24 +2863,21 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     [notify, reloadFeedReleasing]
   );
 
-  // The reader introduction: offered once to a new guest who opened boks itself.
+  // The reader introduction never opens by itself (docs/onboarding.md): the cover
+  // invites a guest who has not met it, and `?welcome=1` opens it on purpose.
   useEffect(() => {
     if (!identitySettled || onboardingChecked.current) return;
-    onboardingChecked.current = true;
     const storage = (() => { try { return window.localStorage; } catch { return null; } })();
-    const offer = shouldOfferOnboarding({
-      // As the reader arrived: the feed rewrites the address once it opens a shared bok.
-      pathname: arrivedByLink ? "/shared" : window.location.pathname,
-      search: initialSearch.current,
-      signedIn: hasSignedInAccount,
-      record: readOnboardingRecord(storage),
-      guestReads: readAnonymousReadState().storyIds.length,
-      welcomeSeen: readFlag(guestWelcomeKey) === "1",
-    });
-    if (!offer) return;
-    const timer = window.setTimeout(() => setOnboardingOpen(true), 0);
+    const record = readOnboardingRecord(storage);
+    const open = shouldOpenOnboarding(initialSearch.current);
+    const timer = window.setTimeout(() => {
+      onboardingChecked.current = true;
+      setOnboardingRecord(record);
+      if (open) setOnboardingOpen(true);
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, [identitySettled, hasSignedInAccount, arrivedByLink]);
+  }, [identitySettled]);
+  const onboardingInviteVisible = isGuestReader && !onboardingOpen && onboardingRecord !== undefined && shouldInviteToOnboarding({ signedIn: hasSignedInAccount, record: onboardingRecord });
 
   /** The answers are known (the shelf is behind): saved, and the feed rebuilt with them while the scenes play. */
   const applyOnboardingAnswers = useCallback((answers: OnboardingAnswers) => {
@@ -2901,7 +2900,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
 
   const finishOnboarding = useCallback((answers: OnboardingAnswers, options: { signIn?: boolean } = {}) => {
     const storage = (() => { try { return window.localStorage; } catch { return null; } })();
-    writeOnboardingRecord(storage, { status: answers.status, at: Date.now(), ...(options.signIn ? { adoptPending: true, answers } : {}) });
+    const record: OnboardingRecord = { status: answers.status, at: Date.now(), ...(options.signIn ? { adoptPending: true, answers } : {}) };
+    writeOnboardingRecord(storage, record);
+    setOnboardingRecord(record);
     writeFlag(guestWelcomeKey, "1");
     setGuestWelcomeSeen(true);
     if (answers.status === "completed") applyOnboardingAnswers(answers);
@@ -3503,6 +3504,19 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
                 {currentStory.summary && <p className="reader-cover__summary" lang={currentStory.language || "und"} translate="no">{currentStory.summary}</p>}
               </CoverHeading>
               <div className="reader-cover__caption">
+                {onboardingInviteVisible && (
+                  <div className="boks-wtr intent-anchor intent-anchor--cover onboarding-invite">
+                    <button type="button" className="intent-control" onClick={() => setOnboardingOpen(true)} disabled={readerInteractionBlocked || storyTransition.phase !== "idle"} aria-haspopup="dialog">
+                      <span className="intent-trigger-art" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M6 21V4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21" /><path d="M4 21h16" /><path d="M14.5 12v1.5" /></svg>
+                      </span>
+                      <span className="reading-trigger-copy">
+                        <span data-intent-label>{t("Get to know boks", "Знакомство с boks")}</span>
+                        <span className="reading-trigger-summary" aria-hidden="true">{t("A minute to tune boks to you", "Минута, чтобы подобрать боки под вас")}</span>
+                      </span>
+                    </button>
+                  </div>
+                )}
                 {isSupabaseReader && (
                   <WhatToRead
                     value={readingRequest.request}

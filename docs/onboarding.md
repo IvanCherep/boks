@@ -7,10 +7,11 @@ mystery mail → afisha → final invitation, landing on the feed's real first b
 
 ## Who sees it
 
-`lib/boks/onboarding/eligibility.ts`: a guest who opened boks itself (`/`, no
-`?bok=`/`?author=`, not an author page), has read nothing here and has no
-record in `localStorage["boks-onboarding"]`. Accounts, returning guests and
-shared links never see it. `/?welcome=1` replays it for anyone.
+`lib/boks/onboarding/eligibility.ts`: nobody is sent into it. A guest with no
+record in `localStorage["boks-onboarding"]` sees "Знакомство с boks" on the
+cover, above "Что почитать", and opens it when they want to; finishing or
+skipping writes the record and the invitation goes. Accounts never see the
+invitation. `/?welcome=1` opens it on purpose, for anyone.
 
 ## How it is built
 

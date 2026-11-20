@@ -1,8 +1,7 @@
 /**
- * Who meets the reader introduction (docs/onboarding.md): a new guest who
- * opened boks itself, once. Never a returning guest, an account, or anyone who
- * came by a shared bok or author link - those keep the destination they were
- * promised. `?welcome=1` replays it on purpose.
+ * Who meets the reader introduction (docs/onboarding.md). It never opens by
+ * itself: a guest who has not met it yet sees an invitation on the cover and
+ * opens it when they want to. `?welcome=1` opens it on purpose, for anyone.
  */
 
 export const onboardingStorageKey = "boks-onboarding";
@@ -34,20 +33,12 @@ export function writeOnboardingRecord(storage: Pick<Storage, "setItem"> | null, 
   }
 }
 
-export function shouldOfferOnboarding(input: {
-  pathname: string;
-  search: string;
-  signedIn: boolean;
-  record: OnboardingRecord | null;
-  /** Boks this browser has already read as a guest. */
-  guestReads: number;
-  /** The old guest welcome was already shown here: not a new visitor. */
-  welcomeSeen: boolean;
-}) {
-  const params = new URLSearchParams(input.search);
-  if (params.get("welcome") === "1") return true;
-  if (input.pathname !== "/") return false;
-  if (params.has("bok") || params.has("author") || params.has("b")) return false;
-  if (input.signedIn || input.record) return false;
-  return input.guestReads === 0 && !input.welcomeSeen;
+/** Opens by itself only when asked to in the address: `?welcome=1`. */
+export function shouldOpenOnboarding(search: string) {
+  return new URLSearchParams(search).get("welcome") === "1";
+}
+
+/** The cover invites a guest who has neither finished nor skipped it in this browser. */
+export function shouldInviteToOnboarding(input: { signedIn: boolean; record: OnboardingRecord | null }) {
+  return !input.signedIn && !input.record;
 }

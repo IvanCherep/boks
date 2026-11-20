@@ -62,8 +62,8 @@ export function OnboardingFrame({ language, readingLanguages, firstBook, onAnswe
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
-  const [replay] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("welcome") === "1");
-  const src = `/onboarding/index.html?lang=${language}&scenario=onboarding&focus=1&reading=${readingLanguages.join(",")}${replay ? "&welcome=1" : ""}&v=${frameVersion}`;
+  // Always from the first room: the reader asked for it (`welcome=1` resets the page's own saved progress).
+  const src = `/onboarding/index.html?lang=${language}&scenario=onboarding&focus=1&reading=${readingLanguages.join(",")}&welcome=1&v=${frameVersion}`;
   return (
     <div className={`onboarding-frame${leaving ? " is-leaving" : ""}${loaded ? " is-loaded" : ""}`} role="dialog" aria-modal="true" aria-label={language === "ru" ? "Знакомство с boks" : "Welcome to boks"}>
       <iframe ref={frame} src={src} title={language === "ru" ? "Знакомство с boks" : "Welcome to boks"} onLoad={() => setLoaded(true)} allow="autoplay" />

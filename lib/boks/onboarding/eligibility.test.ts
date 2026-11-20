@@ -1,23 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { readOnboardingRecord, shouldOfferOnboarding } from "./eligibility";
+import { readOnboardingRecord, shouldInviteToOnboarding, shouldOpenOnboarding } from "./eligibility";
 
-const newGuest = { pathname: "/", search: "", signedIn: false, record: null, guestReads: 0, welcomeSeen: false };
+describe("shouldOpenOnboarding", () => {
+  it("never opens by itself", () => {
+    expect(shouldOpenOnboarding("")).toBe(false);
+    expect(shouldOpenOnboarding("?bok=abc")).toBe(false);
+  });
+  it("opens on ?welcome=1", () => {
+    expect(shouldOpenOnboarding("?welcome=1")).toBe(true);
+    expect(shouldOpenOnboarding("?lang=en&welcome=1")).toBe(true);
+  });
+});
 
-describe("shouldOfferOnboarding", () => {
-  it("meets a new guest who opened boks itself", () => {
-    expect(shouldOfferOnboarding(newGuest)).toBe(true);
+describe("shouldInviteToOnboarding", () => {
+  it("invites a guest who has not met it yet", () => {
+    expect(shouldInviteToOnboarding({ signedIn: false, record: null })).toBe(true);
   });
-  it("leaves shared links, author pages, accounts and returning guests alone", () => {
-    expect(shouldOfferOnboarding({ ...newGuest, search: "?bok=abc" })).toBe(false);
-    expect(shouldOfferOnboarding({ ...newGuest, search: "?author=x" })).toBe(false);
-    expect(shouldOfferOnboarding({ ...newGuest, pathname: "/a/prokhorov" })).toBe(false);
-    expect(shouldOfferOnboarding({ ...newGuest, signedIn: true })).toBe(false);
-    expect(shouldOfferOnboarding({ ...newGuest, guestReads: 2 })).toBe(false);
-    expect(shouldOfferOnboarding({ ...newGuest, welcomeSeen: true })).toBe(false);
-    expect(shouldOfferOnboarding({ ...newGuest, record: { status: "skipped", at: 1 } })).toBe(false);
-  });
-  it("replays on ?welcome=1 for anyone", () => {
-    expect(shouldOfferOnboarding({ ...newGuest, search: "?welcome=1", signedIn: true, record: { status: "completed", at: 1 } })).toBe(true);
+  it("leaves accounts and guests who finished or skipped it alone", () => {
+    expect(shouldInviteToOnboarding({ signedIn: true, record: null })).toBe(false);
+    expect(shouldInviteToOnboarding({ signedIn: false, record: { status: "skipped", at: 1 } })).toBe(false);
+    expect(shouldInviteToOnboarding({ signedIn: false, record: { status: "completed", at: 1 } })).toBe(false);
   });
 });
 
