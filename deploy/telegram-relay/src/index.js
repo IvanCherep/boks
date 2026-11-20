@@ -9,10 +9,11 @@
 // that is down cannot report itself. State lives in KV and is written only
 // when it changes, so the free plan's limits are never close.
 //
-// It also takes the team group's commands (/stats, /server, ...): Telegram
-// calls /telegram, the command waits in KV, and the server collects it every
-// minute from /pending (ops/bot.py) and answers through /send. The server is
-// never called from here, and only the team group is listened to.
+// It also answers the team group's commands (/stats, /server, ...): Telegram
+// calls /telegram, and for each command this calls the server's one ops path,
+// SITE_URL/api/ops/bot, with a key derived from RELAY_KEY (ops/bot.py --serve),
+// and sends what it answers. Nothing runs between commands. /help needs no
+// server; a server that does not answer is said so in the group at once.
 //
 // Secrets: TG_TOKEN, TG_CHAT, RELAY_KEY. Vars: SITE_URL. KV: STATE.
 
@@ -92,16 +93,12 @@ const helpText = [
   "Если сервер в Москве недоступен, бот так и напишет.",
 ].join("\n");
 
-// How long the server may take to collect a command before the group is told it did not.
-const collectWithinMs = 2 * 60_000;
 
 const commandShape = /^\/(stats|stat|server|status|online|help|start)(@\w+)?(\s+[\w\u0400-\u04ff]{1,12})?\s*$/i;
-const queueLimit = 10;
 
-// A command from the team group, kept until the server collects it. Anything
-// else - other chats, ordinary messages - is ignored, and KV is written only
-// for a command.
-async function takeUpdate(request, env) {
+// A command from the team group. Anything else - other chats, ordinary
+// messages - is ignored. Telegram is answered at once; the work goes on after.
+async function takeUpdate(request, env, ctx) {
   if (!sameKey(request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "", await webhookSecret(env))) {
     return new Response("Forbidden", { status: 403 });
   }
@@ -116,41 +113,36 @@ async function takeUpdate(request, env) {
     await telegram(env, helpText).catch(() => undefined);
     return new Response("ok");
   }
-  // The server cannot be reached from here: say so now instead of leaving the question hanging.
-  const site = await checkSite(env);
-  if (!site.ok) {
-    await telegram(env, `⚠️ <b>Сервер boks в Москве сейчас недоступен</b>, поэтому ${command} не выполнить.\nПроверка из Cloudflare: ${site.detail}. Когда сайт снова ответит, придёт «tryboks.com снова отвечает».`).catch(() => undefined);
-    return new Response("ok");
-  }
-  const queue = JSON.parse((await env.STATE.get("commands")) ?? "[]");
-  if (queue.length < queueLimit) {
-    queue.push({ text, at: Date.now() });
-    await env.STATE.put("commands", JSON.stringify(queue));
-  }
+  ctx.waitUntil(askServer(env, text, command));
   return new Response("ok");
 }
 
-// Commands the server has not collected in time: the link from Moscow to
-// Cloudflare is down while the site itself answers. Told once, then dropped.
-async function overdue(env) {
-  const raw = await env.STATE.get("commands");
-  if (!raw || raw === "[]") return;
-  const queue = JSON.parse(raw);
-  const late = queue.filter((item) => Date.now() - item.at >= collectWithinMs);
-  if (!late.length) return;
-  await env.STATE.put("commands", JSON.stringify(queue.filter((item) => Date.now() - item.at < collectWithinMs)));
-  const names = [...new Set(late.map((item) => item.text.split(/[\s@]/)[0]))].join(", ");
-  await telegram(env, `⚠️ <b>Сервер boks не забрал команду</b> ${names} за 2 минуты: связь между сервером в Москве и Cloudflare, похоже, прервалась. Сайт снаружи при этом отвечает. Попробуйте чуть позже.`, true);
+async function botKey(env) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`bot-call:${env.RELAY_KEY}`));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// The server's minute: the waiting commands, handed over once.
-async function handOver(env) {
-  const raw = await env.STATE.get("commands");
-  if (!raw || raw === "[]") return Response.json({ commands: [] });
-  await env.STATE.put("commands", "[]");
-  // Older than ten minutes is a question nobody is waiting for any more.
-  const fresh = JSON.parse(raw).filter((item) => Date.now() - item.at < 10 * 60_000);
-  return Response.json({ commands: fresh });
+// The server answers the command; if it cannot be reached, the group hears why.
+async function askServer(env, text, command) {
+  let failure = "";
+  try {
+    const response = await fetch(`${env.SITE_URL}/api/ops/bot`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${await botKey(env)}`, "Content-Type": "application/json", "User-Agent": "boks-telegram/1 (cloudflare)" },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(25_000),
+    });
+    if (response.ok) {
+      const { reply } = await response.json();
+      if (typeof reply === "string" && reply.trim()) return await telegram(env, reply);
+      failure = "пустой ответ";
+    } else {
+      failure = `HTTP ${response.status}`;
+    }
+  } catch (error) {
+    failure = String(error?.message ?? error).slice(0, 120);
+  }
+  await telegram(env, `⚠️ <b>Сервер boks в Москве сейчас недоступен для бота</b>, поэтому ${command} не выполнить.\nПричина: ${failure}. Попробуйте чуть позже; если не работает сам сайт, придёт «tryboks.com не отвечает».`).catch(() => undefined);
 }
 
 // Once, after deploying: point Telegram at /telegram and list the commands in the group.
@@ -179,13 +171,12 @@ async function setup(env, origin) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (request.method === "POST" && url.pathname === "/telegram") return takeUpdate(request, env);
-    if (request.method !== "POST" || !["/send", "/pending", "/setup"].includes(url.pathname)) return new Response("Not found", { status: 404 });
+    if (request.method === "POST" && url.pathname === "/telegram") return takeUpdate(request, env, ctx);
+    if (request.method !== "POST" || !["/send", "/setup"].includes(url.pathname)) return new Response("Not found", { status: 404 });
     const key = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
     if (!sameKey(key, env.RELAY_KEY)) return new Response("Forbidden", { status: 403 });
-    if (url.pathname === "/pending") return handOver(env);
     if (url.pathname === "/setup") return setup(env, url.origin);
     let body;
     try { body = await request.json(); } catch { return new Response("Bad JSON", { status: 400 }); }
@@ -198,9 +189,7 @@ export default {
     }
   },
 
-  // Every minute: overdue commands; every fifth minute also the uptime check, as before.
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(overdue(env));
-    if (new Date(event.scheduledTime).getUTCMinutes() % 5 === 0) ctx.waitUntil(watch(env));
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(watch(env));
   },
 };

@@ -2,10 +2,15 @@
 """Commands from the team's Telegram group, answered from here (alerts.sh, every minute).
 
 Telegram cannot reach this server and the server cannot reach Telegram, so the
-relay Worker (deploy/telegram-relay) takes the group's commands and keeps them;
-this script collects them every minute, answers each from the database and the
-machine itself, and sends the answer back through the same relay
-(ops/notify.sh). Nothing on the server is opened to the internet for it.
+relay Worker (deploy/telegram-relay) takes the group's commands and, for each,
+calls https://tryboks.com/api/ops/bot with a key derived from RELAY_KEY. Caddy
+hands that one path to this script (`--serve`, on the Docker network's gateway
+address, port 8787, opened by the firewall to the containers only), which
+answers from the database and the machine itself; the Worker sends the answer
+to the group. Nothing runs between commands, and no command waits for a poll.
+
+alerts.sh keeps one `--serve` running (a lock; restarted within a minute if it
+stops), and it exits by itself when this file changes, so a release takes effect.
 
   /stats            today and yesterday
   /stats week       seven days, a row a day (also /stats 14, up to 31)
@@ -17,10 +22,11 @@ Days are Belgrade days, as in the table the team sends to analytics; the
 people counted are the daily report's (ops/report.sql): devices, the team's
 marked devices left out. Likes and comments also leave out the team's accounts.
 
-Locally: BOKS_BOT_PSQL="psql -h 127.0.0.1 -p 54322 -U postgres",
-BOKS_BOT_NOTIFY=echo and BOKS_BOT_COMMANDS="/stats week;/server" try it
-without the relay.
+Locally: BOKS_BOT_PSQL="psql -h 127.0.0.1 -p 54322 -U postgres" and
+BOKS_BOT_COMMANDS="/stats week;/server" python3 ops/bot.py prints the answers.
 """
+import hashlib
+import hmac
 import html
 import json
 import os
@@ -29,12 +35,10 @@ import shlex
 import subprocess
 import sys
 import time
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PSQL = shlex.split(os.environ.get("BOKS_BOT_PSQL", "docker compose exec -T db psql -U postgres -h localhost"))
-NOTIFY = shlex.split(os.environ.get("BOKS_BOT_NOTIFY", str(ROOT / "ops" / "notify.sh")))
 TZ = "Europe/Belgrade"
 COUNTRIES = {"RU": "Россия", "RS": "Сербия", "US": "США", "NL": "Нидерланды", "GB": "Великобритания", "CA": "Канада",
              "BY": "Беларусь", "DE": "Германия", "PL": "Польша", "FI": "Финляндия", "FR": "Франция", "KZ": "Казахстан",
@@ -69,15 +73,6 @@ def sh(command):
     return done.stdout.strip()
 
 
-def notify(text):
-    """Sent, or not: the relay being unreachable is never worth more than a line in the log."""
-    try:
-        done = subprocess.run([*NOTIFY, text[:4000]], cwd=ROOT, timeout=60, check=False, capture_output=True, text=True)
-        return done.returncode == 0
-    except subprocess.TimeoutExpired:
-        return False
-
-
 # ------------------------------------------------------------------- numbers
 
 def day_rows(first_offset, last_offset):
@@ -100,7 +95,7 @@ select to_char(days.d, 'DD.MM'),
   (select count(*) from jo where jo.d = days.d and event = 'visit'),
   (select count(distinct visitor_id) from ev where ev.d = days.d and event_type = 'start'),
   (select count(*) from ev where ev.d = days.d and event_type = 'complete'),
-  (select coalesce(round(minutes), 0) from reading where reading.d = days.d),
+  coalesce((select round(minutes) from reading where reading.d = days.d), 0),
   (select count(*) from ev where ev.d = days.d and event_type = 'share'),
   (select count(*) from auth.users u where not u.is_anonymous and u.id not in (select id from team_users)
      and (u.created_at at time zone '{TZ}')::date = days.d),
@@ -261,59 +256,53 @@ def answer(text):
     return None
 
 
-# --------------------------------------------------------------------- relay
+# --------------------------------------------------------------------- serve
 
-relay_complained = False
+def serve(address="172.18.0.1", port=8787):
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    key = hashlib.sha256(("bot-call:" + env("TG_RELAY_KEY")).encode()).hexdigest()
+    started = Path(__file__).stat().st_mtime
 
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            given = self.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+            if self.path != "/api/ops/bot" or not hmac.compare_digest(given.encode(), key.encode()):
+                self.send_error(404)
+                return
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 2000)
+                text = str(json.loads(self.rfile.read(length) or b"{}").get("text", ""))[:100]
+                reply = answer(text) or HELP
+            except Exception as error:  # an answer that failed is still an answer
+                reply = f"⚠️ Не получилось ответить: {html.escape(str(error)[:200])}"
+            body = json.dumps({"reply": reply}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            print(f"bot: {time.strftime('%H:%M:%S')} {text[:40]!r} answered", flush=True)
 
-def pending():
-    local = os.environ.get("BOKS_BOT_COMMANDS")
-    if local is not None:
-        return [{"text": t} for t in local.split(";") if t.strip()]
-    send_url = env("TG_RELAY_URL") or "https://boks-telegram.tryboks.workers.dev/send"
-    url = send_url.rsplit("/send", 1)[0] + "/pending"
-    request = urllib.request.Request(url, method="POST", headers={
-        "Authorization": "Bearer " + env("TG_RELAY_KEY"),
-        # Cloudflare refuses Python's default User-Agent with a 403.
-        "User-Agent": "boks-ops/1 (ops/bot.py)",
-    })
-    try:
-        with urllib.request.urlopen(request, timeout=8) as response:
-            return json.loads(response.read().decode()).get("commands", [])
-    except Exception as error:
-        # The relay out of reach: nothing to do now, and one line a run in the log, not one every 3 seconds.
-        global relay_complained
-        if not relay_complained:
-            print(f"bot: {time.strftime('%H:%M:%S')} relay /pending failed: {error}", file=sys.stderr, flush=True)
-            relay_complained = True
-        return []
+        def do_GET(self):
+            self.send_error(404)
 
+        def log_message(self, *args):
+            pass
 
-def answer_pending():
-    for item in pending()[:5]:
-        text = str(item.get("text", ""))
-        try:
-            reply = answer(text)
-        except Exception as error:  # one failed answer must not stop the others
-            reply = f"⚠️ Не получилось ответить на {html.escape(text[:40])}: {html.escape(str(error)[:200])}"
-        if reply:
-            sent = notify(reply)
-            print(f"bot: {time.strftime('%H:%M:%S')} {text[:40]!r} -> {'sent' if sent else 'NOT sent (relay unreachable)'}", flush=True)
+    server = ThreadingHTTPServer((address, port), Handler)
+    server.timeout = 5
+    # A new ops/bot.py (a release): stop, and alerts.sh starts the new one within a minute.
+    while Path(__file__).stat().st_mtime == started:
+        server.handle_request()
+    return 0
 
 
 def main():
-    # `--watch N`: ask every 3 seconds for N seconds (alerts.sh starts one a
-    # minute, in the background, under a lock), so an answer takes seconds
-    # rather than waiting for the next minute. 20 asks a minute stay well
-    # inside the relay's free plan; the queue is read, and written only when
-    # something was in it.
-    if len(sys.argv) == 3 and sys.argv[1] == "--watch":
-        until = time.monotonic() + max(1, min(58, int(sys.argv[2])))
-        while time.monotonic() < until:
-            answer_pending()
-            time.sleep(3)
-        return 0
-    answer_pending()
+    if len(sys.argv) >= 2 and sys.argv[1] == "--serve":
+        return serve(*(sys.argv[2:3] or []))
+    # Locally, or to see an answer on the server: BOKS_BOT_COMMANDS="/stats week;/server" ops/bot.py
+    for text in os.environ.get("BOKS_BOT_COMMANDS", "/help").split(";"):
+        print(answer(text) or HELP, end="\n\n")
     return 0
 
 

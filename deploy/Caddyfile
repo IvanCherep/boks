@@ -48,6 +48,13 @@
 		}
 	}
 
+	# The team bot (deploy/ops/bot.py --serve, on the host at the Docker
+	# network's gateway; the firewall opens 8787 to the containers only). The
+	# relay Worker calls it with a key; anything else gets the script's 404.
+	handle /api/ops/bot {
+		reverse_proxy 172.18.0.1:8787
+	}
+
 	handle_path /auth/v1/* {
 		# GoTrue lives in the mailer's network namespace (see compose.yml).
 		reverse_proxy mailer:9999
