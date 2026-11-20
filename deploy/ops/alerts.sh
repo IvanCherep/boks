@@ -18,6 +18,11 @@ alert() {
   fi
 }
 
+# 0. Commands from the team group (/stats, /online, /server), first and in the
+# background: ops/bot.py asks the relay every 3 seconds for the next 55, so an
+# answer takes seconds. The lock keeps it to one, should a minute run long.
+setsid flock -n /tmp/boks-bot.lock python3 ops/bot.py --watch 55 >> /var/log/boks-ops.log 2>&1 < /dev/null &
+
 # 1. Every service is running. During a release (ops/switch.sh, flags/deploying,
 # at most 15 minutes old) an app copy being recreated is expected, not an outage.
 deploying=0
@@ -128,6 +133,3 @@ echo "$now" > "$mark"
 # from the page for authors, every work sent for review (ops/inbox.py).
 python3 ops/inbox.py || true
 
-# 11. Commands from the team group (/stats, /online, /server): collected from
-# the relay and answered (ops/bot.py). Before the relay knows /pending, nothing.
-python3 ops/bot.py || true

@@ -263,6 +263,9 @@ def answer(text):
 
 # --------------------------------------------------------------------- relay
 
+relay_complained = False
+
+
 def pending():
     local = os.environ.get("BOKS_BOT_COMMANDS")
     if local is not None:
@@ -275,15 +278,18 @@ def pending():
         "User-Agent": "boks-ops/1 (ops/bot.py)",
     })
     try:
-        with urllib.request.urlopen(request, timeout=15) as response:
+        with urllib.request.urlopen(request, timeout=8) as response:
             return json.loads(response.read().decode()).get("commands", [])
     except Exception as error:
-        # An older relay without /pending, or the network: nothing to do this minute.
-        print(f"bot: relay /pending failed: {error}", file=sys.stderr)
+        # The relay out of reach: nothing to do now, and one line a run in the log, not one every 3 seconds.
+        global relay_complained
+        if not relay_complained:
+            print(f"bot: {time.strftime('%H:%M:%S')} relay /pending failed: {error}", file=sys.stderr, flush=True)
+            relay_complained = True
         return []
 
 
-def main():
+def answer_pending():
     for item in pending()[:5]:
         text = str(item.get("text", ""))
         try:
@@ -293,6 +299,22 @@ def main():
         if reply:
             sent = notify(reply)
             print(f"bot: {time.strftime('%H:%M:%S')} {text[:40]!r} -> {'sent' if sent else 'NOT sent (relay unreachable)'}", flush=True)
+
+
+def main():
+    # `--watch N`: ask every 3 seconds for N seconds (alerts.sh starts one a
+    # minute, in the background, under a lock), so an answer takes seconds
+    # rather than waiting for the next minute. 20 asks a minute stay well
+    # inside the relay's free plan; the queue is read, and written only when
+    # something was in it.
+    if len(sys.argv) == 3 and sys.argv[1] == "--watch":
+        until = time.monotonic() + max(1, min(58, int(sys.argv[2])))
+        while time.monotonic() < until:
+            answer_pending()
+            time.sleep(3)
+        return 0
+    answer_pending()
+    return 0
 
 
 if __name__ == "__main__":
