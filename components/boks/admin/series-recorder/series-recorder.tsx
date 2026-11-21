@@ -222,6 +222,15 @@ function TextStep({ draft, ownByline, onSaved, onError, onNext }: StepProps & { 
     return () => clearTimeout(timer);
   }, [fields, dirty, draft.id, onSaved, onError]);
 
+  // Next saves what is typed first: leaving the step would cancel the pending save above.
+  const next = () => {
+    if (!dirty) return onNext();
+    updateSeriesDraft(draft.id, ownByline ? { title: fields.title, text: fields.text } : fields).then((saved) => {
+      onSaved(saved);
+      onNext();
+    }, (e) => onError(errorText(e)));
+  };
+
   const poem = useMemo(() => poemLines(fields.text), [fields.text]);
   const set = (name: keyof typeof fields) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setFields((f) => ({ ...f, [name]: event.target.value }));
 
@@ -242,7 +251,7 @@ function TextStep({ draft, ownByline, onSaved, onError, onNext }: StepProps & { 
         {poem.lines.length > 0 && <>{t.lines(poem.lines.length)} · {t.stanzas(poem.stanzas.length)} · {t.reading(clock(estimatedReadingMs(poem.lines)))}</>}
         <span className="series-rec__saved" aria-live="polite">{dirty ? t.saving : savedOnce ? t.saved : ""}</span>
       </p>
-      <Button onClick={onNext} disabled={!fields.title.trim() || !poem.lines.length}>{t.next}<ArrowRight className="size-4" /></Button>
+      <Button onClick={next} disabled={!fields.title.trim() || !poem.lines.length}>{t.next}<ArrowRight className="size-4" /></Button>
     </footer>
   </div>;
 }
