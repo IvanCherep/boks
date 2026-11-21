@@ -154,6 +154,17 @@ const russianSentences: Record<string, string> = {
   "This piece is with the team; it can be changed from My texts.": "Этот бок у редакции; изменить его можно в «Моих текстах».",
   "This piece already has its cover; replace it here.": "У этого бока уже есть обложка; замените её здесь.",
   "You already have this exact text on your page.": "Такой же текст уже есть на вашей странице.",
+  // The author's voice (`20261122120000_boks_author_voice.sql`, `app/api/author/voice`).
+  "Record or attach your reading first: a bok goes out with the author's voice.": "Сначала запишите или прикрепите чтение: бок выходит с голосом автора.",
+  "That is not a recording of this piece.": "Это не запись этого бока.",
+  "The recording is larger than 25 MB.": "Запись больше 25 МБ.",
+  "The recording is longer than 15 minutes.": "Запись длиннее 15 минут.",
+  "The recording is too short.": "Запись слишком короткая.",
+  "This file is not a recording we can read.": "Этот файл не похож на запись, которую мы можем прочитать.",
+  "This kind of recording is not accepted: mp3, m4a, wav, ogg or webm.": "Такую запись не принимаем: подойдут mp3, m4a, wav, ogg или webm.",
+  "Which text does the recording read?": "Какой текст читается в записи?",
+  "No such take.": "Такого дубля нет.",
+  "The recording could not be saved. Try again.": "Запись не сохранилась. Попробуйте ещё раз.",
   "A bok goes out with a picture: draw one or upload your own.": "Бок выходит с картинкой: нарисуйте её или загрузите свою.",
   "This piece is not yours or no longer exists.": "Этот бок не ваш или его больше нет.",
   "Only your own draft can be deleted here.": "Удалить здесь можно только свой черновик.",
@@ -306,6 +317,8 @@ const russianSentences: Record<string, string> = {
 };
 
 const russianPatterns: [RegExp, (...groups: string[]) => string][] = [
+  [/^At most (\d+) takes\. Delete one first\.$/, (n) => `Не больше ${n} дублей. Сначала удалите один.`],
+  [/^At most (\d+) takes for one piece\. Choose among the ones you have\.$/, (n) => `Не больше ${n} дублей на один бок. Выберите из тех, что есть.`],
   [/^A nickname needs at least (\d+) characters\.$/, (n) => `В никнейме должно быть не меньше ${n} символов.`],
   [/^A nickname can be at most (\d+) characters\.$/, (n) => `В никнейме может быть не больше ${n} символов.`],
   [/^No account holds the nickname @(\S+)\.$/, (h) => `Нет аккаунта с никнеймом @${h}.`],

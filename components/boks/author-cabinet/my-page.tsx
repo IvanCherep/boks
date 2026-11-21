@@ -36,6 +36,7 @@ import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "@/lib/
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { Composer, openInComposer } from "./composer";
 import { loadPublishing } from "./composer-data";
+import { loadMyVoices } from "./voice-data";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
 
 /**
@@ -176,7 +177,10 @@ const words = defineMessages(
     toCabinet: "Back to the cabinet",
     refresh: "Refresh",
     newBok: "New bok",
-    newBokHint: "Paste the text and send it to the editors: they make the cover.",
+    newBokHint: "Paste the text, read it in your voice and send it to the editors: they make the cover.",
+    voiceChip: "Waiting for your voice",
+    voiceNote: "Record or attach your reading, then send it to the editors.",
+    recordVoice: "Record",
     draftChip: "Draft",
     edit: "Edit",
     continueDraft: "Continue",
@@ -315,7 +319,10 @@ const words = defineMessages(
       toCabinet: "Вернуться в кабинет",
       refresh: "Обновить",
       newBok: "Новый бок",
-      newBokHint: "Вставьте текст и отправьте в редакцию: обложку сделаем мы.",
+      newBokHint: "Вставьте текст, прочитайте его своим голосом и отправьте в редакцию: обложку сделаем мы.",
+      voiceChip: "Ждёт вашего голоса",
+      voiceNote: "Запишите или прикрепите чтение, и бок можно отправить в редакцию.",
+      recordVoice: "Записать",
       draftChip: "Черновик",
       edit: "Изменить",
       continueDraft: "Продолжить",
@@ -442,15 +449,20 @@ export function MyPage({
     setSkippedState(next);
   }
 
+  /** Pieces whose chosen take reads their text as saved; null until known, so nothing is marked meanwhile. */
+  const [voiced, setVoiced] = useState<Set<string> | null>(null);
+
   const load = useCallback(async () => {
     try {
-      const [mine, look, shelf, publishing] = await Promise.all([
+      const [mine, look, shelf, publishing, voices] = await Promise.all([
         loadMyAuthorSpace(),
         loadSpacePreview(null).catch(() => null),
         loadMySeriesShelf(),
         loadPublishing(null).catch(() => null),
+        loadMyVoices().catch(() => null),
       ]);
       setData(mine);
+      setVoiced(voices ? new Set(voices.filter((voice) => voice.current).map((voice) => voice.bokId)) : null);
       setPreview(look);
       setOnShelf(shelf);
       setDirect(Boolean(publishing?.direct));
@@ -589,8 +601,8 @@ export function MyPage({
     <Topbar title={title} backLabel={w.back} languageLabel={w.language} onBack={() => go(back)} />
   );
 
-  function compose(bokId: string | null) {
-    openInComposer(bokId);
+  function compose(bokId: string | null, at: "voice" | null = null) {
+    openInComposer(bokId, at);
     go("my-page-new");
   }
 
@@ -760,6 +772,8 @@ export function MyPage({
             const previewed = preview?.items.find((entry) => entry.key === item.key || (item.bokId && entry.bokId === item.bokId));
             const piece = item.work?.seriesPiece ?? previewed?.seriesPiece ?? null;
             const series = item.format === "series" || item.work?.format === "series";
+            // A draft without the author's reading of its text cannot go to the editors yet.
+            const voiceWaiting = Boolean(item.draft && item.bokId && voiced && !voiced.has(item.bokId));
             return (
               <li key={item.key} className={`amp-card${isSkipped ? " is-skipped" : ""}${item.draft || item.coverWaiting ? " is-draft" : ""}`}>
                 <button type="button" className="amp-card__cover" disabled={!previewed && !item.draft && !item.coverWaiting} onClick={() => ((item.draft || item.coverWaiting) && item.bokId ? compose(item.bokId) : readItem(item, Boolean(piece)))} aria-label={`${item.draft ? w.continueDraft : item.coverWaiting ? w.edit : piece ? w.watch : w.readText}: ${item.title}`}>
@@ -772,11 +786,13 @@ export function MyPage({
                     <span className={`asp-chip asp-chip--${series || piece ? "series" : "text"}`}>{w.format[series || piece ? "series" : "text"]}</span>
                     {item.coverWaiting
                       ? <span className="asp-chip asp-chip--warn">{w.waitingChip}</span>
+                      : voiceWaiting
+                      ? <span className="asp-chip asp-chip--warn">{w.voiceChip}</span>
                       : item.draft
                       ? <span className="asp-chip asp-chip--draft">{w.draftChip}</span>
                       : <span className={`asp-chip asp-chip--${isSkipped ? "withdrawn" : chipTone(status)}`}>{isSkipped ? w.skipped : w.status[status]}</span>}
                   </span>
-                  {item.draft && <small className="amp-card__note">{w.draftNote}</small>}
+                  {item.draft && <small className="amp-card__note">{voiceWaiting ? w.voiceNote : w.draftNote}</small>}
                   {item.coverWaiting && <small className="amp-card__note">{w.waitingNote}</small>}
                   {item.seriesHeld && <small className="amp-card__note">{w.seriesHeld}</small>}
                   {item.work?.note && item.work.status === "changes_requested" && <small className="amp-card__note">{w.yourNote} {item.work.note}</small>}
@@ -784,8 +800,11 @@ export function MyPage({
                     <small className="amp-card__note">{onShelf ? w.seriesOnShelf : item.work.seriesPublished ? w.seriesLive : w.seriesWaiting}</small>
                   )}
                   <div className="amp-card__actions">
+                    {item.draft && item.bokId && voiceWaiting && (
+                      <button type="button" className="btn amp-card__watch" onClick={() => compose(item.bokId, "voice")}>● {w.recordVoice}</button>
+                    )}
                     {item.draft && item.bokId && (
-                      <button type="button" className="btn amp-card__watch" onClick={() => compose(item.bokId)}>{w.continueDraft}</button>
+                      <button type="button" className={voiceWaiting ? "btn btn-secondary" : "btn amp-card__watch"} onClick={() => compose(item.bokId)}>{w.continueDraft}</button>
                     )}
                     {item.coverWaiting && item.bokId && (
                       <button type="button" className="btn btn-secondary" onClick={() => compose(item.bokId)}>{w.edit}</button>

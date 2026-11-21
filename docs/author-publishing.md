@@ -4,7 +4,8 @@ Status 2026-11-20: released (see "Production" below).
 
 An author whose page the team opened (the authors behind the red curtain)
 publishes a new bok from Cabinet → My page in about a minute. They paste the
-text, keep or type a title and press **Send to the editors**. Covers of text
+text, keep or type a title, read it aloud (see "The author's voice") and press
+**Send to the editors**. Covers of text
 boks are made only by the editors (owner's rule, 2026-11-21): a new piece goes
 to them for its cover and comes out once it has one. A piece that already has
 its cover is edited and saved straight away. Every other author sends texts for review as before (`/author`, Write
@@ -50,6 +51,8 @@ are all refused by the database for them, not only hidden.
   writes to the editors in Requests and ideas. The database refuses a cover
   from an author (`save_my_bok`) and refuses them a drawing
   (`reserve_my_cover_drawing`), `20261122100000_boks_covers_by_editors.sql`.
+- **Voice**: under the text, the author's reading of it. A new piece goes to
+  the editors only with one; see "The author's voice".
 - **The Boks Series note**: the best works, chosen by the editors and readers,
   get their own Boks Series episode.
 - **Send to the editors** (⌘/Ctrl Enter) or **Save as draft**; for a piece
@@ -61,6 +64,64 @@ are all refused by the database for them, not only hidden.
   note that the moving preview for links is made in the background, usually
   within half an hour. That is the curtain loop job
   (`deploy/curtain/curtain.mjs`): every 15 minutes, at most 8 loops a run.
+
+## The author's voice
+
+The author's voice is the platform's DNA (owner, 2026-11-22): no bok goes out
+without its author's reading. The composer's **Голос** block, between the
+text and the buttons, says so in one line («Каждый бок выходит с вашим
+голосом. Иллюстрации и Boks Series делает редакция.») and offers two equal
+ways, side by side (stacked on a phone):
+
+- **Записать с суфлёром**: the Series recorder's teleprompter and microphone
+  (`components/boks/admin/series-recorder/teleprompter.tsx`, `microphone.ts`):
+  level check, a 3-2-1 count, pace, hold, start over (R), Space to stop. Prose
+  is cut into lines for it by `promptStanzas`: a blank line starts a stanza, a
+  line break is a line, a long line is cut after sentences, then commas, then
+  between words, at about 64 characters.
+- **Прикрепить свою запись**: mp3, m4a, wav, ogg or webm, up to 15 minutes
+  and 25 MB. The file input is reset after each pick, so the same file can be
+  chosen again.
+
+Takes are listed newest first: listen, choose, delete (at most 5 at a time,
+30 in all). A new take is chosen when none is, or when the chosen one reads
+another text. Each take remembers the text it reads (`voiceFingerprint`: the
+first 16 hex digits of SHA-256 of the text with runs of spaces and line breaks
+made one space). When the words change, every older take is marked **старый
+текст** and does not count until a new one is made; a change of line breaks
+alone keeps it. **Send to the editors** stays closed, with the reason under it
+(record or attach a reading, no bok goes out without a voice), until there is
+a chosen take of the text as it is. **Save as draft** always works; a draft
+without a voice shows on My page as **Ждёт вашего голоса** with **Записать**,
+which opens the composer at the Голос block. A piece already with the editors
+needs a new take only when its words change. Editing a published piece needs
+no voice and shows no Голос block.
+
+**Where it is kept.** The takes are files beside the Series recorder's drafts:
+`<BOKS_SERIES_DIR>/voices/<bokId>/` (`voice.json` and `take-<n>.<ext>`),
+through `app/api/author/voice/<bok>` (GET the takes, PATCH `{ chosen }`) and
+`app/api/author/voice/<bok>/<file>` (PUT `take`, GET, DELETE), store
+`lib/boks/author/voice/store.ts`. The bytes must be the audio their kind says
+(the recorder's `looksLikeAudio`). Who asks is answered by the database with
+the caller's own token (`get_my_bok_voice_access`): only the piece's author
+(a verified author, the piece theirs or nobody's yet) writes; Studio may also
+listen. After every change the route puts the chosen take into the database
+(`set_my_bok_voice`, table `bok_voices`), which is all the database keeps.
+
+**What the database refuses** (`20261122120000_boks_author_voice.sql`):
+`save_my_bok` sending a new piece to the editors (`p_cover_by_team`), or
+changing the words of a piece already with them, without a chosen take of
+that very text («Record or attach your reading first: a bok goes out with the
+author's voice.»). `boks_voice_fingerprint` in SQL and `voiceFingerprint` in
+`lib/boks/author/voice/rules.ts` give the same value; a test holds them to one
+known text. The fingerprint comes from the browser, so an author could claim
+a take of another text; it is their own piece, and the editors listen to it.
+
+**Studio.** In Moderation a piece shows **Голос автора** next to the cover
+panel: the source (teleprompter or own recording, with its file name), the
+length, whether it reads the text as it is, a player and a download link
+(`components/boks/admin/author-voice.tsx`, `studio_bok_voice`). The editors
+build the Boks Series from it.
 
 ## The editors' cover
 
@@ -116,6 +177,7 @@ Migration `20261120100000_boks_author_direct_publishing.sql`:
 | `save_my_bok` | text, title, cover and state in one call: `draft` or `published`, and a hidden piece stays hidden. Publishing needs a cover. The composer chooses the bok id, so drawings count from the first press |
 | `get_my_publishing`, `get_my_bok_draft`, `delete_my_draft`, `reserve_my_cover_drawing`, `get_boks_cover` | what the composer asks; the picture of a published bok |
 | `reels.cover_requested`, `studio_cover_requests`, `studio_bok_cover`, `studio_set_bok_cover`, trigger `reels_cover_before_publish` | the editors' cover |
+| `bok_voices`, `set_my_bok_voice`, `get_my_bok_voice_access`, `get_my_bok_voices`, `studio_bok_voice`, `boks_voice_fingerprint` | the author's voice, `20261122120000_boks_author_voice.sql` |
 
 Where a bok's picture comes from, in order:
 1. a registered Series cover;

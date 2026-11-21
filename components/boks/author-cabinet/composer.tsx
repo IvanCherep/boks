@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@/app/author-composer.css";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -10,12 +10,15 @@ import { defineMessages, plural } from "@/lib/i18n/messages";
 import { ownCoverPath } from "@/lib/boks/own-cover";
 import { Icon, Topbar } from "./ui";
 import { deleteOwnDraft, loadOwnDraft, loadPublishing, newBokId, saveOwnBok, type SavedBok } from "./composer-data";
+import { VoiceBlock, voiceWords } from "./voice-block";
+import { voiceText } from "@/lib/boks/author/voice/rules";
 
 /**
  * A new bok, from the author's own page (`docs/author-publishing.md`): paste
- * the text, take the title from its first line or type one, give it a
- * picture - two drawn for it, or one's own - and publish. Authors with an
- * open page publish straight away; a draft waits on the page, in its order.
+ * the text, take the title from its first line or type one, read it aloud
+ * (the teleprompter, or a recording of one's own) and send it to the
+ * editors, who make its cover. No piece goes to them without the author's
+ * voice (`VoiceBlock`); a draft waits on the page, in its order.
  *
  * Everything typed is kept on this device until it is saved, so a closed tab
  * loses nothing.
@@ -130,10 +133,12 @@ const words = defineMessages(
 
 type Words = (typeof words)["en"];
 
-/** Which piece the composer opens: set by My page before it goes here; null is a new one. */
+/** Which piece the composer opens: set by My page before it goes here; null is a new one. `voice`: open at the Voice block. */
 let opening: string | null = null;
-export function openInComposer(bokId: string | null) {
+let openingAt: "voice" | null = null;
+export function openInComposer(bokId: string | null, at: "voice" | null = null) {
   opening = bokId;
+  openingAt = at;
 }
 
 const localKey = "boks-composer";
@@ -178,9 +183,11 @@ function minutesOf(characters: number) {
 
 export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: (message: string) => void }) {
   const w = useMessages(words);
+  const v = useMessages(voiceWords);
   const language = useUiLanguage();
   /** The piece being edited, fixed for this composer's life; null for a new one. */
   const [editingId] = useState(opening);
+  const [openAt] = useState(openingAt);
   const [bokId] = useState(() => {
     if (editingId) return editingId;
     const local = typeof window === "undefined" ? null : readLocal();
@@ -197,10 +204,15 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
   const [busy, setBusy] = useState<"" | "publish" | "draft" | "delete">("");
   const [problem, setProblem] = useState("");
   const [done, setDone] = useState<SavedBok | null>(null);
+  /** The text as last saved, to tell a change of words in a piece already with the editors. */
+  const [savedText, setSavedText] = useState("");
+  const [voiceReady, setVoiceReady] = useState(false);
+  const onVoiceReady = useCallback((ready: boolean) => setVoiceReady(ready), []);
   const textArea = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     opening = null;
+    openingAt = null;
     let live = true;
     void loadPublishing(bokId).then((answer) => {
       if (!live) return;
@@ -212,6 +224,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
         if (!live) return;
         setTitle(draft.title === titleFromText(draft.text) ? "" : draft.title);
         setText(draft.text);
+        setSavedText(draft.text);
         setStatus(draft.status);
         if (draft.cover) setSavedCover(`data:${draft.cover.webp.startsWith("/9j/") ? "image/jpeg" : "image/webp"};base64,${draft.cover.webp}`);
         setLoaded(true);
@@ -221,6 +234,11 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
     }
     return () => { live = false; };
   }, [bokId, editingId, w.loading, language]);
+
+  // My page's «Record» opens the piece at its Voice block.
+  useEffect(() => {
+    if (loaded && openAt === "voice") window.setTimeout(() => document.getElementById("acomp-voice")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }, [loaded, openAt]);
 
   // A new piece's text is kept on this device until it is saved.
   useEffect(() => {
@@ -247,7 +265,13 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
   const isNew = status === "new" || status === "draft" || status === "pending_review";
   // Covers are the editors' (`20261122100000_boks_covers_by_editors.sql`): a piece without one goes to them.
   const byTeam = !hasCover;
-  const publishBlocker = !trimmed ? w.needTextToPublish : tooLong ? w.tooLong(maxBokCharacters) : "";
+  // The author's voice (owner, 2026-11-22): a piece goes to the editors only
+  // with a chosen take of the text as it is; one already with them needs a
+  // new take when its words change. Published pieces are edited as before.
+  const voiced = isNew;
+  const wordsChanged = status === "pending_review" && voiceText(savedText) !== voiceText(trimmed);
+  const voiceBlocker = voiced && !voiceReady && trimmed && (byTeam || wordsChanged) ? v.missing : "";
+  const publishBlocker = !trimmed ? w.needTextToPublish : tooLong ? w.tooLong(maxBokCharacters) : voiceBlocker;
 
   async function save(publish: boolean) {
     if (publish && publishBlocker) { setProblem(publishBlocker); return; }
@@ -258,6 +282,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
       const saved = await saveOwnBok({ bokId, title: title.trim(), text: trimmed, publish, cover: null, coverByTeam: publish && byTeam });
       writeLocal(null);
       setStatus(saved.status);
+      setSavedText(trimmed);
       if (isNew && publish && (saved.status === "published" || saved.status === "pending_review")) {
         setDone(saved);
       } else {
@@ -379,6 +404,8 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
             {status === "pending_review" && !hasCover && <p className="notice">{w.waitingNote}</p>}
           </section>
 
+          {voiced && <VoiceBlock bokId={bokId} title={shownTitle} text={trimmed} onReady={onVoiceReady} />}
+
           <aside className="acomp-side">
             <CoverPanel w={w} title={shownTitle} image={savedCover} />
             <small className="acomp-hint">{hasCover ? w.coverChange : w.coverByEditorsNote}</small>
@@ -394,14 +421,14 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
 
           <footer className="acomp-bar">
             {problem && <p className="acomp-problem" role="alert">{problem}</p>}
-            {!problem && direct && publishBlocker && trimmed && <p className="acomp-hint acomp-blocker">{publishBlocker}</p>}
+            {!problem && direct && publishBlocker && trimmed && <p className={`acomp-hint acomp-blocker${voiceBlocker ? " is-voice" : ""}`}>{publishBlocker}</p>}
             <div className="acomp-bar__buttons">
               {status === "draft" && (
                 <button type="button" className="btn btn-quiet acomp-delete" disabled={Boolean(busy)} onClick={() => void remove()}>{w.deleteDraft}</button>
               )}
               {isNew ? (
                 <>
-                  <button type="button" className="btn btn-secondary" disabled={Boolean(busy) || !trimmed} onClick={() => void save(false)}>
+                  <button type="button" className="btn btn-secondary" disabled={Boolean(busy) || !trimmed || (status === "pending_review" && Boolean(voiceBlocker))} onClick={() => void save(false)}>
                     {busy === "draft" ? w.saving : status === "pending_review" ? w.saveChanges : w.saveDraft}
                   </button>
                   <button type="button" className="btn btn-red acomp-publish" disabled={Boolean(busy) || Boolean(publishBlocker)} onClick={() => void save(true)}>

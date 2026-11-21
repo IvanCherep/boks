@@ -13,6 +13,7 @@ import { currentUiLanguage, useMessages, useUiLanguage } from "@/components/boks
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { loadCoverRequests } from "@/components/boks/author-cabinet/composer-data";
 import { TeamCoverPanel } from "@/components/boks/admin/team-cover";
+import { AuthorVoicePanel } from "@/components/boks/admin/author-voice";
 
 const words = defineMessages({
   rightsLoadFailed: "Could not load the rights record. Retry or open the complete record.",
@@ -206,6 +207,7 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
         {coverRequests.has(selected.id) && (
           <TeamCoverPanel key={selected.id} bokId={selected.id} title={selected.title} text={selected.body} onCover={(version) => onCover(selected.id, version)} />
         )}
+        <AuthorVoicePanel key={`voice-${selected.id}`} bokId={selected.id} expected={coverRequests.has(selected.id)} />
         <div className={`studio-rights-note ${rights?.confirmed ? "is-confirmed" : ""}`}>
           <strong><ShieldCheck /> {rights === undefined ? t.loadingRights : rights?.confirmed ? t.rightsConfirmed : t.rightsNotConfirmed}</strong>
           {rights?.note && <p>{rights.note}</p>}

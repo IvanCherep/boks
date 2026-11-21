@@ -153,3 +153,63 @@
   .acomp-done__buttons .btn-red{grid-column:1 / -1}
 }
 @media (max-width:620px){ .acab .acomp-bar__buttons > .btn:only-child{grid-column:1 / -1} }
+
+/* The composer's Voice block (2026-11-22): every bok goes out in its author's voice.
+   Text, then Voice, then the send bar; on a phone the cover comes last. */
+.acomp-layout{grid-template-areas:"writing side" "voice side" "bar side" "rights side"}
+.acomp-voice{grid-area:voice;display:grid;gap:14px;min-width:0;padding:22px 22px 20px;border-radius:6px 18px 6px 6px;background:#fffdf8;box-shadow:inset 0 0 0 1px var(--line)}
+.acomp-voice__head{display:grid;gap:4px}
+.acomp-voice__head h2{margin:0;font-size:30px;line-height:1.1;letter-spacing:-.03em}
+.acomp-voice__head p{margin:0;font-size:15px;line-height:1.5;color:var(--ink)}
+.acomp-ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.acomp-way{display:grid;align-content:start;gap:8px;padding:16px;border-radius:12px;background:var(--paper,#f3efe7);box-shadow:inset 0 0 0 1px var(--line);min-width:0}
+.acomp-way strong{font:500 20px/1.15 var(--serif);letter-spacing:-.02em}
+.acomp-way small{font-size:13px;line-height:1.45;color:var(--muted)}
+.acab .acomp-way__go{justify-self:stretch;min-height:52px;margin-top:4px;display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.acomp-rec-dot{width:12px;height:12px;border-radius:50%;background:#fff8ec;box-shadow:0 0 0 3px #fff8ec55}
+.acomp-level{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;font-size:13px}
+.acomp-level em{font-style:normal;color:var(--muted)}
+.acomp-level em.is-good{color:#2f6b3f}
+.acomp-level em.is-loud{color:#a33d27}
+.acomp-meter{position:relative;display:block;height:6px;border-radius:999px;background:#e5e0d0;overflow:hidden}
+.acomp-meter>span{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:#aeb79a;transition:width .08s linear}
+.acomp-meter.is-good>span{background:#2f6b3f}
+.acomp-meter.is-loud>span{background:#c44a32}
+.acomp-takes{display:grid;gap:8px}
+.acomp-takes ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.acomp-take{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--line);background:#fff}
+.acomp-take.is-chosen{box-shadow:inset 0 0 0 2px #2f6b3f;background:#f1f6ec}
+.acomp-take.is-stale{background:#fbf3ec}
+.acab .acomp-take__play{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--paper,#f3efe7);font-size:14px}
+.acomp-take__name{display:grid;gap:2px;min-width:0}
+.acomp-take__name strong{font-size:15px}
+.acomp-take__name small{font-size:12px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
+.acomp-take__stale{margin-left:8px;padding:2px 8px;border-radius:999px;background:#f4d9cc;color:#8f2f1c;font-style:normal;font-size:11px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;vertical-align:1px}
+.acomp-take__name small.acomp-take__why{color:#8f2f1c}
+.acomp-take__actions{display:flex;align-items:center;gap:6px}
+.acab .acomp-take__actions .btn{min-height:40px;padding:8px 12px;font-size:14px;white-space:nowrap}
+.acomp-take__chosen{font-style:normal;font-size:13px;font-weight:650;color:#2f6b3f;white-space:nowrap}
+.acomp-voice__state{margin:0;padding:10px 12px;border-radius:10px;background:#fbefe9;color:#8f2f1c;font-size:14px;line-height:1.5}
+.acomp-voice__state.is-ready{background:#e9efe0;color:#2f3d2f}
+@media (max-width:860px){
+  .acomp-layout{grid-template-areas:"writing" "voice" "bar" "rights" "side"}
+}
+@media (max-width:620px){
+  .acomp-voice{padding:16px 14px;gap:12px}
+  .acomp-voice__head h2{font-size:26px}
+  .acomp-ways{grid-template-columns:1fr}
+  .acomp-take{grid-template-columns:auto minmax(0,1fr);gap:10px}
+  .acomp-take__actions{grid-column:1 / -1;justify-content:flex-end}
+  /* The reason the send is closed stays visible on a phone when it is the voice. */
+  .acomp-bar .acomp-blocker.is-voice{display:block;margin:0;font-size:12px}
+}
+/* Studio → Moderation: the author's voice beside the cover panel. */
+.studio-author-voice{display:grid;gap:8px;margin:0 0 16px;padding:14px;border-radius:12px;border:1px solid #2f6b3f;background:#f1f6ec;color:#22301f}
+.studio-author-voice.is-none{border-color:#c9b9a8;background:#f7f2ea}
+.studio-author-voice strong{display:flex;align-items:center;gap:6px;font-size:15px}
+.studio-author-voice strong svg,.studio-author-voice__download svg{width:16px;height:16px}
+.studio-author-voice p{margin:0;font-size:13px;line-height:1.5}
+.studio-author-voice p.is-stale{color:#8f2f1c}
+.studio-author-voice audio{width:100%}
+.studio-author-voice__download{display:inline-flex;align-items:center;gap:6px;font-size:13px;text-decoration:underline}
+.studio-author-voice__muted{margin:0 0 16px;font-size:13px;color:#6d5a4f}
