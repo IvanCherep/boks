@@ -4,9 +4,10 @@ Status 2026-11-20: released (see "Production" below).
 
 An author whose page the team opened (the authors behind the red curtain)
 publishes a new bok from Cabinet → My page in about a minute. They paste the
-text, keep or type a title, give it a cover and press Publish. Nobody reviews
-it: the team chose them when it made the page, as it did when it granted Boks
-Series. Every other author sends texts for review as before (`/author`, Write
+text, keep or type a title and press **Send to the editors**. Covers of text
+boks are made only by the editors (owner's rule, 2026-11-21): a new piece goes
+to them for its cover and comes out once it has one. A piece that already has
+its cover is edited and saved straight away. Every other author sends texts for review as before (`/author`, Write
 a text / Upload files).
 
 ## Who publishes directly
@@ -43,17 +44,16 @@ are all refused by the database for them, not only hidden.
   text if the author says yes (`headingLine`). While it is empty the field shows the title the piece
   will get, which is `boks_title_from_text` mirrored by `lib/boks/bok-title.ts`
   (a `* * *` line is skipped).
-- **Cover**: required to publish, not to save a draft. Drawn, uploaded, or left to the editors (below):
-  - **Draw two**: two pictures in the house look, drawn from the text. That
-    is the whole allowance for one piece. The first goes on the cover at
-    once; the author can switch to the other.
-  - **Upload your own**: any picture, or drag it onto the frame. The browser
-    cuts it to 9:16 around the middle at 1080×1920
-    (`lib/boks/author/covers/cover-image.ts`).
-  The frame shows the cover with the title over it, as the reader's cover does.
+- **Cover**: the editors'. The author cannot upload or draw one. The frame
+  says «Обложку делает редакция» until there is a cover, then shows it with
+  the title over it, as the reader's cover does; to change it the author
+  writes to the editors in Requests and ideas. The database refuses a cover
+  from an author (`save_my_bok`) and refuses them a drawing
+  (`reserve_my_cover_drawing`), `20261122100000_boks_covers_by_editors.sql`.
 - **The Boks Series note**: the best works, chosen by the editors and readers,
   get their own Boks Series episode.
-- **Publish** (⌘/Ctrl Enter) or **Save as draft**. The rights line under the
+- **Send to the editors** (⌘/Ctrl Enter) or **Save as draft**; for a piece
+  that already has its cover, **Publish** or **Save changes**. The rights line under the
   buttons is the confirmation, with a link to `/terms#author-content`: there is
   no checkbox. Until the piece is saved, the text waits in this browser's
   storage, so a closed tab loses nothing.
@@ -64,12 +64,10 @@ are all refused by the database for them, not only hidden.
 
 ## The editors' cover
 
-Under the cover buttons: **Let the editors choose the cover**. The frame then
-says so, and Publish becomes **Send to the editors**. The piece goes to the
+Every new piece goes this way. **Send to the editors** puts it in the
 ordinary review queue (`pending_review`, `reels.cover_requested`). The author
-is told it goes out as soon as the editors choose its cover. It waits on My
-page marked **Waiting for a cover**; the author can still edit it there. If
-they add their own picture, it goes out at once.
+is told it goes out as soon as the editors make its cover. It waits on My
+page marked **Waiting for a cover**; the author can still edit it there.
 
 In Studio → Moderation, the piece is marked **Needs a cover** and shows a
 panel (`components/boks/admin/team-cover.tsx`). Studio uploads a picture
@@ -129,8 +127,9 @@ the card's key, so a new picture also remakes the loop.
 
 ## Drawing
 
-`POST /api/author/covers` with the author's token. The database counts the
-pictures first (`reserve_my_cover_drawing`). Then the route writes a job under
+Since 2026-11-22 only Studio draws covers (`reserve_my_cover_drawing` refuses
+anyone else), from the team-cover panel. `POST /api/author/covers` with the
+caller's token; the database counts the pictures first. Then the route writes a job under
 `BOKS_COVERS_DIR`. `scripts/cover-worker.mts` (`npm run covers:worker`) picks
 it up:
 - YandexGPT writes two scenes from the piece's opening (at most 1 500
