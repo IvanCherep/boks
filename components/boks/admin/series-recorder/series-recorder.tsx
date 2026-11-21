@@ -196,7 +196,7 @@ function DraftEditor({ id, ownByline, onChanged, onClose, onDeleted }: {
     {error && <p className="series-rec__error" role="alert">{error}</p>}
     {step === "text" && <TextStep draft={draft} ownByline={ownByline} onSaved={apply} onError={setError} onNext={() => setStep("record")} />}
     {step === "record" && <RecordStep draft={draft} onSaved={apply} onError={setError} onNext={() => setStep("pictures")} />}
-    {step === "pictures" && <PicturesStep draft={draft} onSaved={apply} onError={setError} onNext={() => setStep("build")} />}
+    {step === "pictures" && <PicturesStep draft={draft} canUpload={!ownByline} onSaved={apply} onError={setError} onNext={() => setStep("build")} />}
     {step === "build" && <BuildStep draft={draft} ownByline={ownByline} onSaved={apply} onError={setError} onGo={setStep} />}
     <StepFeedback key={step} step={step} />
   </section>;
@@ -315,6 +315,17 @@ function RecordStep({ draft, onSaved, onError, onNext }: StepProps & { onNext: (
   const verdict = levelVerdict(mic.level);
 
   return <div className="series-rec__step series-rec__record">
+    <p className="series-rec__ways">{t.recordWays}</p>
+    <section className="series-rec__upload is-way">
+      <span><strong>{t.uploadTitle}</strong><small>{t.uploadLead}</small></span>
+      <Button variant="outline" onClick={() => fileInput.current?.click()} disabled={full || uploading || Boolean(pending)}><Upload className="size-4" />{t.attachOwn}</Button>
+      <input ref={fileInput} type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.webm" hidden onChange={(event) => {
+        void uploadFile(event.target.files?.[0]);
+        event.target.value = "";
+      }} />
+      {fileError && <p className="series-rec__error" role="alert">{fileError}</p>}
+    </section>
+
     <section className="series-rec__mic">
       {mic.state === "on"
         ? <>
@@ -352,16 +363,6 @@ function RecordStep({ draft, onSaved, onError, onNext }: StepProps & { onNext: (
           {mic.state !== "unsupported" && <p className="series-rec__muted">{mic.state === "denied" ? t.micDenied : t.micOffLead}</p>}
           {mic.state !== "unsupported" && <Button onClick={() => void mic.open()} disabled={mic.state === "asking"}><Mic className="size-4" />{t.micOn}</Button>}
         </>}
-    </section>
-
-    <section className="series-rec__upload">
-      <span><strong>{t.uploadTitle}</strong><small>{t.uploadLead}</small></span>
-      <Button variant="outline" onClick={() => fileInput.current?.click()} disabled={full || uploading || Boolean(pending)}><Upload className="size-4" />{t.uploadAudio}</Button>
-      <input ref={fileInput} type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.webm" hidden onChange={(event) => {
-        void uploadFile(event.target.files?.[0]);
-        event.target.value = "";
-      }} />
-      {fileError && <p className="series-rec__error" role="alert">{fileError}</p>}
     </section>
 
     {pending && <p className="series-rec__pending" role="status">
@@ -452,7 +453,8 @@ function TakeRow({ draft, file, durationMs, createdAt, onSaved, onError }: StepP
   </li>;
 }
 
-function PicturesStep({ draft, onSaved, onError, onNext }: StepProps & { onNext: () => void }) {
+/** `canUpload`: Studio may add its own pictures; an author's are drawn here only (2026-11-21). */
+function PicturesStep({ draft, canUpload, onSaved, onError, onNext }: StepProps & { canUpload: boolean; onNext: () => void }) {
   const t = useMessages(recorderMessages);
   const [uploading, setUploading] = useState(0);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -505,7 +507,7 @@ function PicturesStep({ draft, onSaved, onError, onNext }: StepProps & { onNext:
         ? <div className="series-rec__generate is-paused" role="status">
           <span className="series-rec__generate-text">
             <strong><CloudOff aria-hidden="true" />{t.unavailableTitle}</strong>
-            <small>{t.unavailableLead}</small>
+            <small>{canUpload ? t.unavailableLead : t.unavailableLeadAuthor}</small>
           </span>
           <Budget used={budget.used} limit={budget.limit} />
           <Button variant="outline" onClick={() => act(generateSeriesImages(draft.id, Math.max(1, wanted)))} disabled={busy || wanted < 1}>
@@ -516,7 +518,7 @@ function PicturesStep({ draft, onSaved, onError, onNext }: StepProps & { onNext:
           ? <div className="series-rec__generate is-spent">
             <span className="series-rec__generate-text">
               <strong><Sparkles aria-hidden="true" />{t.budgetSpent(budget.limit)}</strong>
-              <small>{t.budgetSpentLead}</small>
+              <small>{canUpload ? t.budgetSpentLead : t.budgetSpentLeadAuthor}</small>
             </span>
             <Budget used={budget.used} limit={budget.limit} />
           </div>
@@ -538,17 +540,17 @@ function PicturesStep({ draft, onSaved, onError, onNext }: StepProps & { onNext:
             </span>
             <small className="series-rec__budget-rule">{t.budgetRule(budget.limit)}</small>
           </div>}
-      <div className="series-rec__own">
+      {canUpload && <div className="series-rec__own">
         <Button variant="outline" onClick={() => input.current?.click()} disabled={busy || room < 1}><Upload className="size-4" />{t.uploadOwn}</Button>
         <input ref={input} type="file" accept="image/*" multiple hidden onChange={(event) => {
           void upload(event.target.files);
           event.target.value = "";
         }} />
         <small>{t.picturesLead}</small>
-      </div>
+      </div>}
     </section>
     {art.state !== "idle" && <p className="series-rec__drawing" role="status"><i aria-hidden="true" />{art.kind === "generate" ? t.drawingMany(art.count) : t.drawingOne}</p>}
-    {art.state === "idle" && art.error && art.error !== "unavailable" && <p className="series-rec__error" role="alert">{t.artErrors[art.error]}</p>}
+    {art.state === "idle" && art.error && art.error !== "unavailable" && <p className="series-rec__error" role="alert">{(canUpload ? t.artErrors : t.artErrorsAuthor)[art.error]}</p>}
     {room < 1 && art.state === "idle" && <p className="series-rec__muted">{t.picturesFull(seriesLimits.images)}</p>}
 
     {draft.images.length + generating + uploading > 0 && <ol className="series-rec__frames">
@@ -605,7 +607,7 @@ function PicturesStep({ draft, onSaved, onError, onNext }: StepProps & { onNext:
         </li>;
       })}
     </ol>}
-    {draft.images.length + generating + uploading === 0 && <p className="series-rec__empty-pictures">{t.noPictures}</p>}
+    {draft.images.length + generating + uploading === 0 && <p className="series-rec__empty-pictures">{canUpload ? t.noPictures : t.noPicturesAuthor}</p>}
 
     <footer className="series-rec__foot">
       <span />

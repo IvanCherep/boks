@@ -200,7 +200,8 @@ describe("an author's own drafts", () => {
     const { readFile } = await import("node:fs/promises");
     const draft = await store.createDraft(anna, { title: "Т", text: poem });
     await store.addFile(anna, draft.id, "take", webm, { extension: "webm", durationMs: 60000 });
-    await store.addFile(anna, draft.id, "image", jpeg, { width: 768, height: 1344 });
+    await store.generateImages(anna, draft.id, 1); // an author's pictures are drawn, not uploaded
+    await finishArt(draft.id, true, 1);
     const fail = async (errorCode: string) => {
       const dir = join(root, draft.id);
       const job = JSON.parse(await readFile(join(dir, "job.json"), "utf8"));
@@ -216,5 +217,27 @@ describe("an author's own drafts", () => {
     }
     await expect(store.queueBuild(anna, draft.id)).rejects.toThrow(/used all its builds/);
     await store.queueBuild(studio, draft.id); // Studio has no ceiling
+  });
+
+  it("draw their pictures and may not upload their own; Studio may", async () => {
+    const store = await import("@/lib/boks/series-recorder/store");
+    const draft = await store.createDraft(anna, { title: "Т", text: poem });
+    await expect(store.addFile(anna, draft.id, "image", jpeg, { width: 768, height: 1344 }))
+      .rejects.toMatchObject({ status: 403, message: expect.stringMatching(/generate them here/) });
+    expect((await store.readDraft(anna, draft.id)).images).toHaveLength(0);
+
+    // Everything else about pictures and builds stays the author's.
+    await store.generateImages(anna, draft.id, 2);
+    await finishArt(draft.id, true, 2);
+    let read = await store.readDraft(anna, draft.id);
+    await store.regenerateImage(anna, draft.id, read.images[0].file);
+    await finishArt(draft.id, true, 1, read.images[0].file);
+    read = await store.readDraft(anna, draft.id);
+    read = await store.updateDraft(anna, draft.id, { showImage: read.images[0].versions![0].file });
+    read = await store.removeFile(anna, draft.id, read.images[1].file);
+    expect(read.images).toHaveLength(1);
+
+    read = await store.addFile(studio, draft.id, "image", jpeg, { width: 768, height: 1344 });
+    expect(read.images.map((image) => image.source)).toEqual(["generated", "upload"]);
   });
 });

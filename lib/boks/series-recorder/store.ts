@@ -418,6 +418,8 @@ export async function addFile(
     fresh.updatedAt = take.createdAt;
     await writeJsonAtomically(join(dir, "draft.json"), fresh);
   } else {
+    // An author's pictures are drawn here (Generate); uploading one's own is Studio's (owner's decision, 2026-11-21).
+    if (!actor.admin) throw new SeriesStoreError("Pictures are drawn by boks: generate them here.", 403);
     if (data.images.length >= seriesLimits.images) throw new SeriesStoreError(`At most ${seriesLimits.images} pictures. Delete one first.`, 409);
     if (bytes.byteLength > seriesLimits.imageBytes) throw new SeriesStoreError("The picture is too large.", 413);
     const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
