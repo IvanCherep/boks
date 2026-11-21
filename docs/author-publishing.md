@@ -70,7 +70,7 @@ are all refused by the database for them, not only hidden.
 The author's voice is the platform's DNA (owner, 2026-11-22): no bok goes out
 without its author's reading. The composer's **Голос** block, between the
 text and the buttons, says so in one line («Каждый бок выходит с вашим
-голосом. Иллюстрации и Boks Series делает редакция.») and offers two equal
+голосом. Рисунки и серию делает редакция, от вас нужен только голос.») and offers two equal
 ways, side by side (stacked on a phone):
 
 - **Записать с суфлёром**: the Series recorder's teleprompter and microphone
@@ -79,7 +79,7 @@ ways, side by side (stacked on a phone):
   is cut into lines for it by `promptStanzas`: a blank line starts a stanza, a
   line break is a line, a long line is cut after sentences, then commas, then
   between words, at about 64 characters.
-- **Прикрепить свою запись**: mp3, m4a, wav, ogg or webm, up to 15 minutes
+- **Загрузить готовую запись**: mp3, m4a, wav, ogg or webm, up to 15 minutes
   and 25 MB. The file input is reset after each pick, so the same file can be
   chosen again.
 
