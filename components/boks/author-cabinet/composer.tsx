@@ -11,6 +11,9 @@ import { ownCoverPath } from "@/lib/boks/own-cover";
 import { Icon, Topbar } from "./ui";
 import { deleteOwnDraft, loadOwnDraft, loadPublishing, newBokId, saveOwnBok, type SavedBok } from "./composer-data";
 import { VoiceBlock, voiceWords } from "./voice-block";
+import { DecisionNote } from "./decision-note";
+import { loadMyDecisions } from "./voice-data";
+import type { EditorDecision } from "@/lib/boks/author/editor-decisions";
 import { voiceText } from "@/lib/boks/author/voice/rules";
 
 /**
@@ -207,6 +210,8 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
   /** The text as last saved, to tell a change of words in a piece already with the editors. */
   const [savedText, setSavedText] = useState("");
   const [voiceReady, setVoiceReady] = useState(false);
+  /** The editors' answer on this piece, when they returned or refused it. */
+  const [decision, setDecision] = useState<EditorDecision | null>(null);
   const onVoiceReady = useCallback((ready: boolean) => setVoiceReady(ready), []);
   const textArea = useRef<HTMLTextAreaElement>(null);
 
@@ -220,6 +225,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
       setChecked(true);
     }).catch(() => undefined);
     if (editingId) {
+      void loadMyDecisions().then((all) => { if (live) setDecision(all.find((entry) => entry.bokId === editingId) ?? null); }).catch(() => undefined);
       void loadOwnDraft(bokId).then((draft) => {
         if (!live) return;
         setTitle(draft.title === titleFromText(draft.text) ? "" : draft.title);
@@ -269,6 +275,9 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
   // with a chosen take of the text as it is; one already with them needs a
   // new take when its words change. Published pieces are edited as before.
   const voiced = isNew;
+  // Refused by the editors: the text stays readable here, and nothing sends it again.
+  const refused = status === "rejected" && decision?.decision === "refused";
+  const notBefore = decision?.decision === "changes" && decision.kind === "recording" ? decision.decidedAt : null;
   const wordsChanged = status === "pending_review" && voiceText(savedText) !== voiceText(trimmed);
   const voiceBlocker = voiced && !voiceReady && trimmed && (byTeam || wordsChanged) ? v.missing : "";
   const publishBlocker = !trimmed ? w.needTextToPublish : tooLong ? w.tooLong(maxBokCharacters) : voiceBlocker;
@@ -361,7 +370,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
     <main
       className="page detail-page amp acomp"
       onKeyDown={(event) => {
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && direct && !busy) {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && direct && !busy && !refused) {
           event.preventDefault();
           void save(true);
         }
@@ -373,6 +382,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
       ) : (
         <div className="acomp-layout">
           <section className="acomp-writing">
+            {decision && (status === "draft" || refused) && <DecisionNote decision={decision} />}
             <label className="acomp-title">
               <span className="acomp-label">{w.titleLabel} <em>{w.titleOptional}</em></span>
               <input
@@ -404,7 +414,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
             {status === "pending_review" && !hasCover && <p className="notice">{w.waitingNote}</p>}
           </section>
 
-          {voiced && <VoiceBlock bokId={bokId} title={shownTitle} text={trimmed} onReady={onVoiceReady} />}
+          {voiced && <VoiceBlock bokId={bokId} title={shownTitle} text={trimmed} notBefore={notBefore} onReady={onVoiceReady} />}
 
           <aside className="acomp-side">
             <CoverPanel w={w} title={shownTitle} image={savedCover} />
@@ -419,7 +429,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
             </div>
           </aside>
 
-          <footer className="acomp-bar">
+          {!refused && <footer className="acomp-bar">
             {problem && <p className="acomp-problem" role="alert">{problem}</p>}
             {!problem && direct && publishBlocker && trimmed && <p className={`acomp-hint acomp-blocker${voiceBlocker ? " is-voice" : ""}`}>{publishBlocker}</p>}
             <div className="acomp-bar__buttons">
@@ -441,7 +451,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
                 </button>
               )}
             </div>
-          </footer>
+          </footer>}
           <small className="acomp-rights">{w.rights} <a href="/terms#author-content" target="_blank" rel="noreferrer">{w.terms}</a>{isNew ? <span className="acomp-keys"> · {w.keepHint}</span> : null}</small>
         </div>
       )}

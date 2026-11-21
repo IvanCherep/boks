@@ -7,10 +7,12 @@ import { levelVerdict, useMicrophone } from "@/components/boks/admin/series-reco
 import { Teleprompter } from "@/components/boks/admin/series-recorder/teleprompter";
 import { clock } from "@/components/boks/admin/series-recorder/messages";
 import { estimatedReadingMs, takeExtension } from "@/lib/boks/series-recorder/rules";
-import { currentVoice, isStaleTake, promptStanzas, voiceFingerprint, voiceLimits, type VoiceTake, type VoiceTakes } from "@/lib/boks/author/voice/rules";
+import { isStaleTake, promptStanzas, voiceFingerprint, voiceLimits, type VoiceTake, type VoiceTakes } from "@/lib/boks/author/voice/rules";
 import { readableBoksError } from "@/lib/boks/errors";
 import { defineMessages } from "@/lib/i18n/messages";
+import { takeAfterNote } from "@/lib/boks/author/editor-decisions";
 import { chooseTake, deleteTake, loadTakes, takeUrl, uploadTake } from "./voice-data";
+import { decisionWords } from "./decision-words";
 
 /**
  * The composer's Voice block (`docs/author-publishing.md`, "The author's
@@ -120,14 +122,17 @@ function audioLength(blob: Blob) {
   }).finally(() => URL.revokeObjectURL(url));
 }
 
-export function VoiceBlock({ bokId, title, text, onReady }: {
+export function VoiceBlock({ bokId, title, text, notBefore = null, onReady }: {
   bokId: string;
   title: string;
   /** The text as it is now; a take of another text does not count. */
   text: string;
+  /** The editors returned the piece for its recording: takes made before their note do not count either. */
+  notBefore?: string | null;
   onReady: (ready: boolean) => void;
 }) {
   const w = useMessages(voiceWords);
+  const d = useMessages(decisionWords);
   const language = useUiLanguage();
   const mic = useMicrophone();
   const [takes, setTakes] = useState<VoiceTakes | null>(null);
@@ -151,7 +156,10 @@ export function VoiceBlock({ bokId, title, text, onReady }: {
     return () => { live = false; };
   }, [text]);
 
-  const current = fingerprint && hasText ? currentVoice(takes, fingerprint) : null;
+  /** A take that does not count: of another text, or made before the editors asked for a new recording. */
+  const oldWhy = (take: VoiceTake) => (fingerprint && isStaleTake(take, fingerprint) ? w.staleWhy : !takeAfterNote(take.createdAt, notBefore) ? d.beforeNote : null);
+  const chosenTakeNow = takes?.takes.find((take) => take.file === takes.chosen) ?? null;
+  const current = fingerprint && hasText && chosenTakeNow && !oldWhy(chosenTakeNow) ? chosenTakeNow : null;
   const ready = Boolean(current);
   useEffect(() => onReady(ready), [ready, onReady]);
 
@@ -159,13 +167,18 @@ export function VoiceBlock({ bokId, title, text, onReady }: {
     setSaving(true);
     setProblem("");
     try {
-      setTakes(await uploadTake(bokId, blob, { durationMs, source, name, fingerprint: await voiceFingerprint(text) }));
+      let next = await uploadTake(bokId, blob, { durationMs, source, name, fingerprint: await voiceFingerprint(text) });
+      // A chosen take from before the editors' note gives way to the new one.
+      const chosen = next.takes.find((take) => take.file === next.chosen);
+      const newest = next.takes.at(-1);
+      if (chosen && newest && chosen !== newest && !takeAfterNote(chosen.createdAt, notBefore)) next = await chooseTake(bokId, newest.file);
+      setTakes(next);
     } catch (error) {
       setProblem(readableBoksError(error, w.failed, language));
     } finally {
       setSaving(false);
     }
-  }, [bokId, text, w.failed, language]);
+  }, [bokId, text, notBefore, w.failed, language]);
 
   async function attach(file: File | undefined) {
     if (!file) return;
@@ -183,7 +196,7 @@ export function VoiceBlock({ bokId, title, text, onReady }: {
   const full = list.length >= voiceLimits.takes;
   const blocked = !hasText || saving || full;
   const verdict = levelVerdict(mic.level);
-  const chosenStale = Boolean(takes?.chosen && fingerprint && list.some((take) => take.file === takes.chosen && isStaleTake(take, fingerprint)));
+  const chosenStale = Boolean(chosenTakeNow && oldWhy(chosenTakeNow));
 
   return (
     <section className="acomp-voice" id="acomp-voice" aria-labelledby="acomp-voice-title">
@@ -241,7 +254,7 @@ export function VoiceBlock({ bokId, title, text, onReady }: {
           <span className="acomp-label">{w.takes}</span>
           <ul>
             {[...list].reverse().map((take) => (
-              <TakeRow key={take.file} bokId={bokId} take={take} chosen={takes?.chosen === take.file} stale={Boolean(fingerprint && isStaleTake(take, fingerprint))}
+              <TakeRow key={take.file} bokId={bokId} take={take} chosen={takes?.chosen === take.file} why={oldWhy(take)}
                 onChange={setTakes} onProblem={setProblem} fingerprint={fingerprint ?? ""} />
             ))}
           </ul>
@@ -275,11 +288,12 @@ export function VoiceBlock({ bokId, title, text, onReady }: {
 
 const numberOf = (take: Pick<VoiceTake, "file">) => Number(take.file.match(/\d+/)?.[0] ?? 0);
 
-function TakeRow({ bokId, take, chosen, stale, fingerprint, onChange, onProblem }: {
+function TakeRow({ bokId, take, chosen, why, fingerprint, onChange, onProblem }: {
   bokId: string;
   take: VoiceTake;
   chosen: boolean;
-  stale: boolean;
+  /** Why the take does not count, or null when it does. */
+  why: string | null;
   fingerprint: string;
   onChange: (takes: VoiceTakes) => void;
   onProblem: (message: string) => void;
@@ -289,6 +303,7 @@ function TakeRow({ bokId, take, chosen, stale, fingerprint, onChange, onProblem 
   const [playing, setPlaying] = useState(false);
   const [busy, setBusy] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
+  const stale = Boolean(why);
 
   useEffect(() => () => {
     if (audio.current) {
@@ -333,7 +348,7 @@ function TakeRow({ bokId, take, chosen, stale, fingerprint, onChange, onProblem 
       <span className="acomp-take__name">
         <strong>{w.take(numberOf(take))}{stale && <em className="acomp-take__stale">{w.stale}</em>}</strong>
         <small>{clock(take.durationMs)} · {take.source === "upload" ? `${w.attached}${take.name ? `: ${take.name}` : ""}` : w.recorded} · {when}</small>
-        {stale && <small className="acomp-take__why">{w.staleWhy}</small>}
+        {stale && <small className="acomp-take__why">{why}</small>}
       </span>
       <span className="acomp-take__actions">
         {chosen && !stale

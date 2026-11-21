@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Check, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, RefreshCw, RotateCcw, ShieldCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
@@ -14,6 +14,7 @@ import { defineMessages, plural } from "@/lib/i18n/messages";
 import { loadCoverRequests } from "@/components/boks/author-cabinet/composer-data";
 import { TeamCoverPanel } from "@/components/boks/admin/team-cover";
 import { AuthorVoicePanel } from "@/components/boks/admin/author-voice";
+import { EditorDecisionDialog, RefusedDecision, editorDecisionWords } from "@/components/boks/admin/editor-decision";
 
 const words = defineMessages({
   rightsLoadFailed: "Could not load the rights record. Retry or open the complete record.",
@@ -119,6 +120,9 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
   const [queueStatus, setQueueStatus] = useState<"pending_review" | "rejected">("pending_review");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [refusalOpen, setRefusalOpen] = useState(false);
+  /** A piece sent from My page: returned for changes or refused, with a reason (`EditorDecisionDialog`). */
+  const [deciding, setDeciding] = useState<"changes" | "refused" | null>(null);
+  const td = useMessages(editorDecisionWords);
   const [reading, setReading] = useState(false);
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
@@ -178,6 +182,8 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
   }
   const rights = evidence?.id === selected.id ? evidence.rights : undefined;
   const wordCount = evidence?.id === selected.id ? evidence.wordCount : selected.wordCount;
+  // Sent from My page (text and voice, the editors make the cover): returned or refused with a reason, never sent back silently.
+  const myPagePiece = selected.status === "pending_review" && coverRequests.has(selected.id);
 
   return (
     <section className={`studio-review ${reading ? "studio-review--reading" : ""}`}>
@@ -217,16 +223,24 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
         <dl><dt>{t.account}</dt><dd>{selected.authorUserId ? <button type="button" className="inspector-link" onClick={() => openPerson(selected.authorUserId!)}>@{selected.authorHandle.replace(/^@+/, "")} ↗</button> : selected.authorHandle || t.unavailable}</dd>
           <dt>{t.submitted}</dt><dd>{selected.submittedAt ? new Date(selected.submittedAt).toLocaleString(language) : "—"}</dd>
           <dt>{t.length}</dt><dd>{t.minutes(selected.minutes)}{Number.isFinite(wordCount) ? ` · ${t.words(wordCount)}` : ""}</dd></dl>
+        {selected.status === "rejected" && <RefusedDecision key={`decision-${selected.id}`} bokId={selected.id} onReopened={onRefresh} />}
         {selected.reviewNote && <p className="studio-review-previous">{t.previousReason} {selected.reviewNote}</p>}
-        <label htmlFor={`review-note-${selected.id}`}>{t.noteToAuthor}</label>
-        <Textarea id={`review-note-${selected.id}`} value={reasons[selected.id] ?? ""} rows={5}
-          onChange={(event) => setReasons((current) => ({ ...current, [selected.id]: event.target.value }))} />
-        <small>{t.requiredIfSentBack}</small>
+        {!myPagePiece && <>
+          <label htmlFor={`review-note-${selected.id}`}>{t.noteToAuthor}</label>
+          <Textarea id={`review-note-${selected.id}`} value={reasons[selected.id] ?? ""} rows={5}
+            onChange={(event) => setReasons((current) => ({ ...current, [selected.id]: event.target.value }))} />
+          <small>{t.requiredIfSentBack}</small>
+        </>}
         {status && <p role="alert">{status}</p>}
         <div className="studio-review-decisions">
           <Button disabled={busy} onClick={() => void review(selected, "approve")}><Check /> {t.approvePublish}</Button>
-          <Button variant="outline" disabled={busy} onClick={() => setRefusalOpen(true)}><XCircle /> {t.sendBack}</Button>
+          {myPagePiece ? <>
+            <Button variant="outline" disabled={busy} onClick={() => setDeciding("changes")}><RotateCcw /> {td.returnForChanges}</Button>
+            <Button variant="outline" disabled={busy} onClick={() => setDeciding("refused")}><XCircle /> {td.refuse}</Button>
+          </> : <Button variant="outline" disabled={busy} onClick={() => setRefusalOpen(true)}><XCircle /> {t.sendBack}</Button>}
         </div>
+        <EditorDecisionDialog key={`dialog-${selected.id}`} bokId={selected.id} title={selected.title} decision={deciding}
+          onClose={() => setDeciding(null)} onDone={() => { setDeciding(null); setReading(false); onRefresh(); }} />
         <button type="button" className="inspector-link" onClick={() => openBok(selected.id)}>{t.openRecord} <ArrowUpRight className="inline size-4" /></button>
       </aside>
       <Dialog open={refusalOpen} onOpenChange={(open) => !busy && setRefusalOpen(open)}><DialogContent className="studio-dialog" onInteractOutside={(event) => busy && event.preventDefault()} onEscapeKeyDown={(event) => busy && event.preventDefault()}><div className="studio-dialog-brand"><BoksLogo /></div><DialogHeader><p className="studio-eyebrow">{t.studio}</p><DialogTitle>{t.requestChanges}</DialogTitle><DialogDescription className="sr-only">{t.requestChangesHint}</DialogDescription></DialogHeader><div className="studio-paper-slip"><p className="studio-eyebrow">{t.to(selected.authorHandle.replace(/^@+/, ""))}</p><h2>{selected.title}</h2></div><label className="studio-field">{t.whatToChange}<Textarea value={reasons[selected.id] ?? ""} rows={6} autoFocus onChange={(event) => setReasons((current) => ({ ...current, [selected.id]: event.target.value }))} /></label><p className="studio-hint">{t.authorSeesNote}</p><p className="studio-meta">{t.nothingPublished}</p>{status && <p role="alert">{status}</p>}<DialogFooter><Button variant="outline" onClick={() => setRefusalOpen(false)} disabled={busy}>{t.cancel}</Button><Button disabled={busy || !reasons[selected.id]?.trim()} onClick={() => void review(selected, "reject")}>{t.sendBack}</Button></DialogFooter></DialogContent></Dialog>

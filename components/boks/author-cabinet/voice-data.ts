@@ -3,6 +3,7 @@
 import { currentAccessToken } from "@/components/boks/supabase-browser-data";
 import { supabase } from "@/lib/boks/supabase-client";
 import type { VoiceSource, VoiceTakes } from "@/lib/boks/author/voice/rules";
+import type { DecisionKind, EditorDecision, EditorDecisionKind } from "@/lib/boks/author/editor-decisions";
 
 /**
  * The author's voice on a piece, in the browser: the takes through
@@ -61,3 +62,15 @@ export const loadMyVoices = () => call<SavedVoice[]>("get_my_bok_voices");
 
 /** Studio → Moderation: the author's reading of a piece, or null. */
 export const loadStudioVoice = (bokId: string) => call<SavedVoice | null>("studio_bok_voice", { p_bok_id: bokId });
+
+// ------------------------------------------------------------ the editors' answer
+
+
+/** The author's own: requests for changes and refusals (`get_my_editor_decisions`). */
+export const loadMyDecisions = () => call<EditorDecision[]>("get_my_editor_decisions");
+
+/** Studio returns a piece for changes or refuses it, with a reason (`studio_decide_bok`). */
+export const studioDecide = (bokId: string, decision: EditorDecisionKind, kind: DecisionKind, note: string) =>
+  call<EditorDecision>("studio_decide_bok", { p_bok_id: bokId, p_decision: decision, p_kind: kind, p_note: note });
+export const studioReopen = (bokId: string) => call<EditorDecision>("studio_reopen_bok", { p_bok_id: bokId });
+export const loadStudioDecision = (bokId: string) => call<EditorDecision | null>("studio_bok_decision", { p_bok_id: bokId });

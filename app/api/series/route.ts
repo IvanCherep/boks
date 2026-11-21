@@ -1,4 +1,6 @@
+import { adminJsonError } from "@/lib/boks/admin-request";
 import { spendSeriesCredit } from "@/lib/boks/series-recorder/actor";
+import { authorSeriesClosedMessage, seriesRecorderOpenTo } from "@/lib/boks/series-recorder/switch";
 import { createDraft, listDrafts } from "@/lib/boks/series-recorder/store";
 import { readJsonBody, seriesJson, seriesRoute } from "./respond";
 
@@ -17,6 +19,8 @@ export function GET(request: Request) {
 
 export function POST(request: Request) {
   return seriesRoute(request, async (actor, token) => {
+    // Closed to authors while the switch is off (`lib/boks/series-recorder/switch.ts`), before a Series is spent.
+    if (!seriesRecorderOpenTo(actor)) return adminJsonError(authorSeriesClosedMessage, 403);
     const body = await readJsonBody(request);
     if (!actor.admin) {
       const refused = await spendSeriesCredit(token);

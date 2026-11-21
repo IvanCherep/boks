@@ -123,6 +123,44 @@ length, whether it reads the text as it is, a player and a download link
 (`components/boks/admin/author-voice.tsx`, `studio_bok_voice`). The editors
 build the Boks Series from it.
 
+## When the editors cannot take a piece
+
+A piece sent from My page (text and voice, waiting for its cover) either goes
+out, or comes back with the editors' reasons (owner, 2026-11-22). Never a
+silent drop, and never an email or a message: the author reads it on My page.
+
+**In Studio → Moderation** such a piece has, beside **Approve**, two actions:
+**Вернуть на доработку** and **Отказать**. Each opens a dialog that needs
+what the reason is about (**Запись**, **Текст**, **Законодательство**,
+**Другое**) and words the author will read
+(`components/boks/admin/editor-decision.tsx`, `studio_decide_bok`). Other
+pieces in the queue keep the old **Send back with note**.
+
+- **Вернуть на доработку**: the piece goes back to the author as a draft,
+  not counted anywhere. On My page it says **Редакция просит доработать**,
+  with the reason and the editors' words, and one action: **Записать заново**
+  (the composer at the Голос block) for the recording, **Исправить текст**
+  for the text, **Доработать** otherwise. The composer shows the same note at
+  the top. Returned for the recording, only a reading made after the note
+  counts: older takes say «Записана до просьбы редакции», and the database
+  refuses to send it again without a newer one. Sending it again answers the
+  request (the decision is cleared).
+- **Отказать**: the piece is `rejected`. My page shows **Редакция не сможет
+  выпустить этот текст**, the reason, the words, that the text stays with the
+  author, and a link to Requests and ideas («Если не согласны, напишите нам
+  в …»). The text opens in the composer to read, with no send bar; the
+  database refuses saving or sending it. In the queue's Refused list Studio
+  sees the decision and **Открыть заново**, which turns it into a request for
+  changes with the same words (`studio_reopen_bok`).
+
+The disagree line names the button as it reads on My page, «Просьбы и
+предложения» («Requests and ideas» in English).
+
+Data: `bok_editor_decisions` (one row a piece: `changes` or `refused`, the
+kind, the note, who and when), read by the author through
+`get_my_editor_decisions` and by Studio through `studio_bok_decision`,
+`20261122140000_boks_editor_decisions.sql`.
+
 ## The editors' cover
 
 Every new piece goes this way. **Send to the editors** puts it in the
@@ -177,6 +215,7 @@ Migration `20261120100000_boks_author_direct_publishing.sql`:
 | `save_my_bok` | text, title, cover and state in one call: `draft` or `published`, and a hidden piece stays hidden. Publishing needs a cover. The composer chooses the bok id, so drawings count from the first press |
 | `get_my_publishing`, `get_my_bok_draft`, `delete_my_draft`, `reserve_my_cover_drawing`, `get_boks_cover` | what the composer asks; the picture of a published bok |
 | `reels.cover_requested`, `studio_cover_requests`, `studio_bok_cover`, `studio_set_bok_cover`, trigger `reels_cover_before_publish` | the editors' cover |
+| `bok_editor_decisions`, `studio_decide_bok`, `studio_reopen_bok`, `studio_bok_decision`, `get_my_editor_decisions` | the editors' reasoned answer, `20261122140000_boks_editor_decisions.sql` |
 | `bok_voices`, `set_my_bok_voice`, `get_my_bok_voice_access`, `get_my_bok_voices`, `studio_bok_voice`, `boks_voice_fingerprint` | the author's voice, `20261122120000_boks_author_voice.sql` |
 
 Where a bok's picture comes from, in order:

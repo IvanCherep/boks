@@ -8,6 +8,28 @@ pictures drawn for its lines, the stanzas fitted above the player. The result is
 link-only piece at `/l/<token>`. Studio uses it freely; an author uses it in
 their cabinet (`/author#series`) once the team has granted them Boks Series.
 
+## Hidden for authors (since 2026-11-22)
+
+What authors made with it alone was below the team's quality, so the
+self-serve recorder is hidden from every non-admin account until it is
+better. One switch, `authorSeriesRecorderEnabled` in
+`lib/boks/series-recorder/switch.ts`, now `false`:
+
+- the cabinet shows no entry card (`series-entry.tsx`) and no recorder;
+  `/author#series` goes back to My page (or the library without one);
+- `POST /api/series` answers a non-admin 403 "Boks Series are made by the
+  boks team for now…", before a Boks Series is spent;
+- Studio keeps everything, in Studio → Запись Series and in its own cabinet;
+- authors' existing drafts stay on disk untouched, and their grants
+  (`series_credits`) stay as they were.
+
+The composer's voice block uses the same teleprompter for a bok's reading;
+that is the author's voice for the editors and stays
+(`docs/author-publishing.md`, "The author's voice").
+
+**To turn it back on:** set `authorSeriesRecorderEnabled = true`, run the
+tests (`switch.test.ts` says it is off and must be changed with it), release.
+
 ## Boks Series for authors
 
 The team grants an author a number of Boks Series in Studio → Authors

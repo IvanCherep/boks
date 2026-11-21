@@ -3,6 +3,7 @@
 import { readPendingEmailCode } from "@/components/boks/pending-email-code";
 import { SeriesRecorder } from "@/components/boks/admin/series-recorder/series-recorder";
 import { SeriesEntry } from "./series-entry";
+import { seriesRecorderOpenTo } from "@/lib/boks/series-recorder/switch";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { linkOnlyCover } from "@/lib/boks/link-only";
 import { AuthorLanding } from "@/components/boks/author-landing/author-landing";
@@ -109,6 +110,8 @@ export function AuthorCabinet() {
   const [access, setAccess] = useState<{ loaded: boolean; value: AuthorAccess | null }>({ loaded: false, value: null });
   /** Boks Series the team has granted this account (`docs/series-recorder.md`); null when none or unknown. */
   const [series, setSeries] = useState<SeriesAccess | null>(null);
+  // Authors' own Boks Series are hidden while the switch is off (`lib/boks/series-recorder/switch.ts`); Studio keeps them.
+  const seriesOpen = Boolean(series?.allowed && seriesRecorderOpenTo(series));
   /** An author with an open page publishes from My page, straight away (`docs/author-publishing.md`). */
   const [direct, setDirect] = useState(false);
   const libraryScroll = useRef(0);
@@ -295,6 +298,13 @@ export function AuthorCabinet() {
       return () => window.clearTimeout(timer);
     }
   }, [access, offers, myPage, view, inviteToken, show, direct]);
+
+  // `#series` while the recorder is hidden for authors: back to My page (or the library without one).
+  useEffect(() => {
+    if (view !== "series" || !access.loaded || seriesOpen) return;
+    const timer = window.setTimeout(() => show(direct || myPage?.space ? "my-page" : "library", "replace"), 0);
+    return () => window.clearTimeout(timer);
+  }, [view, access.loaded, seriesOpen, direct, myPage, show]);
 
   // The address the page was opened at.
   useEffect(() => {
@@ -564,11 +574,11 @@ export function AuthorCabinet() {
     );
   }
   const withoutCabinet = access.value && !access.value.admin && access.value.published === 0 && !access.value.hasPage
-    && offers.length === 0 && !inviteToken && !myPage?.space && !series?.allowed;
+    && offers.length === 0 && !inviteToken && !myPage?.space && !seriesOpen;
   if (withoutCabinet) return <AuthorLanding access={access.value} signedIn />;
 
   // The recorder, on its own page: Studio's paper and ink, outside the cabinet's own styles.
-  if (shown === "series" && series?.allowed) {
+  if (shown === "series" && seriesOpen) {
     return (
       <div className="series-host">
         <div className="series-host__bar">
@@ -705,9 +715,9 @@ export function AuthorCabinet() {
             go("profile-edit");
           }}
           coverOf={bokCover}
-          pageEntry={offers.length > 0 || series?.allowed || (myPage && (myPage.space || myPage.items.length > 1)) ? (
+          pageEntry={offers.length > 0 || seriesOpen || (myPage && (myPage.space || myPage.items.length > 1)) ? (
             <>
-            {series?.allowed && <SeriesEntry access={series} onOpen={() => go("series")} />}
+            {seriesOpen && series && <SeriesEntry access={series} onOpen={() => go("series")} />}
             {offers.map((item) => (
               <button key={item.inviteId} type="button" className="draft-strip amp-strip amp-strip--attention" onClick={() => { setOffer(item); setView("invite"); }}>
                 <span className="draft-icon">
