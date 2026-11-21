@@ -3,8 +3,8 @@
 Studio → Редакция → Запись Series. A poem read aloud through a teleprompter
 becomes an immersive Series, built the way the hand-made author Series are
 (`docs/link-only-pieces.md`, «Published author-held pieces»): the author's own
-voice brought to the series' loudness, every word timed against the take, the
-author's own pictures, the stanzas fitted above the player. The result is a
+voice brought to the series' loudness, every word timed against the take,
+pictures drawn for its lines, the stanzas fitted above the player. The result is a
 link-only piece at `/l/<token>`. Studio uses it freely; an author uses it in
 their cabinet (`/author#series`) once the team has granted them Boks Series.
 
@@ -31,6 +31,14 @@ people mostly record their own work: their author page's name, else their
 byline when all their boks carry one (`ownName` in `get_my_series_access`,
 `20261118140000`). The catalogue account has no own name and starts empty;
 Studio can always type another author.
+
+**An author's pictures are drawn, not uploaded** (owner's decision,
+2026-11-21): an author makes them with Generate only, and the Pictures step
+shows them no upload. Uploading a picture is Studio's; the store refuses an
+author's (`addFile` with kind `image`, 403 "Pictures are drawn by boks").
+Everything else stays the author's: generating, drawing again, switching
+versions, deleting, building, the rebuild, choosing the version that stays,
+publishing.
 
 A take is refused unless its bytes are the audio its kind says (WebM, MP4,
 Ogg, WAV, MP3). An author sees and touches only their own drafts; anyone
@@ -82,8 +90,8 @@ wav, ogg or webm, up to ten minutes; it becomes a take like any other.
    down at the pace the poem was estimated to take; the line on the band is
    lit. Pace −/+, hold, arrows to nudge, Space stops, Escape drops the take.
    Up to five takes; listen, choose one (the first is chosen until another
-   is).
-3. **Pictures.** One to five, uploaded or generated, never reordered: a
+   is). Attaching a recording of one's own is shown first, as an equal way.
+3. **Pictures.** One to five, generated (and, in Studio only, uploaded), never reordered: a
    picture is replaced by deleting it and adding another. **Generate** draws
    one to four at a time (`seriesLimits.generate`), appended after the
    pictures there are: YandexGPT writes a scene from the lines each picture
@@ -94,7 +102,7 @@ wav, ogg or webm, up to ten minutes; it becomes a take like any other.
    ones still counted (`seriesLimits.artBudget`; `artUsed` on the draft, and
    `artAllowance` to give one draft more later). Pictures being drawn count
    at once; a drawing that fails spends nothing. The page shows the
-   allowance as eight marks. Uploads are made
+   allowance as eight marks. Studio's uploads are made
    JPEG in the browser, at most 2160 px on the long side. Each picture is cut
    to 9:16 from its middle, and the lines it carries are shown under it.
 4. **Series.** Build, watch the four steps, then the link, the length and
@@ -171,7 +179,7 @@ the work kept:
   after three tries is `service`. The build is "paused": the takes and
   pictures are saved, the team is on it, build again later.
 - **Yandex** out of quota, billing stopped or not answering is `unavailable`:
-  "picture generation is paused for now", upload your own or come back
+  "picture generation is paused for now", upload your own (Studio) or come back
   later. Pictures are not on the critical path.
 
 A build that breaks on our side for any other reason (`unexpected`) is
