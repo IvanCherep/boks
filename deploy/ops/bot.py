@@ -14,6 +14,8 @@ stops), and it exits by itself when this file changes, so a release takes effect
 
   /stats            today and yesterday
   /stats week       seven days, a row a day (also /stats 14, up to 31)
+  /stats authors    our authors (published author pages): fourteen days each, a row a day
+  /stats <handle>   one author, fourteen days (/stats komarov)
   /online           people on the site now
   /server           load, memory, disk, services, errors, the site's answer
   /help             this list
@@ -62,7 +64,7 @@ def env(name):
 
 def rows(sql):
     script = "set statement_timeout = '20s';\n" + TEAM_SQL + sql
-    done = subprocess.run([*PSQL, "-qAt", "-F", "|"], input=script, capture_output=True, text=True, cwd=ROOT, timeout=60)
+    done = subprocess.run([*PSQL, "-v", "ON_ERROR_STOP=1", "-qAt", "-F", "|"], input=script, capture_output=True, text=True, cwd=ROOT, timeout=60)
     if done.returncode != 0:
         raise RuntimeError(done.stderr.strip()[:300])
     return [line.split("|") for line in done.stdout.splitlines() if line.strip()]
@@ -158,6 +160,128 @@ def stats_days(n):
             f"(в них шум от открытых вкладок), Акк — новые аккаунты, ♥ — лайки. Команда не учитывается.</i>")
 
 
+# ------------------------------------------------------------------- authors
+
+# Our authors are the published author pages. A page's boks are the boks its
+# owner wrote and the works attached to it. The author's own account and the
+# team are left out. People: devices that met one of the author's boks (a card
+# shown, read, anything); RU: those of them whose visit came from Russia;
+# accounts: new accounts whose device had started one of the author's boks by
+# the end of the day the account was made (one reader can count for several).
+AUTHORS_SQL = """
+create temp table author_boks as
+  select s.id as space_id, r.id as reel_id from public.author_spaces s join public.reels r on r.author_user_id = s.owner_user_id
+    where s.status = 'published'
+  union
+  select s.id, w.bok_id from public.author_spaces s join public.author_space_works w on w.space_id = s.id
+    where s.status = 'published' and w.bok_id is not null;
+create temp table authors as
+  select s.id as space_id, s.owner_user_id, coalesce(p.handle, s.handle, '') as handle, coalesce(s.name, '?') as name
+  from public.author_spaces s left join public.user_profiles p on p.user_id = s.owner_user_id
+  where s.status = 'published' and exists (select 1 from author_boks b where b.space_id = s.id);
+"""
+
+
+def author_rows(n, handle=None):
+    only = "" if handle is None else "where lower(a.handle) = lower('" + re.sub(r"[^A-Za-z0-9_]", "", handle) + "')"
+    return rows(AUTHORS_SQL + f"""
+with days as (
+  select generate_series((now() at time zone '{TZ}')::date - {n - 1}, (now() at time zone '{TZ}')::date, '1 day')::date as d
+),
+lo as (select (min(d)::timestamp at time zone '{TZ}') as t from days),
+picked as (select a.* from authors a {only}),
+ev as (select (e.created_at at time zone '{TZ}')::date as d, b.space_id, e.visitor_id, e.reel_id, e.event_type, e.active_seconds, e.created_at
+       from public.recommendation_events e join author_boks b on b.reel_id = e.reel_id join picked a on a.space_id = b.space_id
+       where e.created_at >= (select t from lo) and e.user_id is distinct from a.owner_user_id
+         and e.visitor_id <> '' and e.visitor_id not in (select visitor_id from team_devices)
+         and e.user_id not in (select id from team_users)),
+ru as (select distinct visitor_id from public.boks_journey_events
+       where event = 'visit' and upper(country) = 'RU' and created_at >= (select t from lo) - interval '30 days'),
+reading as (select d, space_id, sum(secs) / 60.0 as minutes from (
+              select d, space_id, visitor_id, reel_id, max(active_seconds) as secs from ev
+              where event_type in ('heartbeat', 'complete', 'skip') and active_seconds is not null group by 1, 2, 3, 4) t group by 1, 2),
+acc as (select u.id, u.created_at, (u.created_at at time zone '{TZ}')::date as d from auth.users u
+        where not u.is_anonymous and u.id not in (select id from team_users) and u.created_at >= (select t from lo)),
+acc_dev as (select distinct acc.id, acc.d, e.visitor_id from acc join public.recommendation_events e on e.user_id = acc.id where e.visitor_id <> ''
+            union select distinct acc.id, acc.d, j.visitor_id from acc join public.boks_journey_events j on j.user_id = acc.id where coalesce(j.visitor_id, '') <> ''),
+acc_author as (select distinct acc_dev.d, b.space_id, acc_dev.id from acc_dev
+               join public.recommendation_events e on e.visitor_id = acc_dev.visitor_id and e.event_type = 'start'
+                 and e.created_at < ((acc_dev.d + 1)::timestamp at time zone '{TZ}')
+               join author_boks b on b.reel_id = e.reel_id join picked a on a.space_id = b.space_id
+               where acc_dev.id is distinct from a.owner_user_id)
+select a.handle, a.name, to_char(days.d, 'DD.MM'),
+  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id and ev.d = days.d),
+  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id and ev.d = days.d and visitor_id in (select visitor_id from ru)),
+  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id and ev.d = days.d and event_type = 'start'),
+  (select count(*) from ev where ev.space_id = a.space_id and ev.d = days.d and event_type = 'complete'),
+  coalesce((select round(minutes) from reading where reading.space_id = a.space_id and reading.d = days.d), 0),
+  (select count(*) from acc_author where acc_author.space_id = a.space_id and acc_author.d = days.d),
+  (select count(*) from public.likes l join author_boks b on b.reel_id = l.reel_id
+     where b.space_id = a.space_id and l.user_id not in (select id from team_users) and l.user_id is distinct from a.owner_user_id
+       and (l.created_at at time zone '{TZ}')::date = days.d),
+  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id)
+from picked a cross join days
+order by (select count(distinct visitor_id) from ev where ev.space_id = a.space_id) desc, a.name, days.d;
+""")
+
+
+AUTHOR_HEAD = f"{'Дата':<5} {'Люд':>4} {'РФ':>3} {'Чит':>4} {'Доч':>4} {'Мин':>4} {'Акк':>3} {'♥':>3}"
+AUTHOR_LEGEND = ("<i>Люд — люди (устройства), которым попались его боки, РФ — из них из России, Чит — начали читать, "
+                 "Доч — дочитано, Мин — минуты чтения, Акк — новые аккаунты, читавшие его до регистрации, ♥ — лайки. "
+                 "Команда и сам автор не учитываются.</i>")
+
+
+def author_tables(data):
+    """Rows grouped by author: (handle, name, period people, [day rows])."""
+    grouped = {}
+    for r in data:
+        grouped.setdefault((r[0], r[1]), {"people": r[10], "days": []})["days"].append(r)
+    return [(h, name, g["people"], g["days"]) for (h, name), g in grouped.items()]
+
+
+def author_table(days):
+    # The days before the author's boks met anyone say nothing: left out.
+    while len(days) > 1 and all(int(v) == 0 for v in days[0][3:10]):
+        days = days[1:]
+    lines = [AUTHOR_HEAD]
+    for r in days:
+        lines.append(f"{r[2]:<5} {r[3]:>4} {r[4]:>3} {r[5]:>4} {r[6]:>4} {r[7]:>4} {r[8]:>3} {r[9]:>3}")
+    total = lambda i: sum(int(r[i]) for r in days)
+    lines.append(f"{'Итого':<5} {'':>4} {'':>3} {'':>4} {total(6):>4} {total(7):>4} {total(8):>3} {total(9):>3}")
+    return "<pre>" + html.escape("\n".join(lines)) + "</pre>"
+
+
+def stats_authors(n=14):
+    blocks = author_tables(author_rows(n))
+    if not blocks:
+        return "Опубликованных страниц авторов с боками пока нет."
+
+    def render(keep):
+        parts = [f"👩‍🎨 <b>boks · авторы, {keep} дн.</b> (по Белграду, на {now_belgrade_text}, сегодня — неполный день)"]
+        for handle, name, people, days in blocks:
+            parts.append(f"<b>{html.escape(name)}</b>{' @' + html.escape(handle) if handle else ''} · людей за {n} дн.: {people}\n"
+                         + author_table(days[-keep:]))
+        parts.append(AUTHOR_LEGEND + "\nОдин автор за 14 дней: /stats " + html.escape(blocks[0][0] or "handle"))
+        return "\n".join(parts)
+
+    now_belgrade_text = now_belgrade()
+    # Telegram takes about 4000 characters; with many authors, fewer days.
+    keep = n
+    while keep > 1 and len(re.sub(r"<[^>]+>", "", render(keep))) > 3900:
+        keep -= 1
+    return render(keep)
+
+
+def stats_author(handle, n=14):
+    blocks = author_tables(author_rows(n, handle))
+    if not blocks:
+        return None
+    h, name, people, days = blocks[0]
+    return (f"👩‍🎨 <b>{html.escape(name)}</b>{' @' + html.escape(h) if h else ''} · {n} дн. "
+            f"(по Белграду, на {now_belgrade()}, сегодня — неполный день)\n"
+            f"{author_table(days)}\nЗа период людей: <b>{people}</b>\n{AUTHOR_LEGEND}")
+
+
 # -------------------------------------------------------------------- server
 
 def online_numbers():
@@ -228,6 +352,8 @@ def server():
 HELP = ("🤖 <b>Команды boks</b>\n"
         "/stats — сегодня и вчера\n"
         "/stats week — неделя по дням (или /stats 14, до 31 дня)\n"
+        "/stats authors — наши авторы, каждый по дням за 14 дней\n"
+        "/stats komarov — один автор (его @handle) за 14 дней\n"
         "/online — кто на сайте сейчас\n"
         "/server — нагрузка, память, диск, сервисы, ошибки\n"
         "Ответ приходит в течение минуты. Время — по Белграду.")
@@ -246,7 +372,13 @@ def answer(text):
             return stats_days(7)
         if re.fullmatch(r"\d{1,2}", arg):
             return stats_days(max(1, min(31, int(arg))))
-        return "Не понял период. Например: /stats, /stats week, /stats 14"
+        if arg in ("authors", "author", "авторы", "автор"):
+            return stats_authors()
+        if re.fullmatch(r"@?[a-z][a-z0-9_]{2,23}", arg):
+            found = stats_author(arg.lstrip("@"))
+            if found:
+                return found
+        return "Не понял. Например: /stats, /stats week, /stats 14, /stats authors, /stats komarov"
     if command in ("/server", "/status", "/сервер"):
         return server()
     if command in ("/online", "/онлайн"):
