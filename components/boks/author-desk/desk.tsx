@@ -24,9 +24,10 @@ import {
   type Stage,
   type Work,
 } from "@/lib/boks/author-desk/workflow";
+import { maxBokCharacters } from "@/lib/boks/contracts";
 import { durationProblem, fileProblem, useDesk, useTakes, type Desk, type DeskStatus } from "./store";
 import { Teleprompter } from "./teleprompter";
-import { uploadTake } from "@/components/boks/author-cabinet/voice-data";
+import { chooseTake, uploadTake } from "@/components/boks/author-cabinet/voice-data";
 import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
 import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
 
@@ -145,7 +146,11 @@ function useStatus(work: Work, desk: Desk) {
     const place = queue.findIndex((item) => item.id === work.id) + 1;
     return `В очереди ${ordinal(place)}, ${weekLabel(planned.get(work.id))}`;
   }
-  if (stageOf(work) === "voice") return work.chosenTake ? "Запись есть. Можно отдать редакции" : "Ждёт вашего голоса";
+  if (stageOf(work) === "voice") {
+    const chosen = work.takes.find((take) => take.id === work.chosenTake);
+    if (chosen && isStale(chosen, work.text)) return "Текст изменился после записи. Запишите заново";
+    return chosen ? "Запись есть. Можно отдать редакции" : "Ждёт вашего голоса";
+  }
   return work.text.trim() ? "Черновик" : "Новый текст";
 }
 
@@ -154,6 +159,21 @@ export function AuthorDesk() {
   const [route, setRoute] = useState<Route>({ work: null });
   const [support, setSupport] = useState(false);
   const [welcome, setWelcome] = useState(false);
+  const [unread, setUnread] = useState(0);
+  // The editors' unread messages, checked with each load of the Workshop.
+  const loads = desk.loads;
+  useEffect(() => {
+    if (!loads || support) return;
+    let alive = true;
+    loadMyAuthorSpace()
+      .then((page) => {
+        if (alive) setUnread(page.unread ?? 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [loads, support]);
   useEffect(() => {
     const sync = () => {
       setRoute(readRoute());
@@ -182,7 +202,6 @@ export function AuthorDesk() {
 
   if (desk.status !== "ready" || !desk.state) return <DeskGate status={desk.status} problem={desk.problem} onRetry={() => void desk.refresh()} />;
   const work = route.work ? desk.state.works.find((item) => item.id === route.work) : null;
-  const unread = desk.state.works.filter((item) => item.outcome && !item.editors.step).length;
 
   return (
     <main className="acab desk">
@@ -220,7 +239,15 @@ export function AuthorDesk() {
       ) : (
         <Home desk={desk} go={go} onHelp={() => setWelcome(true)} />
       )}
-      {support ? <SupportSheet desk={desk} onClose={() => setSupport(false)} /> : null}
+      {support ? (
+        <SupportSheet
+          desk={desk}
+          onClose={() => {
+            setSupport(false);
+            setUnread(0);
+          }}
+        />
+      ) : null}
       {welcome ? (
         <Welcome
           perYear={desk.state.plan.perYear}
@@ -310,10 +337,13 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const greeting = hour < 6 ? "Доброй ночи" : hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер";
   const active = works.filter((work) => !work.shelved || work.editors.step);
   const shelved = works.filter((work) => work.shelved && !work.editors.step).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const answered = active.filter((work) => work.outcome && !work.editors.step);
+  // A refusal asks nothing of the author: it waits a week in «Ждёт вас», then rests with the drafts.
+  const [weekAgo] = useState(() => new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString());
+  const oldRefusal = (work: Work) => work.outcome?.kind === "declined" && (work.outcome.at ?? "") < weekAgo;
+  const answered = active.filter((work) => work.outcome && !work.editors.step && !oldRefusal(work));
   const needVoice = active.filter((work) => stageOf(work) === "voice" && !work.chosenTake && !work.outcome);
   const recorded = active.filter((work) => stageOf(work) === "voice" && work.chosenTake && !work.outcome);
-  const drafts = active.filter((work) => stageOf(work) === "text").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const drafts = active.filter((work) => (stageOf(work) === "text" && !(work.outcome && !oldRefusal(work))) || oldRefusal(work)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const shelve = (work: Work) => desk.update(work.id, (current) => ({ ...current, shelved: true }));
   const authorName = (desk.state!.author.name ?? "").trim().split(/\s+/)[0] || "";
   const teamReady = desk.state!.ready;
@@ -322,8 +352,12 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length || teamReady.length;
 
   const startDraft = async () => {
-    const created = await desk.add(blankWork(""));
-    go(`w/${created.id}/text`);
+    try {
+      const created = await desk.add(blankWork(""));
+      go(`w/${created.id}/text`);
+    } catch {
+      /* said in the strip */
+    }
   };
 
   return (
@@ -332,9 +366,13 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
         <AddTextSheet
           onClose={() => setAdding(false)}
           onCreate={async (work, later) => {
-            const created = await desk.add(later ? { ...work, shelved: true } : work);
-            setAdding(false);
-            if (!later) go(`w/${created.id}/voice`);
+            try {
+              const created = await desk.add(later ? { ...work, shelved: true } : work);
+              setAdding(false);
+              if (!later) go(`w/${created.id}/voice`);
+            } catch {
+              // The sheet stays open with the text; the strip above says what went wrong.
+            }
           }}
         />
       ) : null}
@@ -458,7 +496,10 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
               <a key={work.id} href={`#w/${work.id}/text`} className="desk-book">
                 <span className="desk-book-title">{work.title || "Без названия"}</span>
                 <span className="desk-book-line">{firstLine(work.text) || work.idea.notes.at(-1)?.text || "Пока пусто"}</span>
-                <span className="desk-book-meta">{when(work.updatedAt)}</span>
+                <span className="desk-book-meta">
+                  {work.outcome?.kind === "declined" ? "Редакция не взяла · " : ""}
+                  {when(work.updatedAt)}
+                </span>
               </a>
             ))}
           </div>
@@ -614,13 +655,7 @@ function WorkScreen({ work, step, go, desk }: { work: Work; step: Stage; go: (ha
       <a href="#" className="desk-back" onClick={(event) => (event.preventDefault(), go(""))}>
         ← Мастерская
       </a>
-      <input
-        className="desk-title"
-        value={work.title}
-        placeholder="Название" maxLength={120}
-        aria-label="Название"
-        onChange={(event) => update((current) => ({ ...current, title: event.target.value }))}
-      />
+      <TitleField value={work.title} onChange={(title) => update((current) => ({ ...current, title }))} />
       <div className="desk-status-row">
         <p className="desk-status">{status}</p>
         {work.editors.step ? null : work.shelved ? (
@@ -1276,7 +1311,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
         <div>
           <h3>В очереди {ordinal(position + 1)}</h3>
           <p>
-            Редакция начнёт примерно {weekLabel(planned.get(work.id))}. Пока она не взяла текст в работу, порядок можно менять, а текст можно отозвать.
+            Редакция начнёт {weekLabel(planned.get(work.id))}. Пока она не взяла текст в работу, порядок можно менять, а текст можно отозвать.
           </p>
           <div className="desk-state-actions">
             <button type="button" className="desk-btn desk-btn-ink" onClick={toQueue}>
@@ -1439,12 +1474,49 @@ async function storeTake(desk: Desk, work: Work, blob: Blob, seconds: number) {
   try {
     await desk.flush(work.id);
     const fingerprint = await voiceFingerprint(desk.state?.works.find((item) => item.id === work.id)?.text ?? work.text);
-    const takes = await uploadTake(work.id, blob, { durationMs: seconds * 1000, source: "teleprompter", name: null, fingerprint });
+    const before = new Set(work.takes.map((take) => take.id));
+    let takes = await uploadTake(work.id, blob, { durationMs: seconds * 1000, source: "teleprompter", name: null, fingerprint });
+    const added = [...takes.takes].filter((take) => !before.has(take.file)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    if (added && takes.chosen !== added.file) takes = await chooseTake(work.id, added.file);
     await desk.voiceChanged(work.id, takes);
   } catch (error) {
     desk.fail(error, `«${work.title || "Без названия"}»: запись не загрузилась. Запишите этот текст ещё раз.`);
     throw error;
   }
+}
+
+/** The title: one line to type, wrapping when it is long; Enter leaves it, no line breaks. */
+function TitleField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const field = ref.current;
+    if (!field) return;
+    const fit = () => {
+      field.style.height = "auto";
+      field.style.height = `${field.scrollHeight}px`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      className="desk-title"
+      rows={1}
+      value={value}
+      placeholder="Название"
+      maxLength={120}
+      aria-label="Название"
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.currentTarget.blur();
+        }
+      }}
+      onChange={(event) => onChange(event.target.value.replace(/\s*\n+\s*/g, " "))}
+    />
+  );
 }
 
 /** Escape closes whatever sheet is open. */
@@ -1505,13 +1577,30 @@ function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number })
 }
 
 /** Most authors arrive with finished texts: paste one and go straight to the voice. */
-function AddTextSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (work: Work, later?: boolean) => void }) {
+function AddTextSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (work: Work, later?: boolean) => Promise<void> }) {
   useEscape(onClose);
   const [title, setTitle] = useState("");
   const [form, setForm] = useState<Work["form"]>("poem");
   const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
   const seconds = readingSeconds(text, form);
-  const reason = !text.trim() ? "" : text.trim().length < 120 ? "Нужен текст хотя бы в несколько строк." : seconds > 15 * 60 ? "Длиннее 15 минут чтения: бок столько не вмещает." : "";
+  const create = async (later: boolean) => {
+    if (saving) return;
+    const work = blankWork(title.trim());
+    work.form = form;
+    work.text = text.trim();
+    setSaving(true);
+    try {
+      await onCreate(work, later);
+    } finally {
+      setSaving(false);
+    }
+  };
+  const reason = !text.trim()
+    ? ""
+    : text.trim().length > maxBokCharacters
+      ? `Текст длиннее ${maxBokCharacters.toLocaleString("ru-RU")} знаков: бок столько не вмещает.`
+      : text.trim().length < 120 ? "Нужен текст хотя бы в несколько строк." : seconds > 15 * 60 ? "Длиннее 15 минут чтения: бок столько не вмещает." : "";
   return (
     <div className="desk-sheet-back" onClick={onClose}>
       <div className="desk-sheet" role="dialog" aria-label="Добавить текст" onClick={(event) => event.stopPropagation()}>
@@ -1534,26 +1623,16 @@ function AddTextSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (w
         <button
           type="button"
           className="desk-btn desk-btn-red"
-          disabled={!!reason || !text.trim()}
-          onClick={() => {
-            const work = blankWork(title.trim());
-            work.form = form;
-            work.text = text.trim();
-            onCreate(work);
-          }}
+          disabled={!!reason || !text.trim() || saving}
+          onClick={() => void create(false)}
         >
-          Дальше: прочитать вслух
+          {saving ? "Сохраняем…" : "Дальше: прочитать вслух"}
         </button>
         <button
           type="button"
           className="desk-quiet desk-center"
-          disabled={!text.trim()}
-          onClick={() => {
-            const work = blankWork(title.trim());
-            work.form = form;
-            work.text = text.trim();
-            onCreate(work, true);
-          }}
+          disabled={!text.trim() || saving || text.trim().length > maxBokCharacters}
+          onClick={() => void create(true)}
         >
           Сохранить на потом
         </button>

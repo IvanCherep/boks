@@ -10,6 +10,7 @@ import { publishMyAuthorSpace, requestSpaceChanges, sendMyMessage } from "@/comp
 import { currentBoksTermsVersion } from "@/components/boks/user-auth-panel";
 import { voiceFingerprint, voiceLimits, type VoiceTakes } from "@/lib/boks/author/voice/rules";
 import { readableBoksError } from "@/lib/boks/errors";
+import { supabase } from "@/lib/boks/supabase-client";
 import { maxBokCharacters } from "@/lib/boks/contracts";
 
 /**
@@ -55,10 +56,11 @@ function toState(data: ServerWorkshop): DeskState {
 
 /** What the server's refusal means for the page. */
 function classify(error: unknown): DeskStatus {
-  const text = String((error as { message?: string })?.message ?? error ?? "");
-  const code = (error as { code?: string })?.code;
-  if (/Sign in/i.test(text)) return "signed-out";
-  if (code === "42501" || /Workshop is open|invited/i.test(text)) return "not-author";
+  const value = error as { message?: string; closed?: boolean; original?: { message?: string } } | null;
+  const text = `${value?.message ?? ""} ${value?.original?.message ?? ""}`;
+  // Signed out comes first: the database refuses a guest with the same errcode as a reader.
+  if (/Sign in|Нужно войти|войдите/i.test(text)) return "signed-out";
+  if (value?.closed || /Workshop is open|авторам/i.test(text)) return "not-author";
   return "error";
 }
 
@@ -76,6 +78,8 @@ export function useDesk() {
   const [status, setStatus] = useState<DeskStatus>("loading");
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  /** Counts loads from the server, for whatever should follow them. */
+  const [loads, setLoads] = useState(0);
   const stateRef = useRef<DeskState | null>(null);
   const busyRef = useRef<Record<string, boolean>>({});
   const timers = useRef<Record<string, number>>({});
@@ -91,8 +95,27 @@ export function useDesk() {
 
   const refresh = useCallback(async () => {
     try {
+      if (!stateRef.current && supabase) {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session || session.session.user.is_anonymous) {
+          setStatus("signed-out");
+          return;
+        }
+      }
       const data = await loadWorkshop();
-      setState(toState(data));
+      const next = toState(data);
+      // Words typed while the answer was on its way stay as typed.
+      const typing = Object.keys(pendingText.current);
+      if (typing.length && stateRef.current) {
+        const mine = new Map(stateRef.current.works.map((work) => [work.id, work]));
+        next.works = next.works.map((work) => {
+          const local = typing.includes(work.id) ? mine.get(work.id) : undefined;
+          return local ? { ...work, title: local.title, text: local.text } : work;
+        });
+      }
+      stateRef.current = next;
+      setState(next);
+      setLoads((count) => count + 1);
       setStatus("ready");
     } catch (error) {
       const kind = classify(error);
@@ -112,7 +135,15 @@ export function useDesk() {
       if (document.visibilityState === "visible" && !Object.keys(pendingText.current).length) void refresh();
     };
     document.addEventListener("visibilitychange", onShow);
-    return () => document.removeEventListener("visibilitychange", onShow);
+    // And while the page stays open: the editors' answers arrive without a reload.
+    const timer = window.setInterval(() => {
+      const idle = !Object.keys(pendingText.current).length && !Object.keys(pendingMeta).length && !Object.values(busyRef.current).some(Boolean);
+      if (document.visibilityState === "visible" && idle) void refresh();
+    }, 45_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onShow);
+      window.clearInterval(timer);
+    };
   }, [refresh]);
 
   // Nothing typed is lost when the tab closes mid-save.
@@ -376,6 +407,7 @@ export function useDesk() {
 
   return {
     state,
+    loads,
     status,
     problem,
     clearProblem: () => setProblem(""),
@@ -478,9 +510,11 @@ export function useTakes(desk: Desk, work: Work) {
       await flush(work.id);
       const fingerprint = await voiceFingerprint(latestText());
       const before = new Set(takes?.takes.map((take) => take.file));
-      const next = await uploadTake(work.id, blob, { durationMs: seconds * 1000, source, name: name ?? null, fingerprint });
+      let next = await uploadTake(work.id, blob, { durationMs: seconds * 1000, source, name: name ?? null, fingerprint });
+      const added = [...next.takes].filter((take) => !before.has(take.file)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      // The recording just made is the one meant for the Series; an older one can still be chosen.
+      if (added && next.chosen !== added.file) next = await chooseTake(work.id, added.file);
       await apply(next);
-      const added = next.takes.find((take) => !before.has(take.file));
       if (added) {
         const url = URL.createObjectURL(blob);
         made.current.push(url);

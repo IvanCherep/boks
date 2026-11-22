@@ -486,3 +486,4 @@
 .desk .desk-q-title,.desk .desk-voice-title,.desk .desk-book-title,.desk .desk-ready-body h3,.desk .desk-answer b{overflow-wrap:anywhere}
 .desk .desk-title{overflow-wrap:anywhere}
 @keyframes desk-shimmer{to{background-position:-200% 0}}
+.desk textarea.desk-title{display:block;width:100%;resize:none;overflow:hidden;line-height:1.12;padding:4px 0 8px;min-height:0}
