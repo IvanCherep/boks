@@ -128,7 +128,8 @@ export function stageOf(work: Work): Stage {
 }
 
 /** Shorter than this is a note, not a text worth voicing. */
-export const textMinimum = 120;
+/** Any text can be read aloud: a quatrain, a single line. */
+export const textMinimum = 1;
 
 /** Reading aloud at an unhurried pace: about 14 characters a second for Russian prose, 11 for verse. */
 export function readingSeconds(text: string, form: Work["form"]) {

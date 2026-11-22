@@ -487,3 +487,4 @@
 .desk .desk-title{overflow-wrap:anywhere}
 @keyframes desk-shimmer{to{background-position:-200% 0}}
 .desk textarea.desk-title{display:block;width:100%;resize:none;overflow:hidden;line-height:1.12;padding:4px 0 8px;min-height:0}
+.desk .desk-status-row .desk-status{flex:1;min-width:0}

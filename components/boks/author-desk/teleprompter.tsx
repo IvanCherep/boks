@@ -45,6 +45,8 @@ export function Teleprompter({
       return next;
     });
   const [held, setHeld] = useState(false);
+  /** The browser gave the microphone: until then «Начать запись» waits, visibly. */
+  const [micReady, setMicReady] = useState(false);
   const [error, setError] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const streamRef = useRef<MediaStream | null>(null);
@@ -64,6 +66,7 @@ export function Teleprompter({
       ?.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
       .then((stream) => {
         streamRef.current = stream;
+        setMicReady(true);
         context = new AudioContext();
         const analyser = context.createAnalyser();
         analyser.fftSize = 512;
@@ -194,9 +197,9 @@ export function Teleprompter({
         event.stopPropagation();
         stop();
       } else if (event.key === "ArrowRight") setPace((value) => Math.min(2, +(value + 0.1).toFixed(1)));
-      else if (event.key === "ArrowLeft") setPace((value) => Math.max(0.4, +(value - 0.1).toFixed(1)));
+      else if (event.key === "ArrowLeft") setPace((value) => Math.max(0.2, +(value - 0.1).toFixed(1)));
       else if (event.key === "+" || event.key === "=") setPace((value) => Math.min(2, +(value + 0.1).toFixed(1)));
-      else if (event.key === "-") setPace((value) => Math.max(0.4, +(value - 0.1).toFixed(1)));
+      else if (event.key === "-") setPace((value) => Math.max(0.2, +(value - 0.1).toFixed(1)));
       else if ((event.key === "r" || event.key === "R" || event.key === "к" || event.key === "К") && phase === "rolling") restartRef.current();
       else if (event.key === "ArrowUp") offsetRef.current = Math.max(0, offsetRef.current - 40);
       else if (event.key === "ArrowDown") offsetRef.current += 40;
@@ -229,10 +232,10 @@ export function Teleprompter({
             <span style={{ width: `${Math.min(100, level * 260)}%` }} />
           </div>
           <p className="desk-prompter-hint">
-            {error || (level > 0.5 ? "Громковато: отодвиньтесь чуть дальше." : level > 0.05 ? "Хорошо слышно." : "Тишина. Скажите что-нибудь.")}
+            {error || (!micReady ? "Если браузер спросит, разрешите доступ к микрофону." : level > 0.5 ? "Громковато: отодвиньтесь чуть дальше." : level > 0.05 ? "Хорошо слышно." : "Тишина. Скажите что-нибудь.")}
           </p>
-          <button type="button" className="desk-btn desk-btn-red" onClick={start} disabled={!!error}>
-            Начать запись
+          <button type="button" className="desk-btn desk-btn-red" onClick={start} disabled={!!error || !micReady}>
+            {micReady || error ? "Начать запись" : "Ждём микрофон…"}
           </button>
           <p className="desk-prompter-keys">На клавиатуре: пробел, чтобы закончить · R, чтобы начать заново · ← →, чтобы изменить скорость</p>
         </div>
@@ -252,11 +255,11 @@ export function Teleprompter({
           </div>
           <footer className="desk-prompter-bar">
             <span className="desk-prompter-speed">
-              <button type="button" onClick={() => setPace((value) => Math.max(0.4, +(value - 0.1).toFixed(1)))} aria-label="Медленнее">
+              <button type="button" onClick={() => setPace((value) => Math.max(0.2, +(value - 0.1).toFixed(1)))} aria-label="Медленнее">
                 −
               </button>
               <span>
-                Скорость: {pace < 0.85 ? "медленнее" : pace > 1.15 ? "быстрее" : "обычная"}
+                Скорость: {pace < defaultPace - 0.05 ? "медленнее" : pace > defaultPace + 0.05 ? "быстрее" : "обычная"}
                 <small>{Math.round(pace * 100)}%</small>
               </span>
               <button type="button" onClick={() => setPace((value) => Math.min(2, +(value + 0.1).toFixed(1)))} aria-label="Быстрее">
@@ -280,13 +283,16 @@ export function Teleprompter({
   );
 }
 
-const paceKey = "boks-desk-pace";
+// v2: the default became 50% (2026-11-22); paces kept under the old key started at 100%.
+const paceKey = "boks-desk-pace-v2";
+/** Calm enough to read aloud without hurrying; − and + change it. */
+const defaultPace = 0.5;
 
 function readPace() {
   try {
     const stored = Number(sessionStorage.getItem(paceKey));
-    return stored >= 0.4 && stored <= 2 ? stored : 1;
+    return stored >= 0.2 && stored <= 2 ? stored : defaultPace;
   } catch {
-    return 1;
+    return defaultPace;
   }
 }

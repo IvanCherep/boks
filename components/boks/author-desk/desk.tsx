@@ -7,6 +7,7 @@ import {
   blankWork,
   canQueue,
   isStale,
+  textMinimum,
   materialKinds,
   newId,
   pinsByPart,
@@ -655,7 +656,12 @@ function WorkScreen({ work, step, go, desk }: { work: Work; step: Stage; go: (ha
       <a href="#" className="desk-back" onClick={(event) => (event.preventDefault(), go(""))}>
         ← Мастерская
       </a>
-      <TitleField value={work.title} onChange={(title) => update((current) => ({ ...current, title }))} />
+      <TitleField
+        value={work.title}
+        // With the editors or published, the title is fixed like the text: saving it would take the bok back to drafts.
+        readOnly={Boolean(work.editors.step && work.editors.step !== "queued")}
+        onChange={(title) => update((current) => ({ ...current, title }))}
+      />
       <div className="desk-status-row">
         <p className="desk-status">{status}</p>
         {work.editors.step ? null : work.shelved ? (
@@ -675,6 +681,19 @@ function WorkScreen({ work, step, go, desk }: { work: Work; step: Stage; go: (ha
             Отложить на потом
           </button>
         )}
+        {!work.editors.step && !work.outcome ? (
+          <button
+            type="button"
+            className="desk-quiet"
+            onClick={() => {
+              if (!window.confirm(`Удалить черновик «${work.title || "Без названия"}»? Текст и записи удалятся, вернуть их будет нельзя.`)) return;
+              go("");
+              void desk.removeDraft(work.id);
+            }}
+          >
+            Удалить
+          </button>
+        ) : null}
       </div>
 
       <nav className="desk-steps" aria-label="Шаги">
@@ -739,11 +758,11 @@ function TextStep({ work, update, go }: { work: Work; update: Update; go: (hash:
             {words} слов · около {Math.max(1, Math.round(seconds / 60))} мин вслух
             {seconds > 15 * 60 ? <b className="desk-warn"> · длиннее 15 минут, сократите</b> : null}
           </span>
-          <button type="button" className="desk-btn desk-btn-red" disabled={work.text.trim().length < 120 || seconds > 15 * 60} onClick={() => go(`w/${work.id}/voice`)}>
+          <button type="button" className="desk-btn desk-btn-red" disabled={work.text.trim().length < textMinimum || seconds > 15 * 60} onClick={() => go(`w/${work.id}/voice`)}>
             Дальше: прочитать вслух
           </button>
         </div>
-        {work.text.trim().length < 120 ? <p className="desk-calm">Чтобы перейти к голосу, нужен текст хотя бы в несколько строк.</p> : null}
+        
       </section>
 
       {hasNotes ? (
@@ -977,7 +996,7 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
     audio.src = url;
   };
 
-  if (work.text.trim().length < 120) {
+  if (work.text.trim().length < textMinimum) {
     return (
       <div className="desk-empty">
         <h3>Сначала текст</h3>
@@ -1486,7 +1505,7 @@ async function storeTake(desk: Desk, work: Work, blob: Blob, seconds: number) {
 }
 
 /** The title: one line to type, wrapping when it is long; Enter leaves it, no line breaks. */
-function TitleField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+function TitleField({ value, onChange, readOnly }: { value: string; onChange: (value: string) => void; readOnly?: boolean }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const field = ref.current;
@@ -1504,6 +1523,7 @@ function TitleField({ value, onChange }: { value: string; onChange: (value: stri
       ref={ref}
       className="desk-title"
       rows={1}
+      readOnly={readOnly}
       value={value}
       placeholder="Название"
       maxLength={120}
@@ -1600,7 +1620,7 @@ function AddTextSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (w
     ? ""
     : text.trim().length > maxBokCharacters
       ? `Текст длиннее ${maxBokCharacters.toLocaleString("ru-RU")} знаков: бок столько не вмещает.`
-      : text.trim().length < 120 ? "Нужен текст хотя бы в несколько строк." : seconds > 15 * 60 ? "Длиннее 15 минут чтения: бок столько не вмещает." : "";
+      : seconds > 15 * 60 ? "Длиннее 15 минут чтения: бок столько не вмещает." : "";
   return (
     <div className="desk-sheet-back" onClick={onClose}>
       <div className="desk-sheet" role="dialog" aria-label="Добавить текст" onClick={(event) => event.stopPropagation()}>

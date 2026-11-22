@@ -80,7 +80,7 @@ export function Teleprompter({ title, stanzas, stream, level, estimatedMs, onDon
   }, []);
 
   const changePace = useCallback((by: number) => setPace((p) => {
-    const next = Math.min(2, Math.max(0.5, Math.round((p + by) * 10) / 10));
+    const next = Math.min(2, Math.max(0.2, Math.round((p + by) * 10) / 10));
     try {
       sessionStorage.setItem(paceKey, String(next));
     } catch {
@@ -201,13 +201,15 @@ export function Teleprompter({ title, stanzas, stream, level, estimatedMs, onDon
   </div>, document.body);
 }
 
-const paceKey = "boks-series-recorder-pace";
+// v2: the default became 0.5× (2026-11-22), as in the Workshop.
+const paceKey = "boks-series-recorder-pace-v2";
+const defaultPace = 0.5;
 
 function readPace() {
   try {
     const stored = Number(sessionStorage.getItem(paceKey));
-    return stored >= 0.5 && stored <= 2 ? stored : 1;
+    return stored >= 0.2 && stored <= 2 ? stored : defaultPace;
   } catch {
-    return 1;
+    return defaultPace;
   }
 }

@@ -118,9 +118,10 @@ describe("a piece in the Workshop's model", () => {
     expect(workFromServer(piece({ shelvedAt: "2026-11-22T00:00:00Z" })).shelved).toBe(true);
     expect(workFromServer(piece({ shelvedAt: "2026-11-22T00:00:00Z", status: "pending_review", coverRequested: true })).shelved).toBe(false);
   });
-  it("puts a long text in the voice stage and a short one in the text stage", () => {
+  it("lets any text, even four short lines, go to the voice stage; an empty one stays in the text stage", () => {
     expect(stageOf(workFromServer(piece()))).toBe("voice");
-    expect(stageOf(workFromServer(piece({ text: "Коротко" })))).toBe("text");
+    expect(stageOf(workFromServer(piece({ text: "Тихо.\nСнег.\nОкно.\nТы." })))).toBe("voice");
+    expect(stageOf(workFromServer(piece({ text: "  \n " })))).toBe("text");
   });
   it("keeps a 120-character title and emoji as they are", () => {
     const title = "🌧".repeat(10) + "Д".repeat(110);

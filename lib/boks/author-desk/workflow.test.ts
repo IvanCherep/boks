@@ -12,8 +12,9 @@ describe("the author's desk", () => {
     expect(stageOf(work)).toBe("text");
     work.idea.concept = { about: "a", approach: "b", form: "c", plan: [] };
     expect(stageOf(work)).toBe("text");
+    // A single line is a text too: it can be read aloud.
     work.text = "Первая строка";
-    expect(stageOf(work)).toBe("text");
+    expect(stageOf(work)).toBe("voice");
     work.text = long;
     expect(stageOf(work)).toBe("voice");
     work.editors.step = "queued";

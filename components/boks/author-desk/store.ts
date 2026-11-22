@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { moveInQueue, shiftInQueue, textKey, type Work } from "@/lib/boks/author-desk/workflow";
+import { blankWork, moveInQueue, shiftInQueue, textKey, type Work } from "@/lib/boks/author-desk/workflow";
 import { queueFromServer, workFromServer, type ServerReady, type ServerWorkshop } from "@/lib/boks/author-desk/from-server";
 import { loadWorkshop, saveMeta, setQueueOrder } from "@/lib/boks/author-desk/server";
 import { deleteOwnDraft, newBokId, saveOwnBok } from "@/components/boks/author-cabinet/composer-data";
@@ -104,6 +104,12 @@ export function useDesk() {
       }
       const data = await loadWorkshop();
       const next = toState(data);
+      // Blank drafts join the list; empty ones go, except the one open now.
+      const open = window.location.hash;
+      const onServer = new Set(next.works.map((work) => work.id));
+      const blanks = readBlanks().filter((work) => !onServer.has(work.id) && (!isEmptyBlank(work) || open.includes(work.id)));
+      writeBlanks(blanks);
+      next.works = [...blanks, ...next.works];
       // Words typed while the answer was on its way stay as typed.
       const typing = Object.keys(pendingText.current);
       if (typing.length && stateRef.current) {
@@ -187,6 +193,33 @@ export function useDesk() {
       local(id, () => after);
       if (stateRef.current) stateRef.current = { ...stateRef.current, works: stateRef.current.works.map((work) => (work.id === id ? after : work)) };
 
+      if (isBlank(id)) {
+        writeBlanks(readBlanks().map((work) => (work.id === id ? after : work)));
+        if (!after.text.trim()) return;
+        // The first words: the draft goes to the server with its title, form and notes.
+        window.clearTimeout(timers.current[`text:${id}`]);
+        const save = async () => {
+          delete pendingText.current[id];
+          const latest = stateRef.current?.works.find((work) => work.id === id) ?? after;
+          if (!latest.text.trim() || !isBlank(id)) return;
+          try {
+            await saveOwnBok({ bokId: id, title: latest.title.trim(), text: latest.text, publish: false, cover: null });
+            writeBlanks(readBlanks().filter((work) => work.id !== id));
+            const meta: Record<string, unknown> = {};
+            if (latest.form !== "poem") meta.form = latest.form;
+            if (latest.shelved) meta.shelved = true;
+            if (JSON.stringify(notesOf(latest)) !== JSON.stringify(notesOf(blankWork("")))) meta.notes = notesOf(latest);
+            if (Object.keys(meta).length) await saveMeta(id, meta);
+            setProblem("");
+          } catch (error) {
+            fail(error);
+          }
+        };
+        pendingText.current[id] = save;
+        timers.current[`text:${id}`] = window.setTimeout(() => void save(), textDelay);
+        return;
+      }
+
       if (after.title !== before.title || after.text !== before.text) {
         window.clearTimeout(timers.current[`text:${id}`]);
         const save = async () => {
@@ -238,7 +271,10 @@ export function useDesk() {
       const created = { ...work, id };
       setState((current) => current && { ...current, works: [created, ...current.works] });
       if (stateRef.current) stateRef.current = { ...stateRef.current, works: [created, ...stateRef.current.works] };
-      if (!work.text.trim()) return created;
+      if (!work.text.trim()) {
+        writeBlanks([created, ...readBlanks()]);
+        return created;
+      }
       try {
         await saveOwnBok({ bokId: id, title: work.title.trim(), text: work.text, publish: false, cover: null });
         const meta: Record<string, unknown> = {};
@@ -372,6 +408,11 @@ export function useDesk() {
 
   const removeDraft = useCallback(
     async (id: string) => {
+      if (isBlank(id)) {
+        writeBlanks(readBlanks().filter((work) => work.id !== id));
+        await refresh();
+        return;
+      }
       try {
         await deleteOwnDraft(id);
       } catch (error) {
@@ -428,6 +469,36 @@ export function useDesk() {
     fail,
   };
 }
+
+/**
+ * Drafts without a text yet. The server keeps a piece only once it has words
+ * (`save_my_bok`), so a draft started empty lives in this browser, title and
+ * notes included, and goes to the server with its first line.
+ */
+const blankKey = "boks-desk-blank-drafts-v1";
+
+function readBlanks(): Work[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(blankKey) ?? "[]");
+    return Array.isArray(value) ? value.filter((work) => work && typeof work.id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeBlanks(works: Work[]) {
+  try {
+    if (works.length) window.localStorage.setItem(blankKey, JSON.stringify(works.slice(0, 20)));
+    else window.localStorage.removeItem(blankKey);
+  } catch {
+    /* no storage: the draft lasts while the tab is open */
+  }
+}
+
+const isBlank = (id: string) => readBlanks().some((work) => work.id === id);
+
+/** A blank with nothing in it at all, not even a title or a note. */
+const isEmptyBlank = (work: Work) => !work.title.trim() && !work.text.trim() && !work.idea.notes.length && !work.idea.concept && !work.materials.length;
 
 /** Meta changes waiting to be sent, merged per piece across quick edits. */
 const pendingMeta: Record<string, Record<string, unknown>> = {};
