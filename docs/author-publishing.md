@@ -13,6 +13,12 @@ a text / Upload files).
 
 ## Who publishes directly
 
+Since 2026-11-22 (`20261122180000_boks_author_before_page_opens.sql`) the page
+need not be open to readers: owning a verified author page in any state but
+merged (`draft`, accepted but not opened; `published`; `unpublished`) is
+enough. An invited author can write, record and send before opening the page,
+and a team test account can use the cabinet without appearing to readers.
+
 Only **verified authors**: the owner of a published author page the team has
 marked verified (`author_spaces.verified`), and not suspended
 (`boks_publishes_directly`). These are the authors the team brought onto the
