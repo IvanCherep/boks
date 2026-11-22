@@ -32,7 +32,7 @@ let js = fs.readFileSync(jsFile, "utf8");
 const studio = {
   ru: [
     "Авторская страница tryboks.com/@имя и кабинет автора",
-    "Boks Series каждую неделю: до 50 выпусков за год",
+    "5 Boks Series на старте, дальше до 50 выпусков за год",
     "Ваш голос: запись с суфлёром в кабинете или свой файл",
     "Иллюстрации и звук к каждому выпуску делает редакция",
     "Готовый выпуск вы смотрите первым и публикуете сами",
@@ -41,7 +41,7 @@ const studio = {
   ],
   en: [
     "An author’s page at tryboks.com/@name and an author’s studio",
-    "A Boks Series every week: up to 50 editions a year",
+    "5 Boks Series to start with, then up to 50 editions a year",
     "Your voice: record with the teleprompter in the studio or send your own file",
     "The editors make the illustrations and sound for every edition",
     "You see each edition first and publish it yourself",
@@ -78,7 +78,7 @@ const copy = {
     ],
     principle: { title: "Права остаются у вас", body: "Мы получаем только право показывать ваши произведения на boks. Любое из них можно снять в любой момент." },
     publication: "Редакция готовит Boks Series, вы проверяете её и публикуете. Выпуск выходит в общую ленту boks и попадает к новым читателям.",
-    benefit: "Ваш голос рядом с текстом: каждую неделю новый выпуск с иллюстрациями редакции.",
+    benefit: "Ваш голос рядом с текстом: выпуски с иллюстрациями редакции.",
     series: {
       body: "Нет видео и студии? Читайте текст с суфлёра на весь экран, своим голосом, прямо с телефона, или пришлите готовую запись. Редакция boks сверит каждое слово с записью, нарисует иллюстрации и соберёт выпуск, в котором слова появляются ровно тогда, когда вы их произносите.",
       steps: ["Добавьте стихотворение или рассказ.", "Читайте с суфлёра в своём темпе или пришлите свой файл.", "Иллюстрации в стиле boks по вашим строкам рисует редакция.", "Готовый выпуск вы смотрите первым и публикуете сами."],
@@ -114,7 +114,7 @@ const copy = {
     ],
     principle: { title: "Your rights stay with you", body: "We only receive the right to show your works on boks. You can take any of them down at any time." },
     publication: "The editors prepare a Boks Series, you check it and publish it. The edition goes out to the main boks feed and reaches new readers.",
-    benefit: "Your voice next to the text: a new edition every week, illustrated by the editors.",
+    benefit: "Your voice next to the text: editions illustrated by the editors.",
     series: {
       body: "No video or studio? Read from a full-screen teleprompter in your own voice, right on your phone, or send a recording you already have. The boks editors align every word with the recording, draw the illustrations and put together an edition in which the words appear exactly when you say them.",
       steps: ["Add a poem or a story.", "Read from the teleprompter at your own pace, or send your own file.", "The editors draw illustrations in the boks style from your lines.", "You see the finished edition first and publish it yourself."],
