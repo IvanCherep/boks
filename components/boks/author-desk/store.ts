@@ -1,356 +1,514 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { blankWork, moveInQueue, resendCheck, shiftInQueue, textKey, withHistory, type Outcome, type Work } from "@/lib/boks/author-desk/workflow";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { moveInQueue, shiftInQueue, textKey, type Work } from "@/lib/boks/author-desk/workflow";
+import { queueFromServer, workFromServer, type ServerReady, type ServerWorkshop } from "@/lib/boks/author-desk/from-server";
+import { loadWorkshop, saveMeta, setQueueOrder } from "@/lib/boks/author-desk/server";
+import { deleteOwnDraft, newBokId, saveOwnBok } from "@/components/boks/author-cabinet/composer-data";
+import { chooseTake, deleteTake, loadTakes, takeUrl, uploadTake, withdrawMySentBok } from "@/components/boks/author-cabinet/voice-data";
+import { publishMyAuthorSpace, requestSpaceChanges, sendMyMessage } from "@/components/boks/author-spaces/data";
+import { currentBoksTermsVersion } from "@/components/boks/user-auth-panel";
+import { voiceFingerprint, voiceLimits, type VoiceTakes } from "@/lib/boks/author/voice/rules";
+import { readableBoksError } from "@/lib/boks/errors";
+import { maxBokCharacters } from "@/lib/boks/contracts";
 
 /**
- * The prototype keeps the desk in this browser: works and the release queue
- * in localStorage, recorded takes in IndexedDB. The real desk would keep them
- * in Supabase and the Series drafts store, as the cabinet and the recorder do.
+ * The Workshop's state, on the server (`docs/workshop-server.md`): the
+ * author's pieces come from `get_my_workshop()` and every change goes back
+ * through the cabinet's own calls. The page answers at once; writes follow in
+ * the background, text a moment after typing stops. A failed write says so in
+ * Russian and the page reloads what the server has.
  */
-
-const key = "boks-desk-prototype-v5";
 
 export type DeskState = {
   works: Work[];
   queue: string[];
-  /** Boks Series of this author published this year before these works (the demo's history). */
   publishedEarlier: number;
+  plan: ServerWorkshop["plan"];
+  author: ServerWorkshop["author"];
+  ready: ServerReady[];
+  /** Per piece: the Series' token and the work to publish, from the editors. */
+  series: Record<string, { workId: string | null; revision: number | null; seriesPiece: string | null }>;
 };
 
-const day = (offset: number) => new Date(Date.now() - offset * 86_400_000).toISOString();
+export type DeskStatus = "loading" | "ready" | "signed-out" | "not-author" | "error";
 
-const september = `Сентябрь стоит, как гость у двери,
-не зная, можно ли войти.
-Ещё тепло, но ты не верь:
-ему уже пора в пути.
+const textDelay = 700;
+const metaDelay = 600;
 
-И яблоко в траве лежит,
-как будто кто-то уронил
-и не вернулся. И дрожит
-над ним последний мотылёк без сил.`;
-
-function seed(): DeskState {
-  const borodino = blankWork("Бородино");
-  borodino.form = "poem";
-  borodino.createdAt = day(6);
-  borodino.updatedAt = day(0);
-  borodino.idea.notes = [
-    { text: "Хочу писать про Бородино. Боюсь, что зашквар: всё уже сказано, и Лермонтов, и Толстой. Но событие достойное.", at: day(6) },
-    { text: "Через глаза молодого драгуна. Не панорама, а то, что он видит в строю. Батальные сцены без пафоса.", at: day(5) },
-  ];
-  borodino.idea.concept = {
-    about: "Бородино не как парад славы, а как один день людей, которые не знают, что войдут в историю.",
-    approach: "Взгляд молодого драгуна изнутри строя, крупные детали вместо панорамы, сухая интонация без пафоса.",
-    form: "Поэма в нескольких главах, около 10 минут чтения вслух.",
-    plan: [
-      { id: "p1", text: "Утро перед боем, туман над Колочей", done: true },
-      { id: "p2", text: "Атака на флеши", done: false },
-      { id: "p3", text: "Драгун и его значки", done: false },
-      { id: "p4", text: "Сцена матери с молодым офицером", done: false },
-      { id: "p5", text: "Вечер после боя: тишина", done: false },
-    ],
-  };
-  borodino.materials = [
-    { id: "m1", kind: "fact", text: "Утром 26 августа (7 сентября) 1812 года над полем стоял туман; бой начался около шести утра.", source: "Михайловский-Данилевский", pinTo: "Утро перед боем, туман над Колочей" },
-    { id: "m2", kind: "image", text: "Ржаное поле, ещё не убранное: бой идёт по хлебу.", source: "был на поле в августе", pinTo: "Атака на флеши" },
-    { id: "m3", kind: "phrase", text: "«Картечь хлестнула», «фрунт», «ушёл на ретираду».", source: "солдатские записки" },
-    { id: "m4", kind: "note", text: "В вечерней главе вернуть мотив ржи: та же рожь, но уже примятая.", pinTo: "Вечер после боя: тишина" },
-    { id: "m5", kind: "source", text: "Бородинский музей-заповедник: письма офицеров к матерям. Спросить в фондах про 1812-1813.", pinTo: "Сцена матери с молодым офицером" },
-  ];
-  borodino.text = `I
-
-Туман над Колочей лежал,
-как будто поле не проснулось.
-Драгун коня не понукал:
-коню ли знать, куда всё гнулось.`;
-
-  const father = blankWork("Про отца, без названия");
-  father.createdAt = day(1);
-  father.updatedAt = day(1);
-  father.idea.notes = [{ text: "Думаю написать про отца и его гараж. Пока не понимаю, рассказ это или стихи.", at: day(1) }];
-
-  const voiced = (work: Work, seconds: number) => {
-    work.takes = [{ id: `t-${work.id}`, seconds, at: day(2), source: "teleprompter" }];
-    work.chosenTake = work.takes[0].id;
-    return work;
-  };
-
-  const sept = voiced(blankWork("Сентябрь стоит"), 41);
-  sept.form = "poem";
-  sept.createdAt = day(3);
-  sept.updatedAt = day(1);
-  sept.text = september;
-  sept.editors = { step: "queued", notes: [] };
-
-  const letter = voiced(blankWork("Письмо брату"), 184);
-  letter.createdAt = day(9);
-  letter.updatedAt = day(2);
-  letter.text = "Здравствуй, Миша. Пишу тебе с дачи, где всё так же, как при отце: скрипит калитка, и никто её не смазывает, потому что этот скрип и есть дача. ".repeat(4);
-  letter.editors = {
-    step: "approval",
-    notes: [
-      { from: "author", text: "В середине я сбился на слове «калитка», можно ли взять этот кусок из второго дубля?", at: day(2) },
-      { from: "editors", text: "Да, склеили из второго. Серия готова: посмотрите и публикуйте, когда захотите.", at: day(1) },
-    ],
-  };
-
-  const imported = ["Ноябрьская", "Зимний сад", "Девочка и маяк", "Электричка до Голицына", "Колыбельная для взрослого", "Восемь писем", "Дом на Песочной"].map((title, index) => {
-    const work = blankWork(title);
-    work.importedFrom = index % 2 ? "Стихи.ру" : "Проза.ру";
-    work.form = index % 2 ? "poem" : "prose";
-    work.createdAt = day(20 + index);
-    work.updatedAt = day(20 + index);
-    work.text = `${title}. `.repeat(3) + "Текст перенесён редакцией с прежней площадки и ждёт голоса автора. ".repeat(3);
-    return work;
-  });
-  // Imported works already read aloud: one being made this week, one published
-  // last week, and one the editors made in advance and fixed in the queue.
-  voiced(imported[0], 95).editors = { step: "production", notes: [] };
-  voiced(imported[1], 120).editors = { step: "published", notes: [], publishedAt: day(4) };
-  imported[0].updatedAt = day(2);
-  const lullaby = voiced(imported[4], 140);
-  lullaby.editors = { step: "queued", notes: [{ from: "editors", text: "Эту серию мы собрали заранее, к Новому году. Её место в очереди закреплено.", at: day(3) }], fixed: true };
-  // One text the author put aside for later.
-  imported[6].shelved = true;
-  const letters = voiced(imported[5], 88);
-  letters.editors = { step: "queued", notes: [] };
-
-  const h = (who: "author" | "editors", what: string, offset: number) => ({ who, what, at: day(offset) });
-  letter.history = [h("author", "Записал голос", 9), h("author", "Поставил в очередь", 9), h("editors", "Взяла в работу", 6), h("editors", "Собрала серию, передала автору", 1)];
-  imported[0].history = [h("editors", "Перенесла с площадки Проза.ру", 25), h("author", "Записал голос", 3), h("author", "Поставил в очередь", 3), h("editors", "Взяла в работу", 2)];
-  imported[1].history = [h("editors", "Перенесла с площадки Стихи.ру", 26), h("author", "Записал голос", 12), h("editors", "Взяла в работу", 10), h("editors", "Собрала серию, передала автору", 5), h("author", "Опубликовал серию", 4)];
-  lullaby.history = [h("author", "Поставил в очередь", 8), h("editors", "Закрепила место в очереди", 3)];
-  sept.history = [h("author", "Записал голос", 2), h("author", "Поставил в очередь", 2)];
-  letters.history = [h("author", "Поставил в очередь", 1)];
-
-  return {
-    works: [borodino, father, sept, letter, ...imported],
-    queue: [sept.id, lullaby.id, letters.id],
-    publishedEarlier: 37,
-  };
-}
-
-function load(): DeskState {
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as DeskState;
-  } catch {
-    /* private window: start from the demo */
+function toState(data: ServerWorkshop): DeskState {
+  const works = data.pieces.map(workFromServer);
+  const series: DeskState["series"] = {};
+  for (const piece of data.pieces) {
+    if (piece.series) series[piece.id] = { workId: piece.series.workId, revision: piece.series.revision, seriesPiece: piece.series.seriesPiece ?? null };
   }
-  return seed();
+  return {
+    works,
+    queue: queueFromServer(data.pieces),
+    publishedEarlier: 0,
+    plan: data.plan,
+    author: data.author,
+    ready: data.ready ?? [],
+    series,
+  };
 }
 
-/* Pure steps the hook applies. */
-const now = () => new Date().toISOString();
-const touch = (work: Work): Work => ({ ...work, updatedAt: now() });
-const note = (work: Work, from: "author" | "editors", text: string): Work => ({
-  ...work,
-  editors: { ...work.editors, notes: [...work.editors.notes, { from, text, at: now() }] },
-});
-const fixedOf = (current: DeskState) => new Set(current.works.filter((work) => work.editors.fixed).map((work) => work.id));
-/** Changes one work, stamping the time. */
-const change = (current: DeskState, id: string, fn: (work: Work) => Work): DeskState => ({
-  ...current,
-  works: current.works.map((work) => (work.id === id ? touch(fn(work)) : work)),
-});
+/** What the server's refusal means for the page. */
+function classify(error: unknown): DeskStatus {
+  const text = String((error as { message?: string })?.message ?? error ?? "");
+  const code = (error as { code?: string })?.code;
+  if (/Sign in/i.test(text)) return "signed-out";
+  if (code === "42501" || /Workshop is open|invited/i.test(text)) return "not-author";
+  return "error";
+}
 
-const reorder = (current: DeskState, id: string, queue: string[], who: "author" | "editors") => {
-  if (queue.join() === current.queue.join()) return current;
-  const place = queue.indexOf(id) + 1;
-  return { ...change(current, id, (work) => withHistory(work, who, `Переставил на ${place}-е место`)), queue };
-};
+function notesOf(work: Work) {
+  return {
+    about: work.idea.concept?.about ?? "",
+    plan: work.idea.concept?.plan ?? [],
+    thoughts: work.idea.notes,
+    materials: work.materials,
+  };
+}
 
 export function useDesk() {
   const [state, setState] = useState<DeskState | null>(null);
-  // Read after hydration: the server has no localStorage.
+  const [status, setStatus] = useState<DeskStatus>("loading");
+  const [problem, setProblem] = useState("");
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const stateRef = useRef<DeskState | null>(null);
+  const busyRef = useRef<Record<string, boolean>>({});
+  const timers = useRef<Record<string, number>>({});
+  const pendingText = useRef<Record<string, () => Promise<void>>>({});
+
   useEffect(() => {
-    const timer = window.setTimeout(() => setState(load()), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-  useEffect(() => {
-    if (!state) return;
-    try {
-      window.localStorage.setItem(key, JSON.stringify(state));
-    } catch {
-      /* storage full or blocked: the session still works */
-    }
+    stateRef.current = state;
   }, [state]);
 
-  const update = useCallback((id: string, fn: (work: Work) => Work) => setState((current) => current && change(current, id, fn)), []);
-  const add = useCallback((work: Work) => setState((current) => current && { ...current, works: [work, ...current.works] }), []);
-  const reset = useCallback(() => setState(seed()), []);
+  const fail = useCallback((error: unknown, fallback = "Не получилось сохранить. Проверьте интернет и попробуйте ещё раз.") => {
+    setProblem(error ? readableBoksError(error, fallback, "ru") : fallback);
+  }, []);
 
-  /* The author's side ------------------------------------------------ */
+  const refresh = useCallback(async () => {
+    try {
+      const data = await loadWorkshop();
+      setState(toState(data));
+      setStatus("ready");
+    } catch (error) {
+      const kind = classify(error);
+      setStatus(kind);
+      if (kind === "error") fail(error, "Не получилось загрузить мастерскую. Обновите страницу.");
+    }
+  }, [fail]);
 
-  /** Puts a voiced work at the end of the queue, with an optional note to the editors. */
-  const enqueue = useCallback((id: string, text?: string) => {
-    setState((current) => {
-      if (!current || current.queue.includes(id)) return current;
-      const target = current.works.find((work) => work.id === id);
-      if (target?.outcome && !resendCheck(target).ok) return current;
-      const next = change(current, id, (work) => {
-        const queued = withHistory(
-          { ...work, shelved: false, outcome: undefined, editors: { ...work.editors, step: "queued", revising: false } },
-          "author",
-          work.outcome ? "Отправил снова после доработки" : "Поставил в очередь"
-        );
-        return text ? note(queued, "author", text) : queued;
-      });
-      return { ...next, queue: [...current.queue, id] };
-    });
-  }, []);
-  const dequeue = useCallback((id: string) => {
-    setState((current) => {
-      if (!current || current.works.find((work) => work.id === id)?.editors.fixed) return current;
-      const next = change(current, id, (work) => withHistory({ ...work, editors: { ...work.editors, step: null } }, "author", "Убрал из очереди"));
-      return { ...next, queue: current.queue.filter((item) => item !== id) };
-    });
-  }, []);
-  const move = useCallback((id: string, index: number) => {
-    setState((current) => current && reorder(current, id, moveInQueue(current.queue, id, index, fixedOf(current)), "author"));
-  }, []);
-  const shift = useCallback((id: string, step: -1 | 1) => {
-    setState((current) => current && reorder(current, id, shiftInQueue(current.queue, id, step, fixedOf(current)), "author"));
-  }, []);
-  /** The author asks for corrections to a finished Series: back to the editors for up to a week. */
-  const requestFix = useCallback((id: string, text: string) => {
-    update(id, (work) =>
-      withHistory(note({ ...work, editors: { ...work.editors, step: "production", revising: true } }, "author", text), "author", "Попросил правки")
-    );
-  }, [update]);
-  const approve = useCallback((id: string) => {
-    update(id, (work) => withHistory({ ...work, editors: { ...work.editors, step: "published", publishedAt: now() } }, "author", "Опубликовал серию"));
-  }, [update]);
-  const say = useCallback((id: string, from: "author" | "editors", text: string) => update(id, (work) => note(work, from, text)), [update]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void refresh(), 0);
+    return () => window.clearTimeout(timer);
+  }, [refresh]);
 
-  /* The editors' side ------------------------------------------------ */
+  // Coming back to the tab brings what the editors did meanwhile.
+  useEffect(() => {
+    const onShow = () => {
+      if (document.visibilityState === "visible" && !Object.keys(pendingText.current).length) void refresh();
+    };
+    document.addEventListener("visibilitychange", onShow);
+    return () => document.removeEventListener("visibilitychange", onShow);
+  }, [refresh]);
 
-  /** Fix a place in the queue (a Series made in advance), or free it. */
-  const toggleFixed = useCallback((id: string) => {
-    update(id, (work) => withHistory({ ...work, editors: { ...work.editors, fixed: !work.editors.fixed } }, "editors", work.editors.fixed ? "Открепила место" : "Закрепила место в очереди"));
-  }, [update]);
-  /** The editors may reorder freely, fixed places included. */
-  const editorsShift = useCallback((id: string, step: -1 | 1) => {
-    setState((current) => current && reorder(current, id, shiftInQueue(current.queue, id, step), "editors"));
+  // Nothing typed is lost when the tab closes mid-save.
+  useEffect(() => {
+    const onLeave = (event: BeforeUnloadEvent) => {
+      if (Object.keys(pendingText.current).length) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
   }, []);
-  /** Take a work into this week's production, whatever its place. */
-  const take = useCallback((id: string) => {
-    setState((current) => {
-      if (!current) return current;
-      const next = change(current, id, (work) => withHistory({ ...work, editors: { ...work.editors, step: "production", fixed: false, revising: false } }, "editors", "Взяла в работу"));
-      return { ...next, queue: current.queue.filter((item) => item !== id) };
-    });
+
+  const local = useCallback((id: string, change: (work: Work) => Work) => {
+    setState((current) => current && { ...current, works: current.works.map((work) => (work.id === id ? { ...change(work), updatedAt: new Date().toISOString() } : work)) });
   }, []);
-  /** Hand a checked Series (or one with corrections done) to the author. */
-  const handOver = useCallback((id: string) => {
-    update(id, (work) => {
-      const text = work.editors.revising ? "Правки внесли. Посмотрите серию ещё раз." : "Серия готова. Посмотрите её целиком и опубликуйте или напишите, что поправить.";
-      return withHistory(note({ ...work, editors: { ...work.editors, step: "approval", revising: false } }, "editors", text), "editors", work.editors.revising ? "Внесла правки, передала автору" : "Собрала серию, передала автору");
-    });
-  }, [update]);
+
+  const mark = (id: string, on: boolean) => {
+    busyRef.current = { ...busyRef.current, [id]: on };
+    setBusy(busyRef.current);
+  };
+
+  /** Saves title and text now, if a save is waiting. */
+  const flush = useCallback(async (id: string) => {
+    window.clearTimeout(timers.current[`text:${id}`]);
+    const save = pendingText.current[id];
+    if (save) await save();
+  }, []);
 
   /**
-   * The editors cannot take it as it is: back to the author for changes, or a
-   * refusal. The reason goes to the conversation and the history; the piece
-   * leaves the queue and is not counted against the year.
+   * One change to a piece, as the page makes it: the page shows it at once;
+   * title and text go to `save_my_bok` a moment later, the form, notes and
+   * shelving to `save_my_workshop_meta`.
    */
-  const decide = useCallback((id: string, kind: Outcome["kind"], category: Outcome["category"], reason: string) => {
-    setState((current) => {
-      if (!current) return current;
-      const at = now();
-      const next = change(current, id, (work) =>
-        withHistory(
-          note({ ...work, outcome: { kind, category, reason, at, textKey: textKey(work.text) }, editors: { ...work.editors, step: null, fixed: false, revising: false } }, "editors", reason),
-          "editors",
-          kind === "changes" ? "Вернула на доработку" : "Отказала"
-        )
-      );
-      return { ...next, queue: current.queue.filter((item) => item !== id) };
-    });
-  }, []);
+  const update = useCallback(
+    (id: string, change: (work: Work) => Work) => {
+      const before = stateRef.current?.works.find((work) => work.id === id);
+      if (!before) return;
+      const after = change(before);
+      local(id, () => after);
+      if (stateRef.current) stateRef.current = { ...stateRef.current, works: stateRef.current.works.map((work) => (work.id === id ? after : work)) };
 
-  /** Demo of a week on the editors' side: what is being made goes to the author, a free week takes the top of the queue. */
-  const passWeek = useCallback(() => {
-    setState((current) => {
-      if (!current) return current;
-      let next = current;
-      for (const work of current.works.filter((item) => item.editors.step === "production")) {
-        next = change(next, work.id, (item) => {
-          const text = item.editors.revising ? "Правки внесли. Посмотрите серию ещё раз." : "Серия готова. Посмотрите её целиком и опубликуйте или напишите, что поправить.";
-          return withHistory(note({ ...item, editors: { ...item.editors, step: "approval", revising: false } }, "editors", text), "editors", item.editors.revising ? "Внесла правки, передала автору" : "Собрала серию, передала автору");
-        });
+      if (after.title !== before.title || after.text !== before.text) {
+        window.clearTimeout(timers.current[`text:${id}`]);
+        const save = async () => {
+          delete pendingText.current[id];
+          const latest = stateRef.current?.works.find((work) => work.id === id) ?? after;
+          if (latest.text.trim().length > maxBokCharacters) {
+            setProblem(`Текст длиннее, чем помещается в бок (${maxBokCharacters.toLocaleString("ru-RU")} знаков). Сократите его, и он сохранится.`);
+            return;
+          }
+          if (!latest.text.trim()) return;
+          try {
+            await saveOwnBok({ bokId: id, title: latest.title.trim(), text: latest.text, publish: false, cover: null });
+            setProblem("");
+          } catch (error) {
+            fail(error);
+          }
+        };
+        pendingText.current[id] = save;
+        timers.current[`text:${id}`] = window.setTimeout(() => void save(), textDelay);
       }
-      const [top, ...rest] = next.queue;
-      if (!top) return next;
-      next = change(next, top, (item) => withHistory({ ...item, editors: { ...item.editors, step: "production", fixed: false } }, "editors", "Взяла в работу"));
-      return { ...next, queue: rest };
-    });
-  }, []);
 
-  return { state, update, add, reset, enqueue, dequeue, move, shift, requestFix, approve, say, toggleFixed, editorsShift, take, handOver, passWeek, decide };
+      const meta: Record<string, unknown> = {};
+      if (after.form !== before.form) meta.form = after.form;
+      if (Boolean(after.shelved) !== Boolean(before.shelved)) meta.shelved = Boolean(after.shelved);
+      if (JSON.stringify(notesOf(after)) !== JSON.stringify(notesOf(before))) meta.notes = notesOf(after);
+      if (Object.keys(meta).length) {
+        const key = `meta:${id}`;
+        window.clearTimeout(timers.current[key]);
+        const waiting = (pendingMeta[id] = { ...(pendingMeta[id] ?? {}), ...meta });
+        timers.current[key] = window.setTimeout(async () => {
+          const patch = pendingMeta[id] ?? waiting;
+          delete pendingMeta[id];
+          try {
+            await saveMeta(id, patch);
+          } catch (error) {
+            fail(error);
+            void refresh();
+          }
+        }, "shelved" in meta ? 0 : metaDelay);
+      }
+    },
+    [fail, local, refresh]
+  );
+
+  /** A new piece: saved as a draft at once, so it exists on the server before anything else. */
+  const add = useCallback(
+    async (work: Work) => {
+      const id = newBokId();
+      const created = { ...work, id };
+      setState((current) => current && { ...current, works: [created, ...current.works] });
+      if (stateRef.current) stateRef.current = { ...stateRef.current, works: [created, ...stateRef.current.works] };
+      if (!work.text.trim()) return created;
+      try {
+        await saveOwnBok({ bokId: id, title: work.title.trim(), text: work.text, publish: false, cover: null });
+        const meta: Record<string, unknown> = {};
+        if (work.form !== "poem") meta.form = work.form;
+        if (work.shelved) meta.shelved = true;
+        if (Object.keys(meta).length) await saveMeta(id, meta);
+      } catch (error) {
+        fail(error, "Не получилось сохранить текст. Проверьте интернет и попробуйте ещё раз.");
+        setState((current) => current && { ...current, works: current.works.filter((item) => item.id !== id) });
+        throw error;
+      }
+      return created;
+    },
+    [fail]
+  );
+
+  /** «Отдать в работу»: the latest text is saved, then the piece goes to the editors with its voice. */
+  const enqueue = useCallback(
+    async (id: string) => {
+      const work = stateRef.current?.works.find((item) => item.id === id);
+      if (!work || busyRef.current[id]) return;
+      mark(id, true);
+      try {
+        await flush(id);
+        await saveOwnBok({ bokId: id, title: work.title.trim(), text: work.text, publish: true, cover: null, coverByTeam: true });
+        await refresh();
+      } catch (error) {
+        fail(error, "Не получилось отправить в редакцию. Попробуйте ещё раз.");
+        await refresh();
+      } finally {
+        mark(id, false);
+      }
+    },
+    [fail, flush, refresh]
+  );
+
+  /** «Отозвать»: back to the drafts while the editors have not taken it. */
+  const dequeue = useCallback(
+    async (id: string) => {
+      if (busyRef.current[id]) return;
+      mark(id, true);
+      try {
+        await withdrawMySentBok(id);
+      } catch (error) {
+        fail(error, "Не получилось отозвать. Возможно, редакция уже взяла текст в работу.");
+      } finally {
+        mark(id, false);
+        await refresh();
+      }
+    },
+    [fail, refresh]
+  );
+
+  const reorder = useCallback(
+    async (next: string[]) => {
+      const current = stateRef.current;
+      if (!current || next.join() === current.queue.join()) return;
+      setState({ ...current, queue: next });
+      try {
+        await setQueueOrder(next);
+      } catch (error) {
+        fail(error, "Не получилось сохранить порядок. Попробуйте ещё раз.");
+        await refresh();
+      }
+    },
+    [fail, refresh]
+  );
+  const move = useCallback((id: string, index: number) => void reorder(moveInQueue(stateRef.current?.queue ?? [], id, index)), [reorder]);
+  const shift = useCallback((id: string, step: -1 | 1) => void reorder(shiftInQueue(stateRef.current?.queue ?? [], id, step)), [reorder]);
+
+  /** «Опубликовать» the Series the editors sent. */
+  const approve = useCallback(
+    async (id: string) => {
+      const current = stateRef.current;
+      const link = current?.series[id];
+      if (!current || !link?.workId || !link.revision) {
+        setProblem("Серия ещё не готова к публикации. Обновите страницу.");
+        return;
+      }
+      if (busyRef.current[id]) return;
+      mark(id, true);
+      try {
+        await publishMyAuthorSpace({
+          items: [{ workId: link.workId, revision: link.revision }],
+          publishPage: current.author.pageStatus !== "published",
+          termsVersion: currentBoksTermsVersion,
+          requestId: crypto.randomUUID(),
+        });
+      } catch (error) {
+        fail(error, "Не получилось опубликовать. Попробуйте ещё раз.");
+      } finally {
+        mark(id, false);
+        await refresh();
+      }
+    },
+    [fail, refresh]
+  );
+
+  /** «Попросить исправить» a Series the editors sent. */
+  const requestFix = useCallback(
+    async (id: string, note: string) => {
+      const link = stateRef.current?.series[id];
+      if (!link?.workId || busyRef.current[id]) return;
+      mark(id, true);
+      try {
+        await requestSpaceChanges(link.workId, note);
+      } catch (error) {
+        fail(error, "Не получилось отправить просьбу. Попробуйте ещё раз.");
+      } finally {
+        mark(id, false);
+        await refresh();
+      }
+    },
+    [fail, refresh]
+  );
+
+  /** A note to the editors about one text, through the page's conversation. */
+  const say = useCallback(
+    async (id: string, _from: "author" | "editors", text: string) => {
+      const work = stateRef.current?.works.find((item) => item.id === id);
+      const link = stateRef.current?.series[id];
+      local(id, (current) => ({ ...current, editors: { ...current.editors, notes: [...current.editors.notes, { from: "author", text, at: new Date().toISOString() }] } }));
+      try {
+        await sendMyMessage(link?.workId ? text : `«${work?.title || "Без названия"}»: ${text}`, link?.workId ?? null);
+      } catch (error) {
+        fail(error, "Сообщение не ушло. Попробуйте ещё раз.");
+      }
+    },
+    [fail, local]
+  );
+
+  const removeDraft = useCallback(
+    async (id: string) => {
+      try {
+        await deleteOwnDraft(id);
+      } catch (error) {
+        fail(error, "Не получилось удалить черновик.");
+      } finally {
+        await refresh();
+      }
+    },
+    [fail, refresh]
+  );
+
+  /** After a recording is added, chosen or deleted: the list's view of the chosen one follows. */
+  const voiceChanged = useCallback(
+    async (id: string, takes: VoiceTakes) => {
+      const work = stateRef.current?.works.find((item) => item.id === id);
+      if (!work) return;
+      const fingerprint = await voiceFingerprint(work.text);
+      local(id, (current) => ({
+        ...current,
+        chosenTake: takes.chosen,
+        takes: takes.takes.map((take) => ({
+          id: take.file,
+          seconds: Math.round(take.durationMs / 1000),
+          at: take.createdAt,
+          source: take.source === "upload" ? "file" : "teleprompter",
+          name: take.name ?? undefined,
+          textKey: take.fingerprint === fingerprint ? textKey(current.text) : `older:${take.fingerprint}`,
+        })),
+      }));
+    },
+    [local]
+  );
+
+  return {
+    state,
+    status,
+    problem,
+    clearProblem: () => setProblem(""),
+    busy,
+    refresh,
+    update,
+    add,
+    enqueue,
+    dequeue,
+    move,
+    shift,
+    approve,
+    requestFix,
+    say,
+    removeDraft,
+    flush,
+    voiceChanged,
+    fail,
+  };
 }
+
+/** Meta changes waiting to be sent, merged per piece across quick edits. */
+const pendingMeta: Record<string, Record<string, unknown>> = {};
 
 export type Desk = ReturnType<typeof useDesk>;
 
-/* Takes: audio blobs by take id. */
+/* Recordings ------------------------------------------------------------ */
 
-function openTakes(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("boks-desk-takes", 1);
-    request.onupgradeneeded = () => request.result.createObjectStore("takes");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+export const audioTypes = /^audio\/(mpeg|mp3|mp4|x-m4a|aac|wav|x-wav|wave|ogg|webm)$/;
+
+/** What is wrong with a file before it is sent, in the author's words; null when it is fine. */
+export function fileProblem(file: File) {
+  if (!audioTypes.test(file.type) && !/\.(mp3|m4a|aac|wav|ogg|oga|webm)$/i.test(file.name)) return "Это не аудиофайл. Подойдут mp3, m4a, wav, ogg или webm.";
+  if (file.size > voiceLimits.takeBytes) return `Файл больше ${Math.round(voiceLimits.takeBytes / 1024 / 1024)} МБ. Сохраните запись в mp3 или m4a: так она станет меньше.`;
+  if (file.size < 1024) return "Файл пустой или повреждён.";
+  return null;
 }
 
-export async function saveTake(id: string, blob: Blob) {
-  try {
-    const db = await openTakes();
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("takes", "readwrite");
-      tx.objectStore("takes").put(blob, id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  } catch {
-    /* kept for this tab only */
-  }
+export function durationProblem(ms: number) {
+  if (ms && ms > voiceLimits.takeMs) return "Запись длиннее 15 минут: бок столько не вмещает.";
+  if (ms && ms < voiceLimits.minTakeMs) return "Запись слишком короткая.";
+  return null;
 }
 
-export async function readTake(id: string): Promise<Blob | null> {
-  try {
-    const db = await openTakes();
-    return await new Promise((resolve) => {
-      const request = db.transaction("takes").objectStore("takes").get(id);
-      request.onsuccess = () => resolve((request.result as Blob | undefined) ?? null);
-      request.onerror = () => resolve(null);
-    });
-  } catch {
-    return null;
-  }
-}
-
-/** Playable addresses of a work's recorded takes, freed when the work changes. */
-export function useTakeUrls(work: Work) {
+/** A piece's recordings, with addresses to play them, loaded when the Голос step opens. */
+export function useTakes(desk: Desk, work: Work) {
+  const [takes, setTakes] = useState<VoiceTakes | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const made = useRef<string[]>([]);
+  const { voiceChanged, fail, flush } = desk;
+
+  const apply = useCallback(
+    async (next: VoiceTakes) => {
+      setTakes(next);
+      await voiceChanged(work.id, next);
+    },
+    [voiceChanged, work.id]
+  );
+
   useEffect(() => {
     let alive = true;
-    const made: string[] = [];
-    void Promise.all(work.takes.map(async (take) => [take.id, await readTake(take.id)] as const)).then((pairs) => {
-      if (!alive) return;
-      const next: Record<string, string> = {};
-      for (const [id, blob] of pairs) {
-        if (!blob) continue;
-        next[id] = URL.createObjectURL(blob);
-        made.push(next[id]);
-      }
-      setUrls(next);
-    });
+    const created = made.current;
+    loadTakes(work.id)
+      .then(async (loaded) => {
+        if (!alive) return;
+        await apply(loaded);
+        const pairs = await Promise.all(loaded.takes.map(async (take) => [take.file, await takeUrl(work.id, take.file).catch(() => "")] as const));
+        if (!alive) return;
+        const next: Record<string, string> = {};
+        for (const [file, url] of pairs) {
+          if (!url) continue;
+          next[file] = url;
+          created.push(url);
+        }
+        setUrls(next);
+      })
+      .catch(() => {
+        if (alive) setTakes({ ownerId: "", takes: [], chosen: null, uploads: 0 });
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
     return () => {
       alive = false;
-      made.forEach((url) => URL.revokeObjectURL(url));
+      created.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [work.takes]);
-  return urls;
+  }, [apply, work.id]);
+
+  const latestText = () => desk.state?.works.find((item) => item.id === work.id)?.text ?? work.text;
+
+  const add = async (blob: Blob, seconds: number, source: "teleprompter" | "upload", name?: string) => {
+    if ((takes?.takes.length ?? 0) >= voiceLimits.takes) {
+      fail(null, `Можно хранить до ${voiceLimits.takes} записей. Удалите лишнюю и запишите снова.`);
+      return;
+    }
+    setUploading(name ?? "запись");
+    try {
+      await flush(work.id);
+      const fingerprint = await voiceFingerprint(latestText());
+      const before = new Set(takes?.takes.map((take) => take.file));
+      const next = await uploadTake(work.id, blob, { durationMs: seconds * 1000, source, name: name ?? null, fingerprint });
+      await apply(next);
+      const added = next.takes.find((take) => !before.has(take.file));
+      if (added) {
+        const url = URL.createObjectURL(blob);
+        made.current.push(url);
+        setUrls((current) => ({ ...current, [added.file]: url }));
+      }
+    } catch (error) {
+      fail(error, "Запись не загрузилась. Проверьте интернет и попробуйте ещё раз.");
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const choose = async (file: string) => {
+    try {
+      await apply(await chooseTake(work.id, file));
+    } catch (error) {
+      fail(error);
+    }
+  };
+
+  const remove = async (file: string) => {
+    try {
+      const fingerprint = await voiceFingerprint(latestText());
+      await apply(await deleteTake(work.id, file, fingerprint));
+    } catch (error) {
+      fail(error, "Не получилось удалить запись.");
+    }
+  };
+
+  return { takes, urls, loading, uploading, add, choose, remove };
 }

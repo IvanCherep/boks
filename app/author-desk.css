@@ -474,3 +474,15 @@
 .desk .desk-reason{margin:0 0 12px;padding:10px 14px;border-left:3px solid #c9a46a;background:rgba(255,255,255,.6);font-family:var(--serif);font-size:17px;line-height:1.5;border-radius:0 10px 10px 0}
 .desk .is-declined .desk-reason{border-left-color:#b9b2a3}
 @media (max-width:640px){.desk .desk-answer{grid-template-columns:1fr}.desk .desk-answer .desk-nudge-go{grid-column:1;grid-row:auto}}
+
+/* Live states: loading, a failure, an upload in progress, a file that will not do */
+.desk .desk-problem{position:sticky;top:57px;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:920px;margin:12px auto 0;padding:10px 10px 10px 16px;border-radius:12px;background:#fbe9e3;border:1px solid #efc4b6;color:#7a2a17;font-size:15px}
+.desk .desk-loading{display:flex;flex-direction:column;gap:14px;padding-top:20px}
+.desk .desk-loading span{display:block;height:84px;border-radius:16px;background:linear-gradient(90deg,var(--soft),#f3eee4,var(--soft));background-size:200% 100%;animation:desk-shimmer 1.4s ease infinite}
+.desk .desk-loading span:first-child{height:48px;width:60%}
+.desk .desk-file-note{font-size:15px;color:#7a2a17;background:#fbe9e3;border-radius:10px;padding:10px 14px}
+.desk .desk-uploading{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink)}
+.desk .desk-way.is-off,.desk .desk-way:disabled{opacity:.55;cursor:default;transform:none}
+.desk .desk-q-title,.desk .desk-voice-title,.desk .desk-book-title,.desk .desk-ready-body h3,.desk .desk-answer b{overflow-wrap:anywhere}
+.desk .desk-title{overflow-wrap:anywhere}
+@keyframes desk-shimmer{to{background-position:-200% 0}}

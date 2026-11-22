@@ -12,13 +12,11 @@ import {
   pinsByPart,
   plan,
   plannedWeeks,
-  readingLines,
   readingSeconds,
   resendCheck,
   revisionDays,
   stageOf,
   stages,
-  textKey,
   withHistory,
   type Material,
   type MaterialKind,
@@ -26,15 +24,16 @@ import {
   type Stage,
   type Work,
 } from "@/lib/boks/author-desk/workflow";
-import { saveTake, useDesk, useTakeUrls, type Desk } from "./store";
+import { durationProblem, fileProblem, useDesk, useTakes, type Desk, type DeskStatus } from "./store";
 import { Teleprompter } from "./teleprompter";
-import { StudioDesk } from "./studio";
+import { uploadTake } from "@/components/boks/author-cabinet/voice-data";
+import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
+import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
 
 /*
  * The workshop's words, in one place. Plain Russian, the same word for the
  * same thing everywhere: «текст», «запись», «серия», «очередь», «бок».
  */
-const authorName = "Анна";
 const stepNames: Record<Stage, string> = { text: "Текст", voice: "Голос", editors: "Серия" };
 const categoryNames: Record<OutcomeCategory, string> = { voice: "Запись", text: "Текст", law: "Законодательство", other: "Другое" };
 const kindNames: Record<MaterialKind, string> = { fact: "Факт", image: "Образ", phrase: "Слова и выражения", source: "Источник", note: "Мысль" };
@@ -115,15 +114,10 @@ function useQueue(desk: Desk) {
   const making = works.filter((work) => work.editors.step === "production" && !work.editors.revising);
   const revising = works.filter((work) => work.editors.step === "production" && work.editors.revising);
   const ready = works.filter((work) => work.editors.step === "approval");
-  const usedByYear: Record<number, number> = { [year]: desk.state?.publishedEarlier ?? 0 };
-  for (const work of works) {
-    const step = work.editors.step;
-    if (step === "published" && work.editors.publishedAt) {
-      const at = new Date(work.editors.publishedAt).getFullYear();
-      usedByYear[at] = (usedByYear[at] ?? 0) + 1;
-    } else if (step === "production" || step === "approval") usedByYear[year] = (usedByYear[year] ?? 0) + 1;
-  }
-  const planned = plannedWeeks({ queue, busyThisWeek: making.length, today: new Date(), usedByYear });
+  const used = desk.state?.plan.usedThisYear ?? 0;
+  const usedByYear: Record<number, number> = { [year]: used };
+  const perYear = desk.state?.plan.perYear ?? plan.perYear;
+  const planned = plannedWeeks({ queue, busyThisWeek: making.length, today: new Date(), usedByYear, perYear });
   const byId = new Map(works.map((work) => [work.id, work]));
   return {
     making,
@@ -131,13 +125,13 @@ function useQueue(desk: Desk) {
     ready,
     queue: queue.map((id) => byId.get(id)).filter((work): work is Work => !!work),
     planned,
-    used: usedByYear[year] ?? 0,
+    used,
+    perYear,
     year,
-    planFor: (ids: string[]) => plannedWeeks({ queue: ids, busyThisWeek: making.length, today: new Date(), usedByYear }),
+    planFor: (ids: string[]) => plannedWeeks({ queue: ids, busyThisWeek: making.length, today: new Date(), usedByYear, perYear }),
   };
 }
 
-/** One plain sentence: where this text is and what it waits for. */
 function useStatus(work: Work, desk: Desk) {
   const { queue, planned } = useQueue(desk);
   const step = work.editors.step;
@@ -159,13 +153,11 @@ export function AuthorDesk() {
   const desk = useDesk();
   const [route, setRoute] = useState<Route>({ work: null });
   const [support, setSupport] = useState(false);
-  const [preview, setPreview] = useState<Work | null>(null);
   const [welcome, setWelcome] = useState(false);
   useEffect(() => {
     const sync = () => {
       setRoute(readRoute());
       // A link away closes whatever was open over the page.
-      setPreview(null);
       setSupport(false);
     };
     sync();
@@ -188,43 +180,50 @@ export function AuthorDesk() {
     window.scrollTo({ top: 0 });
   };
 
-  if (!desk.state) return <main className="acab desk" />;
+  if (desk.status !== "ready" || !desk.state) return <DeskGate status={desk.status} problem={desk.problem} onRetry={() => void desk.refresh()} />;
   const work = route.work ? desk.state.works.find((item) => item.id === route.work) : null;
-  const studio = !route.work && "studio" in route && route.studio;
-  const unread = desk.state.works.filter((item) => item.editors.notes.at(-1)?.from === "editors" && item.editors.step !== "published").length;
+  const unread = desk.state.works.filter((item) => item.outcome && !item.editors.step).length;
 
   return (
-    <main className={`acab desk ${studio ? "is-studio" : ""}`}>
-      <div className="desk-role" role="group" aria-label="Демо: чей взгляд">
-        <span>Демо</span>
-        <a href="#" className={studio ? "" : "on"} onClick={(event) => (event.preventDefault(), go(""))}>
-          Автор
-        </a>
-        <a href="#studio" className={studio ? "on" : ""}>
-          Редакция
-        </a>
-      </div>
+    <main className="acab desk">
       <header className="desk-top">
         <a href="#" className="desk-brand" onClick={(event) => (event.preventDefault(), go(""))}>
-          boks <span>{studio ? "Редакция" : "Мастерская"}</span>
+          boks <span>Мастерская</span>
         </a>
-        <nav className="desk-top-links" hidden={!!studio}>
+        <nav className="desk-top-links">
           <a href="/author#my-page">Моя страница</a>
           <button type="button" onClick={() => setSupport(true)}>
             Написать редакции{unread ? <b className="desk-badge">{unread}</b> : null}
           </button>
         </nav>
       </header>
-      {work && route.work ? (
-        <WorkScreen key={work.id} work={work} step={(route as { step: Stage }).step} go={go} desk={desk} onPreview={setPreview} />
-      ) : studio ? (
-        <StudioView desk={desk} />
+      {desk.problem ? (
+        <div className="desk-problem" role="alert">
+          <span>{desk.problem}</span>
+          <button type="button" className="desk-x" aria-label="Закрыть" onClick={desk.clearProblem}>
+            ×
+          </button>
+        </div>
+      ) : null}
+      {route.work && !work ? (
+        <div className="desk-work">
+          <div className="desk-empty">
+            <h3>Такого текста нет</h3>
+            <p>Возможно, он удалён или ссылка устарела.</p>
+            <a className="desk-btn desk-btn-ink" href="#" onClick={(event) => (event.preventDefault(), go(""))}>
+              В мастерскую
+            </a>
+          </div>
+        </div>
+      ) : work && route.work ? (
+        <WorkScreen key={work.id} work={work} step={(route as { step: Stage }).step} go={go} desk={desk} />
       ) : (
-        <Home desk={desk} go={go} onPreview={setPreview} onHelp={() => setWelcome(true)} />
+        <Home desk={desk} go={go} onHelp={() => setWelcome(true)} />
       )}
-      {support ? <SupportSheet onClose={() => setSupport(false)} /> : null}
-      {welcome && !studio ? (
+      {support ? <SupportSheet desk={desk} onClose={() => setSupport(false)} /> : null}
+      {welcome ? (
         <Welcome
+          perYear={desk.state.plan.perYear}
           onClose={() => {
             setWelcome(false);
             try {
@@ -235,36 +234,65 @@ export function AuthorDesk() {
           }}
         />
       ) : null}
-      {preview ? (
-        <SeriesPreview
-          work={preview}
-          onClose={() => setPreview(null)}
-          onPublish={() => {
-            desk.approve(preview.id);
-            setPreview(null);
-          }}
-          onFix={() => {
-            const id = preview.id;
-            setPreview(null);
-            go(`w/${id}/editors`);
-            window.setTimeout(() => document.getElementById("desk-ask-fix")?.click(), 120);
-          }}
-        />
-      ) : null}
     </main>
   );
 }
 
-function StudioView({ desk }: { desk: Desk }) {
-  const queue = useQueue(desk);
-  return <StudioDesk desk={desk} helpers={{ ...queue, weekLabel, when, duration }} />;
+/** Before the Workshop can open: loading, signed out, not one of the invited authors, or a failure. */
+function DeskGate({ status, problem, onRetry }: { status: DeskStatus; problem: string; onRetry: () => void }) {
+  return (
+    <main className="acab desk">
+      <header className="desk-top">
+        <a href="/author" className="desk-brand">
+          boks <span>Мастерская</span>
+        </a>
+      </header>
+      <div className="desk-home">
+        {status === "loading" ? (
+          <div className="desk-loading" aria-busy="true" aria-label="Загружаем мастерскую">
+            <span />
+            <span />
+            <span />
+          </div>
+        ) : (
+          <div className="desk-empty">
+            {status === "signed-out" ? (
+              <>
+                <h3>Войдите, чтобы открыть мастерскую</h3>
+                <p>Мастерская открывается из кабинета автора.</p>
+                <a className="desk-btn desk-btn-red" href="/author">
+                  Войти
+                </a>
+              </>
+            ) : status === "not-author" ? (
+              <>
+                <h3>Мастерская открыта авторам boks</h3>
+                <p>Её получают авторы, которых пригласила редакция. Если вас пригласили, войдите той почтой, на которую пришло приглашение.</p>
+                <a className="desk-btn desk-btn-ink" href="/author">
+                  В кабинет
+                </a>
+              </>
+            ) : (
+              <>
+                <h3>Не получилось открыть мастерскую</h3>
+                <p>{problem || "Проверьте интернет и попробуйте ещё раз."}</p>
+                <button type="button" className="desk-btn desk-btn-red" onClick={onRetry}>
+                  Попробовать ещё раз
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }
 
 /* ------------------------------------------------------------------ */
 /* Home                                                               */
 /* ------------------------------------------------------------------ */
 
-function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) => void; onPreview: (work: Work) => void; onHelp: () => void }) {
+function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; onHelp: () => void }) {
   const works = desk.state!.works;
   const { ready } = useQueue(desk);
   const [adding, setAdding] = useState(false);
@@ -277,15 +305,16 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
   const needVoice = active.filter((work) => stageOf(work) === "voice" && !work.chosenTake && !work.outcome);
   const recorded = active.filter((work) => stageOf(work) === "voice" && work.chosenTake && !work.outcome);
   const drafts = active.filter((work) => stageOf(work) === "text").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const shelve = (work: Work) => desk.update(work.id, (current) => withHistory({ ...current, shelved: true }, "author", "Отложил на потом"));
+  const shelve = (work: Work) => desk.update(work.id, (current) => ({ ...current, shelved: true }));
+  const authorName = (desk.state!.author.name ?? "").trim().split(/\s+/)[0] || "";
+  const teamReady = desk.state!.ready;
   const published = works.filter((work) => work.editors.step === "published").sort((a, b) => (b.editors.publishedAt ?? "").localeCompare(a.editors.publishedAt ?? ""));
   const replies = works.filter((work) => work.editors.notes.at(-1)?.from === "editors" && work.editors.step !== "published" && work.editors.step !== "approval" && !work.outcome);
-  const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length;
+  const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length || teamReady.length;
 
-  const startDraft = () => {
-    const work = blankWork("");
-    desk.add(work);
-    go(`w/${work.id}/text`);
+  const startDraft = async () => {
+    const created = await desk.add(blankWork(""));
+    go(`w/${created.id}/text`);
   };
 
   return (
@@ -293,10 +322,10 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
       {adding ? (
         <AddTextSheet
           onClose={() => setAdding(false)}
-          onCreate={(work, later) => {
-            desk.add(later ? { ...work, shelved: true } : work);
+          onCreate={async (work, later) => {
+            const created = await desk.add(later ? { ...work, shelved: true } : work);
             setAdding(false);
-            if (!later) go(`w/${work.id}/voice`);
+            if (!later) go(`w/${created.id}/voice`);
           }}
         />
       ) : null}
@@ -304,13 +333,14 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
 
       <section className="desk-hero">
         <h1>
-          {greeting}, {authorName}
+          {greeting}
+          {authorName ? `, ${authorName}` : ""}
         </h1>
         <div className="desk-hero-actions">
           <button type="button" className="desk-btn desk-btn-red" onClick={() => setAdding(true)}>
             Добавить текст
           </button>
-          <button type="button" className="desk-quiet" onClick={startDraft}>
+          <button type="button" className="desk-quiet" onClick={() => void startDraft()}>
             или начать черновик
           </button>
         </div>
@@ -329,9 +359,9 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
                   <p className="desk-ready-kicker">Серия готова</p>
                   <h3>{work.title}</h3>
                   <p>Редакция нарисовала серию с вашим голосом. Посмотрите и опубликуйте, когда захотите.</p>
-                  <button type="button" className="desk-btn desk-btn-red" onClick={() => onPreview(work)}>
+                  <a className="desk-btn desk-btn-red" href={`#w/${work.id}/editors`}>
                     Посмотреть
-                  </button>
+                  </a>
                 </div>
               </article>
             ))}
@@ -344,6 +374,15 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
                 <b>{work.title}</b>
                 <span className="desk-answer-reason">«{work.outcome!.reason}»</span>
                 <span className="desk-nudge-go">{work.outcome!.kind === "changes" ? "Доработать" : "Подробнее"}</span>
+              </a>
+            ))}
+
+            {teamReady.map((item) => (
+              <a key={item.workId} href="/author#my-page" className="desk-nudge">
+                <span>
+                  Редакция подготовила <b>«{item.title}»</b> для вашей страницы
+                </span>
+                <span className="desk-nudge-go">Посмотреть</span>
               </a>
             ))}
 
@@ -454,9 +493,7 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
         <button type="button" onClick={onHelp}>
           Как это устроено
         </button>
-        <button type="button" onClick={() => window.confirm("Вернуть демо-тексты? Ваши изменения в прототипе пропадут.") && desk.reset()}>
-          Вернуть демо (прототип)
-        </button>
+
       </footer>
     </div>
   );
@@ -465,10 +502,10 @@ function Home({ desk, go, onPreview, onHelp }: { desk: Desk; go: (hash: string) 
 /* The queue ---------------------------------------------------------- */
 
 function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
-  const { making, revising, queue, planned, used } = useQueue(desk);
+  const { making, revising, queue, planned, used, perYear } = useQueue(desk);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<number | null>(null);
-  const left = Math.max(0, plan.perYear - used);
+  const left = Math.max(0, perYear - used);
   if (!making.length && !revising.length && !queue.length) return null;
 
   return (
@@ -488,10 +525,10 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
             <span className="desk-q-n" aria-hidden>
               <i className="desk-pulse" />
             </span>
-            <a href={`#w/${work.id}/editors`} className="desk-q-title">
-              {work.title}
+            <a href={`#w/${work.id}/editors`} className="desk-q-title" title={work.title}>
+              {work.title || "Без названия"}
             </a>
-            <span className="desk-q-when">Сейчас рисуем</span>
+            <span className="desk-q-when">Редакция работает</span>
             <span className="desk-q-moves" />
           </li>
         ))}
@@ -500,73 +537,53 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
             <span className="desk-q-n" aria-hidden>
               ✎
             </span>
-            <a href={`#w/${work.id}/editors`} className="desk-q-title">
-              {work.title}
+            <a href={`#w/${work.id}/editors`} className="desk-q-title" title={work.title}>
+              {work.title || "Без названия"}
             </a>
-            <span className="desk-q-when">Исправляем, до {revisionDays} дней</span>
+            <span className="desk-q-when">Исправляем по вашей просьбе</span>
             <span className="desk-q-moves" />
           </li>
         ))}
-        {queue.map((work, index) => {
-          const fixed = !!work.editors.fixed;
-          return (
-            <li
-              key={work.id}
-              className={`desk-q ${fixed ? "is-fixed" : ""} ${dragging === work.id ? "is-dragging" : ""} ${over === index && dragging !== work.id ? "is-over" : ""}`}
-              draggable={!fixed}
-              onDragStart={() => setDragging(work.id)}
-              onDragEnd={() => {
-                setDragging(null);
-                setOver(null);
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setOver(index);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                if (dragging) desk.move(dragging, index);
-                setDragging(null);
-                setOver(null);
-              }}
-            >
-              <span className="desk-q-n">{index + 1}</span>
-              <a href={`#w/${work.id}/editors`} className="desk-q-title">
-                {work.title}
-              </a>
-              <span className="desk-q-when">
-                {fixed ? (
-                  <>
-                    Уже рисуем заранее <Hint text="Редакция начала эту серию раньше срока, поэтому её место не двигается. Остальные тексты переставляйте как хотите." />
-                  </>
-                ) : (
-                  weekLabel(planned.get(work.id))
-                )}
-              </span>
-              {fixed ? (
-                <span className="desk-q-moves" />
-              ) : (
-                <span className="desk-q-moves">
-                  <button type="button" aria-label="Раньше" title="Раньше" disabled={index === 0} onClick={() => desk.shift(work.id, -1)}>
-                    ↑
-                  </button>
-                  <button type="button" aria-label="Позже" title="Позже" disabled={index === queue.length - 1} onClick={() => desk.shift(work.id, 1)}>
-                    ↓
-                  </button>
-                </span>
-              )}
-            </li>
-          );
-        })}
+        {queue.map((work, index) => (
+          <li
+            key={work.id}
+            className={`desk-q ${dragging === work.id ? "is-dragging" : ""} ${over === index && dragging !== work.id ? "is-over" : ""}`}
+            draggable
+            onDragStart={() => setDragging(work.id)}
+            onDragEnd={() => {
+              setDragging(null);
+              setOver(null);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setOver(index);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              if (dragging) desk.move(dragging, index);
+              setDragging(null);
+              setOver(null);
+            }}
+          >
+            <span className="desk-q-n">{index + 1}</span>
+            <a href={`#w/${work.id}/editors`} className="desk-q-title" title={work.title}>
+              {work.title || "Без названия"}
+            </a>
+            <span className="desk-q-when">{weekLabel(planned.get(work.id))}</span>
+            <span className="desk-q-moves">
+              <button type="button" aria-label="Раньше" title="Раньше" disabled={index === 0} onClick={() => desk.shift(work.id, -1)}>
+                ↑
+              </button>
+              <button type="button" aria-label="Позже" title="Позже" disabled={index === queue.length - 1} onClick={() => desk.shift(work.id, 1)}>
+                ↓
+              </button>
+            </span>
+          </li>
+        ))}
       </ol>
       <p className="desk-queue-foot">
-        В этом году ещё {left} {seriesWord(left)}.
-      </p>
-      <p className="desk-demo">
-        Прототип:{" "}
-        <button type="button" onClick={desk.passWeek}>
-          прошла неделя
-        </button>
+        В этом году ещё {left} {seriesWord(left)}.{" "}
+        <Hint text="Сроки примерные: редакция берёт тексты по порядку, но иногда работа над серией занимает больше недели." />
       </p>
     </section>
   );
@@ -578,7 +595,7 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
 
 type Update = (change: (work: Work) => Work) => void;
 
-function WorkScreen({ work, step, go, desk, onPreview }: { work: Work; step: Stage; go: (hash: string) => void; desk: Desk; onPreview: (work: Work) => void }) {
+function WorkScreen({ work, step, go, desk }: { work: Work; step: Stage; go: (hash: string) => void; desk: Desk }) {
   const reached = stages.indexOf(stageOf(work));
   const update: Update = (change) => desk.update(work.id, change);
   const status = useStatus(work, desk);
@@ -632,7 +649,7 @@ function WorkScreen({ work, step, go, desk, onPreview }: { work: Work; step: Sta
 
       {step === "text" ? <TextStep work={work} update={update} go={go} /> : null}
       {step === "voice" ? <VoiceStep work={work} update={update} desk={desk} go={go} /> : null}
-      {step === "editors" ? <SeriesStep work={work} desk={desk} go={go} onPreview={onPreview} /> : null}
+      {step === "editors" ? <SeriesStep work={work} desk={desk} go={go} /> : null}
     </div>
   );
 }
@@ -881,18 +898,39 @@ function NotesSheet({ work, update, onClose }: { work: Work; update: Update; onC
 function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; desk: Desk; go: (hash: string) => void }) {
   const [recording, setRecording] = useState(false);
   const [editing, setEditing] = useState(false);
-  const urls = useTakeUrls(work);
+  const [fileNote, setFileNote] = useState("");
+  const voice = useTakes(desk, work);
   const seconds = readingSeconds(work.text, work.form);
   const locked = work.editors.step && work.editors.step !== "queued";
+  const sent = work.editors.step === "queued";
   const { queue, planFor } = useQueue(desk);
   const landing = planFor([...queue.map((item) => item.id).filter((id) => id !== work.id), work.id]).get(work.id);
   const chosen = work.takes.find((take) => take.id === work.chosenTake);
   const chosenStale = chosen ? isStale(chosen, work.text) : false;
+  const busy = Boolean(desk.busy[work.id]);
+  const takes = voice.takes?.takes ?? [];
 
   const attach = (file: File) => {
-    const audio = new Audio(URL.createObjectURL(file));
-    audio.onloadedmetadata = () => void storeTake(desk, work.id, file, Math.round(audio.duration || 0), "file", file.name);
-    audio.onerror = () => void storeTake(desk, work.id, file, 0, "file", file.name);
+    const problem = fileProblem(file);
+    if (problem) {
+      setFileNote(problem);
+      return;
+    }
+    setFileNote("");
+    const url = URL.createObjectURL(file);
+    const audio = new Audio();
+    const done = (ms: number) => {
+      URL.revokeObjectURL(url);
+      const late = durationProblem(ms);
+      if (late) return setFileNote(late);
+      void voice.add(file, Math.round(ms / 1000), "upload", file.name);
+    };
+    audio.onloadedmetadata = () => done(Number.isFinite(audio.duration) ? audio.duration * 1000 : 0);
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      setFileNote("Браузер не смог прочитать этот файл. Сохраните запись в mp3 или m4a и загрузите снова.");
+    };
+    audio.src = url;
   };
 
   if (work.text.trim().length < 120) {
@@ -914,26 +952,31 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
           <p className="desk-calm">Серия уже у редакции, запись закреплена. Если что-то не так, напишите на шаге «Серия».</p>
         ) : (
           <>
-            <h2 className="desk-h2">{work.takes.length ? "Ваши записи" : "Прочитайте вслух"}</h2>
-            <p className="desk-lead">Можно записать здесь или загрузить готовую запись. Пробовать можно сколько угодно раз.</p>
+            <h2 className="desk-h2">{takes.length ? "Ваши записи" : "Прочитайте вслух"}</h2>
+            <p className="desk-lead">
+              {sent
+                ? "Текст уже у редакции. Новая запись заменит отправленную, пока редакция не взяла текст в работу."
+                : "Можно записать здесь или загрузить готовую запись. Пробовать можно сколько угодно раз."}
+            </p>
             <div className="desk-ways">
-              <button type="button" className="desk-way is-main" onClick={() => setRecording(true)}>
+              <button type="button" className="desk-way is-main" disabled={!!voice.uploading} onClick={() => setRecording(true)}>
                 <span className="desk-way-icon" aria-hidden>
                   <i />
                 </span>
-                <b>{work.takes.length ? "Записать ещё раз" : "Записать с суфлёром"}</b>
+                <b>{takes.length ? "Записать ещё раз" : "Записать с суфлёром"}</b>
                 <small>Текст сам идёт по экрану в темпе чтения. Около {Math.max(1, Math.round(seconds / 60))} мин.</small>
               </button>
-              <label className="desk-way">
+              <label className={`desk-way ${voice.uploading ? "is-off" : ""}`}>
                 <span className="desk-way-icon" aria-hidden>
                   ↑
                 </span>
                 <b>Загрузить готовую запись</b>
-                <small>Например, из студии. Файлы mp3, m4a, wav, до 15 минут.</small>
+                <small>Например, из студии. Файлы mp3, m4a, wav, до 15 минут и 25 МБ.</small>
                 <input
                   type="file"
-                  accept="audio/*"
+                  accept="audio/*,.mp3,.m4a,.wav,.ogg,.webm"
                   hidden
+                  disabled={!!voice.uploading}
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) attach(file);
@@ -943,29 +986,42 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
                 />
               </label>
             </div>
+            {fileNote ? (
+              <p className="desk-file-note" role="alert">
+                {fileNote}
+              </p>
+            ) : null}
           </>
         )}
 
-        {work.takes.length ? (
+        {voice.uploading ? (
+          <p className="desk-uploading" role="status">
+            <i className="desk-pulse" /> Загружаем запись… Не закрывайте страницу.
+          </p>
+        ) : null}
+        {voice.loading ? <p className="desk-calm">Загружаем ваши записи…</p> : null}
+
+        {takes.length ? (
           <ul className="desk-takes">
-            {work.takes.map((take, index) => {
-              const on = work.chosenTake === take.id;
+            {takes.map((take, index) => {
+              const on = voice.takes?.chosen === take.file;
+              const stale = work.takes.find((item) => item.id === take.file);
               return (
-                <li key={take.id} className={`desk-take ${on ? "is-on" : ""}`}>
-                  <Player url={urls[take.id]} seconds={take.seconds} />
+                <li key={take.file} className={`desk-take ${on ? "is-on" : ""}`}>
+                  <Player url={voice.urls[take.file]} seconds={Math.round(take.durationMs / 1000)} />
                   <div className="desk-take-info">
                     <b>Запись {index + 1}</b>
-                    <small>
-                      {take.source === "file" ? "загружена" : "суфлёр"} · {when(take.at)}
+                    <small title={take.name ?? undefined}>
+                      {take.source === "upload" ? take.name || "загружена" : "суфлёр"} · {when(take.createdAt)}
                     </small>
-                    {isStale(take, work.text) ? <small className="desk-stale">записана до правки текста</small> : null}
+                    {stale && isStale(stale, work.text) ? <small className="desk-stale">записана до правки текста</small> : null}
                   </div>
                   {on ? (
                     <span className="desk-take-chosen">Пойдёт в серию</span>
                   ) : locked ? (
                     <span />
                   ) : (
-                    <button type="button" className="desk-quiet" onClick={() => update((current) => ({ ...current, chosenTake: take.id }))}>
+                    <button type="button" className="desk-quiet" onClick={() => void voice.choose(take.file)}>
                       Выбрать
                     </button>
                   )}
@@ -974,12 +1030,7 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
                       type="button"
                       className="desk-x"
                       aria-label={`Удалить запись ${index + 1}`}
-                      onClick={() =>
-                        update((current) => {
-                          const takes = current.takes.filter((item) => item.id !== take.id);
-                          return { ...current, takes, chosenTake: current.chosenTake === take.id ? takes.at(-1)?.id ?? null : current.chosenTake };
-                        })
-                      }
+                      onClick={() => window.confirm(`Удалить запись ${index + 1}?`) && void voice.remove(take.file)}
                     >
                       ×
                     </button>
@@ -990,7 +1041,7 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
           </ul>
         ) : null}
 
-        {chosenStale && !work.editors.step ? (
+        {chosenStale && !locked ? (
           <div className="desk-next is-warn">
             <div>
               <b>Текст изменился после записи</b>
@@ -1015,12 +1066,13 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
             <button
               type="button"
               className="desk-btn desk-btn-red"
-              onClick={() => {
-                desk.enqueue(work.id);
+              disabled={busy || !!voice.uploading}
+              onClick={async () => {
+                await desk.enqueue(work.id);
                 go(`w/${work.id}/editors`);
               }}
             >
-              Отдать в работу
+              {busy ? "Отправляем…" : "Отдать в работу"}
             </button>
           </div>
         ) : null}
@@ -1050,7 +1102,9 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
           onCancel={() => setRecording(false)}
           onDone={(blob, takeSeconds) => {
             setRecording(false);
-            void storeTake(desk, work.id, blob, takeSeconds, "teleprompter");
+            const late = durationProblem(takeSeconds * 1000);
+            if (late) return setFileNote(late);
+            void voice.add(blob, takeSeconds, "teleprompter");
           }}
         />
       ) : null}
@@ -1058,7 +1112,6 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
   );
 }
 
-/** A quiet player: play or pause, where it is, how long. The browser's own controls are too loud here. */
 function Player({ url, seconds }: { url?: string; seconds: number }) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -1113,7 +1166,10 @@ function Player({ url, seconds }: { url?: string; seconds: number }) {
 
 /* 3. Series ---------------------------------------------------------- */
 
-function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go: (hash: string) => void; onPreview: (work: Work) => void }) {
+function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: string) => void }) {
+  const busy = Boolean(desk.busy[work.id]);
+  const seriesPiece = desk.state?.series[work.id]?.seriesPiece ?? null;
+  const pageOpen = desk.state?.author.pageStatus === "published";
   const [message, setMessage] = useState("");
   const [fixing, setFixing] = useState(false);
   const check = canQueue(work);
@@ -1156,8 +1212,8 @@ function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go:
                 Записать заново
               </a>
             )}
-            <button type="button" className="desk-btn desk-btn-red" disabled={!resend.ok} onClick={() => desk.enqueue(work.id)}>
-              Отправить снова
+            <button type="button" className="desk-btn desk-btn-red" disabled={!resend.ok || busy} onClick={() => void desk.enqueue(work.id)}>
+              {busy ? "Отправляем…" : "Отправить снова"}
             </button>
           </div>
           {!resend.ok ? (
@@ -1198,8 +1254,8 @@ function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go:
             К тексту
           </a>
         ) : (
-          <button type="button" className="desk-btn desk-btn-red" onClick={() => desk.enqueue(work.id)}>
-            Отдать в работу
+          <button type="button" className="desk-btn desk-btn-red" disabled={busy} onClick={() => void desk.enqueue(work.id)}>
+            {busy ? "Отправляем…" : "Отдать в работу"}
           </button>
         )}
       </div>
@@ -1211,19 +1267,20 @@ function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go:
         <div>
           <h3>В очереди {ordinal(position + 1)}</h3>
           <p>
-            Редакция начнёт {weekLabel(planned.get(work.id))}. {work.editors.fixed ? "Это место редакция уже закрепила." : "Порядок можно менять в любой момент."}
+            Редакция начнёт примерно {weekLabel(planned.get(work.id))}. Пока она не взяла текст в работу, порядок можно менять, а текст можно отозвать.
           </p>
           <div className="desk-state-actions">
-            {work.editors.fixed ? null : (
-              <>
-                <button type="button" className="desk-btn desk-btn-ink" onClick={toQueue}>
-                  Поменять порядок
-                </button>
-                <button type="button" className="desk-quiet" onClick={() => desk.dequeue(work.id)}>
-                  Убрать из очереди
-                </button>
-              </>
-            )}
+            <button type="button" className="desk-btn desk-btn-ink" onClick={toQueue}>
+              Поменять порядок
+            </button>
+            <button
+              type="button"
+              className="desk-quiet"
+              disabled={busy}
+              onClick={() => window.confirm("Отозвать из редакции? Текст и запись останутся у вас, в черновиках.") && void desk.dequeue(work.id)}
+            >
+              {busy ? "Отзываем…" : "Отозвать"}
+            </button>
           </div>
         </div>
       </div>
@@ -1235,8 +1292,12 @@ function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go:
           <i className="desk-pulse" />
         </span>
         <div>
-          <h3>{work.editors.revising ? "Редакция исправляет серию" : "Редакция рисует серию"}</h3>
-          <p>{work.editors.revising ? `Обычно до ${revisionDays} дней. Когда закончим, серия появится в «Ждёт вас».` : "Обычно неделю. Когда серия будет готова, она появится в «Ждёт вас»."}</p>
+          <h3>{work.editors.revising ? "Редакция исправляет серию" : "В работе у редакции"}</h3>
+          <p>
+            {work.editors.revising
+              ? `Обычно до ${revisionDays} дней. Когда закончим, серия появится в «Ждёт вас».`
+              : "Редакция готовит Boks Series: рисунки, сборку, строки в такт вашему голосу. Вернём её вам, когда закончим. Пока текст и запись закреплены."}
+          </p>
         </div>
       </div>
     );
@@ -1250,13 +1311,27 @@ function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go:
           <h3>Серия готова</h3>
           <p>Посмотрите её целиком. Если всё хорошо, опубликуйте. Если нет, напишите, что исправить.</p>
           <div className="desk-state-actions">
-            <button type="button" className="desk-btn desk-btn-red" onClick={() => onPreview(work)}>
-              Посмотреть
+            {seriesPiece ? (
+              <a className="desk-btn desk-btn-ink" href={`/l/${seriesPiece}`} target="_blank" rel="noreferrer">
+                Посмотреть серию
+              </a>
+            ) : null}
+            <button
+              type="button"
+              className="desk-btn desk-btn-red"
+              disabled={busy}
+              onClick={() =>
+                window.confirm(pageOpen ? "Опубликовать серию? Она появится на вашей странице и в ленте." : "Опубликовать серию? Ваша страница откроется читателям вместе с ней.") &&
+                void desk.approve(work.id)
+              }
+            >
+              {busy ? "Публикуем…" : "Опубликовать"}
             </button>
             <button type="button" id="desk-ask-fix" className="desk-quiet" onClick={askFix}>
               Попросить исправить
             </button>
           </div>
+          {!pageOpen ? <p className="desk-calm">Ваша страница пока закрыта: она откроется читателям вместе с первой серией.</p> : null}
         </div>
       </div>
     );
@@ -1300,9 +1375,9 @@ function SeriesStep({ work, desk, go, onPreview }: { work: Work; desk: Desk; go:
             event.preventDefault();
             if (!message.trim()) return;
             if (asking) {
-              desk.requestFix(work.id, message.trim());
+              void desk.requestFix(work.id, message.trim());
               setFixing(false);
-            } else desk.say(work.id, "author", message.trim());
+            } else void desk.say(work.id, "author", message.trim());
             setMessage("");
           }}
         >
@@ -1350,20 +1425,17 @@ function History({ work }: { work: Work }) {
 
 const welcomeKey = "boks-desk-welcome-v2";
 
-/** Keeps a recording and makes it the chosen one when the current choice is missing or reads an older text. */
-async function storeTake(desk: Desk, workId: string, blob: Blob, seconds: number, source: "teleprompter" | "file", name?: string) {
-  const id = newId("t");
-  await saveTake(id, blob);
-  desk.update(workId, (current) => {
-    const chosen = current.takes.find((take) => take.id === current.chosenTake);
-    const take = { id, seconds, at: new Date().toISOString(), source, name, textKey: textKey(current.text) };
-    return withHistory(
-      // After the editors returned the piece, the new recording is the one they are waiting for.
-      { ...current, takes: [...current.takes, take], chosenTake: !chosen || isStale(chosen, current.text) || current.outcome?.kind === "changes" ? id : current.chosenTake },
-      "author",
-      source === "file" ? "Загрузил готовую запись" : "Записал с суфлёром"
-    );
-  });
+async function storeTake(desk: Desk, work: Work, blob: Blob, seconds: number) {
+  // Reading in a row has no Голос step open: the recording goes straight up.
+  try {
+    await desk.flush(work.id);
+    const fingerprint = await voiceFingerprint(desk.state?.works.find((item) => item.id === work.id)?.text ?? work.text);
+    const takes = await uploadTake(work.id, blob, { durationMs: seconds * 1000, source: "teleprompter", name: null, fingerprint });
+    await desk.voiceChanged(work.id, takes);
+  } catch (error) {
+    desk.fail(error, `«${work.title || "Без названия"}»: запись не загрузилась. Запишите этот текст ещё раз.`);
+    throw error;
+  }
 }
 
 /** Escape closes whatever sheet is open. */
@@ -1391,7 +1463,7 @@ function Hint({ text }: { text: string }) {
   );
 }
 
-function Welcome({ onClose }: { onClose: () => void }) {
+function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number }) {
   useEscape(onClose);
   return (
     <div className="desk-sheet-back is-center" onClick={onClose}>
@@ -1410,7 +1482,7 @@ function Welcome({ onClose }: { onClose: () => void }) {
           <li>
             <b>Серия</b>
             <span>
-              Редакция рисует серии в вашем порядке, по одной в неделю, до {plan.perYear} в год. Готовую серию вы смотрите и публикуете сами. Если что-то нужно доработать
+              Редакция рисует серии в вашем порядке, по одной в неделю, до {perYear} в год. Готовую серию вы смотрите и публикуете сами. Если что-то нужно доработать
               или текст не может выйти, редакция всегда объяснит почему.
             </span>
           </li>
@@ -1505,7 +1577,13 @@ function RecordRow({ works, desk, onClose }: { works: Work[]; desk: Desk; onClos
         lead={index === 0 ? undefined : `Следующий текст: «${work.title}».`}
         onCancel={() => setPhase("between")}
         onDone={(blob, seconds) => {
-          void storeTake(desk, work.id, blob, seconds, "teleprompter");
+          void storeTake(desk, work, blob, seconds).catch(() =>
+            setRecorded((current) => {
+              const next = { ...current };
+              delete next[work.id];
+              return next;
+            })
+          );
           setRecorded((current) => ({ ...current, [work.id]: seconds }));
           setPhase("between");
         }}
@@ -1582,93 +1660,42 @@ function RecordRow({ works, desk, onClose }: { works: Work[]; desk: Desk; onClos
   );
 }
 
-/** The finished Series as a reader will see it: the editors' picture (a stand-in here), the author's voice, the lines in time. */
-function SeriesPreview({ work, onClose, onPublish, onFix }: { work: Work; onClose: () => void; onPublish: () => void; onFix: () => void }) {
-  const urls = useTakeUrls(work);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lines = useMemo(() => readingLines(work.text).filter(Boolean), [work.text]);
-  const take = work.takes.find((item) => item.id === work.chosenTake);
-  const [time, setTime] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const total = take?.seconds || readingSeconds(work.text, work.form);
-
-  useEffect(() => {
-    if (!playing || (take && urls[take.id])) return;
-    // A demo recording has no sound: the clock runs so the lines still move.
-    const timer = window.setInterval(() => setTime((value) => (value + 0.25 >= total ? (setPlaying(false), total) : value + 0.25)), 250);
-    return () => window.clearInterval(timer);
-  }, [playing, take, urls, total]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const toggle = () => {
-    const audio = audioRef.current;
-    if (audio) {
-      if (audio.paused) void audio.play();
-      else audio.pause();
-      return;
-    }
-    if (time >= total) setTime(0);
-    setPlaying((value) => !value);
-  };
-  const line = Math.min(lines.length - 1, Math.floor((time / total) * lines.length));
-
-  return createPortal(
-    <div className="desk-preview-back" onClick={onClose}>
-      <div className="desk-preview" role="dialog" aria-label={`Серия «${work.title}»`} onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="desk-preview-x" onClick={onClose} aria-label="Закрыть">
-          ×
-        </button>
-        <div className="desk-phone">
-          <div className="desk-phone-art" />
-          <div className="desk-phone-lines">
-            {lines.slice(Math.max(0, line - 1), line + 2).map((text, index) => (
-              <p key={`${line}-${index}`} className={Math.max(0, line - 1) + index === line ? "is-now" : ""}>
-                {text}
-              </p>
-            ))}
-          </div>
-          <div className="desk-phone-bar">
-            <button type="button" onClick={toggle} aria-label={playing ? "Пауза" : "Слушать"}>
-              {playing ? "❚❚" : "▶"}
-            </button>
-            <span className="desk-phone-progress">
-              <i style={{ width: `${(time / total) * 100}%` }} />
-            </span>
-            <span>{duration(time)}</span>
-          </div>
-          {take && urls[take.id] ? (
-            <audio ref={audioRef} src={urls[take.id]} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)} />
-          ) : null}
-        </div>
-        <div className="desk-preview-side">
-          <h2>{work.title}</h2>
-          <p>Ваш голос, рисунки редакции, строки в такт чтению. В прототипе вместо рисунков заглушка.</p>
-          <button type="button" className="desk-btn desk-btn-red desk-wide" onClick={onPublish}>
-            Опубликовать
-          </button>
-          <p className="desk-preview-note">Серия сразу появится на вашей странице и в ленте.</p>
-          <button type="button" className="desk-quiet is-light" onClick={onFix}>
-            Попросить исправить
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-function SupportSheet({ onClose }: { onClose: () => void }) {
+function SupportSheet({ desk, onClose }: { desk: Desk; onClose: () => void }) {
   useEscape(onClose);
   const [kind, setKind] = useState("Вопрос");
   const [text, setText] = useState("");
-  const [sent, setSent] = useState<string[]>([]);
+  const [messages, setMessages] = useState<SpaceMessage[] | null>(null);
+  const [sending, setSending] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    loadMyAuthorSpace()
+      .then((page) => {
+        if (!alive) return;
+        setMessages(page.messages ?? []);
+        if (page.unread) void markMyMessagesSeen().catch(() => undefined);
+      })
+      .catch(() => {
+        if (alive) setMessages([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const send = async () => {
+    const body = text.trim();
+    if (!body || sending) return;
+    setSending(true);
+    try {
+      const page = await sendMyMessage(`${kind}: ${body}`);
+      setMessages(page.messages ?? []);
+      setText("");
+    } catch (error) {
+      desk.fail(error, "Сообщение не ушло. Попробуйте ещё раз.");
+    } finally {
+      setSending(false);
+    }
+  };
+  const shown = [...(messages ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-40);
   return (
     <div className="desk-sheet-back" onClick={onClose}>
       <div className="desk-sheet" role="dialog" aria-label="Написать редакции" onClick={(event) => event.stopPropagation()}>
@@ -1678,16 +1705,20 @@ function SupportSheet({ onClose }: { onClose: () => void }) {
             ×
           </button>
         </div>
-        <p className="desk-calm">Вопросы, неполадки, предложения. Отвечаем в течение дня. Про конкретный текст удобнее писать на его шаге «Серия».</p>
-        <div className="desk-msg">
-          <small>Редакция · вчера</small>
-          <p>Добро пожаловать! Мы перенесли ваши тексты со Стихов.ру и Прозы.ру. Прочитайте их вслух, и мы нарисуем серии.</p>
+        <p className="desk-calm">Вопросы, неполадки, предложения. Отвечаем в течение дня, ответ появится здесь же.</p>
+        {messages === null ? <p className="desk-calm">Загружаем переписку…</p> : null}
+        {messages?.length === 0 ? <p className="desk-calm">Пока сообщений нет.</p> : null}
+        <div className="desk-thread-list">
+          {shown.map((item) => (
+            <div key={item.id} className={`desk-msg ${item.fromAuthor ? "is-me" : ""}`}>
+              <small>
+                {item.fromAuthor ? "Вы" : "Редакция"} · {when(item.createdAt)}
+                {item.workTitle ? ` · «${item.workTitle}»` : ""}
+              </small>
+              <p>{item.body}</p>
+            </div>
+          ))}
         </div>
-        {sent.map((item, index) => (
-          <div key={index} className="desk-msg is-me">
-            <p>{item}</p>
-          </div>
-        ))}
         <div className="desk-chips">
           {["Вопрос", "Что-то не работает", "Предложение"].map((item) => (
             <button key={item} type="button" className={kind === item ? "is-on" : ""} onClick={() => setKind(item)}>
@@ -1699,16 +1730,14 @@ function SupportSheet({ onClose }: { onClose: () => void }) {
           className="desk-compose"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!text.trim()) return;
-            setSent([...sent, `${kind}: ${text.trim()}`]);
-            setText("");
+            void send();
           }}
         >
-          <textarea rows={3} value={text} aria-label="Сообщение" onChange={(event) => setText(event.target.value)} placeholder="Напишите, мы ответим здесь же" />
+          <textarea rows={3} value={text} maxLength={4000} aria-label="Сообщение" onChange={(event) => setText(event.target.value)} placeholder="Напишите, мы ответим здесь же" />
           <div className="desk-compose-row">
-            <span />
-            <button type="submit" className="desk-btn desk-btn-ink" disabled={!text.trim()}>
-              Отправить
+            <span className="desk-calm">{text.length > 3500 ? `${text.length} из 4000` : ""}</span>
+            <button type="submit" className="desk-btn desk-btn-ink" disabled={!text.trim() || sending}>
+              {sending ? "Отправляем…" : "Отправить"}
             </button>
           </div>
         </form>
