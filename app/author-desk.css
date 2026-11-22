@@ -488,3 +488,18 @@
 @keyframes desk-shimmer{to{background-position:-200% 0}}
 .desk textarea.desk-title{display:block;width:100%;resize:none;overflow:hidden;line-height:1.12;padding:4px 0 8px;min-height:0}
 .desk .desk-status-row .desk-status{flex:1;min-width:0}
+
+/* «Поделились выпуском?» (components/boks/author-desk/share-links.tsx) */
+.desk .desk-share{margin-top:22px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:10px;max-width:640px}
+.desk .desk-share h3{font-size:20px}
+.desk .desk-share .desk-label{margin:6px 0 0}
+.desk .desk-share-form{display:flex;flex-direction:column;gap:8px}
+.desk .desk-share-form .desk-inline{flex-wrap:wrap}
+.desk .desk-share-form .desk-inline input{flex:1 1 240px;min-width:0}
+.desk .desk-share-sent{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.desk .desk-share-sent li{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:10px;background:var(--soft)}
+.desk .desk-share-sent a{overflow-wrap:anywhere;color:var(--ink)}
+.desk .desk-share-sent small{font-size:13px;color:var(--muted)}
+.desk .desk-share-mark{display:block;font-size:13px}
+.desk .desk-share .share-pair__btn{min-width:0;overflow-wrap:anywhere;hyphens:auto}
+@media (max-width:560px){.desk .desk-share .share-pair__row{display:flex;flex-direction:column;align-items:stretch}.desk .desk-share-form .desk-btn{width:100%}.desk .desk-share-form .desk-inline input{flex:none;width:100%}}

@@ -10,7 +10,7 @@
  * pictures, a Series "in about a minute"). The contract says: «Совместный
  * запуск» free for authors whose posts reach 30 000 views, «Кабинет автора»
  * 30 000 ₽ a year with a link to every Series in the author's social media,
- * «Кабинет автора без продвижения» 500 000 ₽ without it; one Series a week, up to 50 a year;
+ * «Кабинет автора без продвижения» 500 000 ₽ without it (behind a «?», why-share.js); 5 starting Series, then up to 50 a year;
  * the author reads, the editors make the pictures, the author publishes.
  *
  * It rewrites the copy objects inside landing.js (both languages), then
@@ -69,12 +69,6 @@ const copy = {
         items: [...studio.ru, "Условие: ссылка на каждую вышедшую Series в ваших соцсетях"],
         cta: "Оставить заявку",
       },
-      {
-        number: "03", id: "nopromo", title: "Кабинет автора без продвижения", price: "500 000 ₽", period: "за год",
-        promotion: "Подходит, если вы не ведёте соцсети или не хотите писать там о boks.",
-        items: ["Всё, что входит в «Кабинет автора»", "Без обязательства делиться выпусками в соцсетях"],
-        cta: "Оставить заявку",
-      },
     ],
     principle: { title: "Права остаются у вас", body: "Мы получаем только право показывать ваши произведения на boks. Любое из них можно снять в любой момент." },
     publication: "Редакция готовит Boks Series, вы проверяете её и публикуете. Выпуск выходит в общую ленту boks и попадает к новым читателям.",
@@ -103,12 +97,6 @@ const copy = {
         number: "02", id: "author", title: "Author’s studio", price: "30,000 ₽", period: "per year",
         promotion: "For you if you are still building an audience and want the editions to help it grow.",
         items: [...studio.en, "Condition: a link to every published Series on your social media"],
-        cta: "Apply",
-      },
-      {
-        number: "03", id: "nopromo", title: "Author’s studio without promotion", price: "500,000 ₽", period: "per year",
-        promotion: "For you if you do not use social media or do not want to post about boks there.",
-        items: ["Everything in the “Author’s studio”", "No obligation to share the editions on social media"],
         cta: "Apply",
       },
     ],
@@ -218,9 +206,12 @@ once('["author","series","launch","unsure"]', '["launch","author","nopromo","uns
 // bridge.js inside the bundle: the third offer has its own value in the applications.
 once('{author:"page",series:"series",launch:"launch",unsure:"unsure"}', '{author:"page",nopromo:"page_no_promotion",series:"series",launch:"launch",unsure:"unsure"}');
 
+// The plan without the condition lives behind a «?» on «Кабинет автора» (why-share.js), not in a card.
+js += "\n" + fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.js"), "utf8");
 fs.writeFileSync(jsFile, js);
 
-const css = fs.readFileSync(cssFile, "utf8");
+const css = fs.readFileSync(cssFile, "utf8") + "\n" + fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.css"), "utf8");
+fs.writeFileSync(cssFile, css);
 
 // index.html: rendered again in Russian from the changed script.
 const sandbox = { window: {}, defineMessages: (x) => x };

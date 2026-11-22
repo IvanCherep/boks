@@ -192,6 +192,13 @@ const russianSentences: Record<string, string> = {
   "The author's recording is not on this server.": "Записи автора нет на этом сервере.",
   // The Workshop (`20261122220000_boks_workshop.sql`, `lib/boks/author-desk/server-rules.ts`).
   "The Workshop is open to authors the editors invited.": "Мастерская открыта авторам, которых пригласила редакция.",
+  // Links to the author's posts (`20261122240000_boks_share_links.sql`).
+  "Links are sent for your own published Series.": "Ссылку можно прислать только к своей опубликованной серии.",
+  "The link is too long.": "Ссылка слишком длинная.",
+  "This does not look like a link to a post.": "Это не похоже на ссылку на пост. Скопируйте адрес поста целиком.",
+  "Send the link to your own post about the Series, not the Series itself.": "Нужна ссылка на ваш пост в соцсети, а не на саму серию.",
+  "Ten links for one Series is the most.": "К одной серии можно прислать не больше десяти ссылок.",
+  "Thirty links a day is the most. Try again tomorrow.": "Не больше тридцати ссылок в день. Попробуйте завтра.",
   "Say what to change.": "Скажите, что изменить.",
   "A piece is a poem or prose.": "Бок бывает стихами или прозой.",
   "Shelved is yes or no.": "«Отложено» бывает только да или нет.",

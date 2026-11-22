@@ -1985,6 +1985,25 @@ export async function setAuthorApplicationStatus(id: number, status: AuthorAppli
   if (result.error) throw result.error;
 }
 
+/** Studio → Authors: links to the authors' posts about their Series (`list_share_links`). Admin-only on the server. */
+export type ShareLinkRow = {
+  id: number;
+  url: string;
+  createdAt: string;
+  bokId: string;
+  title: string;
+  slug: string | null;
+  publishedAt: string | null;
+  handle: string | null;
+  name: string | null;
+};
+export async function listShareLinks(): Promise<ShareLinkRow[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("list_share_links", { p_limit: 100 });
+  if (result.error) throw result.error;
+  return (result.data ?? []) as ShareLinkRow[];
+}
+
 /** The recorder for this account: Studio, or how many Boks Series the team has granted (`docs/series-recorder.md`). */
 export type SeriesAccess = { allowed: boolean; admin: boolean; granted: number; used: number; left: number };
 export async function loadMySeriesAccess(): Promise<SeriesAccess | null> {

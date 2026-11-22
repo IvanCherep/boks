@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMessages } from "@/components/boks/ui-language";
+import { useUiLanguage } from "@/components/boks/ui-language";
+import type { UiLanguage } from "@/lib/i18n/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import { russianShareUrl } from "@/lib/boks/share-link";
 
@@ -48,6 +49,7 @@ export function ShareLinkPair({
   className,
   caption = true,
   share,
+  language,
 }: {
   /** The go. link, as `bokShareUrl` / `authorShareUrl` give it. */
   url: string;
@@ -60,8 +62,11 @@ export function ShareLinkPair({
    * (there is no third, neutral "Share": the two links differ); elsewhere it copies.
    */
   share?: { title: string; text?: string; onShared?: () => void };
+  /** A page that speaks one language whatever the device (the Workshop is Russian) fixes it here. */
+  language?: UiLanguage;
 }) {
-  const t = useMessages(words);
+  const device = useUiLanguage();
+  const t = words[language ?? device];
   const [done, setDone] = useState<ShareAudience | null>(null);
   // No clipboard (an old browser, a denied permission): the link to copy by hand.
   const [manual, setManual] = useState<string | null>(null);

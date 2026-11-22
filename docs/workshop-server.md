@@ -116,3 +116,30 @@ Moderation shows the author's order beside each voiced piece («по очере�
 (`queuePos` on the review queue's items). `studio_series_work_list` carries
 `queuePos` too, but a piece loses its place when it is accepted, so there it
 is null; the list itself is in order of acceptance.
+
+## Links to the author's posts
+
+The author contract (v9, section 6) asks an author on a plan with the sharing
+condition to post a link to every published Series in an **open** social
+account within 30 days of publishing, and to send the team the link to that
+post through the cabinet. That channel is in the Workshop
+(`20261122240000_boks_share_links.sql`, `components/boks/author-desk/share-links.tsx`):
+
+- `bok_share_links` (bok, author, url, time): read and written only through
+  the functions below.
+- `get_my_share_links()`: the caller's published Series (`bok_series_work`
+  state `published`) with the links already sent.
+- `submit_my_share_link(p_bok_id, p_url)`: the bok must be the caller's own
+  published Series; the url is http(s) (a missing scheme becomes https), at
+  most 500 characters, not a tryboks.com/.ru link (it is the post, not the
+  Series); the same link twice is a no-op; at most 10 links a Series and 30 a
+  day an author. Answers like `get_my_share_links`.
+- `list_share_links(p_limit)`: admin only, newest first, with the author's
+  name and handle and the Series title.
+
+The author sees «Поделились выпуском?» on a published Series (the Series
+link to copy for Russian and international networks, the post field, the
+links sent) and, on the desk home, a quiet line under each published Series:
+«ссылка на пост у редакции ✓» or «ждём ссылку на пост до ДД.ММ». The team
+sees the links in Studio → Authors («Ссылки на посты авторов») and in
+Telegram (`deploy/ops/inbox.py`, feed `shares`).

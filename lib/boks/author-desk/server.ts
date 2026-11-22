@@ -108,6 +108,22 @@ export async function saveMeta(bokId: string, patch: MetaPatch) {
   return rpc<WorkshopMeta>("save_my_workshop_meta", { p_bok_id: bokId, p_patch: patch });
 }
 
+/**
+ * Links to the author's own posts about a published Series (`docs/workshop-server.md`,
+ * "Links to the author's posts"): the contract asks for one within 30 days of publishing.
+ */
+export type ShareLinkSeries = {
+  bokId: string;
+  slug: string | null;
+  title: string;
+  publishedAt: string | null;
+  links: { url: string; at: string }[];
+};
+export const shareLinkDays = 30;
+export const loadShareLinks = () => rpc<ShareLinkSeries[]>("get_my_share_links");
+/** «Отправить в редакцию»; answers every published Series with its links, as `loadShareLinks`. */
+export const submitShareLink = (bokId: string, url: string) => rpc<ShareLinkSeries[]>("submit_my_share_link", { p_bok_id: bokId, p_url: url });
+
 /** The author's order among sent pieces (`set_my_queue_order`); answers the queue as it now stands. */
 export const setQueueOrder = (ids: string[]) => rpc<{ bokId: string; queuePos: number }[]>("set_my_queue_order", { p_ids: ids });
 

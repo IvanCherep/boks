@@ -28,6 +28,7 @@ import {
 import { maxBokCharacters } from "@/lib/boks/contracts";
 import { durationProblem, fileProblem, useDesk, useTakes, type Desk, type DeskStatus } from "./store";
 import { Teleprompter } from "./teleprompter";
+import { ShareBlock, shareMarker, useShareLinks } from "./share-links";
 import { chooseTake, uploadTake } from "@/components/boks/author-cabinet/voice-data";
 import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
 import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
@@ -349,6 +350,7 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const authorName = (desk.state!.author.name ?? "").trim().split(/\s+/)[0] || "";
   const teamReady = desk.state!.ready;
   const published = works.filter((work) => work.editors.step === "published").sort((a, b) => (b.editors.publishedAt ?? "").localeCompare(a.editors.publishedAt ?? ""));
+  const shares = useShareLinks(published.length > 0);
   const replies = works.filter((work) => work.editors.notes.at(-1)?.from === "editors" && work.editors.step !== "published" && work.editors.step !== "approval" && !work.outcome);
   const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length || teamReady.length;
 
@@ -534,6 +536,9 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
                 <span className="desk-book-cover" aria-hidden />
                 <span className="desk-book-title">{work.title}</span>
                 <span className="desk-book-meta">{work.editors.publishedAt ? when(work.editors.publishedAt) : ""}</span>
+                {shareMarker(shares.series?.find((item) => item.bokId === work.id)) ? (
+                  <span className="desk-book-meta desk-share-mark">{shareMarker(shares.series?.find((item) => item.bokId === work.id))}</span>
+                ) : null}
               </a>
             ))}
           </div>
@@ -1237,6 +1242,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
   const [fixing, setFixing] = useState(false);
   const check = canQueue(work);
   const step = work.editors.step;
+  const shares = useShareLinks(step === "published");
   const { queue, planned } = useQueue(desk);
   const position = queue.findIndex((item) => item.id === work.id);
   const toQueue = () => {
@@ -1407,6 +1413,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
           <p>
             {work.editors.publishedAt ? `${when(work.editors.publishedAt)}. ` : ""}Серия на вашей странице и в ленте. <a href="/series">Открыть полку серий</a>
           </p>
+          <ShareBlock bokId={work.id} shares={shares} />
         </div>
       </div>
     );

@@ -1,0 +1,35 @@
+/* boks: the «?» on the sharing condition and its window (why-share.js). */
+@media (min-width: 951px) { .rz-offers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* The plan without the condition has no card: its choice appears in the form only once the window picks it. */
+.interest-choice:has(input[value="nopromo"]:not(:checked)) { display: none; }
+.boks-why {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-left: 4px; padding: 0; vertical-align: 1px;
+  border: 1px solid currentColor; border-radius: 50%; background: transparent;
+  color: #8f2f45; font: inherit; font-size: 12px; line-height: 1; cursor: pointer;
+}
+.boks-why:hover, .boks-why:focus-visible { background: #8f2f45; color: #fff; outline: none; }
+.boks-why-dialog {
+  width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0;
+  border: 0; border-radius: 4px; background: #f6ede4; color: #3b1222;
+  box-shadow: 0 24px 80px rgba(20, 4, 10, .45);
+}
+.boks-why-dialog::backdrop { background: rgba(30, 6, 16, .62); }
+.boks-why-panel { position: relative; padding: 32px 28px 28px; font-size: 15px; line-height: 1.55; }
+.boks-why-panel h3 { margin: 0 32px 16px 0; font-family: Georgia, "Times New Roman", serif; font-size: 24px; font-weight: 400; line-height: 1.2; }
+.boks-why-panel p { margin: 0 0 12px; }
+.boks-why-close {
+  position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+  border: 0; background: transparent; color: inherit; font-size: 26px; line-height: 1; cursor: pointer;
+}
+.boks-why-close:focus { outline: none; }
+.boks-why-close:focus-visible { outline: 2px solid #8f2f45; outline-offset: 2px; border-radius: 50%; }
+.boks-why-plan { margin-top: 20px; padding: 16px 18px; border: 1px solid rgba(59, 18, 34, .18); background: #fbf6f1; }
+.boks-why-lead { color: #8a6a72; font-size: 13px; }
+.boks-why-name { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
+.boks-why-name span { white-space: nowrap; font-weight: 400; }
+.boks-why-cta {
+  display: inline-flex; gap: 8px; margin-top: 4px; color: #8f2f45; font-size: 14px;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+@media (max-width: 480px) { .boks-why-panel { padding: 28px 20px 22px; } .boks-why-panel h3 { font-size: 21px; } }

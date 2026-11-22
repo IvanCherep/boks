@@ -9,6 +9,8 @@ Feeds, each with its own watermark in $BOKS_OPS_STATE:
                 accepts, writes, asks for changes, publishes, hides
   refused       a bok Yandex's content filter would not label for «Что почитать»:
                 its mood is the editor's to set by hand
+  shares        a link an author sends from the Workshop to their own post about a
+                published Series (the contract's condition; docs/workshop-server.md)
 
 The first run of a feed only sets its watermark, so nothing old is announced.
 The watermark keeps microseconds, like the sign-ups in alerts.sh: cut to whole
@@ -113,6 +115,18 @@ FEEDS = {
     """,
 }
 
+FEEDS["shares"] = """
+    select json_build_object('at', to_char(l.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+      'url', l.url, 'title', r.title, 'handle', p.handle,
+      'name', (select s.name from public.author_spaces s
+                where s.owner_user_id = l.author_id and s.kind = 'author' and s.status <> 'merged'
+                order by (s.status = 'published') desc, s.created_at limit 1))
+    from public.bok_share_links l join public.reels r on r.id = l.bok_id
+    left join public.user_profiles p on p.user_id = l.author_id
+    where l.created_at > :'since'::timestamptz
+    order by l.created_at limit {limit};
+"""
+
 AUTHOR_EVENTS = {
     "opened": "👀 {who} открыл(а) приглашение и смотрит, что подготовила редакция",
     "accepted": "✅ {who} принял(а) приглашение: страница в кабинете, идёт просмотр",
@@ -165,6 +179,11 @@ def message(feed, row):
         if row.get("kind") == "published" and row.get("handle"):
             lines.append(f"Страница: https://go.tryboks.com/@{esc(row['handle'])}")
         return "\n".join(lines)
+    if feed == "shares":
+        name = esc(row.get("name"), 120) or "Автор"
+        handle = f" (@{esc(row['handle'])})" if row.get("handle") else ""
+        return (f"🔗 <b>{name}</b>{handle} поделился(ась) выпуском «{esc(row.get('title'), 160)}»: {esc(row.get('url'), 500)}\n"
+                f"Studio → Авторы → Ссылки на посты: {STUDIO}")
     if feed == "refused":
         link = f"https://tryboks.com/b/{esc(row.get('slug') or row.get('id'))}"
         return (f"🟡 <b>Яндекс отказался размечать настроение</b>: «{esc(row.get('title'), 160)}» — {esc(row.get('author'), 120)}\n"
