@@ -63,6 +63,7 @@ const words = defineMessages({
   nothingPublished: "Nothing is published when you send this note.",
   cancel: "Cancel",
   needsCover: "Needs a cover",
+  authorOrder: (n: number) => `author's order: ${n}`,
   coverFirst: "Add the cover first: the author asked us to choose it.",
 }, { ru: {
   rightsLoadFailed: "Не удалось загрузить сведения о правах. Повторите или откройте полную карточку.",
@@ -109,6 +110,7 @@ const words = defineMessages({
   nothingPublished: "Отправка записки ничего не публикует.",
   cancel: "Отмена",
   needsCover: "Нужна обложка",
+  authorOrder: (n: number) => `по очереди автора: ${n}`,
   coverFirst: "Сначала добавьте обложку: автор попросил подобрать её нам.",
 } });
 
@@ -197,7 +199,7 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
             onClick={() => { setSelectedId(item.id); setReading(true); setStatus(""); setEvidenceError(""); window.scrollTo({ top: 0, behavior: "instant" }); }}>
             <span>{String(index + 1).padStart(2, "0")} · {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString(language) : t.notSubmitted}</span>
             <h2>{item.title}</h2><p>{[item.authorName, item.authorHandle ? `@${item.authorHandle.replace(/^@+/, "")}` : ""].filter(Boolean).join(" · ")}</p>
-            <small>{t.minutes(item.minutes)} · {item.status === "rejected" ? t.refused : t.privateSubmission}{coverRequests.has(item.id) && !coverRequests.get(item.id) ? ` · ${t.needsCover}` : ""}</small>
+            <small>{t.minutes(item.minutes)} · {item.status === "rejected" ? t.refused : t.privateSubmission}{coverRequests.has(item.id) && !coverRequests.get(item.id) ? ` · ${t.needsCover}` : ""}{item.queuePos ? ` · ${t.authorOrder(item.queuePos)}` : ""}</small>
             <p className="studio-review-excerpt">{item.body.slice(0, 140)}{item.body.length > 140 ? "…" : ""}</p>
             <span className="studio-review-open">{t.readAndReview} <ArrowUpRight /></span>
           </button>

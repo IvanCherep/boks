@@ -2641,6 +2641,209 @@ begin
   perform public.boks_test_logout();
 end $$;
 
+-- The Workshop (20261122220000): who may use it, meta and notes, shelving,
+-- the author's queue, what get_my_workshop returns.
+do $$
+declare
+  v_author uuid := 'f1a00000-0000-4000-8000-000000000001';
+  v_rival uuid := 'f1a00000-0000-4000-8000-000000000002';
+  v_reader uuid := '33333333-3333-4333-8333-333333333333';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_draft uuid := 'f1a00000-0000-4000-8000-0000000000c1';
+  v_a uuid := 'f1a00000-0000-4000-8000-0000000000c2';
+  v_b uuid := 'f1a00000-0000-4000-8000-0000000000c3';
+  v_c uuid := 'f1a00000-0000-4000-8000-0000000000c4';
+  v_long uuid := 'f1a00000-0000-4000-8000-0000000000c5';
+  v_foreign uuid := 'f1a00000-0000-4000-8000-0000000000c6';
+  v_title text := left('Ночь 🌙 ليلة ' || repeat('с', 200), 120);
+  v_ws jsonb;
+  v_piece jsonb;
+  v_meta jsonb;
+  v_queue jsonb;
+  v_error text;
+  v_hint text;
+begin
+  -- Only a verified author: everyone else is told apart by 42501 and the hint.
+  perform public.boks_test_login(v_reader);
+  begin
+    perform public.get_my_workshop();
+    perform public.boks_assert(false, 'the Workshop is closed to an author the editors did not invite');
+  exception when insufficient_privilege then
+    get stacked diagnostics v_error = message_text, v_hint = pg_exception_hint;
+    perform public.boks_assert(v_error = 'The Workshop is open to authors the editors invited.' and v_hint = 'workshop_closed',
+      'the Workshop is closed to an author the editors did not invite');
+  end;
+
+  perform public.boks_test_logout();
+  insert into auth.users (id, email, is_anonymous) values (v_rival, 'workshop-rival@boks.test', false);
+  perform public.boks_test_login(v_rival);
+  perform public.ensure_boks_user_profile();
+  perform public.accept_boks_terms('security-test');
+  insert into public.author_spaces (kind, status, name, owner_user_id, verified) values ('author', 'draft', 'Соперник', v_rival, true);
+  perform public.save_my_bok(v_foreign, 'Чужое', 'Чужой текст.', false, null, false);
+
+  perform public.boks_test_login(v_author);
+  -- A title of 120 characters with an emoji and right-to-left letters; a text exactly at the limit, and one past it.
+  perform public.save_my_bok(v_draft, v_title, 'Черновик мастерской.', false, null, false);
+  perform public.save_my_bok(v_long, '', repeat('а', public.boks_max_text_characters()), false, null, false);
+  begin
+    perform public.save_my_bok(v_long, '', repeat('а', public.boks_max_text_characters() + 1), false, null, false);
+    perform public.boks_assert(false, 'a text past the bok limit is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a text past the bok limit is refused');
+  end;
+
+  v_ws := public.get_my_workshop();
+  select p into v_piece from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_draft::text;
+  perform public.boks_assert(
+    v_piece ->> 'title' = v_title and v_piece ->> 'form' = 'poem' and v_piece -> 'notes' = '{}'::jsonb
+      and v_piece -> 'voice' = 'null'::jsonb and v_piece -> 'series' = 'null'::jsonb and v_piece ? 'importedFrom',
+    'a piece without Workshop meta comes with the defaults');
+  perform public.boks_assert(
+    (v_ws -> 'author' ->> 'userId') = v_author::text and (v_ws -> 'author' ->> 'pageId') is not null
+      and (v_ws -> 'plan' ->> 'perYear')::int = 50 and (v_ws -> 'plan' ->> 'usedThisYear')::int >= 1
+      and not exists (select 1 from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_foreign::text)
+      and char_length((select p ->> 'text' from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_long::text)) = public.boks_max_text_characters(),
+    'get_my_workshop: the author, the plan, the author''s own pieces only, the whole text');
+
+  -- Meta: form, notes and their caps, another author's piece.
+  v_meta := public.save_my_workshop_meta(v_draft, '{"form": "prose", "notes": {"about": "о ночи", "plan": [{"id": "1", "text": "начало", "done": false}]}}');
+  perform public.boks_assert(v_meta ->> 'form' = 'prose' and v_meta -> 'notes' ->> 'about' = 'о ночи', 'the form and the notes are saved');
+  v_meta := public.save_my_workshop_meta(v_draft, '{"notes": {}}');
+  perform public.boks_assert(v_meta ->> 'form' = 'prose' and v_meta -> 'notes' = '{}'::jsonb, 'empty notes are saved, the form stays');
+  begin
+    perform public.save_my_workshop_meta(v_draft, '{"form": "verse"}');
+    perform public.boks_assert(false, 'a form other than poem or prose is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a form other than poem or prose is refused');
+  end;
+  begin
+    perform public.save_my_workshop_meta(v_draft, jsonb_build_object('notes', jsonb_build_object('thoughts',
+      (select jsonb_agg(jsonb_build_object('text', repeat('x', 1999))) from generate_series(1, 40)))));
+    perform public.boks_assert(false, 'notes over 64 KB are refused');
+  exception when invalid_parameter_value then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error = 'The notes are longer than 64 KB.', 'notes over 64 KB are refused');
+  end;
+  begin
+    perform public.save_my_workshop_meta(v_draft, jsonb_build_object('notes', jsonb_build_object('plan',
+      (select jsonb_agg(jsonb_build_object('id', g::text)) from generate_series(1, 201) g))));
+    perform public.boks_assert(false, 'a list of more than 200 entries is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a list of more than 200 entries is refused');
+  end;
+  begin
+    perform public.save_my_workshop_meta(v_draft, jsonb_build_object('notes', jsonb_build_object('about', repeat('я', 2001))));
+    perform public.boks_assert(false, 'a note longer than 2000 characters is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a note longer than 2000 characters is refused');
+  end;
+  begin
+    perform public.save_my_workshop_meta(v_foreign, '{"form": "prose"}');
+    perform public.boks_assert(false, 'another author''s piece is refused');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'another author''s piece is refused');
+  end;
+
+  -- Shelving a draft, and back.
+  perform public.boks_assert(public.save_my_workshop_meta(v_draft, '{"shelved": true}') ->> 'shelvedAt' is not null, 'a draft is put aside');
+  perform public.boks_assert(public.save_my_workshop_meta(v_draft, '{"shelved": false}') ->> 'shelvedAt' is null, 'a draft is back in work');
+
+  -- Three pieces sent with their voices take places 1, 2, 3 by themselves.
+  perform public.set_my_bok_voice(v_a, jsonb_build_object('file', 'take-1.webm', 'durationMs', 4000, 'source', 'upload', 'fingerprint', public.boks_voice_fingerprint('Первый.')));
+  perform public.set_my_bok_voice(v_b, jsonb_build_object('file', 'take-1.webm', 'durationMs', 4000, 'source', 'upload', 'fingerprint', public.boks_voice_fingerprint('Второй.')));
+  perform public.set_my_bok_voice(v_c, jsonb_build_object('file', 'take-1.webm', 'durationMs', 4000, 'source', 'teleprompter', 'fingerprint', public.boks_voice_fingerprint('Третий.')));
+  perform public.save_my_bok(v_a, 'Первый', 'Первый.', true, null, true);
+  perform public.save_my_bok(v_b, 'Второй', 'Второй.', true, null, true);
+  perform public.save_my_bok(v_c, 'Третий', 'Третий.', true, null, true);
+  perform public.boks_assert(
+    (select array_agg(queue_pos order by queue_pos) from public.bok_workshop where bok_id in (v_a, v_b, v_c)) = array[1, 2, 3],
+    'a piece sent to the editors takes the last place in its author''s queue');
+  begin
+    perform public.save_my_workshop_meta(v_b, '{"shelved": true}');
+    perform public.boks_assert(false, 'a sent piece is not put aside before it is taken back');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a sent piece is not put aside before it is taken back');
+  end;
+
+  -- The order: given first, the rest after; refused for a draft, a foreign or a repeated id; the same call twice is the same.
+  v_queue := public.set_my_queue_order(array[v_c, v_a]);
+  perform public.boks_assert(
+    (select queue_pos from public.bok_workshop where bok_id = v_c) = 1 and (select queue_pos from public.bok_workshop where bok_id = v_a) = 2
+      and (select queue_pos from public.bok_workshop where bok_id = v_b) = 3 and jsonb_array_length(v_queue) = 3,
+    'the author''s order: the given pieces first, every other waiting one after');
+  perform public.boks_assert(public.set_my_queue_order(array[v_c, v_a]) = v_queue, 'the same order twice changes nothing');
+  begin
+    perform public.set_my_queue_order(array[v_draft]);
+    perform public.boks_assert(false, 'a piece not sent is not put in the queue');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a piece not sent is not put in the queue');
+  end;
+  begin
+    perform public.set_my_queue_order(array[v_foreign]);
+    perform public.boks_assert(false, 'another author''s piece is not put in the queue');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'another author''s piece is not put in the queue');
+  end;
+  begin
+    perform public.set_my_queue_order(array[v_a, v_a]);
+    perform public.boks_assert(false, 'a piece named twice is refused');
+  exception when invalid_parameter_value then
+    perform public.boks_assert(true, 'a piece named twice is refused');
+  end;
+  -- Two tabs, one after the other: the last order wins and the places stay 1..n.
+  perform public.set_my_queue_order(array[v_a, v_b, v_c]);
+  perform public.set_my_queue_order(array[v_b, v_c, v_a]);
+  perform public.boks_assert(
+    (select array_agg(bok_id order by queue_pos) from public.bok_workshop where author_id = v_author and queue_pos is not null) = array[v_b, v_c, v_a]
+      and (select array_agg(queue_pos order by queue_pos) from public.bok_workshop where author_id = v_author and queue_pos is not null) = array[1, 2, 3],
+    'the last order wins and the places stay whole');
+
+  -- Studio sees the author's order.
+  perform public.boks_test_login(v_admin);
+  perform public.boks_assert(
+    (select (q ->> 'queuePos')::int from jsonb_array_elements(public.get_boks_admin_snapshot(100, 0, '', 'newest') -> 'moderationQueue') q where q ->> 'id' = v_c::text) = 2,
+    'the review queue carries the author''s order');
+  perform public.studio_accept_bok(v_a);
+  perform public.boks_test_login(v_author);
+  perform public.withdraw_my_sent_bok(v_b);
+  perform public.boks_assert(
+    (select queue_pos from public.bok_workshop where bok_id = v_a) is null and (select queue_pos from public.bok_workshop where bok_id = v_b) is null,
+    'a piece taken into work or taken back leaves the queue');
+  v_queue := public.set_my_queue_order(array[v_a, v_c]);
+  perform public.boks_assert(jsonb_array_length(v_queue) = 1 and v_queue -> 0 ->> 'bokId' = v_c::text, 'a piece in work is skipped in the order');
+
+  -- The voice of an edited text is no longer current.
+  perform public.boks_assert(
+    (select (p -> 'voice' ->> 'current')::boolean from jsonb_array_elements(public.get_my_workshop() -> 'pieces') p where p ->> 'id' = v_b::text),
+    'a voice of the text as it is is current');
+  perform public.save_my_bok(v_b, 'Второй', 'Второй, исправленный.', false, null, false);
+  perform public.boks_assert(
+    not (select (p -> 'voice' ->> 'current')::boolean from jsonb_array_elements(public.get_my_workshop() -> 'pieces') p where p ->> 'id' = v_b::text),
+    'after the text is edited the voice is no longer current');
+
+  -- A piece deleted while the Workshop has it open.
+  perform public.delete_my_draft(v_draft);
+  begin
+    perform public.save_my_workshop_meta(v_draft, '{"form": "poem"}');
+    perform public.boks_assert(false, 'a deleted piece is refused');
+  exception when insufficient_privilege then
+    perform public.boks_assert(not exists (select 1 from public.bok_workshop where bok_id = v_draft), 'a deleted piece is refused and its meta is gone');
+  end;
+
+  -- At most 200 pieces, newest first.
+  perform public.boks_test_logout();
+  insert into public.reels (title, author_name, text, genre, mood, status, author_user_id, created_at)
+  select 'Много ' || g, 'Автор Серии', 'Текст номер ' || g || '.', 'literary', 'quiet', 'draft', v_author, now() + make_interval(secs => g)
+  from generate_series(1, 205) g;
+  perform public.boks_test_login(v_author);
+  v_ws := public.get_my_workshop();
+  perform public.boks_assert(jsonb_array_length(v_ws -> 'pieces') = 200 and v_ws -> 'pieces' -> 0 ->> 'title' = 'Много 205',
+    'get_my_workshop returns at most 200 pieces, newest first');
+  perform public.boks_test_logout();
+  delete from public.reels where author_user_id = v_author and title like 'Много %';
+end $$;
+
 -- Row level security must hold for a plain authenticated session too.
 set role authenticated;
 select set_config('request.jwt.claims', jsonb_build_object('sub', '33333333-3333-4333-8333-333333333333', 'role', 'authenticated', 'is_anonymous', false)::text, false);

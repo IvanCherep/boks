@@ -99,6 +99,8 @@ export type StudioSeriesWork = SeriesWork & {
   hasCover: boolean;
   bokStatus: string;
   workStatus: string | null;
+  /** The author's order among their sent pieces, while the piece still waits (cleared when accepted). */
+  queuePos: number | null;
 };
 
 /** The author takes a sent piece back while the editors have not taken it into work. */

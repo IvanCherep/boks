@@ -542,6 +542,8 @@ export type AdminModerationItem = AuthorBokSubmission & {
   body: string;
   authorUserId: string | null;
   authorEmail: string;
+  /** The author's own order among their sent pieces (the Workshop's queue, `bok_workshop.queue_pos`); null for others. */
+  queuePos?: number | null;
 };
 
 export type AdminUserRow = {
