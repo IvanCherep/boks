@@ -297,6 +297,15 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const { ready } = useQueue(desk);
   const [adding, setAdding] = useState(false);
   const [row, setRow] = useState<Work[] | null>(null);
+  // «Новый бок» on My page lands here with the sheet open.
+  useEffect(() => {
+    if (window.location.hash !== "#add") return;
+    const timer = window.setTimeout(() => {
+      setAdding(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   const hour = new Date().getHours();
   const greeting = hour < 6 ? "Доброй ночи" : hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер";
   const active = works.filter((work) => !work.shelved || work.editors.step);
@@ -608,7 +617,7 @@ function WorkScreen({ work, step, go, desk }: { work: Work; step: Stage; go: (ha
       <input
         className="desk-title"
         value={work.title}
-        placeholder="Название"
+        placeholder="Название" maxLength={120}
         aria-label="Название"
         onChange={(event) => update((current) => ({ ...current, title: event.target.value }))}
       />
@@ -1512,7 +1521,7 @@ function AddTextSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (w
             ×
           </button>
         </div>
-        <input className="desk-sheet-title" value={title} placeholder="Название" aria-label="Название" onChange={(event) => setTitle(event.target.value)} />
+        <input className="desk-sheet-title" value={title} placeholder="Название" maxLength={120} aria-label="Название" onChange={(event) => setTitle(event.target.value)} />
         <div className="desk-switch" role="group" aria-label="Стихи или проза">
           {(["poem", "prose"] as const).map((item) => (
             <button key={item} type="button" className={form === item ? "is-on" : ""} onClick={() => setForm(item)}>

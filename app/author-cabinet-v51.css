@@ -279,3 +279,13 @@
 /* The closed old way in: a calm explanation in the New sheet */
 .acab .sheet-note{font-size:15px;line-height:1.55;color:var(--ink);margin:0 0 12px}
 .acab .sheet-note+.sheet-note{color:var(--muted)}
+
+/* Entry to the Workshop (/author/desk) on My page */
+.acab .desk-entry{display:flex;align-items:center;gap:13px;padding:18px 16px;margin:18px 0 6px;border-radius:6px 18px 6px 6px;background:#fff;border:1.5px solid var(--red);text-align:left;text-decoration:none;color:var(--ink);transition:transform .15s}
+.acab .desk-entry:hover{transform:translateY(-1px)}
+.acab .desk-entry-mark{width:42px;height:42px;border-radius:50%;background:var(--green);color:var(--paper);display:grid;place-items:center;font:italic 26px/1 var(--serif);flex-shrink:0}
+.acab .desk-entry-text{flex:1;min-width:0}
+.acab .desk-entry strong{font-size:15px;font-weight:650;display:flex;align-items:center;gap:8px}
+.acab .desk-entry em{font-style:normal;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--red);color:#fff}
+.acab .desk-entry small{font-size:13px;color:var(--muted);display:block;margin-top:4px;line-height:1.45}
+.acab .desk-entry-go{font-size:14px;font-weight:600;white-space:nowrap}

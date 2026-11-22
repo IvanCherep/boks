@@ -23,6 +23,7 @@ import { WorkPreview, previewWords } from "@/components/boks/author-spaces/space
 import { useLivePoll } from "@/components/boks/author-spaces/live-poll";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { currentBoksTermsVersion } from "@/components/boks/user-auth-panel";
+import { workshopEnabled } from "@/lib/boks/author-desk/switch";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { describeBoksHandleProblem, maxHandleLength, minHandleLength } from "@/lib/boks/contracts";
@@ -179,6 +180,10 @@ const words = defineMessages(
     openPage: "Open my page",
     toCabinet: "Back to the cabinet",
     refresh: "Refresh",
+    deskBadge: "New",
+    deskTitle: "Workshop",
+    deskBody: "Your texts, your voice and the Boks Series queue in one place: write, record, send to the editors and publish.",
+    deskOpen: "Open",
     newBok: "New bok",
     newBokHint: "Paste the text, read it in your voice and send it to the editors: they make the cover.",
     voiceChip: "Waiting for your voice",
@@ -331,6 +336,10 @@ const words = defineMessages(
       openPage: "Открыть мою страницу",
       toCabinet: "Вернуться в кабинет",
       refresh: "Обновить",
+      deskBadge: "Новое",
+      deskTitle: "Мастерская",
+      deskBody: "Тексты, ваш голос и очередь Boks Series в одном месте: пишите, записывайте, отправляйте в редакцию и публикуйте.",
+      deskOpen: "Открыть",
       newBok: "Новый бок",
       newBokHint: "Вставьте текст, прочитайте его своим голосом и отправьте в редакцию: обложку сделаем мы.",
       voiceChip: "Ждёт вашего голоса",
@@ -808,13 +817,26 @@ export function MyPage({
         </section>
       )}
 
+      {workshopEnabled && direct ? (
+        <a className="desk-entry" href="/author/desk">
+          <span className="desk-entry-mark" aria-hidden="true">b.</span>
+          <span className="desk-entry-text">
+            <strong>
+              {w.deskTitle} <em>{w.deskBadge}</em>
+            </strong>
+            <small>{w.deskBody}</small>
+          </span>
+          <span className="desk-entry-go">{w.deskOpen} →</span>
+        </a>
+      ) : null}
+
       <section className="amp-works">
         <header className="amp-works__head">
           <h2 className="serif">{w.works}</h2>
           {orderable > 1 && <button type="button" className="amp-link" onClick={() => go("my-page-order")}>{w.order}</button>}
         </header>
         {direct && (
-          <button type="button" className="amp-new" onClick={() => compose(null)}>
+          <button type="button" className="amp-new" onClick={() => (workshopEnabled ? window.location.assign("/author/desk#add") : compose(null))}>
             <span className="amp-new__plus" aria-hidden="true">+</span>
             <span><strong>{w.newBok}</strong><small>{w.newBokHint}</small></span>
           </button>
