@@ -43,7 +43,7 @@
   };
   // The database keeps at most this much of each field (`submit_author_application`).
   const limits = { name: 120, contact: 200, publications: 1500, audience: 120, about: 3000 };
-  const offers = { author: 'page', series: 'series', launch: 'launch', unsure: 'unsure' };
+  const offers = { author: 'page', nopromo: 'page_no_promotion', series: 'series', launch: 'launch', unsure: 'unsure' };
   const draftKey = 'boks-author-application-draft-v2';
 
   const lang = () => (document.documentElement.lang === 'en' ? 'en' : 'ru');

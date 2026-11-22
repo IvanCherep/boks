@@ -45,7 +45,7 @@ SURFACES = {
     "series_build": "Запись Series · Сборка",
     "author_landing": "Страница для авторов",
 }
-OFFERS = {"page": "Авторская страница", "series": "Пять Boks Series", "launch": "Совместный запуск", "unsure": "пока не знает"}
+OFFERS = {"page": "Кабинет автора", "page_no_promotion": "Кабинет автора без продвижения", "series": "Пять Boks Series (старое)", "launch": "Совместный запуск", "unsure": "пока не знает"}
 
 FEEDS = {
     "feedback": """

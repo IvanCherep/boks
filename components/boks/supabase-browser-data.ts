@@ -1917,7 +1917,7 @@ export async function deleteStudyFragmentBatch(batch: string) {
 }
 
 /** An application to become a boks author (`docs/author-applications.md`). */
-export type AuthorApplicationOffer = "page" | "series" | "launch" | "unsure";
+export type AuthorApplicationOffer = "page" | "page_no_promotion" | "series" | "launch" | "unsure";
 export type AuthorAccess = {
   published: number;
   admin: boolean;

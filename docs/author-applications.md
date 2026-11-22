@@ -11,11 +11,16 @@ the page existed.
 
 ## What it offers
 
-| Offer | Price | |
+The offers follow the author contract (v7, 2026-11-22); the page gets them from
+`scripts/author-landing/terms.mjs`, which must run after every import.
+
+| Offer (form value → `offer`) | Price | |
 |---|---|---|
-| Author page | ~~45 000 ₽~~ 30 000 ₽ a year | up to 50 short works moved over, an illustration for each, page and cabinet designed, publishing in the boks feed after review, the profile in the main Boks Series section for the year, the Series recorder, priority support (answered within a working day); until 1 January 2027 five Boks Series as a gift |
-| Five Boks Series | 10 000 ₽ a pack | an extra for authors with a cabinet: five issues with illustrations and sound, in the author's voice or recorded with the teleprompter |
-| Joint launch (the main offer, shown in the middle) | free | everything in the Author page, on one condition: a series of posts about boks that reaches 15 000 views in total (was 30 000 until 2026-11-16); open to authors with around 500 followers |
+| Совместный запуск (`launch` → `launch`) | free | everything in «Кабинет автора»; a link to every published Series in the author's social media, and the posts about boks reach 30 000 views in total within the first 3 months; open to authors with 500 followers or more, each application considered individually |
+| Кабинет автора (`author` → `page`), in the middle | 30 000 ₽ a year | page and cabinet, a Boks Series every week (up to 50 a year) in the author's voice, pictures and sound by the editors, the author publishes; condition: a link to every published Series in the author's social media |
+| Кабинет автора без продвижения (`nopromo` → `page_no_promotion`) | 500 000 ₽ a year | the same without the condition |
+
+`series` (five Series for 10 000 ₽) is no longer offered; old applications keep it.
 
 ## The page
 
@@ -67,8 +72,8 @@ The question to the team and the letter to readers are not in this version
 
 `submit_author_application` (`20261117150000_boks_author_applications.sql`,
 open to guests since `20261118150000_boks_author_applications_guests.sql`):
-a name, at least one link, a way to reach them, the offer (`page`, `series`,
-`launch` or `unsure`), optionally the audience and a few words. Nobody has to
+a name, at least one link, a way to reach them, the offer (`launch`, `page`,
+`page_no_promotion` or `unsure`; old rows may say `series`), optionally the audience and a few words. Nobody has to
 sign in: a guest's application has no account (`user_id` null) and carries the
 device id (`visitor_id`, the reader's `boks-reader` id); the team answers
 through the contact left in the form. Three a day per account or per device,
