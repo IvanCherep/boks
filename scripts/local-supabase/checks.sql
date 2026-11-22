@@ -5209,12 +5209,14 @@ declare
   v_error text;
 begin
   perform public.boks_test_login('f0000000-0000-4000-8000-000000000099', true);
+  -- Since 20261118150000 a guest (or an anonymous session) may apply from the
+  -- page for authors; the application is kept without an account.
+  v_error := null;
   begin
-    perform public.submit_author_application('page', 'Гость', 'https://t.me/x', null, '@x', null);
-    raise exception 'a guest applied';
+    perform public.submit_author_application('page', 'Гость', 'https://t.me/x', null, '@guest_x', null);
   exception when others then v_error := sqlerrm;
   end;
-  perform public.boks_assert(v_error = 'A permanent user account is required.', 'an application needs an account');
+  perform public.boks_assert(v_error is null, 'a guest may apply from the page for authors: ' || coalesce(v_error, ''));
 
   perform public.boks_test_login('f0000000-0000-4000-8000-000000000001');
   v_access := public.get_my_author_access();
