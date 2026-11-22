@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { acceptAuthorInvite, loadInviteGreeting, noteInviteOpened, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
+import "@/app/author-agreement.css";
+import { acceptAuthorInvite, acceptAuthorInviteWithTerms, loadInviteGreeting, loadInviteTerms, noteInviteOpened, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
+import { InviteTermsBlock, useInviteTerms } from "./invite-terms";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
 import { pendingInviteKey } from "@/lib/boks/author/invite-link";
@@ -34,6 +36,8 @@ const words = defineMessages(
     existingTitle: "You already have a page in boks",
     existingBody: (n: number) => `We will add ${n} draft${n === 1 ? "" : "s"} to your cabinet. Your name, photo, address, followers and published works stay as they are.`,
     accept: "Accept and look",
+    acceptTerms: "Accept and open the cabinet",
+    tickAll: "Write your full name and tick all three boxes: the button then works.",
     signedInAs: (email: string) => `You are signed in as ${email}.`,
     wrongTitle: "This invitation is for another address",
     wrongBody: (hint: string) => `It was sent to ${hint}. Sign in with that address.`,
@@ -64,6 +68,8 @@ const words = defineMessages(
       existingTitle: "У вас уже есть страница в boks",
       existingBody: (n: number) => `Добавим в кабинет ${n} ${plural("ru", n, { one: "черновик", few: "черновика", many: "черновиков", other: "черновика" })}. Имя, фото, адрес, подписчики и опубликованные работы останутся как есть.`,
       accept: "Принять и посмотреть",
+      acceptTerms: "Принять и открыть кабинет",
+      tickAll: "Впишите ФИО и отметьте все три пункта: тогда кнопка заработает.",
       signedInAs: (email: string) => `Сейчас вы вошли как ${email}.`,
       wrongTitle: "Приглашение для другой почты",
       wrongBody: (hint: string) => `Оно отправлено на ${hint}. Войдите с этого адреса.`,
@@ -159,6 +165,8 @@ export function InviteScreen({
   }, [pending, token, offer?.inviteId]);
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
+  // The plan's offer and the two consents, when the invitation carries a plan.
+  const terms = useInviteTerms(pending ? token : null, pending && !token ? offer?.inviteId ?? null : null, loadInviteTerms);
 
   useEffect(() => {
     if (!token) return;
@@ -180,10 +188,14 @@ export function InviteScreen({
   }, [token, onAccepted, t.failed, language]);
 
   async function accept() {
+    if (terms.value && !terms.ready) return;
     setBusy(true);
     setProblem("");
     try {
-      const answer = await acceptAuthorInvite(token, offer?.inviteId ?? null);
+      const inviteId = token ? null : offer?.inviteId ?? null;
+      const answer = terms.value
+        ? await acceptAuthorInviteWithTerms(token, inviteId, terms.payload())
+        : await acceptAuthorInvite(token, offer?.inviteId ?? null);
       if (answer.state === "accepted") {
         forget();
         onAccepted();
@@ -216,10 +228,14 @@ export function InviteScreen({
         {/* The greeting already names the author; without one, the page's name does. */}
         {peek.name && !peek.existingPage && !greeting && <p className="serif amp-invite__name">{peek.name}</p>}
         {peek.existingPage ? <p>{t.existingBody(peek.works)}</p> : <p className="amp-invite__muted">{t.newLead}</p>}
+        {terms.value && <InviteTermsBlock terms={terms} />}
         {problem && <p className="notice" role="alert">{problem}</p>}
-        <button type="button" className="btn btn-red" style={{ marginTop: 24 }} disabled={busy} onClick={() => void accept()}>
-          {t.accept} <Icon name="arrow" />
-        </button>
+        {!terms.loading && (
+          <button type="button" className="btn btn-red" style={{ marginTop: 24 }} disabled={busy || (Boolean(terms.value) && !terms.ready)} onClick={() => void accept()}>
+            {terms.value ? t.acceptTerms : t.accept} <Icon name="arrow" />
+          </button>
+        )}
+        {terms.value && !terms.ready && <p className="aag-hint">{t.tickAll}</p>}
       </section>
     );
   } else if (peek?.state === "wrong_email") {

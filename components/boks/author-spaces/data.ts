@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/boks/supabase-client";
+import type { AuthorAgreement, AuthorPlan, InviteTerms, LegalKind, PaymentDetails, StudioAgreement } from "@/lib/boks/author/agreement";
 
 /**
  * Author spaces: pages prepared in Studio, handed to their author by an
@@ -258,8 +259,48 @@ export const removeSpaceWork = (workId: string) => call<StudioSpace>("studio_rem
 export const findBoksToAttach = (query: string, spaceId: string | null) =>
   call<FoundBok[]>("studio_find_boks", { p_query: query, p_space_id: spaceId });
 
-export const issueAuthorInvite = (spaceId: string, email: string) =>
-  call<{ token: string; invite: SpaceInvite }>("studio_issue_author_invite", { p_space_id: spaceId, p_email: email });
+/** `plan` null: no offer to accept (a special project arranged separately). */
+export const issueAuthorInvite = (spaceId: string, email: string, plan: AuthorPlan | null = "page", legalName = "") =>
+  call<{ token: string; invite: SpaceInvite }>("studio_issue_author_invite", { p_space_id: spaceId, p_email: email, p_plan: plan, p_legal_name: legalName || null });
+
+// ------------------------------------------------------------------ the contract (`20261123100000_boks_author_agreements.sql`)
+
+export const loadInvitePlans = (spaceId: string) =>
+  call<Record<string, { plan: AuthorPlan | null; legalName: string | null }>>("studio_space_invite_plans", { p_space_id: spaceId });
+
+/** What an invitation asks to accept; null for one without a plan (or not this account's). */
+export const loadInviteTerms = (token: string | null, inviteId: string | null = null) =>
+  call<InviteTerms | null>("get_author_invite_terms", { p_token: token, p_invite_id: inviteId });
+
+export const acceptAuthorInviteWithTerms = (token: string | null, inviteId: string | null, terms: Record<string, string>) =>
+  call<InviteAcceptance & { agreement?: AuthorAgreement }>("accept_author_invite_with_terms", { p_token: token, p_invite_id: inviteId, p_terms: terms });
+
+export const loadMyAgreement = () => call<AuthorAgreement | null>("get_my_author_agreement");
+
+export const reportMyPayment = () => call<AuthorAgreement>("report_my_author_payment");
+
+export const loadLegalDocument = (kind: LegalKind, version: string | null = null) =>
+  call<LegalDocument | null>("get_boks_legal_document", { p_kind: kind, p_version: version });
+
+export type LegalDocument = {
+  kind: LegalKind;
+  version: string;
+  title: string;
+  body: string;
+  sha256: string;
+  publishedAt: string;
+  current: boolean;
+  versions: { version: string; publishedAt: string }[];
+};
+
+export const loadStudioAgreements = () => call<StudioAgreement[]>("studio_author_agreements", { p_limit: 200 });
+export const loadSpaceAgreement = (spaceId: string) => call<StudioAgreement | null>("studio_space_agreement", { p_space_id: spaceId });
+export const markAuthorPayment = (agreementId: string, paidOn: string, amountRub: number, receiptUrl = "", note = "") =>
+  call<StudioAgreement>("studio_mark_author_payment", { p_agreement_id: agreementId, p_paid_on: paidOn, p_amount_rub: amountRub, p_receipt_url: receiptUrl || null, p_note: note || null });
+export const updateAuthorPayment = (agreementId: string, action: "unmark" | "receipt", receiptUrl = "") =>
+  call<StudioAgreement>("studio_update_author_payment", { p_agreement_id: agreementId, p_action: action, p_receipt_url: receiptUrl || null });
+export const loadPaymentDetails = () => call<PaymentDetails | null>("studio_payment_details");
+export const savePaymentDetails = (details: Partial<PaymentDetails>) => call<PaymentDetails>("studio_save_payment_details", { p_details: details });
 
 export const revokeAuthorInvite = (inviteId: string) => call<StudioSpace>("studio_revoke_author_invite", { p_invite_id: inviteId });
 

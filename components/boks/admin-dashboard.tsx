@@ -39,6 +39,7 @@ import { RightsReview } from "@/components/boks/admin/rights-review";
 import { AuthorSpaces } from "@/components/boks/admin/author-spaces";
 import { AuthorApplications } from "@/components/boks/admin/author-applications";
 import { ShareLinks } from "@/components/boks/admin/share-links";
+import { AuthorAgreements } from "@/components/boks/admin/author-agreement";
 import { SeriesCredits } from "@/components/boks/admin/series-credits";
 import { AuthorGameStudio } from "@/components/boks/admin/author-game";
 import { SeriesRecorder, openRecorderDraft } from "@/components/boks/admin/series-recorder/series-recorder";
@@ -544,6 +545,7 @@ export function AdminDashboard() {
 
         {tab === "rights" && <RightsReview />}
         {tab === "authors" && <AuthorApplications />}
+        {tab === "authors" && <AuthorAgreements />}
         {tab === "authors" && <ShareLinks />}
         {tab === "authors" && <SeriesCredits />}
         {tab === "authors" && <AuthorSpaces />}

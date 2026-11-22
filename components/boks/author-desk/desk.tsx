@@ -29,6 +29,7 @@ import { maxBokCharacters } from "@/lib/boks/contracts";
 import { durationProblem, fileProblem, useDesk, useTakes, type Desk, type DeskStatus } from "./store";
 import { Teleprompter } from "./teleprompter";
 import { ShareBlock, shareMarker, useShareLinks } from "./share-links";
+import { AgreementCard, useMyAgreement } from "@/components/boks/author-cabinet/agreement-card";
 import { chooseTake, uploadTake } from "@/components/boks/author-cabinet/voice-data";
 import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
 import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
@@ -353,6 +354,9 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const shares = useShareLinks(published.length > 0);
   const replies = works.filter((work) => work.editors.notes.at(-1)?.from === "editors" && work.editors.step !== "published" && work.editors.step !== "approval" && !work.outcome);
   const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length || teamReady.length;
+  // The online contract while it waits for its payment («Договор и оплата»).
+  const contract = useMyAgreement();
+  const contractWaiting = contract.agreement?.payState === "awaiting" || contract.agreement?.payState === "reported";
 
   const startDraft = async () => {
     try {
@@ -395,6 +399,8 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
           </button>
         </div>
       </section>
+
+      {contractWaiting ? <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} compact /> : null}
 
       {hasWaiting ? (
         <section className="desk-section">

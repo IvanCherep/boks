@@ -1,6 +1,9 @@
 "use client";
 
 import { SpaceVerified } from "@/components/boks/admin/space-verified";
+import { InvitePlanFields, SpaceAgreementPanel } from "@/components/boks/admin/author-agreement";
+import "@/app/author-agreement.css";
+import { planName, type AuthorPlan } from "@/lib/boks/author/agreement";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, Monitor, Plus, RefreshCw, Search, Smartphone, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +12,7 @@ import "@/app/author-spaces.css";
 import {
   findBoksToAttach,
   issueAuthorInvite,
+  loadInvitePlans,
   loadSpacePreview,
   loadStudioSpace,
   loadStudioSpaces,
@@ -601,6 +605,7 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
             <HistoryPanel t={t} space={space} />
           )}
           {space && space.kind === "author" && space.status !== "merged" && <SpaceVerified spaceId={space.id} />}
+          {space && space.kind === "author" && space.owned && <SpaceAgreementPanel spaceId={space.id} />}
           <ProfileForm
             t={t}
             name={name}
@@ -1204,7 +1209,18 @@ function InvitePanel({ t, space, busy, run }: { t: Words; space: StudioSpace; bu
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [plan, setPlan] = useState<AuthorPlan | "">("page");
+  const [legalName, setLegalName] = useState("");
+  const [plans, setPlans] = useState<Record<string, { plan: AuthorPlan | null }>>({});
   const latest = space.invites[0] ?? null;
+  const invitesKey = space.invites.map((invite) => invite.id).join(",");
+  useEffect(() => {
+    let live = true;
+    loadInvitePlans(space.id).then((value) => live && setPlans(value ?? {}), () => undefined);
+    return () => {
+      live = false;
+    };
+  }, [space.id, invitesKey]);
 
   if (space.owned) {
     return (
@@ -1245,8 +1261,9 @@ function InvitePanel({ t, space, busy, run }: { t: Words; space: StudioSpace; bu
             <span>{t.emailLabel}</span>
             <Input type="email" value={email} autoComplete="off" onChange={(event) => setEmail(event.target.value)} />
           </label>
+          <InvitePlanFields plan={plan} setPlan={setPlan} legalName={legalName} setLegalName={setLegalName} />
           <Button disabled={busy || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())} onClick={() => void run(async () => {
-            const answer = await issueAuthorInvite(space.id, email.trim());
+            const answer = await issueAuthorInvite(space.id, email.trim(), plan || null, legalName.trim());
             setLink(inviteLink(window.location.origin, answer.token));
             setCopied(false);
             return loadStudioSpace(space.id);
@@ -1259,7 +1276,7 @@ function InvitePanel({ t, space, busy, run }: { t: Words; space: StudioSpace; bu
           <ul className="asp-invites">
             {space.invites.map((invite) => (
               <li key={invite.id}>
-                <span>{invite.email}</span>
+                <span>{invite.email}{plans[invite.id]?.plan ? ` · ${planName[plans[invite.id].plan!]}` : ""}</span>
                 <StatusChip tone={`invite-${invite.state}`}>{t.invite[invite.state]}</StatusChip>
                 <small>{new Date(invite.expiresAt).toLocaleDateString()}</small>
                 {invite.state === "pending" && (

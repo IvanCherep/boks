@@ -13,6 +13,8 @@ Feeds, each with its own watermark in $BOKS_OPS_STATE:
                 its mood is the editor's to set by hand
   shares        a link an author sends from the Workshop to their own post about a
                 published Series (the contract's condition; docs/workshop-server.md)
+  contracts     an author accepts the offer online, presses «Я оплатил(а)», or the
+                team marks the payment (docs/author-agreements.md)
 
 The first run of a feed only sets its watermark, so nothing old is announced.
 The watermark keeps microseconds, like the sign-ups in alerts.sh: cut to whole
@@ -139,6 +141,26 @@ FEEDS["shares"] = """
     order by l.created_at limit {limit};
 """
 
+FEEDS["contracts"] = """
+    with ev as (
+      select a.accepted_at as at, 'accepted' as kind, a.id from public.author_agreements a
+       where a.accepted_at > :'since'::timestamptz
+      union all
+      select a.pay_reported_at, 'reported', a.id from public.author_agreements a
+       where a.pay_reported_at > :'since'::timestamptz
+      union all
+      select a.paid_marked_at, 'paid', a.id from public.author_agreements a
+       where a.pay_state = 'paid' and a.paid_marked_at > :'since'::timestamptz
+    )
+    select json_build_object('at', to_char(ev.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+      'kind', ev.kind, 'number', a.number, 'plan', a.plan, 'price', a.price_rub, 'legal', a.legal_name,
+      'due', a.pay_due, 'amount', a.paid_amount_rub, 'handle', p.handle,
+      'name', (select s.name from public.author_spaces s where s.id = a.space_id))
+    from ev join public.author_agreements a on a.id = ev.id
+    left join public.user_profiles p on p.user_id = a.user_id
+    order by ev.at limit {limit};
+"""
+
 AUTHOR_EVENTS = {
     "opened": "👀 {who} открыл(а) приглашение и смотрит, что подготовила редакция",
     "accepted": "✅ {who} принял(а) приглашение: страница в кабинете, идёт просмотр",
@@ -196,6 +218,20 @@ def message(feed, row):
         handle = f" (@{esc(row['handle'])})" if row.get("handle") else ""
         return (f"🔗 <b>{name}</b>{handle} поделился(ась) выпуском «{esc(row.get('title'), 160)}»: {esc(row.get('url'), 500)}\n"
                 f"Studio → Авторы → Ссылки на посты: {STUDIO}")
+    if feed == "contracts":
+        name = esc(row.get("name"), 120) or esc(row.get("legal"), 120) or "Автор"
+        handle = f" (@{esc(row['handle'])})" if row.get("handle") else ""
+        plan = esc(OFFERS.get(row.get("plan"), row.get("plan")))
+        price = f"{int(row.get('price') or 0):,}".replace(",", " ") + " ₽"
+        if row.get("kind") == "accepted":
+            pay = f"оплата до {esc(row.get('due'))}" if row.get("due") else "бесплатно"
+            return (f"📄 <b>{name}</b>{handle} принял(а) оферту: договор № {esc(row.get('number'))}, «{plan}», {price}, {pay}.\n"
+                    f"ФИО: {esc(row.get('legal'), 200)}. Кабинет открыт, страница закрыта до оплаты.")
+        if row.get("kind") == "reported":
+            return (f"💸 <b>{name}</b>{handle} сообщил(а) об оплате по договору № {esc(row.get('number'))}: {price}.\n"
+                    f"Проверьте поступление и нажмите «Оплата получена»: Studio → Авторы → Договоры авторов: {STUDIO}")
+        amount = f"{int(row.get('amount') or 0):,}".replace(",", " ") + " ₽"
+        return f"✅ Оплата по договору № {esc(row.get('number'))} отмечена: {amount}, <b>{name}</b>{handle}. Страница может открыться читателям."
     if feed == "refused":
         link = f"https://tryboks.com/b/{esc(row.get('slug') or row.get('id'))}"
         return (f"🟡 <b>Яндекс отказался размечать настроение</b>: «{esc(row.get('title'), 160)}» — {esc(row.get('author'), 120)}\n"

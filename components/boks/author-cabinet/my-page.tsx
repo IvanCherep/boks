@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@/app/author-spaces.css";
+import { AgreementCard, awaitingPayment, useMyAgreement } from "./agreement-card";
 import {
   loadMyAuthorSpace,
   loadMySeriesShelf,
@@ -180,6 +181,7 @@ const words = defineMessages(
     publishPage: "Publish the page and works",
     publishWorks: "Publish the chosen works",
     nothingReady: "Nothing is ready to publish yet. The team marks a work ready when it is checked.",
+    afterPayment: "The page opens to readers once the payment has come: see «Договор и оплата» above.",
     changed: "Something changed since you opened the preview. Look at the works again and confirm.",
     doneTitle: "Published",
     doneBody: (n: number) => `${n} work${n === 1 ? " is" : "s are"} published: readers see ${n === 1 ? "it" : "them"} on your page and in the feed.`,
@@ -340,6 +342,7 @@ const words = defineMessages(
       publishPage: "Опубликовать страницу и работы",
       publishWorks: "Опубликовать выбранные работы",
       nothingReady: "Пока нечего публиковать. Редакция отмечает работу готовой, когда проверит её.",
+      afterPayment: "Страница откроется читателям после оплаты: смотрите «Договор и оплата» выше.",
       changed: "После предпросмотра что-то изменилось. Посмотрите работы ещё раз и подтвердите.",
       doneTitle: "Опубликовано",
       doneBody: (n: number) => `Опубликовано ${n} ${plural("ru", n, { one: "произведение", few: "произведения", many: "произведений", other: "произведения" })}: читатели видят ${n === 1 ? "его" : "их"} на вашей странице и в ленте.`,
@@ -503,6 +506,9 @@ export function MyPage({
   const [withdrawing, setWithdrawing] = useState<PageItem | null>(null);
   /** "For social media": the page, or one work, being made into pictures. */
   const [kit, setKit] = useState<KitSubject | null>(null);
+  /** The online contract, when there is one: until it is paid nothing opens to readers. */
+  const contract = useMyAgreement();
+  const unpaid = awaitingPayment(contract.agreement);
 
   const load = useCallback(async () => {
     try {
@@ -831,6 +837,8 @@ export function MyPage({
         </div>
       </section>
 
+      <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} />
+
       {unread > 0 && data.space && (
         <a className="amp-replied" href="#messages" onClick={(event) => { event.preventDefault(); setRequestsOpen(true); }}>
           <span>✉ {w.replied(unread)}</span>
@@ -994,9 +1002,10 @@ export function MyPage({
           <>
           {onShelf && ready.some((item) => item.work?.seriesPiece) && <p className="amp-publish-note">{w.shelfNote}</p>}
           <div className="amp-publish-bar">
-            <button type="button" className="btn btn-red amp-publish" disabled={chosen.length === 0 && !pageDraft} onClick={() => go("my-page-publish")}>
+            <button type="button" className="btn btn-red amp-publish" disabled={(chosen.length === 0 && !pageDraft) || unpaid} onClick={() => go("my-page-publish")}>
               {chosen.length > 0 ? w.publishCount(chosen.length) : pageDraft ? w.publishPageOnly : w.toPublish} <Icon name="arrow" />
             </button>
+            {unpaid && <p className="desk-note">{w.afterPayment}</p>}
             {ready.length === 0 && items.length > 0 && (
               <p className="desk-note">{waiting.some((item) => item.work?.status === "changes_requested") ? w.waitingChanges : w.nothingReady}</p>
             )}

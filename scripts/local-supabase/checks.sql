@@ -5938,3 +5938,136 @@ begin
   perform public.boks_assert(not has_table_privilege('anon', 'public.boks_legal_documents', 'SELECT'), 'the table itself is not open');
 end $$;
 rollback;
+
+-- The author contract online (20261123100000): an invitation with a plan is
+-- accepted only with the offer and both consents in force and a full name;
+-- the contract gets its number and the request's address; nothing of the
+-- author's opens to readers until the team marks the payment.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f0000-0000-4000-8000-000000000001', 'offer-editor@boks.test', false),
+  ('0f0f0000-0000-4000-8000-000000000002', 'offer-poet@boks.test', false),
+  ('0f0f0000-0000-4000-8000-000000000003', 'offer-other@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f0000-0000-4000-8000-000000000001', 'offer_editor', 'admin', now(), 'v1'),
+  ('0f0f0000-0000-4000-8000-000000000002', 'offer_mail', 'reader', now(), 'v1'),
+  ('0f0f0000-0000-4000-8000-000000000003', 'offer_other', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_id uuid;
+  v_token text;
+  v_terms jsonb;
+  v_answer jsonb;
+  v_agreement jsonb;
+  v_ok jsonb := jsonb_build_object('legalName', 'Поэтова  Анна Сергеевна');
+  v_error text;
+  v_bok uuid;
+begin
+  select v_ok || jsonb_object_agg(d.kind, d.version) into v_ok
+  from (values ('author_offer'), ('author_pd_processing'), ('author_pd_distribution')) k(kind)
+  cross join lateral public.boks_legal_current(k.kind) d;
+  perform public.boks_assert(v_ok ? 'author_offer' and v_ok ? 'author_pd_distribution', 'the offer and both consents are published');
+
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000001');
+  v_id := (public.studio_save_author_space(null, 'author', 'Поэт Оферты', 'offer_poet', null, 0) ->> 'id')::uuid;
+  v_token := public.studio_issue_author_invite(v_id, 'offer-poet@boks.test', 'page', 'Поэтова Анна') ->> 'token';
+
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000003');
+  perform public.boks_assert(public.get_author_invite_terms(v_token) is null, 'another address is not shown the terms');
+
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000002');
+  v_terms := public.get_author_invite_terms(v_token);
+  perform public.boks_assert(v_terms ->> 'plan' = 'page' and (v_terms ->> 'priceRub')::integer = 30000 and jsonb_array_length(v_terms -> 'documents') = 3 and v_terms ->> 'legalName' = 'Поэтова Анна', 'the invitation shows its plan, price, documents and the name the team wrote');
+  begin
+    perform public.accept_author_invite(v_token);
+    perform public.boks_assert(false, 'an invitation with a plan is not accepted bare');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error = 'Accept the offer and the consents first.', 'the bare acceptance is refused: ' || v_error);
+  end;
+  begin
+    perform public.accept_author_invite_with_terms(v_token, null, v_ok || '{"author_pd_processing": "2000-01-01"}');
+    perform public.boks_assert(false, 'an old edition is not accepted');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'The terms have changed%', 'an old edition is refused: ' || v_error);
+  end;
+  begin
+    perform public.accept_author_invite_with_terms(v_token, null, v_ok || '{"legalName": "Анна"}');
+    perform public.boks_assert(false, 'a first name alone is not a full name');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'Write your full name%', 'a first name alone is refused: ' || v_error);
+  end;
+  perform public.boks_assert((select accepted_at from public.author_space_invites where space_id = v_id and revoked_at is null) is null, 'refused attempts bind nothing');
+
+  perform set_config('request.headers', '{"x-forwarded-for": "203.0.113.9, 10.0.0.2", "user-agent": "CheckBrowser/1"}', true);
+  v_answer := public.accept_author_invite_with_terms(v_token, null, v_ok);
+  perform public.boks_assert(v_answer ->> 'state' = 'accepted' and v_answer -> 'agreement' ->> 'number' ~ '^[0-9]{4}/[0-9]{3}$', 'accepting makes a numbered contract');
+  v_agreement := public.get_my_author_agreement();
+  perform public.boks_assert(v_agreement ->> 'payState' = 'awaiting' and v_agreement ->> 'legalName' = 'Поэтова Анна Сергеевна' and v_agreement ->> 'payDue' is not null, 'the contract waits for payment, with the name as typed and a due day');
+  perform public.boks_assert((select accepted_ip = '203.0.113.9' and accepted_agent = 'CheckBrowser/1' from public.author_agreements where id = (v_agreement ->> 'id')::uuid), 'the address and the browser of the acceptance are kept');
+  begin
+    perform public.accept_author_invite_with_terms(v_token, null, v_ok);
+  exception when others then null;
+  end;
+  perform public.boks_assert((select count(*) from public.author_agreements where user_id = '0f0f0000-0000-4000-8000-000000000002') = 1, 'accepting twice makes no second contract');
+
+  begin
+    perform public.publish_my_author_space('[]'::jsonb, true, 'test-terms', gen_random_uuid());
+    perform public.boks_assert(false, 'the page does not open before payment');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error = 'Your page opens to readers once the payment has come.', 'the page is held until payment: ' || v_error);
+  end;
+  insert into public.reels (id, title, text, status, author_user_id, author_name)
+  values (gen_random_uuid(), 'Проба', 'Первая строка и вторая строка.', 'draft', '0f0f0000-0000-4000-8000-000000000002', 'Поэт')
+  returning id into v_bok;
+  begin
+    update public.reels set status = 'published' where id = v_bok;
+    perform public.boks_assert(false, 'a bok does not open before payment');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error = 'Your page opens to readers once the payment has come.', 'a bok is held until payment: ' || v_error);
+  end;
+
+  v_agreement := public.report_my_author_payment();
+  perform public.boks_assert(v_agreement ->> 'payState' = 'reported', '«Я оплатил(а)» tells the team');
+
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000003');
+  begin
+    perform public.studio_mark_author_payment((v_agreement ->> 'id')::uuid, current_date, 30000);
+    perform public.boks_assert(false, 'a reader cannot mark a payment');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error not like 'This contract%', 'a reader is refused marking a payment: ' || v_error);
+  end;
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000001');
+  v_agreement := public.studio_mark_author_payment((v_agreement ->> 'id')::uuid, (now() at time zone 'Europe/Moscow')::date, 30000, 'https://lknpd.nalog.ru/api/v1/receipt/1/print');
+  perform public.boks_assert(v_agreement ->> 'payState' = 'paid' and (v_agreement ->> 'periodEnd')::date = (v_agreement ->> 'periodStart')::date + interval '1 year' - interval '1 day', 'the year runs from the day the money came');
+
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000002');
+  v_answer := public.publish_my_author_space('[]'::jsonb, true, 'test-terms', gen_random_uuid());
+  perform public.boks_assert((v_answer ->> 'pagePublished')::boolean, 'once paid the author opens the page');
+  perform public.boks_assert(public.get_my_author_agreement() -> 'payment' is null, 'a paid contract shows no payment details');
+
+  -- An invitation without a plan works as before.
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000001');
+  v_id := (public.studio_save_author_space(null, 'author', 'Особый Проект', 'offer_special', null, 0) ->> 'id')::uuid;
+  v_token := public.studio_issue_author_invite(v_id, 'offer-other@boks.test') ->> 'token';
+  perform public.boks_test_login('0f0f0000-0000-4000-8000-000000000003');
+  perform public.boks_assert(public.get_author_invite_terms(v_token) is null and public.accept_author_invite(v_token) ->> 'state' = 'accepted', 'an invitation without a plan needs no offer');
+  perform public.boks_assert(public.get_my_author_agreement() is null, 'and makes no contract');
+
+  begin
+    update public.boks_legal_documents set body = body || ' ' where kind = 'author_offer';
+    perform public.boks_assert(false, 'a published edition is not changed');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'A published edition is not changed%', 'a published edition is frozen: ' || v_error);
+  end;
+  perform public.boks_test_logout();
+  perform public.boks_assert(public.get_boks_legal_document('author_offer') ->> 'version' = v_ok ->> 'author_offer', 'anyone reads the offer in force');
+end $$;
+rollback;
