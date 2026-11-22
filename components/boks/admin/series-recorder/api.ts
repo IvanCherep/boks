@@ -90,3 +90,10 @@ export async function seriesFileUrl(id: string, file: string) {
   if (!response.ok) throw new Error(`Could not load ${file}.`);
   return URL.createObjectURL(await response.blob());
 }
+
+/**
+ * Studio: a recorder draft for a piece the editors took into work, made from
+ * its text, its byline and the author's chosen take (or the one already made).
+ */
+export const createSeriesDraftFromBok = (bokId: string) =>
+  request<{ draft: SeriesDraft }>("", { method: "POST", ...json({ fromBok: bokId }) }).then((r) => r.draft);

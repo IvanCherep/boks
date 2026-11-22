@@ -27,6 +27,15 @@ The composer's voice block uses the same teleprompter for a bok's reading;
 that is the author's voice for the editors and stays
 (`docs/author-publishing.md`, "The author's voice").
 
+**Made from an author's piece.** In Studio → «Boks Series в работе»,
+**Собрать Boks Series** makes a Studio draft from a piece the editors
+accepted: title, text, the author's byline and the author's chosen take
+copied in as the first take (`POST /api/series` with `{ fromBok }`,
+`lib/boks/series-recorder/from-bok.ts`); a second press opens the same draft
+(`bok_series_work.draft_id`). The rest is the recorder as below; the kept
+build's token goes to the author with «Отправить автору»
+(`docs/author-publishing.md`, "From a voiced piece to its Boks Series").
+
 **To turn it back on:** set `authorSeriesRecorderEnabled = true`, run the
 tests (`switch.test.ts` says it is off and must be changed with it), release.
 

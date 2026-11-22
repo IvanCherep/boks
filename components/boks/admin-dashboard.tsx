@@ -40,7 +40,8 @@ import { AuthorSpaces } from "@/components/boks/admin/author-spaces";
 import { AuthorApplications } from "@/components/boks/admin/author-applications";
 import { SeriesCredits } from "@/components/boks/admin/series-credits";
 import { AuthorGameStudio } from "@/components/boks/admin/author-game";
-import { SeriesRecorder } from "@/components/boks/admin/series-recorder/series-recorder";
+import { SeriesRecorder, openRecorderDraft } from "@/components/boks/admin/series-recorder/series-recorder";
+import { SeriesWorkPanel } from "@/components/boks/admin/series-work";
 import { AdminInspectorProvider } from "@/components/boks/admin/admin-inspector";
 import { useBoksData } from "@/components/boks/use-boks-data";
 import {
@@ -70,6 +71,7 @@ export const adminTabs = [
   { id: "recorder", label: "Series recorder", heading: "Series recorder", group: "Editorial" },
   { id: "special", label: "Special projects", heading: "Special projects", group: "Editorial" },
   { id: "moderation", label: "Moderation", heading: "Review queue", group: "Editorial" },
+  { id: "series-work", label: "Series in work", heading: "Boks Series in work", group: "Editorial" },
   { id: "rights", label: "Rights", heading: "Rights & reports", group: "Editorial" },
   { id: "content", label: "Content", heading: "Content", group: "Editorial" },
   { id: "catalogue", label: "Catalogue", heading: "Catalogue", group: "Editorial" },
@@ -144,6 +146,7 @@ const words = defineMessages(
         links: "Ссылки",
         growth: "Рост",
         moderation: "Модерация",
+        "series-work": "Boks Series в работе",
         rights: "Права",
         content: "Контент",
         catalogue: "Каталог",
@@ -169,6 +172,7 @@ const words = defineMessages(
         recorder: "Запись Series",
         special: "Спецпроекты",
         moderation: "Очередь проверки",
+        "series-work": "Boks Series в работе",
         rights: "Права и жалобы",
         content: "Контент",
         catalogue: "Каталог",
@@ -543,6 +547,7 @@ export function AdminDashboard() {
         {tab === "authors" && <AuthorSpaces />}
         {tab === "game" && <AuthorGameStudio />}
         {tab === "recorder" && <SeriesRecorder />}
+        {tab === "series-work" && <SeriesWorkPanel openRecorder={(draftId) => { openRecorderDraft(draftId); navigate("recorder"); }} />}
         {tab === "special" && <SpecialProjectsPanel />}
 
         {tab === "experiments" && <RecommendationLab />}

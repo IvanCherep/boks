@@ -12,7 +12,7 @@ import { Icon, Topbar } from "./ui";
 import { deleteOwnDraft, loadOwnDraft, loadPublishing, newBokId, saveOwnBok, type SavedBok } from "./composer-data";
 import { VoiceBlock, voiceWords } from "./voice-block";
 import { DecisionNote } from "./decision-note";
-import { loadMyDecisions } from "./voice-data";
+import { loadMyDecisions, loadMySeriesWork } from "./voice-data";
 import type { EditorDecision } from "@/lib/boks/author/editor-decisions";
 import { voiceText } from "@/lib/boks/author/voice/rules";
 
@@ -76,8 +76,10 @@ const words = defineMessages(
     sendToEditors: "Send to the editors",
     teamCoverHint: "We draw it from your text and publish the bok as soon as it is ready.",
     teamDoneTitle: "Sent to the editors",
-    teamDoneBody: "The bok goes out as soon as the editors choose its cover. It waits on My page meanwhile; you can still change it or add your own picture.",
-    waitingNote: "The editors are choosing the cover. Add your own here to publish it now.",
+    teamDoneBody: "The editors will read the text and listen to your recording. Until they take it into work, you can change it or take it back on My page.",
+    waitingNote: "The bok is with the editors. Until they take it into work, you can change it here or take it back on My page.",
+    lockedTitle: "With the editors",
+    lockedNote: "The editors are making its Boks Series. We will bring it back to you when it is done.",
   },
   {
     ru: {
@@ -128,8 +130,10 @@ const words = defineMessages(
       sendToEditors: "Отправить в редакцию",
       teamCoverHint: "Нарисуем её по вашему тексту и опубликуем бок, как только она будет готова.",
       teamDoneTitle: "Отправлено редакции",
-      teamDoneBody: "Бок выйдет, как только редакция подберёт для него обложку. Пока он ждёт на «Моей странице»: его можно изменить или добавить свою картинку.",
-      waitingNote: "Редакция подбирает обложку. Если добавите свою, бок выйдет сразу.",
+      teamDoneBody: "Редакция прочитает текст и послушает запись. Пока бок не взят в работу, его можно изменить или отозвать на «Моей странице».",
+      waitingNote: "Бок у редакции. Пока он не взят в работу, его можно изменить здесь или отозвать на «Моей странице».",
+      lockedTitle: "В работе у редакции",
+      lockedNote: "Редакция готовит Boks Series. Вернём её вам, когда закончим.",
     },
   }
 );
@@ -212,6 +216,8 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
   const [voiceReady, setVoiceReady] = useState(false);
   /** The editors' answer on this piece, when they returned or refused it. */
   const [decision, setDecision] = useState<EditorDecision | null>(null);
+  /** The editors took it into work for its Boks Series: read-only until they bring it back. */
+  const [locked, setLocked] = useState(false);
   const onVoiceReady = useCallback((ready: boolean) => setVoiceReady(ready), []);
   const textArea = useRef<HTMLTextAreaElement>(null);
 
@@ -226,6 +232,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
     }).catch(() => undefined);
     if (editingId) {
       void loadMyDecisions().then((all) => { if (live) setDecision(all.find((entry) => entry.bokId === editingId) ?? null); }).catch(() => undefined);
+      void loadMySeriesWork().then((all) => { if (live) setLocked(all.some((entry) => entry.bokId === editingId && (entry.state === "accepted" || entry.state === "sent"))); }).catch(() => undefined);
       void loadOwnDraft(bokId).then((draft) => {
         if (!live) return;
         setTitle(draft.title === titleFromText(draft.text) ? "" : draft.title);
@@ -276,7 +283,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
   // new take when its words change. Published pieces are edited as before.
   const voiced = isNew;
   // Refused by the editors: the text stays readable here, and nothing sends it again.
-  const refused = status === "rejected" && decision?.decision === "refused";
+  const refused = (status === "rejected" && decision?.decision === "refused") || (status === "pending_review" && locked);
   const notBefore = decision?.decision === "changes" && decision.kind === "recording" ? decision.decidedAt : null;
   const wordsChanged = status === "pending_review" && voiceText(savedText) !== voiceText(trimmed);
   const voiceBlocker = voiced && !voiceReady && trimmed && (byTeam || wordsChanged) ? v.missing : "";
@@ -370,7 +377,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
     <main
       className="page detail-page amp acomp"
       onKeyDown={(event) => {
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && direct && !busy && !refused) {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && direct && !busy && !refused && status !== "pending_review") {
           event.preventDefault();
           void save(true);
         }
@@ -382,13 +389,15 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
       ) : (
         <div className="acomp-layout">
           <section className="acomp-writing">
-            {decision && (status === "draft" || refused) && <DecisionNote decision={decision} />}
+            {decision && (status === "draft" || status === "rejected") && <DecisionNote decision={decision} />}
+            {status === "pending_review" && locked && <div className="acomp-decision is-refused" role="status"><strong className="acomp-decision__title">{w.lockedTitle}</strong><small>{w.lockedNote}</small></div>}
             <label className="acomp-title">
               <span className="acomp-label">{w.titleLabel} <em>{w.titleOptional}</em></span>
               <input
                 className="serif"
                 value={title}
                 maxLength={120}
+                readOnly={refused}
                 placeholder={derived || w.titlePlaceholder}
                 onChange={(event) => setTitle(event.target.value)}
               />
@@ -403,6 +412,7 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
                 value={text}
                 autoFocus={!editingId}
                 spellCheck
+                readOnly={refused}
                 placeholder={w.textPlaceholder}
                 onChange={(event) => { setText(event.target.value); setProblem(""); }}
               />
@@ -411,10 +421,10 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
               {tooLong ? w.tooLong(maxBokCharacters) : characters > 0 ? w.length(characters, minutesOf(characters)) : ""}
             </small>
             {status === "withdrawn" && <p className="notice">{w.hiddenNote}</p>}
-            {status === "pending_review" && !hasCover && <p className="notice">{w.waitingNote}</p>}
+            {status === "pending_review" && !locked && <p className="notice">{w.waitingNote}</p>}
           </section>
 
-          {voiced && <VoiceBlock bokId={bokId} title={shownTitle} text={trimmed} notBefore={notBefore} onReady={onVoiceReady} />}
+          {voiced && !refused && <VoiceBlock bokId={bokId} title={shownTitle} text={trimmed} notBefore={notBefore} onReady={onVoiceReady} />}
 
           <aside className="acomp-side">
             <CoverPanel w={w} title={shownTitle} image={savedCover} />
@@ -441,9 +451,10 @@ export function Composer({ go, toast }: { go: (view: "my-page") => void; toast: 
                   <button type="button" className="btn btn-secondary" disabled={Boolean(busy) || !trimmed || (status === "pending_review" && Boolean(voiceBlocker))} onClick={() => void save(false)}>
                     {busy === "draft" ? w.saving : status === "pending_review" ? w.saveChanges : w.saveDraft}
                   </button>
-                  <button type="button" className="btn btn-red acomp-publish" disabled={Boolean(busy) || Boolean(publishBlocker)} onClick={() => void save(true)}>
+                  {/* Already with the editors: changes are saved, nothing is sent or published again from here. */}
+                  {status !== "pending_review" && <button type="button" className="btn btn-red acomp-publish" disabled={Boolean(busy) || Boolean(publishBlocker)} onClick={() => void save(true)}>
                     {busy === "publish" ? w.publishing : byTeam ? w.sendToEditors : w.publish} <Icon name="arrow" />
-                  </button>
+                  </button>}
                 </>
               ) : (
                 <button type="button" className="btn btn-red acomp-publish" disabled={Boolean(busy) || !trimmed || tooLong} onClick={() => void save(status === "published")}>

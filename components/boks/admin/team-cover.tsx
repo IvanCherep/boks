@@ -25,6 +25,9 @@ const words = defineMessages({
   saved: "Cover saved. Approve to publish.",
   failed: "Could not do that. Try again or upload a picture.",
   current: "Current cover",
+  seriesTitle: "The bok's cover",
+  seriesHint: "Upload a picture or draw two from the text. The series goes to the author only with a cover.",
+  seriesSaved: "Cover saved.",
 }, { ru: {
   title: "Автор просит подобрать обложку",
   hint: "Загрузите картинку или нарисуйте две по тексту, потом одобрите. Без обложки бок не опубликовать.",
@@ -35,9 +38,12 @@ const words = defineMessages({
   saved: "Обложка сохранена. Одобрите, чтобы опубликовать.",
   failed: "Не получилось. Попробуйте ещё раз или загрузите картинку.",
   current: "Текущая обложка",
+  seriesTitle: "Обложка бока",
+  seriesHint: "Загрузите картинку или нарисуйте две по тексту. Серия уходит автору только с обложкой.",
+  seriesSaved: "Обложка сохранена.",
 } });
 
-export function TeamCoverPanel({ bokId, title, text, onCover }: { bokId: string; title: string; text: string; onCover: (version: number) => void }) {
+export function TeamCoverPanel({ bokId, title, text, onCover, forSeries = false }: { bokId: string; title: string; text: string; onCover: (version: number) => void; /** In «Boks Series в работе»: the cover goes with the series, nothing is approved. */ forSeries?: boolean }) {
   const t = useMessages(words);
   const [image, setImage] = useState<string | null>(null);
   const [pictures, setPictures] = useState<string[]>([]);
@@ -65,7 +71,7 @@ export function TeamCoverPanel({ bokId, title, text, onCover }: { bokId: string;
       const saved = await setStudioBokCover(bokId, prepared);
       setImage(prepared.preview);
       report.current(saved.coverVersion);
-      setNote(t.saved);
+      setNote(forSeries ? t.seriesSaved : t.saved);
     } catch {
       setNote(t.failed);
     } finally {
@@ -90,8 +96,8 @@ export function TeamCoverPanel({ bokId, title, text, onCover }: { bokId: string;
 
   return (
     <div className="studio-team-cover">
-      <strong>{t.title}</strong>
-      <p>{t.hint}</p>
+      <strong>{forSeries ? t.seriesTitle : t.title}</strong>
+      <p>{forSeries ? t.seriesHint : t.hint}</p>
       {image && (
         <figure>
           {/* eslint-disable-next-line @next/next/no-img-element */}

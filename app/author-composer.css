@@ -232,3 +232,30 @@
 .studio-decision-done{display:grid;gap:6px;margin:0 0 16px;padding:14px;border-radius:12px;border:1px solid #c9b9a8;background:#f7f2ea;color:#3b2a22}
 .studio-decision-done p{margin:0;font-size:13px;line-height:1.5;white-space:pre-wrap}
 .studio-decision-done strong{font-size:15px}
+/* Studio → «Boks Series в работе» (2026-11-22). */
+.studio-series-work{display:grid;gap:18px}
+.studio-series-work__head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:start}
+.studio-series-work__head h2{margin:0;font:400 30px/1.1 var(--font-serif,Georgia),serif}
+.studio-series-work__head p{margin:6px 0 0;max-width:640px;font-size:14px;line-height:1.5}
+.studio-series-work__empty{font-size:14px;opacity:.75}
+.studio-series-work ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+.studio-series-work__card{display:grid;gap:10px;align-content:start;padding:16px;border-radius:14px;border:1px solid #d9cfc2;background:#fffdf8;color:#2a211b;min-width:0}
+.studio-series-work__title{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.studio-series-work__title h3{margin:0;font:400 22px/1.15 var(--font-serif,Georgia),serif;overflow-wrap:anywhere}
+.studio-series-work__state{flex:none;padding:3px 10px;border-radius:999px;background:#f4e2bf;color:#5a3d0c;font-size:12px;font-weight:600}
+.studio-series-work__state.is-sent{background:#e9efe0;color:#2f3d2f}
+.studio-series-work__state.is-published{background:#2f3d2f;color:#f3efe7}
+.studio-series-work__who{margin:0;font-size:13px;color:#6d5a4f}
+.studio-series-work__series{display:grid;gap:8px}
+.studio-series-work__series p{margin:0;font-size:13px}
+.studio-series-work__series input{width:100%;min-height:40px;padding:6px 10px;border:1px solid #d9cfc2;border-radius:8px;background:#fff;font:14px/1.3 ui-monospace,monospace}
+.studio-series-work__series small{font-size:12px;line-height:1.45;color:#6d5a4f}
+.studio-series-work__series small.is-warn{color:#a33d27;font-weight:600}
+.studio-series-work__series small.is-ok{color:#2f6b3f}
+.studio-series-work__actions{display:flex;flex-wrap:wrap;gap:8px}
+.studio-series-work__note{margin:0;font-size:13px;line-height:1.5}
+@media (max-width:620px){
+  /* A ready series' card has four buttons: two short lines each rather than a card wider than the phone. */
+  .acab .amp-card__actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .acab .amp-card__actions .btn{min-width:0;white-space:normal;line-height:1.2}
+}

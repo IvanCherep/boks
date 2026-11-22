@@ -74,3 +74,37 @@ export const studioDecide = (bokId: string, decision: EditorDecisionKind, kind: 
   call<EditorDecision>("studio_decide_bok", { p_bok_id: bokId, p_decision: decision, p_kind: kind, p_note: note });
 export const studioReopen = (bokId: string) => call<EditorDecision>("studio_reopen_bok", { p_bok_id: bokId });
 export const loadStudioDecision = (bokId: string) => call<EditorDecision | null>("studio_bok_decision", { p_bok_id: bokId });
+
+// ------------------------------------------------------------ the editors' work on a Boks Series
+
+/** The editors' work on one of the author's pieces (`bok_series_work`). */
+export type SeriesWork = {
+  bokId: string;
+  state: "accepted" | "sent" | "published";
+  acceptedAt: string;
+  draftId: string | null;
+  workId: string | null;
+  seriesPiece: string | null;
+  sentAt: string | null;
+  publishedAt: string | null;
+};
+
+/** Studio's list «Boks Series в работе»: a piece in work, with what Studio needs to finish it. */
+export type StudioSeriesWork = SeriesWork & {
+  title: string;
+  text: string;
+  byline: string;
+  authorHandle: string | null;
+  coverVersion: number | null;
+  hasCover: boolean;
+  bokStatus: string;
+  workStatus: string | null;
+};
+
+/** The author takes a sent piece back while the editors have not taken it into work. */
+export const withdrawMySentBok = (bokId: string) => call<{ id: string; status: string }>("withdraw_my_sent_bok", { p_bok_id: bokId });
+export const loadMySeriesWork = () => call<SeriesWork[]>("get_my_series_work");
+
+export const studioAccept = (bokId: string) => call<SeriesWork>("studio_accept_bok", { p_bok_id: bokId });
+export const loadStudioSeriesWork = () => call<StudioSeriesWork[]>("studio_series_work_list");
+export const studioSendSeries = (bokId: string, piece: string) => call<SeriesWork>("studio_send_series_to_author", { p_bok_id: bokId, p_series_piece: piece });

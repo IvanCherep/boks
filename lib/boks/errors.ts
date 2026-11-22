@@ -175,6 +175,21 @@ const russianSentences: Record<string, string> = {
   "The reason is longer than 2000 characters.": "Причина длиннее 2000 знаков.",
   "Only a piece sent from My page and waiting for the editors can be returned or refused here.": "Вернуть или отказать здесь можно только бок, отправленный с «Моей страницы» и ждущий редакцию.",
   "This piece was not refused here.": "Этому боку здесь не отказывали.",
+  // From a voiced piece to its Boks Series (`20261122200000_boks_author_series_flow.sql`).
+  "The editors are already making the Boks Series for this piece; it cannot be changed now.": "Редакция уже готовит Boks Series для этого бока, поэтому изменить его сейчас нельзя.",
+  "The editors are already making the Boks Series for this piece, so it cannot be taken back. Write to them in Requests and ideas.": "Редакция уже работает над серией для этого бока, поэтому отозвать его нельзя. Напишите нам в «Просьбы и предложения».",
+  "Only a piece waiting for the editors can be taken back.": "Отозвать можно только бок, который ждёт редакцию.",
+  "A piece sent from My page goes out with its Boks Series: accept it into work, make the series and send it to the author to publish.": "Бок с «Моей страницы» выходит со своей Boks Series: примите его в работу, соберите серию и отправьте автору, чтобы он опубликовал.",
+  "Only a piece sent from My page and waiting for the editors can be accepted into work.": "Принять в работу можно только бок, отправленный с «Моей страницы» и ждущий редакцию.",
+  "This piece has no reading of its text by the author: return it for a recording.": "У бока нет чтения автора для этого текста: верните его за записью.",
+  "This piece is not in work for its Boks Series.": "Этот бок не в работе над Boks Series.",
+  "That is not a recorder draft.": "Это не черновик из «Записи Series».",
+  "Paste the link-only token of the finished Series.": "Вставьте ссылку-токен готовой серии.",
+  "Add the cover first: the bok goes out with the editors' cover.": "Сначала добавьте обложку: бок выходит с обложкой редакции.",
+  "The author has no page to send the series to.": "У автора нет страницы, куда отправить серию.",
+  "Only the boks editors make a Series from an author's piece.": "Серию из бока автора собирает только редакция boks.",
+  "The piece has no reading by its author.": "У бока нет чтения автора.",
+  "The author's recording is not on this server.": "Записи автора нет на этом сервере.",
   "Boks Series are made by the boks team for now. Send your text with your voice from My page.": "Boks Series пока делает команда boks. Отправьте текст со своим голосом с «Моей страницы».",
   "A bok goes out with a picture: draw one or upload your own.": "Бок выходит с картинкой: нарисуйте её или загрузите свою.",
   "This piece is not yours or no longer exists.": "Этот бок не ваш или его больше нет.",
@@ -328,6 +343,7 @@ const russianSentences: Record<string, string> = {
 };
 
 const russianPatterns: [RegExp, (...groups: string[]) => string][] = [
+  [/^«(.+)» has no cover yet: the editors add it before sending the series\.$/, (title) => `У «${title}» ещё нет обложки: редакция добавляет её до того, как отправить серию.`],
   [/^At most (\d+) takes\. Delete one first\.$/, (n) => `Не больше ${n} дублей. Сначала удалите один.`],
   [/^At most (\d+) takes for one piece\. Choose among the ones you have\.$/, (n) => `Не больше ${n} дублей на один бок. Выберите из тех, что есть.`],
   [/^A nickname needs at least (\d+) characters\.$/, (n) => `В никнейме должно быть не меньше ${n} символов.`],

@@ -179,19 +179,62 @@ kind, the note, who and when), read by the author through
 `get_my_editor_decisions` and by Studio through `studio_bok_decision`,
 `20261122140000_boks_editor_decisions.sql`.
 
+## From a voiced piece to its Boks Series (2026-11-22)
+
+A piece sent from My page goes out only with its Boks Series, made by the
+editors from the author's reading and published by the author. Migration
+`20261122200000_boks_author_series_flow.sql`.
+
+| Step | Author (My page) | Editors (Studio) |
+|---|---|---|
+| Sent | **Отправлено**: can still change it, or **Отозвать** (a sheet: «Отозвать из редакции? Текст и запись останутся у вас.»). It goes back to drafts with its text and voice (`withdraw_my_sent_bok`) | Moderation: **Принять в работу**, **Вернуть на доработку**, **Отказать**. No **Одобрить и опубликовать** for these pieces |
+| Accepted | **В работе у редакции**: «Редакция готовит Boks Series. Вернём её вам, когда закончим.» No edit, no withdraw; the composer opens read-only | The piece leaves the queue for **Boks Series в работе** (`studio_accept_bok`, `studio_series_work_list`) |
+| In work | | **Собрать Boks Series** makes a Studio recorder draft with the title, the text, the author's byline and the author's chosen take copied in from `<seriesRoot>/voices/<bok>/` (`POST /api/series` `{ fromBok }`, `lib/boks/series-recorder/from-bok.ts`), and opens it in Запись Series. The kept build's token fills the token field; for a piece made by hand (`docs/link-only-pieces.md`) the team pastes one. The cover is set on the same card |
+| Sent back | **Серия готова**: «Посмотрите и опубликуйте.», the usual preview and **Опубликовать** | **Отправить автору** (needs the cover): a `ready` Series work on the author's page for this bok (`studio_send_series_to_author`) |
+| Published | **Опубликовано**, the Series on the author page | the card says when the author published it |
+
+At any point before publishing, **Вернуть автору с причиной** on the card (or
+**Вернуть на доработку** / **Отказать** in Moderation) answers with a reason
+as in "When the editors cannot take a piece", unlocks the piece and takes a
+sent series back.
+
+The author publishes through the usual My page publish
+(`publish_my_author_space`): terms, the request id, and a page that opens
+together with its first works all stay as they were. `boks_publish_space_works`
+now lets a work go out when its bok is still `pending_review` and the editors
+sent it (`bok_series_work.state = 'sent'`): the bok becomes `published` with
+its series.
+
+What the database refuses:
+- `save_my_bok` on a piece in work: «The editors are already making the Boks
+  Series for this piece; it cannot be changed now.»
+- `withdraw_my_sent_bok` on a piece in work, and on anything not waiting for
+  the editors.
+- `studio_accept_bok` without a current reading by the author, or for a piece
+  not sent from My page.
+- `studio_send_series_to_author` without the cover, a valid token, or a page
+  to send it to.
+- Publishing a piece sent from My page any other way (the old approve, the
+  composer): trigger `reels_series_publish_guard`, unless the call is the
+  author's publish of the sent series (a transaction setting
+  `boks.series_publish`). Server jobs with no caller are not affected.
+
+Data: `bok_series_work` (one row a piece: `accepted`, `sent`, `published` or
+`returned`, who accepted it, the recorder draft, the work on the author's
+page, the token, when it was sent and published). The piece stays
+`pending_review` while it is in work, and the review queue
+(`get_boks_admin_snapshot`) leaves it out.
+
 ## The editors' cover
 
-Every new piece goes this way. **Send to the editors** puts it in the
-ordinary review queue (`pending_review`, `reels.cover_requested`). The author
-is told it goes out as soon as the editors make its cover. It waits on My
-page marked **Waiting for a cover**; the author can still edit it there.
-
-In Studio → Moderation, the piece is marked **Needs a cover** and shows a
-panel (`components/boks/admin/team-cover.tsx`). Studio uploads a picture
-(`studio_set_bok_cover`) or draws two with the same pipeline (admins are not
-counted against an author's allowance) and picks one. Approve is refused
-until there is a cover: by the panel, and by the database for every path
-(trigger `reels_cover_before_publish`). So every bok goes out with a picture.
+**Send to the editors** puts a piece in the review queue (`pending_review`,
+`reels.cover_requested`). Studio gives it a cover with the panel
+(`components/boks/admin/team-cover.tsx`) in Moderation or on its card in
+«Boks Series в работе»: it uploads a picture (`studio_set_bok_cover`) or
+draws two with the same pipeline (admins are not counted against an author's
+allowance) and picks one. The series goes to the author only with a cover,
+and the database refuses publishing without one for every path (trigger
+`reels_cover_before_publish`). So every bok goes out with a picture.
 
 ## Requests and ideas
 
@@ -234,6 +277,7 @@ Migration `20261120100000_boks_author_direct_publishing.sql`:
 | `get_my_publishing`, `get_my_bok_draft`, `delete_my_draft`, `reserve_my_cover_drawing`, `get_boks_cover` | what the composer asks; the picture of a published bok |
 | `reels.cover_requested`, `studio_cover_requests`, `studio_bok_cover`, `studio_set_bok_cover`, trigger `reels_cover_before_publish` | the editors' cover |
 | `bok_editor_decisions`, `studio_decide_bok`, `studio_reopen_bok`, `studio_bok_decision`, `get_my_editor_decisions` | the editors' reasoned answer, `20261122140000_boks_editor_decisions.sql` |
+| `bok_series_work`, `withdraw_my_sent_bok`, `get_my_series_work`, `studio_accept_bok`, `studio_series_work_list`, `studio_series_source`, `studio_link_series_draft`, `studio_send_series_to_author`, trigger `reels_series_publish_guard` | from a voiced piece to its Boks Series, `20261122200000_boks_author_series_flow.sql` |
 | `bok_voices`, `set_my_bok_voice`, `get_my_bok_voice_access`, `get_my_bok_voices`, `studio_bok_voice`, `boks_voice_fingerprint` | the author's voice, `20261122120000_boks_author_voice.sql` |
 
 Where a bok's picture comes from, in order:

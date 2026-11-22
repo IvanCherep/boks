@@ -20,6 +20,8 @@ import { defineMessages } from "@/lib/i18n/messages";
  */
 
 export const editorDecisionWords = defineMessages({
+  accept: "Accept into work",
+  acceptFailed: "Could not accept it. Try again.",
   returnForChanges: "Return for changes",
   refuse: "Refuse",
   returnTitle: "Return to the author for changes",
@@ -38,6 +40,8 @@ export const editorDecisionWords = defineMessages({
   reopen: "Reopen: return for changes",
   reopenHint: "The author gets it back as a request for changes, with the same words, and can send it again.",
 }, { ru: {
+  accept: "Принять в работу",
+  acceptFailed: "Не удалось принять. Попробуйте ещё раз.",
   returnForChanges: "Вернуть на доработку",
   refuse: "Отказать",
   returnTitle: "Вернуть автору на доработку",

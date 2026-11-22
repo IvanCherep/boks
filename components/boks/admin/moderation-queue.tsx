@@ -15,6 +15,8 @@ import { loadCoverRequests } from "@/components/boks/author-cabinet/composer-dat
 import { TeamCoverPanel } from "@/components/boks/admin/team-cover";
 import { AuthorVoicePanel } from "@/components/boks/admin/author-voice";
 import { EditorDecisionDialog, RefusedDecision, editorDecisionWords } from "@/components/boks/admin/editor-decision";
+import { studioAccept } from "@/components/boks/author-cabinet/voice-data";
+import { readableBoksError } from "@/lib/boks/errors";
 
 const words = defineMessages({
   rightsLoadFailed: "Could not load the rights record. Retry or open the complete record.",
@@ -123,6 +125,7 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
   /** A piece sent from My page: returned for changes or refused, with a reason (`EditorDecisionDialog`). */
   const [deciding, setDeciding] = useState<"changes" | "refused" | null>(null);
   const td = useMessages(editorDecisionWords);
+  const [accepting, setAccepting] = useState(false);
   const [reading, setReading] = useState(false);
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
@@ -233,7 +236,14 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
         </>}
         {status && <p role="alert">{status}</p>}
         <div className="studio-review-decisions">
-          <Button disabled={busy} onClick={() => void review(selected, "approve")}><Check /> {t.approvePublish}</Button>
+          {/* A voiced piece from My page is not published from here: it is accepted into work for its Boks Series. */}
+          {myPagePiece
+            ? <Button disabled={busy || accepting} onClick={() => {
+              setAccepting(true);
+              setStatus("");
+              studioAccept(selected.id).then(() => { setReading(false); onRefresh(); }, (error) => setStatus(readableBoksError(error, td.acceptFailed, language))).finally(() => setAccepting(false));
+            }}><Check /> {td.accept}</Button>
+            : <Button disabled={busy} onClick={() => void review(selected, "approve")}><Check /> {t.approvePublish}</Button>}
           {myPagePiece ? <>
             <Button variant="outline" disabled={busy} onClick={() => setDeciding("changes")}><RotateCcw /> {td.returnForChanges}</Button>
             <Button variant="outline" disabled={busy} onClick={() => setDeciding("refused")}><XCircle /> {td.refuse}</Button>

@@ -93,3 +93,29 @@ export async function spendSeriesCredit(token: string): Promise<Response | null>
   const body = (await response.json().catch(() => ({}))) as { message?: string };
   return adminJsonError(body.message || "No Boks Series left to make.", response.status === 400 || response.status >= 500 ? 409 : response.status);
 }
+
+/** Studio's RPC with the caller's own token: the parsed answer, or the refusal as a response. */
+async function studioRpc<T>(token: string, name: string, body: unknown): Promise<T | Response> {
+  const restBase = globalThis.process?.env?.BOKS_INTERNAL_REST_URL || `${supabaseUrl}/rest/v1`;
+  let response: Response;
+  try {
+    response = await fetch(`${restBase}/rpc/${name}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: supabaseApiKey!, Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return adminJsonError("Could not reach the database.", 502);
+  }
+  const answer = (await response.json().catch(() => ({}))) as T & { message?: string };
+  if (!response.ok) return adminJsonError(answer.message || "The database refused.", response.status === 403 ? 403 : response.status >= 500 ? 502 : 409);
+  return answer;
+}
+
+/** A piece in work for its Boks Series, as a recorder draft is made from it (`studio_series_source`). */
+export const seriesSourceFor = (token: string, bokId: string) =>
+  studioRpc<import("@/lib/boks/series-recorder/from-bok").SeriesSource>(token, "studio_series_source", { p_bok_id: bokId });
+
+/** Remember which recorder draft is the piece's Series (`studio_link_series_draft`). */
+export const linkSeriesDraft = (token: string, bokId: string, draftId: string) =>
+  studioRpc<unknown>(token, "studio_link_series_draft", { p_bok_id: bokId, p_draft_id: draftId });

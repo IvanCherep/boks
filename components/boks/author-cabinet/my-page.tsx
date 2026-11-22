@@ -36,7 +36,7 @@ import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "@/lib/
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { Composer, openInComposer } from "./composer";
 import { loadPublishing } from "./composer-data";
-import { loadMyDecisions, loadMyVoices } from "./voice-data";
+import { loadMyDecisions, loadMySeriesWork, loadMyVoices, withdrawMySentBok, type SeriesWork } from "./voice-data";
 import { DecisionNote } from "./decision-note";
 import { decisionWords } from "./decision-words";
 import { changeAction, type EditorDecision } from "@/lib/boks/author/editor-decisions";
@@ -190,6 +190,16 @@ const words = defineMessages(
     draftNote: "Only you see it. It goes out when you publish it.",
     waitingChip: "Waiting for a cover",
     waitingNote: "The editors are choosing its cover; it goes out once it has one.",
+    sentChip: "Sent",
+    sentNote: "The editors are reading and listening. Until they take it into work, you can take it back.",
+    withdraw: "Take back",
+    withdrawTitle: "Take it back from the editors?",
+    withdrawBody: "The text and the recording stay with you, in your drafts.",
+    withdrawDone: "Taken back: the bok is in your drafts with its text and recording.",
+    inWorkChip: "With the editors",
+    inWorkNote: "The editors are making its Boks Series. We will bring it back to you when it is done.",
+    seriesReadyChip: "Series ready",
+    seriesReadyNote: "Watch it, then publish it.",
     requests: "Requests and ideas",
     requestsTitle: "Requests and ideas",
     requestsHint: "Something does not work, or you would like something new? Write here: the editors read every note and answer here.",
@@ -332,6 +342,16 @@ const words = defineMessages(
       draftNote: "Видите только вы. Выйдет, когда опубликуете.",
       waitingChip: "Ждёт обложку",
       waitingNote: "Редакция подбирает обложку; бок выйдет, как только она будет готова.",
+      sentChip: "Отправлено",
+      sentNote: "Редакция читает и слушает. Пока бок не взят в работу, его можно отозвать.",
+      withdraw: "Отозвать",
+      withdrawTitle: "Отозвать из редакции?",
+      withdrawBody: "Текст и запись останутся у вас, в черновиках.",
+      withdrawDone: "Отозвано: бок в черновиках, текст и запись на месте.",
+      inWorkChip: "В работе у редакции",
+      inWorkNote: "Редакция готовит Boks Series. Вернём её вам, когда закончим.",
+      seriesReadyChip: "Серия готова",
+      seriesReadyNote: "Посмотрите и опубликуйте.",
       requests: "Просьбы и предложения",
       requestsTitle: "Просьбы и предложения",
       requestsHint: "Что-то не работает или хочется чего-то нового? Напишите: редакция читает каждое сообщение и отвечает здесь же.",
@@ -457,6 +477,10 @@ export function MyPage({
   const [voiced, setVoiced] = useState<Set<string> | null>(null);
   /** The editors' answers on the author's pieces: requests for changes and refusals. */
   const [decisions, setDecisions] = useState<EditorDecision[]>([]);
+  /** The editors' work on the author's pieces: accepted into work, the series sent back, published. */
+  const [seriesWork, setSeriesWork] = useState<Map<string, SeriesWork>>(new Map());
+  /** A sent piece the author is about to take back from the editors. */
+  const [withdrawing, setWithdrawing] = useState<PageItem | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -468,6 +492,7 @@ export function MyPage({
         loadMyVoices().catch(() => null),
       ]);
       setDecisions(await loadMyDecisions().catch(() => []));
+      setSeriesWork(new Map((await loadMySeriesWork().catch(() => [] as SeriesWork[])).map((entry) => [entry.bokId, entry])));
       setData(mine);
       setVoiced(voices ? new Set(voices.filter((voice) => voice.current).map((voice) => voice.bokId)) : null);
       setPreview(look);
@@ -573,6 +598,29 @@ export function MyPage({
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Take a sent piece back from the editors, while they have not taken it into work. */
+  async function withdraw(item: PageItem) {
+    if (!item.bokId) return;
+    setBusy(true);
+    try {
+      await withdrawMySentBok(item.bokId);
+      setWithdrawing(null);
+      await load();
+      toast(w.withdrawDone);
+    } catch (error) {
+      setWithdrawing(null);
+      toast(readableBoksError(error, w.failed, language));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** A piece whose series the editors sent back shows once: as the ready series, not also as the sent text. */
+  function seriesShownAsWork(item: PageItem) {
+    if (!item.coverWaiting || !item.bokId || seriesWork.get(item.bokId)?.state !== "sent") return false;
+    return items.some((other) => other.work?.bokId === item.bokId && other.work.status === "ready");
   }
 
   /** Take a published work off the site, or put it back: the cabinet's own withdraw. */
@@ -773,8 +821,12 @@ export function MyPage({
         )}
         {items.length === 0 && !direct && <p className="desk-note">{w.nothing}</p>}
         <ul className="amp-list amp-cards">
-          {items.map((item) => {
+          {items.filter((item) => !seriesShownAsWork(item)).map((item) => {
             const status = lineStatus(item);
+            // The editors' work on it: accepted (locked), or its series sent back to publish.
+            const work = item.bokId ? seriesWork.get(item.bokId) : undefined;
+            const inWork = Boolean(item.coverWaiting && work && (work.state === "accepted" || work.state === "sent"));
+            const seriesReady = Boolean(item.work?.status === "ready" && item.work.bokId && seriesWork.get(item.work.bokId)?.state === "sent");
             const isSkipped = item.work?.status === "ready" && skipped.has(item.key);
             const previewed = preview?.items.find((entry) => entry.key === item.key || (item.bokId && entry.bokId === item.bokId));
             const piece = item.work?.seriesPiece ?? previewed?.seriesPiece ?? null;
@@ -785,7 +837,7 @@ export function MyPage({
             const voiceWaiting = Boolean(!returned && item.draft && item.bokId && voiced && !voiced.has(item.bokId));
             return (
               <li key={item.key} className={`amp-card${isSkipped ? " is-skipped" : ""}${item.draft || item.coverWaiting ? " is-draft" : ""}`}>
-                <button type="button" className="amp-card__cover" disabled={!previewed && !item.draft && !item.coverWaiting} onClick={() => ((item.draft || item.coverWaiting) && item.bokId ? compose(item.bokId) : readItem(item, Boolean(piece)))} aria-label={`${item.draft ? w.continueDraft : item.coverWaiting ? w.edit : piece ? w.watch : w.readText}: ${item.title}`}>
+                <button type="button" className="amp-card__cover" disabled={!previewed && !item.draft && !item.coverWaiting} onClick={() => ((item.draft || item.coverWaiting) && item.bokId ? compose(item.bokId) : readItem(item, Boolean(piece)))} aria-label={`${item.draft ? w.continueDraft : item.coverWaiting && !inWork ? w.edit : piece ? w.watch : w.readText}: ${item.title}`}>
                   <Thumb id={item.bokId ?? item.key} title={item.title} image={coverOf(item)} />
                   {piece && <span className="amp-card__play" aria-hidden="true">▶</span>}
                 </button>
@@ -794,7 +846,9 @@ export function MyPage({
                   <span className="amp-card__chips">
                     <span className={`asp-chip asp-chip--${series || piece ? "series" : "text"}`}>{w.format[series || piece ? "series" : "text"]}</span>
                     {item.coverWaiting
-                      ? <span className="asp-chip asp-chip--warn">{w.waitingChip}</span>
+                      ? <span className={`asp-chip asp-chip--${inWork ? "series" : "warn"}`}>{inWork ? w.inWorkChip : w.sentChip}</span>
+                      : seriesReady
+                      ? <span className="asp-chip asp-chip--ready">{w.seriesReadyChip}</span>
                       : returned
                       ? <span className="asp-chip asp-chip--warn">{d.changesTitle}</span>
                       : voiceWaiting
@@ -805,7 +859,8 @@ export function MyPage({
                   </span>
                   {returned && <DecisionNote decision={returned} compact />}
                   {item.draft && !returned && <small className="amp-card__note">{voiceWaiting ? w.voiceNote : w.draftNote}</small>}
-                  {item.coverWaiting && <small className="amp-card__note">{w.waitingNote}</small>}
+                  {item.coverWaiting && <small className="amp-card__note">{inWork ? w.inWorkNote : w.sentNote}</small>}
+                  {seriesReady && <small className="amp-card__note">{w.seriesReadyNote}</small>}
                   {item.seriesHeld && <small className="amp-card__note">{w.seriesHeld}</small>}
                   {item.work?.note && item.work.status === "changes_requested" && <small className="amp-card__note">{w.yourNote} {item.work.note}</small>}
                   {item.work?.seriesPiece && item.work.status === "published" && !item.hidden && (
@@ -823,8 +878,11 @@ export function MyPage({
                     {item.draft && item.bokId && !returned && (
                       <button type="button" className={voiceWaiting ? "btn btn-secondary" : "btn amp-card__watch"} onClick={() => compose(item.bokId)}>{w.continueDraft}</button>
                     )}
-                    {item.coverWaiting && item.bokId && (
+                    {item.coverWaiting && item.bokId && !inWork && (
                       <button type="button" className="btn btn-secondary" onClick={() => compose(item.bokId)}>{w.edit}</button>
+                    )}
+                    {item.coverWaiting && item.bokId && !inWork && (
+                      <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setWithdrawing(item)}>{w.withdraw}</button>
                     )}
                     {direct && !item.draft && item.bokId && !piece && !series && !item.work && (item.published || item.hidden) && (
                       <button type="button" className="btn btn-secondary" onClick={() => compose(item.bokId)}>{w.edit}</button>
@@ -915,6 +973,16 @@ export function MyPage({
       )}
       {reading && <WorkPreview key={`${reading.key}:${readingSeries}`} item={reading} t={pw} watchFirst={readingSeries} onClose={() => setReading(null)} />}
       {asking && <AskSheet w={w} item={asking} note={note} setNote={setNote} busy={busy} onSend={() => void sendChanges()} onClose={() => setAsking(null)} />}
+      {withdrawing && (
+        <Sheet title={w.withdrawTitle} closeLabel={w.cancel} onClose={() => setWithdrawing(null)}>
+          <p className="serif" style={{ fontSize: 22 }}>{withdrawing.title}</p>
+          <p>{w.withdrawBody}</p>
+          <div className="sheet-buttons">
+            <button type="button" className="btn btn-secondary" onClick={() => setWithdrawing(null)}>{w.cancel}</button>
+            <button type="button" className="btn" disabled={busy} onClick={() => void withdraw(withdrawing)}>{w.withdraw}</button>
+          </div>
+        </Sheet>
+      )}
     </main>
   );
 }

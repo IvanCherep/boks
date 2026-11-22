@@ -35,6 +35,12 @@ type Step = "text" | "record" | "pictures" | "build";
 const steps: Step[] = ["text", "record", "pictures", "build"];
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+/** A draft to open when Studio's recorder next mounts (Studio → «Boks Series в работе» → «Собрать Boks Series»). */
+let openingDraft: string | null = null;
+export function openRecorderDraft(id: string | null) {
+  openingDraft = id;
+}
+
 /**
  * Studio → Series recorder (beta). A poem's text, a few takes read through
  * the teleprompter, the author's pictures, and the Series built from the
@@ -49,7 +55,8 @@ export function SeriesRecorder({ mode = "studio" }: {
   const [allowance, setAllowance] = useState<SeriesAllowance | null>(null);
   const [failed, setFailed] = useState(false);
   const [createError, setCreateError] = useState("");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(() => openingDraft);
+  useEffect(() => { openingDraft = null; }, []);
   const [creating, setCreating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const author = mode === "author" && !allowance?.admin;

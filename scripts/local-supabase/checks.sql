@@ -42,6 +42,12 @@ begin
 end;
 $$;
 
+-- These checks exercise the old write-and-review functions, still kept for
+-- Studio and server jobs; since 20261122160000 an author reaches the editors
+-- only the voiced way (`reels_review_needs_voice`), so the trigger is off for
+-- this block and checked on its own below.
+alter table public.reels disable trigger reels_review_needs_voice;
+
 do $$
 declare
   v_author uuid := '11111111-1111-4111-8111-111111111111';
@@ -2544,6 +2550,95 @@ begin
 
   perform public.boks_test_logout();
   raise notice 'ALL CHECKS PASSED';
+end $$;
+
+-- Back on: the voiced way is the only way in for an author (see the checks of
+-- `reels_review_needs_voice` and the author's Boks Series flow further down).
+alter table public.reels enable trigger reels_review_needs_voice;
+
+-- From a voiced piece to its Boks Series (20261122200000): withdraw, accept,
+-- the lock, the series sent back, the author's publish, a return that unlocks.
+do $$
+declare
+  v_author uuid := 'f1a00000-0000-4000-8000-000000000001';
+  v_admin uuid := '22222222-2222-4222-8222-222222222222';
+  v_bok uuid := 'f1a00000-0000-4000-8000-0000000000b1';
+  v_other uuid := 'f1a00000-0000-4000-8000-0000000000b2';
+  v_text text := E'Голос и серия.\nВторая строка.';
+  v_work public.author_space_works;
+  v_error text;
+begin
+  perform public.boks_test_logout();
+  insert into auth.users (id, email, is_anonymous) values (v_author, 'series-flow@boks.test', false);
+  perform public.boks_test_login(v_author);
+  perform public.ensure_boks_user_profile();
+  perform public.accept_boks_terms('security-test');
+  insert into public.author_spaces (kind, status, name, owner_user_id, verified, published_at)
+  values ('author', 'published', 'Автор Серии', v_author, true, now());
+
+  perform public.set_my_bok_voice(v_bok, jsonb_build_object('file', 'take-1.webm', 'durationMs', 5000, 'source', 'teleprompter',
+    'fingerprint', public.boks_voice_fingerprint(v_text), 'recordedAt', now() - interval '1 minute'));
+  perform public.save_my_bok(v_bok, 'Голос и серия', v_text, true, null, true);
+  perform public.withdraw_my_sent_bok(v_bok);
+  perform public.boks_assert((select status from public.reels where id = v_bok) = 'draft', 'a sent piece taken back is a draft again');
+  perform public.save_my_bok(v_bok, 'Голос и серия', v_text, true, null, true);
+  perform public.boks_assert((select status from public.reels where id = v_bok) = 'pending_review', 'a piece taken back goes to the editors again with its voice');
+
+  perform public.boks_test_login(v_admin);
+  perform public.studio_accept_bok(v_bok);
+  perform public.boks_assert(
+    not exists (select 1 from jsonb_array_elements(public.get_boks_admin_snapshot(100, 0, '', 'newest') -> 'moderationQueue') q where q ->> 'id' = v_bok::text),
+    'a piece in work for its Boks Series leaves the review queue');
+  begin
+    perform public.studio_send_series_to_author(v_bok, 'SeriesFlowCheckToken0001');
+    perform public.boks_assert(false, 'a series goes to the author only with the cover');
+  exception when sqlstate '22023' then
+    perform public.boks_assert(true, 'a series goes to the author only with the cover');
+  end;
+  insert into public.bok_covers (bok_id, webp, jpeg, source) values (v_bok, decode(repeat('00', 1200), 'hex'), decode(repeat('00', 1200), 'hex'), 'upload');
+  begin
+    perform public.review_bok_submission(v_bok, 'approve', '');
+    perform public.boks_assert(false, 'a piece sent from My page is not published from moderation');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a piece sent from My page is not published from moderation');
+  end;
+
+  perform public.boks_test_login(v_author);
+  begin
+    perform public.withdraw_my_sent_bok(v_bok);
+    perform public.boks_assert(false, 'a piece in work cannot be taken back');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a piece in work cannot be taken back');
+  end;
+  begin
+    perform public.save_my_bok(v_bok, 'Голос и серия', E'Другой текст.', false, null, false);
+    perform public.boks_assert(false, 'a piece in work cannot be changed by its author');
+  exception when insufficient_privilege then
+    perform public.boks_assert(true, 'a piece in work cannot be changed by its author');
+  end;
+
+  perform public.boks_test_login(v_admin);
+  perform public.studio_send_series_to_author(v_bok, 'SeriesFlowCheckToken0001');
+  perform public.boks_test_login(v_author);
+  select * into v_work from public.author_space_works where bok_id = v_bok;
+  perform public.boks_assert(v_work.status = 'ready' and v_work.format = 'series', 'the series comes to the author ready to publish');
+  perform public.publish_my_author_space(jsonb_build_array(jsonb_build_object('workId', v_work.id, 'revision', v_work.revision)), false, 'checks', gen_random_uuid());
+  perform public.boks_assert(
+    (select r.status from public.reels r where r.id = v_bok) = 'published'
+      and (select w.series_published from public.author_space_works w where w.id = v_work.id)
+      and (select state from public.bok_series_work where bok_id = v_bok) = 'published',
+    'the author publishes the piece with its series');
+
+  perform public.set_my_bok_voice(v_other, jsonb_build_object('file', 'take-1.webm', 'durationMs', 5000, 'source', 'upload',
+    'fingerprint', public.boks_voice_fingerprint(E'Второй бок.'), 'recordedAt', now() - interval '1 minute'));
+  perform public.save_my_bok(v_other, 'Второй', E'Второй бок.', true, null, true);
+  perform public.boks_test_login(v_admin);
+  perform public.studio_accept_bok(v_other);
+  perform public.studio_decide_bok(v_other, 'changes', 'recording', 'Запись обрывается.');
+  perform public.boks_assert(
+    (select status from public.reels where id = v_other) = 'draft' and (select state from public.bok_series_work where bok_id = v_other) = 'returned',
+    'a piece returned from work is unlocked and back with its author');
+  perform public.boks_test_logout();
 end $$;
 
 -- Row level security must hold for a plain authenticated session too.
