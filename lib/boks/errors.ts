@@ -156,6 +156,7 @@ const russianSentences: Record<string, string> = {
   "You already have this exact text on your page.": "Такой же текст уже есть на вашей странице.",
   // The author's voice (`20261122120000_boks_author_voice.sql`, `app/api/author/voice`).
   "Record or attach your reading first: a bok goes out with the author's voice.": "Сначала запишите или прикрепите чтение: бок выходит с голосом автора.",
+  "A bok goes to the editors with the author's voice, from My page. Publishing is open to authors the editors invited.": "Бок уходит в редакцию вместе с голосом автора, со страницы «Моя страница». Публиковаться могут авторы, которых пригласила редакция.",
   "That is not a recording of this piece.": "Это не запись этого бока.",
   "The recording is larger than 25 MB.": "Запись больше 25 МБ.",
   "The recording is longer than 15 minutes.": "Запись длиннее 15 минут.",

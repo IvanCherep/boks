@@ -317,7 +317,7 @@ export function AuthorCabinet() {
 
   // A view that needs what a reload lost goes back to the library.
   const shown: View =
-    (publishingViews.has(view) && !publishing.canShow(view as PublishingView)) ||
+    publishingViews.has(view) ||
     (profileViews.has(view) && (!profile.canShow(view as ProfileView) || !author)) ||
     (view === "invite" && !inviteToken && !offer) ||
     (view !== "library" && !author)
@@ -458,10 +458,13 @@ export function AuthorCabinet() {
 
   let sheetNode: React.ReactNode = null;
   if (sheet?.kind === "new") {
+    // The old way in (write or upload, then review without a voice) is closed:
+    // a bok goes to the editors from My page with its author's reading
+    // (`20261122160000_boks_review_needs_voice.sql`).
     sheetNode = (
-      <Sheet title={w.newTitle} closeLabel={w.close} onClose={() => setSheet(null)}>
-        <SheetAction icon="write" label={w.write} hint={w.writeHint} onClick={() => publishing.startWriting(!publishing.hasDraft)} />
-        <SheetAction icon="upload" label={w.upload} hint={w.uploadHint} onClick={() => go("upload")} />
+      <Sheet title={w.closedTitle} closeLabel={w.close} onClose={() => setSheet(null)}>
+        <p className="sheet-note">{w.closedBody}</p>
+        <p className="sheet-note">{access.value?.admin ? w.closedAdmin : w.closedApply}</p>
       </Sheet>
     );
   } else if (sheet?.kind === "menu") {
@@ -703,7 +706,7 @@ export function AuthorCabinet() {
           suspended={suspended}
           suspendedReason={author.banReason ?? null}
           refreshKey={refreshKey}
-          hasDraft={publishing.hasDraft}
+          hasDraft={false}
           onNew={() => {
             if (!direct) { setSheet({ kind: "new" }); return; }
             openInComposer(null);

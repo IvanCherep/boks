@@ -275,3 +275,7 @@
 .acab-preview-label{position:fixed;z-index:270;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:999px;background:#f3efe7e6;color:#202a26;font:600 12px/1.3 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.02em;box-shadow:0 6px 20px #0003;pointer-events:none;white-space:nowrap}
 /* The cabinet covers the page: its own paper, whatever the reader theme. */
 .acab{min-height:100svh}
+
+/* The closed old way in: a calm explanation in the New sheet */
+.acab .sheet-note{font-size:15px;line-height:1.55;color:var(--ink);margin:0 0 12px}
+.acab .sheet-note+.sheet-note{color:var(--muted)}

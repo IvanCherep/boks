@@ -33,6 +33,18 @@ bok on My page, and the composer's address shows them the way to review
 instead. Drawing, publishing straight away and asking the team for a cover
 are all refused by the database for them, not only hidden.
 
+## The old way in is closed (2026-11-22)
+
+«Мои тексты» → «Написать текст» / «Загрузить файлы» used to put a text into
+review with no voice (`submit_bok_for_review`). Every author today is one the
+team invited, and no bok goes out without its author's voice, so that way is
+closed: the cabinet's New sheet explains how publishing works (with a line for
+an admin account, which has no My page of its own), the old screens send back
+to the library, and a trigger on `reels` refuses a move into review unless it
+is the voiced way (`cover_requested`), the caller is Studio, or there is no
+caller (imports, server jobs)
+(`20261122160000_boks_review_needs_voice.sql`).
+
 ## The composer
 
 `components/boks/author-cabinet/composer.tsx`, view `#my-page-new`:
