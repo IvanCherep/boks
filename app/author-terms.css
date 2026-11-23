@@ -1,0 +1,93 @@
+/*
+ * /author/terms: the documents for authors (components/boks/author-terms/terms-page.tsx),
+ * on the frame of /terms and /privacy (legal-v45.css). Only what the long
+ * contract text needs on top: numbered clauses, tables, the edition notes,
+ * the list of documents, and a clean print.
+ */
+
+.aterm .aterm-all { justify-self: end; min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; font-weight: 550; text-decoration: none; }
+.aterm .aterm-all[aria-current] { color: var(--legal-accent); }
+.aterm-tabs { overflow-x: auto; scrollbar-width: none; }
+.aterm-tabs::-webkit-scrollbar { display: none; }
+.aterm-tabs a { white-space: nowrap; }
+
+.aterm-hero h1 { font-size: clamp(40px, 5.2vw, 66px); }
+.aterm-old { margin: 0 0 20px; padding: 12px 16px; border-left: 3px solid var(--legal-accent); background: color-mix(in srgb, var(--legal-accent) 8%, transparent); font-size: 15px; }
+.aterm-old a { color: var(--legal-accent); font-weight: 600; }
+.aterm .aterm-note { margin: 18px 0 0; color: var(--legal-soft); font-size: 13px; opacity: .85; }
+.aterm-loading { padding: 40px 0; color: var(--legal-muted); }
+
+.aterm-doc-title { padding: 0 0 22px; margin: 0 0 22px; border-bottom: 1px solid var(--legal-line); }
+.aterm .aterm-doc-kicker { margin: 0 0 6px; color: var(--legal-accent); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.aterm .aterm-doc-name { margin: 0 0 6px; font: 400 22px/1.3 var(--legal-serif); letter-spacing: -0.01em; max-width: none; }
+.aterm .aterm-doc-sub { margin: 0; color: var(--legal-muted); font-size: 14px; }
+
+.aterm-document h3 { margin: 18px 0 8px; font: 600 17px/1.35 var(--legal-sans); }
+.aterm .aterm-document p.aterm-clause { position: relative; padding-left: 0; }
+.aterm .aterm-num { font-weight: 650; color: var(--legal-ink); font-variant-numeric: tabular-nums; }
+.aterm .aterm-document p.aterm-clause--1 { padding-left: 18px; }
+.aterm .aterm-document p.aterm-clause--2 { padding-left: 36px; }
+.aterm-document ul { max-width: 64ch; margin: 0 0 12px; padding-left: 22px; }
+.aterm-document li { margin: 0 0 6px; line-height: 1.6; }
+
+.aterm-table { margin: 6px 0 16px; overflow-x: auto; border: 1px solid var(--legal-line); border-radius: 4px; }
+.aterm-table:focus-visible { outline: 2px solid var(--legal-accent); outline-offset: 2px; }
+.aterm-table table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; line-height: 1.45; }
+.aterm-table th, .aterm-table td { padding: 9px 12px; border-bottom: 1px solid var(--legal-line); text-align: left; vertical-align: top; }
+.aterm-table th { background: color-mix(in srgb, var(--legal-green) 7%, transparent); font-weight: 650; }
+.aterm-table tr:last-child td { border-bottom: 0; }
+
+.aterm-footer { display: grid; gap: 10px; }
+.aterm .aterm-actions { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.aterm .aterm-actions button { min-height: 40px; padding: 8px 16px; border: 1px solid var(--legal-ink); border-radius: 4px 14px 4px 4px; background: transparent; color: var(--legal-ink); font: 600 14px/1.2 var(--legal-sans); cursor: pointer; }
+.aterm .aterm-actions button:hover { background: var(--legal-ink); color: var(--legal-paper); }
+.aterm .aterm-actions a { font-size: 14px; }
+.aterm .aterm-meta { color: var(--legal-muted); font-size: 12.5px; line-height: 1.6; }
+.aterm .aterm-meta span { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+
+.aterm-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 6px 0 76px; padding: 0; list-style: none; }
+.aterm-card { display: grid; gap: 8px; height: 100%; padding: 22px 24px; border: 1px solid var(--legal-line); border-radius: 4px 18px 4px 4px; background: color-mix(in srgb, #fff 45%, transparent); text-decoration: none; transition: border-color 160ms ease, transform 160ms ease; }
+.aterm-card:hover { border-color: var(--legal-accent); transform: translateY(-1px); }
+.aterm-card strong { font: 400 26px/1.15 var(--legal-serif); letter-spacing: -0.02em; }
+.aterm-card__kind { color: var(--legal-accent); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.aterm-card__lead { color: var(--legal-muted); font-size: 15px; line-height: 1.5; }
+.aterm-card__version { margin-top: 6px; font-size: 14px; font-weight: 600; }
+.aterm-card--quiet { background: transparent; }
+.aterm-card__older { margin: 8px 4px 0; color: var(--legal-muted); font-size: 13px; }
+.aterm-card__older a { color: var(--legal-accent); }
+
+@media (max-width: 680px) {
+  .aterm .aterm-all { font-size: 13px; }
+  .aterm-hero h1 { font-size: clamp(27px, 8vw, 40px); }
+  .aterm-cards { grid-template-columns: 1fr; margin-bottom: 40px; }
+  .aterm-card { padding: 18px 18px; }
+  .aterm-card strong { font-size: 23px; }
+  .aterm .aterm-document p.aterm-clause--1 { padding-left: 10px; }
+  .aterm .aterm-document p.aterm-clause--2 { padding-left: 20px; }
+  .aterm .aterm-doc-name { font-size: 19px; }
+  /* A table reads as cards on a phone: each row a block, each cell with its column's name. */
+  .aterm-table { overflow: visible; border: 0; }
+  .aterm-table table { min-width: 0; }
+  .aterm-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .aterm-table tr { display: block; margin: 0 0 10px; padding: 12px 14px; border: 1px solid var(--legal-line); border-radius: 4px 14px 4px 4px; }
+  .aterm-table td { display: block; padding: 3px 0; border: 0; }
+  .aterm-table td:first-child { font-weight: 650; padding-bottom: 6px; }
+  .aterm-table td + td::before { content: attr(data-label) ": "; color: var(--legal-muted); font-weight: 600; }
+}
+
+@media (prefers-reduced-motion: reduce) { .aterm-card { transition: none; } .aterm-card:hover { transform: none; } }
+
+@media print {
+  .aterm .legal-topbar, .aterm .legal-tabs, .aterm .legal-contents, .aterm .legal-highlights, .aterm .aterm-actions, .aterm .aterm-old a { display: none !important; }
+  .aterm.legal-v45 { background: #fff; color: #000; padding: 0; }
+  .aterm .legal-body { display: block; padding: 0; }
+  .aterm .legal-hero { padding: 0 0 12px; }
+  .aterm .legal-hero h1 { font-size: 24pt; }
+  .aterm .legal-intro { display: none; }
+  .aterm .legal-document section { break-inside: auto; padding-bottom: 8pt; }
+  .aterm .legal-document h2 { font-size: 15pt; break-after: avoid; }
+  .aterm .legal-document p, .aterm-document li { font-size: 10.5pt; line-height: 1.45; max-width: none; }
+  .aterm-table { overflow: visible; border-color: #999; }
+  .aterm-table table { min-width: 0; }
+  .aterm .legal-document a { color: #000; text-decoration: none; }
+}

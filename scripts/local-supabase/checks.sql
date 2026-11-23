@@ -5911,3 +5911,30 @@ begin
   perform public.boks_assert(jsonb_array_length(public.get_boks_series_shelf_authors()) = 0, 'a page not marked for the shelf stays off it');
 end $$;
 rollback;
+
+-- The documents for authors (20261123095000, 20261123096000): anyone reads
+-- the editions in force and each edition by its date; an edition is frozen.
+begin;
+do $$
+declare
+  v_doc jsonb;
+  v_list jsonb;
+  v_error text;
+begin
+  perform public.boks_test_logout();
+  v_list := public.get_boks_legal_documents();
+  perform public.boks_assert(jsonb_array_length(v_list) = 3 and v_list -> 0 ->> 'kind' = 'author_offer', 'the three documents are listed, the offer first');
+  v_doc := public.get_boks_legal_document('author_offer');
+  perform public.boks_assert(v_doc ->> 'body' like '# Оферта%' and (v_doc ->> 'current')::boolean and char_length(v_doc ->> 'sha256') = 64, 'a guest reads the offer in force with its checksum');
+  perform public.boks_assert(public.get_boks_legal_document('author_offer', v_doc ->> 'version') ->> 'sha256' = v_doc ->> 'sha256', 'an edition opens by its date');
+  perform public.boks_assert(public.get_boks_legal_document('author_offer', '2000-01-01') is null and public.get_boks_legal_document('nope') is null, 'an unknown edition or document is nothing');
+  begin
+    update public.boks_legal_documents set body = body || ' ' where kind = 'author_offer';
+    perform public.boks_assert(false, 'a published edition is not changed');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'A published edition is not changed%', 'a published edition is frozen: ' || v_error);
+  end;
+  perform public.boks_assert(not has_table_privilege('anon', 'public.boks_legal_documents', 'SELECT'), 'the table itself is not open');
+end $$;
+rollback;
