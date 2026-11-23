@@ -138,3 +138,20 @@
 @media (prefers-reduced-motion: reduce) {
   .legal-contents--narrow summary::after { transition: none; }
 }
+
+/* /about (app/about/page.tsx): the same frame, one column, no tabs. */
+.about-v45 .legal-hero { grid-template-columns: 1fr; padding-top: 56px; }
+.about-v45 .about-body { max-width: 760px; padding: 47px 0 64px; }
+.about-team { margin: 4px 0 0; }
+.about-team > div { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; padding: 14px 0; border-top: 1px solid var(--legal-line); }
+.about-team > div:first-child { border-top: 0; padding-top: 4px; }
+.about-team dt { display: grid; gap: 2px; }
+.about-team dt strong { font: 400 21px/1.2 var(--legal-serif); letter-spacing: -0.015em; }
+.about-team dt span { color: var(--legal-muted); font-size: 14px; }
+.about-team dd { margin: 0; font-size: 16px; line-height: 1.6; }
+@media (max-width: 680px) {
+  .about-v45 .legal-hero { padding-top: 30px; }
+  .about-v45 .about-body { padding: 26px 0 38px; }
+  .about-team > div { grid-template-columns: 1fr; gap: 6px; }
+  .about-team dd { font-size: 15px; }
+}
