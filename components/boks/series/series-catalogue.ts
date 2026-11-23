@@ -820,9 +820,10 @@ export function activeCollections(
 
 /**
  * The authors' sections in the order the team set for the shelf, whether a
- * section comes from the database (`author-<handle>`) or from code. A section
- * not listed here keeps the old rule: a newly published author's own section
- * on top, the sections in code after the listed ones.
+ * section comes from the database (`author-<handle>`) or from code. An
+ * author not listed here goes to the bottom of the authors, after the last
+ * listed section, in the order they published (2026-11-23: before, a new
+ * author opened the shelf); code collections nobody listed come after them.
  */
 export const seriesShelfOrder: readonly string[] = [
   "author-vodennikov",
@@ -870,7 +871,9 @@ export function shelfSections(
     return byPrint >= 0 ? byPrint : order.indexOf(collection.id);
   };
   const listed = [...live, ...inCode].filter((collection) => rank(collection) >= 0).sort((a, b) => rank(a) - rank(b));
-  return [...live.filter((collection) => rank(collection) < 0), ...listed, ...inCode.filter((collection) => rank(collection) < 0)];
+  // The database answers newest first; the newest unlisted author goes last.
+  const newcomers = live.filter((collection) => rank(collection) < 0).reverse();
+  return [...listed, ...newcomers, ...inCode.filter((collection) => rank(collection) < 0)];
 }
 
 /** The first collection up today, if any. */

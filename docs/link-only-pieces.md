@@ -113,8 +113,11 @@ SQL file. Nothing goes into `poems.ts` or `series-catalogue.ts`: the moment
 the owner presses Publish in the cabinet, `get_boks_series_shelf_authors()`
 (migration `20261118170000`) returns his published works with their Series,
 in his page order, and `components/boks/series/live-series.ts` puts them as
-his own section first on the shelf, above the sections in code, and makes the
-feed open them as Series. Hiding a work in the cabinet takes it off at once.
+his own section on the shelf and makes the feed open them as Series. Where:
+`seriesShelfOrder` in `series-catalogue.ts` if he is listed there (with his
+folders' fingerprints in `seriesShelfPrints`, so a new @handle does not move
+him); otherwise, by default since 2026-11-23, at the bottom of the authors,
+after the last listed section, newcomers in the order they published. Hiding a work in the cabinet takes it off at once.
 Only published works of a published page are returned, so an unpublished
 token never leaves the database. The section photo is the page's photo.
 

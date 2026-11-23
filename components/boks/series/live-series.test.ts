@@ -86,7 +86,7 @@ describe("live Series sections", () => {
     expect(liveCollections(sections)).toEqual([]);
   });
 
-  it("puts Демидов fourth, under Мальо-Субботина, and a new unlisted author on top", () => {
+  it("puts Демидов fourth, under Мальо-Субботина, and a new unlisted author after the listed ones", () => {
     const bokC = "33333333-3333-4333-8333-333333333333";
     const bokD = "44444444-4444-4444-8444-444444444444";
     const tokenC = "CCCCCCCCCCCCCCCCCCCCCC";
@@ -103,7 +103,7 @@ describe("live Series sections", () => {
     const shelf = publishedSeriesShelf(catalogue, [], new Set(), registry);
     const arranged = arrangeSeriesShelf(shelf, shelfSections(liveCollections(sections), activeCollections(new Date("2026-11-21T12:00:00Z"))), null);
     expect(arranged.collections.map((collection) => collection.id).slice(0, 5)).toEqual([
-      "author-newcomer", "author-vodennikov", "prokhorov", "malyo-subbotina", "author-demidov",
+      "author-vodennikov", "prokhorov", "malyo-subbotina", "author-demidov", "author-newcomer",
     ]);
     // Without the newcomer Демидов is the fourth section.
     const four = arrangeSeriesShelf(shelf, shelfSections(liveCollections(sections.slice(1)), activeCollections(new Date("2026-11-21T12:00:00Z"))), null);
@@ -138,8 +138,11 @@ describe("live Series sections", () => {
       { ...answer[0], handle: "dmitry_v" },
     ];
     expect(order(renamed)).toEqual(["author-dmitry-v", "prokhorov", "malyo-subbotina", "author-evgeny", "author-kkomarov", "author-ksenia-avgust"]);
-    // A new author nobody listed still opens the shelf.
-    expect(order([{ handle: "newcomer", name: "Новый", pieces: [piece(8, "Новое")] }, ...renamed])[0]).toBe("author-newcomer");
+    // A new author nobody listed goes to the bottom of the authors; two of them, in the order they published.
+    const one = { handle: "newcomer", name: "Новый", pieces: [piece(8, "Новое")] };
+    const two = { handle: "later", name: "Позже", pieces: [piece(9, "Ещё новее")] };
+    expect(order([one, ...renamed]).at(-1)).toBe("author-newcomer");
+    expect(order([two, one, ...renamed]).slice(-2)).toEqual(["author-newcomer", "author-later"]);
   });
   it("puts the next listed author after Август, by the shelf's own fingerprints", () => {
     // The real list: a section whose Series folders match an author's prints takes that author's place.
