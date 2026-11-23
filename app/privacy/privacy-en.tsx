@@ -6,7 +6,7 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
   effective: "Effective November 23, 2026",
   intro: "Who processes data in boks, which data and on what basis, what others can see, and how to ask for a copy, a correction or deletion. The policy covers readers and authors alike.",
   highlights: [
-    { title: "Where data is kept", body: "The main boks database is in Moscow, Russia." },
+    { title: "Where data is kept", body: "Only in Russia: the boks database is in Moscow, and data is not transferred abroad." },
     {
       title: "What others see",
       body: "Public comments and your @nickname, published texts and their bylines. An author page also shows a name and photo if you added them.",
@@ -145,18 +145,8 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
       title: "Where data is kept",
       body: <>
         <p>
-          The main boks database and the sign-in service run in Moscow, Russia, on boks&apos;s own server in a
-          Selectel data centre. To deliver the email with your sign-in link or code, we use an email provider, which
-          receives your address and the content of the email to deliver it. Email sent to support reaches the
-          team&apos;s inbox through an email forwarding service.
-        </p>
-        <p>
-          <strong>Transfer outside Russia.</strong> The email provider, the email forwarding service and the messenger
-          through which the team receives service notifications (for example the text of feedback or a request, the
-          @nickname, and for authors also the agreement number and the payment mark) are outside Russia, including in
-          the USA. They receive only that data and only to deliver emails and notifications. Personal data is first
-          recorded, stored and updated in a database in Russia (part 5 of article 18 of Federal Law No. 152-FZ). We
-          name these services on request.
+          The boks database and the sign-in service run in Moscow, Russia, on boks&apos;s own server in a
+          Selectel data centre. All personal data is stored and processed in Russia and is not transferred abroad.
         </p>
         <p>
           Your email address is needed to sign in. To run and protect your session, boks processes your IP address and
@@ -176,8 +166,6 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
       body: <>
         <p>
           For as long as your account exists, or for the length of the pilot for activity recorded without an account.
-          Until November 7, 2026 the boks database was hosted by Supabase in London. A copy of it as of that date stays
-          there for a while as a backup and will then be deleted; nothing new goes there.
         </p>
         <p>
           An author&apos;s data related to the agreement is kept while the agreement is in force and for 3 years after
