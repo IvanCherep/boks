@@ -49,3 +49,7 @@
 .acab .kit-how strong{font-size:14px;font-weight:600}
 .acab .kit-how ul{margin:0;padding:0 0 0 18px;display:grid;gap:6px}
 .acab .kit-how li,.acab .kit-how small{font-size:12.5px;line-height:1.5;color:var(--muted)}
+/* The wrapper gives the sheet the cabinet's look in Studio too; it takes no room itself. */
+.acab.kit-root{display:contents}
+/* Studio -> Authors: the page and every published work. */
+.asp-kit{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}

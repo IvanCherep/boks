@@ -75,12 +75,22 @@ which cannot read WebP, the format of every Series frame. Drawing in the
 browser also hands the file straight to the phone's share sheet. Nothing per
 author: a new page or work gets its pictures the moment it is published.
 
+## In Studio
+
+Studio -> Authors -> an open author page has a card **For social media** with
+the page and every published work: the same sheet, from the page's preview
+(`get_author_space_preview`, `kit-subjects.ts`), so the team sees what an
+author gets and can save pictures to post for them. Nothing new in the
+database; the sheet wraps itself in `.acab` to keep the cabinet's look there.
+
 ## Files
 
 - `components/boks/story-kit/kit-render.ts` - the drawing, canvas only.
 - `components/boks/story-kit/kit-content.ts` - which lines a card may quote; tested.
 - `components/boks/story-kit/kit-share.ts` - copy the link and open the share sheet in one tap; tested.
 - `components/boks/story-kit/story-kit-sheet.tsx` - the sheet.
+- `components/boks/story-kit/kit-subjects.ts` - a page's subjects from its preview, for Studio.
+- `components/boks/admin/author-spaces.tsx` - the Studio card (`KitPanel`).
 - `app/story-kit.css` - its styles and the tiles on My page.
 - `components/boks/author-cabinet/my-page.tsx` - the section and the card button.
 
@@ -88,4 +98,4 @@ author: a new page or work gets its pictures the moment it is published.
 
 - A moving story: the curtain opening on the cover as a vertical MP4, made by
   the curtain job on the server (`deploy/curtain/`), the way the link loops are.
-- The same sheet in Studio for the team, and on the reader's Share sheet.
+- The same sheet on the reader's Share sheet.

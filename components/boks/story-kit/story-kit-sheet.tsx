@@ -213,6 +213,8 @@ export function StoryKitSheet({ subject, handle, onClose }: { subject: KitSubjec
   }
 
   return (
+    // Its own cabinet look wherever it opens: My page, or Studio, which is not inside the cabinet.
+    <div className="acab kit-root">
     <Sheet title={w.title} closeLabel={w.close} onClose={onClose}>
       <div className="kit">
         <p className="kit-intro">{w.intro}</p>
@@ -296,5 +298,6 @@ export function StoryKitSheet({ subject, handle, onClose }: { subject: KitSubjec
         </div>
       </div>
     </Sheet>
+    </div>
   );
 }

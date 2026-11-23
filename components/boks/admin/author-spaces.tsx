@@ -40,6 +40,8 @@ import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mo
 import { Conversation, shortDateTime } from "@/components/boks/author-spaces/conversation";
 import { linkOnlyCover, linkOnlyPiecePath } from "@/lib/boks/link-only";
 import { seriesFitProblems } from "@/components/boks/author-spaces/series-fit";
+import { StoryKitSheet, type KitSubject } from "@/components/boks/story-kit/story-kit-sheet";
+import { kitSubjectsFromPreview } from "@/components/boks/story-kit/kit-subjects";
 import { authorShareLabelPrefix } from "@/lib/boks/share-link";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
@@ -87,6 +89,10 @@ const words = defineMessages(
     worksCount: (n: number) => `${n} work${n === 1 ? "" : "s"}`,
     readyCount: (n: number) => `${n} ready`,
     authors: "Authors",
+    kitTitle: "For social media",
+    kitHint: "What the author gets on My page: pictures for stories and posts about the page and each published work. Open one to see it, or save it to post for the author.",
+    kitPage: "The whole page",
+    kitNone: "Nothing published yet: the section appears with the first published work.",
     back: "Back to authors",
     nameLabel: "Name on the page",
     handleLabel: "Page address",
@@ -242,6 +248,10 @@ const words = defineMessages(
       worksCount: (n: number) => `${n} ${plural("ru", n, { one: "произведение", few: "произведения", many: "произведений", other: "произведения" })}`,
       readyCount: (n: number) => `готово: ${n}`,
       authors: "Авторы",
+      kitTitle: "Для соцсетей",
+      kitHint: "То, что автор видит на «Моей странице»: картинки для сторис и постов о странице и каждой опубликованной работе. Откройте, чтобы посмотреть, или сохраните, чтобы выложить за автора.",
+      kitPage: "Вся страница",
+      kitNone: "Пока ничего не опубликовано: раздел появится с первой опубликованной работой.",
       back: "К авторам",
       nameLabel: "Имя на странице",
       handleLabel: "Адрес страницы",
@@ -614,6 +624,10 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
             <MessagesPanel t={t} space={space} busy={busy} run={run} />
           )}
 
+          {space && space.kind === "author" && space.status === "published" && (
+            <KitPanel key={`${space.id}:${previewNonce}`} t={t} spaceId={space.id} />
+          )}
+
           {space && space.status !== "merged" && (
             <ShareCardPanel key={`${space.id}:${space.shareCard ?? ""}:${space.shareVideo ?? ""}`} t={t} space={space} busy={busy} run={run} />
           )}
@@ -655,6 +669,42 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
           {space ? <PreviewFrame spaceId={space.id} width={previewWidth} nonce={previewNonce} /> : <p className="studio-notice">{t.saveFirst}</p>}
         </aside>
       </div>
+    </section>
+  );
+}
+
+/**
+ * "For social media" as the author has it on My page (`docs/story-kit.md`):
+ * the team sees an author's pictures, and can save them to post for them.
+ */
+function KitPanel({ t, spaceId }: { t: Words; spaceId: string }) {
+  const [kit, setKit] = useState<{ page: KitSubject; works: KitSubject[]; handle: string | null } | null>(null);
+  const [open, setOpen] = useState<KitSubject | null>(null);
+  useEffect(() => {
+    let live = true;
+    void loadSpacePreview(spaceId).then((preview) => {
+      if (live) setKit({ ...kitSubjectsFromPreview(preview), handle: preview.handle });
+    }, () => undefined);
+    return () => { live = false; };
+  }, [spaceId]);
+  if (!kit?.handle) return null;
+  return (
+    <section className="asp-card">
+      <h2>{t.kitTitle}</h2>
+      <p className="asp-hint">{t.kitHint}</p>
+      {kit.works.length === 0 ? (
+        <p className="asp-hint">{t.kitNone}</p>
+      ) : (
+        <div className="asp-kit">
+          <Button variant="outline" onClick={() => setOpen(kit.page)}>{t.kitPage}</Button>
+          {kit.works.map((work) => (
+            <Button key={work.kind === "work" ? work.bokId : "page"} variant="outline" onClick={() => setOpen(work)}>
+              {work.kind === "work" ? work.title : t.kitPage}
+            </Button>
+          ))}
+        </div>
+      )}
+      {open && <StoryKitSheet subject={open} handle={kit.handle} onClose={() => setOpen(null)} />}
     </section>
   );
 }
