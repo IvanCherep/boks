@@ -85,7 +85,7 @@ export const invitePlans: { value: AuthorPlan | ""; label: string }[] = [
   { value: "page", label: `${planName.page}, ${rub(30000)}` },
   { value: "launch", label: `${planName.launch}, бесплатно` },
   { value: "page_no_promotion", label: `${planName.page_no_promotion}, ${rub(500000)}` },
-  { value: "", label: "Без договора на сайте (особый проект)" },
+  { value: "", label: "Наш автор: без оплаты и без оферты (партнёрство, особый проект)" },
 ];
 
 const stateLabel: Record<PayState, string> = {
@@ -93,6 +93,7 @@ const stateLabel: Record<PayState, string> = {
   awaiting: "ждём оплату",
   reported: "автор сообщил об оплате",
   paid: "оплачено",
+  waived: "без оплаты (решение редакции)",
   cancelled: "расторгнут",
 };
 
@@ -120,7 +121,7 @@ export function InvitePlanFields({
         <small>
           {plan
             ? "Автор примет оферту этого тарифа и два согласия галочками на экране приглашения. Кабинет откроется сразу, страница читателям только после оплаты."
-            : "Приглашение без оферты: договор с автором оформлен отдельно."}
+            : "Наш автор: без оплаты и без оферты, условия договорены отдельно. Кабинет и суфлёр открываются сразу, серии выходят, когда решит редакция."}
         </small>
       </label>
       {plan && (

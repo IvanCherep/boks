@@ -217,6 +217,8 @@ const russianSentences: Record<string, string> = {
   "Paste the text.": "Вставьте текст.",
   "The text is longer than 20 000 characters.": "Текст длиннее 20 000 знаков.",
   "Poem or prose?": "Стихи или проза?",
+  "Ours or paid?": "Наш автор или платный?",
+  "A paid author needs a contract on a paid tariff: the author has none yet.": "Платному автору нужен договор по платному тарифу, а у этого автора его пока нет.",
   "The author has this text already: they change it in the cabinet.": "Текст уже у автора: менять его теперь может только он, в кабинете.",
   "The author has sent this piece on: the recording is theirs to change now.": "Автор уже отдал этот текст в работу: запись теперь меняет только он.",
   // Links to the author's posts (`20261122240000_boks_share_links.sql`).

@@ -45,8 +45,9 @@ export type ServerPiece = {
 };
 export type ServerReady = { workId: string; revision: number; title: string; format: "text" | "series"; bokId: string | null };
 export type ServerWorkshop = {
-  author: { userId: string; handle: string | null; name: string | null; pageId: string | null; pageStatus: string | null };
-  plan: { perYear: number; perWeek: number; usedThisYear: number };
+  author: { userId: string; handle: string | null; name: string | null; pageId: string | null; pageStatus: string | null; billing?: "partner" | "paid" };
+  /** perYear: null for our authors (no yearly limit; the team decides the batches). */
+  plan: { perYear: number | null; perWeek: number; usedThisYear: number };
   pieces: ServerPiece[];
   ready: ServerReady[];
 };

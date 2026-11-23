@@ -5,7 +5,8 @@
  */
 
 export type AuthorPlan = "launch" | "page" | "page_no_promotion";
-export type PayState = "free" | "awaiting" | "reported" | "paid" | "cancelled";
+/** waived: the team decided this author does not pay (Studio → «Условия»: наш автор). */
+export type PayState = "free" | "awaiting" | "reported" | "paid" | "waived" | "cancelled";
 export type LegalKind = "author_offer" | "author_pd_processing" | "author_pd_distribution";
 
 export const legalKinds: LegalKind[] = ["author_offer", "author_pd_processing", "author_pd_distribution"];

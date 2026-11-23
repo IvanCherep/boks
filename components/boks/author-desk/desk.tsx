@@ -120,8 +120,9 @@ function useQueue(desk: Desk) {
   const ready = works.filter((work) => work.editors.step === "approval");
   const used = desk.state?.plan.usedThisYear ?? 0;
   const usedByYear: Record<number, number> = { [year]: used };
-  const perYear = desk.state?.plan.perYear ?? plan.perYear;
-  const planned = plannedWeeks({ queue, busyThisWeek: making.length, today: new Date(), usedByYear, perYear });
+  // Our authors have no yearly limit (perYear null); paid ones have their tariff's.
+  const perYear = desk.state ? desk.state.plan.perYear : plan.perYear;
+  const planned = plannedWeeks({ queue, busyThisWeek: making.length, today: new Date(), usedByYear, perYear: perYear ?? Infinity });
   const byId = new Map(works.map((work) => [work.id, work]));
   return {
     making,
@@ -132,7 +133,7 @@ function useQueue(desk: Desk) {
     used,
     perYear,
     year,
-    planFor: (ids: string[]) => plannedWeeks({ queue: ids, busyThisWeek: making.length, today: new Date(), usedByYear, perYear }),
+    planFor: (ids: string[]) => plannedWeeks({ queue: ids, busyThisWeek: making.length, today: new Date(), usedByYear, perYear: perYear ?? Infinity }),
   };
 }
 
@@ -567,7 +568,7 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
   const { making, revising, queue, planned, used, perYear } = useQueue(desk);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<number | null>(null);
-  const left = Math.max(0, perYear - used);
+  const left = perYear === null ? null : Math.max(0, perYear - used);
   if (!making.length && !revising.length && !queue.length) return null;
 
   return (
@@ -644,7 +645,7 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
         ))}
       </ol>
       <p className="desk-queue-foot">
-        В этом году ещё {left} {seriesWord(left)}.{" "}
+        {left !== null ? <>В этом году ещё {left} {seriesWord(left)}.{" "}</> : null}
         <Hint text="Сроки примерные: редакция берёт тексты по порядку, но иногда работа над серией занимает больше недели." />
       </p>
     </section>
@@ -1597,7 +1598,7 @@ function Hint({ text }: { text: string }) {
   );
 }
 
-function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number }) {
+function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number | null }) {
   useEscape(onClose);
   return (
     <div className="desk-sheet-back is-center" onClick={onClose}>
@@ -1616,7 +1617,7 @@ function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number })
           <li>
             <b>Серия</b>
             <span>
-              Редакция рисует серии в вашем порядке, не чаще одной в неделю, до {perYear} в год. Готовую серию вы смотрите и публикуете сами. Если что-то нужно доработать
+              Редакция рисует серии в вашем порядке, не чаще одной в неделю{perYear !== null ? `, до ${perYear} в год` : ""}. Готовую серию вы смотрите и публикуете сами. Если что-то нужно доработать
               или текст не может выйти, редакция всегда объяснит почему.
             </span>
           </li>

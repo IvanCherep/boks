@@ -88,7 +88,7 @@
 .aag-state{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:#ece8dc}
 .aag-state--awaiting{background:#fbefe9;color:#a8382a}
 .aag-state--reported{background:#c44a32;color:#fff}
-.aag-state--paid,.aag-state--free{background:#e3efe2;color:#2f5d2b}
+.aag-state--paid,.aag-state--free,.aag-state--waived{background:#e3efe2;color:#2f5d2b}
 .aag-team{margin-top:10px;display:grid;gap:8px}
 .aag-team__form{display:grid;gap:10px;max-width:520px}
 .aag-details{display:grid;gap:12px;margin:0 0 16px;padding:14px;border:1px solid #e4dfd1;border-radius:10px;background:#fffdf8}
@@ -112,3 +112,11 @@
 .aseed-form{display:grid;gap:10px;padding-top:4px}
 .aseed-form h3{margin:0;font-size:15px}
 .aseed-text{width:100%;border:1px solid #d7d2c3;border-radius:8px;background:#fffdf8;padding:12px;font:inherit;font-size:15px;line-height:1.5;color:inherit;resize:vertical}
+
+/* Studio «Условия автора» (components/boks/admin/author-billing.tsx). */
+.abil{display:grid;gap:10px}
+.abil-choice{display:grid;gap:8px}
+.abil-choice label{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;padding:10px 12px;border:1px solid #e4dfd1;border-radius:10px;background:#fffdf8;cursor:pointer;font-size:14px;line-height:1.45}
+.abil-choice label:has(input:checked){border-color:#c9a99f;background:#fbf3ee}
+.abil-choice input{margin-top:3px;accent-color:#c44a32}
+.abil-choice small{display:block;color:#65685e;font-size:12px}

@@ -2,6 +2,7 @@
 
 import { SpaceVerified } from "@/components/boks/admin/space-verified";
 import { SpaceSeedsPanel } from "@/components/boks/admin/author-seeds";
+import { SpaceBillingPanel } from "@/components/boks/admin/author-billing";
 import { AccountFinder, InvitePlanFields, onNewAuthor, SpaceAgreementPanel, type NewAuthorPrefill } from "@/components/boks/admin/author-agreement";
 import "@/app/author-agreement.css";
 import { planName, type AuthorPlan } from "@/lib/boks/author/agreement";
@@ -621,6 +622,7 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
             <HistoryPanel t={t} space={space} />
           )}
           {space && space.kind === "author" && space.status !== "merged" && <SpaceVerified spaceId={space.id} />}
+          {space && space.kind === "author" && space.status !== "merged" && <SpaceBillingPanel key={`${space.id}:${space.owned}`} spaceId={space.id} />}
           {space && space.kind === "author" && space.owned && <SpaceAgreementPanel spaceId={space.id} />}
           <ProfileForm
             t={t}

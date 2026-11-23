@@ -91,6 +91,29 @@ Not covered: an author who already owns a team-made page (a special
 project) cannot be given a paid contract from Studio yet (the invitation
 needs a page without an owner).
 
+## Who pays
+
+`20261123190000_boks_author_billing.sql`, `components/boks/admin/author-billing.tsx`.
+The way in serves two kinds of authors, and the page says which
+(`author_spaces.billing`), set in Studio → the page → «Условия автора»:
+
+- `partner`, **наш автор** (default): partners brought in through the team's
+  contacts, special projects, and every author from before the online
+  contract. No payment step, no yearly limit in the Workshop
+  (`get_my_workshop` gives `perYear: null`); the team decides how many
+  Series go out together by how many it accepts into work.
+- `paid`, **по договору**: the contract's tariff (`author_agreements.plan`,
+  `price_rub`; new tariffs need no change to this). Accepting an invitation
+  with a paid tariff makes the page paid; one without a tariff, or a free
+  one, keeps it ours.
+
+Switching a paid author to ours waives the payment on the contract
+(`pay_state = 'waived'`: the author sees «Без оплаты, по договорённости с
+редакцией», the year starts that day). Switching back asks for it again with
+a fresh 30 days. An author with no paid contract cannot be made paid from
+here yet: they need an offer on a paid tariff, and an invitation is only for
+a page without an owner.
+
 ## The texts
 
 `docs/legal/author/{offer,processing,distribution}.md`, in a small markdown

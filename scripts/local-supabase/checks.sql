@@ -2701,7 +2701,7 @@ begin
     'a piece without Workshop meta comes with the defaults');
   perform public.boks_assert(
     (v_ws -> 'author' ->> 'userId') = v_author::text and (v_ws -> 'author' ->> 'pageId') is not null
-      and (v_ws -> 'plan' ->> 'perYear')::int = 30 and (v_ws -> 'plan' ->> 'usedThisYear')::int >= 1
+      and v_ws -> 'plan' -> 'perYear' = 'null'::jsonb and (v_ws -> 'plan' ->> 'usedThisYear')::int >= 1
       and not exists (select 1 from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_foreign::text)
       and char_length((select p ->> 'text' from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_long::text)) = public.boks_max_text_characters(),
     'get_my_workshop: the author, the plan, the author''s own pieces only, the whole text');
@@ -6165,6 +6165,101 @@ begin
   v_answer := public.accept_author_invite_with_terms(v_token, null, v_terms || jsonb_build_object('legalName', 'Путь Беата Ивановна'));
   perform public.boks_assert((v_answer ->> 'existingPage')::boolean and public.boks_publishes_directly(v_old), 'after the invitation the own page opens the Workshop');
   perform public.boks_assert(jsonb_array_length(public.get_my_workshop() -> 'pieces') = 1, 'with the team''s text in it');
+  perform public.boks_test_logout();
+end $$;
+rollback;
+
+-- Who pays (20261123190000): our authors (partners, special projects, all
+-- from before) have no payment step and no yearly limit; a paid tariff makes
+-- an author paid; the team switches either way in Studio.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f2000-0000-4000-8000-000000000001', 'pays-editor@boks.test', false),
+  ('0f0f2000-0000-4000-8000-000000000002', 'pays-partner@boks.test', false),
+  ('0f0f2000-0000-4000-8000-000000000003', 'pays-paid@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f2000-0000-4000-8000-000000000001', 'pays_editor', 'admin', now(), 'v1'),
+  ('0f0f2000-0000-4000-8000-000000000002', 'pays_partner', 'reader', now(), 'v1'),
+  ('0f0f2000-0000-4000-8000-000000000003', 'pays_paid', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_editor uuid := '0f0f2000-0000-4000-8000-000000000001';
+  v_partner uuid := '0f0f2000-0000-4000-8000-000000000002';
+  v_paid uuid := '0f0f2000-0000-4000-8000-000000000003';
+  v_space uuid;
+  v_paid_space uuid;
+  v_seed jsonb;
+  v_bok uuid;
+  v_paid_bok uuid;
+  v_token text;
+  v_answer jsonb;
+  v_error text;
+  v_terms jsonb := jsonb_build_object(
+    'legalName', 'Платная Анна Сергеевна',
+    'author_offer', (public.boks_legal_current('author_offer')).version,
+    'author_pd_processing', (public.boks_legal_current('author_pd_processing')).version,
+    'author_pd_distribution', (public.boks_legal_current('author_pd_distribution')).version);
+begin
+  perform public.boks_assert(
+    (select column_default from information_schema.columns where table_schema = 'public' and table_name = 'author_spaces' and column_name = 'billing') like '''partner''%',
+    'an author page is ours unless the team says otherwise');
+
+  -- A partner: invitation without a tariff, a text with a recording, Series work at once.
+  perform public.boks_test_login(v_editor);
+  v_space := (public.studio_save_author_space(null, 'author', 'Партнёр Путь', 'pays_partner_page', null, 0) ->> 'id')::uuid;
+  v_seed := public.studio_save_space_seed(v_space, null, 'Партнёрский', 'Строка партнёра', 'poem');
+  v_bok := (v_seed ->> 'id')::uuid;
+  perform public.studio_set_space_seed_voice(v_bok, jsonb_build_object('file', 'take-1.mp3', 'durationMs', 9000, 'source', 'upload',
+    'fingerprint', public.boks_voice_fingerprint('Строка партнёра')));
+  v_token := public.studio_issue_author_invite(v_space, 'pays-partner@boks.test') ->> 'token';
+  perform public.boks_test_login(v_partner);
+  perform public.boks_assert(public.accept_author_invite(v_token) ->> 'state' = 'accepted', 'a partner accepts an invitation without an offer');
+  perform public.boks_assert((select billing from public.author_spaces where id = v_space) = 'partner' and public.get_my_author_agreement() is null, 'a partner is ours, with no contract');
+  perform public.boks_assert(public.get_my_workshop() -> 'plan' -> 'perYear' = 'null'::jsonb and public.get_my_workshop() -> 'author' ->> 'billing' = 'partner', 'a partner has no yearly limit in the Workshop');
+  perform public.save_my_bok(v_bok, 'Партнёрский', 'Строка партнёра', true, null, true);
+  perform public.boks_test_login(v_editor);
+  perform public.boks_assert(public.studio_accept_bok(v_bok) ->> 'state' = 'accepted', 'a partner''s piece goes into work with no payment');
+  begin
+    perform public.studio_set_space_billing(v_space, 'paid');
+    perform public.boks_assert(false, 'a partner without a contract cannot be made paid');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'A paid author needs a contract%', 'a partner without a contract cannot be made paid: ' || v_error);
+  end;
+
+  -- A paid author: the tariff makes the page paid; the team waives and asks again.
+  v_paid_space := (public.studio_save_author_space(null, 'author', 'Платная Путь', 'pays_paid_page', null, 0) ->> 'id')::uuid;
+  v_seed := public.studio_save_space_seed(v_paid_space, null, 'Платный', 'Строка платная', 'poem');
+  v_paid_bok := (v_seed ->> 'id')::uuid;
+  perform public.studio_set_space_seed_voice(v_paid_bok, jsonb_build_object('file', 'take-1.mp3', 'durationMs', 9000, 'source', 'upload',
+    'fingerprint', public.boks_voice_fingerprint('Строка платная')));
+  v_token := public.studio_issue_author_invite(v_paid_space, 'pays-paid@boks.test', 'page') ->> 'token';
+  perform public.boks_test_login(v_paid);
+  perform public.accept_author_invite_with_terms(v_token, null, v_terms);
+  perform public.boks_assert((select billing from public.author_spaces where id = v_paid_space) = 'paid', 'a paid tariff makes the author paid');
+  perform public.boks_assert((public.get_my_workshop() -> 'plan' ->> 'perYear')::integer = 30, 'a paid author has the tariff''s yearly limit');
+  perform public.save_my_bok(v_paid_bok, 'Платный', 'Строка платная', true, null, true);
+
+  perform public.boks_test_login(v_editor);
+  perform public.boks_assert(public.studio_set_space_billing(v_paid_space, 'partner') ->> 'billing' = 'partner', 'the team makes a paid author ours');
+  perform public.boks_assert((select pay_state from public.author_agreements where user_id = v_paid) = 'waived' and not public.boks_author_unpaid(v_paid), 'and the contract''s payment is waived');
+  perform public.boks_assert(public.studio_accept_bok(v_paid_bok) ->> 'state' = 'accepted', 'so their piece goes into work');
+  perform public.boks_test_login(v_paid);
+  perform public.boks_assert(public.get_my_author_agreement() ->> 'payState' = 'waived' and public.get_my_author_agreement() -> 'payment' is null, 'the author is not asked to pay');
+  perform public.boks_test_login(v_editor);
+  perform public.studio_set_space_billing(v_paid_space, 'paid');
+  perform public.boks_assert((select pay_state = 'awaiting' and pay_due > current_date from public.author_agreements where user_id = v_paid), 'switching back asks for the payment again');
+  perform public.boks_assert(public.boks_author_unpaid(v_paid), 'and holds the author until it comes');
+
+  perform public.boks_test_login(v_partner);
+  begin
+    perform public.studio_set_space_billing(v_space, 'partner');
+    perform public.boks_assert(false, 'an author cannot set their own terms');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error not like 'A paid author%', 'an author cannot set their own terms: ' || v_error);
+  end;
   perform public.boks_test_logout();
 end $$;
 rollback;
