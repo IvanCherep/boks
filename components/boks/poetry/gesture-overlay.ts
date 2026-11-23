@@ -192,13 +192,16 @@ export function createOverlayLayer(
     const [r, g, b] = flare.colour ?? [190, 255, 120];
     const tint = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
     const hot = (alpha: number) => `rgba(250, 255, 225, ${alpha.toFixed(3)})`;
-    // A slow breath, and, as it gathers, a quicker throb under it.
+    const strength = flare.strength ?? 1;
+    // A slow breath, and, as it gathers, a quicker throb under it; every few
+    // seconds a surge, a flash that swells and falls back.
     const breath = still ? 1 : 1 + 0.14 * Math.sin(seconds * 1.9) + 0.07 * Math.sin(seconds * 4.7 + 1.3) + 0.1 * amount * Math.sin(seconds * 9.1);
+    const surge = still ? 0 : amount * Math.pow(Math.max(0, Math.sin(seconds * 1.35)), 10);
     ctx!.save();
     ctx!.globalCompositeOperation = "lighter";
-    glowDot(c.x, c.y, reach * (1.5 + 0.9 * amount) * breath, tint, 0.12 * amount);
-    glowDot(c.x, c.y, reach * (0.45 + 0.55 * amount) * breath, tint, 0.34 * amount * breath);
-    glowDot(c.x, c.y, reach * (0.08 + 0.12 * amount), hot, Math.min(1, 0.9 * amount * breath));
+    glowDot(c.x, c.y, reach * (1.8 + 1.2 * amount + 0.8 * surge) * breath, tint, Math.min(1, strength * (0.2 * amount + 0.12 * surge)));
+    glowDot(c.x, c.y, reach * (0.45 + 0.6 * amount + 0.3 * surge) * breath, tint, Math.min(1, strength * (0.5 * amount * breath + 0.3 * surge)));
+    glowDot(c.x, c.y, reach * (0.1 + 0.16 * amount + 0.08 * surge), hot, Math.min(1, strength * amount * breath));
     ctx!.restore();
   }
 

@@ -225,6 +225,8 @@ export type FlareAmbience = {
   colour?: [number, number, number];
   delayMs?: number;
   growMs: number;
+  /** How bright at full strength; 1 by default. */
+  strength?: number;
 };
 
 /** How far a sky flare has gathered, 0..1, eased: nothing before its delay. */
