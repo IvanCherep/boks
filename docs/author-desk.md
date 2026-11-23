@@ -19,7 +19,7 @@ Rules from the owners (2026-11-21):
   can describe in words what is wrong.
 - **No AI in the desk**, neither ours nor the author's, for now. The desk keeps
   things in order; it does not write, suggest or check.
-- **The standard plan: at most one Boks Series a week and 50 a year per
+- **The standard plan: at most one Boks Series a week and 30 a year (50 until 2026-11-23) per
   author.** The editors make them fully themselves; the author sets the
   order of the free places, and the editors can fix places (a Series made in
   advance) that the author cannot move.
@@ -87,14 +87,14 @@ Both are in the text's history and the editors' Studio view.
 
 The desk's home shows the queue as its own block, under any finished Series:
 
-- **The allowance**: "40 из 50 серий в 2026 году · осталось 10", and the plan's
+- **The allowance**: "20 из 30 серий в 2026 году · осталось 10", and the plan's
   rule under it.
 - **This week**: the work the editors are making. It cannot be moved.
 - **Corrections**: a Series back with the editors for up to a week; the queue
   does not wait for it.
 - **The queue**: every other voiced work, each with its planned week
   (`plannedWeeks`: one a week from the first free week; a year that has used
-  its 50 is skipped, and the work is marked "в счёт 2027 года").
+  its 30 is skipped, and the work is marked "в счёт 2027 года").
 - **Fixed places** (lock, gold): the editors fixed them, say because the
   Series is already made in advance. The author cannot drag, shift or remove
   them; dragging and ↑ ↓ move the free works around them (`moveInQueue`,
@@ -129,7 +129,7 @@ the server refuses pictures and builds from a non-admin.
 
 `/author/desk#studio` is the editors' view of one author (the demo bar at the
 top switches between the two views):
-- the author, the plan, "40/50 серий", how many works are queued, without a
+- the author, the plan, "20/30 серий", how many works are queued, without a
   voice, and in the sandbox (a count only: thoughts, materials and drafts are
   the author's own);
 - the rules in one paragraph;

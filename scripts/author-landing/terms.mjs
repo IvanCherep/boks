@@ -32,7 +32,7 @@ let js = fs.readFileSync(jsFile, "utf8");
 const studio = {
   ru: [
     "Авторская страница tryboks.com/@имя и кабинет автора",
-    "5 Boks Series на старте, дальше до 50 выпусков за год",
+    "5 Boks Series на старте, дальше до 30 выпусков за год",
     "Ваш голос: запись с суфлёром в кабинете или свой файл",
     "Иллюстрации и звук к каждому выпуску делает редакция",
     "Готовый выпуск вы смотрите первым и публикуете сами",
@@ -41,7 +41,7 @@ const studio = {
   ],
   en: [
     "An author’s page at tryboks.com/@name and an author’s studio",
-    "5 Boks Series to start with, then up to 50 editions a year",
+    "5 Boks Series to start with, then up to 30 editions a year",
     "Your voice: record with the teleprompter in the studio or send your own file",
     "The editors make the illustrations and sound for every edition",
     "You see each edition first and publish it yourself",

@@ -2701,7 +2701,7 @@ begin
     'a piece without Workshop meta comes with the defaults');
   perform public.boks_assert(
     (v_ws -> 'author' ->> 'userId') = v_author::text and (v_ws -> 'author' ->> 'pageId') is not null
-      and (v_ws -> 'plan' ->> 'perYear')::int = 50 and (v_ws -> 'plan' ->> 'usedThisYear')::int >= 1
+      and (v_ws -> 'plan' ->> 'perYear')::int = 30 and (v_ws -> 'plan' ->> 'usedThisYear')::int >= 1
       and not exists (select 1 from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_foreign::text)
       and char_length((select p ->> 'text' from jsonb_array_elements(v_ws -> 'pieces') p where p ->> 'id' = v_long::text)) = public.boks_max_text_characters(),
     'get_my_workshop: the author, the plan, the author''s own pieces only, the whole text');

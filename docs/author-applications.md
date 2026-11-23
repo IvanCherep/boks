@@ -17,7 +17,7 @@ The offers follow the author contract (v7, 2026-11-22); the page gets them from
 | Offer (form value → `offer`) | Price | |
 |---|---|---|
 | Совместный запуск (`launch` → `launch`) | free | everything in «Кабинет автора»; a link to every published Series in the author's social media, and the posts about boks reach 30 000 views in total within the first 3 months; open to authors with 500 followers or more, each application considered individually |
-| Кабинет автора (`author` → `page`), in the middle | 30 000 ₽ a year | page and cabinet, 5 starting Boks Series guaranteed, then more as the editors can (about one a week, up to 50 a year in all) in the author's voice, pictures and sound by the editors, the author publishes; condition: a link to every published Series in the author's social media |
+| Кабинет автора (`author` → `page`), in the middle | 30 000 ₽ a year | page and cabinet, 5 starting Boks Series guaranteed, then more as the editors can (at most one a week, up to 30 a year in all) in the author's voice, pictures and sound by the editors, the author publishes; condition: a link to every published Series in the author's social media |
 | Кабинет автора без продвижения (`nopromo` → `page_no_promotion`) | 500 000 ₽ a year | the same without the condition; no card of its own: a «?» on the condition of «Кабинет автора» explains why we ask authors to share and offers this plan (`scripts/author-landing/why-share.js`, `.css`); its radio in the form is hidden until chosen there |
 
 `series` (five Series for 10 000 ₽) is no longer offered; old applications keep it.

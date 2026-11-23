@@ -47,7 +47,7 @@ order.
 ```
 {
   "author": { "userId", "handle", "name", "pageId", "pageStatus" },
-  "plan":   { "perYear": 50, "perWeek": 1, "usedThisYear": <series accepted or later this calendar year> },
+  "plan":   { "perYear": 30, "perWeek": 1, "usedThisYear": <series accepted or later this calendar year> },
   "pieces": [
     {
       "id", "title", "text", "status",          -- reels.status

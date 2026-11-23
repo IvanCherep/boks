@@ -9,7 +9,7 @@
  *  2. **Голос** - every bok goes out with the author's voice, recorded on the
  *     teleprompter or uploaded as a file.
  *  3. **Серия** - the editors draw the pictures and make the Series, up to
- *     50 a year and about one a week, in the author's order; the author
+ *     30 a year and at most one a week, in the author's order; the author
  *     watches it and publishes it.
  *
  * No AI anywhere: the workshop only keeps things in order.
@@ -167,7 +167,7 @@ export function pinsByPart(materials: Material[]) {
 /* The release queue ------------------------------------------------- */
 
 /** The standard plan: at most one Boks Series a week, at most fifty a year. */
-export const plan = { perWeek: 1, perYear: 50 } as const;
+export const plan = { perWeek: 1, perYear: 30 } as const;
 
 /** Corrections after the author has watched a Series take up to this many days. */
 export const revisionDays = 7;
