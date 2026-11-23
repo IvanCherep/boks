@@ -5,6 +5,8 @@ Feeds, each with its own watermark in $BOKS_OPS_STATE:
   feedback      every note in Studio -> Feedback, with the page or step it came from
   applications  every application from the page for authors (docs/author-applications.md)
   moderation    every work an author sends for review (not the team's own imports)
+                a piece sent with the author's voice for a Boks Series gets its own
+                message: voice length, place in the author's queue, what the editors do next
   authors       what an invited author does with their page: opens the invitation,
                 accepts, writes, asks for changes, publishes, hides
   refused       a bok Yandex's content filter would not label for «Что почитать»:
@@ -66,7 +68,17 @@ FEEDS = {
     "moderation": """
         select json_build_object('at', to_char(r.submitted_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
           'title', r.title, 'handle', p.handle, 'words', array_length(regexp_split_to_array(btrim(coalesce(r.text, '')), '\\s+'), 1),
-          'waiting', (select count(*) from public.reels w where w.status = 'pending_review'))
+          'waiting', (select count(*) from public.reels w where w.status = 'pending_review'),
+          'series', r.cover_requested,
+          'name', (select s.name from public.author_spaces s
+                    where s.owner_user_id = r.author_user_id and s.kind = 'author' and s.status <> 'merged'
+                    order by (s.status = 'published') desc, s.created_at limit 1),
+          'voiceMs', (select v.duration_ms from public.bok_voices v where v.bok_id = r.id),
+          'voiceSource', (select v.source from public.bok_voices v where v.bok_id = r.id),
+          'queuePos', (select b.queue_pos from public.bok_workshop b where b.bok_id = r.id),
+          'queue', (select count(*) from public.reels q where q.author_user_id = r.author_user_id
+                     and q.status = 'pending_review' and q.cover_requested),
+          'seriesWaiting', (select count(*) from public.reels w where w.status = 'pending_review' and w.cover_requested))
         from public.reels r left join public.user_profiles p on p.user_id = r.author_user_id
         where r.status = 'pending_review' and r.submitted_at > :'since'::timestamptz
           and not coalesce(public.is_boks_admin(r.author_user_id), false)
@@ -191,8 +203,27 @@ def message(feed, row):
                 f"«Что почитать» по настроению. Нужно поставить настроение вручную (грустное / весёлое / на подумать).\n"
                 f"{link}\nbok id: <code>{esc(row.get('id'))}</code>")
     words = f", {row['words']} слов" if row.get("words") else ""
+    if row.get("series"):
+        return series_sent(row, words)
     return (f"📝 <b>На модерацию</b>: «{esc(row.get('title'), 160)}» от {who(row)}{words}\n"
             f"Ждут проверки: {row.get('waiting')}. Studio → Модерация: {STUDIO}")
+
+
+def series_sent(row, words):
+    """A piece sent from the Workshop or My page with the author's voice: the editors check it,
+    accept it into work, and make the pictures and the Boks Series."""
+    author = f"{esc(row['name'], 120)} ({who(row)})" if row.get("name") else who(row)
+    lines = [f"🎙 <b>В работу на Boks Series</b>: «{esc(row.get('title'), 160)}»",
+             f"от {author}{words}"]
+    if row.get("voiceMs"):
+        seconds = round(row["voiceMs"] / 1000)
+        how = "свой файл" if row.get("voiceSource") == "upload" else "суфлёр"
+        lines.append(f"Голос: {seconds // 60}:{seconds % 60:02d} ({how})")
+    if row.get("queuePos"):
+        lines.append(f"В очереди автора: {row['queuePos']} из {row.get('queue') or row['queuePos']}")
+    lines.append("Нужно: проверить текст и запись → «Принять в работу» → картинки и сборка Boks Series.")
+    lines.append(f"Ждут редакции на Series: {row.get('seriesWaiting')}. Studio → Модерация: {STUDIO}")
+    return "\n".join(lines)
 
 
 def query(sql, since):
