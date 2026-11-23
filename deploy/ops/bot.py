@@ -208,20 +208,31 @@ acc_author as (select distinct acc_dev.d, b.space_id, acc_dev.id from acc_dev
                join public.recommendation_events e on e.visitor_id = acc_dev.visitor_id and e.event_type = 'start'
                  and e.created_at < ((acc_dev.d + 1)::timestamp at time zone '{TZ}')
                join author_boks b on b.reel_id = e.reel_id join picked a on a.space_id = b.space_id
-               where acc_dev.id is distinct from a.owner_user_id)
+               where acc_dev.id is distinct from a.owner_user_id),
+-- Each figure is counted once per author and day: subqueries over ev for every
+-- author x day ran past the 20 s limit once there were several authors.
+per_day as (select ev.space_id, ev.d,
+              count(distinct ev.visitor_id) as people,
+              count(distinct ru.visitor_id) as ru_people,
+              count(distinct ev.visitor_id) filter (where ev.event_type = 'start') as starts,
+              count(*) filter (where ev.event_type = 'complete') as completes
+            from ev left join ru on ru.visitor_id = ev.visitor_id group by 1, 2),
+per_period as (select space_id, count(distinct visitor_id) as people from ev group by 1),
+acc_day as (select space_id, d, count(*) as n from acc_author group by 1, 2),
+likes_day as (select b.space_id, (l.created_at at time zone '{TZ}')::date as d, count(*) as n
+              from public.likes l join author_boks b on b.reel_id = l.reel_id join picked a on a.space_id = b.space_id
+              where l.created_at >= (select t from lo) and l.user_id not in (select id from team_users)
+                and l.user_id is distinct from a.owner_user_id group by 1, 2)
 select a.handle, a.name, to_char(days.d, 'DD.MM'),
-  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id and ev.d = days.d),
-  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id and ev.d = days.d and visitor_id in (select visitor_id from ru)),
-  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id and ev.d = days.d and event_type = 'start'),
-  (select count(*) from ev where ev.space_id = a.space_id and ev.d = days.d and event_type = 'complete'),
-  coalesce((select round(minutes) from reading where reading.space_id = a.space_id and reading.d = days.d), 0),
-  (select count(*) from acc_author where acc_author.space_id = a.space_id and acc_author.d = days.d),
-  (select count(*) from public.likes l join author_boks b on b.reel_id = l.reel_id
-     where b.space_id = a.space_id and l.user_id not in (select id from team_users) and l.user_id is distinct from a.owner_user_id
-       and (l.created_at at time zone '{TZ}')::date = days.d),
-  (select count(distinct visitor_id) from ev where ev.space_id = a.space_id)
+  coalesce(pd.people, 0), coalesce(pd.ru_people, 0), coalesce(pd.starts, 0), coalesce(pd.completes, 0),
+  coalesce(round(r.minutes), 0), coalesce(ad.n, 0), coalesce(ld.n, 0), coalesce(pp.people, 0)
 from picked a cross join days
-order by (select count(distinct visitor_id) from ev where ev.space_id = a.space_id) desc, a.name, days.d;
+left join per_day pd on pd.space_id = a.space_id and pd.d = days.d
+left join reading r on r.space_id = a.space_id and r.d = days.d
+left join acc_day ad on ad.space_id = a.space_id and ad.d = days.d
+left join likes_day ld on ld.space_id = a.space_id and ld.d = days.d
+left join per_period pp on pp.space_id = a.space_id
+order by coalesce(pp.people, 0) desc, a.name, days.d;
 """)
 
 
