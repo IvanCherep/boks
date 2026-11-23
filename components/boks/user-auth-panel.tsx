@@ -69,14 +69,14 @@ import { currentUiLanguage, useMessages } from "./ui-language";
 /** The guest's account screens: the limit and the reminders' way in (`lib/boks/daily/days.ts`). */
 const guestGateMessages = defineMessages(
   {
-    limitReached: (limit: number) => `You have read ${limit} boks without an account. Create one to read on: today's line and Guess the author are waiting.`,
+    limitReached: (limit: number) => `You have read ${limit} boks without an account. Sign in or create one to read on: today's line and Guess the author are waiting.`,
     booksLeft: (left: number) => `You can read ${left} more ${left === 1 ? "bok" : "boks"} without an account. With one: a line a day, Guess the author and your reading history.`,
     boksRead: (count: number) => `${count === 1 ? "bok" : "boks"} read.`,
     readOn: "Read on with an account.",
   },
   {
     ru: {
-      limitReached: (limit: number) => `Вы прочитали ${limit} ${plural("ru", limit, { one: "бок", few: "бока", many: "боков", other: "бока" })} без аккаунта. Создайте аккаунт, чтобы читать дальше: строка дня и «Угадай автора» уже ждут.`,
+      limitReached: (limit: number) => `Вы прочитали ${limit} ${plural("ru", limit, { one: "бок", few: "бока", many: "боков", other: "бока" })} без аккаунта. Войдите или создайте аккаунт, чтобы читать дальше: строка дня и «Угадай автора» уже ждут.`,
       booksLeft: (left: number) => `Без аккаунта можно прочитать ещё ${left} ${plural("ru", left, { one: "бок", few: "бока", many: "боков", other: "бока" })}. С аккаунтом: строка дня, «Угадай автора» и ваша история чтения.`,
       boksRead: (count: number) => `${plural("ru", count, { one: "бок прочитан", few: "бока прочитано", many: "боков прочитано", other: "бока прочитано" })}.`,
       readOn: "Дальше с аккаунтом.",

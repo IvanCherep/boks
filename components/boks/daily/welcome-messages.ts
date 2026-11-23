@@ -33,7 +33,7 @@ export const welcomeMessages = defineMessages(
     perkGameLead: "one text, three names",
     perkDays: "My days",
     perkDaysLead: "what you read, on every device",
-    createAccount: "Create an account",
+    createAccount: "Create an account or sign in",
     readWithout: "Read without an account",
     guestAllowance: (limit: number) => `${limit} boks without an account · email only`,
     // Guest reminders
@@ -87,7 +87,7 @@ export const welcomeMessages = defineMessages(
       perkGameLead: "один текст, три имени",
       perkDays: "Мои дни",
       perkDaysLead: "прочитанное на всех устройствах",
-      createAccount: "Создать аккаунт",
+      createAccount: "Создать аккаунт или войти",
       readWithout: "Читать без аккаунта",
       guestAllowance: (limit: number) => `${limit} ${ruBoks(limit)} без аккаунта · нужна только почта`,
       guestProgress: (count: number, limit: number) => `${count} из ${limit} ${ruBoks(limit)} без аккаунта`,
