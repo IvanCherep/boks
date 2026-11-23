@@ -3,10 +3,12 @@ import {
   autoFinger,
   coverTransform,
   flameLean,
+  flareAmount,
   flingFrom,
   imageToScreen,
   isWarpGesture,
   lightNear,
+  type FlareAmbience,
   type ImagePoint,
   type PoemGesture,
   type SceneAmbience,
@@ -176,6 +178,27 @@ export function createOverlayLayer(
     ctx!.globalCompositeOperation = "lighter";
     glowDot(c.x + flicker * 4, c.y, reach * (1 + flicker), gold, 0.16 + flicker);
     glowDot(c.x, c.y, reach * 0.18, gold, 0.35 + flicker * 2);
+    ctx!.restore();
+  }
+
+  // ----------------------------------------------------------- sky flare
+  function skyFlare(seconds: number, ms: number | undefined, still: boolean, flare: FlareAmbience) {
+    const into = ms === undefined ? flare.growMs : ms - (scene.startMs ?? 0);
+    // Reduced motion: no growing and no breathing, the light simply there.
+    const amount = still ? 0.7 : flareAmount(flare, into);
+    if (amount <= 0) return;
+    const c = at(flare.at);
+    const reach = (flare.radius * width) / transform.scaleX;
+    const [r, g, b] = flare.colour ?? [190, 255, 120];
+    const tint = (alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+    const hot = (alpha: number) => `rgba(250, 255, 225, ${alpha.toFixed(3)})`;
+    // A slow breath, and, as it gathers, a quicker throb under it.
+    const breath = still ? 1 : 1 + 0.14 * Math.sin(seconds * 1.9) + 0.07 * Math.sin(seconds * 4.7 + 1.3) + 0.1 * amount * Math.sin(seconds * 9.1);
+    ctx!.save();
+    ctx!.globalCompositeOperation = "lighter";
+    glowDot(c.x, c.y, reach * (1.5 + 0.9 * amount) * breath, tint, 0.12 * amount);
+    glowDot(c.x, c.y, reach * (0.45 + 0.55 * amount) * breath, tint, 0.34 * amount * breath);
+    glowDot(c.x, c.y, reach * (0.08 + 0.12 * amount), hot, Math.min(1, 0.9 * amount * breath));
     ctx!.restore();
   }
 
@@ -597,6 +620,7 @@ export function createOverlayLayer(
     if (ambience?.effect === "returning-song" && !frame.still) returningSong(now, ambience.from, ambience.to, input);
     if (ambience?.effect === "falling-leaves" && !frame.still) leaves(frame.time, ambience.count, ambience.sun);
     if (ambience?.effect === "candle-glow") candleGlow(frame.time, ambience.at, ambience.radius);
+    if (ambience?.effect === "sky-flare") skyFlare(frame.time, frame.ms, frame.still, ambience);
     if (ambience?.effect === "snow" && !frame.still) snow(frame.time, ambience.count, ambience.wind, ambience.light, null, 0, elapsed);
     if (gesture?.kind === "attract") {
       // Nothing is let go of here: the swarm or the snow follows the finger itself.

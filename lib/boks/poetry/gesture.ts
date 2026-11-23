@@ -199,6 +199,7 @@ export type SceneAmbience =
   | LeavesAmbience
   | SnowAmbience
   | CandleAmbience
+  | FlareAmbience
   | ShadowAmbience;
 
 /** Leaves coming down through the frame, and a low sun that slowly shifts. */
@@ -209,6 +210,28 @@ export type SnowAmbience = { effect: "snow"; count: number; wind: number; light?
 
 /** The light a painted candle throws, never quite still. */
 export type CandleAmbience = { effect: "candle-glow"; at: ImagePoint; radius: number };
+
+/**
+ * A light kindling in a painted sky: from nothing it gathers into a bright
+ * centre with a breathing halo, by the recording's clock - something about to
+ * arrive. `delayMs` after the scene begins it starts, and takes `growMs` to
+ * reach full strength. `colour` is its halo, as RGB; the centre is near white.
+ */
+export type FlareAmbience = {
+  effect: "sky-flare";
+  at: ImagePoint;
+  /** The halo at full strength, in image widths. */
+  radius: number;
+  colour?: [number, number, number];
+  delayMs?: number;
+  growMs: number;
+};
+
+/** How far a sky flare has gathered, 0..1, eased: nothing before its delay. */
+export function flareAmount(flare: Pick<FlareAmbience, "delayMs" | "growMs">, msIntoScene: number) {
+  const t = Math.max(0, Math.min(1, (msIntoScene - (flare.delayMs ?? 0)) / Math.max(1, flare.growMs)));
+  return t * t * (3 - 2 * t);
+}
 
 /**
  * A shadow that comes out of moving branches. Branch shadows sway across the

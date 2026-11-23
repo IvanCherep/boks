@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  flareAmount,
   approach,
   coverTransform,
   dragLean,
@@ -238,5 +239,24 @@ describe("screenToImage", () => {
     const back = screenToImage(imageToScreen({ x: 0.62, y: 0.3 }, t), t);
     expect(back.x).toBeCloseTo(0.62, 6);
     expect(back.y).toBeCloseTo(0.3, 6);
+  });
+});
+
+describe("a light kindling in the sky", () => {
+  const flare = { delayMs: 2000, growMs: 10000 };
+  it("is nothing before its delay and whole after it has grown", () => {
+    expect(flareAmount(flare, 0)).toBe(0);
+    expect(flareAmount(flare, 2000)).toBe(0);
+    expect(flareAmount(flare, 12000)).toBe(1);
+    expect(flareAmount(flare, 60000)).toBe(1);
+  });
+  it("only grows on the way", () => {
+    let previous = 0;
+    for (let ms = 2000; ms <= 12000; ms += 250) {
+      const amount = flareAmount(flare, ms);
+      expect(amount).toBeGreaterThanOrEqual(previous);
+      previous = amount;
+    }
+    expect(flareAmount(flare, 7000)).toBeCloseTo(0.5, 5);
   });
 });
