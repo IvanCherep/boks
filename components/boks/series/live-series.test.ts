@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { liveSeriesManifestFor, liveSeriesPieceFor, readLiveSeries, setLiveSeries } from "./live-series";
-import { activeCollections, arrangeSeriesShelf, liveCollections, publishedSeriesShelf, seriesCollections, seriesPieceFor, seriesPieces, shelfSections, tokenPrint } from "./series-catalogue";
+import { activeCollections, arrangeSeriesShelf, liveCollections, publishedSeriesShelf, seriesCollections, seriesPieceFor, seriesPieces, seriesShelfOrder, seriesShelfPrints, shelfSections, tokenPrint } from "./series-catalogue";
 import { poemManifestFor } from "@/components/boks/poetry/poems";
 
 const bokA = "11111111-1111-4111-8111-111111111111";
@@ -140,5 +140,14 @@ describe("live Series sections", () => {
     expect(order(renamed)).toEqual(["author-dmitry-v", "prokhorov", "malyo-subbotina", "author-evgeny", "author-kkomarov", "author-ksenia-avgust"]);
     // A new author nobody listed still opens the shelf.
     expect(order([{ handle: "newcomer", name: "Новый", pieces: [piece(8, "Новое")] }, ...renamed])[0]).toBe("author-newcomer");
+  });
+  it("puts the next listed author after Август, by the shelf's own fingerprints", () => {
+    // The real list: a section whose Series folders match an author's prints takes that author's place.
+    const sorokin = seriesShelfPrints["author-sorokin"];
+    const avgustAt = seriesShelfOrder.indexOf("author-avgust");
+    expect(avgustAt).toBeGreaterThanOrEqual(0);
+    expect(seriesShelfOrder[avgustAt + 1]).toBe("author-sorokin");
+    expect(sorokin).toHaveLength(5);
+    expect(new Set(Object.values(seriesShelfPrints).flat()).size).toBe(Object.values(seriesShelfPrints).flat().length);
   });
 });

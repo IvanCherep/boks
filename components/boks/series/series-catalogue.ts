@@ -831,6 +831,7 @@ export const seriesShelfOrder: readonly string[] = [
   "author-demidov",
   "author-komarov",
   "author-avgust",
+  "author-sorokin",
 ];
 
 /**
@@ -854,6 +855,7 @@ export const seriesShelfPrints: Readonly<Record<string, readonly string[]>> = {
   "author-demidov": ["8585f0f1", "2f0b9124", "6547e0c2", "dbec56b6"],
   "author-komarov": ["ffb2cbd3", "05d2debc", "acfa3075", "2c827b14", "73367c1a"],
   "author-avgust": ["5dfe29b4", "3c689eb1", "7c0a24db", "15e26909", "67e80ca0"],
+  "author-sorokin": ["9a080f3c", "d756d749", "ee1335b7", "88c47ad8", "70ac1e58"],
 };
 
 /** The shelf's sections: live ones (`liveCollections`) and today's in code, in `seriesShelfOrder`. */
