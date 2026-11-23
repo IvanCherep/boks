@@ -14,7 +14,7 @@ export async function voiceRoute(request: Request, rawBokId: string, write: bool
   const who = await voiceCaller(request, bokId, { write });
   if (who instanceof Response) return who;
   try {
-    return await handle({ userId: who.access.userId, admin: who.access.admin }, bokId, who.token, who.access);
+    return await handle({ userId: who.access.userId, admin: who.access.admin, owns: who.access.ownerId === who.access.userId }, bokId, who.token, who.access);
   } catch (error) {
     if (error instanceof VoiceStoreError) return adminJsonError(error.message, error.status);
     console.error("Voice request failed.", error);

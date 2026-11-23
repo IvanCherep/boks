@@ -107,6 +107,9 @@ export type StudioSeriesWork = SeriesWork & {
 export const withdrawMySentBok = (bokId: string) => call<{ id: string; status: string }>("withdraw_my_sent_bok", { p_bok_id: bokId });
 export const loadMySeriesWork = () => call<SeriesWork[]>("get_my_series_work");
 
+/** Authors whose contract waits for the money: Series work on their pieces starts after «Оплата получена». */
+export type UnpaidAuthor = { userId: string; number: string; payState: "awaiting" | "reported"; payDue: string | null };
+export const loadUnpaidAuthors = () => call<UnpaidAuthor[]>("studio_unpaid_authors");
 export const studioAccept = (bokId: string) => call<SeriesWork>("studio_accept_bok", { p_bok_id: bokId });
 export const loadStudioSeriesWork = () => call<StudioSeriesWork[]>("studio_series_work_list");
 export const studioSendSeries = (bokId: string, piece: string) => call<SeriesWork>("studio_send_series_to_author", { p_bok_id: bokId, p_series_piece: piece });

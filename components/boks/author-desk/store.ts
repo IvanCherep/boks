@@ -373,6 +373,39 @@ export function useDesk() {
     [fail, refresh]
   );
 
+  /**
+   * «Открыть страницу»: while the page is still closed, every ready Series is
+   * published with it in one go, so readers meet the page with its first
+   * Series (the letter to new authors, step 7), not with one of them.
+   */
+  const approveAll = useCallback(
+    async (ids: string[]) => {
+      const current = stateRef.current;
+      if (!current || !ids.length) return;
+      const items = ids.map((id) => current.series[id]).filter((link) => link?.workId && link.revision);
+      if (items.length !== ids.length) {
+        setProblem("Не все серии готовы к публикации. Обновите страницу.");
+        return;
+      }
+      if (ids.some((id) => busyRef.current[id])) return;
+      ids.forEach((id) => mark(id, true));
+      try {
+        await publishMyAuthorSpace({
+          items: items.map((link) => ({ workId: link!.workId!, revision: link!.revision! })),
+          publishPage: current.author.pageStatus !== "published",
+          termsVersion: currentBoksTermsVersion,
+          requestId: crypto.randomUUID(),
+        });
+      } catch (error) {
+        fail(error, "Не получилось открыть страницу. Попробуйте ещё раз.");
+      } finally {
+        ids.forEach((id) => mark(id, false));
+        await refresh();
+      }
+    },
+    [fail, refresh]
+  );
+
   /** «Попросить исправить» a Series the editors sent. */
   const requestFix = useCallback(
     async (id: string, note: string) => {
@@ -461,6 +494,7 @@ export function useDesk() {
     move,
     shift,
     approve,
+    approveAll,
     requestFix,
     say,
     removeDraft,

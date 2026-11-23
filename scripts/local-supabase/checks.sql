@@ -6071,3 +6071,100 @@ begin
   perform public.boks_assert(public.get_boks_legal_document('author_offer') ->> 'version' = v_ok ->> 'author_offer', 'anyone reads the offer in force');
 end $$;
 rollback;
+
+-- The way in for a paid author (20261123180000): the team's texts and
+-- recordings wait on the page and become the author's drafts on acceptance
+-- (after the site's terms); an account with a page of its own gets the
+-- Workshop too; no Series work starts before the payment.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f1000-0000-4000-8000-000000000001', 'way-editor@boks.test', false),
+  ('0f0f1000-0000-4000-8000-000000000002', 'way-new@boks.test', false),
+  ('0f0f1000-0000-4000-8000-000000000003', 'way-old@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f1000-0000-4000-8000-000000000001', 'way_editor', 'admin', now(), 'v1'),
+  ('0f0f1000-0000-4000-8000-000000000002', 'way_new', 'reader', null, null),
+  ('0f0f1000-0000-4000-8000-000000000003', 'way_old', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+insert into public.author_spaces (kind, status, owner_user_id, name, created_by, published_at)
+values ('author', 'published', '0f0f1000-0000-4000-8000-000000000003', 'Своя Страница', '0f0f1000-0000-4000-8000-000000000003', now());
+do $$
+declare
+  v_editor uuid := '0f0f1000-0000-4000-8000-000000000001';
+  v_new uuid := '0f0f1000-0000-4000-8000-000000000002';
+  v_old uuid := '0f0f1000-0000-4000-8000-000000000003';
+  v_space uuid;
+  v_seed jsonb;
+  v_seeds uuid[] := '{}';
+  v_token text;
+  v_answer jsonb;
+  v_error text;
+  v_terms jsonb := jsonb_build_object(
+    'legalName', 'Путина Анна Сергеевна',
+    'author_offer', (public.boks_legal_current('author_offer')).version,
+    'author_pd_processing', (public.boks_legal_current('author_pd_processing')).version,
+    'author_pd_distribution', (public.boks_legal_current('author_pd_distribution')).version);
+begin
+  perform public.boks_test_login(v_editor);
+  v_space := (public.studio_save_author_space(null, 'author', 'Анна Путь', 'way_anna', null, 0) ->> 'id')::uuid;
+  for i in 1..3 loop
+    v_seed := public.studio_save_space_seed(v_space, null, 'Текст ' || i, 'Строка ' || i || E'\nи ещё строка', case when i = 3 then 'prose' else 'poem' end);
+    v_seeds := v_seeds || (v_seed ->> 'id')::uuid;
+  end loop;
+  for i in 1..2 loop
+    v_seed := public.studio_set_space_seed_voice(v_seeds[i], jsonb_build_object('file', 'take-1.mp3', 'durationMs', 61000, 'source', 'upload',
+      'fingerprint', public.boks_voice_fingerprint('Строка ' || i || E'\nи ещё строка')));
+  end loop;
+  perform public.boks_assert((v_seed ->> 'voiceCurrent')::boolean and v_seed ->> 'handedAt' is null, 'a team recording waits on its text');
+  v_token := public.studio_issue_author_invite(v_space, 'way-new@boks.test', 'page', 'Путина Анна Сергеевна') ->> 'token';
+
+  perform public.boks_test_login(v_new);
+  v_answer := public.accept_author_invite_with_terms(v_token, null, v_terms);
+  perform public.boks_assert(v_answer ->> 'state' = 'accepted', 'a new author accepts the invitation with the offer');
+  perform public.boks_assert(not (v_answer -> 'agreement' ? 'receiptUrl'), 'the author is not shown a receipt link');
+  perform public.boks_assert((select count(*) from public.reels where author_user_id = v_new) = 0, 'before the site''s terms the texts wait with the page');
+  update public.user_profiles set terms_accepted_at = now(), terms_version = 'v1' where user_id = v_new;
+  perform public.boks_assert((select count(*) from public.reels where author_user_id = v_new and status = 'draft') = 3, 'with the terms the three texts are the author''s drafts');
+  perform public.boks_assert((select count(*) from public.bok_voices where user_id = v_new) = 2, 'two of them come with the author''s recording');
+  perform public.boks_assert((select form from public.bok_workshop where bok_id = v_seeds[3]) = 'prose', 'the form comes along');
+  perform public.boks_assert(
+    (select count(*) from jsonb_array_elements(public.get_my_workshop() -> 'pieces') p where (p -> 'voice' ->> 'current')::boolean) = 2,
+    'the Workshop shows both recordings as current');
+  perform public.save_my_bok(v_seeds[1], 'Текст 1', E'Строка 1\nи ещё строка', true, null, true);
+
+  perform public.boks_test_login(v_editor);
+  begin
+    perform public.studio_accept_bok(v_seeds[1]);
+    perform public.boks_assert(false, 'no Series work before the payment');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'The author has not paid yet%', 'no Series work before the payment: ' || v_error);
+  end;
+  perform public.boks_assert(public.studio_unpaid_authors() @> jsonb_build_array(jsonb_build_object('userId', v_new::text)), 'Moderation knows the author still has to pay');
+  begin
+    perform public.studio_save_space_seed(v_space, v_seeds[2], 'x', 'y', 'poem');
+    perform public.boks_assert(false, 'a handed text is the author''s');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'The author has this text already%', 'a handed text is the author''s: ' || v_error);
+  end;
+  perform public.studio_mark_author_payment((select id from public.author_agreements where user_id = v_new), (now() at time zone 'Europe/Moscow')::date, 30000);
+  perform public.boks_assert(public.studio_accept_bok(v_seeds[1]) ->> 'state' = 'accepted', 'after the payment the piece goes into work');
+  v_seed := public.studio_save_space_seed(v_space, null, 'Поздний', 'Поздний текст', 'poem');
+  perform public.boks_assert(v_seed ->> 'bokStatus' = 'draft', 'a text added once the page has its author goes to them at once');
+  v_seed := public.studio_set_space_seed_voice((v_seed ->> 'id')::uuid, jsonb_build_object('file', 'take-1.m4a', 'durationMs', 30000, 'source', 'upload',
+    'fingerprint', public.boks_voice_fingerprint('Поздний текст')));
+  perform public.boks_assert((select user_id from public.bok_voices where bok_id = (v_seed ->> 'id')::uuid) = v_new, 'and its recording is the author''s');
+
+  -- An account with a page of its own, never verified.
+  v_space := (public.studio_save_author_space(null, 'author', 'Беата Путь', 'way_bea', null, 0) ->> 'id')::uuid;
+  perform public.studio_save_space_seed(v_space, null, 'Её текст', 'Её строка', 'poem');
+  v_token := public.studio_issue_author_invite(v_space, 'way-old@boks.test', 'page', 'Путь Беата Ивановна') ->> 'token';
+  perform public.boks_test_login(v_old);
+  perform public.boks_assert(not public.boks_publishes_directly(v_old), 'an own page is not verified');
+  v_answer := public.accept_author_invite_with_terms(v_token, null, v_terms || jsonb_build_object('legalName', 'Путь Беата Ивановна'));
+  perform public.boks_assert((v_answer ->> 'existingPage')::boolean and public.boks_publishes_directly(v_old), 'after the invitation the own page opens the Workshop');
+  perform public.boks_assert(jsonb_array_length(public.get_my_workshop() -> 'pieces') = 1, 'with the team''s text in it');
+  perform public.boks_test_logout();
+end $$;
+rollback;

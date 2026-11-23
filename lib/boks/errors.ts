@@ -210,6 +210,15 @@ const russianSentences: Record<string, string> = {
   "Check the details: account and correspondent account 20 digits, BIC 9, INN 10 or 12, phone +7 and 10 digits, link https://.": "Проверьте реквизиты: счёт и корр. счёт по 20 цифр, БИК 9, ИНН 10 или 12, телефон +7 и 10 цифр, ссылка с https://.",
   "Choose the plan.": "Выберите тариф.",
   "Write the author's full name.": "Впишите ФИО автора полностью.",
+  // The way in (`20261123180000_boks_author_start_path.sql`).
+  "The author has not paid yet: Series work starts after the payment is marked in «Договоры авторов».": "Автор ещё не оплатил: Series начинаем после отметки «Оплата получена» в «Договорах авторов».",
+  "This text does not exist.": "Такого текста нет.",
+  "Texts for the cabinet are for an author's page.": "Тексты для кабинета бывают только у страницы автора.",
+  "Paste the text.": "Вставьте текст.",
+  "The text is longer than 20 000 characters.": "Текст длиннее 20 000 знаков.",
+  "Poem or prose?": "Стихи или проза?",
+  "The author has this text already: they change it in the cabinet.": "Текст уже у автора: менять его теперь может только он, в кабинете.",
+  "The author has sent this piece on: the recording is theirs to change now.": "Автор уже отдал этот текст в работу: запись теперь меняет только он.",
   // Links to the author's posts (`20261122240000_boks_share_links.sql`).
   "Links are sent for your own published Series.": "Ссылку можно прислать только к своей опубликованной серии.",
   "The link is too long.": "Ссылка слишком длинная.",

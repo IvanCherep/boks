@@ -67,7 +67,6 @@ export type AuthorAgreement = {
   reportedAt: string | null;
   paidAt: string | null;
   paidAmountRub: number | null;
-  receiptUrl: string | null;
   periodStart: string | null;
   periodEnd: string | null;
   cancelledAt: string | null;
@@ -82,6 +81,8 @@ export type StudioAgreement = AuthorAgreement & {
   acceptedIp: string | null;
   acceptedAgent: string | null;
   payNote: string | null;
+  /** The receipt from «Мой налог»: the team's only, sent to the author in a personal message. */
+  receiptUrl: string | null;
   cancelReason: string | null;
   handle: string | null;
   name: string | null;

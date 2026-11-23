@@ -52,12 +52,17 @@ async function readStored(bokId: string): Promise<VoiceTakes | null> {
   }
 }
 
-/** Who may touch a piece's takes: its author writes them; Studio only listens. */
-export type VoiceCaller = { userId: string; admin: boolean };
+/**
+ * Who may touch a piece's takes: its author writes them; Studio only listens.
+ * `owns`: the database says the piece is the caller's (`reels.author_user_id`),
+ * which also covers a text the team prepared with a recording before the
+ * author had it (its folder was started in the page's name).
+ */
+export type VoiceCaller = { userId: string; admin: boolean; owns?: boolean };
 
 function owned(stored: VoiceTakes | null, caller: VoiceCaller, write: boolean) {
   if (!stored) return null;
-  if (stored.ownerId === caller.userId) return stored;
+  if (stored.ownerId === caller.userId || caller.owns) return stored;
   if (!write && caller.admin) return stored;
   throw new VoiceStoreError("This piece belongs to another account.", 403);
 }

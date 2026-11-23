@@ -15,7 +15,7 @@ import { loadCoverRequests } from "@/components/boks/author-cabinet/composer-dat
 import { TeamCoverPanel } from "@/components/boks/admin/team-cover";
 import { AuthorVoicePanel } from "@/components/boks/admin/author-voice";
 import { EditorDecisionDialog, RefusedDecision, editorDecisionWords } from "@/components/boks/admin/editor-decision";
-import { studioAccept } from "@/components/boks/author-cabinet/voice-data";
+import { loadUnpaidAuthors, studioAccept, type UnpaidAuthor } from "@/components/boks/author-cabinet/voice-data";
 import { readableBoksError } from "@/lib/boks/errors";
 
 const words = defineMessages({
@@ -144,6 +144,15 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
     }).catch(() => undefined);
     return () => { live = false; };
   }, [items]);
+  /** Authors still to pay: their pieces wait with «ждёт оплаты» and cannot be accepted into work. */
+  const [unpaid, setUnpaid] = useState<Map<string, UnpaidAuthor>>(new Map());
+  useEffect(() => {
+    let live = true;
+    void loadUnpaidAuthors().then((rows) => {
+      if (live) setUnpaid(new Map((rows ?? []).map((row) => [row.userId, row])));
+    }).catch(() => undefined);
+    return () => { live = false; };
+  }, [items]);
   const onCover = useCallback((bokId: string, version: number) => {
     setCoverRequests((current) => (current.get(bokId) === version ? current : new Map(current).set(bokId, version)));
   }, []);
@@ -189,6 +198,8 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
   const wordCount = evidence?.id === selected.id ? evidence.wordCount : selected.wordCount;
   // Sent from My page (text and voice, the editors make the cover): returned or refused with a reason, never sent back silently.
   const myPagePiece = selected.status === "pending_review" && coverRequests.has(selected.id);
+  const payment = selected.authorUserId ? unpaid.get(selected.authorUserId) ?? null : null;
+  const waitsForPayment = Boolean(myPagePiece && payment);
 
   return (
     <section className={`studio-review ${reading ? "studio-review--reading" : ""}`}>
@@ -199,7 +210,7 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
             onClick={() => { setSelectedId(item.id); setReading(true); setStatus(""); setEvidenceError(""); window.scrollTo({ top: 0, behavior: "instant" }); }}>
             <span>{String(index + 1).padStart(2, "0")} · {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString(language) : t.notSubmitted}</span>
             <h2>{item.title}</h2><p>{[item.authorName, item.authorHandle ? `@${item.authorHandle.replace(/^@+/, "")}` : ""].filter(Boolean).join(" · ")}</p>
-            <small>{t.minutes(item.minutes)} · {item.status === "rejected" ? t.refused : t.privateSubmission}{coverRequests.has(item.id) && !coverRequests.get(item.id) ? ` · ${t.needsCover}` : ""}{item.queuePos ? ` · ${t.authorOrder(item.queuePos)}` : ""}</small>
+            <small>{t.minutes(item.minutes)} · {item.status === "rejected" ? t.refused : t.privateSubmission}{coverRequests.has(item.id) && !coverRequests.get(item.id) ? ` · ${t.needsCover}` : ""}{item.queuePos ? ` · ${t.authorOrder(item.queuePos)}` : ""}{item.authorUserId && unpaid.has(item.authorUserId) ? (language === "ru" ? " · ждёт оплаты" : " · awaiting payment") : ""}</small>
             <p className="studio-review-excerpt">{item.body.slice(0, 140)}{item.body.length > 140 ? "…" : ""}</p>
             <span className="studio-review-open">{t.readAndReview} <ArrowUpRight /></span>
           </button>
@@ -236,11 +247,18 @@ export function ModerationQueue({ items, busy, onReview, onRefresh }: {
             onChange={(event) => setReasons((current) => ({ ...current, [selected.id]: event.target.value }))} />
           <small>{t.requiredIfSentBack}</small>
         </>}
+        {myPagePiece && payment && (
+          <p className="studio-review-previous">
+            {language === "ru"
+              ? `Автор ещё не оплатил договор № ${payment.number}${payment.payState === "reported" ? " (сообщил об оплате, проверьте поступление)" : ""}. Series начнём после отметки «Оплата получена» в «Договорах авторов».`
+              : `The author has not paid contract № ${payment.number} yet${payment.payState === "reported" ? " (they reported paying: check the bank)" : ""}. Series work starts after «Оплата получена» in the contracts list.`}
+          </p>
+        )}
         {status && <p role="alert">{status}</p>}
         <div className="studio-review-decisions">
           {/* A voiced piece from My page is not published from here: it is accepted into work for its Boks Series. */}
           {myPagePiece
-            ? <Button disabled={busy || accepting} onClick={() => {
+            ? <Button disabled={busy || accepting || waitsForPayment} title={waitsForPayment ? (language === "ru" ? "Сначала оплата" : "Payment first") : undefined} onClick={() => {
               setAccepting(true);
               setStatus("");
               studioAccept(selected.id).then(() => { setReading(false); onRefresh(); }, (error) => setStatus(readableBoksError(error, td.acceptFailed, language))).finally(() => setAccepting(false));

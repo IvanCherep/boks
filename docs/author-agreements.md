@@ -44,14 +44,52 @@ generated). Client: `lib/boks/author/agreement.ts`,
 7. The team checks the bank, then Studio → Authors → «Договоры авторов» (or
    the page's «Договор и оплата») → «Оплата получена»: the day the money
    came, the amount, optionally the receipt link from «Мой налог». The year
-   runs from that day; the author sees «Оплачен … · действует до …» and the
-   receipt.
+   runs from that day; the author sees «Оплачен … · действует до …». The
+   receipt is not on the site: the team sends it to the author in a personal
+   message (the link stays in Studio for the team).
 
 Until the payment is marked, nothing of the author's opens to readers: the
 page, a work on it, a bok (`boks_guard_unpaid_publication` on
 `author_spaces`, `author_space_works` and `reels`, for the author's own
 actions; Studio is not held). The publish button on My page says so.
 A free plan (`launch`) has nothing to pay and its year starts at acceptance.
+
+## The way in (the letter to new authors)
+
+`20261123180000_boks_author_start_path.sql`, `components/boks/admin/author-seeds.tsx`,
+`app/api/admin/author-seeds/[seed]/voice/route.ts`. The letter promises:
+the author replies with texts (and recordings, if any), the team prepares a
+closed page with them, the author accepts the invitation, records the rest
+with the teleprompter, queues the pieces, pays, gets the first Series and
+opens the page with all of them at once.
+
+- **Texts from the team.** Studio → Authors → the page → «Тексты для
+  кабинета»: paste a text (title optional, poem or prose), «Приложить запись»
+  for the author's own file (audio, or an mp4/webm video up to 25 MB; a
+  larger video: take the sound out first). They wait on the page
+  (`author_space_seeds`) and become the author's Workshop drafts when the
+  invitation is accepted (trigger on `author_space_invites`), keeping the id,
+  so a recording attached earlier (`voices/<id>/`) is already the author's
+  chosen take. A page that already has its author gets a new text at once.
+  An account that has not accepted the site's terms yet gets the texts the
+  moment it does (drafts are its own writes). Once handed over a text is the
+  author's: Studio cannot change it, and attaches a recording only while it
+  is still a draft.
+- **An account with a page of its own.** Accepting merges the team's page
+  into it (as before) and now marks that page verified, so the Workshop and
+  the voice open for it too.
+- **No Series work before the payment.** `studio_accept_bok` refuses while
+  the author's contract is `awaiting` or `reported`; Moderation shows
+  «ждёт оплаты» and the contract number beside such pieces.
+- **The page opens with all its first Series.** While the page is closed,
+  the Workshop has no per-Series «Опубликовать»: it says how many are ready
+  of how many in work, and once none is left with the editors offers
+  «Открыть страницу с N сериями», which publishes the page with every ready
+  Series in one call.
+
+Not covered: an author who already owns a team-made page (a special
+project) cannot be given a paid contract from Studio yet (the invitation
+needs a page without an owner).
 
 ## The texts
 

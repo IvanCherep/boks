@@ -22,7 +22,8 @@ import {
 /**
  * «Договор и оплата» in the cabinet (My page and the Workshop):
  * the contract's number, what it costs, how to pay by QR code or СБП, and
- * «Я оплатил(а)»; after the team marks the money, the year and the receipt.
+ * «Я оплатил(а)»; after the team marks the money, the year. The receipt is
+ * not on the site: the team sends it to the author in a personal message.
  * Nothing shows for an author without an online contract.
  */
 
@@ -137,9 +138,6 @@ export function AgreementCard({
         <p className="aag-card__state">
           {agreement.payState === "paid" ? `Оплачен ${ruDate(agreement.periodStart)}` : "Бесплатный тариф"}
           {until ? ` · ${until}` : ""}
-          {agreement.receiptUrl && (
-            <> · <a href={agreement.receiptUrl} target="_blank" rel="noreferrer noopener">Чек</a></>
-          )}
         </p>
         <button type="button" className="aag-link" aria-expanded={showDocs} onClick={() => setShowDocs(!showDocs)}>
           {showDocs ? "Скрыть документы" : "Документы"}
@@ -155,7 +153,7 @@ export function AgreementCard({
       {reported ? (
         <p className="aag-card__lead">
           <strong>Спасибо, вы сообщили об оплате.</strong> Проверяем поступление, обычно в течение рабочего дня. Когда деньги придут,
-          здесь появится чек, а страница сможет открыться читателям. Тексты и голос можно добавлять и сейчас.
+          здесь будет «Оплачен», чек мы пришлём вам в личном сообщении, а редакция начнёт делать Series. Тексты и голос можно добавлять и сейчас.
         </p>
       ) : (
         <p className="aag-card__lead">

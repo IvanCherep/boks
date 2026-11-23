@@ -1244,6 +1244,9 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
   const busy = Boolean(desk.busy[work.id]);
   const seriesPiece = desk.state?.series[work.id]?.seriesPiece ?? null;
   const pageOpen = desk.state?.author.pageStatus === "published";
+  // Before the page opens: the first Series ready to go out with it, and those still with the editors.
+  const firstReady = pageOpen ? [] : (desk.state?.works ?? []).filter((item) => item.editors.step === "approval");
+  const firstInWork = pageOpen ? [] : (desk.state?.works ?? []).filter((item) => item.editors.step === "production");
   const [message, setMessage] = useState("");
   const [fixing, setFixing] = useState(false);
   const check = canQueue(work);
@@ -1391,22 +1394,39 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
                 Посмотреть серию
               </a>
             ) : null}
-            <button
-              type="button"
-              className="desk-btn desk-btn-red"
-              disabled={busy}
-              onClick={() =>
-                window.confirm(pageOpen ? "Опубликовать серию? Она появится на вашей странице и в ленте." : "Опубликовать серию? Ваша страница откроется читателям вместе с ней.") &&
-                void desk.approve(work.id)
-              }
-            >
-              {busy ? "Публикуем…" : "Опубликовать"}
-            </button>
+            {pageOpen ? (
+              <button
+                type="button"
+                className="desk-btn desk-btn-red"
+                disabled={busy}
+                onClick={() => window.confirm("Опубликовать серию? Она появится на вашей странице и в ленте.") && void desk.approve(work.id)}
+              >
+                {busy ? "Публикуем…" : "Опубликовать"}
+              </button>
+            ) : !firstInWork.length ? (
+              <button
+                type="button"
+                className="desk-btn desk-btn-red"
+                disabled={busy}
+                onClick={() =>
+                  window.confirm(`Открыть страницу читателям? Она откроется сразу ${firstReady.length > 1 ? `с ${firstReady.length} сериями` : "с этой серией"}, они появятся и в ленте.`) &&
+                  void desk.approveAll(firstReady.map((item) => item.id))
+                }
+              >
+                {busy ? "Открываем…" : firstReady.length > 1 ? `Открыть страницу с ${firstReady.length} сериями` : "Открыть страницу"}
+              </button>
+            ) : null}
             <button type="button" id="desk-ask-fix" className="desk-quiet" onClick={askFix}>
               Попросить исправить
             </button>
           </div>
-          {!pageOpen ? <p className="desk-calm">Ваша страница пока закрыта: она откроется читателям вместе с первой серией.</p> : null}
+          {!pageOpen ? (
+            <p className="desk-calm">
+              {firstInWork.length
+                ? `Ваша страница пока закрыта. Готово серий: ${firstReady.length} из ${firstReady.length + firstInWork.length}. Когда редакция закончит остальные, вы откроете страницу одной кнопкой сразу со всеми.`
+                : "Ваша страница пока закрыта: она откроется читателям сразу со всеми готовыми сериями."}
+            </p>
+          ) : null}
         </div>
       </div>
     );

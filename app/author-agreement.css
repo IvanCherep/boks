@@ -102,3 +102,13 @@
 .aag-finder__list button:hover{border-color:#c44a32}
 .aag-finder__list span{color:#6b6e64}
 .asp-anchor{scroll-margin-top:16px}
+
+/* Studio «Тексты для кабинета» (components/boks/admin/author-seeds.tsx). */
+.aseed{display:grid;gap:12px}
+.aseed-list{margin:0;padding:0 0 0 20px;display:grid;gap:8px}
+.aseed-item{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;padding:8px 0;border-bottom:1px solid #e4dfd1}
+.aseed-item__what{display:grid;gap:2px;min-width:0}
+.aseed-item__what small{color:#65685e;font-size:12px}
+.aseed-form{display:grid;gap:10px;padding-top:4px}
+.aseed-form h3{margin:0;font-size:15px}
+.aseed-text{width:100%;border:1px solid #d7d2c3;border-radius:8px;background:#fffdf8;padding:12px;font:inherit;font-size:15px;line-height:1.5;color:inherit;resize:vertical}

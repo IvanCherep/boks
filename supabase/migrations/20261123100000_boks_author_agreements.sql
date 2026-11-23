@@ -148,7 +148,6 @@ begin
     'reportedAt', p_agreement.pay_reported_at,
     'paidAt', p_agreement.paid_at,
     'paidAmountRub', p_agreement.paid_amount_rub,
-    'receiptUrl', p_agreement.receipt_url,
     'periodStart', p_agreement.period_start,
     'periodEnd', p_agreement.period_end,
     'cancelledAt', p_agreement.cancelled_at
@@ -160,6 +159,8 @@ begin
       'acceptedIp', p_agreement.accepted_ip,
       'acceptedAgent', p_agreement.accepted_agent,
       'payNote', p_agreement.pay_note,
+      -- The receipt is not on the site: the team sends it in a personal message.
+      'receiptUrl', p_agreement.receipt_url,
       'cancelReason', p_agreement.cancel_reason,
       'handle', (select p.handle from public.user_profiles p where p.user_id = p_agreement.user_id),
       'name', (select s.name from public.author_spaces s where s.id = p_agreement.space_id)

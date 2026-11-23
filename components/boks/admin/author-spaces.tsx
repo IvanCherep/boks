@@ -1,6 +1,7 @@
 "use client";
 
 import { SpaceVerified } from "@/components/boks/admin/space-verified";
+import { SpaceSeedsPanel } from "@/components/boks/admin/author-seeds";
 import { AccountFinder, InvitePlanFields, onNewAuthor, SpaceAgreementPanel, type NewAuthorPrefill } from "@/components/boks/admin/author-agreement";
 import "@/app/author-agreement.css";
 import { planName, type AuthorPlan } from "@/lib/boks/author/agreement";
@@ -638,6 +639,10 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
 
           {space && space.status !== "merged" && (
             <Works t={t} space={space} busy={busy} run={run} />
+          )}
+
+          {space && space.kind === "author" && space.status !== "merged" && (
+            <SpaceSeedsPanel spaceId={space.id} owned={space.owned} />
           )}
 
           {space && space.kind === "author" && space.status !== "merged" && (space.owned || space.messages.length > 0) && (
