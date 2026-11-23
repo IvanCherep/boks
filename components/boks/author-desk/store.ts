@@ -73,6 +73,41 @@ function notesOf(work: Work) {
   };
 }
 
+/**
+ * Words that did not reach the server (no connection, a refused save): kept in
+ * this browser until they do, so a reload or a lost connection loses nothing.
+ */
+const unsavedKey = "boks-desk-unsaved-v1";
+type Unsaved = Record<string, { title: string; text: string; at: string }>;
+function readUnsaved(): Unsaved {
+  try {
+    return JSON.parse(window.localStorage.getItem(unsavedKey) ?? "{}") ?? {};
+  } catch {
+    return {};
+  }
+}
+function keepUnsaved(id: string, work: Pick<Work, "title" | "text">) {
+  try {
+    window.localStorage.setItem(unsavedKey, JSON.stringify({ ...readUnsaved(), [id]: { title: work.title, text: work.text, at: new Date().toISOString() } }));
+  } catch {
+    /* storage may be unavailable: the page still holds the words */
+  }
+}
+function dropUnsaved(id: string) {
+  const all = readUnsaved();
+  if (!(id in all)) return;
+  delete all[id];
+  try {
+    window.localStorage.setItem(unsavedKey, JSON.stringify(all));
+  } catch {
+    /* nothing kept */
+  }
+}
+const offlineError = (error: unknown) => {
+  const value = error as { message?: string; name?: string } | null;
+  return (typeof navigator !== "undefined" && !navigator.onLine) || /Failed to fetch|NetworkError|Load failed|network/i.test(`${value?.name ?? ""} ${value?.message ?? ""}`);
+};
+
 export function useDesk() {
   const [state, setState] = useState<DeskState | null>(null);
   const [status, setStatus] = useState<DeskStatus>("loading");
@@ -90,8 +125,14 @@ export function useDesk() {
   }, [state]);
 
   const fail = useCallback((error: unknown, fallback = "Не получилось сохранить. Проверьте интернет и попробуйте ещё раз.") => {
+    if (error && offlineError(error)) {
+      setProblem("Нет связи с интернетом. Всё, что вы пишете, хранится в этом браузере и сохранится само, когда связь вернётся.");
+      return;
+    }
     setProblem(error ? readableBoksError(error, fallback, "ru") : fallback);
   }, []);
+  /** Texts kept in this browser that the next load puts back and sends again. */
+  const restore = useRef<string[]>([]);
 
   const refresh = useCallback(async () => {
     try {
@@ -110,6 +151,18 @@ export function useDesk() {
       const blanks = readBlanks().filter((work) => !onServer.has(work.id) && (!isEmptyBlank(work) || open.includes(work.id)));
       writeBlanks(blanks);
       next.works = [...blanks, ...next.works];
+      // Words that never reached the server come back from this browser and are sent again.
+      const kept = readUnsaved();
+      next.works = next.works.map((work) => {
+        const copy = kept[work.id];
+        if (!copy) return work;
+        if (copy.text === work.text && copy.title === work.title) {
+          dropUnsaved(work.id);
+          return work;
+        }
+        if (!pendingText.current[work.id]) restore.current = [...new Set([...restore.current, work.id])];
+        return { ...work, title: copy.title, text: copy.text };
+      });
       // Words typed while the answer was on its way stay as typed.
       const typing = Object.keys(pendingText.current);
       if (typing.length && stateRef.current) {
@@ -212,6 +265,8 @@ export function useDesk() {
             if (Object.keys(meta).length) await saveMeta(id, meta);
             setProblem("");
           } catch (error) {
+            // The draft stays in this browser (blank drafts) and is sent again when it can be.
+            if (!pendingText.current[id]) pendingText.current[id] = save;
             fail(error);
           }
         };
@@ -232,8 +287,12 @@ export function useDesk() {
           if (!latest.text.trim()) return;
           try {
             await saveOwnBok({ bokId: id, title: latest.title.trim(), text: latest.text, publish: false, cover: null });
+            dropUnsaved(id);
             setProblem("");
           } catch (error) {
+            // Still waiting: kept here, protected from the next load, sent again when it can be.
+            if (!pendingText.current[id]) pendingText.current[id] = save;
+            keepUnsaved(id, latest);
             fail(error);
           }
         };
@@ -478,6 +537,46 @@ export function useDesk() {
     },
     [local]
   );
+
+  // Saves that could not go through are tried again when the connection returns, and every 20 seconds.
+  useEffect(() => {
+    const retry = () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      for (const save of Object.values(pendingText.current)) void save();
+    };
+    window.addEventListener("online", retry);
+    const timer = window.setInterval(() => {
+      if (Object.keys(pendingText.current).length) retry();
+    }, 20_000);
+    return () => {
+      window.removeEventListener("online", retry);
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  // Texts this browser kept after a failed save, put back by the last load: sent again.
+  useEffect(() => {
+    const ids = restore.current;
+    if (!ids.length) return;
+    restore.current = [];
+    for (const id of ids) {
+      const save = async () => {
+        delete pendingText.current[id];
+        const latest = stateRef.current?.works.find((work) => work.id === id);
+        if (!latest?.text.trim()) return;
+        try {
+          await saveOwnBok({ bokId: id, title: latest.title.trim(), text: latest.text, publish: false, cover: null });
+          dropUnsaved(id);
+          setProblem("");
+        } catch (error) {
+          if (!pendingText.current[id]) pendingText.current[id] = save;
+          fail(error);
+        }
+      };
+      pendingText.current[id] = save;
+      void save();
+    }
+  }, [loads, fail]);
 
   return {
     state,

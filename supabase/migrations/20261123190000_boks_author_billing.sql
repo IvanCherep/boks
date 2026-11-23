@@ -31,6 +31,40 @@ alter table public.author_agreements
   add constraint author_agreements_pay_state_check
   check (pay_state in ('free', 'awaiting', 'reported', 'paid', 'waived', 'cancelled'));
 
+-- How many Series a year a tariff promises. It may change one day (with a
+-- new edition of the offer); a contract keeps the number it was signed with
+-- (`author_agreements.series_per_year`). Free and our authors: no limit (null).
+create or replace function public.boks_plan_series_per_year(p_plan text)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when p_plan in ('page', 'page_no_promotion') then 30 end;
+$$;
+
+alter table public.author_agreements
+  add column if not exists series_per_year integer check (series_per_year is null or series_per_year between 1 and 520);
+update public.author_agreements set series_per_year = public.boks_plan_series_per_year(plan) where series_per_year is null;
+
+create or replace function public.boks_agreement_series_per_year()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.series_per_year is null then
+    new.series_per_year := public.boks_plan_series_per_year(new.plan);
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.boks_agreement_series_per_year() from public, anon, authenticated;
+drop trigger if exists author_agreements_series_per_year on public.author_agreements;
+create trigger author_agreements_series_per_year
+  before insert on public.author_agreements
+  for each row execute function public.boks_agreement_series_per_year();
+
 -- The page the author works from (their own, not a merged one).
 create or replace function public.boks_author_page_of(p_user_id uuid)
 returns public.author_spaces
@@ -102,7 +136,8 @@ begin
     'billing', v_space.billing,
     'owned', v_space.owner_user_id is not null,
     'agreement', case when v_agreement.id is null then null else jsonb_build_object(
-      'number', v_agreement.number, 'plan', v_agreement.plan, 'priceRub', v_agreement.price_rub, 'payState', v_agreement.pay_state
+      'number', v_agreement.number, 'plan', v_agreement.plan, 'priceRub', v_agreement.price_rub, 'payState', v_agreement.pay_state,
+      'seriesPerYear', v_agreement.series_per_year
     ) end
   );
 end;
@@ -191,11 +226,17 @@ begin
       'name', coalesce(v_space.name, case when v_handle is not null then '@' || v_handle end),
       'pageId', v_space.id::text,
       'pageStatus', v_space.status,
-      'billing', coalesce(v_space.billing, 'partner')
+      'billing', coalesce(v_space.billing, 'partner'),
+      -- A paid author before the money: Series work waits for it.
+      'awaitingPayment', public.boks_author_unpaid(v_uid)
     ),
     'plan', jsonb_build_object(
       -- Our authors have no yearly limit: the team decides the batches.
-      'perYear', case when v_space.billing = 'partner' then null else 30 end,
+      -- Paid authors: the number their contract was signed with; ours: no limit.
+      'perYear', case when v_space.billing = 'paid' then (
+        select a.series_per_year from public.author_agreements a
+        where a.user_id = v_uid and a.pay_state <> 'cancelled' limit 1
+      ) end,
       'perWeek', 1,
       'usedThisYear', (
         select count(*)::integer from public.bok_series_work w
@@ -258,3 +299,87 @@ end;
 $$;
 revoke all on function public.get_my_workshop() from public, anon, authenticated;
 grant execute on function public.get_my_workshop() to authenticated;
+
+
+-- ------------------------------------------------------------------ the invitation says what waits
+
+-- The invitation's terms, as in 20261123100000, with the tariff's Series a year.
+create or replace function public.get_author_invite_terms(p_token text default null, p_invite_id uuid default null)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_invite public.author_space_invites;
+  v_email text;
+begin
+  if v_uid is null then
+    return null;
+  end if;
+  if p_invite_id is not null then
+    select * into v_invite from public.author_space_invites where id = p_invite_id;
+  else
+    select * into v_invite from public.author_space_invites
+    where token_hash = sha256(convert_to(btrim(coalesce(p_token, '')), 'UTF8'));
+  end if;
+  select lower(u.email) into v_email from auth.users u where u.id = v_uid;
+  if v_invite.id is null or v_invite.plan is null or v_email is distinct from v_invite.email then
+    return null;
+  end if;
+  return jsonb_build_object(
+    'plan', v_invite.plan,
+    'priceRub', public.boks_plan_price(v_invite.plan),
+    'payDays', public.boks_agreement_pay_days(),
+    'seriesPerYear', public.boks_plan_series_per_year(v_invite.plan),
+    'legalName', v_invite.legal_name,
+    'documents', coalesce((
+      select jsonb_agg(jsonb_build_object('kind', d.kind, 'version', d.version, 'title', d.title) order by k.n)
+      from (values ('author_offer', 1), ('author_pd_processing', 2), ('author_pd_distribution', 3)) k(kind, n)
+      cross join lateral public.boks_legal_current(k.kind) d
+      where d.kind is not null
+    ), '[]'::jsonb)
+  );
+end;
+$$;
+revoke all on function public.get_author_invite_terms(text, uuid) from public, anon, authenticated;
+grant execute on function public.get_author_invite_terms(text, uuid) to authenticated;
+
+-- What the team put in the cabinet for this invitation: the texts, and how
+-- many come with the author's recording. Only for the address it was sent to.
+create or replace function public.get_invite_texts(p_token text default null, p_invite_id uuid default null)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_invite public.author_space_invites;
+  v_email text;
+begin
+  if v_uid is null then
+    return null;
+  end if;
+  if p_invite_id is not null then
+    select * into v_invite from public.author_space_invites where id = p_invite_id;
+  else
+    select * into v_invite from public.author_space_invites
+    where token_hash = sha256(convert_to(btrim(coalesce(p_token, '')), 'UTF8'));
+  end if;
+  select lower(u.email) into v_email from auth.users u where u.id = v_uid;
+  if v_invite.id is null or v_email is distinct from v_invite.email then
+    return null;
+  end if;
+  return (
+    select jsonb_build_object('texts', count(*)::integer, 'voiced', (count(*) filter (where s.voice is not null))::integer)
+    from public.author_space_seeds s
+    where s.space_id = v_invite.space_id and s.handed_at is null
+  );
+end;
+$$;
+revoke all on function public.get_invite_texts(text, uuid) from public, anon, authenticated;
+grant execute on function public.get_invite_texts(text, uuid) to authenticated;

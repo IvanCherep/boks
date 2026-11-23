@@ -107,6 +107,8 @@ const words = defineMessages(
     unskip: "Put back into the publication",
     skipped: "Not publishing",
     publishCount: (n: number) => `Publish · ${n}`,
+    openInDesk: "To the Workshop",
+    opensInDesk: "The page is closed for now. It opens from the Workshop with one button, together with all the ready Series.",
     publishPageOnly: "Publish the page",
     shelfNote: "Your Series appear at once on your page, in the feed and first on the boks Series shelf.",
     seriesOnShelf: "On your page, in the feed and on the boks Series shelf.",
@@ -202,6 +204,8 @@ const words = defineMessages(
     edit: "Edit",
     continueDraft: "Continue",
     draftNote: "Only you see it. It goes out when you publish it.",
+    deskDraftNote: "In the Workshop: record it and send it to the editors.",
+    deskVoicedNote: "Recorded. Send it to the editors in the Workshop.",
     waitingChip: "Waiting for a cover",
     waitingNote: "The editors are choosing its cover; it goes out once it has one.",
     sentChip: "Sent",
@@ -342,6 +346,8 @@ const words = defineMessages(
       publishPage: "Опубликовать страницу и работы",
       publishWorks: "Опубликовать выбранные работы",
       nothingReady: "Пока нечего публиковать. Редакция отмечает работу готовой, когда проверит её.",
+      openInDesk: "В мастерскую",
+      opensInDesk: "Страница пока закрыта. Она откроется из мастерской одной кнопкой, сразу со всеми готовыми сериями.",
       afterPayment: "Страница откроется читателям после оплаты: смотрите «Договор и оплата» выше.",
       changed: "После предпросмотра что-то изменилось. Посмотрите работы ещё раз и подтвердите.",
       doneTitle: "Опубликовано",
@@ -363,6 +369,8 @@ const words = defineMessages(
       edit: "Изменить",
       continueDraft: "Продолжить",
       draftNote: "Видите только вы. Выйдет, когда опубликуете.",
+      deskDraftNote: "В мастерской: запишите голос и отдайте редакции.",
+      deskVoicedNote: "Запись есть. В мастерской отдайте текст редакции.",
       waitingChip: "Ждёт обложку",
       waitingNote: "Редакция подбирает обложку; бок выйдет, как только она будет готова.",
       sentChip: "Отправлено",
@@ -704,6 +712,11 @@ export function MyPage({
   );
 
   function compose(bokId: string | null, at: "voice" | null = null) {
+    // Texts and the voice live in the Workshop now: a piece opens there, not in the old composer.
+    if (workshopEnabled && direct) {
+      window.location.assign(bokId ? `/author/desk#w/${bokId}/voice` : "/author/desk#add");
+      return;
+    }
     openInComposer(bokId, at);
     go("my-page-new");
   }
@@ -837,7 +850,7 @@ export function MyPage({
         </div>
       </section>
 
-      <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} />
+      <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} pageOpen={!pageDraft} />
 
       {unread > 0 && data.space && (
         <a className="amp-replied" href="#messages" onClick={(event) => { event.preventDefault(); setRequestsOpen(true); }}>
@@ -922,7 +935,7 @@ export function MyPage({
                       : <span className={`asp-chip asp-chip--${isSkipped ? "withdrawn" : chipTone(status)}`}>{isSkipped ? w.skipped : w.status[status]}</span>}
                   </span>
                   {returned && <DecisionNote decision={returned} compact />}
-                  {item.draft && !returned && <small className="amp-card__note">{voiceWaiting ? w.voiceNote : w.draftNote}</small>}
+                  {item.draft && !returned && <small className="amp-card__note">{workshopEnabled && direct ? (voiceWaiting ? w.deskDraftNote : w.deskVoicedNote) : voiceWaiting ? w.voiceNote : w.draftNote}</small>}
                   {item.coverWaiting && <small className="amp-card__note">{inWork ? w.inWorkNote : w.sentNote}</small>}
                   {seriesReady && <small className="amp-card__note">{w.seriesReadyNote}</small>}
                   {item.seriesHeld && <small className="amp-card__note">{w.seriesHeld}</small>}
@@ -998,7 +1011,13 @@ export function MyPage({
             </li>
           ))}
         </ul>
-        {ready.length > 0 || pageDraft || waiting.length > 0 ? (
+        {workshopEnabled && direct && pageDraft && ready.length === 0 ? (
+          // A closed page opens from the Workshop, with all its first Series at once.
+          <div className="amp-publish-bar">
+            <a className="btn btn-secondary amp-publish" href="/author/desk">{w.openInDesk} <Icon name="arrow" /></a>
+            <p className="desk-note">{w.opensInDesk}</p>
+          </div>
+        ) : ready.length > 0 || pageDraft || waiting.length > 0 ? (
           <>
           {onShelf && ready.some((item) => item.work?.seriesPiece) && <p className="amp-publish-note">{w.shelfNote}</p>}
           <div className="amp-publish-bar">

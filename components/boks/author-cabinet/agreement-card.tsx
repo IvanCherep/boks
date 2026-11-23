@@ -59,11 +59,17 @@ export function AgreementCard({
   agreement,
   onChange,
   compact = false,
+  explained = false,
+  pageOpen = false,
 }: {
   agreement: AuthorAgreement | null;
   onChange: (next: AuthorAgreement) => void;
   /** In the Workshop: only what asks for action, the rest behind «Договор». */
   compact?: boolean;
+  /** The Workshop's «Как откроется ваша страница» already says why and when: no lead while it waits for the money. */
+  explained?: boolean;
+  /** The author's page is open already: only the Series wait for the money. */
+  pageOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -155,10 +161,10 @@ export function AgreementCard({
           <strong>Спасибо, вы сообщили об оплате.</strong> Проверяем поступление, обычно в течение одного-двух рабочих дней. Когда деньги придут,
           здесь будет «Оплачен», чек мы пришлём вам в личном сообщении, а редакция начнёт делать Series. Тексты и голос можно добавлять и сейчас.
         </p>
-      ) : (
+      ) : explained ? null : (
         <p className="aag-card__lead">
-          <strong>Подготовительный период.</strong> Добавляйте тексты и записывайте голос. Страница откроется читателям, а редакция
-          начнёт делать Series после оплаты.
+          <strong>Подготовительный период.</strong> Добавляйте тексты и записывайте голос.{" "}
+          {pageOpen ? "Редакция начнёт делать Series после оплаты." : "Страница откроется читателям, а редакция начнёт делать Series после оплаты."}
         </p>
       )}
       <div className="aag-due">
@@ -216,7 +222,7 @@ export function AgreementCard({
             <p>{purpose}</p>
             <CopyButton label="назначение" copied={copied} onCopy={() => void copy("назначение", purpose)} />
           </div>
-          <p className="aag-small">Чек из «Мой налог» появится здесь после того, как мы получим оплату.</p>
+          <p className="aag-small">Чек из «Мой налог» пришлём вам в личном сообщении, когда получим оплату.</p>
           {problem && <p className="notice" role="alert">{problem}</p>}
           <div className="aag-actions">
             {!reported && <button type="button" className="btn btn-red" disabled={busy} onClick={() => void report()}>Я оплатил(а)</button>}

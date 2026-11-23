@@ -18,7 +18,7 @@ type Billing = "partner" | "paid";
 type SpaceBilling = {
   billing: Billing;
   owned: boolean;
-  agreement: { number: string; plan: AuthorPlan; priceRub: number; payState: PayState } | null;
+  agreement: { number: string; plan: AuthorPlan; priceRub: number; payState: PayState; seriesPerYear: number | null } | null;
 };
 
 async function call<T>(name: string, args: Record<string, unknown>): Promise<T> {
@@ -81,7 +81,7 @@ export function SpaceBillingPanel({ spaceId }: { spaceId: string }) {
             <strong>Платный, по договору</strong>
             <small>
               {a
-                ? `Договор № ${a.number}, «${planName[a.plan]}», ${a.priceRub ? rub(a.priceRub) : "бесплатно"} · ${payWords[a.payState] ?? a.payState}.`
+                ? `Договор № ${a.number}, «${planName[a.plan]}», ${a.priceRub ? rub(a.priceRub) : "бесплатно"}${a.seriesPerYear ? `, до ${a.seriesPerYear} Series в год` : ""} · ${payWords[a.payState] ?? a.payState}.`
                 : state.owned
                   ? "Нужен договор по платному тарифу: у автора его пока нет."
                   : "Тариф выбирается в приглашении ниже; после принятия автор платит до начала работы над сериями."}

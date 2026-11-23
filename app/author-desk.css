@@ -503,3 +503,52 @@
 .desk .desk-share-mark{display:block;font-size:13px}
 .desk .desk-share .share-pair__btn{min-width:0;overflow-wrap:anywhere;hyphens:auto}
 @media (max-width:560px){.desk .desk-share .share-pair__row{display:flex;flex-direction:column;align-items:stretch}.desk .desk-share-form .desk-btn{width:100%}.desk .desk-share-form .desk-inline input{flex:none;width:100%}}
+
+/* The welcome on a phone (2026-11-23 walkthrough): the whole window fits the
+   visible height, its «Понятно» stays in reach at the bottom, and it sits
+   above the cookie notice, which waits until the welcome is closed. */
+.desk .desk-sheet-back.is-center{z-index:96}
+.desk .desk-welcome{max-height:calc(100dvh - 32px);overflow:auto}
+.desk .desk-welcome>.desk-wide{position:sticky;bottom:0;flex:none;box-shadow:0 -14px 18px -6px var(--paper)}
+@media (max-width:560px){
+  .desk .desk-welcome{padding:22px 20px 18px;gap:10px}
+  .desk .desk-welcome h2{font-size:26px}
+  .desk .desk-welcome .desk-lead{font-size:16px}
+  .desk .desk-welcome ol{gap:10px;margin:2px 0 6px}
+  .desk .desk-welcome li span{font-size:14px;line-height:1.4}
+}
+
+/* «Как откроется ваша страница» (components/boks/author-desk/start-path.tsx). */
+.desk .desk-start-steps{list-style:none;margin:0;padding:18px 20px;display:grid;gap:14px;border:1px solid var(--line,#e4dfd1);border-radius:16px;background:#fffdf8}
+.desk .desk-start-steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start;color:var(--muted)}
+.desk .desk-start-steps li>div{display:grid;gap:3px;justify-items:start}
+.desk .desk-start-steps li b{font-size:16px;color:var(--ink,#1f2a25);font-weight:600}
+.desk .desk-start-steps li span{font-size:14px;line-height:1.45}
+.desk .desk-start-steps li .desk-btn{margin-top:8px;min-height:42px;padding:9px 18px;font-size:15px}
+.desk .desk-start-mark{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:500 14px/1 var(--serif);border:1.5px solid #cfc9b8;color:#8a8b80;background:var(--paper)}
+.desk .desk-start-steps li.is-done .desk-start-mark{background:var(--green);border-color:var(--green);color:#f4f0e8;font-family:inherit}
+.desk .desk-start-steps li.is-done b{color:var(--muted)}
+.desk .desk-start-steps li.is-now .desk-start-mark{border-color:var(--red);color:var(--red);box-shadow:0 0 0 4px rgba(196,74,50,.12)}
+.desk .desk-start-steps li.is-now span{color:var(--ink,#1f2a25)}
+.desk .desk-contract{margin-bottom:28px}
+@media (max-width:560px){
+  .desk .desk-start-steps{padding:14px 14px;gap:12px}
+}
+.desk .desk-start-steps li b em{font-style:normal;font-weight:400;color:var(--muted);font-size:14px}
+.desk .desk-start-steps{gap:10px}
+.desk .desk-start-steps li.is-now{padding:4px 0}
+
+/* The Голос step once there is a recording: the recording and the next step
+   come first, the ways to record again below them, smaller. */
+.desk .desk-voice-main.has-takes{display:flex;flex-direction:column;gap:16px}
+.desk .desk-voice-main.has-takes>*{margin-top:0;margin-bottom:0}
+.desk .desk-voice-main.has-takes>.desk-ways{order:10;grid-template-columns:repeat(2,minmax(0,1fr))}
+.desk .desk-voice-main.has-takes>.desk-file-note{order:11}
+.desk .desk-voice-main.has-takes .desk-way{padding:14px 16px;gap:4px}
+.desk .desk-voice-main.has-takes .desk-way small,.desk .desk-voice-main.has-takes .desk-way-icon{display:none}
+.desk .desk-voice-main.has-takes .desk-way b{font-size:15px}
+
+/* The teleprompter when the microphone is refused; no keyboard hint on touch screens. */
+.desk-prompter-retry{display:flex;flex-direction:column;align-items:center;gap:12px}
+.desk-prompter-retry .desk-quiet{color:#cfc9b8}
+@media (hover:none) and (pointer:coarse){.desk-prompter-keys{display:none}}

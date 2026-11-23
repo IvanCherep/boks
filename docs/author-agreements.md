@@ -107,12 +107,39 @@ The way in serves two kinds of authors, and the page says which
   with a paid tariff makes the page paid; one without a tariff, or a free
   one, keeps it ours.
 
+The yearly number of Series belongs to the tariff
+(`boks_plan_series_per_year`: 30 for the paid tariffs, none for free and
+ours) and is written on the contract when it is accepted
+(`author_agreements.series_per_year`): if it changes one day (with a new
+edition of the offer), contracts keep the number they were signed with.
+
 Switching a paid author to ours waives the payment on the contract
 (`pay_state = 'waived'`: the author sees «Без оплаты, по договорённости с
 редакцией», the year starts that day). Switching back asks for it again with
 a fresh 30 days. An author with no paid contract cannot be made paid from
 here yet: they need an offer on a paid tariff, and an invitation is only for
 a page without an owner.
+
+## What the author sees (walkthrough 2026-11-23)
+
+- The invitation says what waits in the cabinet («В кабинете уже ждут 3
+  ваших текста, 2 из них с вашей записью») and, for a paid tariff, «до 30
+  серий в год, не чаще одной в неделю».
+- After accepting, and whenever a verified author opens `/author`, the
+  Workshop is home (`/author/desk`); «Моя страница» is in its header.
+- While the page is closed the Workshop home starts with «Как откроется ваша
+  страница» (`components/boks/author-desk/start-path.tsx`): Тексты, Голос,
+  Отдать редакции, Оплата (paid only), Серии, Страница открывается; only the
+  current step is explained, with its button (Прочитать, Отдать все
+  записанные, Оплатить, Открыть страницу с N сериями).
+- Queue dates («на этой неделе») only for a paid author whose page is open
+  and paid; before the payment «после оплаты», otherwise no week promised.
+- Saving: a text that did not reach the server is kept in the browser
+  (`boks-desk-unsaved-v1`), protected from the next load, and sent again
+  when the connection returns; the «Добавить текст» sheet keeps what was
+  pasted until it is saved.
+- After the page opens: «Поделитесь сериями…» in «Ждёт вас» until the post
+  links are sent (with the 30-day date for paid authors).
 
 ## The texts
 

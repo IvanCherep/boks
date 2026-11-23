@@ -37,6 +37,7 @@ import { MyPage, myPageViews, type MyPageView } from "./my-page";
 import { openInComposer } from "./composer";
 import { loadPublishing } from "./composer-data";
 import { InviteScreen, InviteSignIn } from "./invite";
+import { workshopEnabled } from "@/lib/boks/author-desk/switch";
 import { loadMyAuthorSpace, loadMyInvites, type InviteOffer, type MyAuthorSpace } from "@/components/boks/author-spaces/data";
 import { inviteTokenFromHash, pendingInviteKey } from "@/lib/boks/author/invite-link";
 import { signOutBoksUser } from "@/lib/boks/supabase-client";
@@ -284,10 +285,10 @@ export function AuthorCabinet() {
       const timer = window.setTimeout(() => { setOffer(offers[0]); setView("invite"); }, 0);
       return () => window.clearTimeout(timer);
     }
-    // An author who publishes straight away works from My page: it is their home.
+    // An author who publishes straight away works from the Workshop (My page is one tap away there).
     if (direct) {
       steered.current = true;
-      const timer = window.setTimeout(() => show("my-page", "replace"), 0);
+      const timer = window.setTimeout(() => (workshopEnabled ? window.location.replace("/author/desk") : show("my-page", "replace")), 0);
       return () => window.clearTimeout(timer);
     }
     // Also later: a reply from the team, or a work back from changes, is what they come for.
@@ -639,7 +640,9 @@ export function AuthorCabinet() {
           // Accepting can change the account's @name, name and photo: read them again.
           void refreshUser();
           profileRef.current.reload();
-          show("my-page", "replace");
+          // The Workshop is an invited author's home: texts, voice, the way to the open page.
+          if (workshopEnabled) window.location.assign("/author/desk");
+          else show("my-page", "replace");
         }}
         onSwitchAccount={() => {
           void signOutBoksUser().finally(() => {

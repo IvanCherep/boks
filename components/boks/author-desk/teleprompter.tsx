@@ -48,6 +48,8 @@ export function Teleprompter({
   /** The browser gave the microphone: until then «Начать запись» waits, visibly. */
   const [micReady, setMicReady] = useState(false);
   const [error, setError] = useState("");
+  /** «Попробовать снова» asks for the microphone again. */
+  const [attempt, setAttempt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -62,8 +64,12 @@ export function Teleprompter({
     (document.activeElement as HTMLElement | null)?.blur?.();
     let frame = 0;
     let context: AudioContext | null = null;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const timer = window.setTimeout(() => setError("Этот браузер не даёт записывать звук на этой странице. Загрузите готовую запись или откройте кабинет в Chrome или Safari."), 0);
+      return () => window.clearTimeout(timer);
+    }
     navigator.mediaDevices
-      ?.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      .getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
       .then((stream) => {
         streamRef.current = stream;
         setMicReady(true);
@@ -81,13 +87,17 @@ export function Teleprompter({
         };
         tick();
       })
-      .catch(() => setError("Браузер не дал микрофон. Разрешите доступ к микрофону для этой страницы и попробуйте снова."));
+      .catch(() =>
+        setError(
+          "Браузер не дал микрофон. Разрешите доступ: на телефоне через «аА» или замок рядом с адресом, на компьютере через значок микрофона или замка в адресной строке. Потом нажмите «Попробовать снова».",
+        ),
+      );
     return () => {
       cancelAnimationFrame(frame);
       void context?.close();
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, []);
+  }, [attempt]);
 
   const stop = useCallback(() => {
     const recorder = recorderRef.current;
@@ -234,9 +244,20 @@ export function Teleprompter({
           <p className="desk-prompter-hint">
             {error || (!micReady ? "Если браузер спросит, разрешите доступ к микрофону." : level > 0.5 ? "Громковато: отодвиньтесь чуть дальше." : level > 0.05 ? "Хорошо слышно." : "Тишина. Скажите что-нибудь.")}
           </p>
-          <button type="button" className="desk-btn desk-btn-red" onClick={start} disabled={!!error || !micReady}>
-            {micReady || error ? "Начать запись" : "Ждём микрофон…"}
-          </button>
+          {error ? (
+            <div className="desk-prompter-retry">
+              <button type="button" className="desk-btn desk-btn-red" onClick={() => { setError(""); setAttempt((n) => n + 1); }}>
+                Попробовать снова
+              </button>
+              <button type="button" className="desk-quiet" onClick={onCancel}>
+                Закрыть и загрузить готовую запись
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="desk-btn desk-btn-red" onClick={start} disabled={!micReady}>
+              {micReady ? "Начать запись" : "Ждём микрофон…"}
+            </button>
+          )}
           <p className="desk-prompter-keys">На клавиатуре: пробел, чтобы закончить · R, чтобы начать заново · ← →, чтобы изменить скорость</p>
         </div>
       ) : null}

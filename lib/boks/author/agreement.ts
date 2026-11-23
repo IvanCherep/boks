@@ -93,6 +93,8 @@ export type InviteTerms = {
   plan: AuthorPlan;
   priceRub: number;
   payDays: number;
+  /** The Series a year the tariff promises (null: no yearly limit). */
+  seriesPerYear?: number | null;
   legalName: string | null;
   documents: { kind: LegalKind; version: string; title: string }[];
 };

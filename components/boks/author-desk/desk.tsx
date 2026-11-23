@@ -28,8 +28,9 @@ import {
 import { maxBokCharacters } from "@/lib/boks/contracts";
 import { durationProblem, fileProblem, useDesk, useTakes, type Desk, type DeskStatus } from "./store";
 import { Teleprompter } from "./teleprompter";
-import { ShareBlock, shareMarker, useShareLinks } from "./share-links";
+import { ShareBlock, shareDeadline, shareMarker, useShareLinks } from "./share-links";
 import { AgreementCard, useMyAgreement } from "@/components/boks/author-cabinet/agreement-card";
+import { StartPath } from "./start-path";
 import { chooseTake, uploadTake } from "@/components/boks/author-cabinet/voice-data";
 import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
 import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
@@ -124,6 +125,12 @@ function useQueue(desk: Desk) {
   const perYear = desk.state ? desk.state.plan.perYear : plan.perYear;
   const planned = plannedWeeks({ queue, busyThisWeek: making.length, today: new Date(), usedByYear, perYear: perYear ?? Infinity });
   const byId = new Map(works.map((work) => [work.id, work]));
+  const author = desk.state?.author;
+  const pace: "weekly" | "after-payment" | "batch" = author?.awaitingPayment
+    ? "after-payment"
+    : author?.billing === "paid" && author.pageStatus === "published"
+      ? "weekly"
+      : "batch";
   return {
     making,
     revising,
@@ -134,11 +141,19 @@ function useQueue(desk: Desk) {
     perYear,
     year,
     planFor: (ids: string[]) => plannedWeeks({ queue: ids, busyThisWeek: making.length, today: new Date(), usedByYear, perYear: perYear ?? Infinity }),
+    /**
+     * When a queued text is due, in words. Week by week only for a paid
+     * author whose page is open and paid for; before the payment it waits for
+     * it; the first Series of a closed page, and our authors' Series, come when
+     * the editors make them (no week promised).
+     */
+    pace,
+    whenDue: (date: Date | undefined) => (pace === "weekly" ? weekLabel(date) : pace === "after-payment" ? "после оплаты" : "в ближайших сериях"),
   };
 }
 
 function useStatus(work: Work, desk: Desk) {
-  const { queue, planned } = useQueue(desk);
+  const { queue, planned, whenDue } = useQueue(desk);
   const step = work.editors.step;
   if (!step && work.outcome?.kind === "declined") return "Редакция не сможет выпустить этот текст";
   if (!step && work.outcome?.kind === "changes") return "Редакция просит доработать";
@@ -148,7 +163,7 @@ function useStatus(work: Work, desk: Desk) {
   if (step === "production") return work.editors.revising ? `Редакция исправляет серию, до ${revisionDays} дней` : "Редакция рисует серию, обычно неделю";
   if (step === "queued") {
     const place = queue.findIndex((item) => item.id === work.id) + 1;
-    return `В очереди ${ordinal(place)}, ${weekLabel(planned.get(work.id))}`;
+    return `В очереди ${ordinal(place)}, ${whenDue(planned.get(work.id))}`;
   }
   if (stageOf(work) === "voice") {
     const chosen = work.takes.find((take) => take.id === work.chosenTake);
@@ -255,6 +270,7 @@ export function AuthorDesk() {
       {welcome ? (
         <Welcome
           perYear={desk.state.plan.perYear}
+          partner={desk.state.author.billing !== "paid"}
           onClose={() => {
             setWelcome(false);
             try {
@@ -354,10 +370,15 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const published = works.filter((work) => work.editors.step === "published").sort((a, b) => (b.editors.publishedAt ?? "").localeCompare(a.editors.publishedAt ?? ""));
   const shares = useShareLinks(published.length > 0);
   const replies = works.filter((work) => work.editors.notes.at(-1)?.from === "editors" && work.editors.step !== "published" && work.editors.step !== "approval" && !work.outcome);
-  const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length || teamReady.length;
+  // Published Series with no link to the author's post yet (the offer's sharing condition, 30 days).
+  const unshared = (shares.series ?? []).filter((item) => !item.links.length && item.publishedAt);
+  const firstDue = unshared.map((item) => shareDeadline(item.publishedAt)).filter((date): date is Date => Boolean(date)).sort((a, b) => a.getTime() - b.getTime())[0];
+  const unsharedDue = firstDue ? firstDue.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : null;
+  const hasWaiting = ready.length || needVoice.length || recorded.length || replies.length || answered.length || teamReady.length || unshared.length;
   // The online contract while it waits for its payment («Договор и оплата»).
   const contract = useMyAgreement();
   const contractWaiting = contract.agreement?.payState === "awaiting" || contract.agreement?.payState === "reported";
+  const [sendingAll, setSendingAll] = useState(false);
 
   const startDraft = async () => {
     try {
@@ -376,6 +397,12 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
           onCreate={async (work, later) => {
             try {
               const created = await desk.add(later ? { ...work, shelved: true } : work);
+              // Saved on the server: the sheet's kept copy is no longer needed.
+              try {
+                window.localStorage.removeItem(addDraftKey);
+              } catch {
+                /* nothing kept */
+              }
               setAdding(false);
               if (!later) go(`w/${created.id}/voice`);
             } catch {
@@ -401,7 +428,22 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
         </div>
       </section>
 
-      {contractWaiting ? <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} compact /> : null}
+      <StartPath
+        desk={desk}
+        agreement={contract.agreement}
+        onPay={() => {
+          const card = document.getElementById("desk-contract");
+          card?.scrollIntoView({ behavior: "smooth", block: "center" });
+          Array.from(card?.querySelectorAll("button") ?? []).find((button) => button.textContent?.trim() === "Оплатить")?.click();
+        }}
+      />
+
+
+      {contractWaiting ? (
+        <div id="desk-contract" className="desk-contract">
+          <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} compact explained={desk.state?.author.pageStatus !== "published"} pageOpen={desk.state?.author.pageStatus === "published"} />
+        </div>
+      ) : null}
 
       {hasWaiting ? (
         <section className="desk-section">
@@ -415,13 +457,31 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
                 <div className="desk-ready-body">
                   <p className="desk-ready-kicker">Серия готова</p>
                   <h3>{work.title}</h3>
-                  <p>Редакция нарисовала серию с вашим голосом. Посмотрите и опубликуйте, когда захотите.</p>
+                  <p>
+                    {desk.state?.author.pageStatus === "published"
+                      ? "Редакция нарисовала серию с вашим голосом. Посмотрите и опубликуйте, когда захотите."
+                      : "Редакция нарисовала серию с вашим голосом. Посмотрите её: страница откроется сразу со всеми готовыми сериями."}
+                  </p>
                   <a className="desk-btn desk-btn-red" href={`#w/${work.id}/editors`}>
                     Посмотреть
                   </a>
                 </div>
               </article>
             ))}
+
+            {unshared.length ? (
+              <a href={`#w/${unshared[0].bokId}/editors`} className="desk-nudge is-share">
+                <span>
+                  {unshared.length > 1 ? (
+                    <>Поделитесь сериями в своей соцсети и пришлите нам ссылки на посты</>
+                  ) : (
+                    <>Поделитесь серией <b>«{unshared[0].title}»</b> в своей соцсети и пришлите нам ссылку на пост</>
+                  )}
+                  {desk.state?.author.billing === "paid" && unsharedDue ? ` до ${unsharedDue}` : ""}
+                </span>
+                <span className="desk-nudge-go">Поделиться</span>
+              </a>
+            ) : null}
 
             {answered.map((work) => (
               <a key={work.id} href={`#w/${work.id}/editors`} className={`desk-answer ${work.outcome!.kind === "declined" ? "is-declined" : ""}`}>
@@ -476,14 +536,45 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
               </article>
             ) : null}
 
-            {recorded.map((work) => (
-              <a key={work.id} href={`#w/${work.id}/voice`} className="desk-nudge">
-                <span>
-                  <b>«{work.title}»</b> записан. Отдать редакции?
-                </span>
-                <span className="desk-nudge-go">Открыть</span>
-              </a>
-            ))}
+            {recorded.length ? (
+              <article className="desk-card-voice">
+                <div className="desk-card-voice-head">
+                  <div>
+                    <h3>Записано: {texts(recorded.length)}</h3>
+                    <p>Послушайте, если хотите, и отдайте редакции: текст встанет в вашу очередь на серию.</p>
+                  </div>
+                  {recorded.some((work) => canQueue(work).ok) ? (
+                    <button
+                      type="button"
+                      className="desk-btn desk-btn-red"
+                      disabled={sendingAll}
+                      onClick={async () => {
+                        const ready = recorded.filter((work) => canQueue(work).ok);
+                        setSendingAll(true);
+                        try {
+                          for (const work of ready) await desk.enqueue(work.id);
+                        } finally {
+                          setSendingAll(false);
+                        }
+                      }}
+                    >
+                      {sendingAll ? "Отдаём…" : recorded.filter((work) => canQueue(work).ok).length > 1 ? `Отдать все (${recorded.filter((work) => canQueue(work).ok).length})` : "Отдать редакции"}
+                    </button>
+                  ) : null}
+                </div>
+                <ul className="desk-voice-list">
+                  {recorded.map((work) => (
+                    <li key={work.id}>
+                      <a href={`#w/${work.id}/voice`}>
+                        <span className="desk-voice-title">{work.title || "Без названия"}</span>
+                        <span className="desk-voice-meta">{canQueue(work).ok ? "записан" : "запись не совпадает с текстом"}</span>
+                        <span className="desk-voice-go">Послушать</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ) : null}
             {replies.map((work) => (
               <a key={work.id} href={`#w/${work.id}/editors`} className="desk-nudge">
                 <span>
@@ -565,7 +656,7 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
 /* The queue ---------------------------------------------------------- */
 
 function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
-  const { making, revising, queue, planned, used, perYear } = useQueue(desk);
+  const { making, revising, queue, planned, used, perYear, pace, whenDue } = useQueue(desk);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const left = perYear === null ? null : Math.max(0, perYear - used);
@@ -576,7 +667,11 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
       <div className="desk-h2-row">
         <h2 className="desk-h2">Очередь</h2>
         <span className="desk-h2-note">
-          Редакция рисует по одной серии в неделю, в вашем порядке.{" "}
+          {pace === "weekly"
+            ? "Редакция рисует по одной серии в неделю, в вашем порядке."
+            : pace === "after-payment"
+              ? "Редакция начнёт серии после оплаты, в вашем порядке."
+              : "Редакция делает серии в вашем порядке и пришлёт каждую вам посмотреть."}{" "}
           <button type="button" onClick={onHelp}>
             Подробнее
           </button>
@@ -632,7 +727,7 @@ function QueueBlock({ desk, onHelp }: { desk: Desk; onHelp: () => void }) {
             <a href={`#w/${work.id}/editors`} className="desk-q-title" title={work.title}>
               {work.title || "Без названия"}
             </a>
-            <span className="desk-q-when">{weekLabel(planned.get(work.id))}</span>
+            {pace === "weekly" ? <span className="desk-q-when">{whenDue(planned.get(work.id))}</span> : null}
             <span className="desk-q-moves">
               <button type="button" aria-label="Раньше" title="Раньше" disabled={index === 0} onClick={() => desk.shift(work.id, -1)}>
                 ↑
@@ -978,7 +1073,7 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
   const seconds = readingSeconds(work.text, work.form);
   const locked = work.editors.step && work.editors.step !== "queued";
   const sent = work.editors.step === "queued";
-  const { queue, planFor } = useQueue(desk);
+  const { queue, planFor, pace } = useQueue(desk);
   const landing = planFor([...queue.map((item) => item.id).filter((id) => id !== work.id), work.id]).get(work.id);
   const chosen = work.takes.find((take) => take.id === work.chosenTake);
   const chosenStale = chosen ? isStale(chosen, work.text) : false;
@@ -1022,7 +1117,7 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
 
   return (
     <div className="desk-voice">
-      <section className="desk-voice-main">
+      <section className={`desk-voice-main${takes.length && !locked ? " has-takes" : ""}`}>
         {locked ? (
           <p className="desk-calm">Серия уже у редакции, запись закреплена. Если что-то не так, напишите на шаге «Серия».</p>
         ) : (
@@ -1135,7 +1230,7 @@ function VoiceStep({ work, update, desk, go }: { work: Work; update: Update; des
             <div>
               <b>{work.outcome ? "Готово. Отправить снова?" : "Всё готово. Отдать редакции?"}</b>
               <p>
-                Будет {ordinal(queue.length + 1)} в очереди, {weekLabel(landing)}. Порядок можно менять.
+                Будет {ordinal(queue.length + 1)} в очереди{pace === "weekly" ? `, ${weekLabel(landing)}` : pace === "after-payment" ? ": редакция начнёт после оплаты" : ""}. Порядок можно менять.
               </p>
             </div>
             <button
@@ -1253,7 +1348,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
   const check = canQueue(work);
   const step = work.editors.step;
   const shares = useShareLinks(step === "published");
-  const { queue, planned } = useQueue(desk);
+  const { queue, planned, pace } = useQueue(desk);
   const position = queue.findIndex((item) => item.id === work.id);
   const toQueue = () => {
     go("");
@@ -1346,7 +1441,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
         <div>
           <h3>В очереди {ordinal(position + 1)}</h3>
           <p>
-            Редакция начнёт {weekLabel(planned.get(work.id))}. Пока она не взяла текст в работу, порядок можно менять, а текст можно отозвать.
+            {pace === "weekly" ? `Редакция начнёт ${weekLabel(planned.get(work.id))}. ` : pace === "after-payment" ? "Редакция начнёт после оплаты. " : ""}Пока она не взяла текст в работу, порядок можно менять, а текст можно отозвать.
           </p>
           <div className="desk-state-actions">
             <button type="button" className="desk-btn desk-btn-ink" onClick={toQueue}>
@@ -1410,7 +1505,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
                 className="desk-btn desk-btn-red"
                 disabled={busy}
                 onClick={() =>
-                  window.confirm(`Открыть страницу читателям? Она откроется сразу ${firstReady.length > 1 ? `с ${firstReady.length} сериями` : "с этой серией"}, они появятся и в ленте.`) &&
+                  window.confirm(`Открыть страницу читателям? Она откроется сразу ${firstReady.length > 1 ? `с ${firstReady.length} сериями, они появятся` : "с этой серией, она появится"} и в ленте.`) &&
                   void desk.approveAll(firstReady.map((item) => item.id))
                 }
               >
@@ -1598,7 +1693,7 @@ function Hint({ text }: { text: string }) {
   );
 }
 
-function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number | null }) {
+function Welcome({ onClose, perYear, partner = false }: { onClose: () => void; perYear: number | null; partner?: boolean }) {
   useEscape(onClose);
   return (
     <div className="desk-sheet-back is-center" onClick={onClose}>
@@ -1617,7 +1712,9 @@ function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number | 
           <li>
             <b>Серия</b>
             <span>
-              Редакция рисует серии в вашем порядке, не чаще одной в неделю{perYear !== null ? `, до ${perYear} в год` : ""}. Готовую серию вы смотрите и публикуете сами. Если что-то нужно доработать
+              {partner
+                ? "Редакция рисует серии в вашем порядке. Готовую серию вы смотрите первыми и публикуете сами. Если что-то нужно доработать "
+                : `Редакция рисует серии в вашем порядке, не чаще одной в неделю${perYear !== null ? `, до ${perYear} в год` : ""}. Готовую серию вы смотрите первыми и публикуете сами. Если что-то нужно доработать `}
               или текст не может выйти, редакция всегда объяснит почему.
             </span>
           </li>
@@ -1630,13 +1727,31 @@ function Welcome({ onClose, perYear }: { onClose: () => void; perYear: number | 
   );
 }
 
+const addDraftKey = "boks-desk-add-text-v1";
+
 /** Most authors arrive with finished texts: paste one and go straight to the voice. */
 function AddTextSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (work: Work, later?: boolean) => Promise<void> }) {
   useEscape(onClose);
-  const [title, setTitle] = useState("");
-  const [form, setForm] = useState<Work["form"]>("poem");
-  const [text, setText] = useState("");
+  // What is typed or pasted here survives a tap outside, Esc or a reload, until it is saved.
+  const [kept] = useState<{ title?: string; form?: Work["form"]; text?: string }>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem(addDraftKey) ?? "{}") ?? {};
+    } catch {
+      return {};
+    }
+  });
+  const [title, setTitle] = useState(kept.title ?? "");
+  const [form, setForm] = useState<Work["form"]>(kept.form === "prose" ? "prose" : "poem");
+  const [text, setText] = useState(kept.text ?? "");
   const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    try {
+      if (title.trim() || text.trim()) window.localStorage.setItem(addDraftKey, JSON.stringify({ title, form, text }));
+      else window.localStorage.removeItem(addDraftKey);
+    } catch {
+      /* storage may be unavailable: the sheet still works */
+    }
+  }, [title, form, text]);
   const seconds = readingSeconds(text, form);
   const create = async (later: boolean) => {
     if (saving) return;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import "@/app/author-agreement.css";
-import { acceptAuthorInvite, acceptAuthorInviteWithTerms, loadInviteGreeting, loadInviteTerms, noteInviteOpened, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
+import { acceptAuthorInvite, acceptAuthorInviteWithTerms, loadInviteGreeting, loadInviteTexts, loadInviteTerms, noteInviteOpened, peekAuthorInvite, type InviteOffer, type InvitePeek } from "@/components/boks/author-spaces/data";
 import { InviteTermsBlock, useInviteTerms } from "./invite-terms";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { readableBoksError } from "@/lib/boks/errors";
@@ -28,7 +28,8 @@ const words = defineMessages(
     signInAction: "Sign in with email",
     checking: "Checking the invitation…",
     newTitle: "Your page is ready",
-    newLead: "Readers see nothing until you press “Publish” yourself.",
+    newLead: "The page is closed for now: only you and the editors see it. It opens to readers when you open it yourself.",
+    textsWaiting: (n: number, voiced: number) => `${n} of your text${n === 1 ? "" : "s"} ${n === 1 ? "is" : "are"} already in the cabinet${voiced ? `, ${voiced} with your recording` : ""}.`,
     newBody: (n: number) => `The team prepared your page and ${n} work${n === 1 ? "" : "s"}. Look at everything first: readers see nothing until you press Publish yourself.`,
     withSeries: (n: number) => `${n} of them also come as Series: the recording, word by word, with illustrations.`,
     address: (handle: string) => `Address: ${authorShareLabel(handle)}. You can change it later.`,
@@ -60,7 +61,9 @@ const words = defineMessages(
       signInAction: "Войти по почте",
       checking: "Проверяем приглашение…",
       newTitle: "Ваша страница готова",
-      newLead: "Читатели ничего не увидят, пока вы сами не нажмёте «Опубликовать».",
+      newLead: "Страница пока закрыта: её видите только вы и редакция. Читателям она откроется, когда вы сами её откроете.",
+      textsWaiting: (n: number, voiced: number) =>
+        `В кабинете уже ${plural("ru", n, { one: "ждёт", few: "ждут", many: "ждут", other: "ждут" })} ${n} ${plural("ru", n, { one: "ваш текст", few: "ваших текста", many: "ваших текстов", other: "вашего текста" })}${voiced ? `, ${voiced} из них с вашей записью` : ""}.`,
       newBody: (n: number) => `Редакция подготовила страницу и ${n} ${plural("ru", n, { one: "произведение", few: "произведения", many: "произведений", other: "произведения" })}. Сначала вы всё посмотрите: читатели ничего не увидят, пока вы сами не нажмёте «Опубликовать».`,
       withSeries: (n: number) => `${n} из них ещё и в Series: запись, слово в слово, с иллюстрациями.`,
       address: (handle: string) => `Адрес: ${authorShareLabel(handle)}. Его можно поменять потом.`,
@@ -166,6 +169,15 @@ export function InviteScreen({
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
   // The plan's offer and the two consents, when the invitation carries a plan.
+  const [seeds, setSeeds] = useState<{ texts: number; voiced: number } | null>(null);
+  useEffect(() => {
+    if (!pending) return;
+    let live = true;
+    void loadInviteTexts(token, token ? null : offer?.inviteId ?? null).then((value) => live && setSeeds(value), () => undefined);
+    return () => {
+      live = false;
+    };
+  }, [pending, token, offer?.inviteId]);
   const terms = useInviteTerms(pending ? token : null, pending && !token ? offer?.inviteId ?? null : null, loadInviteTerms);
 
   useEffect(() => {
@@ -227,8 +239,9 @@ export function InviteScreen({
         <h1>{peek.existingPage ? t.existingTitle : t.newTitle}</h1>
         {/* The greeting already names the author; without one, the page's name does. */}
         {peek.name && !peek.existingPage && !greeting && <p className="serif amp-invite__name">{peek.name}</p>}
-        {peek.existingPage ? <p>{t.existingBody(peek.works)}</p> : <p className="amp-invite__muted">{t.newLead}</p>}
-        {terms.value && <InviteTermsBlock terms={terms} />}
+        {peek.existingPage ? (peek.works > 0 ? <p>{t.existingBody(peek.works)}</p> : null) : <p className="amp-invite__muted">{t.newLead}</p>}
+        {seeds && seeds.texts > 0 ? <p className="amp-invite__muted">{t.textsWaiting(seeds.texts, seeds.voiced)}</p> : null}
+        {terms.value && <InviteTermsBlock terms={terms} pageOpen={Boolean(peek.existingPage)} />}
         {problem && <p className="notice" role="alert">{problem}</p>}
         {!terms.loading && (
           <button type="button" className="btn btn-red" style={{ marginTop: 24 }} disabled={busy || (Boolean(terms.value) && !terms.ready)} onClick={() => void accept()}>

@@ -272,6 +272,10 @@ export const loadInvitePlans = (spaceId: string) =>
 export const loadInviteTerms = (token: string | null, inviteId: string | null = null) =>
   call<InviteTerms | null>("get_author_invite_terms", { p_token: token, p_invite_id: inviteId });
 
+/** What the team put in the cabinet for this invitation (texts, how many with a recording); null when not for this address. */
+export const loadInviteTexts = (token: string | null, inviteId: string | null = null) =>
+  call<{ texts: number; voiced: number } | null>("get_invite_texts", { p_token: token, p_invite_id: inviteId });
+
 export const acceptAuthorInviteWithTerms = (token: string | null, inviteId: string | null, terms: Record<string, string>) =>
   call<InviteAcceptance & { agreement?: AuthorAgreement }>("accept_author_invite_with_terms", { p_token: token, p_invite_id: inviteId, p_terms: terms });
 

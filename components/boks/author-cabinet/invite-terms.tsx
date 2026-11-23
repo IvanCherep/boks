@@ -73,20 +73,23 @@ const boxText: Record<LegalKind, { before: string; link: string; after: string }
   author_pd_distribution: { before: "Даю ", link: "согласие на распространение персональных данных", after: ": имя, фото, биография и голос будут на моей странице" },
 };
 
-export function InviteTermsBlock({ terms }: { terms: InviteTermsState }) {
+export function InviteTermsBlock({ terms, pageOpen = false }: { terms: InviteTermsState; pageOpen?: boolean }) {
   const value = terms.value;
   if (!value) return null;
   const paid = value.priceRub > 0;
   return (
     <div className="aag-terms">
       <div className="aag-plan">
-        <span className="aag-plan__name">Тариф «{planName[value.plan]}»</span>
+        <span className="aag-plan__name">
+          Тариф «{planName[value.plan]}»
+          {value.seriesPerYear ? <small className="aag-plan__more">до {value.seriesPerYear} серий в год, не чаще одной в неделю</small> : null}
+        </span>
         <span className="aag-plan__price">{paid ? `${rub(value.priceRub)} за год` : "бесплатно"}</span>
       </div>
       {paid ? (
         <p className="aag-lead">
           Сейчас платить не нужно. Кабинет откроется сразу: добавьте тексты и запишите голос. Оплатить можно в течение {value.payDays} дней
-          по QR-коду из кабинета. Страница откроется читателям, а редакция начнёт делать Series после оплаты.
+          по QR-коду из кабинета. {pageOpen ? "Редакция начнёт делать Series после оплаты." : "Страница откроется читателям, а редакция начнёт делать Series после оплаты."}
         </p>
       ) : (
         <p className="aag-lead">
