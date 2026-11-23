@@ -85,7 +85,7 @@ const helpText = [
   "",
   "/stats — статистика за сегодня и вчера: люди, Россия, визиты, чтение, аккаунты, лайки, страны",
   "/stats week — неделя по дням, таблицей (или /stats 14 — любое число дней до 31)",
-  "/stats authors — то же по каждому нашему автору, 14 дней; /stats komarov — один автор по его @handle",
+  "/stats authors — то же по каждому нашему автору, 14 дней (/stats authors 30 — за 30 дней, до 60); /stats komarov — один автор по его @handle (/stats komarov 30)",
   "/online — сколько людей на сайте за 5 минут, 15 минут и час",
   "/server — нагрузка, память, диск, база, сервисы, ошибки, скорость сайта, релиз",
   "/help — этот список",
@@ -134,8 +134,13 @@ async function askServer(env, text, command) {
       signal: AbortSignal.timeout(25_000),
     });
     if (response.ok) {
-      const { reply } = await response.json();
-      if (typeof reply === "string" && reply.trim()) return await telegram(env, reply);
+      const { reply, replies } = await response.json();
+      // A long answer (all authors over many days) comes as several messages, in order.
+      const messages = (Array.isArray(replies) ? replies : [reply]).filter((one) => typeof one === "string" && one.trim());
+      if (messages.length) {
+        for (const one of messages.slice(0, 10)) await telegram(env, one);
+        return;
+      }
       failure = "пустой ответ";
     } else {
       failure = `HTTP ${response.status}`;

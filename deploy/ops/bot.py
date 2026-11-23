@@ -263,24 +263,25 @@ def author_table(days):
 
 
 def stats_authors(n=14):
+    """All authors, n days each. A list of messages: Telegram takes about 4000
+    characters, so with many authors (or many days) the authors go on in the next
+    message instead of losing days."""
     blocks = author_tables(author_rows(n))
     if not blocks:
         return "Опубликованных страниц авторов с боками пока нет."
-
-    def render(keep):
-        parts = [f"👩‍🎨 <b>boks · авторы, {keep} дн.</b> (по Белграду, на {now_belgrade_text}, сегодня — неполный день)"]
-        for handle, name, people, days in blocks:
-            parts.append(f"<b>{html.escape(name)}</b>{' @' + html.escape(handle) if handle else ''} · людей за {n} дн.: {people}\n"
-                         + author_table(days[-keep:]))
-        parts.append(AUTHOR_LEGEND + "\nОдин автор за 14 дней: /stats " + html.escape(blocks[0][0] or "handle"))
-        return "\n".join(parts)
-
-    now_belgrade_text = now_belgrade()
-    # Telegram takes about 4000 characters; with many authors, fewer days.
-    keep = n
-    while keep > 1 and len(re.sub(r"<[^>]+>", "", render(keep))) > 3900:
-        keep -= 1
-    return render(keep)
+    head = f"👩‍🎨 <b>boks · авторы, {n} дн.</b> (по Белграду, на {now_belgrade()}, сегодня — неполный день)"
+    parts = [f"<b>{html.escape(name)}</b>{' @' + html.escape(handle) if handle else ''} · людей за {n} дн.: {people}\n"
+             + author_table(days) for handle, name, people, days in blocks]
+    tail = AUTHOR_LEGEND + f"\nОдин автор: /stats {html.escape(blocks[0][0] or 'handle')} {n}"
+    messages, current = [], head
+    for part in parts + [tail]:
+        if len(current) + 1 + len(part) > 3900:
+            messages.append(current)
+            current = part
+        else:
+            current += "\n" + part
+    messages.append(current)
+    return messages if len(messages) > 1 else messages[0]
 
 
 def stats_author(handle, n=14):
@@ -363,8 +364,8 @@ def server():
 HELP = ("🤖 <b>Команды boks</b>\n"
         "/stats — сегодня и вчера\n"
         "/stats week — неделя по дням (или /stats 14, до 31 дня)\n"
-        "/stats authors — наши авторы, каждый по дням за 14 дней\n"
-        "/stats komarov — один автор (его @handle) за 14 дней\n"
+        "/stats authors — наши авторы, каждый по дням за 14 дней (/stats authors 30 — за 30, до 60)\n"
+        "/stats komarov — один автор (его @handle) за 14 дней (/stats komarov 30)\n"
         "/online — кто на сайте сейчас\n"
         "/server — нагрузка, память, диск, сервисы, ошибки\n"
         "Ответ приходит в течение минуты. Время — по Белграду.")
@@ -376,20 +377,23 @@ def answer(text):
         return None
     command = words[0].split("@")[0].lower()
     arg = words[1].lower() if len(words) > 1 else ""
-    if command in ("/stats", "/stat", "/статистика"):
+    days = words[2] if len(words) > 2 else ""
+    author_days = max(1, min(60, int(days))) if re.fullmatch(r"\d{1,2}", days) else 14
+    is_authors = arg in ("authors", "author", "авторы", "автор")
+    if command in ("/stats", "/stat", "/статистика") or (command == "/status" and is_authors):
         if arg in ("", "today", "сегодня"):
             return stats_today()
         if arg in ("week", "неделя", "7"):
             return stats_days(7)
         if re.fullmatch(r"\d{1,2}", arg):
             return stats_days(max(1, min(31, int(arg))))
-        if arg in ("authors", "author", "авторы", "автор"):
-            return stats_authors()
+        if is_authors:
+            return stats_authors(author_days)
         if re.fullmatch(r"@?[a-z][a-z0-9_]{2,23}", arg):
-            found = stats_author(arg.lstrip("@"))
+            found = stats_author(arg.lstrip("@"), author_days)
             if found:
                 return found
-        return "Не понял. Например: /stats, /stats week, /stats 14, /stats authors, /stats komarov"
+        return "Не понял. Например: /stats, /stats week, /stats 14, /stats authors, /stats authors 30, /stats komarov"
     if command in ("/server", "/status", "/сервер"):
         return server()
     if command in ("/online", "/онлайн"):
@@ -418,7 +422,8 @@ def serve(address="172.18.0.1", port=8787):
                 reply = answer(text) or HELP
             except Exception as error:  # an answer that failed is still an answer
                 reply = f"⚠️ Не получилось ответить: {html.escape(str(error)[:200])}"
-            body = json.dumps({"reply": reply}).encode()
+            replies = reply if isinstance(reply, list) else [reply]
+            body = json.dumps({"reply": replies[0], "replies": replies}).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -445,7 +450,8 @@ def main():
         return serve(*(sys.argv[2:3] or []))
     # Locally, or to see an answer on the server: BOKS_BOT_COMMANDS="/stats week;/server" ops/bot.py
     for text in os.environ.get("BOKS_BOT_COMMANDS", "/help").split(";"):
-        print(answer(text) or HELP, end="\n\n")
+        reply = answer(text) or HELP
+        print("\n\n--- next message ---\n\n".join(reply if isinstance(reply, list) else [reply]), end="\n\n")
     return 0
 
 
