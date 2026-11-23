@@ -17,7 +17,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const bok = kind ? await loadBokForShare(id) : null;
   if (!kind || !bok) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
   const card = curtainCardFor(bok);
-  if (kind === "key") return new Response(card.key, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store", "X-Curtain-Key": card.key } });
+  // The look and the Series folder let the job reuse a loop made before publication.
+  if (kind === "key") return new Response(card.key, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store", "X-Curtain-Key": card.key, "X-Curtain-Look": card.look, ...(card.piece ? { "X-Curtain-Piece": card.piece } : {}) } });
   try {
     const bytes = await curtainLayer(card, kind, request);
     return new Response(bytes, {

@@ -56,6 +56,16 @@ export type CurtainCard = {
   position: string;
   /** Changes whenever anything drawn changes: names the stored loop. */
   key: string;
+  /**
+   * The same, without the bok's id: what the card looks like. A Series piece
+   * gets its loop and poster made before its author publishes it, under its
+   * folder's token and this look (`curtain/prepared/<piece>-<look>.mp4`); the
+   * bok, once published with the same title, byline and cover, shows them at
+   * once instead of waiting for the job.
+   */
+  look: string;
+  /** The link-only folder of the bok's Series, or null. */
+  piece: string | null;
 };
 
 /** The card for a published bok, from trusted data only (`loadBokForShare`). */
@@ -67,7 +77,26 @@ export function curtainCardFor(bok: { id: string; title: string; authorName?: st
   const art = getBokPosterArtwork(bok.id) ?? (bok.seriesPiece ? linkOnlyFilePath(bok.seriesPiece, "curtain-share.jpg") : null) ?? ownCoverPath(bok.id, bok.coverVersion, "jpg");
   const position = curtainPosition[bok.id] ?? seriesPieceFor(bok.id)?.coverFocus ?? bokArtworkFocus(bok.id);
   const key = hash([curtainTemplate, bok.id, title, byline ?? "", art ?? "", position].join("\u0000"));
-  return { id: bok.id, title, byline, art, position, key };
+  return { id: bok.id, title, byline, art, position, key, look: curtainLook(title, byline, art, position), piece: bok.seriesPiece ?? null };
+}
+
+/**
+ * The card a Series piece will have once its author publishes it, from its
+ * link-only folder (its manifest's title and author, its `curtain-share.jpg`)
+ * and the window an unregistered bok gets. Drawn ahead, it lets the bok show
+ * its loop the moment it appears. `id` is the token: it names caches only.
+ */
+export function curtainCardForPiece(piece: { token: string; title: string; author?: string | null }): CurtainCard {
+  const title = piece.title.replace(/\s+/g, " ").trim();
+  const byline = piece.author?.replace(/\s+/g, " ").trim() || null;
+  const art = linkOnlyFilePath(piece.token, "curtain-share.jpg");
+  const position = bokArtworkFocus("");
+  const look = curtainLook(title, byline, art, position);
+  return { id: piece.token, title, byline, art, position, key: look, look, piece: piece.token };
+}
+
+function curtainLook(title: string, byline: string | null, art: string | null, position: string) {
+  return hash([curtainTemplate, title, byline ?? "", art ?? "", position].join("\u0000"));
 }
 
 /** FNV-1a, 32 bits, as 8 hex digits: a name for a file, not a security boundary. */

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { curtainArtBox, curtainCardFor, curtainTitleLayout, jpegSize } from "./curtain";
-import { curtainLoopUrl, storedCurtainPoster } from "./curtain-loop";
+import { curtainArtBox, curtainCardFor, curtainCardForPiece, curtainTitleLayout, jpegSize } from "./curtain";
+import { curtainLoopSource, curtainLoopUrl, curtainSources, preparedCurtainUrl, storedCurtainPoster } from "./curtain-loop";
 
 describe("curtain card", () => {
   const kosa = { id: "cc7e3800-3567-42c1-ba08-8554a345e25c", title: "коса", authorName: "Алексей Прохоров" };
@@ -84,5 +84,52 @@ describe("curtain card", () => {
     expect(curtainLoopUrl(curtainCardFor(kosa))).toMatch(/^http:\/\/caddy:8082\/curtain\/cc7e3800-3567-42c1-ba08-8554a345e25c-[0-9a-f]{8}\.mp4$/);
     expect(curtainLoopUrl({ id: "../x", key: "00000000" })).toBeNull();
     delete process.env.BOKS_LINK_ONLY_BASE_URL;
+  });
+});
+
+describe("previews ahead of publication", () => {
+  const token = "BBBBBBBBBBBBBBBBBBBBBB";
+  const piece = { token, title: "Первая строка…", author: "Имя Автора" };
+  const bok = (id: string) => ({ id, title: "Первая строка…", authorName: "Имя Автора", seriesPiece: token });
+
+  it("draws the card the bok will have once its author publishes it", () => {
+    const ahead = curtainCardForPiece(piece);
+    const published = curtainCardFor(bok("00000000-0000-4000-8000-000000000001"));
+    expect(ahead.art).toBe(published.art);
+    expect(ahead.position).toBe(published.position);
+    expect(ahead.look).toBe(published.look);
+    expect(published.piece).toBe(token);
+  });
+
+  it("looks the same whatever the bok's id; its own key does not", () => {
+    const one = curtainCardFor(bok("00000000-0000-4000-8000-000000000001"));
+    const two = curtainCardFor(bok("00000000-0000-4000-8000-000000000002"));
+    expect(one.look).toBe(two.look);
+    expect(one.key).not.toBe(two.key);
+  });
+
+  it("stops matching when the author publishes it under another title or name", () => {
+    const ahead = curtainCardForPiece(piece).look;
+    expect(curtainCardFor({ ...bok("00000000-0000-4000-8000-000000000001"), title: "Посвящение" }).look).not.toBe(ahead);
+    expect(curtainCardFor({ ...bok("00000000-0000-4000-8000-000000000001"), authorName: "Имя Отчество Автора" }).look).not.toBe(ahead);
+  });
+
+  it("looks for the bok's own loop first, then the prepared one", async () => {
+    process.env.BOKS_LINK_ONLY_BASE_URL = "http://caddy:8082";
+    const card = curtainCardFor(bok("00000000-0000-4000-8000-000000000001"));
+    const [own, ahead] = curtainSources(card);
+    expect(own).toMatch(/\/curtain\/00000000-0000-4000-8000-000000000001-[0-9a-f]{8}\.mp4$/);
+    expect(ahead).toBe(`http://caddy:8082/curtain/prepared/${token}-${card.look}.mp4`);
+    expect(preparedCurtainUrl({ piece: "../../etc", look: card.look })).toBeNull();
+    const real = globalThis.fetch;
+    try {
+      globalThis.fetch = (async (url: string) => new Response(null, { status: String(url) === ahead ? 200 : 404 })) as typeof fetch;
+      expect(await curtainLoopSource(card)).toBe(ahead);
+      globalThis.fetch = (async () => new Response(null, { status: 200 })) as typeof fetch;
+      expect(await curtainLoopSource(card)).toBe(own);
+    } finally {
+      globalThis.fetch = real;
+      delete process.env.BOKS_LINK_ONLY_BASE_URL;
+    }
   });
 });

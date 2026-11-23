@@ -271,6 +271,8 @@ services:
     volumes:
       - ./curtain/curtain.mjs:/curtain/curtain.mjs:ro
       - ./link-only/curtain:/out
+      # The Series folders, read-only: previews made before publication.
+      - ./link-only:/pieces:ro
       - ./static:/static:ro
       - ./flags:/flags:ro
     mem_limit: 1g

@@ -15,9 +15,17 @@
 // Nothing here is encoded in a request: a bok published a minute ago previews
 // with its poster until the next run. The poster itself is stored here too
 // (`<id>-<key>.jpg`, asked of the app), so copies do not redraw it.
+//
+// Previews ahead of publication (2026-11-23): every Series folder in the
+// link-only store (`PIECES_DIR`, read-only) that is not yet a published bok
+// gets its loop and poster made from `/l/<token>/curtain/<layer>`, under
+// `prepared/<token>-<look>.{mp4,jpg}`; the look is the card without the bok's
+// id. Once the author publishes it with the same title, byline and cover, the
+// app serves those at once, and this job links them in as the bok's own
+// (`<id>-<key>.mp4`) instead of making them again.
 
 import { spawn } from "node:child_process";
-import { mkdtemp, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile, link, mkdir, mkdtemp, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { cpus, tmpdir } from "node:os";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -50,6 +58,9 @@ const busyFlag = process.env.BUSY_FLAG ?? "/flags/busy.on";
  */
 const startLoadPerCore = Number(process.env.START_LOAD ?? 0.6);
 const stopLoadPerCore = Number(process.env.STOP_LOAD ?? 1.0);
+const pieces = process.env.PIECES_DIR ?? "/pieces";
+const prepared = join(out, "prepared");
+const tokenPattern = /^[A-Za-z0-9_-]{22,64}$/;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** A response from whichever app copy answers: one may be stopping for a release. */
@@ -108,13 +119,14 @@ function ffmpeg(args) {
   });
 }
 
-async function makeLoop(id, key, work) {
-  const [art, text] = await Promise.all(["art.png", "text.png"].map((layer) => app(`/b/${id}/curtain/${layer}`)));
+/** `base` is `/b/<id>/curtain` or `/l/<token>/curtain`; `target` the finished file's path. */
+async function makeLoop(base, key, target, work) {
+  const [art, text] = await Promise.all(["art.png", "text.png"].map((layer) => app(`${base}/${layer}`)));
   if (!art.ok || !text.ok) return false; // unpublished meanwhile
   if (text.headers.get("x-curtain-key") !== key) return false; // changed meanwhile: next run
   await writeFile(join(work, "art.png"), Buffer.from(await art.arrayBuffer()));
   await writeFile(join(work, "text.png"), Buffer.from(await text.arrayBuffer()));
-  const partial = join(out, `.${id}-${key}.mp4.part`);
+  const partial = join(out, `.${key}-${Date.now()}.mp4.part`);
   await ffmpeg([
     "-nostdin", "-v", "error", "-y",
     "-loop", "1", "-framerate", "30", "-i", join(work, "art.png"),
@@ -126,18 +138,42 @@ async function makeLoop(id, key, work) {
     "-movflags", "+faststart", "-f", "mp4", partial,
   ]);
   // Whole or nothing: the app only ever sees a finished file.
-  await rename(partial, join(out, `${id}-${key}.mp4`));
+  await rename(partial, target);
   return true;
 }
 
-async function storePoster(id, key) {
-  const response = await app(`/b/${id}/image`);
+/** `path` is `/b/<id>/image` or `/l/<token>/curtain/image.jpg`. */
+async function storePoster(path, key, target) {
+  const response = await app(path);
   if (!response.ok || response.headers.get("x-curtain-key") !== key) return false; // unpublished or changed meanwhile
   const bytes = Buffer.from(await response.arrayBuffer());
   if (bytes.length < 1000 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
-  const partial = join(out, `.${id}-${key}.jpg.part`);
+  const partial = join(out, `.${key}-${Date.now()}.jpg.part`);
   await writeFile(partial, bytes);
-  await rename(partial, join(out, `${id}-${key}.jpg`));
+  await rename(partial, target);
+  return true;
+}
+
+async function exists(path) {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** A prepared file taken as a bok's own: a hard link (same disk, no copy), else a copy. */
+async function adopt(from, to) {
+  if (!(await exists(from))) return false;
+  const partial = `${to}.part`;
+  await rm(partial, { force: true });
+  try {
+    await link(from, partial);
+  } catch {
+    await copyFile(from, partial);
+  }
+  await rename(partial, to);
   return true;
 }
 
@@ -164,7 +200,9 @@ async function main() {
 
   const work = await mkdtemp(join(tmpdir(), "curtain-"));
   await writeFile(join(work, "phases.txt"), phaseList());
-  let made = 0, current = 0, failed = 0, removed = 0, posters = 0;
+  let made = 0, current = 0, failed = 0, removed = 0, posters = 0, adopted = 0, ready = 0;
+  const publishedPieces = new Set();
+  await mkdir(prepared, { recursive: true });
   try {
     for (const id of published) {
       try {
@@ -172,18 +210,28 @@ async function main() {
         if (!answer.ok) continue;
         const key = (await answer.text()).trim();
         if (!/^[0-9a-f]{8}$/.test(key)) continue;
+        const look = answer.headers.get("x-curtain-look") ?? "";
+        const piece = answer.headers.get("x-curtain-piece") ?? "";
+        const ahead = tokenPattern.test(piece) && /^[0-9a-f]{8}$/.test(look) ? join(prepared, `${piece}-${look}`) : null;
+        if (tokenPattern.test(piece)) publishedPieces.add(piece);
         const name = `${id}-${key}.mp4`;
         const poster = `${id}-${key}.jpg`;
         const old = (stored.get(id) ?? []).filter((file) => file !== name && file !== poster);
-        if (!(stored.get(id) ?? []).includes(poster) && posters < postersPerRun && !(await busy(stopLoadPerCore))) {
-          if (posters > 0) await sleep(posterPauseMs);
-          if (await storePoster(id, key)) posters += 1;
+        if (!(stored.get(id) ?? []).includes(poster)) {
+          if (ahead && (await adopt(`${ahead}.jpg`, join(out, poster)))) adopted += 1;
+          else if (posters < postersPerRun && !(await busy(stopLoadPerCore))) {
+            if (posters > 0) await sleep(posterPauseMs);
+            if (await storePoster(`/b/${id}/image`, key, join(out, poster))) posters += 1;
+          }
         }
         if (!(stored.get(id) ?? []).includes(name)) {
-          if (made >= perRun || (made > 0 && (await busy(stopLoadPerCore)))) continue;
-          if (made > 0) await sleep(pauseMs);
-          if (!(await makeLoop(id, key, work))) continue;
-          made += 1;
+          if (ahead && (await adopt(`${ahead}.mp4`, join(out, name)))) adopted += 1;
+          else {
+            if (made >= perRun || (made > 0 && (await busy(stopLoadPerCore)))) continue;
+            if (made > 0) await sleep(pauseMs);
+            if (!(await makeLoop(`/b/${id}/curtain`, key, join(out, name), work))) continue;
+            made += 1;
+          }
         } else current += 1;
         for (const file of old) {
           await rm(join(out, file), { force: true });
@@ -202,10 +250,59 @@ async function main() {
         removed += 1;
       }
     }
+
+    // Previews ahead of publication: Series folders not yet published as boks.
+    let folders = [];
+    try {
+      folders = (await readdir(pieces, { withFileTypes: true })).filter((entry) => entry.isDirectory() && tokenPattern.test(entry.name)).map((entry) => entry.name);
+    } catch {
+      // no store mounted: nothing to prepare
+    }
+    const kept = new Set();
+    const unknown = new Set(); // folders whose look this run could not learn: theirs stay
+    for (const token of folders) {
+      if (publishedPieces.has(token)) continue;
+      if (!(await exists(join(pieces, token, "manifest.json"))) || !(await exists(join(pieces, token, "curtain-share.jpg")))) continue;
+      unknown.add(token);
+      try {
+        const answer = await app(`/l/${token}/curtain/key`);
+        if (!answer.ok) continue;
+        const look = (await answer.text()).trim();
+        if (!/^[0-9a-f]{8}$/.test(look)) continue;
+        unknown.delete(token);
+        const target = join(prepared, `${token}-${look}`);
+        kept.add(`${token}-${look}.mp4`).add(`${token}-${look}.jpg`);
+        if (!(await exists(`${target}.jpg`)) && posters < postersPerRun && !(await busy(stopLoadPerCore))) {
+          if (posters > 0) await sleep(posterPauseMs);
+          if (await storePoster(`/l/${token}/curtain/image.jpg`, look, `${target}.jpg`)) posters += 1;
+        }
+        if (await exists(`${target}.mp4`)) {
+          ready += 1;
+          continue;
+        }
+        if (made >= perRun || (made > 0 && (await busy(stopLoadPerCore)))) continue;
+        if (made > 0) await sleep(pauseMs);
+        if (await makeLoop(`/l/${token}/curtain`, look, `${target}.mp4`, work)) made += 1;
+      } catch (error) {
+        failed += 1;
+        console.error(token, error instanceof Error ? error.message : error);
+      }
+    }
+    // A prepared file stays while its folder is unpublished and still looks
+    // the same. A published piece's is the bok's own by now (linked above, or
+    // made again if the bok looks different); a gone folder's goes with it.
+    // Without the store mounted nothing is judged.
+    for (const name of folders.length > 0 ? await readdir(prepared) : []) {
+      const match = /^([A-Za-z0-9_-]{22,64})-([0-9a-f]{8})\.(mp4|jpg)$/.exec(name);
+      const stale = name.endsWith(".part") || (match && !kept.has(name) && !unknown.has(match[1]));
+      if (!stale) continue;
+      await rm(join(prepared, name), { force: true });
+      removed += 1;
+    }
   } finally {
     await rm(work, { recursive: true, force: true });
   }
-  console.log(JSON.stringify({ job: "curtain", published: published.size, made, current, posters, removed, failed, seconds: Math.round((Date.now() - started) / 1000) }));
+  console.log(JSON.stringify({ job: "curtain", published: published.size, made, current, adopted, prepared: ready, posters, removed, failed, seconds: Math.round((Date.now() - started) / 1000) }));
   if (failed > 0 && made === 0 && current === 0) process.exitCode = 1;
 }
 

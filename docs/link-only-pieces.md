@@ -144,6 +144,32 @@ Published this way:
 | «полет сквозь сны» | Алексей Прохоров | 2026-11-10 | immersive poem in the author's own recording, 5 pictures; first in his section; published straight from @prokhorov |
 | «сошлись по швам», «наконец-то родился я» | Алексей Прохоров | 2026-11-10 | immersive poems in the author's own recordings, 3 and 7 pictures; «сошлись по швам» first in his section, «наконец-то родился я» before the long roses; published straight from @prokhorov |
 
+### Previews ahead of publication
+
+A Series piece has its link preview (the curtain loop for og:video and the
+1200x630 poster) before its author publishes it, so a new bok previews fully
+from its first minute, and the team has the files for its own materials.
+
+- **Made by the curtain job** (`deploy/curtain/curtain.mjs`, every 15
+  minutes): every folder in the store with `manifest.json` and
+  `curtain-share.jpg` that is not yet a published bok gets
+  `curtain/prepared/<token>-<look>.mp4` and `.jpg`. The job reads the store
+  read-only at `/pieces` (`compose.yml`).
+- **The card it draws** is the one the bok will have
+  (`curtainCardForPiece`): the manifest's `title` and `author`, the folder's
+  `curtain-share.jpg`, the default window. `look` is the card's key without
+  the bok's id. So build the manifest with the work's title as it will be
+  published, and the author's name as on their page.
+- **On publication** the app serves the prepared loop and poster at once
+  (`/b/<id>/loop.mp4` and `/b/<id>/image` look for the bok's own first, then
+  `curtain/prepared/`), and the next job run links them in as the bok's own
+  (`<id>-<key>`, a hard link, no copy) instead of rendering. If the author
+  changed the title, or their name differs, the look differs: the bok gets
+  its loop the ordinary way, within one run.
+- **For the team**: `/l/<token>/curtain/loop.mp4` (the loop),
+  `/l/<token>/curtain/image.jpg` (the poster). Token-only, like the piece.
+  `key`, `art.png`, `text.png` there are for the job.
+
 ### A poet's own address
 
 A poet with a section gets an address of their own to share, `/series/<slug>`
