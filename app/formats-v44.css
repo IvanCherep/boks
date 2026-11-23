@@ -222,6 +222,7 @@
 .poem .poem-text-preview h1 { text-wrap: balance; margin: 15px 0 22px; font: 400 39px/1.06 var(--font-serif); letter-spacing: -1.4px; }
 .poem-text-preview__verse { font: 400 20px/1.65 var(--font-serif); }
 .poem-text-preview__verse p { margin: 0; }
+.poem-text-preview__verse p.is-stanza { margin-top: 1.1em; }
 .poem-text-preview__end { margin-top: 38px; text-align: center; font: italic 32px var(--font-serif); }
 /* Workshop chrome uses the accepted studio frame; artwork and readings are real. */
 .isandbox__overlay { background: #152928; color: #eae6cd; }

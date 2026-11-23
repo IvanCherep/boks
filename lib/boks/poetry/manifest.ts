@@ -78,6 +78,12 @@ export type PoemLine = {
   startMs: number;
   endMs: number;
   tokens: PoemToken[];
+  /**
+   * The line opens a stanza of the printed poem. Only "Read the text" uses it,
+   * to keep the poem's blank lines; on screen a stanza is what one picture
+   * carries. Older manifests do not have it and read as one block.
+   */
+  stanzaStart?: boolean;
 };
 
 export type PoemManifest = {
@@ -250,6 +256,13 @@ export function tokenStateAt(line: PoemLine, index: number, ms: number): TokenSt
  * at full opacity to zero and back. The word reached cannot go backwards.
  */
 export function wordReachedAt(line: PoemLine, ms: number): number {
+  /*
+   * Before the poem's first word nothing has been reached. `lineIndexAt`
+   * answers the first line during a recording's own musical opening, and
+   * that line's first word stood lit for the whole introduction - nine
+   * seconds of a word the voice had not said yet.
+   */
+  if (line.tokens.length > 0 && ms < line.tokens[0].atMs) return -1;
   let reached = 0;
   for (let index = 0; index < line.tokens.length; index += 1) {
     if (line.tokens[index].atMs <= ms) reached = index;

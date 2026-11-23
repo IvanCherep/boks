@@ -413,9 +413,20 @@ describe("the word the reading has reached", () => {
     }
   });
 
+  it("has reached nothing before the first word is spoken", () => {
+    // A recording that opens with music: the first line is the one on screen,
+    // but none of its words may be lit until the voice gets to them.
+    const opening = 9000;
+    const first = { ...manifest.lines[0], startMs: manifest.lines[0].startMs + opening, endMs: manifest.lines[0].endMs + opening,
+      tokens: manifest.lines[0].tokens.map((token) => ({ ...token, atMs: token.atMs + opening, endMs: token.endMs + opening })) };
+    expect(wordReachedAt(first, 0)).toBe(-1);
+    expect(wordReachedAt(first, first.tokens[0].atMs - 1)).toBe(-1);
+    expect(wordReachedAt(first, first.tokens[0].atMs)).toBe(0);
+  });
+
   it("only moves forward through a line", () => {
     for (const line of manifest.lines) {
-      let previous = 0;
+      let previous = -1;
       for (let ms = line.startMs; ms <= line.endMs + 400; ms += 20) {
         const reached = wordReachedAt(line, ms);
         expect(reached).toBeGreaterThanOrEqual(previous);

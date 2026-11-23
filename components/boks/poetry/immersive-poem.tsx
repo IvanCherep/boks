@@ -1311,7 +1311,7 @@ export function ImmersivePoem({
 
       {textPreview && <div className="poem-text-preview">
         <header><button type="button" onClick={() => setTextPreview(false)}><ArrowLeft /><span>{t("Back to audio", "К аудио")}</span></button></header>
-        <article lang={manifest.language}><h1>{manifest.title}</h1><div className="poem-text-preview__verse">{manifest.lines.map((verse, index) => <p key={index}>{verse.tokens.map(token => token.text).join(" ")}</p>)}</div><div className="poem-text-preview__end" aria-hidden="true">b.</div></article>
+        <article lang={manifest.language}><h1>{manifest.title}</h1><div className="poem-text-preview__verse">{manifest.lines.map((verse, index) => <p key={index} className={index > 0 && verse.stanzaStart ? "is-stanza" : undefined}>{verse.tokens.map(token => token.text).join(" ")}</p>)}</div><div className="poem-text-preview__end" aria-hidden="true">b.</div></article>
       </div>}
       {/* Keyed by scene so it fades in afresh on its own picture. */}
       {gestureHint && (
