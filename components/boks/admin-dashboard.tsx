@@ -546,9 +546,9 @@ export function AdminDashboard() {
         {tab === "rights" && <RightsReview />}
         {tab === "authors" && <AuthorApplications />}
         {tab === "authors" && <AuthorAgreements />}
+        {tab === "authors" && <AuthorSpaces />}
         {tab === "authors" && <ShareLinks />}
         {tab === "authors" && <SeriesCredits />}
-        {tab === "authors" && <AuthorSpaces />}
         {tab === "game" && <AuthorGameStudio />}
         {tab === "recorder" && <SeriesRecorder />}
         {tab === "series-work" && <SeriesWorkPanel openRecorder={(draftId) => { openRecorderDraft(draftId); navigate("recorder"); }} />}

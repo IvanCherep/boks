@@ -16,6 +16,7 @@ import {
 import { readableBoksError } from "@/lib/boks/errors";
 import { legalHref, legalKinds, planName, rub, ruDate, type AuthorPlan, type PaymentDetails, type PayState, type StudioAgreement } from "@/lib/boks/author/agreement";
 import { useUiLanguage } from "@/components/boks/ui-language";
+import { loadBoksPeople } from "@/components/boks/supabase-browser-data";
 
 /**
  * Studio's side of the online contract (`docs/author-agreements.md`): the
@@ -23,6 +24,62 @@ import { useUiLanguage } from "@/components/boks/ui-language";
  * получена», every contract in Studio → Authors, and the payment details
  * the authors see. The team works in Russian, so this screen is Russian only.
  */
+
+/** What Studio knows when it starts a new author: from an application, or nothing. */
+export type NewAuthorPrefill = { name?: string; email?: string; plan?: AuthorPlan | "" };
+
+const newAuthorEvent = "boks:new-author";
+
+/** «Новый автор» / «Оформить автора»: Studio → Authors opens a new page, filled in where it can be. */
+export function startNewAuthor(prefill: NewAuthorPrefill = {}) {
+  window.dispatchEvent(new CustomEvent<NewAuthorPrefill>(newAuthorEvent, { detail: prefill }));
+}
+
+export function onNewAuthor(listener: (prefill: NewAuthorPrefill) => void) {
+  const handler = (event: Event) => listener((event as CustomEvent<NewAuthorPrefill>).detail ?? {});
+  window.addEventListener(newAuthorEvent, handler);
+  return () => window.removeEventListener(newAuthorEvent, handler);
+}
+
+/** The account a person already has: search by @name or email, the invitation goes to its email. */
+export function AccountFinder({ onPick }: { onPick: (person: { email: string; handle: string | null }) => void }) {
+  const [query, setQuery] = useState("");
+  const [rows, setRows] = useState<{ email: string; handle: string | null; displayName: string }[] | null>(null);
+  useEffect(() => {
+    const q = query.trim().replace(/^@/, "");
+    if (q.length < 2) return;
+    let live = true;
+    const timer = window.setTimeout(() => {
+      loadBoksPeople({ query: q, limit: 6 }).then((answer) => live && setRows(answer.rows.filter((row) => row.email)), () => live && setRows([]));
+    }, 250);
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+  const shown = query.trim().replace(/^@/, "").length >= 2 ? rows : null;
+  return (
+    <div className="aag-finder">
+      <label className="asp-field">
+        <span>Уже есть аккаунт в Boks? Найдите его</span>
+        <Input value={query} placeholder="@ник или почта" autoComplete="off" onChange={(event) => setQuery(event.target.value)} />
+        <small>Приглашение должно уйти на почту, с которой человек входит. Тогда он войдёт как обычно и сразу увидит приглашение.</small>
+      </label>
+      {shown && shown.length === 0 && <p className="author-applications__muted">Не нашли такой аккаунт. Можно пригласить по почте: аккаунт создастся при первом входе.</p>}
+      {shown && shown.length > 0 && (
+        <ul className="aag-finder__list">
+          {shown.map((row) => (
+            <li key={row.email}>
+              <button type="button" onClick={() => { onPick({ email: row.email, handle: row.handle }); setQuery(""); setRows(null); }}>
+                <strong>{row.handle ? `@${row.handle}` : row.displayName || "без ника"}</strong> <span>{row.email}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export const invitePlans: { value: AuthorPlan | ""; label: string }[] = [
   { value: "page", label: `${planName.page}, ${rub(30000)}` },
@@ -207,6 +264,7 @@ export function AuthorAgreements() {
           <p>Автор принимает оферту и два согласия на экране приглашения, платит по QR-коду из кабинета и нажимает «Я оплатил(а)». Проверьте поступление в банке и нажмите «Оплата получена»: страница сможет открыться читателям, год пойдёт с этого дня.</p>
         </div>
         <div className="asp-buttons">
+          <Button size="sm" onClick={() => startNewAuthor()}>+ Новый автор</Button>
           <Button variant="outline" size="sm" onClick={() => setDetailsOpen(!detailsOpen)}>Реквизиты для оплаты</Button>
           <Button variant="outline" size="sm" onClick={() => void load()}><RefreshCw className="size-4" />Обновить</Button>
         </div>

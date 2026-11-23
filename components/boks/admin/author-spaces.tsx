@@ -1,7 +1,7 @@
 "use client";
 
 import { SpaceVerified } from "@/components/boks/admin/space-verified";
-import { InvitePlanFields, SpaceAgreementPanel } from "@/components/boks/admin/author-agreement";
+import { AccountFinder, InvitePlanFields, onNewAuthor, SpaceAgreementPanel, type NewAuthorPrefill } from "@/components/boks/admin/author-agreement";
 import "@/app/author-agreement.css";
 import { planName, type AuthorPlan } from "@/lib/boks/author/agreement";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -406,13 +406,26 @@ function photoUrl(base64: string | null) {
 export function AuthorSpaces() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState<SpaceKind | null>(null);
+  // «+ Новый автор» and «Оформить автора» elsewhere on the tab open a new page here, filled in.
+  const [prefill, setPrefill] = useState<NewAuthorPrefill | null>(null);
+  const [prefillKey, setPrefillKey] = useState(0);
+  const anchor = useRef<HTMLDivElement>(null);
+  useEffect(() => onNewAuthor((next) => {
+    setOpenId(null);
+    setPrefill(next);
+    setPrefillKey((key) => key + 1);
+    setCreating("author");
+    window.setTimeout(() => anchor.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }), []);
 
   if (openId || creating) {
     return (
+      <div ref={anchor} className="asp-anchor">
       <SpaceEditor
-        key={openId ?? `new-${creating}`}
+        key={openId ?? `new-${creating}-${prefillKey}`}
         spaceId={openId}
         kind={creating ?? "author"}
+        prefill={prefill}
         onCreated={(id) => {
           setCreating(null);
           setOpenId(id);
@@ -420,11 +433,13 @@ export function AuthorSpaces() {
         onBack={() => {
           setOpenId(null);
           setCreating(null);
+          setPrefill(null);
         }}
       />
+      </div>
     );
   }
-  return <SpaceList onOpen={setOpenId} onCreate={setCreating} />;
+  return <div ref={anchor} className="asp-anchor"><SpaceList onOpen={setOpenId} onCreate={(kind) => { setPrefill(null); setCreating(kind); }} /></div>;
 }
 
 function SpaceList({ onOpen, onCreate }: { onOpen: (id: string) => void; onCreate: (kind: SpaceKind) => void }) {
@@ -503,11 +518,11 @@ function newRequestId() {
     : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (Number(c) ^ (Math.random() * 16) >> (Number(c) / 4)).toString(16));
 }
 
-function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | null; kind: SpaceKind; onCreated: (id: string) => void; onBack: () => void }) {
+function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spaceId: string | null; kind: SpaceKind; prefill?: NewAuthorPrefill | null; onCreated: (id: string) => void; onBack: () => void }) {
   const t = useMessages(words);
   const language = useUiLanguage();
   const [space, setSpace] = useState<StudioSpace | null>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(prefill?.name ?? "");
   const [handle, setHandle] = useState("");
   const [photo, setPhoto] = useState<{ kind: "keep" | "remove" } | { kind: "new"; base64: string }>({ kind: "keep" });
   const [busy, setBusy] = useState(false);
@@ -638,7 +653,7 @@ function SpaceEditor({ spaceId, kind, onCreated, onBack }: { spaceId: string | n
           )}
 
           {space && space.kind === "author" && space.status !== "merged" && (
-            <InvitePanel t={t} space={space} busy={busy} run={run} />
+            <InvitePanel t={t} space={space} busy={busy} run={run} prefill={prefill} />
           )}
 
           {space && space.kind === "editorial" && (
@@ -1205,11 +1220,12 @@ function MessagesPanel({ t, space, busy, run }: { t: Words; space: StudioSpace; 
   );
 }
 
-function InvitePanel({ t, space, busy, run }: { t: Words; space: StudioSpace; busy: boolean; run: Run }) {
-  const [email, setEmail] = useState("");
+function InvitePanel({ t, space, busy, run, prefill = null }: { t: Words; space: StudioSpace; busy: boolean; run: Run; prefill?: NewAuthorPrefill | null }) {
+  const [email, setEmail] = useState(prefill?.email ?? "");
+  const [account, setAccount] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [plan, setPlan] = useState<AuthorPlan | "">("page");
+  const [plan, setPlan] = useState<AuthorPlan | "">(prefill?.plan ?? "page");
   const [legalName, setLegalName] = useState("");
   const [plans, setPlans] = useState<Record<string, { plan: AuthorPlan | null }>>({});
   const latest = space.invites[0] ?? null;
@@ -1257,9 +1273,11 @@ function InvitePanel({ t, space, busy, run }: { t: Words; space: StudioSpace; bu
         </div>
       ) : (
         <div className="asp-invite-form">
+          <AccountFinder onPick={(person) => { setEmail(person.email); setAccount(person.handle ? `@${person.handle}` : person.email); }} />
           <label className="asp-field">
             <span>{t.emailLabel}</span>
-            <Input type="email" value={email} autoComplete="off" onChange={(event) => setEmail(event.target.value)} />
+            <Input type="email" value={email} autoComplete="off" onChange={(event) => { setEmail(event.target.value); setAccount(null); }} />
+            {account && <small>Аккаунт уже есть: {account}. Приглашение увидит при следующем входе, а по ссылке откроет сразу.</small>}
           </label>
           <InvitePlanFields plan={plan} setPlan={setPlan} legalName={legalName} setLegalName={setLegalName} />
           <Button disabled={busy || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())} onClick={() => void run(async () => {

@@ -96,3 +96,9 @@
 .author-applications.aag-studio ul>li,.aag-studio ul>li{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:start}
 .aag-studio .aag-facts{max-width:820px}
 @media (max-width:560px){.aag-facts div{grid-template-columns:1fr;gap:2px}}
+.aag-finder{display:grid;gap:8px}
+.aag-finder__list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.aag-finder__list button{width:100%;text-align:left;border:1px solid #e4dfd1;border-radius:8px;background:#fff;padding:8px 10px;font:inherit;font-size:14px;cursor:pointer}
+.aag-finder__list button:hover{border-color:#c44a32}
+.aag-finder__list span{color:#6b6e64}
+.asp-anchor{scroll-margin-top:16px}

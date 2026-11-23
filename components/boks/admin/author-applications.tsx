@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { startNewAuthor } from "@/components/boks/admin/author-agreement";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import {
@@ -93,7 +94,13 @@ export function AuthorApplications() {
         </dl>
         {row.message && <p className="author-applications__message">{row.message}</p>}
         <div className="author-applications__actions">
-          {row.status === "new" && <Button size="sm" onClick={() => void mark(row, "contacted")}>{t.markContacted}</Button>}
+          {row.status !== "closed" && <Button size="sm" onClick={() => startNewAuthor({
+            name: row.name,
+            // The account's own email when they applied signed in; else the contact, if it is an email.
+            email: row.email ?? (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.contact.trim()) ? row.contact.trim() : ""),
+            plan: row.offer === "launch" || row.offer === "page" || row.offer === "page_no_promotion" ? row.offer : "page",
+          })}>Оформить автора</Button>}
+          {row.status === "new" && <Button size="sm" variant="outline" onClick={() => void mark(row, "contacted")}>{t.markContacted}</Button>}
           {row.status !== "closed"
             ? <Button size="sm" variant="ghost" onClick={() => void mark(row, "closed")}>{t.close}</Button>
             : <Button size="sm" variant="ghost" onClick={() => void mark(row, "new")}>{t.reopen}</Button>}
