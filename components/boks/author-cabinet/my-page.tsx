@@ -32,7 +32,7 @@ import { moveBy, moveTo, orderChanged } from "@/lib/boks/author/page-order";
 import { defineMessages, plural } from "@/lib/i18n/messages";
 import { Icon, Sheet, Thumb, Topbar } from "./ui";
 import { getBokArtwork } from "@/components/boks/reader/bok-artwork";
-import { linkOnlyCover } from "@/lib/boks/link-only";
+import { linkOnlyCover, linkOnlyFilePath } from "@/lib/boks/link-only";
 import { authorShareLabel, authorShareLabelPrefix, authorShareUrl } from "@/lib/boks/share-link";
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { Composer, openInComposer } from "./composer";
@@ -42,6 +42,9 @@ import { DecisionNote } from "./decision-note";
 import { decisionWords } from "./decision-words";
 import { changeAction, type EditorDecision } from "@/lib/boks/author/editor-decisions";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
+import { StoryKitSheet, type KitSubject } from "@/components/boks/story-kit/story-kit-sheet";
+import { poemManifestFor } from "@/components/boks/poetry/poems";
+import { bokArtworkFocus } from "@/components/boks/reader/bok-artwork";
 
 /**
  * The cabinet's "My page" (2026-11-14): what the team prepared, next to what
@@ -119,6 +122,10 @@ const words = defineMessages(
     writePlaceholder: "Write to the team…",
     noMessages: "No messages yet.",
     sentToTeam: "Sent to the team.",
+    kitTitle: "For social media",
+    kitHint: "Ready pictures for stories and posts about your page and each work: a poster, a frame of a Series, your lines. Save them or send them straight to a story.",
+    kitPage: "The whole page",
+    kitWork: "For social media",
     linkTitle: "Link to your page",
     linkHint: "This is how the link looks when you send it.",
     linkLater: "It opens for readers once your page is published.",
@@ -275,6 +282,10 @@ const words = defineMessages(
       writePlaceholder: "Написать редакции…",
       noMessages: "Сообщений пока нет.",
       sentToTeam: "Отправлено редакции.",
+      kitTitle: "Для соцсетей",
+      kitHint: "Готовые картинки для сторис и постов о вашей странице и каждой работе: афиша, кадр из Series, ваши строки. Сохраните или сразу отправьте в сторис.",
+      kitPage: "Вся страница",
+      kitWork: "Для соцсетей",
       linkTitle: "Ссылка на вашу страницу",
       linkHint: "Так ссылка выглядит, когда вы ей делитесь.",
       linkLater: "Читателям она откроется после публикации страницы.",
@@ -490,6 +501,8 @@ export function MyPage({
   const [seriesWork, setSeriesWork] = useState<Map<string, SeriesWork>>(new Map());
   /** A sent piece the author is about to take back from the editors. */
   const [withdrawing, setWithdrawing] = useState<PageItem | null>(null);
+  /** "For social media": the page, or one work, being made into pictures. */
+  const [kit, setKit] = useState<KitSubject | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -632,6 +645,25 @@ export function MyPage({
     return items.some((other) => other.work?.bokId === item.bokId && other.work.status === "ready");
   }
 
+  /** A work readers can open now: it gets pictures for social media. */
+  function kitWork(item: PageItem): KitSubject | null {
+    if (!item.bokId || !item.published || item.hidden || item.draft) return null;
+    const previewed = preview?.items.find((entry) => entry.key === item.key || entry.bokId === item.bokId);
+    const piece = item.work?.seriesPiece ?? previewed?.seriesPiece ?? null;
+    return {
+      kind: "work",
+      bokId: item.bokId,
+      title: item.title,
+      byline: preview?.name || data?.name || null,
+      cover: coverOf(item),
+      focus: seriesPieceFor(item.bokId)?.coverFocus ?? bokArtworkFocus(item.bokId),
+      series: isSeries(item) || Boolean(piece),
+      manifest: piece ? linkOnlyFilePath(piece, "manifest.json") : poemManifestFor(item.bokId),
+      body: previewed?.body ?? null,
+    };
+  }
+
+
   /** Take a published work off the site, or put it back: the cabinet's own withdraw. */
   async function setHidden(item: PageItem, hide: boolean) {
     if (!item.bokId) return;
@@ -751,6 +783,8 @@ export function MyPage({
 
   const name = preview?.name || (data.handle ? `@${data.handle}` : "");
   const photo = preview?.photo ? `data:image/jpeg;base64,${preview.photo}` : null;
+  const kitWorks = items.filter((item) => !seriesShownAsWork(item)).map(kitWork).filter((entry): entry is Extract<KitSubject, { kind: "work" }> => entry?.kind === "work");
+  const kitPage: KitSubject = { kind: "page", name, photo, covers: kitWorks.map((entry) => entry.cover).filter((cover): cover is string => Boolean(cover)).slice(0, 3), works: kitWorks.length, series: kitWorks.filter((entry) => entry.series).length };
 
   return (
     <main className="page amp">
@@ -915,6 +949,9 @@ export function MyPage({
                     {previewed && (
                       <button type="button" className="btn btn-secondary" onClick={() => readItem(item)}>{w.readText}</button>
                     )}
+                    {kitWork(item) && (
+                      <button type="button" className="btn btn-secondary" onClick={() => setKit(kitWork(item))}>{w.kitWork}</button>
+                    )}
                     {item.work && ["preparing", "ready", "changes_requested"].includes(item.work.status) && (
                       <button type="button" className="btn btn-secondary" onClick={() => { setNote(""); setAsking(item); }}>{w.fix}</button>
                     )}
@@ -977,6 +1014,34 @@ export function MyPage({
         <RequestsSheet w={w} messages={data.messages ?? []} language={language} busy={busy} onSend={sendMessage} onClose={() => setRequestsOpen(false)} />
       )}
 
+      {data.handle && !pageDraft && kitWorks.length > 0 && (
+        <section className="amp-section">
+          <h2 className="serif">{w.kitTitle}</h2>
+          <p>{w.kitHint}</p>
+          <div className="kit-shelf">
+            <button type="button" className="kit-tile" onClick={() => setKit(kitPage)}>
+              <span className="kit-tile-art" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {photo ? <img src={photo} alt="" /> : <span className="kit-tile-letter">{name.replace(/^@/, "").charAt(0).toUpperCase()}</span>}
+              </span>
+              <strong>{name}</strong>
+              <small>{w.kitPage}</small>
+            </button>
+            {kitWorks.map((entry) => (
+              <button key={entry.bokId} type="button" className="kit-tile" onClick={() => setKit(entry)}>
+                <span className="kit-tile-art" aria-hidden="true">
+                  <span className="kit-tile-letter">{entry.title.charAt(0)}</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {entry.cover && <img src={entry.cover} alt="" onError={(event) => { event.currentTarget.hidden = true; }} />}
+                </span>
+                <strong>{entry.title}</strong>
+                <small>{entry.series ? w.format.series : w.format.text}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {data.handle && (
         <section className="amp-section">
           <h2 className="serif">{w.linkTitle}</h2>
@@ -993,6 +1058,7 @@ export function MyPage({
           </div>
         </section>
       )}
+      {kit && data.handle && <StoryKitSheet subject={kit} handle={data.handle} onClose={() => setKit(null)} />}
       {reading && <WorkPreview key={`${reading.key}:${readingSeries}`} item={reading} t={pw} watchFirst={readingSeries} onClose={() => setReading(null)} />}
       {asking && <AskSheet w={w} item={asking} note={note} setNote={setNote} busy={busy} onSend={() => void sendChanges()} onClose={() => setAsking(null)} />}
       {withdrawing && (
