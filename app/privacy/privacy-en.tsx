@@ -3,8 +3,8 @@ import { supportEmail, supportMailto } from "@/lib/boks/contact";
 
 export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
   title: "Privacy",
-  effective: "Effective November 14, 2026",
-  intro: "What data boks uses, what other readers can see, and how to ask for a copy, a correction or deletion.",
+  effective: "Effective November 23, 2026",
+  intro: "Who processes data in boks, which data and on what basis, what others can see, and how to ask for a copy, a correction or deletion. The policy covers readers and authors alike.",
   highlights: [
     { title: "Where data is kept", body: "The main boks database is in Moscow, Russia." },
     {
@@ -17,6 +17,22 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
     },
   ],
   sections: [
+    {
+      id: "operator",
+      title: "Who processes data",
+      body: <>
+        <p>
+          The personal data operator of the boks service (tryboks.com and tryboks.ru) is Andrey Alekseevich Kurnosov,
+          taxpayer number (INN) 182810983035 (&ldquo;we&rdquo;). Requests about data are accepted at{" "}
+          <a href={supportMailto}>{supportEmail}</a>.
+        </p>
+        <p>
+          This Privacy policy is the operator&apos;s policy on the processing of personal data (part 2 of article 18.1
+          of Russian Federal Law No. 152-FZ of 27 July 2006 &ldquo;On Personal Data&rdquo;). It is the Personal data
+          processing policy referred to by the offer agreement for authors and by the authors&apos; consents.
+        </p>
+      </>,
+    },
     {
       id: "data",
       title: "What data we use",
@@ -60,6 +76,28 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
       </p>,
     },
     {
+      id: "authors",
+      title: "Authors with an agreement",
+      body: <>
+        <p>
+          To conclude and perform an agreement with an author we also process: surname, first name, patronymic and pen
+          name; photo and biography; the texts of the works and recordings of the author reading them; links to social
+          media accounts; records of accepting the offer and the consents (date and time, IP address, browser
+          details, editions of the documents); payment records (date, amount, payment purpose, the sender&apos;s name as
+          the bank shows it, refund details if the author gave them) and correspondence with us.
+        </p>
+        <p>
+          The data, purposes, recipients, retention and how to withdraw are set out in detail in the{" "}
+          <a href="/author/terms/processing">consent to the processing of personal data</a>, and what readers see on
+          the author page and in Series is set out in the{" "}
+          <a href="/author/terms/distribution">consent to the dissemination of personal data</a> (both in Russian).
+          The texts of the works are processed by Yandex.Cloud LLC (Russia) for the labels recommendations are built
+          on. An author&apos;s voice is not used to identify them, to train artificial intelligence, or to synthesise or
+          clone a voice.
+        </p>
+      </>,
+    },
+    {
       id: "why",
       title: "Why",
       body: <>
@@ -73,6 +111,24 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
           servers when your feed is built. Nothing about you is sent to anyone else to do this, and nothing is decided
           about you beyond which bok to show next.
         </p>
+      </>,
+    },
+    {
+      id: "bases",
+      title: "Legal bases",
+      body: <>
+        <p>We process data on the bases set out in article 6 of Federal Law No. 152-FZ:</p>
+        <ul>
+          <li>
+            performance of an agreement you are a party to (clause 5 of part 1): the <a href="/terms">Terms</a>, which
+            you accept by using boks, and for an author also the <a href="/author/terms/offer">offer agreement</a>;
+          </li>
+          <li>
+            the author&apos;s consent to the processing of personal data (article 9) and to their dissemination
+            (article 10.1), which the author gives with separate ticks when concluding the agreement;
+          </li>
+          <li>duties imposed by law, such as issuing receipts and keeping payment records (clause 2 of part 1).</li>
+        </ul>
       </>,
     },
     {
@@ -95,6 +151,14 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
           team&apos;s inbox through an email forwarding service.
         </p>
         <p>
+          <strong>Transfer outside Russia.</strong> The email provider, the email forwarding service and the messenger
+          through which the team receives service notifications (for example the text of feedback or a request, the
+          @nickname, and for authors also the agreement number and the payment mark) are outside Russia, including in
+          the USA. They receive only that data and only to deliver emails and notifications. Personal data is first
+          recorded, stored and updated in a database in Russia (part 5 of article 18 of Federal Law No. 152-FZ). We
+          name these services on request.
+        </p>
+        <p>
           Your email address is needed to sign in. To run and protect your session, boks processes your IP address and
           information about your browser.
         </p>
@@ -109,15 +173,33 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
     {
       id: "retention",
       title: "How long it is kept",
+      body: <>
+        <p>
+          For as long as your account exists, or for the length of the pilot for activity recorded without an account.
+          Until November 7, 2026 the boks database was hosted by Supabase in London. A copy of it as of that date stays
+          there for a while as a backup and will then be deleted; nothing new goes there.
+        </p>
+        <p>
+          An author&apos;s data related to the agreement is kept while the agreement is in force and for 3 years after
+          it ends, and payment and receipt records also for the periods set by law. If the agreement ends before
+          payment, the texts and recordings are deleted within the period stated in the offer agreement. When these
+          periods end, the data is deleted or anonymised.
+        </p>
+      </>,
+    },
+    {
+      id: "security",
+      title: "How we protect data",
       body: <p>
-        For as long as your account exists, or for the length of the pilot for activity recorded without an account.
-        Until November 7, 2026 the boks database was hosted by Supabase in London. A copy of it as of that date stays
-        there for a while as a backup and will then be deleted; nothing new goes there.
+        Connections to boks are encrypted (HTTPS). Access to the database is restricted: each user gets only their own
+        data and what is published, and service data is open only to the team members who need it for their work.
+        Signing in uses a link or a one-time code from an email. We also apply the other legal, organisational and
+        technical measures required by article 19 of Federal Law No. 152-FZ.
       </p>,
     },
     {
       id: "delete",
-      title: "Access, correction and deletion",
+      title: "Your rights: access, correction and deletion",
       body: <>
         <p>
           To delete your account, open <strong>Settings</strong> and choose <strong>Delete account</strong>. That
@@ -129,6 +211,14 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
           <a href={supportMailto}>{supportEmail}</a>. You can also write there about guest reading data and feedback
           you sent.
         </p>
+        <p>
+          You have the right to learn how your data is processed, to require it to be corrected, blocked or destroyed
+          if it is incomplete, out of date, inaccurate or processed unlawfully, and to withdraw a consent where
+          processing rests on one (articles 9, 14 and 21 of Federal Law No. 152-FZ). Withdrawing a consent does not
+          affect processing the law allows without it, such as performing an agreement. We reply within 10 working days
+          of receiving a request; this may be extended by no more than 5 working days, and we will tell you why. If you
+          believe we are infringing your rights, you can complain to Roskomnadzor or go to court.
+        </p>
       </>,
     },
     {
@@ -137,6 +227,14 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
       body: <p>
         Accounts are for people aged 16 and over, and boks does not knowingly keep data about anyone younger. If you
         believe a child has created an account, tell us and we will delete it.
+      </p>,
+    },
+    {
+      id: "changes",
+      title: "Changes to this policy",
+      body: <p>
+        A new edition is published on this page with the date it takes effect. We tell users about significant changes
+        in the service or by email. Earlier editions are available on request.
       </p>,
     },
     {

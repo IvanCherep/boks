@@ -3,8 +3,8 @@ import { supportEmail, supportMailto } from "@/lib/boks/contact";
 
 export const termsEn: Omit<LegalDocumentProps, "page" | "language"> = {
   title: "Terms of Use",
-  // The effective date stays with the version readers accepted; 14 November was an editorial pass.
-  effective: "Effective September 22, 2026 · clarified November 14, 2026",
+  // The effective date stays with the version readers accepted; 14 and 23 November were editorial passes.
+  effective: "Effective September 22, 2026 · clarified November 23, 2026",
   intro: "boks is a free service for reading short literature. This page sets out the rules for reading, publishing and talking to each other, and how to make a complaint or delete your account.",
   highlights: [
     {
@@ -24,11 +24,20 @@ export const termsEn: Omit<LegalDocumentProps, "page" | "language"> = {
     {
       id: "acceptance",
       title: "Accepting these Terms",
-      body: <p>
-        These Terms are the rules for using boks during its pilot. By reading, creating an account, commenting,
-        liking, sharing, sending feedback or publishing on boks, you agree to them. If you do not agree, please do not
-        use the service. The <a href="/privacy">Privacy</a> page explains what boks keeps about you.
-      </p>,
+      body: <>
+        <p>
+          These Terms are the rules for using boks during its pilot. By reading, creating an account, commenting,
+          liking, sharing, sending feedback or publishing on boks, you agree to them. If you do not agree, please do not
+          use the service. The <a href="/privacy">Privacy</a> page explains what boks keeps about you.
+        </p>
+        <p>
+          The boks service is provided by Andrey Alekseevich Kurnosov, taxpayer number (INN) 182810983035; you can
+          reach us at <a href={supportMailto}>{supportEmail}</a>. If an author has concluded an agreement under the{" "}
+          <a href="/author/terms/offer">offer agreement for authors</a>, its terms apply to what it covers, and these
+          Terms apply to everything else. All documents for authors are collected on the{" "}
+          <a href="/author/terms">Documents for authors</a> page (in Russian).
+        </p>
+      </>,
     },
     {
       id: "accounts",

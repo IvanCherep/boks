@@ -10,7 +10,9 @@ import type { UiLanguage } from "@/lib/i18n/ui-language";
 
 /**
  * The shared frame of /terms and /privacy: a top bar with the way back to
- * reading and an explicit RU / EN switch, the two documents as tabs, a first
+ * reading and an explicit RU / EN switch, the two documents as tabs (and a
+ * third to the documents for authors, which show this policy in their own
+ * frame, `components/boks/author-terms/terms-page.tsx`), a first
  * screen (title, effective date, one sentence, three highlights), then the
  * document with a contents list - beside the text on a wide screen, behind a
  * button on a phone.
@@ -41,6 +43,7 @@ const words = {
     back: "Back to reading",
     terms: "Terms",
     privacy: "Privacy",
+    authors: "For authors",
     documents: "Documents",
     language: "Language",
     highlights: "In short",
@@ -52,6 +55,7 @@ const words = {
     back: "К чтению",
     terms: "Условия",
     privacy: "Конфиденциальность",
+    authors: "Для авторов",
     documents: "Документы",
     language: "Язык",
     highlights: "Главное",
@@ -117,6 +121,7 @@ export function LegalDocument({ page, language, title, effective, intro, highlig
           {tabs.map((tab) => (
             <a key={tab.key} href={`/${tab.key}${keep}`} aria-current={tab.key === page ? "page" : undefined}>{tab.label}</a>
           ))}
+          <a href="/author/terms">{w.authors}</a>
         </nav>
 
         <div className="legal-hero">

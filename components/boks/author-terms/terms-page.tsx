@@ -1,12 +1,13 @@
 "use client";
 
 import "@/app/author-terms.css";
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
 import { legalHref, legalKindFromSlug, legalKinds, legalVersionLabel, type LegalKind } from "@/lib/boks/author/agreement";
 import { parseLegalMarkdown, type Inline, type LegalBlock } from "@/lib/boks/author/legal-markdown";
+import { privacyRu } from "@/app/privacy/privacy-ru";
 import { loadLegalDocument, loadLegalDocuments, type LegalDocument, type LegalDocumentEntry } from "./terms-data";
 
 /**
@@ -16,6 +17,11 @@ import { loadLegalDocument, loadLegalDocuments, type LegalDocument, type LegalDo
  * `/author/terms/<doc>/<version>` one edition for good, the one a contract
  * names. The text is the stored edition word for word; «Главное» above it is
  * a short summary that says it does not replace the text.
+ *
+ * The fourth tab, `/author/terms/privacy`, is the Privacy policy of /privacy
+ * (the one policy for everyone, the one the offer names) shown in this frame,
+ * so an author moving between the four documents never loses the way back.
+ * /privacy in turn has a tab back to these documents.
  */
 
 const short: Record<LegalKind, string> = {
@@ -127,7 +133,21 @@ function Blocks({ blocks }: { blocks: LegalBlock[] }) {
   );
 }
 
-function Frame({ active, children }: { active: LegalKind | "index"; children: ReactNode }) {
+type Active = LegalKind | "privacy" | "index";
+
+/** The policy is not a stored edition: it lives in `app/privacy/privacy-ru.tsx` and is served at /privacy too. */
+const privacySlug = "privacy";
+const privacyTab = "Конфиденциальность";
+
+function Frame({ active, children }: { active: Active; children: ReactNode }) {
+  // On a phone the four tabs scroll sideways: bring the open one into view.
+  const tabs = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = tabs.current;
+    const current = nav?.querySelector<HTMLElement>("[aria-current]");
+    if (!nav || !current || nav.scrollWidth <= nav.clientWidth) return;
+    nav.scrollLeft = current.offsetLeft - nav.offsetLeft - (nav.clientWidth - current.offsetWidth) / 2;
+  }, [active]);
   return (
     <main className="legal-page legal-v45 aterm" lang="ru">
       <div className="legal-shell">
@@ -136,11 +156,11 @@ function Frame({ active, children }: { active: LegalKind | "index"; children: Re
           <a className="legal-mark" href="/" aria-label="boks"><BoksLogo seasonal={false} /><span className="legal-mark__star" aria-hidden="true">*</span></a>
           <a className="aterm-all" href="/author/terms" aria-current={active === "index" ? "page" : undefined}>Все документы</a>
         </header>
-        <nav className="legal-tabs aterm-tabs" aria-label="Документы для авторов">
+        <nav ref={tabs} className="legal-tabs aterm-tabs" aria-label="Документы для авторов">
           {legalKinds.map((kind) => (
             <a key={kind} href={legalHref(kind)} aria-current={kind === active ? "page" : undefined}>{short[kind]}</a>
           ))}
-          <a href="/privacy?lang=ru">Политика</a>
+          <a href={`/author/terms/${privacySlug}`} aria-current={active === "privacy" ? "page" : undefined}>{privacyTab}</a>
         </nav>
         {children}
       </div>
@@ -148,7 +168,7 @@ function Frame({ active, children }: { active: LegalKind | "index"; children: Re
   );
 }
 
-function Contents({ sections }: { sections: Section[] }) {
+function Contents({ sections }: { sections: { id: string; title: string }[] }) {
   return (
     <ol>
       {sections.map((section) => (
@@ -158,7 +178,70 @@ function Contents({ sections }: { sections: Section[] }) {
   );
 }
 
+/** `/author/terms/<doc>[/<version>]`: one of the stored documents, or the policy. */
 export function AuthorTermsPage({ slug, version = null }: { slug: string; version?: string | null }) {
+  if (slug === privacySlug && !version) return <AuthorPrivacyPage />;
+  return <AuthorDocumentPage slug={slug} version={version} />;
+}
+
+function AuthorPrivacyPage() {
+  useEffect(() => {
+    document.title = `${privacyRu.title} · Boks`;
+  }, []);
+  const { title, effective, intro, highlights: points, sections } = privacyRu;
+  return (
+    <Frame active="privacy">
+      <div className="legal-hero aterm-hero">
+        <p className="legal-effective">{effective}</p>
+        <h1>{title}</h1>
+        <p className="legal-intro">{intro}</p>
+      </div>
+
+      <section className="legal-highlights" aria-labelledby="aterm-highlights">
+        <h2 id="aterm-highlights">Главное</h2>
+        <ul>
+          {points.map((item) => (
+            <li key={item.title}><h3>{item.title}</h3><p>{item.body}</p></li>
+          ))}
+        </ul>
+        <p className="aterm-note">Это краткое изложение. Порядок обработки данных определяет полный текст ниже.</p>
+      </section>
+
+      <div className="legal-body">
+        <nav className="legal-contents legal-contents--wide" aria-label="Содержание">
+          <p>Содержание</p>
+          <Contents sections={sections} />
+        </nav>
+        <details className="legal-contents legal-contents--narrow">
+          <summary>Содержание</summary>
+          <nav aria-label="Содержание"><Contents sections={sections} /></nav>
+        </details>
+
+        <article className="legal-document aterm-document">
+          <header className="aterm-doc-title">
+            <p className="aterm-doc-kicker">Для всех пользователей Boks</p>
+            <p className="aterm-doc-name">{title}</p>
+            <p className="aterm-doc-sub">Один документ для читателей и авторов. Он же опубликован по адресу <a href="/privacy?lang=ru">tryboks.com/privacy</a>, там есть и английская версия.</p>
+          </header>
+          {sections.map((section) => (
+            <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`}>
+              <h2 id={`${section.id}-title`}>{section.title}</h2>
+              {section.body}
+            </section>
+          ))}
+          <footer className="legal-support aterm-footer">
+            <p><strong>Остались вопросы?</strong> Напишите на <a href={supportMailto}>{supportEmail}</a>.</p>
+            <p className="aterm-actions">
+              <button type="button" onClick={() => window.print()}>Распечатать или сохранить в PDF</button>
+            </p>
+          </footer>
+        </article>
+      </div>
+    </Frame>
+  );
+}
+
+function AuthorDocumentPage({ slug, version }: { slug: string; version: string | null }) {
   const kind = legalKindFromSlug(slug);
   const [doc, setDoc] = useState<LegalDocument | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "failed">(kind ? "loading" : "missing");
@@ -272,7 +355,7 @@ export function AuthorTermsPage({ slug, version = null }: { slug: string; versio
   );
 }
 
-/** `/author/terms`: the three documents, the edition in force and every earlier one. */
+/** `/author/terms`: the three stored documents with every edition, then the policy and the Terms that apply to everyone. */
 export function AuthorTermsIndex() {
   const [rows, setRows] = useState<LegalDocumentEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -313,10 +396,18 @@ export function AuthorTermsIndex() {
           </li>
         ))}
         <li>
-          <a className="aterm-card aterm-card--quiet" href="/privacy?lang=ru">
-            <span className="aterm-card__kind">Для всех</span>
-            <strong>Политика конфиденциальности Boks</strong>
-            <span className="aterm-card__lead">Как Boks обращается с данными читателей и авторов.</span>
+          <a className="aterm-card aterm-card--quiet" href={`/author/terms/${privacySlug}`}>
+            <span className="aterm-card__kind">{privacyTab} · для всех</span>
+            <strong>{privacyRu.title}</strong>
+            <span className="aterm-card__lead">Политика оператора в отношении обработки персональных данных: кто, какие данные и на каком основании обрабатывает, права читателей и авторов.</span>
+            <span className="aterm-card__version">{privacyRu.effective} →</span>
+          </a>
+        </li>
+        <li>
+          <a className="aterm-card aterm-card--quiet" href="/terms?lang=ru">
+            <span className="aterm-card__kind">Условия · для всех</span>
+            <strong>Условия использования</strong>
+            <span className="aterm-card__lead">Общие правила сервиса. Для автора с договором условия договора-оферты применяются в той части, которую он регулирует.</span>
             <span className="aterm-card__version">Открыть →</span>
           </a>
         </li>
