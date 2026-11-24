@@ -128,3 +128,7 @@
 .author-applications__page{margin:0 0 8px;font-size:13px;line-height:1.4;color:#7a4a1f}
 .author-applications__page.is-invited{color:#3c5b43}
 .author-applications__page.is-in{color:#2e5d3a}
+
+/* My page: the quiet way to «Договор и оплаты» when nothing is asked. */
+.aag-billing-link{display:inline-block;margin:4px 0 0;font-size:14px;color:#5d655f;text-underline-offset:3px}
+.aag-ledger{margin-top:12px}.aag-ledger h3{font-size:14px;font-weight:600;margin:0 0 6px}.aag-ledger ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}.aag-ledger li{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px}.aag-ledger small{color:#6b6b6b}

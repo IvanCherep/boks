@@ -75,6 +75,39 @@ export type AuthorAgreement = {
   payment?: PaymentDetails | null;
 };
 
+/** One payment under a contract («Договор и оплаты»): the tariff, later a renewal or an extra. */
+export type AuthorPayment = {
+  id: string;
+  agreementId: string;
+  kind: "tariff" | "renewal" | "extra";
+  amountRub: number;
+  state: "awaiting" | "reported" | "paid" | "waived" | "cancelled";
+  dueOn: string | null;
+  reportedAt: string | null;
+  paidAt: string | null;
+  paidAmountRub: number | null;
+  /** The receipt from «Мой налог»: on «Договор и оплаты», and by email. */
+  receiptUrl: string | null;
+  createdAt: string;
+  note?: string | null;
+  markedAt?: string | null;
+};
+
+/** «Договор и оплаты»: a contract with its payments and the Series made in its year. */
+export type BillingAgreement = AuthorAgreement & {
+  seriesPerYear: number | null;
+  seriesUsed: number;
+  payments: AuthorPayment[];
+};
+
+export type MyBilling = { billing: "partner" | "paid"; agreements: BillingAgreement[] };
+
+export const paymentKindName: Record<AuthorPayment["kind"], string> = {
+  tariff: "Годовой тариф",
+  renewal: "Продление на год",
+  extra: "Дополнительно",
+};
+
 /** The team's view adds who and from where. */
 export type StudioAgreement = AuthorAgreement & {
   userId: string | null;

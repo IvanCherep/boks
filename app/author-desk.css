@@ -115,7 +115,7 @@
 .desk .desk-book.is-out{min-height:0}
 .desk .desk-book-cover{aspect-ratio:9/12;border-radius:10px;background:radial-gradient(120% 70% at 30% 20%,#c9b48f 0,#7b5a3d 50%,#2a1d14 90%);margin-bottom:6px}
 .desk .desk-footer{display:flex;gap:18px;flex-wrap:wrap;padding-top:24px;border-top:1px solid var(--line)}
-.desk .desk-footer button{min-height:40px;font-size:15px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.desk .desk-footer button,.desk .desk-footer a{display:inline-flex;align-items:center;min-height:40px;font-size:15px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 
 /* A text */
 .desk .desk-work{max-width:1120px;margin:0 auto;padding:24px clamp(16px,4vw,40px) 64px}

@@ -6379,3 +6379,63 @@ begin
   perform public.boks_test_logout();
 end $$;
 rollback;
+
+-- Contract and payments (20261124140000): a paid contract has its payment row,
+-- the row follows the contract, the author reads their own on «Договор и
+-- оплаты» with the receipt, and nobody reads the table directly.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f2300-0000-4000-8000-000000000001', 'bill-editor@boks.test', false),
+  ('0f0f2300-0000-4000-8000-000000000002', 'bill-author@boks.test', false),
+  ('0f0f2300-0000-4000-8000-000000000003', 'bill-other@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f2300-0000-4000-8000-000000000001', 'bill_editor', 'admin', now(), 'v1'),
+  ('0f0f2300-0000-4000-8000-000000000002', 'bill_author', 'reader', now(), 'v1'),
+  ('0f0f2300-0000-4000-8000-000000000003', 'bill_other', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_editor uuid := '0f0f2300-0000-4000-8000-000000000001';
+  v_author uuid := '0f0f2300-0000-4000-8000-000000000002';
+  v_other uuid := '0f0f2300-0000-4000-8000-000000000003';
+  v_space uuid;
+  v_token text;
+  v_agreement uuid;
+  v_bill jsonb;
+  v_terms jsonb := jsonb_build_object(
+    'legalName', 'Счётова Анна Сергеевна',
+    'author_offer', (public.boks_legal_current('author_offer')).version,
+    'author_pd_processing', (public.boks_legal_current('author_pd_processing')).version,
+    'author_pd_distribution', (public.boks_legal_current('author_pd_distribution')).version);
+begin
+  perform public.boks_test_login(v_editor);
+  v_space := (public.studio_save_author_space(null, 'author', 'Счётова', '', null, 0) ->> 'id')::uuid;
+  v_token := public.studio_issue_author_invite(v_space, 'bill-author@boks.test', 'page') ->> 'token';
+  perform public.boks_test_login(v_author);
+  perform public.accept_author_invite_with_terms(v_token, null, v_terms);
+  select id into v_agreement from public.author_agreements where user_id = v_author;
+  perform public.boks_assert((select count(*) from public.author_payments where agreement_id = v_agreement and kind = 'tariff' and state = 'awaiting' and amount_rub = 30000) = 1, 'a paid contract has its payment, awaiting');
+  v_bill := public.get_my_billing();
+  perform public.boks_assert(v_bill ->> 'billing' = 'paid' and jsonb_array_length(v_bill -> 'agreements') = 1, 'the author sees their contract');
+  perform public.boks_assert((v_bill -> 'agreements' -> 0 ->> 'seriesPerYear')::integer = 30 and (v_bill -> 'agreements' -> 0 ->> 'seriesUsed')::integer = 0, 'with its yearly number and none used');
+  perform public.boks_assert(v_bill -> 'agreements' -> 0 -> 'payments' -> 0 ->> 'state' = 'awaiting', 'and the payment awaiting');
+  perform public.report_my_author_payment();
+  perform public.boks_assert((select state from public.author_payments where agreement_id = v_agreement) = 'reported', 'the payment follows «Я оплатил(а)»');
+  perform public.boks_test_login(v_editor);
+  perform public.studio_mark_author_payment(v_agreement, current_date, 30000, 'https://lknpd.nalog.ru/api/v1/receipt/1/x/print', null);
+  perform public.boks_assert((public.studio_agreement_payments(v_agreement) -> 0 ->> 'state') = 'paid', 'Studio lists it paid');
+  perform public.boks_test_login(v_author);
+  v_bill := public.get_my_billing();
+  perform public.boks_assert(v_bill -> 'agreements' -> 0 -> 'payments' -> 0 ->> 'receiptUrl' like 'https://lknpd%', 'the author sees the receipt on «Договор и оплаты»');
+  perform public.boks_assert(v_bill -> 'agreements' -> 0 -> 'payments' -> 0 ->> 'note' is null, 'but not the team''s note');
+  perform public.boks_test_login(v_other);
+  perform public.boks_assert(jsonb_array_length(public.get_my_billing() -> 'agreements') = 0, 'nobody else sees it');
+  begin
+    perform public.studio_agreement_payments(v_agreement);
+    perform public.boks_assert(false, 'only the team lists a contract''s payments');
+  exception when others then
+    perform public.boks_assert(sqlerrm like 'Admin access%', 'only the team lists a contract''s payments');
+  end;
+  perform public.boks_test_logout();
+end $$;
+rollback;

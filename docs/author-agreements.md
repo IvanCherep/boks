@@ -191,3 +191,19 @@ previews and story cards are drawn from the current name, the shelf places a
 section by its Series (`seriesShelfPrints`), and the old name stays the
 author's so nobody else can take it. Only files the team made by hand (share
 card pictures with a name drawn in) would need redoing.
+
+## Contract and payments (2026-11-24)
+
+The author's contract lives on `/author/billing` («Договор и оплаты», or
+«Договор и документы» when nothing is paid): the tariff and its year, the
+Series made against the yearly number, every payment with its receipt, the
+document editions they accepted, earlier contracts. The Workshop and My page
+show the contract card only while a payment is asked for; otherwise one quiet
+link at the foot of the Workshop and under My page.
+
+Payments have their own table (`author_payments`, `20261124140000`), so a
+contract can carry a renewal or an extra payment and a year more than one
+contract. The tariff's payment still lives on the contract row, where Studio
+and the guards read it; a trigger keeps its payment row the same. The receipt
+is now on the site (on this page only) and still goes by email (offer, 5.3).
+Studio lists a contract's payments under it.

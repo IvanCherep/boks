@@ -5,4 +5,5 @@ export { AuthorCabinet } from "@/components/boks/author-cabinet/author-cabinet";
 export { AdminDashboard } from "@/components/boks/admin-dashboard";
 export { SpacePreviewPage } from "@/components/boks/author-spaces/space-preview";
 export { AuthorDesk } from "@/components/boks/author-desk/desk";
+export { AuthorBilling } from "@/components/boks/author-desk/billing";
 export { AuthorTermsIndex, AuthorTermsPage } from "@/components/boks/author-terms/terms-page";

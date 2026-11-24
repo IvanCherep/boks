@@ -860,7 +860,12 @@ export function MyPage({
         </div>
       </section>
 
-      <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} pageOpen={!pageDraft} />
+      {/* The contract shows here only while a payment is asked for; the rest lives on «Договор и оплаты». */}
+      {awaitingPayment(contract.agreement) ? (
+        <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} pageOpen={!pageDraft} />
+      ) : contract.agreement ? (
+        <a className="aag-billing-link" href="/author/billing">{contract.agreement.priceRub > 0 && contract.agreement.payState !== "waived" ? "Договор и оплаты" : "Договор и документы"} →</a>
+      ) : null}
 
       {unread > 0 && data.space && (
         <a className="amp-replied" href="#messages" onClick={(event) => { event.preventDefault(); setRequestsOpen(true); }}>

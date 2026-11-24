@@ -1,0 +1,43 @@
+/* «Договор и оплаты»: one calm column in the Workshop's colours; nothing red unless a payment is asked for. */
+.desk.bil .bil-body{max-width:720px;margin:0 auto;padding:28px 16px 64px}
+.desk.bil .bil-title{font-size:clamp(30px,6vw,40px);line-height:1.1}
+.desk.bil .bil-lead{margin-top:10px;color:var(--muted);max-width:56ch}
+.desk.bil .bil-pay{margin-top:24px}
+.desk.bil .bil-card{margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.desk.bil .bil-card__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px 16px}
+.desk.bil .bil-card__head strong{display:block;font-family:var(--serif);font-weight:500;font-size:24px;line-height:1.2;letter-spacing:-.01em}
+.desk.bil .bil-eyebrow{display:block;font-size:13px;color:var(--muted);margin-bottom:2px}
+.desk.bil .bil-chip{display:inline-flex;align-items:center;min-height:28px;padding:2px 12px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.desk.bil .bil-chip.is-ok{background:#e6efe7;color:#2e5d3a}
+.desk.bil .bil-chip.is-wait{background:#f6ead6;color:#7a5520}
+.desk.bil .bil-facts{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin:18px 0 0}
+.desk.bil .bil-facts div{min-width:0}
+.desk.bil .bil-facts dt{font-size:13px;color:var(--muted)}
+.desk.bil .bil-facts dd{margin:2px 0 0;font-weight:550;overflow-wrap:anywhere}
+.desk.bil .bil-meter{height:6px;margin-top:16px;border-radius:3px;background:var(--soft);overflow:hidden}
+.desk.bil .bil-meter span{display:block;height:100%;border-radius:3px;background:var(--green)}
+.desk.bil .bil-note{margin-top:10px;font-size:14px;color:var(--muted)}
+.desk.bil .bil-section{margin-top:36px}
+.desk.bil .bil-section h2{font-size:24px}
+.desk.bil .bil-payments{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid var(--line)}
+.desk.bil .bil-payment{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.desk.bil .bil-payment__what{min-width:0}
+.desk.bil .bil-payment__what strong{display:block;font-weight:600}
+.desk.bil .bil-payment__what small{display:block;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.desk.bil .bil-payment__sum{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.desk.bil .bil-receipt{grid-column:1/-1;justify-self:start;font-size:14px;text-underline-offset:3px}
+.desk.bil .bil-receipt.is-later{color:var(--muted)}
+.desk.bil .bil-docs{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.desk.bil .bil-docs a{display:flex;flex-direction:column;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);text-decoration:none}
+.desk.bil .bil-docs a:hover{border-color:#cfc6b4}
+.desk.bil .bil-docs span{font-weight:550}
+.desk.bil .bil-docs small{font-size:13px;color:var(--muted)}
+.desk.bil .bil-past summary{cursor:pointer;font-weight:600}
+.desk.bil .bil-past ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
+.desk.bil .bil-help{margin-top:40px;font-size:14px;color:var(--muted)}
+.desk.bil .bil-help a,.desk.bil .bil-receipt{text-decoration:underline;text-underline-offset:3px;color:var(--ink)}
+@media (max-width:520px){
+  .desk.bil .bil-facts{grid-template-columns:1fr}
+  .desk.bil .bil-card{padding:16px}
+}
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/boks/supabase-client";
-import type { AuthorAgreement, AuthorPlan, InviteTerms, LegalKind, PaymentDetails, StudioAgreement } from "@/lib/boks/author/agreement";
+import type { AuthorAgreement, AuthorPayment, AuthorPlan, InviteTerms, LegalKind, MyBilling, PaymentDetails, StudioAgreement } from "@/lib/boks/author/agreement";
 
 /**
  * Author spaces: pages prepared in Studio, handed to their author by an
@@ -284,6 +284,8 @@ export const loadInviteTexts = (token: string | null, inviteId: string | null = 
 export const acceptAuthorInviteWithTerms = (token: string | null, inviteId: string | null, terms: Record<string, string>) =>
   call<InviteAcceptance & { agreement?: AuthorAgreement }>("accept_author_invite_with_terms", { p_token: token, p_invite_id: inviteId, p_terms: terms });
 
+export const loadMyBilling = () => call<MyBilling>("get_my_billing");
+export const loadAgreementPayments = (agreementId: string) => call<AuthorPayment[]>("studio_agreement_payments", { p_agreement_id: agreementId });
 export const loadMyAgreement = () => call<AuthorAgreement | null>("get_my_author_agreement");
 
 export const reportMyPayment = () => call<AuthorAgreement>("report_my_author_payment");

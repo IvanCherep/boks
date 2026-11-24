@@ -197,6 +197,13 @@ export function AuthorDesk() {
   }, [loads, support]);
   useEffect(() => {
     const sync = () => {
+      // «Напишите редакции» from «Договор и оплаты»: /author/desk#support opens the messages.
+      if (window.location.hash === "#support") {
+        window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+        setRoute(readRoute());
+        setSupport(true);
+        return;
+      }
       setRoute(readRoute());
       // A link away closes whatever was open over the page.
       setSupport(false);
@@ -654,7 +661,9 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
         <button type="button" onClick={onHelp}>
           Как это устроено
         </button>
-
+        {contract.agreement ? (
+          <a href="/author/billing">{contract.agreement.priceRub > 0 && contract.agreement.payState !== "waived" ? "Договор и оплаты" : "Договор и документы"}</a>
+        ) : null}
       </footer>
     </div>
   );
