@@ -60,6 +60,7 @@
   .aag-sbp{order:-1}
   /* On a phone the bank link comes first, then a transfer by phone number; the details to copy after the code. */
   .aag-link-pay{order:-2}
+  .aag-fast{order:-3}
   .aag-requisites{order:0}
   .aag-qr{grid-template-columns:1fr}
   .aag-qr__code{width:200px;height:200px}
@@ -204,3 +205,10 @@
 .aag-requisites[open] summary::after{content:"▴"}
 .aag-requisites dd{overflow-wrap:anywhere}
 .aag-select{width:100%;min-height:40px;padding:0 10px;border:1px solid #e3ddd0;border-radius:8px;background:#fff;font:inherit}
+/* СБП leads: a short note why it is the preferred way. */
+.aag-fast{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 14px;border-radius:10px;background:#eef5ea;border:1px solid #d3e4c9}
+.aag-fast strong{font-size:16px}
+.aag-fast__badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#2f6b3a;color:#fff}
+.aag-fast p{flex-basis:100%;margin:0;font-size:14px;line-height:1.5}
+.aag-requisites .aag-small{margin:6px 0 4px}
+.aag-requisites .aag-qr{margin:8px 0}

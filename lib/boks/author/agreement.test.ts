@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysToPay, gostPaymentQr, legalHref, legalVersionLabel, legalKindFromSlug, legalNameProblem, paymentPurpose, paymentQr, phoneLabel, rub, ruDate } from "./agreement";
+import { daysToPay, gostPaymentQr, legalHref, legalVersionLabel, legalKindFromSlug, legalNameProblem, paymentPurpose, paymentQr, phoneLabel, requisitesQr, rub, ruDate } from "./agreement";
 
 const details = {
   recipient: "Иванов Иван Иванович",
@@ -33,7 +33,9 @@ describe("author agreement", () => {
   it("has no QR without the details, and prefers the team's link", () => {
     expect(gostPaymentQr({ ...details, account: null }, 30000, "x")).toBeNull();
     // The details first (the sum and purpose fill in); the link only without them.
-    expect(paymentQr({ ...agreement, payment: { ...details, payLink: "https://qr.nspk.ru/AS1000" } })?.kind).toBe("details");
+    expect(paymentQr({ ...agreement, payment: { ...details, payLink: "https://qr.nspk.ru/AS1000" } })).toEqual({ kind: "link", value: "https://qr.nspk.ru/AS1000" });
+    expect(requisitesQr({ ...agreement, payment: { ...details, payLink: "https://qr.nspk.ru/AS1000" } })).toContain("ST00012");
+    expect(requisitesQr(agreement)).toBeNull();
     expect(paymentQr({ ...agreement, payment: { ...details, account: null, payLink: "https://qr.nspk.ru/AS1000" } })).toEqual({ kind: "link", value: "https://qr.nspk.ru/AS1000" });
     expect(gostPaymentQr({ ...details, recipientKind: "company", kpp: "770801001" }, 30000, "x")).toContain("|KPP=770801001|");
     expect(gostPaymentQr({ ...details, recipientKind: "person", kpp: "770801001" }, 30000, "x")).not.toContain("KPP=");

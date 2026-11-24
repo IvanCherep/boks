@@ -11,6 +11,7 @@ import {
   legalKinds,
   paymentPurpose,
   paymentQr,
+  requisitesQr,
   phoneLabel,
   planName,
   rub,
@@ -89,6 +90,17 @@ export function AgreementCard({
     if (!code) return null;
     try {
       return { ...code, svg: renderSVG(code.value, { border: 1, ecc: "M" }) };
+    } catch {
+      return null;
+    }
+  }, [agreement]);
+
+  const detailsQrSvg = useMemo(() => {
+    if (!agreement || !awaitingPayment(agreement)) return null;
+    const value = requisitesQr(agreement);
+    if (!value) return null;
+    try {
+      return renderSVG(value, { border: 1, ecc: "M" });
     } catch {
       return null;
     }
@@ -198,23 +210,27 @@ export function AgreementCard({
         </div>
       ) : (
         <div className="aag-pay">
+          {(pay?.payLink || pay?.sbpPhone) && (
+            <div className="aag-fast">
+              <strong>Оплата по СБП</strong>
+              <span className="aag-fast__badge">Рекомендуем</span>
+              <p>Это предпочтительный способ: по СБП мы получаем деньги гораздо быстрее, обычно за несколько минут.</p>
+            </div>
+          )}
+
           {pay?.payLink ? (
             <div className="aag-link-pay">
-              <a className="btn btn-red" href={pay.payLink} target="_blank" rel="noreferrer noopener">Оплатить по ссылке СБП</a>
+              <a className="btn btn-red" href={pay.payLink} target="_blank" rel="noreferrer noopener">Оплатить по СБП</a>
               <p className="aag-small">Откроется перевод в приложении вашего банка. Впишите сумму {rub(agreement.priceRub)} и, если банк спросит, назначение платежа из поля ниже.</p>
             </div>
           ) : null}
 
-          {qr ? (
+          {qr && qr.kind === "details" ? (
             <div className="aag-qr">
               <div className="aag-qr__code" role="img" aria-label="QR-код для оплаты" dangerouslySetInnerHTML={{ __html: qr.svg }} />
               <p>
-                <strong>Оплата по QR-коду.</strong> Если кабинет открыт на компьютере, откройте на телефоне приложение банка, найдите «Оплата по QR» или сканер и наведите камеру:
-                {qr.kind === "details" ? " получатель, сумма и назначение заполнятся сами." : " откроется перевод через СБП."} Проверьте сумму: {rub(agreement.priceRub)}.
+                <strong>Оплата по QR-коду.</strong> Если кабинет открыт на компьютере, откройте на телефоне приложение банка, найдите «Оплата по QR» или сканер и наведите камеру: получатель, сумма и назначение заполнятся сами. Проверьте сумму: {rub(agreement.priceRub)}.
               </p>
-              {qr.kind === "link" && !pay?.payLink && (
-                <a className="btn btn-secondary aag-qr__open" href={qr.value} target="_blank" rel="noreferrer noopener">Открыть оплату на телефоне</a>
-              )}
             </div>
           ) : null}
 
@@ -232,7 +248,16 @@ export function AgreementCard({
 
           {pay?.account && pay.bic ? (
             <details className="aag-sbp aag-requisites" open={!qr && !pay.payLink && !pay.sbpPhone}>
-              <summary><strong>Перевод по реквизитам</strong></summary>
+              <summary><strong>{pay.payLink || pay.sbpPhone ? "Другой способ: перевод по реквизитам" : "Перевод по реквизитам"}</strong></summary>
+              {(pay.payLink || pay.sbpPhone) && (
+                <p className="aag-small">Перевод по реквизитам может занять несколько дней. Если можете, платите по СБП.</p>
+              )}
+              {detailsQrSvg && (
+                <div className="aag-qr">
+                  <div className="aag-qr__code" role="img" aria-label="QR-код с реквизитами" dangerouslySetInnerHTML={{ __html: detailsQrSvg }} />
+                  <p>Наведите камеру приложения банка: получатель, сумма и назначение заполнятся сами.</p>
+                </div>
+              )}
               <dl>
                 {([
                   ["Получатель", pay.recipient],

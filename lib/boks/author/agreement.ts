@@ -205,10 +205,17 @@ export function gostPaymentQr(details: PaymentDetails | null | undefined, amount
  * complete (the link is a button of its own beside the code).
  */
 export function paymentQr(agreement: Pick<AuthorAgreement, "number" | "plan" | "acceptedAt" | "priceRub" | "payment">) {
+  // СБП comes first: the money arrives in minutes, a transfer by details takes days.
+  if (agreement.payment?.payLink) return { kind: "link" as const, value: agreement.payment.payLink };
   const value = gostPaymentQr(agreement.payment, agreement.priceRub, paymentPurpose(agreement));
   if (value) return { kind: "details" as const, value };
-  if (agreement.payment?.payLink) return { kind: "link" as const, value: agreement.payment.payLink };
   return null;
+}
+
+/** The QR code with the bank details, shown inside «Перевод по реквизитам» when СБП leads. */
+export function requisitesQr(agreement: Pick<AuthorAgreement, "number" | "plan" | "acceptedAt" | "priceRub" | "payment">) {
+  if (!agreement.payment?.payLink) return null;
+  return gostPaymentQr(agreement.payment, agreement.priceRub, paymentPurpose(agreement));
 }
 
 /** «+79001234567» → «+7 900 123-45-67». */
