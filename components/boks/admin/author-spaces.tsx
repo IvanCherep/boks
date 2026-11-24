@@ -102,7 +102,8 @@ const words = defineMessages(
     back: "Back to authors",
     nameLabel: "Name on the page",
     handleLabel: "Page address",
-    handleHint: "3–24 English letters, digits or _, starting with a letter. For a living author it becomes their @handle when they accept.",
+    handleHint: "3–24 English letters, digits or _, starting with a letter. For a living author it becomes their @handle when they accept. Leave it empty and an author with an account keeps their own @handle.",
+    handleKeep: (handle: string) => `Empty: the author keeps their account's @${handle}, so the page and the account have one name. Type another only if the author asked: their @handle will change to it when they accept. They can change it later on My page.`,
     handleOwned: (handle: string) => `The author owns this page; its address is their @${handle}.`,
     photoLabel: "Photo",
     choosePhoto: "Choose a file",
@@ -261,7 +262,8 @@ const words = defineMessages(
       back: "К авторам",
       nameLabel: "Имя на странице",
       handleLabel: "Адрес страницы",
-      handleHint: "3–24 латинские буквы, цифры или _, начинается с буквы. У живого автора станет его @именем после принятия приглашения.",
+      handleHint: "3–24 латинские буквы, цифры или _, начинается с буквы. У живого автора станет его @именем после принятия приглашения. Оставьте пустым — автор с аккаунтом сохранит свой @ник.",
+      handleKeep: (handle: string) => `Пусто — у автора останется ник его аккаунта @${handle}: у страницы и аккаунта одно имя. Другой адрес впишите, только если автор попросил: его @ник сменится на этот после принятия приглашения. Потом автор сам может сменить его в «Моей странице».`,
       handleOwned: (handle: string) => `Страница у автора; её адрес — его @${handle}.`,
       photoLabel: "Фото",
       choosePhoto: "Выбрать файл",
@@ -590,7 +592,8 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
         id: space?.id ?? null,
         kind: space?.kind ?? kind,
         name,
-        handle,
+        // The applicant's own @handle is theirs already: the page keeps it by having none of its own.
+        handle: prefill?.handle && handle === prefill.handle ? "" : handle,
         photo: photo.kind === "new" ? photo.base64 : photo.kind,
         version: space?.version ?? 0,
       });
@@ -632,6 +635,7 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
             setHandle={setHandle}
             owned={Boolean(space?.owned)}
             ownerHandle={space?.ownerHandle ?? null}
+            accountHandle={prefill?.handle ?? null}
             photo={shownPhoto}
             onPhoto={(base64) => setPhoto(base64 ? { kind: "new", base64 } : { kind: "remove" })}
             busy={busy}
@@ -765,7 +769,7 @@ function PreviewFrame({ spaceId, width, nonce }: { spaceId: string; width: "desk
 // ------------------------------------------------------------------ profile
 
 function ProfileForm({
-  t, name, setName, handle, setHandle, owned, ownerHandle, photo, onPhoto, busy, dirty, onSave,
+  t, name, setName, handle, setHandle, owned, ownerHandle, accountHandle = null, photo, onPhoto, busy, dirty, onSave,
 }: {
   t: Words;
   name: string;
@@ -774,6 +778,7 @@ function ProfileForm({
   setHandle: (value: string) => void;
   owned: boolean;
   ownerHandle: string | null;
+  accountHandle?: string | null;
   photo: string | null;
   onPhoto: (base64: string | null) => void;
   busy: boolean;
@@ -825,10 +830,10 @@ function ProfileForm({
         <span>{t.handleLabel}</span>
         <span className="asp-address">
           <span>{authorShareLabelPrefix()}</span>
-          <Input value={handle} maxLength={24} disabled={owned} autoCapitalize="off" autoCorrect="off" spellCheck={false}
+          <Input value={handle} maxLength={24} disabled={owned} autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder={!owned && accountHandle ? accountHandle : undefined}
             onChange={(event) => setHandle(event.target.value.toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9_]/g, ""))} />
         </span>
-        <small>{owned ? t.handleOwned(ownerHandle ?? handle) : t.handleHint}</small>
+        <small>{owned ? t.handleOwned(ownerHandle ?? handle) : accountHandle && (!handle || handle === accountHandle) ? t.handleKeep(accountHandle) : t.handleHint}</small>
       </label>
       <div className="asp-field">
         <span>{t.photoLabel}</span>

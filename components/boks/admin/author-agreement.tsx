@@ -26,7 +26,8 @@ import { loadBoksPeople } from "@/components/boks/supabase-browser-data";
  */
 
 /** What Studio knows when it starts a new author: from an application, or nothing. */
-export type NewAuthorPrefill = { name?: string; email?: string; plan?: AuthorPlan | "" };
+/** `handle`: the @handle of the account that applied; the page keeps it unless the team types another. */
+export type NewAuthorPrefill = { name?: string; email?: string; plan?: AuthorPlan | ""; handle?: string | null };
 
 const newAuthorEvent = "boks:new-author";
 

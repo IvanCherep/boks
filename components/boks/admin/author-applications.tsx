@@ -96,6 +96,7 @@ export function AuthorApplications() {
         <div className="author-applications__actions">
           {row.status !== "closed" && <Button size="sm" onClick={() => startNewAuthor({
             name: row.name,
+            handle: row.handle ?? null,
             // The account's own email when they applied signed in; else the contact, if it is an email.
             email: row.email ?? (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.contact.trim()) ? row.contact.trim() : ""),
             plan: row.offer === "launch" || row.offer === "page" || row.offer === "page_no_promotion" ? row.offer : "page",
