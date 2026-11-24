@@ -680,8 +680,7 @@ export function UserAuthPanel({
   // again, for the chosen works, when publishing (`my-page.tsx`).
   const terms = <p className="auth-terms-line">{t("By continuing you accept the", "Продолжая, вы принимаете")} <a href="/terms" target="_blank" rel="noreferrer">{t("Terms of use", "Условия использования")}</a> {t("and the", "и")} <a href="/privacy" target="_blank" rel="noreferrer">{t("Privacy policy", "Политику конфиденциальности")}</a>.</p>;
 
-  // Activity sits under the You page, reached by scrolling (or the entry that
-  // scrolls to it); a restricted account sees its notice there instead.
+  // Activity sits under the You page, reached by scrolling; a restricted account sees its notice there instead.
   const bannedBlock = <>
             <div className="you-suspension-icon" aria-hidden="true"><Pause /></div>
             <h1 className="social-display">{t("Account", "Аккаунт")}<br />{t("restricted.", "ограничен.")}</h1>
@@ -722,7 +721,6 @@ export function UserAuthPanel({
               <p className="social-note">{t("Your latest 120 boks. Search titles and bylines in this list.", "Последние 120 боков. Поиск по названиям и авторам в этом списке.")}</p>
             </div>
   </section>;
-  const scrollToActivity = () => panelRef.current?.querySelector("#you-activity")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("boks account", "Аккаунт boks")}
@@ -739,7 +737,7 @@ export function UserAuthPanel({
       onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
       <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
         {settingsVisible ? <>
-          <YouSettings key={settingsSection ?? "home"} initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={scrollToActivity} below={showingAccount ? (accountUser?.bannedAt ? <div className="you-activity-section">{bannedBlock}</div> : activityBlock) : undefined} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
+          <YouSettings key={settingsSection ?? "home"} initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} below={showingAccount ? (accountUser?.bannedAt ? <div className="you-activity-section">{bannedBlock}</div> : activityBlock) : undefined} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
           {status && <p className="social-status" role="status">{status}</p>}
         </> : <>
           {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, BookOpen, Check, ChevronRight, DoorOpen, Globe, Moon, Users } from "lucide-react";
+import { ArrowUpRight, Check, ChevronRight, DoorOpen, Globe, Moon, Users } from "lucide-react";
 import { ReaderBackIcon as ArrowLeft, ReaderTypeIcon as Type } from "./reader/reader-icons";
 import type { BoksUserContext } from "./client-types";
 import type { FollowedAuthor } from "./supabase-browser-data";
@@ -47,12 +47,12 @@ export type YouSection = "home" | "typography" | "languages" | "feedback" | "let
 type Page = "home" | "app-language" | "typography" | "languages" | "appearance" | "handle" | "following" | "delete" | "feedback" | "feedback-sent" | "about" | "letters" | "saved" | "game" | "days";
 
 /** Presentation only: the parent retains every account and language controller. */
-export function YouSettings({ user, busy, handle, setHandle, languages, saveLanguages, saveHandle, follows, unfollowing, unfollow, deleteConfirmation, setDeleteConfirmation, deleteError, deleteAccount, signOut, onSignIn, onActivity, onClose, onFeed, onSeries, onIntroduction, initialSection, daily, below }: {
+export function YouSettings({ user, busy, handle, setHandle, languages, saveLanguages, saveHandle, follows, unfollowing, unfollow, deleteConfirmation, setDeleteConfirmation, deleteError, deleteAccount, signOut, onSignIn, onClose, onFeed, onSeries, onIntroduction, initialSection, daily, below }: {
   user: BoksUserContext | null; busy: boolean; handle: string; setHandle: (value: string) => void;
   languages: string[]; saveLanguages: (languages: string[]) => Promise<void>; saveHandle: () => Promise<void>;
   follows: FollowedAuthor[]; unfollowing: string | null; unfollow: (id: string) => Promise<void>;
   deleteConfirmation: string; setDeleteConfirmation: (value: string) => void; deleteError: string; deleteAccount: () => Promise<void>;
-  signOut: () => Promise<void>; onSignIn: () => void; onActivity: () => void; onClose: () => void;
+  signOut: () => Promise<void>; onSignIn: () => void; onClose: () => void;
   onFeed?: () => void; onSeries?: () => void;
   /** The reader introduction again: languages, form, favourite classics. */
   onIntroduction?: () => void;
@@ -113,7 +113,7 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
       {entry(t("Reading languages", "Языки чтения"), languages.map(language => language === "ru" ? "Русский" : "English").join(" · "), "languages", <Globe />)}
       {entry(t("Appearance", "Оформление"), t("Light, dark or your device", "Светлое, тёмное или системное"), "appearance", <Moon />)}
       {onIntroduction && <button type="button" className="you-entry" onClick={onIntroduction}><span><strong>{t("Get to know boks", "Знакомство с boks")}</strong><small>{t("Languages, form and favourite classics", "Языки, форма и любимые классики")}</small></span><DoorOpen /></button>}
-      {user && <><span className="social-eyebrow you-section-label">{t("Your account", "Ваш аккаунт")}</span><button type="button" className="you-entry" onClick={onActivity}><span><strong>{t("Your activity", "Ваша активность")}</strong><small>{t("Read, liked & conversations", "Прочитанное, лайки и беседы")}</small></span><BookOpen /></button>{entry(t("Following", "Подписки"), t(`${follows.length} ${follows.length === 1 ? "account" : "accounts"}`, `Аккаунтов: ${follows.length}`), "following", <Users />)}{!user.bannedAt && <a className="you-entry" href="/author"><span><strong>{t("Author's cabinet", "Кабинет автора")}{pagesWaiting > 0 && <span className="you-entry-badge">{t("A page is ready for you", "Для вас готова страница")}</span>}</strong><small>{t("Your author page, your works, publishing", "Ваша страница автора, произведения, публикация")}</small></span><PenLine /></a>}</>}
+      {user && <><span className="social-eyebrow you-section-label">{t("Your account", "Ваш аккаунт")}</span>{entry(t("Following", "Подписки"), t(`${follows.length} ${follows.length === 1 ? "account" : "accounts"}`, `Аккаунтов: ${follows.length}`), "following", <Users />)}{!user.bannedAt && <a className="you-entry" href="/author"><span><strong>{t("Author's cabinet", "Кабинет автора")}{pagesWaiting > 0 && <span className="you-entry-badge">{t("A page is ready for you", "Для вас готова страница")}</span>}</strong><small>{t("Your author page, your works, publishing", "Ваша страница автора, произведения, публикация")}</small></span><PenLine /></a>}</>}
       {below}
       <div className="you-utility-links"><button type="button" onClick={() => setPage("feedback")}>{t("Feedback", "Обратная связь")}</button><button type="button" onClick={() => setPage("about")}>{t("About boks", "О boks")}</button><button type="button" onClick={user ? () => void signOut() : onClose} disabled={busy}>{user ? t("Sign out", "Выйти") : t("Keep reading", "Читать дальше")}</button></div>
       {user && <>{user.role === "admin" && <div className="you-surface-links"><a href="/admin">{t("Admin", "Админка")}<ArrowUpRight /></a></div>}{user.role !== "admin" && <button className="you-danger-link" type="button" onClick={() => setPage("delete")}>{t("Delete account", "Удалить аккаунт")}</button>}</>}
