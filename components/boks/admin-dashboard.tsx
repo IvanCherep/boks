@@ -38,6 +38,7 @@ import { CatalogueImport } from "@/components/boks/admin/catalogue-import";
 import { RightsReview } from "@/components/boks/admin/rights-review";
 import { AuthorSpaces } from "@/components/boks/admin/author-spaces";
 import { AuthorApplications } from "@/components/boks/admin/author-applications";
+import { AuthorPipeline } from "@/components/boks/admin/author-pipeline";
 import { ShareLinks } from "@/components/boks/admin/share-links";
 import { AuthorAgreements } from "@/components/boks/admin/author-agreement";
 import { SeriesCredits } from "@/components/boks/admin/series-credits";
@@ -544,6 +545,7 @@ export function AdminDashboard() {
         )}
 
         {tab === "rights" && <RightsReview />}
+        {tab === "authors" && <AuthorPipeline onNavigate={navigate} />}
         {tab === "authors" && <AuthorApplications />}
         {tab === "authors" && <AuthorAgreements />}
         {tab === "authors" && <AuthorSpaces />}

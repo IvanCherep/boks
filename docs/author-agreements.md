@@ -207,3 +207,16 @@ contract. The tariff's payment still lives on the contract row, where Studio
 and the guards read it; a trigger keeps its payment row the same. The receipt
 is now on the site (on this page only) and still goes by email (offer, 5.3).
 Studio lists a contract's payments under it.
+
+## Keeping track (2026-11-24)
+
+Studio › «Авторы» opens on «Ведение авторов»: one row per author, from the
+application to the open page (`studio_author_pipeline` gathers the facts,
+`lib/boks/author/pipeline.ts` decides, tested). Each row has the step (dots:
+Заявка → Страница → Приглашение → Тексты и голос → Оплата for paid → Series →
+Открытие → Публикуется), whose move it is («Наш ход» / «Ждём автора» / «Всё
+идёт»), what to do next and since when, and one button to where it is done:
+the application, the page, Модерация or «Boks Series в работе». Ours come
+first; a wait longer than its step should take (`stuckAfterDays`) is
+«застрял». Filters: Ждут нас, Застряли, Ждём автора, Страница открыта, Все;
+search by name, @ or email.

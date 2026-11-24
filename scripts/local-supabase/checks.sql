@@ -6439,3 +6439,43 @@ begin
   perform public.boks_test_logout();
 end $$;
 rollback;
+
+-- Keeping track (20261124150000): one row per author for the team only.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f2400-0000-4000-8000-000000000001', 'pipe-editor@boks.test', false),
+  ('0f0f2400-0000-4000-8000-000000000002', 'pipe-author@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f2400-0000-4000-8000-000000000001', 'pipe_editor', 'admin', now(), 'v1'),
+  ('0f0f2400-0000-4000-8000-000000000002', 'pipe_author', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_editor uuid := '0f0f2400-0000-4000-8000-000000000001';
+  v_author uuid := '0f0f2400-0000-4000-8000-000000000002';
+  v_app bigint;
+  v_space uuid;
+  v_row jsonb;
+begin
+  perform public.boks_test_login(v_author);
+  v_app := (public.submit_author_application('page', 'Ведомая', 'https://vk.com/x', null, 'pipe-author@boks.test', null) ->> 'id')::bigint;
+  begin
+    perform public.studio_author_pipeline();
+    perform public.boks_assert(false, 'only the team sees the pipeline');
+  exception when others then
+    perform public.boks_assert(sqlerrm like 'Admin access%', 'only the team sees the pipeline');
+  end;
+  perform public.boks_test_login(v_editor);
+  select r into v_row from jsonb_array_elements(public.studio_author_pipeline()) r where r ->> 'key' = 'a' || v_app;
+  perform public.boks_assert(v_row ->> 'kind' = 'application' and v_row ->> 'email' = 'pipe-author@boks.test', 'an application without a page is a row');
+  v_space := (public.studio_save_author_space(null, 'author', 'Ведомая', '', null, 0) ->> 'id')::uuid;
+  perform public.studio_link_application(v_app, v_space);
+  perform public.boks_assert(not exists (select 1 from jsonb_array_elements(public.studio_author_pipeline()) r where r ->> 'key' = 'a' || v_app), 'once it has a page, the application is not a row of its own');
+  select r into v_row from jsonb_array_elements(public.studio_author_pipeline()) r where r ->> 'key' = 's' || v_space;
+  perform public.boks_assert(v_row ->> 'kind' = 'page' and (v_row ->> 'applicationId')::bigint = v_app and v_row -> 'invite' = 'null'::jsonb, 'the page is, with its application and no invite');
+  perform public.studio_issue_author_invite(v_space, 'pipe-author@boks.test', 'page');
+  select r into v_row from jsonb_array_elements(public.studio_author_pipeline()) r where r ->> 'key' = 's' || v_space;
+  perform public.boks_assert(v_row -> 'invite' ->> 'email' = 'pipe-author@boks.test' and v_row -> 'invite' ->> 'acceptedAt' is null, 'then with the invite waiting');
+  perform public.boks_test_logout();
+end $$;
+rollback;
