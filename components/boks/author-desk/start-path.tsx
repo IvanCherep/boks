@@ -34,7 +34,8 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
   const paid = state.author.billing === "paid";
   const works = state.works.filter((work) => !work.shelved || work.editors.step);
   const withEditors = works.filter((work) => work.editors.step && work.editors.step !== "published");
-  const atHome = works.filter((work) => !work.editors.step && work.text.trim());
+  // A piece the editors declined is not waiting to be given: it never holds the way back.
+  const atHome = works.filter((work) => !work.editors.step && work.text.trim() && work.outcome?.kind !== "declined");
   const recorded = atHome.filter(voiced);
   const sendable = atHome.filter((work) => canQueue(work).ok);
   const inWork = works.filter((work) => work.editors.step === "production");
@@ -70,7 +71,7 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
     {
       key: "send",
       title: "Отдать редакции",
-      done: withEditors.length > 0 && recorded.length === 0,
+      done: withEditors.length > 0 && sendable.length === 0,
       short: withEditors.length ? `отдано ${withEditors.length}` : paid ? "до 5 текстов для начала" : undefined,
       action: sendable.length
         ? {
@@ -79,7 +80,7 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
           }
         : undefined,
       status: withEditors.length
-        ? `Отдано ${textsWord(withEditors.length)}.${recorded.length ? ` Ещё ${recorded.length} ${plural(recorded.length, "записан", "записаны", "записаны")}, но не отданы.` : ""}`
+        ? `Отдано ${textsWord(withEditors.length)}.${sendable.length ? ` Ещё ${sendable.length} ${plural(sendable.length, "записан, но не отдан", "записаны, но не отданы", "записаны, но не отданы")}.` : ""}`
         : paid
           ? "Для начала отдайте до 5 текстов: из них редакция сделает первые серии."
           : "Отдайте тексты, с которых хотите начать: редакция сделает из них серии.",
@@ -144,8 +145,8 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
                 {index !== current && step.short ? <em> · {step.short}</em> : null}
               </b>
               {index === current ? <span>{step.status}</span> : null}
-              {step.action && (index === current || step.key === "pay" || step.key === "send") ? (
-                <button type="button" className={`desk-btn ${index === current ? "desk-btn-red" : "desk-btn-ink"}`} onClick={step.action.run}>
+              {step.action && (index === current || step.key === "pay" || step.key === "send" || step.key === "open") ? (
+                <button type="button" className={`desk-btn ${index === current || step.key === "open" ? "desk-btn-red" : "desk-btn-ink"}`} onClick={step.action.run}>
                   {step.action.label}
                 </button>
               ) : null}
