@@ -62,6 +62,7 @@ export function AgreementCard({
   explained = false,
   pageOpen = false,
   startOpen = false,
+  preview = false,
 }: {
   agreement: AuthorAgreement | null;
   onChange: (next: AuthorAgreement) => void;
@@ -73,6 +74,8 @@ export function AgreementCard({
   pageOpen?: boolean;
   /** Opened from «Оплатить» elsewhere (the Workshop's steps): the details at once. */
   startOpen?: boolean;
+  /** Studio's preview: everything as the author sees it, «Я оплатил(а)» sends nothing. */
+  preview?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
   const [busy, setBusy] = useState(false);
@@ -109,6 +112,10 @@ export function AgreementCard({
   }
 
   async function report() {
+    if (preview) {
+      setProblem("Это предпросмотр: у автора эта кнопка сообщает редакции об оплате, и в Студии появляется «Проверить оплату».");
+      return;
+    }
     setBusy(true);
     setProblem("");
     try {

@@ -1,6 +1,8 @@
 "use client";
 
 import "@/app/author-agreement.css";
+import "@/app/author-desk.css";
+import { AgreementCard } from "@/components/boks/author-cabinet/agreement-card";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,7 @@ import {
   updateAuthorPayment,
 } from "@/components/boks/author-spaces/data";
 import { readableBoksError } from "@/lib/boks/errors";
-import { legalHref, legalKinds, paymentKindName, planName, rub, ruDate, type AuthorPayment, type AuthorPlan, type PaymentDetails, type PayState, type RecipientKind, recipientKindName, type StudioAgreement } from "@/lib/boks/author/agreement";
+import { legalHref, legalKinds, paymentKindName, planName, rub, ruDate, type AuthorAgreement, type AuthorPayment, type AuthorPlan, type PaymentDetails, type PayState, type RecipientKind, recipientKindName, type StudioAgreement } from "@/lib/boks/author/agreement";
 import { useUiLanguage } from "@/components/boks/ui-language";
 import { loadBoksPeople } from "@/components/boks/supabase-browser-data";
 
@@ -354,7 +356,76 @@ function PaymentDetailsForm({ onClose }: { onClose: () => void }) {
         <Button size="sm" disabled={busy} onClick={() => void save()}>Сохранить реквизиты</Button>
         <Button size="sm" variant="ghost" onClick={onClose}>Закрыть</Button>
       </div>
+      <PaymentPreview details={details} />
     </div>
+  );
+}
+
+const digitsOnly = (value: unknown) => (typeof value === "string" ? value.replace(/\s/g, "") || null : null);
+const textOrNull = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : null);
+
+/**
+ * «Так увидит автор»: the very payment screen of the cabinet (`AgreementCard`),
+ * with the details as typed in the form above and a sample contract for the
+ * «Кабинет автора» tariff. At phone width it lays out as on a phone. Nothing
+ * is sent from it.
+ */
+function PaymentPreview({ details }: { details: Partial<PaymentDetails> }) {
+  const [width, setWidth] = useState<"phone" | "desktop">("phone");
+  const now = new Date();
+  const due = new Date(now.getTime() + 30 * 86_400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Moscow" });
+  const payment: PaymentDetails = {
+    recipient: textOrNull(details.recipient),
+    recipientKind: details.recipientKind ?? "person",
+    inn: digitsOnly(details.inn),
+    kpp: digitsOnly(details.kpp),
+    account: digitsOnly(details.account),
+    bank: textOrNull(details.bank),
+    bic: digitsOnly(details.bic),
+    corrAccount: digitsOnly(details.corrAccount),
+    bankInn: digitsOnly(details.bankInn),
+    bankKpp: digitsOnly(details.bankKpp),
+    sbpPhone: textOrNull(details.sbpPhone),
+    sbpBank: textOrNull(details.sbpBank),
+    payLink: textOrNull(details.payLink),
+  };
+  const sample: AuthorAgreement = {
+    id: "preview",
+    number: `${now.getFullYear()}/000`,
+    plan: "page",
+    priceRub: 30000,
+    legalName: "Иванова Анна Сергеевна",
+    email: "author@example.com",
+    acceptedAt: now.toISOString(),
+    documents: { author_offer: "", author_pd_processing: "", author_pd_distribution: "" },
+    payState: "awaiting",
+    payDue: due,
+    reportedAt: null,
+    paidAt: null,
+    paidAmountRub: null,
+    periodStart: null,
+    periodEnd: null,
+    cancelledAt: null,
+    payment,
+  };
+  return (
+    <section className="aag-preview" aria-label="Так увидит автор">
+      <div className="aag-preview__bar">
+        <div>
+          <strong>Так увидит автор</strong>
+          <small className="author-applications__muted"> · окно «Оплатить», с тем, что сейчас в полях; договор для примера</small>
+        </div>
+        <div className="asp-segmented" role="group" aria-label="Ширина">
+          <button type="button" aria-pressed={width === "phone"} onClick={() => setWidth("phone")}>Телефон</button>
+          <button type="button" aria-pressed={width === "desktop"} onClick={() => setWidth("desktop")}>Компьютер</button>
+        </div>
+      </div>
+      <div className={`aag-preview__frame is-${width}`}>
+        <div className="acab desk">
+          <AgreementCard key={JSON.stringify(payment)} agreement={sample} onChange={() => undefined} compact explained startOpen preview />
+        </div>
+      </div>
+    </section>
   );
 }
 
