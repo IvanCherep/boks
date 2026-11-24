@@ -5850,6 +5850,8 @@ declare
 begin
   perform public.boks_test_login('5e5e0000-0000-4000-8000-000000000001');
   v_id := (public.studio_save_author_space(null, 'author', 'Поэт Полки', 'shelf_poet', null, 0) ->> 'id')::uuid;
+  -- Pages opened by other checks go onto the shelf too (20261124160000): this block looks at its own page only.
+  update public.author_spaces set series_shelf = false where id <> v_id;
   perform public.studio_save_space_work(v_id, null, 'Первая', 'Первая строка.', 'text', null);
   perform public.studio_save_space_work(v_id, null, 'Вторая', 'Вторая строка.', 'text', null);
   v_one := (select id from public.author_space_works where space_id = v_id and title = 'Первая');
@@ -6476,6 +6478,25 @@ begin
   perform public.studio_issue_author_invite(v_space, 'pipe-author@boks.test', 'page');
   select r into v_row from jsonb_array_elements(public.studio_author_pipeline()) r where r ->> 'key' = 's' || v_space;
   perform public.boks_assert(v_row -> 'invite' ->> 'email' = 'pipe-author@boks.test' and v_row -> 'invite' ->> 'acceptedAt' is null, 'then with the invite waiting');
+  perform public.boks_test_logout();
+end $$;
+rollback;
+
+-- Every page that opens goes onto the Series shelf (20261124160000).
+begin;
+insert into auth.users (id, email, is_anonymous) values ('0f0f2500-0000-4000-8000-000000000001', 'shelf-editor@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values ('0f0f2500-0000-4000-8000-000000000001', 'shelf_editor', 'admin', now(), 'v1')
+on conflict (user_id) do update set role = excluded.role;
+do $$
+declare
+  v_space uuid;
+begin
+  perform public.boks_test_login('0f0f2500-0000-4000-8000-000000000001');
+  v_space := (public.studio_save_author_space(null, 'author', 'Полочная', 'shelf_page', null, 0) ->> 'id')::uuid;
+  update public.author_spaces set series_shelf = false where id = v_space;
+  perform public.boks_assert(not (select series_shelf from public.author_spaces where id = v_space), 'a closed page can be off the shelf');
+  update public.author_spaces set status = 'published', published_at = now() where id = v_space;
+  perform public.boks_assert((select series_shelf from public.author_spaces where id = v_space), 'opening the page puts it on the Series shelf');
   perform public.boks_test_logout();
 end $$;
 rollback;
