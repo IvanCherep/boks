@@ -1,6 +1,7 @@
 "use client";
 
 import { SpaceVerified } from "@/components/boks/admin/space-verified";
+import { linkAuthorApplication } from "@/components/boks/supabase-browser-data";
 import { SpaceSeedsPanel } from "@/components/boks/admin/author-seeds";
 import { SpaceBillingPanel } from "@/components/boks/admin/author-billing";
 import { AccountFinder, InvitePlanFields, onNewAuthor, SpaceAgreementPanel, type NewAuthorPrefill } from "@/components/boks/admin/author-agreement";
@@ -431,10 +432,16 @@ export function AuthorSpaces() {
   const [prefillKey, setPrefillKey] = useState(0);
   const anchor = useRef<HTMLDivElement>(null);
   useEffect(() => onNewAuthor((next) => {
-    setOpenId(null);
     setPrefill(next);
     setPrefillKey((key) => key + 1);
-    setCreating("author");
+    // An application whose page exists opens that page, not a second one.
+    if (next.spaceId) {
+      setCreating(null);
+      setOpenId(next.spaceId);
+    } else {
+      setOpenId(null);
+      setCreating("author");
+    }
     window.setTimeout(() => anchor.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }), []);
 
@@ -613,6 +620,7 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
         photo: photo.kind === "new" ? photo.base64 : photo.kind,
         version: space?.version ?? 0,
       });
+      if (!space && prefill?.applicationId) await linkAuthorApplication(prefill.applicationId, next.id).catch(() => {});
       if (!space) onCreated(next.id);
       return next;
     }, t.saved);
@@ -634,6 +642,19 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
         <button type="button" className="asp-icon-button" onClick={() => void reload()} aria-label={t.refresh} disabled={!space}><RefreshCw aria-hidden="true" /></button>
       </nav>
       {notice && <p className="asp-notice" role="status">{notice}</p>}
+      {space && space.kind === "author" && !space.owned && space.status !== "merged" && (() => {
+        const waiting = space.invites.find((invite) => invite.state === "pending");
+        return waiting ? (
+          <p className="asp-next is-invited" role="status">
+            Приглашение отправлено на {waiting.email}. Автор войдёт в кабинет, когда примет его: по ссылке или просто войдя на сайт с этой почтой и открыв /author.
+          </p>
+        ) : (
+          <p className="asp-next" role="status">
+            <span><b>Автор пока не может войти в кабинет.</b> Страница — только черновик. Следующий шаг — пригласить автора.</span>
+            <Button size="sm" onClick={() => document.getElementById("asp-invite")?.scrollIntoView({ behavior: "smooth", block: "center" })}>К приглашению</Button>
+          </p>
+        );
+      })()}
 
       <div className="asp-columns">
         <div className="asp-main">
@@ -1312,7 +1333,7 @@ function InvitePanel({ t, space, busy, run, prefill = null }: { t: Words; space:
   }
 
   return (
-    <section className="asp-card">
+    <section className="asp-card" id="asp-invite">
       <header className="asp-card__head"><h2><UserPlus aria-hidden="true" /> {t.inviteTitle}</h2></header>
       <p className="asp-hint">{t.inviteHint}</p>
       {latest?.problem === "handle_taken" && <p className="asp-warn" role="alert">{t.handleTaken}</p>}

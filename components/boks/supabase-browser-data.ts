@@ -1969,7 +1969,18 @@ export type AuthorApplicationRow = {
   createdAt: string;
   handle: string | null;
   email: string | null;
+  /** The page made from it (or the applicant's own), and where it stands. */
+  spaceId: string | null;
+  pageStage: "page" | "invited" | "in" | null;
+  invitedEmail: string | null;
 };
+
+/** Studio: remember the page made from an application. */
+export async function linkAuthorApplication(id: number, spaceId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("studio_link_application", { p_id: id, p_space_id: spaceId });
+  if (result.error) throw result.error;
+}
 
 /** Studio → Authors: the applications, newest first. Admin-only on the server. */
 export async function listAuthorApplications(): Promise<AuthorApplicationRow[]> {

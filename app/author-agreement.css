@@ -121,3 +121,10 @@
 .abil-choice label:has(input:checked){border-color:#c9a99f;background:#fbf3ee}
 .abil-choice input{margin-top:3px;accent-color:#c44a32}
 .abil-choice small{display:block;color:#65685e;font-size:12px}
+
+/* Studio: what the page waits for, above the editor; an application's page. */
+.asp-next{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin:0 0 16px;padding:12px 16px;border-radius:12px;background:#fdf0e6;border:1px solid #f0c9a8;font-size:14px;line-height:1.45}
+.asp-next.is-invited{background:#eef5ef;border-color:#c5dcc9}
+.author-applications__page{margin:0 0 8px;font-size:13px;line-height:1.4;color:#7a4a1f}
+.author-applications__page.is-invited{color:#3c5b43}
+.author-applications__page.is-in{color:#2e5d3a}

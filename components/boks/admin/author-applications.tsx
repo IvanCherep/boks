@@ -94,7 +94,22 @@ export function AuthorApplications() {
         </dl>
         {row.message && <p className="author-applications__message">{row.message}</p>}
         <div className="author-applications__actions">
-          {row.status !== "closed" && <Button size="sm" onClick={() => startNewAuthor({
+          {row.pageStage && <p className={`author-applications__page is-${row.pageStage}`}>
+            {row.pageStage === "in"
+              ? "✓ Автор принял приглашение и работает в кабинете."
+              : row.pageStage === "invited"
+                ? `Приглашение отправлено${row.invitedEmail ? ` на ${row.invitedEmail}` : ""}. Автор войдёт в кабинет, как только примет его.`
+                : "Страница создана, но автор ещё не приглашён и войти в кабинет не может. Откройте страницу и нажмите «Пригласить автора»."}
+          </p>}
+          {row.spaceId && <Button size="sm" variant={row.pageStage === "page" ? "default" : "outline"} onClick={() => startNewAuthor({
+            spaceId: row.spaceId,
+            applicationId: row.id,
+            handle: row.handle ?? null,
+            email: row.email ?? (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.contact.trim()) ? row.contact.trim() : ""),
+            plan: row.offer === "launch" || row.offer === "page" || row.offer === "page_no_promotion" ? row.offer : "page",
+          })}>{row.pageStage === "page" ? "Открыть и пригласить" : "Открыть страницу"}</Button>}
+          {row.status !== "closed" && !row.spaceId && <Button size="sm" onClick={() => startNewAuthor({
+            applicationId: row.id,
             name: row.name,
             handle: row.handle ?? null,
             // The account's own email when they applied signed in; else the contact, if it is an email.

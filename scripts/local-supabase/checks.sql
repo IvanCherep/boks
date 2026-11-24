@@ -6333,3 +6333,49 @@ begin
   perform public.boks_test_logout();
 end $$;
 rollback;
+
+-- An application remembers its page (20261124130000): page made, invited, in.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f2200-0000-4000-8000-000000000001', 'appl-editor@boks.test', false),
+  ('0f0f2200-0000-4000-8000-000000000002', 'appl-author@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f2200-0000-4000-8000-000000000001', 'appl_editor', 'admin', now(), 'v1'),
+  ('0f0f2200-0000-4000-8000-000000000002', 'appl_author', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_editor uuid := '0f0f2200-0000-4000-8000-000000000001';
+  v_author uuid := '0f0f2200-0000-4000-8000-000000000002';
+  v_app bigint;
+  v_space uuid;
+  v_token text;
+  v_row jsonb;
+begin
+  perform public.boks_test_login(v_author);
+  v_app := (public.submit_author_application('page', 'Заявитель', 'https://vk.com/x', null, 'appl-author@boks.test', null) ->> 'id')::bigint;
+  perform public.boks_test_login(v_editor);
+  select r into v_row from jsonb_array_elements(public.list_author_applications(500)) r where (r ->> 'id')::bigint = v_app;
+  perform public.boks_assert(v_row ->> 'pageStage' is null and v_row ->> 'spaceId' is null, 'a fresh application has no page');
+  v_space := (public.studio_save_author_space(null, 'author', 'Заявитель', '', null, 0) ->> 'id')::uuid;
+  perform public.studio_link_application(v_app, v_space);
+  select r into v_row from jsonb_array_elements(public.list_author_applications(500)) r where (r ->> 'id')::bigint = v_app;
+  perform public.boks_assert(v_row ->> 'pageStage' = 'page' and (v_row ->> 'spaceId')::uuid = v_space and v_row ->> 'status' = 'contacted', 'the application shows its page, not invited yet');
+  v_token := public.studio_issue_author_invite(v_space, 'appl-author@boks.test', null) ->> 'token';
+  select r into v_row from jsonb_array_elements(public.list_author_applications(500)) r where (r ->> 'id')::bigint = v_app;
+  perform public.boks_assert(v_row ->> 'pageStage' = 'invited' and v_row ->> 'invitedEmail' = 'appl-author@boks.test', 'then invited');
+  perform public.boks_test_login(v_author);
+  perform public.accept_author_invite(v_token, null);
+  perform public.boks_test_login(v_editor);
+  select r into v_row from jsonb_array_elements(public.list_author_applications(500)) r where (r ->> 'id')::bigint = v_app;
+  perform public.boks_assert(v_row ->> 'pageStage' = 'in', 'then the author is in');
+  perform public.boks_test_login(v_author);
+  begin
+    perform public.studio_link_application(v_app, v_space);
+    perform public.boks_assert(false, 'only the team links an application');
+  exception when others then
+    perform public.boks_assert(sqlerrm like 'Admin access%', 'only the team links an application');
+  end;
+  perform public.boks_test_logout();
+end $$;
+rollback;
