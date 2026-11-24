@@ -6687,6 +6687,13 @@ begin
   perform public.boks_test_login('5ea70000-0000-4000-8000-000000000003', true);
   perform public.boks_assert(jsonb_array_length(public.search_boks_authors('поэтова', 20) -> 'results') = 0,
     'an author whose boks are all unpublished drops out');
+  perform public.boks_assert((
+      select bool_and(a <= b) from (
+        select public.boks_author_search_text(r ->> 'name') as a,
+               lead(public.boks_author_search_text(r ->> 'name')) over (order by n) as b
+        from jsonb_array_elements(public.search_boks_authors('', 30) -> 'results') with ordinality x(r, n)
+      ) pairs where b is not null) is not false,
+    'the panel opens on the authors in alphabetical order');
   perform public.boks_assert((public.search_boks_authors('nobody-like-this', 20) ->> 'hasMore')::boolean = false
       and jsonb_array_length(public.search_boks_authors('nobody-like-this', 20) -> 'results') = 0,
     'nothing found is an empty page, not an error');
