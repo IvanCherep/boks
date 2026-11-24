@@ -408,6 +408,7 @@ const russianPatterns: [RegExp, (...groups: string[]) => string][] = [
     (n, max) => `Бок должен укладываться в 15 минут. В этом тексте ${n} символов, а можно не больше ${max}.`,
   ],
   [/^The address @(\S+) is already taken\.$/, (h) => `Адрес @${h} уже занят.`],
+  [/^The address @(\S+) is reserved for the platform\.$/, (h) => `@${h} — служебное имя платформы, выберите другой адрес.`],
   [/^«(.+)» is not ready to publish\.$/, (title) => `«${title}» ещё не готово к публикации.`],
   [/^«(.+)»: the bok it belongs to is not published\.$/, (title) => `«${title}»: бок, к которому оно относится, не опубликован.`],
   [/^«(.+)» belongs to another account\.$/, (title) => `«${title}» принадлежит другому аккаунту.`],

@@ -40,6 +40,8 @@ import {
   type StudioSpaceRow,
   type WorkFormat,
   type WorkStatus,
+  checkStudioHandle,
+  type HandleStatus,
 } from "@/components/boks/author-spaces/data";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { LinkPreviewMock } from "@/components/boks/author-spaces/link-preview-mock";
@@ -103,6 +105,13 @@ const words = defineMessages(
     nameLabel: "Name on the page",
     handleLabel: "Page address",
     handleHint: "3–24 English letters, digits or _, starting with a letter. For a living author it becomes their @handle when they accept. Leave it empty and an author with an account keeps their own @handle.",
+    handleState: {
+      free: (h: string) => `@${h} is free.`,
+      account: (h: string) => `@${h} is another account's @handle. Choose another.`,
+      page: (h: string) => `@${h} is another page's address. Choose another.`,
+      moved: (h: string) => `@${h} is an author's former address: old links lead to them. Choose another.`,
+      reserved: (h: string) => `@${h} is kept for the platform. Choose another.`,
+    } as Record<string, (h: string) => string>,
     handleKeep: (handle: string) => `Empty: the author keeps their account's @${handle}, so the page and the account have one name. Type another only if the author asked: their @handle will change to it when they accept. They can change it later on My page.`,
     handleOwned: (handle: string) => `The author owns this page; its address is their @${handle}.`,
     photoLabel: "Photo",
@@ -263,6 +272,13 @@ const words = defineMessages(
       nameLabel: "Имя на странице",
       handleLabel: "Адрес страницы",
       handleHint: "3–24 латинские буквы, цифры или _, начинается с буквы. У живого автора станет его @именем после принятия приглашения. Оставьте пустым — автор с аккаунтом сохранит свой @ник.",
+      handleState: {
+        free: (h: string) => `@${h} свободен.`,
+        account: (h: string) => `@${h} — ник другого аккаунта. Выберите другой.`,
+        page: (h: string) => `@${h} — адрес другой страницы. Выберите другой.`,
+        moved: (h: string) => `@${h} — прежний адрес автора: старые ссылки ведут к нему. Выберите другой.`,
+        reserved: (h: string) => `@${h} — служебное имя платформы. Выберите другой.`,
+      } as Record<string, (h: string) => string>,
       handleKeep: (handle: string) => `Пусто — у автора останется ник его аккаунта @${handle}: у страницы и аккаунта одно имя. Другой адрес впишите, только если автор попросил: его @ник сменится на этот после принятия приглашения. Потом автор сам может сменить его в «Моей странице».`,
       handleOwned: (handle: string) => `Страница у автора; её адрес — его @${handle}.`,
       photoLabel: "Фото",
@@ -636,6 +652,8 @@ function SpaceEditor({ spaceId, kind, prefill = null, onCreated, onBack }: { spa
             owned={Boolean(space?.owned)}
             ownerHandle={space?.ownerHandle ?? null}
             accountHandle={prefill?.handle ?? null}
+            spaceId={space?.id ?? null}
+            savedHandle={space?.proposedHandle ?? ""}
             photo={shownPhoto}
             onPhoto={(base64) => setPhoto(base64 ? { kind: "new", base64 } : { kind: "remove" })}
             busy={busy}
@@ -769,9 +787,11 @@ function PreviewFrame({ spaceId, width, nonce }: { spaceId: string; width: "desk
 // ------------------------------------------------------------------ profile
 
 function ProfileForm({
-  t, name, setName, handle, setHandle, owned, ownerHandle, accountHandle = null, photo, onPhoto, busy, dirty, onSave,
+  t, spaceId = null, savedHandle = "", name, setName, handle, setHandle, owned, ownerHandle, accountHandle = null, photo, onPhoto, busy, dirty, onSave,
 }: {
   t: Words;
+  spaceId?: string | null;
+  savedHandle?: string;
   name: string;
   setName: (value: string) => void;
   handle: string;
@@ -790,6 +810,20 @@ function ProfileForm({
   const [problem, setProblem] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const frameSize = 168;
+  // The address is checked as it is typed; the database refuses a taken one anyway.
+  const own = Boolean(accountHandle && handle === accountHandle);
+  const checking = !owned && Boolean(handle) && handle !== savedHandle && !own;
+  const [handleState, setHandleState] = useState<{ handle: string; status: HandleStatus } | null>(null);
+  useEffect(() => {
+    if (!checking || !/^[a-z][a-z0-9_]{2,23}$/.test(handle)) return;
+    let live = true;
+    const timer = window.setTimeout(() => {
+      checkStudioHandle(handle, spaceId).then((status) => { if (live) setHandleState({ handle, status }); }, () => {});
+    }, 300);
+    return () => { live = false; window.clearTimeout(timer); };
+  }, [checking, handle, spaceId]);
+  const status = checking && handleState?.handle === handle ? handleState.status : null;
+  const handleBlocked = checking && (!/^[a-z][a-z0-9_]{2,23}$/.test(handle) || (status !== null && status !== "free"));
 
   function choose(file: File | undefined) {
     if (!file) return;
@@ -833,7 +867,15 @@ function ProfileForm({
           <Input value={handle} maxLength={24} disabled={owned} autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder={!owned && accountHandle ? accountHandle : undefined}
             onChange={(event) => setHandle(event.target.value.toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9_]/g, ""))} />
         </span>
-        <small>{owned ? t.handleOwned(ownerHandle ?? handle) : accountHandle && (!handle || handle === accountHandle) ? t.handleKeep(accountHandle) : t.handleHint}</small>
+        <small className={status && status !== "free" ? "asp-warn" : undefined} role={status && status !== "free" ? "alert" : undefined}>
+          {owned
+            ? t.handleOwned(ownerHandle ?? handle)
+            : accountHandle && (!handle || own)
+              ? t.handleKeep(accountHandle)
+              : status && status !== "invalid"
+                ? `${status === "free" ? "✓ " : ""}${t.handleState[status](handle)}`
+                : t.handleHint}
+        </small>
       </label>
       <div className="asp-field">
         <span>{t.photoLabel}</span>
@@ -858,7 +900,7 @@ function ProfileForm({
           </div>
         </div>
       </div>
-      <Button className="asp-primary" disabled={busy || !dirty || !name.trim()} onClick={onSave}>{t.saveDraft}</Button>
+      <Button className="asp-primary" disabled={busy || !dirty || !name.trim() || handleBlocked} onClick={onSave}>{t.saveDraft}</Button>
     </section>
   );
 }

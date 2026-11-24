@@ -6263,3 +6263,73 @@ begin
   perform public.boks_test_logout();
 end $$;
 rollback;
+
+-- One name, one owner (20261124120000): an account's @handle and a page's
+-- address never coincide, a page cannot take a service name, and Studio can
+-- ask while the address is typed.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f2100-0000-4000-8000-000000000001', 'name-editor@boks.test', false),
+  ('0f0f2100-0000-4000-8000-000000000002', 'name-lead@boks.test', false),
+  ('0f0f2100-0000-4000-8000-000000000003', 'name-other@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f2100-0000-4000-8000-000000000001', 'name_editor', 'admin', now(), 'v1'),
+  ('0f0f2100-0000-4000-8000-000000000002', 'name_lead', 'reader', now(), 'v1'),
+  ('0f0f2100-0000-4000-8000-000000000003', 'name_other', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_editor uuid := '0f0f2100-0000-4000-8000-000000000001';
+  v_lead uuid := '0f0f2100-0000-4000-8000-000000000002';
+  v_other uuid := '0f0f2100-0000-4000-8000-000000000003';
+  v_space uuid;
+  v_kept uuid;
+  v_token text;
+  v_error text;
+begin
+  perform public.boks_test_login(v_editor);
+  perform public.boks_assert(public.studio_check_handle('name_lead', null) = 'account', 'Studio sees an account''s @handle as taken');
+  perform public.boks_assert(public.studio_check_handle('Admin', null) = 'reserved', 'and a service name as reserved');
+  perform public.boks_assert(public.studio_check_handle('1x', null) = 'invalid', 'and a malformed one as invalid');
+  perform public.boks_assert(public.studio_check_handle('name_fresh', null) = 'free', 'and a fresh one as free');
+
+  foreach v_error in array array['support', 'NAME_LEAD'] loop
+    begin
+      perform public.studio_save_author_space(null, 'author', 'Проба', v_error, null, 0);
+      perform public.boks_assert(false, 'a page cannot take @' || v_error);
+    exception when others then
+      get stacked diagnostics v_error = message_text;
+      perform public.boks_assert(v_error like 'The address @% is %', 'a page cannot take a taken or service name: ' || v_error);
+    end;
+  end loop;
+  begin
+    insert into public.author_spaces (kind, name, handle, created_by) values ('author', 'Мимо Studio', 'name_other', v_editor);
+    perform public.boks_assert(false, 'a page written past Studio cannot take an account''s @handle');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like 'The address @name_other is already taken.', 'the table itself refuses it: ' || v_error);
+  end;
+
+  v_space := (public.studio_save_author_space(null, 'author', 'Свободная', 'name_fresh', null, 0) ->> 'id')::uuid;
+  perform public.boks_assert(public.studio_check_handle('name_fresh', v_space) = 'free', 'a page''s own address is free to it');
+  perform public.boks_assert(public.studio_check_handle('name_fresh', null) = 'page', 'and taken for any other page');
+  perform public.boks_test_login(v_other);
+  begin
+    perform public.update_boks_user_profile('', 'name_fresh');
+    perform public.boks_assert(false, 'an account cannot take a page''s address');
+  exception when others then
+    get stacked diagnostics v_error = message_text;
+    perform public.boks_assert(v_error like '%taken%', 'an account cannot take a page''s address: ' || v_error);
+  end;
+
+  -- A page made from an application with no address of its own: the author keeps their @handle.
+  perform public.boks_test_login(v_editor);
+  v_kept := (public.studio_save_author_space(null, 'author', 'Лид', '', null, 0) ->> 'id')::uuid;
+  v_token := public.studio_issue_author_invite(v_kept, 'name-lead@boks.test', null) ->> 'token';
+  perform public.boks_test_login(v_lead);
+  perform public.accept_author_invite(v_token, null);
+  perform public.boks_assert((select handle from public.user_profiles where user_id = v_lead) = 'name_lead', 'accepting a page without an address keeps the author''s @handle');
+  perform public.boks_assert((select owner_user_id from public.author_spaces where id = v_kept) = v_lead, 'and the page is theirs');
+  perform public.boks_test_logout();
+end $$;
+rollback;

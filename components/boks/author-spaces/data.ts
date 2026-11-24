@@ -219,6 +219,11 @@ export const loadStudioSpaces = (query: string, limit = 50, offset = 0) =>
 
 export const loadStudioSpace = (id: string) => call<StudioSpace>("studio_author_space", { p_space_id: id });
 
+export type HandleStatus = "invalid" | "reserved" | "account" | "page" | "moved" | "free";
+/** Studio, while the address is typed: free for this page, or what holds it. */
+export const checkStudioHandle = (handle: string, spaceId: string | null) =>
+  call<HandleStatus>("studio_check_handle", { p_handle: handle, p_space_id: spaceId });
+
 export const saveStudioSpace = (input: { id: string | null; kind: SpaceKind; name: string; handle: string; photo: string; version: number }) =>
   call<StudioSpace>("studio_save_author_space", {
     p_space_id: input.id,
