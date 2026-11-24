@@ -3503,9 +3503,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           onPiecesChanged={setPublishedSeriesPieces}
           heard={seriesHeard}
           openingStoryId={seriesOpening}
-          signedIn={hasSignedInAccount}
           onOpenPiece={(piece) => void openSeriesPiece(piece)}
-          onOpenAccount={() => openAccount("manual", "general", "home")}
+          onOpenSearch={openAuthorSearch}
           onOpenLanguages={() => openAccount("manual", "general", "languages")}
         /></div>
         {!readerOverlayOpen && <ReaderTabs
@@ -3700,9 +3699,8 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             onPiecesChanged={setPublishedSeriesPieces}
             heard={seriesHeard}
             openingStoryId={seriesOpening}
-            signedIn={hasSignedInAccount}
             onOpenPiece={(piece) => void openSeriesPiece(piece)}
-            onOpenAccount={() => openAccount("manual", "general", "home")}
+            onOpenSearch={openAuthorSearch}
           onOpenLanguages={() => openAccount("manual", "general", "languages")}
           /></div>
         )}

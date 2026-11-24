@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
 import { Clock3, Languages, Loader2 } from "lucide-react";
-import { ReaderBookIcon as BookOpen, ReaderFilmIcon as Clapperboard, ReaderPlayIcon as Play, ReaderSettingsIcon as SlidersHorizontal, ReaderUserIcon as UserRound } from "@/components/boks/reader/reader-icons";
+import { authorSearchMessages } from "@/components/boks/author-search/author-search-content";
+import { ReaderBookIcon as BookOpen, ReaderFilmIcon as Clapperboard, ReaderPlayIcon as Play, ReaderSearchIcon, ReaderUserIcon as UserRound } from "@/components/boks/reader/reader-icons";
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { loadSeriesBoks } from "@/components/boks/supabase-browser-data";
@@ -91,9 +92,8 @@ function loadCatalogueOnce() {
 export function SeriesView({
   heard,
   openingStoryId,
-  signedIn,
   onOpenPiece,
-  onOpenAccount,
+  onOpenSearch,
   onPiecesChanged,
   focusCollection = null,
   onOpenAuthor,
@@ -106,9 +106,9 @@ export function SeriesView({
   heard: ReadonlySet<string>;
   /** The piece being loaded, so its card can say so. */
   openingStoryId: string | null;
-  signedIn: boolean;
   onOpenPiece: (piece: SeriesPiece) => void;
-  onOpenAccount: () => void;
+  /** The magnifier, top left as on the feed's cover: find an author. Settings live in You. */
+  onOpenSearch: () => void;
   onOpenLanguages?: () => void;
   /** Actual hero-first visible order, empty until this language scope is ready. */
   onPiecesChanged?: (pieces: SeriesPiece[]) => void;
@@ -116,6 +116,7 @@ export function SeriesView({
   const words = useSeriesWords();
   const { t, preferences } = useReaderPreferences();
   const filterWords = useMessages(filterMessages);
+  const searchWords = useMessages(authorSearchMessages);
   const [filterOpen, setFilterOpen] = useState(false);
   const [languageFilter, setLanguageFilter] = useState<string[]>([]);
   // Until the reader chooses, the shelf follows the interface language.
@@ -191,11 +192,11 @@ export function SeriesView({
         <button
           type="button"
           className="reader-account-trigger"
-          onClick={onOpenAccount}
-          aria-label={t("You and settings", "Вы и настройки")}
-          title={signedIn ? words.account : undefined}
+          onClick={onOpenSearch}
+          aria-label={searchWords.title}
+          aria-haspopup="dialog"
         >
-          <SlidersHorizontal className="size-5" />
+          <ReaderSearchIcon size={23} />
         </button>
         <h1 className="series__mark" aria-label={words.series}>
           <BoksLogo series />
