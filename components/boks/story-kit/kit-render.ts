@@ -144,6 +144,35 @@ function focusOf(focus: string | undefined) {
   return { x: x ?? 0.5, y: y ?? 0.5 };
 }
 
+/**
+ * An author's photo in the house black and white, as everywhere else on
+ * boks (`filter: grayscale(1)` in the CSS): even a colour photo the author
+ * uploaded goes onto a card in grey. Done by hand on the pixels, because
+ * `context.filter` is missing in older Safari, where many authors make their
+ * cards. A photo that cannot be read back (another origin) is left out
+ * rather than drawn in colour.
+ */
+function housePhoto(image: HTMLImageElement): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth || image.width;
+  canvas.height = image.naturalHeight || image.height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context || !canvas.width || !canvas.height) return null;
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  try {
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const data = pixels.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const grey = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      data[i] = data[i + 1] = data[i + 2] = grey;
+    }
+    context.putImageData(pixels, 0, 0);
+    return canvas;
+  } catch {
+    return null;
+  }
+}
+
 /** Draws an image to cover a box, moved within the room it has by `focus` (CSS object-position). */
 function cover(context: Ctx, image: CanvasImageSource & { width: number; height: number }, x: number, y: number, width: number, height: number, focus?: string) {
   const scale = Math.max(width / image.width, height / image.height);
@@ -567,7 +596,8 @@ async function drawAuthor(context: Ctx, card: Extract<KitCard, { style: "author"
   context.beginPath();
   context.arc(center, photoY, radius, 0, Math.PI * 2);
   context.clip();
-  if (photo) cover(context, photo, center - radius, photoY - radius, radius * 2, radius * 2, "50% 30%");
+  const grey = photo ? housePhoto(photo) : null;
+  if (grey) cover(context, grey, center - radius, photoY - radius, radius * 2, radius * 2, "50% 30%");
   else {
     fill(context, ground, center - radius, photoY - radius, radius * 2, radius * 2);
     context.fillStyle = ink;

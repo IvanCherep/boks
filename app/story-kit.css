@@ -53,3 +53,6 @@
 .acab.kit-root{display:contents}
 /* Studio -> Authors: the page and every published work. */
 .asp-kit{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+/* The tile shows the photo as the card draws it: black and white (2026-11-24). */
+.acab .kit-tile-art img{filter:grayscale(1)}

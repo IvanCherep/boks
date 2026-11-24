@@ -315,3 +315,6 @@
 /* A highlighted row hides the rules above and below it. */
 .boks-author-search__list li:has(.boks-author-search__row:is(:hover, :focus-visible, :active))::before,
 .boks-author-search__list li:has(.boks-author-search__row:is(:hover, :focus-visible, :active)) + li::before { opacity: 0; }
+
+/* An author's photo is always in the house black and white, whatever they uploaded. */
+.boks-author-search__avatar img { filter: grayscale(1); }

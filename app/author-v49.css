@@ -177,3 +177,6 @@
 .ap-sheet__actions .share-pair__btn{display:grid;justify-content:stretch;gap:2px 8px;min-height:58px;padding:10px 12px;border:1px solid #19252355;border-radius:5px 16px 5px 5px;font-weight:400}
 .ap-sheet__actions .share-pair__btn svg{width:16px;height:16px}
 .ap-sheet__actions .share-pair__btn--ru{background:var(--ap-ink);color:var(--ap-paper);border-color:var(--ap-ink)}
+
+/* An author's photo is always in the house black and white, whatever they uploaded (2026-11-24). */
+.ap-portrait__photo,.ap-sheet__author img{filter:grayscale(1)}

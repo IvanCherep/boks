@@ -289,3 +289,6 @@
 .acab .desk-entry em{font-style:normal;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--red);color:#fff}
 .acab .desk-entry small{font-size:13px;color:var(--muted);display:block;margin-top:4px;line-height:1.45}
 .acab .desk-entry-go{font-size:14px;font-weight:600;white-space:nowrap}
+
+/* The author sees their photo as readers do: in the house black and white (2026-11-24). */
+.acab .pe-portrait,.acab .mini-ex img,.acab .pe-crop img{filter:grayscale(1)}
