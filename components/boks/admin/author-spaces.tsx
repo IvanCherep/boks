@@ -4,7 +4,7 @@ import { SpaceVerified } from "@/components/boks/admin/space-verified";
 import { linkAuthorApplication } from "@/components/boks/supabase-browser-data";
 import { SpaceSeedsPanel } from "@/components/boks/admin/author-seeds";
 import { SpaceBillingPanel } from "@/components/boks/admin/author-billing";
-import { AccountFinder, InvitePlanFields, onNewAuthor, SpaceAgreementPanel, type NewAuthorPrefill } from "@/components/boks/admin/author-agreement";
+import { AccountFinder, authorsChanged, InvitePlanFields, onNewAuthor, SpaceAgreementPanel, type NewAuthorPrefill } from "@/components/boks/admin/author-agreement";
 import "@/app/author-agreement.css";
 import { planName, type AuthorPlan } from "@/lib/boks/author/agreement";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -461,6 +461,8 @@ export function AuthorSpaces() {
           setOpenId(null);
           setCreating(null);
           setPrefill(null);
+          authorsChanged();
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }}
       />
       </div>

@@ -4,7 +4,7 @@ import "@/app/author-agreement.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { startNewAuthor } from "@/components/boks/admin/author-agreement";
+import { authorsChangedEvent, startNewAuthor } from "@/components/boks/admin/author-agreement";
 import { loadAuthorPipeline } from "@/components/boks/author-spaces/data";
 import { readableBoksError } from "@/lib/boks/errors";
 import { matchesFilter, pipelineOrder, pipelineStep, type PipelineFacts, type PipelineFilter, type PipelineStep } from "@/lib/boks/author/pipeline";
@@ -50,7 +50,16 @@ export function AuthorPipeline({ onNavigate }: { onNavigate: (tab: "moderation" 
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    // Back from a page, or back to the tab: the list shows where everyone is now.
+    const reload = () => void load();
+    const visible = () => { if (document.visibilityState === "visible") void load(); };
+    window.addEventListener(authorsChangedEvent, reload);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(authorsChangedEvent, reload);
+      document.removeEventListener("visibilitychange", visible);
+    };
   }, [load]);
 
   const counts = useMemo(() => {

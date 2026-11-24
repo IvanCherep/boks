@@ -61,6 +61,7 @@ export function AgreementCard({
   compact = false,
   explained = false,
   pageOpen = false,
+  startOpen = false,
 }: {
   agreement: AuthorAgreement | null;
   onChange: (next: AuthorAgreement) => void;
@@ -70,8 +71,10 @@ export function AgreementCard({
   explained?: boolean;
   /** The author's page is open already: only the Series wait for the money. */
   pageOpen?: boolean;
+  /** Opened from «Оплатить» elsewhere (the Workshop's steps): the details at once. */
+  startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [copied, setCopied] = useState("");

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { startNewAuthor } from "@/components/boks/admin/author-agreement";
+import { authorsChangedEvent, startNewAuthor } from "@/components/boks/admin/author-agreement";
 import { useMessages, useUiLanguage } from "@/components/boks/ui-language";
 import { defineMessages } from "@/lib/i18n/messages";
 import {
@@ -61,7 +61,12 @@ export function AuthorApplications() {
     setRows(next);
     setFailed(false);
   }, () => setFailed(true)), []);
-  useEffect(() => void load(), [load]);
+  useEffect(() => {
+    void load();
+    const reload = () => void load();
+    window.addEventListener(authorsChangedEvent, reload);
+    return () => window.removeEventListener(authorsChangedEvent, reload);
+  }, [load]);
 
   const mark = (row: AuthorApplicationRow, status: AuthorApplicationRow["status"]) =>
     setAuthorApplicationStatus(row.id, status).then(load, () => setFailed(true));

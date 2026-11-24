@@ -387,6 +387,7 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   // The online contract while it waits for its payment («Договор и оплата»).
   const contract = useMyAgreement();
   const contractWaiting = contract.agreement?.payState === "awaiting" || contract.agreement?.payState === "reported";
+  const [payOpen, setPayOpen] = useState(false);
   const [sendingAll, setSendingAll] = useState(false);
 
   const startDraft = async () => {
@@ -446,16 +447,17 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
         desk={desk}
         agreement={contract.agreement}
         onPay={() => {
-          const card = document.getElementById("desk-contract");
-          card?.scrollIntoView({ behavior: "smooth", block: "center" });
-          Array.from(card?.querySelectorAll("button") ?? []).find((button) => button.textContent?.trim() === "Оплатить")?.click();
+          // The payment details open under the steps; the steps themselves say the rest.
+          setPayOpen(true);
+          window.setTimeout(() => document.getElementById("desk-contract")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
         }}
       />
 
 
-      {contractWaiting ? (
+      {/* While the page is closed, «Как откроется ваша страница» carries the payment: the card shows when «Оплатить» is pressed there. */}
+      {contractWaiting && (desk.state?.author.pageStatus === "published" || payOpen) ? (
         <div id="desk-contract" className="desk-contract">
-          <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} compact explained={desk.state?.author.pageStatus !== "published"} pageOpen={desk.state?.author.pageStatus === "published"} />
+          <AgreementCard agreement={contract.agreement} onChange={contract.setAgreement} compact explained={desk.state?.author.pageStatus !== "published"} pageOpen={desk.state?.author.pageStatus === "published"} startOpen={payOpen} />
         </div>
       ) : null}
 

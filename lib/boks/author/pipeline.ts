@@ -22,7 +22,7 @@ export type PipelineFacts = {
   pageCreatedAt?: string;
   pagePublishedAt?: string | null;
   ownerId?: string | null;
-  invite?: { createdAt: string; expiresAt: string; openedAt: string | null; acceptedAt: string | null; email: string; problem: string | null } | null;
+  invite?: { createdAt: string; expiresAt: string; openedAt: string | null; acceptedAt: string | null; email: string; problem: string | null; plan?: string | null } | null;
   seeds?: number;
   agreement?: { number: string; plan: string; priceRub: number; payState: string; payDue: string | null; reportedAt: string | null; paidAt: string | null; acceptedAt: string } | null;
   drafts?: number;
@@ -102,7 +102,12 @@ export const stuckAfterDays = {
 
 export function pipelineStep(facts: PipelineFacts, now = new Date()): PipelineStep {
   // An application on a paid tariff counts as paid already: its way has the payment.
-  const paid = facts.billing === "paid" || (facts.agreement?.priceRub ?? 0) > 0 || (facts.kind === "application" && (facts.offer === "page" || facts.offer === "page_no_promotion"));
+  const paidPlan = (plan: string | null | undefined) => plan === "page" || plan === "page_no_promotion";
+  const paid =
+    facts.billing === "paid" ||
+    (facts.agreement?.priceRub ?? 0) > 0 ||
+    // Before the author accepts: the tariff the invitation carries, or the one they applied for.
+    (!facts.ownerId && (facts.invite && !facts.invite.acceptedAt ? paidPlan(facts.invite.plan) : paidPlan(facts.offer)));
   const steps = pipelineSteps.filter((step) => paid || step !== "Оплата") as StepName[];
   const at = (step: StepName) => steps.indexOf(step);
   const make = (step: StepName, mover: Mover, title: string, detail: string, since: string | null | undefined, limit: number | null, action: PipelineAction): PipelineStep => {

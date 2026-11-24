@@ -38,6 +38,12 @@ export function startNewAuthor(prefill: NewAuthorPrefill = {}) {
   window.dispatchEvent(new CustomEvent<NewAuthorPrefill>(newAuthorEvent, { detail: prefill }));
 }
 
+/** Something about an author changed in Studio (a page closed, an invite sent): lists that show authors reload. */
+export const authorsChangedEvent = "boks:authors-changed";
+export function authorsChanged() {
+  window.dispatchEvent(new Event(authorsChangedEvent));
+}
+
 export function onNewAuthor(listener: (prefill: NewAuthorPrefill) => void) {
   const handler = (event: Event) => listener((event as CustomEvent<NewAuthorPrefill>).detail ?? {});
   window.addEventListener(newAuthorEvent, handler);

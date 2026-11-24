@@ -79,6 +79,12 @@ describe("pipelineStep", () => {
     expect(pipelineStep(owned({ pageStatus: "published", published: 5, unshared: 2, unsharedOldestAt: ago(40) }), now)).toMatchObject({ mover: "team", title: "Нет ссылок на посты: напомнить" });
   });
 
+  it("an invitation on a paid tariff counts as paid before the author accepts", () => {
+    const invite = { createdAt: ago(1), expiresAt: ago(-13), openedAt: null, acceptedAt: null, email: "v@t", problem: null };
+    expect(pipelineStep(page({ invite: { ...invite, plan: "page" } }), now).steps).toContain("Оплата");
+    expect(pipelineStep(page({ invite: { ...invite, plan: null } }), now).steps).not.toContain("Оплата");
+  });
+
   it("our authors have no payment step", () => {
     expect(pipelineStep(owned(), now).steps).not.toContain("Оплата");
     expect(pipelineStep(owned({ billing: "paid", agreement: paidAgreement("paid") }), now).steps).toContain("Оплата");

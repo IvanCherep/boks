@@ -51,7 +51,11 @@ begin
         'spaceId', s.id,
         'applicationId', (select a.id from public.author_applications a where a.space_id = s.id order by a.created_at desc limit 1),
         'name', coalesce(s.name, '@' || op.handle),
-        'handle', coalesce(op.handle, s.handle),
+        -- Before the author accepts: the applicant's own @handle (the page keeps it), else the page's.
+        'handle', coalesce(op.handle, s.handle, (
+          select ap.handle from public.author_applications a2 join public.user_profiles ap on ap.user_id = a2.user_id
+          where a2.space_id = s.id order by a2.created_at desc limit 1)),
+        'offer', (select a3.offer from public.author_applications a3 where a3.space_id = s.id order by a3.created_at desc limit 1),
         'email', coalesce(ou.email, inv.email),
         'billing', s.billing,
         'pageStatus', s.status,
@@ -60,7 +64,7 @@ begin
         'ownerId', s.owner_user_id,
         'invite', case when inv.id is null then null else jsonb_build_object(
           'createdAt', inv.created_at, 'expiresAt', inv.expires_at, 'openedAt', inv.opened_at,
-          'acceptedAt', inv.accepted_at, 'email', inv.email, 'problem', inv.problem) end,
+          'acceptedAt', inv.accepted_at, 'email', inv.email, 'problem', inv.problem, 'plan', inv.plan) end,
         'seeds', (select count(*) from public.author_space_seeds sd where sd.space_id = s.id),
         'agreement', case when ag.id is null then null else jsonb_build_object(
           'number', ag.number, 'plan', ag.plan, 'priceRub', ag.price_rub, 'payState', ag.pay_state,
