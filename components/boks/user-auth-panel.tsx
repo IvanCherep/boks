@@ -358,7 +358,8 @@ export function UserAuthPanel({
       setCodeRecovery(false);
       setSettingsSection(undefined);
       setShowAuth(Boolean(pending) || reason !== "manual" || intent !== "general" || surface === "author");
-      setShowSettings(Boolean(initialSection));
+      // The You page opens on its home; activity is below it.
+      setShowSettings(true);
     }, 0);
     return () => window.clearTimeout(handle);
   }, [open, reason, intent, surface, initialSection]);
@@ -679,40 +680,19 @@ export function UserAuthPanel({
   // again, for the chosen works, when publishing (`my-page.tsx`).
   const terms = <p className="auth-terms-line">{t("By continuing you accept the", "Продолжая, вы принимаете")} <a href="/terms" target="_blank" rel="noreferrer">{t("Terms of use", "Условия использования")}</a> {t("and the", "и")} <a href="/privacy" target="_blank" rel="noreferrer">{t("Privacy policy", "Политику конфиденциальности")}</a>.</p>;
 
-  return (
-    <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("boks account", "Аккаунт boks")}
-      onKeyDown={(event) => {
-        event.stopPropagation();
-        if (event.key !== "Tab") return;
-        const elements = panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea, a[href], summary, select');
-        const visible = Array.from(elements ?? []).filter((element) => element.getClientRects().length > 0);
-        const first = visible[0], last = visible[visible.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-      }}
-      onPointerDown={(event) => event.stopPropagation()} onPointerUp={(event) => event.stopPropagation()}
-      onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
-      <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
-        {settingsVisible ? <>
-          <YouSettings initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={() => setShowSettings(false)} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
-          {status && <p className="social-status" role="status">{status}</p>}
-        </> : <>
-          {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">
-            {(!required || signedIn) ? <button className="social-icon" type="button" onClick={() => sentMagicLink ? editEmail() : showAuth && reason === "manual" && intent === "general" ? setShowAuth(false) : onClose()} aria-label={t("Back", "Назад")}><ArrowLeft /></button> : <span />}
-            <span>{showingAccount && !accountUser?.bannedAt ? t("Your activity", "Ваша активность") : sentMagicLink ? t("Check your email", "Проверьте почту") : t("Your account", "Ваш аккаунт")}</span>
-            {showingAccount ? <button className="social-icon" type="button" onClick={() => { setSettingsSection(undefined); setShowSettings(true); }} aria-label={t("Settings", "Настройки")}><Settings2 /></button> : <span />}
-          </header>}
-          {accountLoading && !user ? <p className="social-status" role="status">{t("Checking account…", "Проверяем аккаунт…")}</p> : showingAccount && accountUser?.bannedAt ? <>
+  // Activity sits under the You page, reached by scrolling (or the entry that
+  // scrolls to it); a restricted account sees its notice there instead.
+  const bannedBlock = <>
             <div className="you-suspension-icon" aria-hidden="true"><Pause /></div>
             <h1 className="social-display">{t("Account", "Аккаунт")}<br />{t("restricted.", "ограничен.")}</h1>
             <p className="social-muted">{t("Likes, comments, follows, reports and publishing are temporarily unavailable. You can continue reading.", "Лайки, комментарии, подписки, жалобы и публикация временно недоступны. Вы можете продолжать читать.")}</p>
-            {accountUser.banReason && <div className="you-deletion-note"><strong>{t("Reason from the boks team", "Причина от команды boks")}</strong><p>{accountUser.banReason}</p></div>}
+            {accountUser?.banReason && <div className="you-deletion-note"><strong>{t("Reason from the boks team", "Причина от команды boks")}</strong><p>{accountUser?.banReason}</p></div>}
             <Button className="you-wide-button" onClick={onClose}>{t("Back to my bok", "Вернуться к боку")}</Button>
             <Button className="you-wide-button" variant="outline" onClick={() => { setSettingsSection("feedback"); setShowSettings(true); }}>{t("Ask about this decision", "Узнать об этом решении")}</Button>
             <p className="social-note">{t("Only you and admins see this notice. Your reading place is kept.", "Это уведомление видите только вы и администраторы. Место чтения сохранено.")}</p>
-          </> : showingAccount ? <>
-            <span className="social-eyebrow" translate="no">@{accountUser?.handle}</span>
-            <h1 className="social-display">{title}</h1>
+  </>;
+  const activityBlock = <section className="you-activity-section" id="you-activity" aria-labelledby="you-activity-title">
+            <h2 id="you-activity-title" className="social-display you-activity-title">{title}</h2>
             <div className="you-activity">
               <label className="relative block" htmlFor="boks-library-search"><span className="sr-only">{t("Search your boks", "Поиск среди ваших боков")}</span><Search className="pointer-events-none absolute top-1/2 -translate-y-1/2" /><Input id="boks-library-search" name="search-read-boks" type="search" autoComplete="off" placeholder={t("A title, an author", "Название или автор")} value={libraryQuery} onChange={event => setLibraryQuery(event.target.value)} /></label>
               <div className="library-tabs" role="tablist" aria-label={t("Your activity", "Ваша активность")}>
@@ -741,6 +721,36 @@ export function UserAuthPanel({
               </div>
               <p className="social-note">{t("Your latest 120 boks. Search titles and bylines in this list.", "Последние 120 боков. Поиск по названиям и авторам в этом списке.")}</p>
             </div>
+  </section>;
+  const scrollToActivity = () => panelRef.current?.querySelector("#you-activity")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  return (
+    <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("boks account", "Аккаунт boks")}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+        if (event.key !== "Tab") return;
+        const elements = panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea, a[href], summary, select');
+        const visible = Array.from(elements ?? []).filter((element) => element.getClientRects().length > 0);
+        const first = visible[0], last = visible[visible.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }}
+      onPointerDown={(event) => event.stopPropagation()} onPointerUp={(event) => event.stopPropagation()}
+      onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
+      <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
+        {settingsVisible ? <>
+          <YouSettings key={settingsSection ?? "home"} initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} onActivity={scrollToActivity} below={showingAccount ? (accountUser?.bannedAt ? <div className="you-activity-section">{bannedBlock}</div> : activityBlock) : undefined} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
+          {status && <p className="social-status" role="status">{status}</p>}
+        </> : <>
+          {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">
+            {(!required || signedIn) ? <button className="social-icon" type="button" onClick={() => sentMagicLink ? editEmail() : showAuth && reason === "manual" && intent === "general" ? setShowAuth(false) : onClose()} aria-label={t("Back", "Назад")}><ArrowLeft /></button> : <span />}
+            <span>{showingAccount && !accountUser?.bannedAt ? t("Your activity", "Ваша активность") : sentMagicLink ? t("Check your email", "Проверьте почту") : t("Your account", "Ваш аккаунт")}</span>
+            {showingAccount ? <button className="social-icon" type="button" onClick={() => { setSettingsSection(undefined); setShowSettings(true); }} aria-label={t("Settings", "Настройки")}><Settings2 /></button> : <span />}
+          </header>}
+          {accountLoading && !user ? <p className="social-status" role="status">{t("Checking account…", "Проверяем аккаунт…")}</p> : showingAccount && accountUser?.bannedAt ? <>
+            {bannedBlock}
+          </> : showingAccount ? <>
+            {activityBlock}
           </> : sentMagicLink ? <>
             {codeRecovery ? <div className="auth-recovery-art" aria-hidden="true">↶</div> : <div className="auth-mail-art" aria-hidden="true"><Mail /><span>6</span></div>}
             <h1 className="social-display">{codeRecovery ? t("New code.", "Новый код.") : t("Enter code.", "Введите код.")}</h1>

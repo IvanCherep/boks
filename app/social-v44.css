@@ -528,3 +528,6 @@
 .share-page .share-pair__btn--ru{background:var(--foreground);color:var(--background);border-color:var(--foreground)}
 .share-pair__btn strong,.share-pair__btn small{overflow-wrap:normal;word-break:normal;hyphens:manual}
 .daily-send__pair{max-width:420px}
+/* You: activity under the home entries (2026-11-25), reached by scrolling or «Ваша активность». */
+.you-activity-section{margin-top:40px;scroll-margin-top:72px}
+.you-activity-section .you-activity-title{margin-bottom:4px}

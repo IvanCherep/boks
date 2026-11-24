@@ -47,7 +47,7 @@ export type YouSection = "home" | "typography" | "languages" | "feedback" | "let
 type Page = "home" | "app-language" | "typography" | "languages" | "appearance" | "handle" | "following" | "delete" | "feedback" | "feedback-sent" | "about" | "letters" | "saved" | "game" | "days";
 
 /** Presentation only: the parent retains every account and language controller. */
-export function YouSettings({ user, busy, handle, setHandle, languages, saveLanguages, saveHandle, follows, unfollowing, unfollow, deleteConfirmation, setDeleteConfirmation, deleteError, deleteAccount, signOut, onSignIn, onActivity, onClose, onFeed, onSeries, onIntroduction, initialSection, daily }: {
+export function YouSettings({ user, busy, handle, setHandle, languages, saveLanguages, saveHandle, follows, unfollowing, unfollow, deleteConfirmation, setDeleteConfirmation, deleteError, deleteAccount, signOut, onSignIn, onActivity, onClose, onFeed, onSeries, onIntroduction, initialSection, daily, below }: {
   user: BoksUserContext | null; busy: boolean; handle: string; setHandle: (value: string) => void;
   languages: string[]; saveLanguages: (languages: string[]) => Promise<void>; saveHandle: () => Promise<void>;
   follows: FollowedAuthor[]; unfollowing: string | null; unfollow: (id: string) => Promise<void>;
@@ -59,6 +59,8 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
   initialSection?: YouSection;
   /** The line of the day and the game; absent where Settings opens outside the reader. */
   daily?: DailyLinks;
+  /** Under the home page: the account's activity (or its restriction notice). */
+  below?: ReactNode;
 }) {
   const dailyWords = useMessages(dailyMessages);
   const signedIn = Boolean(user && !user.isAnonymous);
@@ -82,7 +84,7 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
     contentRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
   }, [page]);
   const titles: Record<Page, string> = {
-    home: user ? t("Settings", "Настройки") : t("You", "Вы"),
+    home: t("You", "Вы"),
     "app-language": t("Settings", "Настройки"), typography: t("Reading comfort", "Удобство чтения"),
     languages: t("Reading languages", "Языки чтения"), appearance: t("Appearance", "Оформление"),
     handle: t("Your handle", "Ваше @имя"), following: t("Following", "Подписки"),
@@ -101,7 +103,7 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
   const bokCount = (count: number) => t(`${count} ${count === 1 ? "bok" : "boks"}`, `${count} ${plural("ru", count, { one: "бок", few: "бока", many: "боков", other: "бока" })}`);
   const backToReading = <Button className="you-wide-button" onClick={onClose}>{t("Back to reading", "Вернуться к чтению")}</Button>;
   return <div className={`you-settings-screen you-settings-screen--${page}`} ref={contentRef}>
-    <header className="social-page-header"><button type="button" className="social-icon" aria-label={t("Back", "Назад")} onClick={() => page !== "home" ? setPage("home") : user ? onActivity() : onClose()}><ArrowLeft /></button><span>{titles[page]}</span><span /></header>
+    <header className="social-page-header"><button type="button" className="social-icon" aria-label={t("Back", "Назад")} onClick={() => page !== "home" ? setPage("home") : onClose()}><ArrowLeft /></button><span>{titles[page]}</span><span /></header>
     {page === "home" && <>
       {user ? <div className="you-settings-identity"><span className="social-monogram" aria-hidden="true">{user.handle?.[0]?.toUpperCase()}</span><div><strong translate="no">@{user.handle}</strong><small>{user.email}</small></div><button type="button" onClick={() => setPage("handle")}>{t("Edit", "Изменить")}</button></div> : <><h1 className="social-display">{t("Settings.", "Настройки.")}</h1><p className="social-muted">{t("Your app and reading preferences.", "Приложение и удобство чтения.")}</p><div className="you-invitation"><h2>{t("Your account.", "Ваш аккаунт.")}</h2><p>{t("Sign in to keep your reading history, like boks and comment.", "Войдите, чтобы сохранять историю чтения, ставить лайки и общаться.")}</p><Button onClick={onSignIn}>{t("Create an account or sign in", "Создать аккаунт или войти")}</Button></div></>}
       {dailyEntries}
@@ -112,9 +114,10 @@ export function YouSettings({ user, busy, handle, setHandle, languages, saveLang
       {entry(t("Appearance", "Оформление"), t("Light, dark or your device", "Светлое, тёмное или системное"), "appearance", <Moon />)}
       {onIntroduction && <button type="button" className="you-entry" onClick={onIntroduction}><span><strong>{t("Get to know boks", "Знакомство с boks")}</strong><small>{t("Languages, form and favourite classics", "Языки, форма и любимые классики")}</small></span><DoorOpen /></button>}
       {user && <><span className="social-eyebrow you-section-label">{t("Your account", "Ваш аккаунт")}</span><button type="button" className="you-entry" onClick={onActivity}><span><strong>{t("Your activity", "Ваша активность")}</strong><small>{t("Read, liked & conversations", "Прочитанное, лайки и беседы")}</small></span><BookOpen /></button>{entry(t("Following", "Подписки"), t(`${follows.length} ${follows.length === 1 ? "account" : "accounts"}`, `Аккаунтов: ${follows.length}`), "following", <Users />)}{!user.bannedAt && <a className="you-entry" href="/author"><span><strong>{t("Author's cabinet", "Кабинет автора")}{pagesWaiting > 0 && <span className="you-entry-badge">{t("A page is ready for you", "Для вас готова страница")}</span>}</strong><small>{t("Your author page, your works, publishing", "Ваша страница автора, произведения, публикация")}</small></span><PenLine /></a>}</>}
+      {below}
       <div className="you-utility-links"><button type="button" onClick={() => setPage("feedback")}>{t("Feedback", "Обратная связь")}</button><button type="button" onClick={() => setPage("about")}>{t("About boks", "О boks")}</button><button type="button" onClick={user ? () => void signOut() : onClose} disabled={busy}>{user ? t("Sign out", "Выйти") : t("Keep reading", "Читать дальше")}</button></div>
       {user && <>{user.role === "admin" && <div className="you-surface-links"><a href="/admin">{t("Admin", "Админка")}<ArrowUpRight /></a></div>}{user.role !== "admin" && <button className="you-danger-link" type="button" onClick={() => setPage("delete")}>{t("Delete account", "Удалить аккаунт")}</button>}</>}
-      {!user && onFeed && onSeries && <ReaderTabs className="you-tabs" active="you" seriesIsNew={false} onFeed={onFeed} onSeries={onSeries} onYou={() => contentRef.current?.closest(".social-page")?.scrollTo({ top: 0, behavior: "smooth" })} />}
+      {onFeed && onSeries && <ReaderTabs className="you-tabs" active="you" seriesIsNew={false} onFeed={onFeed} onSeries={onSeries} onYou={() => contentRef.current?.closest(".social-page")?.scrollTo({ top: 0, behavior: "smooth" })} />}
     </>}
     {(page === "app-language" || page === "typography") && <ReaderPreferenceControls page={page} onDone={onClose} />}
     {page === "letters" && daily && signedIn && <ReceivedLines todayWaiting={letterWaiting} onOpenToday={daily.openToday} onOpenLetter={daily.openLetter} />}

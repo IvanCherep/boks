@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   X,
 } from "lucide-react";
-import { ReaderHeartIcon, ReaderCommentsIcon, ReaderShareIcon, ReaderMoreIcon, ReaderSettingsIcon, ReaderDownIcon, ReaderBackIcon, ReaderPlayIcon, ReaderTypeIcon, ReaderSearchIcon } from "@/components/boks/reader/reader-icons";
+import { ReaderHeartIcon, ReaderCommentsIcon, ReaderShareIcon, ReaderMoreIcon, ReaderDownIcon, ReaderBackIcon, ReaderPlayIcon, ReaderTypeIcon, ReaderSearchIcon } from "@/components/boks/reader/reader-icons";
 import { AuthorSearchContent, authorSearchMessages } from "@/components/boks/author-search/author-search-content";
 import type { AuthorSearchResult } from "@/components/boks/author-search/author-search-controller";
 import { Button } from "@/components/ui/button";
@@ -3579,17 +3579,16 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           <header className="reader-topbar z-10 flex items-center justify-between px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
             <button
               className="reader-account-trigger reader-ui"
-              onClick={() => readingPhase === "cover" ? openAccount("manual", "general", "home") : storyScroll.current?.scrollTo({ top: 0, behavior: "smooth" })}
-              aria-label={readingPhase === "cover" ? t("Settings", "Настройки") : t("Back to cover", "К обложке")}
+              // On the cover the magnifier (find an author); settings live in You.
+              onClick={() => readingPhase === "cover" ? openAuthorSearch() : storyScroll.current?.scrollTo({ top: 0, behavior: "smooth" })}
+              aria-label={readingPhase === "cover" ? searchWords.title : t("Back to cover", "К обложке")}
+              aria-haspopup={readingPhase === "cover" ? "dialog" : undefined}
             >
-              {readingPhase === "cover" ? <ReaderSettingsIcon className="size-5" /> : <ReaderBackIcon className="size-5" />}
+              {readingPhase === "cover" ? <ReaderSearchIcon size={23} /> : <ReaderBackIcon className="size-5" />}
             </button>
             <span className="reader-topbar__mark"><BoksLogo seasonal={readingPhase === "cover"} /></span>
             <div className="reader-topbar__tools reader-ui">
               {readingPhase !== "cover" && <button type="button" aria-label={t("Text settings", "Настройки текста")} onClick={() => openAccount("manual", "general", "typography")}><ReaderTypeIcon size={23} /></button>}
-            <button type="button" className="reader-search-trigger reader-ui" onClick={openAuthorSearch} aria-label={searchWords.title} aria-haspopup="dialog">
-              <ReaderSearchIcon size={23} />
-            </button>
             <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}>
               <ReaderMoreIcon className="size-5" />
             </button>
@@ -3611,12 +3610,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           >
             <div className="reader-cover" ref={coverRef}>
               <header className="reader-cover__desktop-bar">
-                <button type="button" onClick={() => openAccount("manual", "general", "home")} aria-label={t("Settings", "Настройки")}><ReaderSettingsIcon size={23} /></button>
+                <button type="button" className="reader-search-trigger" onClick={openAuthorSearch} aria-label={searchWords.title} aria-haspopup="dialog"><ReaderSearchIcon size={23} /></button>
                 <BoksLogo seasonal />
-                <span className="reader-cover__desktop-tools">
-                  <button type="button" onClick={openAuthorSearch} aria-label={searchWords.title} aria-haspopup="dialog"><ReaderSearchIcon size={23} /></button>
-                  <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
-                </span>
+                <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
               </header>
               {getBokArtwork(currentStory) ? <CoverArtwork bokId={currentStory.id} artwork={getBokArtwork(currentStory)!} active={!readerInteractionBlocked && storyTransition.phase === "idle"} /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
               <CoverHeading artwork={getBokArtwork(currentStory)}>
