@@ -3,7 +3,7 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Mail, MessageCircle, Pause, Search } from "lucide-react";
-import { ReaderBackIcon as ArrowLeft, ReaderSettingsIcon as Settings2 } from "./reader/reader-icons";
+import { ReaderBackIcon as ArrowLeft } from "./reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
@@ -690,19 +690,25 @@ export function UserAuthPanel({
             <Button className="you-wide-button" variant="outline" onClick={() => { setSettingsSection("feedback"); setShowSettings(true); }}>{t("Ask about this decision", "Узнать об этом решении")}</Button>
             <p className="social-note">{t("Only you and admins see this notice. Your reading place is kept.", "Это уведомление видите только вы и администраторы. Место чтения сохранено.")}</p>
   </>;
-  const activityBlock = <section className="you-activity-section" id="you-activity" aria-labelledby="you-activity-title">
-            <h2 id="you-activity-title" className="social-display you-activity-title">{title}</h2>
+  // On the You page: the five latest and a way to all of them, so feedback,
+  // About and Sign out stay a short scroll away however much someone reads.
+  // "Вся активность" opens the full list, with its search, on its own screen.
+  const ACTIVITY_PREVIEW = 5;
+  const activityBlock = (compact: boolean) => {
+    const rows = compact ? visibleLibrary.slice(0, ACTIVITY_PREVIEW) : visibleLibrary;
+    return <section className={`you-activity-section${compact ? " you-activity-section--preview" : ""}`} id="you-activity" aria-labelledby="you-activity-title">
+            <h2 id="you-activity-title" className="social-display you-activity-title">{compact ? t("Your activity.", "Ваша активность.") : title}</h2>
             <div className="you-activity">
-              <label className="relative block" htmlFor="boks-library-search"><span className="sr-only">{t("Search your boks", "Поиск среди ваших боков")}</span><Search className="pointer-events-none absolute top-1/2 -translate-y-1/2" /><Input id="boks-library-search" name="search-read-boks" type="search" autoComplete="off" placeholder={t("A title, an author", "Название или автор")} value={libraryQuery} onChange={event => setLibraryQuery(event.target.value)} /></label>
+              {!compact &&               <label className="relative block" htmlFor="boks-library-search"><span className="sr-only">{t("Search your boks", "Поиск среди ваших боков")}</span><Search className="pointer-events-none absolute top-1/2 -translate-y-1/2" /><Input id="boks-library-search" name="search-read-boks" type="search" autoComplete="off" placeholder={t("A title, an author", "Название или автор")} value={libraryQuery} onChange={event => setLibraryQuery(event.target.value)} /></label>}
               <div className="library-tabs" role="tablist" aria-label={t("Your activity", "Ваша активность")}>
                 {([["read", t("Read", "Прочитано")], ["liked", t("Liked", "Нравится")], ["commented", t("Comments", "Комментарии")]] as const).map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={libraryView === value} aria-controls="boks-library-results" className={`library-tab${libraryView === value ? " is-active" : ""}`} onClick={() => setLibraryView(value)}>{label}<span className="sr-only"> · {libraryCounts[value]}</span></button>)}
               </div>
               <div id="boks-library-results" role="tabpanel" className="activity-list">
-                {visibleLibrary.length ? visibleLibrary.map((item, index) => {
+                {rows.length ? rows.map((item, index) => {
                   const artwork = getBokArtwork({ id: item.storyId, title: item.title, authorName: item.authorName });
                   const palette = bokCoverPalette(item.storyId);
                   const activityDate = dateLabel(readerLibraryActivityAt(item, libraryView));
-                  const previousDate = index > 0 ? dateLabel(readerLibraryActivityAt(visibleLibrary[index - 1], libraryView)) : "";
+                  const previousDate = index > 0 ? dateLabel(readerLibraryActivityAt(rows[index - 1], libraryView)) : "";
                   const activityTime = readerLibraryActivityTime(readerLibraryActivityAt(item, libraryView), preferences.locale);
                   if (libraryView === "commented") return <button key={item.storyId} type="button" className="activity-comment" onClick={() => openReadBoks(item.storyId, true)}>
                     <span className="activity-date">{activityDate} · <span translate="no">{item.title}</span></span>
@@ -718,9 +724,14 @@ export function UserAuthPanel({
                   </div>;
                 }) : <p className="social-note">{libraryQuery.trim() ? t("No matching boks.", "Ничего не найдено.") : libraryView === "read" ? t("Boks you read will appear here.", "Здесь появятся прочитанные боки.") : libraryView === "liked" ? t("Boks you like will appear here.", "Здесь появятся понравившиеся боки.") : t("Boks you comment on will appear here.", "Здесь появятся боки с вашими комментариями.")}</p>}
               </div>
-              <p className="social-note">{t("Your latest 120 boks. Search titles and bylines in this list.", "Последние 120 боков. Поиск по названиям и авторам в этом списке.")}</p>
+              {compact
+                ? visibleLibrary.length > 0 && <button type="button" className="you-activity-all" onClick={() => { setShowSettings(false); panelRef.current?.scrollTo({ top: 0 }); }}>
+                    <span>{t("All activity", "Вся активность")}</span><small>{visibleLibrary.length}</small><ChevronRight aria-hidden="true" />
+                  </button>
+                : <p className="social-note">{t("Your latest 120 boks. Search titles and bylines in this list.", "Последние 120 боков. Поиск по названиям и авторам в этом списке.")}</p>}
             </div>
   </section>;
+  };
 
   return (
     <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("boks account", "Аккаунт boks")}
@@ -737,18 +748,18 @@ export function UserAuthPanel({
       onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
       <section className={`auth-panel social-page you-page${!showingAccount && authVisible ? " auth-v44-page" : ""}${gate ? " auth-v44-gate" : ""}`} ref={panelRef}>
         {settingsVisible ? <>
-          <YouSettings key={settingsSection ?? "home"} initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} below={showingAccount ? (accountUser?.bannedAt ? <div className="you-activity-section">{bannedBlock}</div> : activityBlock) : undefined} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
+          <YouSettings key={settingsSection ?? "home"} initialSection={settingsSection ?? initialSection} user={accountUser} busy={busy} handle={handle} setHandle={value => setHandle(normalizeHandleInput(value))} languages={readingLanguages} saveLanguages={saveLanguages} saveHandle={saveSettings} follows={follows} unfollowing={unfollowing} unfollow={unfollowAuthor} deleteConfirmation={deleteConfirmation} setDeleteConfirmation={setDeleteConfirmation} deleteError={deleteError} deleteAccount={deleteAccount} signOut={signOut} onSignIn={() => setShowAuth(true)} below={showingAccount ? (accountUser?.bannedAt ? <div className="you-activity-section">{bannedBlock}</div> : activityBlock(true)) : undefined} onClose={onClose} onFeed={surface === "reader" ? onOpenFeed : undefined} onSeries={surface === "reader" ? onOpenSeries : undefined} onIntroduction={surface === "reader" ? onOpenIntroduction : undefined} daily={daily && { ...daily, onStatus: setStatus }} />
           {status && <p className="social-status" role="status">{status}</p>}
         </> : <>
           {gate ? <header className="auth-wall-mark">boks<span>{t("ALWAYS FREE", "ВСЕГДА БЕСПЛАТНО")}</span></header> : <header className="social-page-header">
-            {(!required || signedIn) ? <button className="social-icon" type="button" onClick={() => sentMagicLink ? editEmail() : showAuth && reason === "manual" && intent === "general" ? setShowAuth(false) : onClose()} aria-label={t("Back", "Назад")}><ArrowLeft /></button> : <span />}
+            {(!required || signedIn) ? <button className="social-icon" type="button" onClick={() => sentMagicLink ? editEmail() : showingAccount && !accountUser?.bannedAt ? (setLibraryQuery(""), setShowSettings(true)) : showAuth && reason === "manual" && intent === "general" ? setShowAuth(false) : onClose()} aria-label={t("Back", "Назад")}><ArrowLeft /></button> : <span />}
             <span>{showingAccount && !accountUser?.bannedAt ? t("Your activity", "Ваша активность") : sentMagicLink ? t("Check your email", "Проверьте почту") : t("Your account", "Ваш аккаунт")}</span>
-            {showingAccount ? <button className="social-icon" type="button" onClick={() => { setSettingsSection(undefined); setShowSettings(true); }} aria-label={t("Settings", "Настройки")}><Settings2 /></button> : <span />}
+            <span />
           </header>}
           {accountLoading && !user ? <p className="social-status" role="status">{t("Checking account…", "Проверяем аккаунт…")}</p> : showingAccount && accountUser?.bannedAt ? <>
             {bannedBlock}
           </> : showingAccount ? <>
-            {activityBlock}
+            {activityBlock(false)}
           </> : sentMagicLink ? <>
             {codeRecovery ? <div className="auth-recovery-art" aria-hidden="true">↶</div> : <div className="auth-mail-art" aria-hidden="true"><Mail /><span>6</span></div>}
             <h1 className="social-display">{codeRecovery ? t("New code.", "Новый код.") : t("Enter code.", "Введите код.")}</h1>
@@ -775,7 +786,7 @@ export function UserAuthPanel({
           </>}
           {!showingAccount && <>{!required && <button className="auth-back" type="button" onClick={onClose}>{t("Back to reading", "Вернуться к чтению")}</button>}<p className="social-note auth-support"><a href={supportMailto}>{t("Contact support", "Связаться с поддержкой")}</a> · {supportEmail}</p></>}
           {status && !authRequestFailed && <p className="social-status" role="status" aria-live="polite">{status}</p>}
-          {surface === "reader" && showingAccount && !accountUser?.bannedAt && onOpenFeed && onOpenSeries && <ReaderTabs className="reader-tabs--pinned you-tabs" active="you" seriesIsNew={false} onFeed={onOpenFeed} onSeries={onOpenSeries} onYou={() => panelRef.current?.scrollTo({ top: 0, behavior: "smooth" })} />}
+          {surface === "reader" && showingAccount && !accountUser?.bannedAt && onOpenFeed && onOpenSeries && <ReaderTabs className="reader-tabs--pinned you-tabs" active="you" seriesIsNew={false} onFeed={onOpenFeed} onSeries={onOpenSeries} onYou={() => { setLibraryQuery(""); setShowSettings(true); }} />}
         </>}
       </section>
     </div>
