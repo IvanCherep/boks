@@ -64,6 +64,7 @@ import type { A3Candidate } from "@/lib/boks/studies/a3";
 import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
+import type { ApplicationStage } from "@/lib/boks/author/pipeline";
 import {
   buildRecommendationLab,
   defaultExperimentConfig,
@@ -1966,9 +1967,21 @@ export type AuthorApplicationRow = {
   contact: string;
   message: string | null;
   status: "new" | "contacted" | "closed";
+  /** Where the conversation stands (`docs/author-applications.md`, "Working an application"). */
+  stage: ApplicationStage;
+  stageAt: string;
+  /** «Что уточнить»: the one line the team keeps current. */
+  focus: string | null;
+  updatedAt: string;
   createdAt: string;
   handle: string | null;
   email: string | null;
+  /** Applied without an account. */
+  guest: boolean;
+  notes: number;
+  lastNote: { body: string; at: string } | null;
+  /** The same person's other applications (account, device or contact). */
+  others: number;
   /** The page made from it (or the applicant's own), and where it stands. */
   spaceId: string | null;
   pageStage: "page" | "invited" | "in" | null;
@@ -1985,9 +1998,45 @@ export async function linkAuthorApplication(id: number, spaceId: string) {
 /** Studio → Authors: the applications, newest first. Admin-only on the server. */
 export async function listAuthorApplications(): Promise<AuthorApplicationRow[]> {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const result = await supabase.rpc("list_author_applications", { p_limit: 200 });
+  const result = await supabase.rpc("list_author_applications", { p_limit: 500 });
   if (result.error) throw result.error;
   return (result.data ?? []) as AuthorApplicationRow[];
+}
+
+export type ApplicationEvent = {
+  id: number;
+  kind: "note" | "stage" | "focus";
+  body: string | null;
+  stageFrom: ApplicationStage | null;
+  stageTo: ApplicationStage | null;
+  at: string;
+  by: string | null;
+};
+
+/** Studio: an application's journal, newest first. */
+export async function listApplicationEvents(id: number): Promise<ApplicationEvent[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("studio_application_events", { p_id: id });
+  if (result.error) throw result.error;
+  return (result.data ?? []) as ApplicationEvent[];
+}
+
+export async function setApplicationStage(id: number, stage: ApplicationStage, note?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("studio_application_set_stage", { p_id: id, p_stage: stage, p_note: note ?? null });
+  if (result.error) throw result.error;
+}
+
+export async function addApplicationNote(id: number, body: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("studio_application_add_note", { p_id: id, p_body: body });
+  if (result.error) throw result.error;
+}
+
+export async function setApplicationFocus(id: number, focus: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const result = await supabase.rpc("studio_application_set_focus", { p_id: id, p_focus: focus });
+  if (result.error) throw result.error;
 }
 
 export async function setAuthorApplicationStatus(id: number, status: AuthorApplicationRow["status"]) {

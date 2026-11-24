@@ -12,6 +12,11 @@ export type PipelineFacts = {
   applicationStatus?: "new" | "contacted" | "closed";
   applicationAt?: string;
   applicationUpdatedAt?: string;
+  /** The conversation's stage (`author_applications.stage`); older rows only have the status. */
+  applicationStage?: ApplicationStage;
+  applicationStageAt?: string;
+  /** «Что уточнить», the line the team keeps current. */
+  applicationFocus?: string | null;
   offer?: string;
   spaceId?: string;
   name: string | null;
@@ -39,6 +44,19 @@ export type PipelineFacts = {
   unshared?: number;
   unsharedOldestAt?: string | null;
 };
+
+/**
+ * Where the conversation about an application stands (Studio → Authors →
+ * Заявки). Open stages first, in the order a conversation goes; the last two
+ * close it.
+ */
+export const applicationStages = ["new", "written", "replied", "agreed", "declined", "silent"] as const;
+export type ApplicationStage = (typeof applicationStages)[number];
+export const closedApplicationStages: readonly ApplicationStage[] = ["declined", "silent"];
+
+/** Whose move it is on an application, by its stage. */
+export const applicationMover = (stage: ApplicationStage): Mover =>
+  stage === "written" ? "author" : closedApplicationStages.includes(stage) ? "none" : "team";
 
 /** The way, as the team sees it. A paid author has the payment among the steps. */
 export const pipelineSteps = ["Заявка", "Страница", "Приглашение", "Тексты и голос", "Оплата", "Series", "Открытие", "Публикуется"] as const;
@@ -89,6 +107,10 @@ const plural = (n: number, one: string, few: string, many: string) => {
 /** How long each wait may last before the row is «застрял». */
 export const stuckAfterDays = {
   newApplication: 2,
+  /** We wrote and nobody answered: time to write again or close. */
+  awaitingReply: 5,
+  /** They answered, or we agreed: our move should not wait. */
+  ourReply: 2,
   awaitingMaterials: 10,
   pageWithoutInvite: 2,
   inviteOpen: 5,
@@ -118,6 +140,20 @@ export function pipelineStep(facts: PipelineFacts, now = new Date()): PipelineSt
 
   if (facts.kind === "application") {
     const apply: PipelineAction = { kind: "application", label: "Оформить автора" };
+    const focus = facts.applicationFocus?.trim();
+    const stageAt = facts.applicationStageAt ?? facts.applicationUpdatedAt;
+    if (facts.applicationStage === "written") {
+      return make("Заявка", "author", "Написали, ждём ответа", focus || "Нет ответа дольше пяти дней: напомните или закройте заявку.", stageAt, stuckAfterDays.awaitingReply, apply);
+    }
+    if (facts.applicationStage === "replied") {
+      return make("Заявка", "team", "Автор ответил: наш ход", focus || "Прочитайте ответ и решите, что написать.", stageAt, stuckAfterDays.ourReply, apply);
+    }
+    if (facts.applicationStage === "agreed") {
+      return make("Заявка", "team", "Договорились: оформить автора", focus || "Создайте страницу и пригласите автора.", stageAt, stuckAfterDays.ourReply, apply);
+    }
+    if (facts.applicationStage === "new") {
+      return make("Заявка", "team", "Ответить на заявку", focus || "Отправьте письмо с условиями или сразу оформите автора.", facts.applicationAt, stuckAfterDays.newApplication, apply);
+    }
     if (facts.applicationStatus === "contacted") {
       return make("Заявка", "author", "Ждём ответ и материалы", "Мы ответили на заявку. Когда автор пришлёт данные и тексты, оформите его.", facts.applicationUpdatedAt, stuckAfterDays.awaitingMaterials, apply);
     }

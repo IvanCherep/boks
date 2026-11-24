@@ -6382,6 +6382,82 @@ begin
 end $$;
 rollback;
 
+-- Applications as a small CRM (20261125090000): a stage with its status, the
+-- «что уточнить» line, a journal of notes and changes; only the team.
+begin;
+insert into auth.users (id, email, is_anonymous) values
+  ('0f0f2250-0000-4000-8000-000000000001', 'crm-editor@boks.test', false),
+  ('0f0f2250-0000-4000-8000-000000000002', 'crm-author@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values
+  ('0f0f2250-0000-4000-8000-000000000001', 'crm_editor', 'admin', now(), 'v1'),
+  ('0f0f2250-0000-4000-8000-000000000002', 'crm_author', 'reader', now(), 'v1')
+on conflict (user_id) do update set handle = excluded.handle, role = excluded.role, terms_accepted_at = excluded.terms_accepted_at;
+do $$
+declare
+  v_editor uuid := '0f0f2250-0000-4000-8000-000000000001';
+  v_author uuid := '0f0f2250-0000-4000-8000-000000000002';
+  v_app bigint;
+  v_row jsonb;
+  v_events jsonb;
+  v_space uuid;
+  v_error text;
+begin
+  perform public.boks_test_login(v_author);
+  v_app := (public.submit_author_application('launch', 'Вера', 'https://t.me/vera', '900', 'crm-author@boks.test', 'Стихи') ->> 'id')::bigint;
+  perform public.submit_author_application('page', 'Вера', 'https://t.me/vera', null, 'crm-author@boks.test', null);
+  begin
+    perform public.studio_application_set_stage(v_app, 'written', null);
+    v_error := null;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'Admin access%', 'only the team moves an application');
+  begin
+    perform public.studio_application_events(v_app);
+    v_error := null;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error like 'Admin access%', 'only the team reads the journal');
+  perform public.boks_assert(not has_table_privilege('authenticated', 'public.author_application_events', 'SELECT'), 'the journal is reached only through its functions');
+
+  perform public.boks_test_login(v_editor);
+  select r into v_row from jsonb_array_elements(public.list_author_applications(500)) r where (r ->> 'id')::bigint = v_app;
+  perform public.boks_assert(v_row ->> 'stage' = 'new' and (v_row ->> 'others')::integer = 1 and not (v_row ->> 'guest')::boolean, 'a fresh application is new and knows the other one from the same person');
+
+  perform public.studio_application_set_stage(v_app, 'written', 'Написали в Telegram');
+  perform public.boks_assert((select status from public.author_applications where id = v_app) = 'contacted', 'written to means contacted for the applicant');
+  perform public.studio_application_set_stage(v_app, 'replied', null);
+  perform public.studio_application_set_focus(v_app, 'Уточнить права на сборник');
+  perform public.studio_application_set_focus(v_app, 'Уточнить права на сборник');
+  perform public.studio_application_add_note(v_app, 'Готова прислать пять текстов');
+  begin
+    perform public.studio_application_add_note(v_app, '   ');
+    v_error := null;
+  exception when others then v_error := sqlerrm;
+  end;
+  perform public.boks_assert(v_error = 'Write the note first.', 'an empty note is refused');
+  v_events := public.studio_application_events(v_app);
+  perform public.boks_assert(jsonb_array_length(v_events) = 4, 'two stage moves, one line and one note in the journal (an unchanged line is not repeated)');
+  perform public.boks_assert(v_events -> 0 ->> 'kind' = 'note' and v_events -> 0 ->> 'by' = 'crm_editor', 'newest first, with who wrote it');
+  perform public.boks_assert(v_events -> 3 ->> 'stageFrom' = 'new' and v_events -> 3 ->> 'stageTo' = 'written' and v_events -> 3 ->> 'body' = 'Написали в Telegram', 'a stage move keeps its from, to and why');
+  select r into v_row from jsonb_array_elements(public.list_author_applications(500)) r where (r ->> 'id')::bigint = v_app;
+  perform public.boks_assert(v_row ->> 'focus' = 'Уточнить права на сборник' and (v_row ->> 'notes')::integer = 1 and v_row -> 'lastNote' ->> 'body' = 'Готова прислать пять текстов',
+    'the list carries the line and the last note');
+  perform public.boks_assert(exists (select 1 from jsonb_array_elements(public.studio_author_pipeline()) r where r ->> 'applicationId' = v_app::text and r ->> 'applicationStage' = 'replied'),
+    '«Ведение авторов» sees the stage');
+
+  v_space := (public.studio_save_author_space(null, 'author', 'Вера', '', null, 0) ->> 'id')::uuid;
+  perform public.studio_link_application(v_app, v_space);
+  perform public.boks_assert((select stage from public.author_applications where id = v_app) = 'agreed', 'making the page means we agreed');
+
+  perform public.set_author_application_status(v_app, 'closed');
+  perform public.boks_assert((select (stage, status) = ('declined', 'closed') from public.author_applications where id = v_app), 'the old close button keeps the stage in step');
+  perform public.studio_application_set_stage(v_app, 'silent', null);
+  perform public.boks_test_login(v_author);
+  perform public.boks_assert(public.get_my_author_access() -> 'application' ->> 'status' in ('new', 'closed'), 'the applicant still sees one of the three statuses');
+  perform public.boks_test_logout();
+end $$;
+rollback;
+
 -- Contract and payments (20261124140000): a paid contract has its payment row,
 -- the row follows the contract, the author reads their own on «Договор и
 -- оплаты» with the receipt, and nobody reads the table directly.

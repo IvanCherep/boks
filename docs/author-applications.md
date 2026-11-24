@@ -81,9 +81,45 @@ and at most sixty guest applications an hour in total. The draft waits in this
 tab's storage until it is sent. A signed-in applicant later sees that the
 application is in and what became of it.
 
-The team reads them in Studio → Authors, newest first, with the applicant's
-@name and email, and marks each as written to or closed
-(`list_author_applications`, `set_author_application_status`; admins only).
+The team works them in Studio → Authors → «Заявки» (admins only), below.
+
+## Working an application
+
+Studio → Authors → «Заявки» is a small CRM (`components/boks/admin/author-applications.tsx`,
+order and waits in `lib/boks/author/applications.ts`, migration
+`20261125090000_boks_application_crm.sql`). Each application has:
+
+- **a stage** (`author_applications.stage`), moved by hand as the conversation goes:
+
+  | Stage | Russian | Whose move | Too long after |
+  |---|---|---|---|
+  | `new` | Новая | ours | 2 days since it came |
+  | `written` | Написали, ждём | the author's | 5 days: write again or close |
+  | `replied` | Ответили нам | ours | 2 days |
+  | `agreed` | Договорились | ours: make the page, invite | 2 days |
+  | `declined` | Отказ | closed | |
+  | `silent` | Не отвечает | closed | |
+
+  Making the author's page from an application moves it to `agreed`
+  (`studio_link_application`). `status` (new / contacted / closed) is derived
+  from the stage, because the applicant's own page and the Telegram feed read
+  it; the old `set_author_application_status` still works and moves the stage.
+- **«Что уточнить»** (`focus`): one line the team keeps current (what is open,
+  what worries us, what to ask), shown on the list.
+- **a journal** (`author_application_events`): notes, stage moves (from, to,
+  an optional why) and every change of «Что уточнить», each with who and
+  when, newest first. Nothing is edited or deleted; what the person filled in
+  is never changed.
+
+The list opens on «В работе», our moves first with the longest waiting on
+top, then those waiting for the author; filters «Наш ход», «Ждём ответа»,
+«Закрытые», «Все», and a search by name, contact, @handle, links or the line.
+A row says the stage, whose move and for how many days, and is marked when it
+waits too long. Opened, it shows the stage buttons, the line, the journal and
+everything the person sent (the contact as a link when it is an email,
+Telegram, VK or a phone), their account or that they applied as a guest, and
+how many other applications came from the same account, device or contact.
+«Ведение авторов» reads the same stage for whose move it is.
 
 ## To the team's Telegram
 

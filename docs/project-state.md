@@ -44,7 +44,7 @@ Studio -> Authors get it in their cabinet (`/author#series`) and publish the
 result straight onto their page, no review; nobody is granted any at release.
 An account with nothing published sees, at `/author`, the page for authors:
 why boks, three offers, an application and a question (`docs/author-applications.md`);
-applications are in Studio -> Authors. My page's order view shows the
+applications are worked in Studio -> Authors -> «Заявки» as a small CRM: stage, «Что уточнить», a journal (`docs/author-applications.md`, "Working an application"; 20261125090000). My page's order view shows the
 reader's page beside the list, live, for every author. Feedback notes,
 applications and works sent for review go to the team's Telegram
 (`deploy/ops/inbox.py`). Migrations 20261117140000-180000. Open: whether the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesFilter, pipelineOrder, pipelineStep, type PipelineFacts } from "./pipeline";
+import { applicationMover, matchesFilter, pipelineOrder, pipelineStep, type PipelineFacts } from "./pipeline";
 
 const now = new Date("2026-11-24T12:00:00+03:00");
 const ago = (days: number) => new Date(now.getTime() - days * 86_400_000).toISOString();
@@ -30,6 +30,19 @@ describe("pipelineStep", () => {
     expect(answered).toMatchObject({ mover: "author", title: "Ждём ответ и материалы", stuck: false });
     expect(pipelineStep({ key: "a2", kind: "application", applicationStatus: "new", applicationAt: ago(0), offer: "page", name: "Вера", handle: null, email: null }, now).steps).toContain("Оплата");
     expect(pipelineStep({ key: "a3", kind: "application", applicationStatus: "new", applicationAt: ago(0), offer: "launch", name: "Вера", handle: null, email: null }, now).steps).not.toContain("Оплата");
+  });
+
+  it("an application's stage says whose move it is, and the team's line replaces the hint", () => {
+    const app = (over: Partial<PipelineFacts>) => pipelineStep({ key: "a1", kind: "application", applicationStatus: "contacted", applicationAt: ago(9), name: "Вера", handle: null, email: null, ...over }, now);
+    expect(app({ applicationStage: "written", applicationStageAt: ago(6) })).toMatchObject({ mover: "author", title: "Написали, ждём ответа", stuck: true, days: 6 });
+    expect(app({ applicationStage: "written", applicationStageAt: ago(1) })).toMatchObject({ stuck: false });
+    expect(app({ applicationStage: "replied", applicationStageAt: ago(2), applicationFocus: "Спросить про права на сборник" }))
+      .toMatchObject({ mover: "team", title: "Автор ответил: наш ход", stuck: true, detail: "Спросить про права на сборник" });
+    expect(app({ applicationStage: "agreed", applicationStageAt: ago(0) })).toMatchObject({ mover: "team", title: "Договорились: оформить автора", stuck: false });
+    expect(app({ applicationStatus: "new", applicationStage: "new" })).toMatchObject({ mover: "team", title: "Ответить на заявку", stuck: true });
+    expect(applicationMover("written")).toBe("author");
+    expect(applicationMover("silent")).toBe("none");
+    expect(applicationMover("replied")).toBe("team");
   });
 
   it("a page nobody was invited to says the author cannot come in", () => {
