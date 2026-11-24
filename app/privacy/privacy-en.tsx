@@ -92,8 +92,9 @@ export const privacyEn: Omit<LegalDocumentProps, "page" | "language"> = {
           the author page and in Series is set out in the{" "}
           <a href="/author/terms/distribution">consent to the dissemination of personal data</a> (both in Russian).
           The texts of the works are processed by Yandex.Cloud LLC (Russia) for the labels recommendations are built
-          on. An author&apos;s voice is not used to identify them, to train artificial intelligence, or to synthesise or
-          clone a voice.
+          on. Authors&apos; texts and recordings, including the voice, are analysed and used to train and tune boks
+          software (Boks AI) within the author offer. An author&apos;s voice is not used to identify them, or to
+          synthesise or clone a voice imitating theirs.
         </p>
       </>,
     },
