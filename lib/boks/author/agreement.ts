@@ -4,27 +4,37 @@
  * without a browser; the calls live in `components/boks/author-spaces/data.ts`.
  */
 
-export type AuthorPlan = "launch" | "page" | "page_no_promotion";
+/** partner: «Сотрудничество», its own offer (/author/terms/partner): no money, a link to each Series. */
+export type AuthorPlan = "launch" | "page" | "page_no_promotion" | "partner";
 /** waived: the team decided this author does not pay (Studio → «Условия»: наш автор). */
 export type PayState = "free" | "awaiting" | "reported" | "paid" | "waived" | "cancelled";
 export type LegalKind = "author_offer" | "author_pd_processing" | "author_pd_distribution";
 
+/** Every stored document: the three a contract names, and the offer of «Сотрудничество» (by link only, not in the list). */
+export type DocumentKind = LegalKind | "author_partner_offer";
+
 export const legalKinds: LegalKind[] = ["author_offer", "author_pd_processing", "author_pd_distribution"];
 
 /** The address of each document's page: `/author/terms/<slug>`. */
-export const legalSlug: Record<LegalKind, string> = {
+export const legalSlug: Record<DocumentKind, string> = {
   author_offer: "offer",
   author_pd_processing: "processing",
   author_pd_distribution: "distribution",
+  author_partner_offer: "partner",
 };
 
-export function legalKindFromSlug(slug: string): LegalKind | null {
-  const found = (Object.entries(legalSlug) as [LegalKind, string][]).find(([, value]) => value === slug);
+export function legalKindFromSlug(slug: string): DocumentKind | null {
+  const found = (Object.entries(legalSlug) as [DocumentKind, string][]).find(([, value]) => value === slug);
   return found ? found[0] : null;
 }
 
+/** The document a contract's entry is: its offer is the partner one under «Сотрудничество». */
+export function agreementDocKind(kind: LegalKind, plan: AuthorPlan | null | undefined): DocumentKind {
+  return kind === "author_offer" && plan === "partner" ? "author_partner_offer" : kind;
+}
+
 /** `/author/terms/offer` (the edition in force) or `/author/terms/offer/2026-11-23` (that edition, for good). */
-export function legalHref(kind: LegalKind, version?: string | null) {
+export function legalHref(kind: DocumentKind, version?: string | null) {
   return `/author/terms/${legalSlug[kind]}${version ? `/${encodeURIComponent(version)}` : ""}`;
 }
 
@@ -39,6 +49,7 @@ export const planName: Record<AuthorPlan, string> = {
   launch: "Совместный запуск",
   page: "Кабинет автора",
   page_no_promotion: "Кабинет автора без продвижения",
+  partner: "Сотрудничество",
 };
 
 /** Who receives the money: a private person today, later a sole trader or a company. */
@@ -144,7 +155,7 @@ export type InviteTerms = {
   /** The Series a year the tariff promises (null: no yearly limit). */
   seriesPerYear?: number | null;
   legalName: string | null;
-  documents: { kind: LegalKind; version: string; title: string }[];
+  documents: { kind: DocumentKind; version: string; title: string }[];
 };
 
 /** 30000 → «30 000 ₽». */

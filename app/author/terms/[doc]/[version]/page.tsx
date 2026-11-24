@@ -9,11 +9,14 @@ const titles: Record<string, string> = {
   offer: "Договор-оферта для авторов",
   processing: "Согласие на обработку персональных данных",
   distribution: "Согласие на распространение персональных данных",
+  partner: "Договор-оферта о сотрудничестве",
 };
 
 export async function generateMetadata({ params }: { params: RouteParams | Promise<RouteParams> }): Promise<Metadata> {
   const { doc, version } = await params;
-  return { title: `${titles[doc] ?? "Документ для авторов"}, редакция ${decodeURIComponent(String(version ?? ""))} · Boks` };
+  const title = `${titles[doc] ?? "Документ для авторов"}, редакция ${decodeURIComponent(String(version ?? ""))} · Boks`;
+  // «Сотрудничество» is opened by link only: not in search.
+  return doc === "partner" ? { title, robots: { index: false, follow: false } } : { title };
 }
 
 export default async function AuthorTermsEditionRoute({ params }: { params: RouteParams | Promise<RouteParams> }) {

@@ -5,7 +5,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "
 import { BoksLogo } from "@/components/boks/reader/boks-logo";
 import { ReaderBackIcon } from "@/components/boks/reader/reader-icons";
 import { supportEmail, supportMailto } from "@/lib/boks/contact";
-import { legalHref, legalKindFromSlug, legalKinds, legalVersionLabel, type LegalKind } from "@/lib/boks/author/agreement";
+import { legalHref, legalKindFromSlug, legalKinds, legalVersionLabel, type DocumentKind } from "@/lib/boks/author/agreement";
 import { parseLegalMarkdown, type Inline, type LegalBlock } from "@/lib/boks/author/legal-markdown";
 import { privacyRu } from "@/app/privacy/privacy-ru";
 import { loadLegalDocument, loadLegalDocuments, type LegalDocument, type LegalDocumentEntry } from "./terms-data";
@@ -24,25 +24,33 @@ import { loadLegalDocument, loadLegalDocuments, type LegalDocument, type LegalDo
  * /privacy in turn has a tab back to these documents.
  */
 
-const short: Record<LegalKind, string> = {
+const short: Record<DocumentKind, string> = {
+  author_partner_offer: "Сотрудничество",
   author_offer: "Договор-оферта",
   author_pd_processing: "Обработка данных",
   author_pd_distribution: "Распространение данных",
 };
 
-const heading: Record<LegalKind, string> = {
+const heading: Record<DocumentKind, string> = {
+  author_partner_offer: "Договор-оферта о сотрудничестве",
   author_offer: "Договор-оферта для авторов",
   author_pd_processing: "Согласие на обработку персональных данных",
   author_pd_distribution: "Согласие на распространение персональных данных",
 };
 
-const lead: Record<LegalKind, string> = {
+const lead: Record<DocumentKind, string> = {
+  author_partner_offer: "Условия тарифа «Сотрудничество»: Boks делает авторскую страницу и Boks Series без оплаты, автор делится ссылкой на каждую вышедшую Series в своих соцсетях.",
   author_offer: "Условия, на которых Boks делает авторскую страницу и Boks Series. Договор заключается на сайте: по приглашению редакции, отметкой в кабинете.",
   author_pd_processing: "Какие данные автора нужны для договора и кабинета, зачем, где они хранятся и как отозвать согласие.",
   author_pd_distribution: "Что из сведений об авторе видят читатели на странице и в Series и как это прекратить.",
 };
 
-const highlights: Record<LegalKind, { title: string; body: string }[]> = {
+const highlights: Record<DocumentKind, { title: string; body: string }[]> = {
+  author_partner_offer: [
+    { title: "Без оплаты", body: "Страница, кабинет и Boks Series вашим голосом бесплатно. Требований к просмотрам и подписчикам нет, штрафов нет." },
+    { title: "Ваша часть", body: "О каждой вышедшей Series пост со ссылкой на неё в вашем открытом аккаунте, в течение 30 дней и не меньше чем на 30 дней. Если постов нет, редакция может остановить работу над новыми Series." },
+    { title: "Ваши права", body: "Права на тексты и записи остаются у вас. Каждый выпуск вы смотрите первым, публикуете сами и можете снять в любой момент." },
+  ],
   author_offer: [
     { title: "Что входит", body: "Авторская страница, кабинет и Boks Series вашим голосом: 5 гарантированно, дальше до 30 за год, не чаще одной в неделю." },
     { title: "Оплата", body: "«Кабинет автора» стоит 30 000 ₽ за год. Кабинет открывается сразу, оплатить можно в течение 30 дней; год считается со дня оплаты." },
@@ -71,11 +79,11 @@ function sectionId(title: string, index: number) {
 }
 
 /** The stored text as sections: everything before the first `##` is the opening section. */
-function toSections(blocks: LegalBlock[], kind: LegalKind) {
+function toSections(blocks: LegalBlock[], kind: DocumentKind) {
   const title = blocks.find((block) => block.kind === "title");
   const subtitle = blocks.find((block) => block.kind === "subtitle");
   const sections: Section[] = [];
-  let current: Section = { id: "intro", title: kind === "author_offer" ? "Об оферте" : "О согласии", blocks: [] };
+  let current: Section = { id: "intro", title: kind === "author_offer" || kind === "author_partner_offer" ? "Об оферте" : "О согласии", blocks: [] };
   for (const block of blocks) {
     if (block.kind === "title" || block.kind === "subtitle") continue;
     if (block.kind === "h2") {
@@ -133,7 +141,7 @@ function Blocks({ blocks }: { blocks: LegalBlock[] }) {
   );
 }
 
-type Active = LegalKind | "privacy" | "index";
+type Active = DocumentKind | "privacy" | "index";
 
 /** The policy is not a stored edition: it lives in `app/privacy/privacy-ru.tsx` and is served at /privacy too. */
 const privacySlug = "privacy";

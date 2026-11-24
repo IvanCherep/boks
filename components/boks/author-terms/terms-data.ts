@@ -1,12 +1,12 @@
 "use client";
 
 import { supabase } from "@/lib/boks/supabase-client";
-import type { LegalKind } from "@/lib/boks/author/agreement";
+import type { DocumentKind } from "@/lib/boks/author/agreement";
 
 /** The documents for authors (`20261123095000_boks_legal_documents.sql`): open to anyone. */
 
 export type LegalDocument = {
-  kind: LegalKind;
+  kind: DocumentKind;
   version: string;
   title: string;
   body: string;
@@ -17,7 +17,7 @@ export type LegalDocument = {
 };
 
 export type LegalDocumentEntry = {
-  kind: LegalKind;
+  kind: DocumentKind;
   title: string;
   version: string;
   versions: { version: string; publishedAt: string }[];
@@ -30,7 +30,7 @@ async function call<T>(name: string, args: Record<string, unknown> = {}): Promis
   return result.data as T;
 }
 
-export const loadLegalDocument = (kind: LegalKind, version: string | null = null) =>
+export const loadLegalDocument = (kind: DocumentKind, version: string | null = null) =>
   call<LegalDocument | null>("get_boks_legal_document", { p_kind: kind, p_version: version });
 
 export const loadLegalDocuments = () => call<LegalDocumentEntry[]>("get_boks_legal_documents");

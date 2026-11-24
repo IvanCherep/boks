@@ -8,6 +8,7 @@ import { AgreementCard, awaitingPayment } from "@/components/boks/author-cabinet
 import { loadMyBilling } from "@/components/boks/author-spaces/data";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
+  agreementDocKind,
   legalHref,
   legalKinds,
   legalVersionLabel,
@@ -148,7 +149,7 @@ export function AuthorBilling() {
               <ul className="bil-docs">
                 {legalKinds.map((kind) => (
                   <li key={kind}>
-                    <a href={legalHref(kind, current.documents[kind])} target="_blank" rel="noreferrer noopener">
+                    <a href={legalHref(agreementDocKind(kind, current.plan), current.documents[kind])} target="_blank" rel="noreferrer noopener">
                       <span>{docName[kind]}</span>
                       <small>редакция от {legalVersionLabel(current.documents[kind])}</small>
                     </a>

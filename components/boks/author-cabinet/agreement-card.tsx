@@ -6,6 +6,7 @@ import { renderSVG } from "uqr";
 import { loadMyAgreement, reportMyPayment } from "@/components/boks/author-spaces/data";
 import { readableBoksError } from "@/lib/boks/errors";
 import {
+  agreementDocKind,
   daysToPay,
   legalHref,
   legalKinds,
@@ -152,7 +153,7 @@ export function AgreementCard({
     <ul className="aag-docs">
       {legalKinds.map((kind) => (
         <li key={kind}>
-          <a href={legalHref(kind, agreement.documents[kind])} target="_blank" rel="noreferrer noopener">{docName[kind]}</a>
+          <a href={legalHref(agreementDocKind(kind, agreement.plan), agreement.documents[kind])} target="_blank" rel="noreferrer noopener">{docName[kind]}</a>
         </li>
       ))}
     </ul>

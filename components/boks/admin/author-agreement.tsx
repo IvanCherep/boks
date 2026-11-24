@@ -17,7 +17,7 @@ import {
   updateAuthorPayment,
 } from "@/components/boks/author-spaces/data";
 import { readableBoksError } from "@/lib/boks/errors";
-import { legalHref, legalKinds, paymentKindName, planName, rub, ruDate, type AuthorAgreement, type AuthorPayment, type AuthorPlan, type PaymentDetails, type PayState, type RecipientKind, recipientKindName, type StudioAgreement } from "@/lib/boks/author/agreement";
+import { agreementDocKind, legalHref, legalKinds, paymentKindName, planName, rub, ruDate, type AuthorAgreement, type AuthorPayment, type AuthorPlan, type PaymentDetails, type PayState, type RecipientKind, recipientKindName, type StudioAgreement } from "@/lib/boks/author/agreement";
 import { useUiLanguage } from "@/components/boks/ui-language";
 import { loadBoksPeople } from "@/components/boks/supabase-browser-data";
 
@@ -94,6 +94,7 @@ export function AccountFinder({ onPick }: { onPick: (person: { email: string; ha
 
 export const invitePlans: { value: AuthorPlan | ""; label: string }[] = [
   { value: "page", label: `${planName.page}, ${rub(30000)}` },
+  { value: "partner", label: `${planName.partner}: бесплатно, ссылка на каждую Series в соцсетях (по знакомству)` },
   { value: "launch", label: `${planName.launch}, бесплатно` },
   { value: "page_no_promotion", label: `${planName.page_no_promotion}, ${rub(500000)}` },
   { value: "", label: "Наш автор: без оплаты и без оферты (партнёрство, особый проект)" },
@@ -130,7 +131,9 @@ export function InvitePlanFields({
           {invitePlans.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
         <small>
-          {plan
+          {plan === "partner"
+            ? "Автор примет оферту о сотрудничестве (/author/terms/partner) и два согласия галочками на экране приглашения. Платить не нужно, условие одно: пост со ссылкой на каждую вышедшую Series. Не выполняет: можно остановить работу над его Series."
+            : plan
             ? "Автор примет оферту этого тарифа и два согласия галочками на экране приглашения. Кабинет откроется сразу, страница читателям только после оплаты."
             : "Наш автор: без оплаты и без оферты, условия договорены отдельно. Кабинет и суфлёр открываются сразу, серии выходят, когда решит редакция."}
         </small>
@@ -161,7 +164,7 @@ function AgreementFacts({ agreement }: { agreement: StudioAgreement }) {
       <div><dt>Акцепт</dt><dd>
         {new Date(agreement.acceptedAt).toLocaleString("ru-RU")} · IP {agreement.acceptedIp ?? "нет"} ·{" "}
         {legalKinds.map((kind, n) => (
-          <span key={kind}>{n > 0 && ", "}<a href={legalHref(kind, agreement.documents[kind])} target="_blank" rel="noreferrer noopener">{docShort[kind]} {agreement.documents[kind]}</a></span>
+          <span key={kind}>{n > 0 && ", "}<a href={legalHref(agreementDocKind(kind, agreement.plan), agreement.documents[kind])} target="_blank" rel="noreferrer noopener">{docShort[kind]} {agreement.documents[kind]}</a></span>
         ))}
       </dd></div>
     </dl>

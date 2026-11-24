@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { legalHref, legalNameProblem, planName, rub, type InviteTerms, type LegalKind } from "@/lib/boks/author/agreement";
+import { legalHref, legalNameProblem, planName, rub, type DocumentKind, type InviteTerms } from "@/lib/boks/author/agreement";
 
 /**
  * The contract on the invitation screen (`docs/author-agreements.md`): the
@@ -22,7 +22,7 @@ export function useInviteTerms(
   const key = token || inviteId ? `${token ?? ""}:${inviteId ?? ""}` : "";
   const [answer, setAnswer] = useState<{ key: string; value: InviteTerms | null } | null>(null);
   const [name, setName] = useState("");
-  const [ticked, setTicked] = useState<Set<LegalKind>>(new Set());
+  const [ticked, setTicked] = useState<Set<DocumentKind>>(new Set());
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function useInviteTerms(
     touched,
     nameProblem,
     ticked,
-    toggle(kind: LegalKind) {
+    toggle(kind: DocumentKind) {
       const next = new Set(ticked);
       if (next.has(kind)) next.delete(kind); else next.add(kind);
       setTicked(next);
@@ -67,8 +67,9 @@ export function useInviteTerms(
   };
 }
 
-const boxText: Record<LegalKind, { before: string; link: string; after: string }> = {
+const boxText: Record<DocumentKind, { before: string; link: string; after: string }> = {
   author_offer: { before: "Я прочитал(а) и принимаю ", link: "договор-оферту", after: "" },
+  author_partner_offer: { before: "Я прочитал(а) и принимаю ", link: "договор-оферту о сотрудничестве", after: "" },
   author_pd_processing: { before: "Даю ", link: "согласие на обработку персональных данных", after: "" },
   author_pd_distribution: { before: "Даю ", link: "согласие на распространение персональных данных", after: ": имя, фото, биография и голос будут на моей странице" },
 };
@@ -93,7 +94,9 @@ export function InviteTermsBlock({ terms, pageOpen = false }: { terms: InviteTer
         </p>
       ) : (
         <p className="aag-lead">
-          Кабинет откроется сразу. Условие тарифа: делиться каждой вышедшей Series в своём открытом аккаунте (раздел 6 договора).
+          {value.plan === "partner"
+            ? "Кабинет откроется сразу. Платить ничего не нужно. Ваша часть: пост со ссылкой на каждую вышедшую Series в своём открытом аккаунте (раздел 6 договора)."
+            : "Кабинет откроется сразу. Условие тарифа: делиться каждой вышедшей Series в своём открытом аккаунте (раздел 6 договора)."}
         </p>
       )}
 
@@ -122,7 +125,7 @@ export function InviteTermsBlock({ terms, pageOpen = false }: { terms: InviteTer
                   <a href={legalHref(doc.kind, doc.version)} target="_blank" rel="noreferrer noopener" onClick={(event) => event.stopPropagation()}>
                     {text.link}
                   </a>
-                  {doc.kind === "author_offer" ? ` по тарифу «${planName[value.plan]}»` : ""}
+                  {doc.kind === "author_offer" || doc.kind === "author_partner_offer" ? ` по тарифу «${planName[value.plan]}»` : ""}
                   {text.after}
                 </span>
               </label>
