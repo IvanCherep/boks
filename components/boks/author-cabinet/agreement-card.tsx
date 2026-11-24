@@ -10,9 +10,8 @@ import {
   legalHref,
   legalKinds,
   paymentPurpose,
-  paymentQr,
-  requisitesQr,
   phoneLabel,
+  gostPaymentQr,
   planName,
   rub,
   ruDate,
@@ -62,7 +61,6 @@ export function AgreementCard({
   compact = false,
   explained = false,
   pageOpen = false,
-  startOpen = false,
   preview = false,
 }: {
   agreement: AuthorAgreement | null;
@@ -73,31 +71,20 @@ export function AgreementCard({
   explained?: boolean;
   /** The author's page is open already: only the Series wait for the money. */
   pageOpen?: boolean;
-  /** Opened from «Оплатить» elsewhere (the Workshop's steps): the details at once. */
+  /** Kept for callers; the payment shows at once now. */
   startOpen?: boolean;
   /** Studio's preview: everything as the author sees it, «Я оплатил(а)» sends nothing. */
   preview?: boolean;
 }) {
-  const [open, setOpen] = useState(startOpen);
+  const [showDetails, setShowDetails] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [copied, setCopied] = useState("");
   const [showDocs, setShowDocs] = useState(false);
 
-  const qr = useMemo(() => {
+  const detailsQr = useMemo(() => {
     if (!agreement || !awaitingPayment(agreement)) return null;
-    const code = paymentQr(agreement);
-    if (!code) return null;
-    try {
-      return { ...code, svg: renderSVG(code.value, { border: 1, ecc: "M" }) };
-    } catch {
-      return null;
-    }
-  }, [agreement]);
-
-  const detailsQrSvg = useMemo(() => {
-    if (!agreement || !awaitingPayment(agreement)) return null;
-    const value = requisitesQr(agreement);
+    const value = gostPaymentQr(agreement.payment, agreement.priceRub, paymentPurpose(agreement));
     if (!value) return null;
     try {
       return renderSVG(value, { border: 1, ecc: "M" });
@@ -112,6 +99,28 @@ export function AgreementCard({
   const purpose = paymentPurpose(agreement);
   const left = daysToPay(agreement.payDue);
   const pay = agreement.payment;
+  const details = (pay?.account && pay.bic
+    ? ([
+        ["Получатель", pay.recipient],
+        ["Счёт", pay.account],
+        ["Банк", pay.bank],
+        ["БИК", pay.bic],
+        ["Корр. счёт", pay.corrAccount],
+        ["ИНН получателя", pay.inn],
+        ["КПП получателя", pay.recipientKind === "company" ? pay.kpp : null],
+        ["ИНН банка", pay.bankInn],
+        ["КПП банка", pay.bankKpp],
+      ] as [string, string | null | undefined][])
+    : []
+  ).filter((row): row is [string, string] => Boolean(row[1]));
+  const detailsText = [
+    ...(pay?.sbpPhone ? [`СБП по номеру: ${phoneLabel(pay.sbpPhone)}${pay.sbpBank ? `, ${pay.sbpBank}` : ""}`] : []),
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    `Сумма: ${rub(agreement.priceRub)}`,
+    `Назначение: ${purpose}`,
+  ].join("\n");
+  // Without a СБП link the details are the way to pay: shown at once.
+  const detailsOpen = showDetails || !pay?.payLink;
 
   async function copy(label: string, text: string) {
     try {
@@ -132,7 +141,6 @@ export function AgreementCard({
     setProblem("");
     try {
       onChange(await reportMyPayment());
-      setOpen(false);
     } catch (error) {
       setProblem(readableBoksError(error, "Не удалось отправить. Попробуйте ещё раз.", "ru"));
     } finally {
@@ -189,129 +197,89 @@ export function AgreementCard({
           {pageOpen ? "Редакция начнёт делать Series после оплаты." : "Страница откроется читателям, а редакция начнёт делать Series после оплаты."}
         </p>
       )}
-      <div className="aag-due">
-        <span>К оплате <strong>{rub(agreement.priceRub)}</strong></span>
+      <div className="aag-amount">
+        <strong>{rub(agreement.priceRub)}</strong>
         {agreement.payDue && !reported && (
-          <span className={left !== null && left < 3 ? "aag-due__soon" : ""}>
-            до {ruDate(agreement.payDue)}
-            {left !== null && left >= 0 ? ` (${left === 0 ? "сегодня" : `осталось ${left} ${dayWord(left)}`})` : ""}
-          </span>
+          <span className={left !== null && left < 3 ? "aag-due__soon" : ""}>Оплатить до {ruDate(agreement.payDue)}</span>
         )}
       </div>
 
-      {!open ? (
-        <div className="aag-actions">
-          <button type="button" className="btn btn-red" onClick={() => setOpen(true)}>{reported ? "Реквизиты" : "Оплатить"}</button>
-          {!compact && (
-            <button type="button" className="aag-link" aria-expanded={showDocs} onClick={() => setShowDocs(!showDocs)}>
-              {showDocs ? "Скрыть документы" : "Документы"}
-            </button>
+      {pay?.payLink && !reported ? (
+        <a className="aag-sbp-button" href={pay.payLink} target="_blank" rel="noreferrer noopener" aria-label="Оплатить через СБП">
+          <span>Оплатить</span>
+          <SbpMark />
+          <span className="aag-sbp-button__word" aria-hidden="true">сбп</span>
+        </a>
+      ) : null}
+
+      {details.length > 0 || pay?.sbpPhone ? (
+        <div className="aag-details-pay">
+          {!detailsOpen && (
+            <button type="button" className="aag-link" aria-expanded={false} onClick={() => setShowDetails(true)}>Реквизиты</button>
+          )}
+          {detailsOpen && (
+            <>
+              {pay?.payLink && <p className="aag-small">Перевод по реквизитам может занять несколько дней.</p>}
+              <div className="aag-req">
+                {detailsQr && (
+                  <figure className="aag-req__qr">
+                    <div className="aag-qr__code" role="img" aria-label="QR-код с реквизитами" dangerouslySetInnerHTML={{ __html: detailsQr }} />
+                    <figcaption>Наведите камеру в приложении банка: всё заполнится само</figcaption>
+                  </figure>
+                )}
+                <dl className="aag-plain">
+                  {pay?.sbpPhone && (
+                    <div><dt>СБП по номеру</dt><dd>{phoneLabel(pay.sbpPhone)}{pay.sbpBank ? `, ${pay.sbpBank}` : ""}</dd></div>
+                  )}
+                  {details.map(([label, value]) => (
+                    <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+                  ))}
+                  <div><dt>Сумма</dt><dd>{rub(agreement.priceRub)}</dd></div>
+                  <div><dt>Назначение</dt><dd>{purpose}</dd></div>
+                </dl>
+              </div>
+              <button type="button" className="btn btn-secondary aag-copy-all" onClick={() => void copy("all", detailsText)}>
+                {copied === "all" ? "Скопировано" : "Скопировать реквизиты"}
+              </button>
+              {pay?.payLink && (
+                <button type="button" className="aag-link" onClick={() => setShowDetails(false)}>Скрыть реквизиты</button>
+              )}
+            </>
           )}
         </div>
-      ) : (
-        <div className="aag-pay">
-          {(pay?.payLink || pay?.sbpPhone) && (
-            <div className="aag-fast">
-              <strong>Оплата по СБП</strong>
-              <span className="aag-fast__badge">Рекомендуем</span>
-              <p>Это предпочтительный способ: по СБП мы получаем деньги гораздо быстрее, обычно за несколько минут.</p>
-            </div>
-          )}
+      ) : null}
 
-          {pay?.payLink ? (
-            <div className="aag-link-pay">
-              <a className="btn btn-red" href={pay.payLink} target="_blank" rel="noreferrer noopener">Оплатить по СБП</a>
-              <p className="aag-small">Откроется перевод в приложении вашего банка. Впишите сумму {rub(agreement.priceRub)} и, если банк спросит, назначение платежа из поля ниже.</p>
-            </div>
-          ) : null}
-
-          {qr && qr.kind === "details" ? (
-            <div className="aag-qr">
-              <div className="aag-qr__code" role="img" aria-label="QR-код для оплаты" dangerouslySetInnerHTML={{ __html: qr.svg }} />
-              <p>
-                <strong>Оплата по QR-коду.</strong> Если кабинет открыт на компьютере, откройте на телефоне приложение банка, найдите «Оплата по QR» или сканер и наведите камеру: получатель, сумма и назначение заполнятся сами. Проверьте сумму: {rub(agreement.priceRub)}.
-              </p>
-            </div>
-          ) : null}
-
-          {pay?.sbpPhone ? (
-            <div className="aag-sbp">
-              <strong>Перевод по СБП по номеру телефона</strong>
-              <dl>
-                <div><dt>Номер телефона</dt><dd>{phoneLabel(pay.sbpPhone)} <CopyButton label="телефон" copied={copied} onCopy={() => void copy("телефон", pay.sbpPhone!)} /></dd></div>
-                {pay.sbpBank && <div><dt>Банк получателя</dt><dd>{pay.sbpBank}</dd></div>}
-                {pay.recipient && <div><dt>Получатель</dt><dd>{pay.recipient}</dd></div>}
-                <div><dt>Сумма</dt><dd>{rub(agreement.priceRub)}</dd></div>
-              </dl>
-            </div>
-          ) : null}
-
-          {pay?.account && pay.bic ? (
-            <details className="aag-sbp aag-requisites" open={!qr && !pay.payLink && !pay.sbpPhone}>
-              <summary><strong>{pay.payLink || pay.sbpPhone ? "Другой способ: перевод по реквизитам" : "Перевод по реквизитам"}</strong></summary>
-              {(pay.payLink || pay.sbpPhone) && (
-                <p className="aag-small">Перевод по реквизитам может занять несколько дней. Если можете, платите по СБП.</p>
-              )}
-              {detailsQrSvg && (
-                <div className="aag-qr">
-                  <div className="aag-qr__code" role="img" aria-label="QR-код с реквизитами" dangerouslySetInnerHTML={{ __html: detailsQrSvg }} />
-                  <p>Наведите камеру приложения банка: получатель, сумма и назначение заполнятся сами.</p>
-                </div>
-              )}
-              <dl>
-                {([
-                  ["Получатель", pay.recipient],
-                  ["Счёт получателя", pay.account],
-                  ["Банк получателя", pay.bank],
-                  ["БИК", pay.bic],
-                  ["Корр. счёт", pay.corrAccount],
-                  ["ИНН получателя", pay.inn],
-                  ["КПП получателя", pay.recipientKind === "company" ? pay.kpp : null],
-                  ["ИНН банка", pay.bankInn],
-                  ["КПП банка", pay.bankKpp],
-                ] as [string, string | null | undefined][]).filter(([, value]) => value).map(([label, value]) => (
-                  <div key={label}><dt>{label}</dt><dd>{value} <CopyButton label={label} copied={copied} onCopy={() => void copy(label, value!)} /></dd></div>
-                ))}
-                <div><dt>Сумма</dt><dd>{rub(agreement.priceRub)}</dd></div>
-              </dl>
-            </details>
-          ) : null}
-
-          {!qr && !pay?.sbpPhone && !pay?.payLink && !pay?.account && (
-            <p className="aag-card__lead">Реквизиты для оплаты пришлёт редакция. Если письма нет, напишите нам в «Просьбы и предложения».</p>
-          )}
-
-          <div className="aag-purpose">
-            <span>Назначение платежа</span>
-            <p>{purpose}</p>
-            <CopyButton label="назначение" copied={copied} onCopy={() => void copy("назначение", purpose)} />
-          </div>
-          <p className="aag-small">Чек из «Мой налог» пришлём вам на почту, когда получим оплату.</p>
-          {problem && <p className="notice" role="alert">{problem}</p>}
-          <div className="aag-actions">
-            {!reported && <button type="button" className="btn btn-red" disabled={busy} onClick={() => void report()}>Я оплатил(а)</button>}
-            <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>{reported ? "Свернуть" : "Позже"}</button>
-          </div>
-        </div>
+      {!pay?.payLink && details.length === 0 && !pay?.sbpPhone && (
+        <p className="aag-small">Реквизиты для оплаты пришлёт редакция. Если письма нет, напишите нам в «Просьбы и предложения».</p>
       )}
+
+      {problem && <p className="notice" role="alert">{problem}</p>}
+      <div className="aag-foot">
+        <span className="aag-small">Чек пришлём вам на почту.</span>
+        {!reported && <button type="button" className="aag-link" disabled={busy} onClick={() => void report()}>Я оплатил(а)</button>}
+        {!compact && (
+          <button type="button" className="aag-link aag-link--quiet" aria-expanded={showDocs} onClick={() => setShowDocs(!showDocs)}>
+            {showDocs ? "Скрыть документы" : "Документы"}
+          </button>
+        )}
+      </div>
       {showDocs && docs}
     </section>
   );
 }
 
-function CopyButton({ label, copied, onCopy }: { label: string; copied: string; onCopy: () => void }) {
+/** The СБП mark (Система быстрых платежей), as on bank payment buttons. */
+function SbpMark() {
   return (
-    <button type="button" className="aag-copy" onClick={onCopy} aria-label={`Скопировать ${label}`}>
-      {copied === label ? "Скопировано" : "Копировать"}
-    </button>
+    <svg className="aag-sbp-mark" viewBox="0 0 23 28" aria-hidden="true" focusable="false">
+      <path fill="#5B57A2" d="M0 6.1l3.4 6.1v3.7L0 22.1z" />
+      <path fill="#D90751" d="M13.1 9.9l3.2-1.96 6.5-.01-9.7 5.97z" />
+      <path fill="#FAB617" d="M13.1 6.1l.02 8.1-3.4-2.1V0z" />
+      <path fill="#ED6F26" d="M22.8 7.9l-6.5.01-3.2-1.96L9.7 0z" />
+      <path fill="#63B22F" d="M13.1 22.1v-3.9l-3.4-2.1V28z" />
+      <path fill="#1487C9" d="M16.3 20.1L3.4 12.2 0 6.1l22.8 14z" />
+      <path fill="#017F36" d="M9.7 28l3.4-6.1 3.2-1.9 6.5-.01z" />
+      <path fill="#984995" d="M0 22.1l9.7-6-3.3-2-3 1.8z" />
+    </svg>
   );
-}
-
-function dayWord(n: number) {
-  const tail = n % 100;
-  if (tail >= 11 && tail <= 14) return "дней";
-  const last = n % 10;
-  if (last === 1) return "день";
-  if (last >= 2 && last <= 4) return "дня";
-  return "дней";
 }
