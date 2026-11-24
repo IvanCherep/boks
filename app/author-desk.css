@@ -552,3 +552,16 @@
 .desk-prompter-retry{display:flex;flex-direction:column;align-items:center;gap:12px}
 .desk-prompter-retry .desk-quiet{color:#cfc9b8}
 @media (hover:none) and (pointer:coarse){.desk-prompter-keys{display:none}}
+
+/* The page address under the greeting, with the way to change it. */
+.desk .desk-address {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.desk .desk-address a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

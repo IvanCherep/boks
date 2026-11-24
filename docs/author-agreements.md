@@ -175,3 +175,19 @@ for payment.
   decides (the offer, 5.2.2).
 - Cancelling a contract (refund, refusal) has a state (`cancelled`) but no
   Studio button yet.
+
+## One name (2026-11-24)
+
+An author's account and their page have one @name. A page made from an
+application keeps the applicant's @handle (Studio leaves the address empty and
+shows it); the team types another only when the author asks for a pen name.
+Names are unique across accounts and pages with one lock
+(`20261124120000_boks_handle_one_owner.sql`); service names are refused for
+pages too, and Studio says while typing whether an address is free.
+
+The author changes it themselves: Workshop → «изменить адрес» (My page). No
+hand work follows: `/@old` and `/a/old/photo` lead to the new address, the
+previews and story cards are drawn from the current name, the shelf places a
+section by its Series (`seriesShelfPrints`), and the old name stays the
+author's so nobody else can take it. Only files the team made by hand (share
+card pictures with a name drawn in) would need redoing.

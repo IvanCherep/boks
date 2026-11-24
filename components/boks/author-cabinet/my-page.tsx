@@ -492,6 +492,16 @@ export function MyPage({
   const [editingAddress, setEditingAddress] = useState(false);
   const [address, setAddress] = useState("");
   const [addressProblem, setAddressProblem] = useState("");
+  // «изменить адрес» from the Workshop: /author?address=1#my-page opens the address at once.
+  useEffect(() => {
+    if (!data?.handle || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("address")) return;
+    url.searchParams.delete("address");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    const timer = window.setTimeout(() => { setAddress(data.handle ?? ""); setAddressProblem(""); setEditingAddress(true); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [data?.handle]);
   /** Whether published Series go onto the boks Series shelf at once (`series_shelf`). */
   const [onShelf, setOnShelf] = useState(false);
   /** Whether this author publishes straight away (`boks_publishes_directly`): the composer is theirs. */

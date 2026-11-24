@@ -1,4 +1,4 @@
-import { loadAuthorPhoto } from "@/lib/boks/author-preview";
+import { loadAuthorPhoto, loadMovedAuthorHandle } from "@/lib/boks/author-preview";
 
 /**
  * The photo an author set for their page (`author_spaces.photo`), as a JPEG.
@@ -12,6 +12,15 @@ type RouteParams = { handle: string };
 export async function GET(request: Request, { params }: { params: RouteParams | Promise<RouteParams> }) {
   const { handle } = await params;
   const photo = await loadAuthorPhoto(String(handle ?? ""));
+  if (!photo) {
+    // An author who changed their @handle: previews already shared still ask for the old address.
+    const moved = await loadMovedAuthorHandle(String(handle ?? ""));
+    if (moved) {
+      const target = new URL(`/a/${moved}/photo`, request.url);
+      target.search = new URL(request.url).search;
+      return new Response(null, { status: 301, headers: { Location: target.pathname + target.search, "Cache-Control": "public, max-age=3600" } });
+    }
+  }
   if (!photo) return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=60" } });
   const asked = new URL(request.url).searchParams.get("v");
   const current = asked === String(photo.version);

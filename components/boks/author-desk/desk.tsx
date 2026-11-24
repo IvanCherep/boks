@@ -1,5 +1,7 @@
 "use client";
 
+import { authorShareLabel } from "@/lib/boks/share-link";
+
 import "@/app/author-desk.css";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -418,6 +420,11 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
           {greeting}
           {authorName ? `, ${authorName}` : ""}
         </h1>
+        {desk.state?.author.handle ? (
+          <p className="desk-address">
+            {authorShareLabel(desk.state.author.handle)} · <a href="/author?address=1#my-page">изменить адрес</a>
+          </p>
+        ) : null}
         <div className="desk-hero-actions">
           <button type="button" className="desk-btn desk-btn-red" onClick={() => setAdding(true)}>
             Добавить текст
