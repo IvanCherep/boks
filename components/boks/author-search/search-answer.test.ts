@@ -19,7 +19,7 @@ describe("toAuthorSearchPage", () => {
     ]);
     expect(page.results.map((row) => row.avatarUrl)).toEqual([
       "/a/demidov/photo?v=1",
-      "/onboarding/assets/authors/classics-v52/chekhov.webp",
+      null,
       null,
     ]);
   });

@@ -6602,90 +6602,80 @@ begin
 end $$;
 rollback;
 
--- Author search (20261125100000): real published authors only, one bounded page,
--- two writers of one publisher stay two rows, an author page opens the account.
+-- Author search (20261125100000): only authors with their own public page and
+-- a published bok; publishers' writers (the classics) are not results.
 begin;
 insert into auth.users (id, email, is_anonymous) values
   ('5ea70000-0000-4000-8000-000000000001', 'search-publisher@boks.test', false),
   ('5ea70000-0000-4000-8000-000000000002', 'search-poet@boks.test', false),
-  ('5ea70000-0000-4000-8000-000000000003', 'search-guest@boks.test', true);
+  ('5ea70000-0000-4000-8000-000000000003', 'search-guest@boks.test', true),
+  ('5ea70000-0000-4000-8000-000000000004', 'search-empty@boks.test', false),
+  ('5ea70000-0000-4000-8000-000000000005', 'search-draft@boks.test', false);
 insert into public.user_profiles (user_id, handle) values
   ('5ea70000-0000-4000-8000-000000000001', 'srch_pub'),
-  ('5ea70000-0000-4000-8000-000000000002', 'srch_poet')
+  ('5ea70000-0000-4000-8000-000000000002', 'srch_poet'),
+  ('5ea70000-0000-4000-8000-000000000004', 'srch_empty'),
+  ('5ea70000-0000-4000-8000-000000000005', 'srch_draft')
 on conflict (user_id) do update set handle = excluded.handle;
 do $$
 declare
   v jsonb;
   v_hidden uuid;
-  v_names text[];
 begin
   perform public.boks_test_login('22222222-2222-4222-8222-222222222222');
   perform public.set_boks_publisher('srch_pub', true);
   perform public.set_boks_publisher('srch_poet', true);
+  perform public.set_boks_publisher('srch_draft', true);
   perform public.import_boks_batch('srch_pub', jsonb_build_array(
     jsonb_build_object('importKey', 's-1', 'title', 'Палата', 'text', 'Текст.', 'authorName', 'Антон Чехов'),
-    jsonb_build_object('importKey', 's-2', 'title', 'Степь', 'text', 'Текст.', 'authorName', 'Антон Чехов'),
-    jsonb_build_object('importKey', 's-3', 'title', 'Метель', 'text', 'Текст.', 'authorName', 'Александр Пушкин'),
-    jsonb_build_object('importKey', 's-4', 'title', 'Сказка', 'text', 'Текст.', 'authorName', 'Михаил Салтыков-Щедрин'),
-    jsonb_build_object('importKey', 's-5', 'title', 'Hidden', 'text', 'Text.', 'authorName', 'Zelda Hiddenwriter')
+    jsonb_build_object('importKey', 's-2', 'title', 'Метель', 'text', 'Текст.', 'authorName', 'Александр Пушкин')
   ), true, true, 'Public domain');
   perform public.import_boks_batch('srch_poet', jsonb_build_array(
-    jsonb_build_object('importKey', 'p-1', 'title', 'Стих', 'text', 'Строка.', 'authorName', 'Мира Поэтова')
+    jsonb_build_object('importKey', 'p-1', 'title', 'Стих', 'text', 'Строка.', 'authorName', 'Мира Поэтова'),
+    jsonb_build_object('importKey', 'p-2', 'title', 'Другой стих', 'text', 'Строка.', 'authorName', 'Мира Поэтова')
   ), true, true, 'Own work');
-  insert into public.author_spaces (kind, status, name, owner_user_id, published_at)
-  values ('author', 'published', 'Мира Поэтова, поэт', '5ea70000-0000-4000-8000-000000000002', now());
+  perform public.import_boks_batch('srch_draft', jsonb_build_array(
+    jsonb_build_object('importKey', 'd-1', 'title', 'Скрытый', 'text', 'Строка.', 'authorName', 'Зоя Черновикова')
+  ), true, true, 'Own work');
+  insert into public.author_spaces (kind, status, name, owner_user_id, published_at) values
+    ('author', 'published', 'Мира Поэтова, поэт', '5ea70000-0000-4000-8000-000000000002', now()),
+    ('author', 'published', 'Пустая Страница', '5ea70000-0000-4000-8000-000000000004', now()),
+    ('author', 'draft', 'Зоя Черновикова', '5ea70000-0000-4000-8000-000000000005', null);
 
   -- What a guest sees, through the anonymous session.
   perform public.boks_test_login('5ea70000-0000-4000-8000-000000000003', true);
 
-  v := public.search_boks_authors('чехов', 20);
-  perform public.boks_assert(
-    jsonb_array_length(v -> 'results') = 1
-      and v #>> '{results,0,kind}' = 'byline' and v #>> '{results,0,handle}' = 'srch_pub' and v #>> '{results,0,byline}' = 'Антон Чехов',
-    'a writer of a publisher is found as that writer, with the publisher''s real handle');
-  perform public.boks_assert(v #>> '{results,0,name}' = 'Антон Чехов' and not (v -> 'results' -> 0) ? 'title' and not (v -> 'results' -> 0) ? 'boks',
-    'a search row names the author and nothing they wrote');
-
-  v := public.search_boks_authors('  ЧЕХОВ   антон ', 20);
-  perform public.boks_assert(jsonb_array_length(v -> 'results') = 1, 'words in any order, any case, any spacing');
-  v := public.search_boks_authors('chekhov', 20);
-  perform public.boks_assert(v #>> '{results,0,byline}' = 'Антон Чехов', 'a Latin spelling finds a Cyrillic name');
-  v := public.search_boks_authors('щедрин', 20);
-  perform public.boks_assert(v #>> '{results,0,byline}' = 'Михаил Салтыков-Щедрин', 'each half of a hyphenated name is a word');
-  v := public.search_boks_authors('пу', 20);
-  perform public.boks_assert(v #>> '{results,0,byline}' = 'Александр Пушкин', 'part of a name is enough');
-
-  v := public.search_boks_authors('', 20);
-  select array_agg(r ->> 'name') into v_names from jsonb_array_elements(v -> 'results') r
-  where r ->> 'handle' in ('srch_pub', 'srch_poet');
-  perform public.boks_assert('Антон Чехов' = any(v_names) and 'Александр Пушкин' = any(v_names),
-    'two writers of one publisher stay two results');
-  perform public.boks_assert(not exists (
-      select 1 from jsonb_array_elements(v -> 'results') r where r ->> 'kind' = 'account' and r ->> 'handle' = 'srch_pub'),
-    'a publisher of several writers is not itself a result');
-
-  v := public.search_boks_authors('@srch_poet', 20);
+  v := public.search_boks_authors('поэтова', 20);
   perform public.boks_assert(
     jsonb_array_length(v -> 'results') = 1 and v #>> '{results,0,kind}' = 'account'
-      and v #>> '{results,0,name}' = 'Мира Поэтова, поэт' and v #>> '{results,0,byline}' is null,
-    'an author with a page is found by @handle, as the account, under the page''s name');
-  perform public.boks_assert(public.search_boks_authors('поэтова', 20) #>> '{results,0,kind}' = 'account', 'and by name');
+      and v #>> '{results,0,handle}' = 'srch_poet' and v #>> '{results,0,name}' = 'Мира Поэтова, поэт',
+    'an author with a public page is found as the account, under the page''s name');
+  perform public.boks_assert(not (v -> 'results' -> 0) ? 'title' and not (v -> 'results' -> 0) ? 'boks',
+    'a search row names the author and nothing they wrote');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('  ПОЭТ   мира ', 20) -> 'results') = 1, 'words in any order, any case, any spacing');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('poetova', 20) -> 'results') = 1, 'a Latin spelling finds a Cyrillic name');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('@srch_poet', 20) -> 'results') = 1, 'an @handle finds its author');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('поэ', 20) -> 'results') >= 1, 'part of a name is enough');
 
-  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('hiddenwriter', 20) -> 'results') = 1, 'a published writer is found');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('чехов', 20) -> 'results') = 0
+      and jsonb_array_length(public.search_boks_authors('srch_pub', 20) -> 'results') = 0,
+    'a publisher and its writers without a page of their own are not results');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('пустая', 20) -> 'results') = 0, 'a page with nothing published is not a result');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('черновикова', 20) -> 'results') = 0, 'a page that is not public is not a result');
+  perform public.boks_assert(not exists (
+      select 1 from jsonb_array_elements(public.search_boks_authors('', 30) -> 'results') r where r ->> 'handle' in ('srch_pub', 'srch_empty', 'srch_draft')),
+    'the first page holds only authors with a public page');
+
   perform public.boks_test_login('22222222-2222-4222-8222-222222222222');
-  select id into v_hidden from public.boks_reels where title = 'Hidden' and author_handle = 'srch_pub';
-  update public.reels set status = 'pending_review' where id = v_hidden;
+  update public.reels set status = 'pending_review'
+  where id in (select id from public.boks_reels where author_handle = 'srch_poet');
   perform public.boks_test_login('5ea70000-0000-4000-8000-000000000003', true);
-  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('hiddenwriter', 20) -> 'results') = 0,
-    'a writer with nothing published is not a result');
-  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('nobody-like-this', 20) -> 'results') = 0
-      and (public.search_boks_authors('nobody-like-this', 20) ->> 'hasMore')::boolean = false,
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('поэтова', 20) -> 'results') = 0,
+    'an author whose boks are all unpublished drops out');
+  perform public.boks_assert((public.search_boks_authors('nobody-like-this', 20) ->> 'hasMore')::boolean = false
+      and jsonb_array_length(public.search_boks_authors('nobody-like-this', 20) -> 'results') = 0,
     'nothing found is an empty page, not an error');
-
-  v := public.search_boks_authors('', 1);
-  perform public.boks_assert(jsonb_array_length(v -> 'results') = 1 and (v ->> 'hasMore')::boolean, 'a page is cut where asked and says there is more');
-  v := public.search_boks_authors('', 100000);
-  perform public.boks_assert(jsonb_array_length(v -> 'results') <= 30, 'the server caps the page whatever is asked');
+  perform public.boks_assert(jsonb_array_length(public.search_boks_authors('', 100000) -> 'results') <= 30, 'the server caps the page whatever is asked');
   perform public.boks_assert(jsonb_array_length(public.search_boks_authors(repeat('а', 5000), 20) -> 'results') = 0, 'a huge query is cut, not refused');
   perform public.boks_test_logout();
 

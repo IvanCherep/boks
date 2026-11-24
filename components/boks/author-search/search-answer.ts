@@ -21,13 +21,13 @@ export function toAuthorSearchPage(answer: unknown): AuthorSearchPage {
       results.push({
         target: { kind: "byline", accountHandle: handle, byline },
         displayName: name,
-        avatarUrl: searchPortraitFor({ kind: "byline", handle, byline, photoVersion: null }),
+        avatarUrl: searchPortraitFor({ kind: "byline", handle, photoVersion: null }),
       });
     } else if (item.kind === "account") {
       results.push({
         target: { kind: "account", handle },
         displayName: name,
-        avatarUrl: searchPortraitFor({ kind: "account", handle, byline: null, photoVersion }),
+        avatarUrl: searchPortraitFor({ kind: "account", handle, photoVersion }),
       });
     }
   }

@@ -4,16 +4,13 @@
 -- do you search for authors at all?" There was no way: an author was reached
 -- only by tapping a byline on a bok that happened to be on screen.
 --
--- `search_boks_authors` answers one bounded page of real authors, built only
--- from published boks (`published_boks`), so a draft, a bok in review or an
--- archived one never makes an author appear. Two kinds of row:
---
---   * account: an @handle with a published author page, or one that publishes
---     under a single byline. Opens the account (`get_boks_author(handle)`),
---     which is where Follow is.
---   * byline: one writer of an account that publishes several (the classics
---     under @boks). Opens `get_boks_author(handle, byline)`. Two writers of one
---     publisher stay two rows; they are never folded into the publisher.
+-- `search_boks_authors` answers one bounded page of the authors who have
+-- their own public page (`author_spaces`, kind author, published) and at
+-- least one published bok (`published_boks`): a draft, a bok in review or an
+-- archived one never makes an author appear, and neither does an empty page.
+-- The classics under @boks are deliberately not searched for now (the
+-- owner's decision, 2026-11-25). A row opens the account
+-- (`get_boks_author(handle)`), which is where Follow is.
 --
 -- A row carries the name, the handle and the page photo's version, nothing
 -- else: no titles, texts, counts, emails or account ids. The browser never
@@ -22,9 +19,9 @@
 --
 -- Matching: every word of the query must occur in the name (case, ё,
 -- punctuation and hyphens aside), in its Latin spelling ("chekhov" finds
--- «Антон Чехов») or, for an account, in its @handle. A whole-word match ranks
--- first ("poe" is Poe before «поэт»), then a word start, then a match inside
--- a word; then authors with a page, then the larger shelf, then the name. The query is cut to 100 characters and the page to 30 rows
+-- «Антон Чехов») or in its @handle. A whole-word match ranks first, then a
+-- word start, then a match inside a word; then the larger shelf, then the
+-- name. The query is cut to 100 characters and the page to 30 rows
 -- here, whatever the caller asks for.
 
 -- A name as the search reads it: lower case, е for ё, every run of
@@ -81,17 +78,11 @@ declare
 begin
   v_words := case when v_query = '' then array[]::text[] else string_to_array(v_query, ' ') end;
 
-  with bylines as (
-    select lower(b.author_handle) as handle, b.author_name as byline, count(*)::integer as boks
+  with accounts as (
+    select lower(b.author_handle) as handle, count(*)::integer as boks, min(b.author_name) as only_byline
     from public.published_boks b
     where nullif(btrim(coalesce(b.author_handle, '')), '') is not null
-      and nullif(btrim(coalesce(b.author_name, '')), '') is not null
-    group by 1, 2
-  ),
-  accounts as (
-    select y.handle, count(*)::integer as writers, sum(y.boks)::integer as boks, min(y.byline) as only_byline
-    from bylines y
-    group by y.handle
+    group by 1
   ),
   pages as (
     select lower(i.handle) as handle, s.name, case when s.photo is null then null else s.photo_version end as photo_version
@@ -100,24 +91,15 @@ begin
     where s.kind = 'author' and s.status = 'published'
   ),
   candidates as (
-    -- An account with a page, or with one writer: the account itself.
-    select 'account'::text as kind, a.handle, null::text as byline,
-      coalesce(nullif(btrim(p.name), ''), a.only_byline) as name,
-      p.photo_version, p.handle is not null as has_page, a.boks
-    from accounts a
-    left join pages p on p.handle = a.handle
-    where p.handle is not null or a.writers = 1
-    union all
-    -- A publisher of several writers: each writer on their own row.
-    select 'byline', y.handle, y.byline, y.byline, null::integer, false, y.boks
-    from bylines y
-    join accounts a on a.handle = y.handle
-    left join pages p on p.handle = y.handle
-    where p.handle is null and a.writers > 1
+    select 'account'::text as kind, p.handle, null::text as byline,
+      coalesce(nullif(btrim(p.name), ''), a.only_byline, p.handle) as name,
+      p.photo_version, true as has_page, a.boks
+    from pages p
+    join accounts a on a.handle = p.handle
   ),
   keyed as (
     select c.*,
-      ' ' || public.boks_author_search_key(c.name || case when c.kind = 'account' then ' ' || c.handle else '' end) || ' ' as search_key
+      ' ' || public.boks_author_search_key(c.name || ' ' || c.handle) || ' ' as search_key
     from candidates c
   ),
   matched as (
