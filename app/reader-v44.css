@@ -289,3 +289,6 @@ html, body { background-color:var(--background); }
   .reader-v44 .reader-actions > .reader-previous:disabled { opacity:.3; }
   .reader-v44 .story-copy { font-size:calc(21px * var(--reader-text-scale,1)); }
 }
+/* The magnifier (author search) sits beside More on the cover, phone and desktop alike. */
+.reader-topbar__tools > .reader-search-trigger { display:grid; place-items:center; width:44px; height:44px; }
+.reader-cover__desktop-tools { display:flex; align-items:center; gap:2px; }

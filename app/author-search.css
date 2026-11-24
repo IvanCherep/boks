@@ -1,0 +1,317 @@
+/*
+ * Author search (2026-11-25): the magnifier on the cover opens this panel.
+ * Content: components/boks/author-search/author-search-content.tsx; the shell
+ * is ReaderSheet with `reader-sheet--search`.
+ *
+ * Phone: nearly the whole screen, anchored at the top, so the field stays in
+ * sight above the keyboard and the list scrolls beneath it. Computer: a tall
+ * card in the middle over a dimmed reader. The field's text is 17px: under
+ * 16px, iPhone zooms the page when it is tapped.
+ */
+
+.reader-v44 .reader-sheet.reader-sheet--search {
+  top: max(10px, calc(env(safe-area-inset-top) + 6px));
+  bottom: 0;
+  max-height: none;
+  height: auto;
+  padding-bottom: 0;
+  box-shadow: 0 -10px 60px rgb(16 23 15 / 18%), 0 0 0 100vmax rgb(12 10 8 / 26%);
+  animation: boks-search-sheet-in 280ms cubic-bezier(.2, .8, .2, 1);
+  /* Opaque: the bok's words must not show through the list. */
+  background: var(--card);
+  backdrop-filter: none;
+}
+.reader-v44 .reader-sheet--search.reader-sheet--under { visibility: hidden; animation: none; }
+.reader-v44 .reader-sheet--search > .sheet-grip { align-self: center; }
+
+@media (min-width: 1024px) {
+  .reader-v44 .reader-sheet.reader-sheet--search {
+    top: max(48px, 9vh);
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    width: min(600px, calc(100vw - 48px));
+    max-width: none;
+    height: min(720px, calc(100svh - max(48px, 9vh) - 48px));
+    margin: 0;
+    transform: translateX(-50%);
+    border-radius: 28px;
+    box-shadow: 0 30px 90px rgb(16 23 15 / 26%), 0 0 0 100vmax rgb(12 10 8 / 34%);
+    animation-name: boks-search-card-in;
+  }
+  .reader-v44 .reader-sheet--search > .sheet-grip { display: none; }
+}
+
+@keyframes boks-search-sheet-in { from { transform: translateY(28px); opacity: 0; } }
+@keyframes boks-search-card-in { from { transform: translate(-50%, 14px) scale(.985); opacity: 0; } }
+
+.boks-author-search {
+  --as-ink: var(--foreground, #222621);
+  --as-muted: var(--muted-foreground, #687064);
+  --as-rule: color-mix(in srgb, var(--border, #dcd7cd) 80%, transparent);
+  --as-serif: "Boks Literary", "Source Serif 4 Variable", Georgia, serif;
+  --as-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --as-pad: clamp(20px, 6vw, 36px);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--as-ink);
+}
+
+.boks-author-search__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px calc(var(--as-pad) - 10px) 0 var(--as-pad);
+}
+.boks-author-search__heading {
+  margin: 4px 0 18px;
+  font: 400 clamp(32px, 9vw, 42px)/1.04 var(--as-serif);
+  letter-spacing: -0.02em;
+}
+.boks-author-search__close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.boks-author-search__close svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+
+.boks-author-search__field {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  margin: 0 var(--as-pad);
+  border-bottom: 1px solid color-mix(in srgb, var(--as-ink) 35%, transparent);
+  transition: border-color 160ms;
+}
+.boks-author-search__field::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--as-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms cubic-bezier(.2, .8, .2, 1);
+}
+.boks-author-search__field:focus-within::after { transform: scaleX(1); }
+.boks-author-search__search-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  stroke: var(--as-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.boks-author-search__input {
+  appearance: none;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  border: 0;
+  border-radius: 0;
+  padding: 8px 0;
+  color: inherit;
+  background: transparent;
+  font: 17px/1.4 var(--as-sans);
+}
+.boks-author-search__input::placeholder { color: var(--as-muted); opacity: 1; }
+.boks-author-search__input::-webkit-search-cancel-button,
+.boks-author-search__input::-webkit-search-decoration { appearance: none; }
+.reader-v44 .boks-author-search__input:focus-visible { outline: none; }
+/* Focus shows as the line under the field drawing itself in ink (::after). */
+.boks-author-search__clear {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.boks-author-search__clear-icon { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+
+.boks-author-search__rows {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px var(--as-pad) max(28px, calc(18px + env(safe-area-inset-bottom)));
+  scroll-padding-bottom: 24px;
+}
+.boks-author-search__rows ul { margin: 0; padding: 0; list-style: none; }
+.boks-author-search__list li { animation: boks-search-row-in 340ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--row, 0) * 22ms); }
+.boks-author-search__list--stale { opacity: .42; transition: opacity 160ms; }
+.boks-author-search__list--stale li { animation: none; }
+@keyframes boks-search-row-in { from { opacity: 0; transform: translateY(6px); } }
+
+.boks-author-search__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: calc(100% + 20px);
+  min-height: 72px;
+  margin: 0 -10px;
+  border: 0;
+  border-radius: 16px;
+  padding: 10px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms;
+}
+.boks-author-search__list li { position: relative; }
+.boks-author-search__list li + li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 68px;
+  right: 0;
+  height: 1px;
+  background: var(--as-rule);
+  pointer-events: none;
+}
+.boks-author-search__row:disabled { cursor: default; }
+.boks-author-search__row:active:not(:disabled) { background: color-mix(in srgb, var(--as-ink) 7%, transparent); }
+
+.boks-author-search__avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--as-ink) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--as-ink) 10%, transparent);
+}
+.boks-author-search__avatar img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 400ms cubic-bezier(.2, .8, .2, 1); }
+.boks-author-search__avatar--monogram {
+  color: color-mix(in srgb, var(--as-ink) 78%, transparent);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--as-ink) 6%, transparent), color-mix(in srgb, var(--as-ink) 14%, transparent));
+  font: italic 400 19px/1 var(--as-serif);
+  letter-spacing: .02em;
+}
+.boks-author-search__name {
+  flex: 1;
+  min-width: 0;
+  font: 400 20px/1.25 var(--as-serif);
+  letter-spacing: -0.005em;
+  overflow-wrap: anywhere;
+}
+.boks-author-search__name mark {
+  color: inherit;
+  background: linear-gradient(transparent 58%, color-mix(in srgb, var(--primary, #c9a35c) 30%, transparent) 58%);
+  border-radius: 1px;
+}
+.boks-author-search__row-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  stroke: var(--as-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1), stroke 160ms;
+}
+
+@media (hover: hover) {
+  .boks-author-search__row:hover:not(:disabled) { background: color-mix(in srgb, var(--as-ink) 5%, transparent); }
+  .boks-author-search__row:hover:not(:disabled) .boks-author-search__row-icon { transform: translateX(4px); stroke: var(--as-ink); }
+  .boks-author-search__row:hover:not(:disabled) .boks-author-search__avatar img { transform: scale(1.06); }
+  .boks-author-search__close:hover,
+  .boks-author-search__clear:hover { background: color-mix(in srgb, var(--as-ink) 6%, transparent); }
+}
+.boks-author-search__row:focus-visible { outline: 2px solid var(--ring, currentColor); outline-offset: -2px; }
+
+.boks-author-search__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.boks-author-search__empty {
+  margin: 34px 0 0;
+  color: var(--as-muted);
+  font: italic 400 24px/1.3 var(--as-serif);
+}
+.boks-author-search__problem { margin: 28px 0 0; color: var(--as-muted); font: 16px/1.5 var(--as-sans); }
+.boks-author-search__problem p { margin: 0 0 14px; }
+.boks-author-search__retry {
+  min-height: 44px;
+  border: 1px solid color-mix(in srgb, var(--as-ink) 30%, transparent);
+  border-radius: 999px;
+  padding: 8px 20px;
+  color: var(--as-ink);
+  background: transparent;
+  font: 500 15px/1 var(--as-sans);
+  cursor: pointer;
+}
+.boks-author-search__more {
+  margin: 18px 0 0;
+  color: var(--as-muted);
+  font: 14px/1.5 var(--as-sans);
+}
+
+.boks-author-search__skeleton li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+  animation: boks-search-row-in 300ms both;
+  animation-delay: calc(var(--row, 0) * 40ms);
+}
+.boks-author-search__skeleton span {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--as-ink) 6%, transparent) 30%, color-mix(in srgb, var(--as-ink) 12%, transparent) 50%, color-mix(in srgb, var(--as-ink) 6%, transparent) 70%) 0 0 / 300% 100%;
+  animation: boks-search-shimmer 1.3s linear infinite;
+}
+.boks-author-search__skeleton span:first-child { flex: none; width: 52px; height: 52px; }
+.boks-author-search__skeleton span:last-child { width: calc(46% + var(--row, 0) * 5%); height: 14px; }
+@keyframes boks-search-shimmer { to { background-position: -150% 0; } }
+
+@media (min-width: 1024px) {
+  .boks-author-search { --as-pad: 40px; }
+  .boks-author-search__top { padding-top: 30px; }
+  .boks-author-search__heading { font-size: 44px; margin-bottom: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-v44 .reader-sheet.reader-sheet--search,
+  .boks-author-search__list li,
+  .boks-author-search__skeleton li,
+  .boks-author-search__skeleton span { animation: none; }
+  .boks-author-search__row-icon,
+  .boks-author-search__avatar img,
+  .boks-author-search__field::after { transition: none; }
+}
+/* A highlighted row hides the rules above and below it. */
+.boks-author-search__list li:has(.boks-author-search__row:is(:hover, :focus-visible, :active))::before,
+.boks-author-search__list li:has(.boks-author-search__row:is(:hover, :focus-visible, :active)) + li::before { opacity: 0; }

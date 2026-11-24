@@ -8,7 +8,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   X,
 } from "lucide-react";
-import { ReaderHeartIcon, ReaderCommentsIcon, ReaderShareIcon, ReaderMoreIcon, ReaderSettingsIcon, ReaderDownIcon, ReaderBackIcon, ReaderPlayIcon, ReaderTypeIcon } from "@/components/boks/reader/reader-icons";
+import { ReaderHeartIcon, ReaderCommentsIcon, ReaderShareIcon, ReaderMoreIcon, ReaderSettingsIcon, ReaderDownIcon, ReaderBackIcon, ReaderPlayIcon, ReaderTypeIcon, ReaderSearchIcon } from "@/components/boks/reader/reader-icons";
+import { AuthorSearchContent, authorSearchMessages } from "@/components/boks/author-search/author-search-content";
+import type { AuthorSearchResult } from "@/components/boks/author-search/author-search-controller";
 import { Button } from "@/components/ui/button";
 import { initialMetrics, initialProfile } from "@/components/boks/constants";
 import type {
@@ -132,6 +134,7 @@ import {
   setSupabaseLike,
   submitSupabaseComment,
   loadLiveBokReactions,
+  searchBoksAuthors,
 } from "@/components/boks/supabase-browser-data";
 import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
 import { WhatToRead, type ApplyResult } from "@/components/boks/what-to-read/what-to-read";
@@ -597,6 +600,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     [setStatus]
   );
   const [authorSheet, setAuthorSheet] = useState<{ handle: string; authorName?: string; follow?: boolean } | null>(null);
+  // The author search panel (the magnifier). An author opened from it covers
+  // it, and Back from the author returns to the same list.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchWords = useMessages(authorSearchMessages);
   // The address bar follows the view (`lib/boks/reader-address.ts`): whether an
   // author page is open, and which bok has its own address right now.
   const authorOpenRef = useRef(false);
@@ -1593,9 +1600,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       setAftertastes(current => ({ ...current, [currentStory.id]: tags }));
     },
   };
-  const readerOverlayOpen = Boolean(onboardingOpen || whatToReadOpen || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
+  const readerOverlayOpen = Boolean(onboardingOpen || whatToReadOpen || authPanelOpen || commentOpen || authorSheet || searchOpen || bokMenuOpen || shareOpen || hideTarget || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft);
   const readerInteractionBlocked = Boolean(
-    onboardingOpen || whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
+    onboardingOpen || whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || searchOpen || bokMenuOpen || shareOpen || hideTarget || cinemaOpen || poem || seriesOpen || openIssue || formatLoading || feedbackMilestone !== null || letterView || lineDraft
   );
   const coverInspection = useCoverInspection(coverRef, currentStoryId,
     Boolean(currentStory && getBokArtwork(currentStory) && !readerInteractionBlocked && storyTransition.phase === "idle"),
@@ -1867,14 +1874,14 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
   // Visibility may resume a clock only when its reading surface is eligible.
   // Settings, decorative covers, final actions and paused audio are all holds.
   useEffect(() => {
-    const overlay = onboardingOpen || whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
+    const overlay = onboardingOpen || whatToReadOpen || ribbonPlaying || authPanelOpen || commentOpen || authorSheet || searchOpen || bokMenuOpen || shareOpen || hideTarget || openIssue || feedbackMilestone !== null || formatLoading;
     const reading = formatOnScreen ? formatPlaying : !seriesOpen && readingPhase === "reading";
     if (overlay || !reading) readingClock.current.hold();
     else {
       readingClock.current.release();
       if (document.visibilityState === "visible") readingClock.current.resume();
     }
-  }, [onboardingOpen, whatToReadOpen, ribbonPlaying, authPanelOpen, commentOpen, authorSheet, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
+  }, [onboardingOpen, whatToReadOpen, ribbonPlaying, authPanelOpen, commentOpen, authorSheet, searchOpen, bokMenuOpen, shareOpen, hideTarget, openIssue, feedbackMilestone, formatLoading, formatOnScreen, formatPlaying, seriesOpen, readingPhase]);
 
   // Start is measured in foreground reading seconds, never cover dwell.
   useEffect(() => {
@@ -2714,6 +2721,19 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     return signal.aborted ? true : matches > 0;
   }
 
+  /** The magnifier: find an author by name, over the bok, without leaving it. */
+  function openAuthorSearch() {
+    setCommentOpen(false);
+    setBokMenuOpen(false);
+    setSearchOpen(true);
+    revealReaderChrome(0);
+  }
+
+  function openSearchResult(result: AuthorSearchResult) {
+    if (result.target.kind === "byline") openAuthor(result.target.accountHandle, result.target.byline);
+    else openAuthor(result.target.handle);
+  }
+
   function openBokMenu() {
     setCommentOpen(false);
     setBokMenuOpen(true);
@@ -3420,6 +3440,22 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
     />}
   </>;
 
+  const searchPanel = searchOpen && (
+    <ReaderSheet
+      label={searchWords.title}
+      onClose={() => setSearchOpen(false)}
+      className={`reader-sheet--search${authorSheet ? " reader-sheet--under" : ""}`}
+      inactive={Boolean(authorSheet)}
+    >
+      <AuthorSearchContent
+        search={searchBoksAuthors}
+        active={!authorSheet}
+        onClose={() => setSearchOpen(false)}
+        onOpenAuthor={openSearchResult}
+      />
+    </ReaderSheet>
+  );
+
   const authorPanel = authorSheet && (
     <AuthorSheet
       key={`${authorSheet.handle}|${authorSheet.authorName ?? ""}|${authorSheet.follow ? "follow" : ""}`}
@@ -3433,6 +3469,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       onOpenAccount={authorSheet.authorName ? () => openAuthor(authorSheet.handle) : undefined}
       onOpenBok={(storyId) => {
         closeAuthor("replace");
+        setSearchOpen(false);
         // Opened over the Series shelf: a series piece starts its player, as
         // from the shelf itself; anything else leaves the shelf for the feed.
         // Opening it in the feed under the shelf left the shelf on screen.
@@ -3448,6 +3485,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         // and the follow goes through then (the effect on `hasSignedInAccount`).
         rememberPendingFollow({ handle: authorSheet.handle, authorName: authorSheet.authorName });
         closeAuthor("replace");
+        setSearchOpen(false);
         openAccount("manual", "follow");
       }}
     />
@@ -3478,6 +3516,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           onSeries={openSeries}
           onYou={() => openAccount("manual")}
         />}
+        {searchPanel}
         {authorPanel}
         {accountPanel}
         {dailyOverlays}
@@ -3505,6 +3544,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           />
         </div>
         {!readerOverlayOpen && <ReaderTabs className="reader-tabs--pinned" active="feed" seriesIsNew={seriesIsNew} onFeed={openFeed} onSeries={openSeries} onYou={() => openAccount("manual")} />}
+        {searchPanel}
         {authorPanel}
         {accountPanel}
         {dailyOverlays}
@@ -3547,6 +3587,9 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             <span className="reader-topbar__mark"><BoksLogo seasonal={readingPhase === "cover"} /></span>
             <div className="reader-topbar__tools reader-ui">
               {readingPhase !== "cover" && <button type="button" aria-label={t("Text settings", "Настройки текста")} onClick={() => openAccount("manual", "general", "typography")}><ReaderTypeIcon size={23} /></button>}
+            <button type="button" className="reader-search-trigger reader-ui" onClick={openAuthorSearch} aria-label={searchWords.title} aria-haspopup="dialog">
+              <ReaderSearchIcon size={23} />
+            </button>
             <button type="button" className="reader-more reader-ui" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}>
               <ReaderMoreIcon className="size-5" />
             </button>
@@ -3570,7 +3613,10 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
               <header className="reader-cover__desktop-bar">
                 <button type="button" onClick={() => openAccount("manual", "general", "home")} aria-label={t("Settings", "Настройки")}><ReaderSettingsIcon size={23} /></button>
                 <BoksLogo seasonal />
-                <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
+                <span className="reader-cover__desktop-tools">
+                  <button type="button" onClick={openAuthorSearch} aria-label={searchWords.title} aria-haspopup="dialog"><ReaderSearchIcon size={23} /></button>
+                  <button type="button" onClick={openBokMenu} aria-label={t("More about this bok", "Об этом боке")}><ReaderMoreIcon size={23} /></button>
+                </span>
               </header>
               {getBokArtwork(currentStory) ? <CoverArtwork bokId={currentStory.id} artwork={getBokArtwork(currentStory)!} active={!readerInteractionBlocked && storyTransition.phase === "idle"} /> : <span className="reader-cover__letter" aria-hidden="true">{currentStory.title.charAt(0)}</span>}
               <CoverHeading artwork={getBokArtwork(currentStory)}>
@@ -3701,6 +3747,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
           <GuestReminderCard kind={guestNoticeStep.kind} count={guestReadCount} onCreate={() => openAccount("notice")} onClose={() => setGuestNoticeStep(null)} />
         )}
 
+        {searchPanel}
         {authorPanel}
 
         {commentOpen && currentStory && (

@@ -20,3 +20,4 @@ export const ReaderPlayIcon = glyph(<path d="m8 4 12 8-12 8z" fill="currentColor
 export const ReaderTypeIcon = glyph(<path d="M3 7V4h16v3M11 4v16M7 20h8M17 12h6m-3 0v8" />);
 export const ReaderSettingsIcon = glyph(<path d="M3 7h8m4 0h6M3 17h3m4 0h11M11 4v6M6 14v6" />);
 export const ReaderMoreIcon = glyph(<><circle cx="5" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="19" cy="12" r="1" fill="currentColor" /></>);
+export const ReaderSearchIcon = glyph(<><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></>);

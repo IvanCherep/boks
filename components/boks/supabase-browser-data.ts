@@ -65,6 +65,8 @@ import type { GestureTrace } from "@/lib/boks/studies/gesture-trace";
 import type { ReaderOutcomeRow } from "@/lib/recsys/aggregate";
 import type { UiLanguage } from "@/lib/i18n/ui-language";
 import type { ApplicationStage } from "@/lib/boks/author/pipeline";
+import type { AuthorSearchPage } from "@/components/boks/author-search/author-search-controller";
+import { toAuthorSearchPage } from "@/components/boks/author-search/search-answer";
 import {
   buildRecommendationLab,
   defaultExperimentConfig,
@@ -561,6 +563,20 @@ export async function loadBoksAuthor(handle: string, authorName?: string): Promi
     throw result.error;
   }
   return (result.data ?? null) as AuthorProfile | null;
+}
+
+/**
+ * One page of authors for the search panel (`search_boks_authors`): real
+ * authors of published boks, cut by the server to its own limit. Guests ask
+ * with their anonymous session. Aborting drops the request in flight.
+ */
+export async function searchBoksAuthors(query: string, options: { signal: AbortSignal; limit: number }): Promise<AuthorSearchPage> {
+  if (!supabase) throw new Error("Search is not configured.");
+  const result = await supabase
+    .rpc("search_boks_authors", { p_query: query, p_limit: options.limit })
+    .abortSignal(options.signal);
+  if (result.error) throw result.error;
+  return toAuthorSearchPage(result.data);
 }
 
 /**

@@ -14,6 +14,7 @@ import "./author-stage.css";
 import "./author-cabinet-v51.css";
 import "./admin-v44.css";
 import "./legal-v45.css";
+import "./author-search.css";
 import { themeBootScript, browserStatusBarColor } from "@/components/boks/theme";
 import { headers } from "next/headers";
 import { uiLanguageBootScript, uiLanguageFromRequest } from "@/lib/i18n/ui-language";
