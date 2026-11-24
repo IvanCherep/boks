@@ -32,7 +32,11 @@ describe("author agreement", () => {
 
   it("has no QR without the details, and prefers the team's link", () => {
     expect(gostPaymentQr({ ...details, account: null }, 30000, "x")).toBeNull();
-    expect(paymentQr({ ...agreement, payment: { ...details, payLink: "https://qr.nspk.ru/AS1000" } })).toEqual({ kind: "link", value: "https://qr.nspk.ru/AS1000" });
+    // The details first (the sum and purpose fill in); the link only without them.
+    expect(paymentQr({ ...agreement, payment: { ...details, payLink: "https://qr.nspk.ru/AS1000" } })?.kind).toBe("details");
+    expect(paymentQr({ ...agreement, payment: { ...details, account: null, payLink: "https://qr.nspk.ru/AS1000" } })).toEqual({ kind: "link", value: "https://qr.nspk.ru/AS1000" });
+    expect(gostPaymentQr({ ...details, recipientKind: "company", kpp: "770801001" }, 30000, "x")).toContain("|KPP=770801001|");
+    expect(gostPaymentQr({ ...details, recipientKind: "person", kpp: "770801001" }, 30000, "x")).not.toContain("KPP=");
     expect(paymentQr(agreement)?.kind).toBe("details");
     expect(paymentQr({ ...agreement, payment: null })).toBeNull();
   });

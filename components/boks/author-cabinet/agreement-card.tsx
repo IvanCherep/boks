@@ -191,6 +191,13 @@ export function AgreementCard({
         </div>
       ) : (
         <div className="aag-pay">
+          {pay?.payLink ? (
+            <div className="aag-link-pay">
+              <a className="btn btn-red" href={pay.payLink} target="_blank" rel="noreferrer noopener">Оплатить по ссылке СБП</a>
+              <p className="aag-small">Откроется перевод в приложении вашего банка. Впишите сумму {rub(agreement.priceRub)} и, если банк спросит, назначение платежа из поля ниже.</p>
+            </div>
+          ) : null}
+
           {qr ? (
             <div className="aag-qr">
               <div className="aag-qr__code" role="img" aria-label="QR-код для оплаты" dangerouslySetInnerHTML={{ __html: qr.svg }} />
@@ -198,7 +205,7 @@ export function AgreementCard({
                 <strong>Оплата по QR-коду.</strong> Если кабинет открыт на компьютере, откройте на телефоне приложение банка, найдите «Оплата по QR» или сканер и наведите камеру:
                 {qr.kind === "details" ? " получатель, сумма и назначение заполнятся сами." : " откроется перевод через СБП."} Проверьте сумму: {rub(agreement.priceRub)}.
               </p>
-              {qr.kind === "link" && (
+              {qr.kind === "link" && !pay?.payLink && (
                 <a className="btn btn-secondary aag-qr__open" href={qr.value} target="_blank" rel="noreferrer noopener">Открыть оплату на телефоне</a>
               )}
             </div>
@@ -216,7 +223,29 @@ export function AgreementCard({
             </div>
           ) : null}
 
-          {!qr && !pay?.sbpPhone && (
+          {pay?.account && pay.bic ? (
+            <details className="aag-sbp aag-requisites" open={!qr && !pay.payLink && !pay.sbpPhone}>
+              <summary><strong>Перевод по реквизитам</strong></summary>
+              <dl>
+                {([
+                  ["Получатель", pay.recipient],
+                  ["Счёт получателя", pay.account],
+                  ["Банк получателя", pay.bank],
+                  ["БИК", pay.bic],
+                  ["Корр. счёт", pay.corrAccount],
+                  ["ИНН получателя", pay.inn],
+                  ["КПП получателя", pay.recipientKind === "company" ? pay.kpp : null],
+                  ["ИНН банка", pay.bankInn],
+                  ["КПП банка", pay.bankKpp],
+                ] as [string, string | null | undefined][]).filter(([, value]) => value).map(([label, value]) => (
+                  <div key={label}><dt>{label}</dt><dd>{value} <CopyButton label={label} copied={copied} onCopy={() => void copy(label, value!)} /></dd></div>
+                ))}
+                <div><dt>Сумма</dt><dd>{rub(agreement.priceRub)}</dd></div>
+              </dl>
+            </details>
+          ) : null}
+
+          {!qr && !pay?.sbpPhone && !pay?.payLink && !pay?.account && (
             <p className="aag-card__lead">Реквизиты для оплаты пришлёт редакция. Если письма нет, напишите нам в «Просьбы и предложения».</p>
           )}
 

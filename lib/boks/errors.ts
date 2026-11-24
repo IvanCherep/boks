@@ -207,6 +207,8 @@ const russianSentences: Record<string, string> = {
   "Give the amount that came.": "Укажите сумму, которая пришла.",
   "The receipt is a link from «Мой налог».": "Чек: ссылка из «Мой налог».",
   "This contract is not marked as paid.": "Этот договор не отмечен оплаченным.",
+  "Check the details: account and correspondent account 20 digits, BIC 9, INN 10 or 12, KPP 9, bank INN 10, phone +7 and 10 digits, link https://.":
+    "Проверьте реквизиты: счёт и корр. счёт по 20 цифр, БИК 9, ИНН 10 или 12, КПП 9, ИНН банка 10, телефон +7 и 10 цифр, ссылка https://.",
   "Check the details: account and correspondent account 20 digits, BIC 9, INN 10 or 12, phone +7 and 10 digits, link https://.": "Проверьте реквизиты: счёт и корр. счёт по 20 цифр, БИК 9, ИНН 10 или 12, телефон +7 и 10 цифр, ссылка с https://.",
   "Choose the plan.": "Выберите тариф.",
   "Write the author's full name.": "Впишите ФИО автора полностью.",

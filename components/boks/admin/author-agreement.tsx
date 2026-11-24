@@ -15,7 +15,7 @@ import {
   updateAuthorPayment,
 } from "@/components/boks/author-spaces/data";
 import { readableBoksError } from "@/lib/boks/errors";
-import { legalHref, legalKinds, paymentKindName, planName, rub, ruDate, type AuthorPayment, type AuthorPlan, type PaymentDetails, type PayState, type StudioAgreement } from "@/lib/boks/author/agreement";
+import { legalHref, legalKinds, paymentKindName, planName, rub, ruDate, type AuthorPayment, type AuthorPlan, type PaymentDetails, type PayState, type RecipientKind, recipientKindName, type StudioAgreement } from "@/lib/boks/author/agreement";
 import { useUiLanguage } from "@/components/boks/ui-language";
 import { loadBoksPeople } from "@/components/boks/supabase-browser-data";
 
@@ -295,16 +295,19 @@ export function AuthorAgreements() {
   );
 }
 
-const detailFields: { key: keyof PaymentDetails; label: string; hint?: string; placeholder?: string }[] = [
-  { key: "recipient", label: "Получатель (ФИО полностью)", placeholder: "Курносов Андрей Алексеевич" },
-  { key: "inn", label: "ИНН получателя", hint: "12 цифр" },
+const detailFields: { key: keyof PaymentDetails; label: string; hint?: string; placeholder?: string; companyOnly?: boolean }[] = [
+  { key: "recipient", label: "Получатель", hint: "Физлицо и самозанятый: ФИО полностью. ИП: «ИП Фамилия Имя Отчество». Организация: краткое название.", placeholder: "Фамилия Имя Отчество" },
+  { key: "inn", label: "ИНН получателя", hint: "12 цифр (у организации 10)" },
+  { key: "kpp", label: "КПП получателя", hint: "Только у организации, 9 цифр", companyOnly: true },
   { key: "account", label: "Счёт получателя", hint: "20 цифр" },
-  { key: "bank", label: "Банк", placeholder: "АО «АЛЬФА-БАНК»" },
+  { key: "bank", label: "Банк", placeholder: "АО «Альфа-Банк», г. Москва" },
   { key: "bic", label: "БИК", hint: "9 цифр" },
   { key: "corrAccount", label: "Корр. счёт", hint: "20 цифр" },
-  { key: "sbpPhone", label: "Телефон для СБП", placeholder: "+7 900 000-00-00" },
+  { key: "bankInn", label: "ИНН банка", hint: "10 цифр, если банк просит при переводе" },
+  { key: "bankKpp", label: "КПП банка", hint: "9 цифр" },
+  { key: "sbpPhone", label: "Телефон для СБП (необязательно)", placeholder: "+7 900 000-00-00" },
   { key: "sbpBank", label: "Банк для СБП", placeholder: "Альфа-Банк" },
-  { key: "payLink", label: "Готовая ссылка на оплату (необязательно)", hint: "Если банк дал ссылку или QR СБП: QR-код в кабинете будет вести на неё вместо реквизитов." },
+  { key: "payLink", label: "Ссылка на оплату через СБП (необязательно)", hint: "Ссылка банка для перевода: в кабинете это отдельная кнопка «Оплатить по ссылке СБП». QR-код всё равно собирается из реквизитов, с суммой и назначением." },
 ];
 
 function PaymentDetailsForm({ onClose }: { onClose: () => void }) {
@@ -330,8 +333,15 @@ function PaymentDetailsForm({ onClose }: { onClose: () => void }) {
   return (
     <div className="aag-details">
       <p className="author-applications__muted">QR-код в кабинете автора собирается из этих реквизитов (формат банковской квитанции): сумма и назначение с номером договора заполняются сами. Проверьте его в паре банковских приложений, прежде чем отправлять авторам.</p>
+      <label className="asp-field">
+        <span>Кто получает оплату</span>
+        <select className="aag-select" value={details.recipientKind ?? "person"} onChange={(event) => setDetails({ ...details, recipientKind: event.target.value as RecipientKind })}>
+          {(Object.keys(recipientKindName) as RecipientKind[]).map((kind) => <option key={kind} value={kind}>{recipientKindName[kind]}</option>)}
+        </select>
+        <small>Сменится форма (например, на ИП): поменяйте здесь и реквизиты ниже. Авторы сразу увидят новые; уже оплаченные договоры не меняются.</small>
+      </label>
       <div className="aag-details__grid">
-        {detailFields.map((field) => (
+        {detailFields.filter((field) => !field.companyOnly || details.recipientKind === "company").map((field) => (
           <label key={field.key} className="asp-field">
             <span>{field.label}</span>
             <Input value={String(details[field.key] ?? "")} placeholder={field.placeholder} onChange={(event) => setDetails({ ...details, [field.key]: event.target.value })} />

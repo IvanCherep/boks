@@ -56,6 +56,9 @@
 @media (max-width:560px){
   /* On a phone the QR code cannot be scanned by the same phone: the СБП transfer comes first. */
   .aag-sbp{order:-1}
+  /* On a phone the bank link comes first, then a transfer by phone number; the details to copy after the code. */
+  .aag-link-pay{order:-2}
+  .aag-requisites{order:0}
   .aag-qr{grid-template-columns:1fr}
   .aag-qr__code{width:200px;height:200px}
   .aag-sbp dl div{grid-template-columns:1fr;gap:2px}
@@ -180,3 +183,12 @@
   .apl-act{grid-column:1/-1;justify-self:start}
   .apl-search{max-width:none}
 }
+
+/* The payment sheet: the bank's СБП link, the details to copy. */
+.aag-link-pay{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0 16px}
+.aag-requisites summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+.aag-requisites summary::-webkit-details-marker{display:none}
+.aag-requisites summary::after{content:"▾";font-size:12px;color:#6b6b6b}
+.aag-requisites[open] summary::after{content:"▴"}
+.aag-requisites dd{overflow-wrap:anywhere}
+.aag-select{width:100%;min-height:40px;padding:0 10px;border:1px solid #e3ddd0;border-radius:8px;background:#fff;font:inherit}

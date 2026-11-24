@@ -41,9 +41,24 @@ export const planName: Record<AuthorPlan, string> = {
   page_no_promotion: "Кабинет автора без продвижения",
 };
 
+/** Who receives the money: a private person today, later a sole trader or a company. */
+export type RecipientKind = "person" | "self_employed" | "sole_trader" | "company";
+export const recipientKindName: Record<RecipientKind, string> = {
+  person: "Физическое лицо",
+  self_employed: "Самозанятый",
+  sole_trader: "ИП",
+  company: "Организация",
+};
+
 export type PaymentDetails = {
   recipient: string | null;
+  recipientKind?: RecipientKind | null;
   inn: string | null;
+  /** A company's KPP; nobody else has one. */
+  kpp?: string | null;
+  /** Some banks ask for the bank's own INN and KPP in a transfer by details. */
+  bankInn?: string | null;
+  bankKpp?: string | null;
   account: string | null;
   bank: string | null;
   bic: string | null;
@@ -178,15 +193,22 @@ export function gostPaymentQr(details: PaymentDetails | null | undefined, amount
   ];
   if (details.corrAccount) parts.push(`CorrespAcc=${details.corrAccount}`);
   if (details.inn) parts.push(`PayeeINN=${details.inn}`);
+  if (details.recipientKind === "company" && details.kpp) parts.push(`KPP=${details.kpp}`);
   parts.push(`Sum=${Math.round(amountRub * 100)}`, `Purpose=${field(purpose)}`);
   return parts.join("|");
 }
 
-/** What the QR code on the payment screen carries: the team's ready link first, else the bank details. */
+/**
+ * What the QR code on the payment screen carries: the bank details first, so
+ * the bank app fills in the recipient, the sum and the purpose with the
+ * contract's number; the team's ready СБП link only when the details are not
+ * complete (the link is a button of its own beside the code).
+ */
 export function paymentQr(agreement: Pick<AuthorAgreement, "number" | "plan" | "acceptedAt" | "priceRub" | "payment">) {
-  if (agreement.payment?.payLink) return { kind: "link" as const, value: agreement.payment.payLink };
   const value = gostPaymentQr(agreement.payment, agreement.priceRub, paymentPurpose(agreement));
-  return value ? { kind: "details" as const, value } : null;
+  if (value) return { kind: "details" as const, value };
+  if (agreement.payment?.payLink) return { kind: "link" as const, value: agreement.payment.payLink };
+  return null;
 }
 
 /** «+79001234567» → «+7 900 123-45-67». */

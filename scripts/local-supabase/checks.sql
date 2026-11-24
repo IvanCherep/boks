@@ -6500,3 +6500,28 @@ begin
   perform public.boks_test_logout();
 end $$;
 rollback;
+
+-- Payment details for any recipient (20261124170000).
+begin;
+insert into auth.users (id, email, is_anonymous) values ('0f0f2600-0000-4000-8000-000000000001', 'paydet-editor@boks.test', false);
+insert into public.user_profiles (user_id, handle, role, terms_accepted_at, terms_version) values ('0f0f2600-0000-4000-8000-000000000001', 'paydet_editor', 'admin', now(), 'v1')
+on conflict (user_id) do update set role = excluded.role;
+do $$
+declare
+  v jsonb;
+begin
+  perform public.boks_test_login('0f0f2600-0000-4000-8000-000000000001');
+  v := public.studio_save_payment_details(jsonb_build_object('recipient', 'Проба Получатель', 'recipientKind', 'person', 'inn', '123456789012', 'kpp', '770801001',
+    'account', '40817810000000000001', 'bank', 'Банк', 'bic', '044525000', 'corrAccount', '30101810000000000000', 'bankInn', '7700000000', 'bankKpp', '770801001'));
+  perform public.boks_assert(v ->> 'recipientKind' = 'person' and v ->> 'kpp' is null and v ->> 'bankInn' = '7700000000', 'a person keeps no KPP; the bank''s INN is kept');
+  v := public.studio_save_payment_details(v || jsonb_build_object('recipientKind', 'company', 'inn', '7700000001', 'kpp', '770801001'));
+  perform public.boks_assert(v ->> 'recipientKind' = 'company' and v ->> 'kpp' = '770801001', 'a company keeps its KPP');
+  begin
+    perform public.studio_save_payment_details(v || jsonb_build_object('bankInn', '12'));
+    perform public.boks_assert(false, 'a malformed bank INN is refused');
+  exception when others then
+    perform public.boks_assert(sqlerrm like 'Check the details%', 'a malformed bank INN is refused');
+  end;
+  perform public.boks_test_logout();
+end $$;
+rollback;
