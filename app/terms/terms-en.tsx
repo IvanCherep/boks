@@ -96,7 +96,8 @@ export const termsEn: Omit<LegalDocumentProps, "page" | "language"> = {
         <p>
           By submitting, you confirm that the content is yours to publish - that you wrote it, or hold the rights to
           it, or that it is in the public domain - and that publishing it does not infringe anyone&apos;s copyright,
-          privacy or other rights. You are responsible for what you publish. If a claim is made against boks because
+          privacy or other rights. You are fully responsible for what you publish, including holding the rights to
+          the texts and recordings; boks does not check who owns them. If a claim is made against boks because
           of content you submitted in breach of these Terms, you agree to cover the costs that result, to the extent
           the law allows. You can ask us to remove your content at any time.
         </p>
@@ -114,7 +115,8 @@ export const termsEn: Omit<LegalDocumentProps, "page" | "language"> = {
         Open the work&apos;s menu and choose &ldquo;Report a concern&rdquo;. If you are the rights holder or act for
         them, you can also write to <a href={supportMailto}>{supportEmail}</a>. Include the link to the publication,
         name the work and describe which rights are affected. We will look into it and, where there are grounds,
-        restrict access to the publication. Accounts that repeatedly publish infringing content are closed.
+        restrict access to the publication or remove it. On a rights holder&apos;s complaint and in disputed cases,
+        such as a dispute over authorship, a publication may be taken down until the dispute is settled. Accounts that repeatedly publish infringing content are closed.
       </p>,
     },
     {
