@@ -6662,8 +6662,23 @@ begin
     'a publisher and its writers without a page of their own are not results');
   perform public.boks_assert(jsonb_array_length(public.search_boks_authors('пустая', 20) -> 'results') = 0, 'a page with nothing published is not a result');
   perform public.boks_assert(jsonb_array_length(public.search_boks_authors('черновикова', 20) -> 'results') = 0, 'a page that is not public is not a result');
+
+  -- A new author published with a photo is found at once: no list to register in.
+  perform public.boks_test_login('22222222-2222-4222-8222-222222222222');
+  update public.author_spaces
+  set status = 'published', published_at = now(),
+      photo = '\xffd8ffe0'::bytea || convert_to(repeat('x', 200), 'UTF8'), photo_version = 1
+  where owner_user_id = '5ea70000-0000-4000-8000-000000000005';
+  perform public.boks_test_login('5ea70000-0000-4000-8000-000000000003', true);
+  v := public.search_boks_authors('черновикова', 20);
+  perform public.boks_assert(
+    jsonb_array_length(v -> 'results') = 1 and v #>> '{results,0,handle}' = 'srch_draft' and (v #>> '{results,0,photoVersion}')::int = 1,
+    'a page published with a photo appears in search straight away, with its photo');
+  perform public.boks_assert(exists (
+      select 1 from jsonb_array_elements(public.search_boks_authors('', 30) -> 'results') r where r ->> 'handle' = 'srch_draft'),
+    'and on the first page, before anything is typed');
   perform public.boks_assert(not exists (
-      select 1 from jsonb_array_elements(public.search_boks_authors('', 30) -> 'results') r where r ->> 'handle' in ('srch_pub', 'srch_empty', 'srch_draft')),
+      select 1 from jsonb_array_elements(public.search_boks_authors('', 30) -> 'results') r where r ->> 'handle' in ('srch_pub', 'srch_empty')),
     'the first page holds only authors with a public page');
 
   perform public.boks_test_login('22222222-2222-4222-8222-222222222222');
