@@ -191,7 +191,7 @@ function PaymentActions({ agreement, onChange }: { agreement: StudioAgreement; o
           <div className="aag-team__form">
             <label className="asp-field"><span>День поступления</span><Input type="date" value={paidOn} max={today} onChange={(event) => setPaidOn(event.target.value)} /></label>
             <label className="asp-field"><span>Сумма, ₽</span><Input inputMode="numeric" value={amount} onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))} /></label>
-            <label className="asp-field"><span>Ссылка на чек из «Мой налог»</span><Input value={receipt} placeholder="https://lknpd.nalog.ru/api/v1/receipt/…" onChange={(event) => setReceipt(event.target.value)} /><small>Для нас: на сайте автор чек не видит. Отправьте его автору в личном сообщении. Можно добавить позже.</small></label>
+            <label className="asp-field"><span>Ссылка на чек из «Мой налог»</span><Input value={receipt} placeholder="https://lknpd.nalog.ru/api/v1/receipt/…" onChange={(event) => setReceipt(event.target.value)} /><small>Для нас: на сайте автор чек не видит. Отправьте его автору на почту (по договору, п. 5.3), можно продублировать в личном сообщении. Можно добавить позже.</small></label>
             <label className="asp-field"><span>Заметка для команды</span><Input value={note} placeholder="Перевод СБП от Анны С." onChange={(event) => setNote(event.target.value)} /></label>
             {Number(amount) !== agreement.priceRub && <p className="asp-warn">Сумма отличается от цены тарифа ({rub(agreement.priceRub)}).</p>}
             <div className="asp-buttons">

@@ -159,7 +159,7 @@ export function AgreementCard({
       {reported ? (
         <p className="aag-card__lead">
           <strong>Спасибо, вы сообщили об оплате.</strong> Проверяем поступление, обычно в течение одного-двух рабочих дней. Когда деньги придут,
-          здесь будет «Оплачен», чек мы пришлём вам в личном сообщении, а редакция начнёт делать Series. Тексты и голос можно добавлять и сейчас.
+          здесь будет «Оплачен», чек мы пришлём вам на почту, а редакция начнёт делать Series. Тексты и голос можно добавлять и сейчас.
         </p>
       ) : explained ? null : (
         <p className="aag-card__lead">
@@ -222,7 +222,7 @@ export function AgreementCard({
             <p>{purpose}</p>
             <CopyButton label="назначение" copied={copied} onCopy={() => void copy("назначение", purpose)} />
           </div>
-          <p className="aag-small">Чек из «Мой налог» пришлём вам в личном сообщении, когда получим оплату.</p>
+          <p className="aag-small">Чек из «Мой налог» пришлём вам на почту, когда получим оплату.</p>
           {problem && <p className="notice" role="alert">{problem}</p>}
           <div className="aag-actions">
             {!reported && <button type="button" className="btn btn-red" disabled={busy} onClick={() => void report()}>Я оплатил(а)</button>}
