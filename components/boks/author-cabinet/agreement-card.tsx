@@ -173,7 +173,7 @@ export function AgreementCard({
       <section className="aag-card aag-card--done" aria-label="Договор">
         {title}
         <p className="aag-card__state">
-          {agreement.payState === "paid" ? `Оплачен ${ruDate(agreement.periodStart)}` : agreement.payState === "waived" ? "Без оплаты, по договорённости с редакцией" : "Бесплатный тариф"}
+          {agreement.payState === "paid" ? `Оплачен ${ruDate(agreement.periodStart)}` : agreement.payState === "waived" ? "Оплата не требуется" : "Действует"}
           {until ? ` · ${until}` : ""}
         </p>
         <button type="button" className="aag-link" aria-expanded={showDocs} onClick={() => setShowDocs(!showDocs)}>

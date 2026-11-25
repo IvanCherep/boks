@@ -115,8 +115,7 @@ ours) and is written on the contract when it is accepted
 edition of the offer), contracts keep the number they were signed with.
 
 Switching a paid author to ours waives the payment on the contract
-(`pay_state = 'waived'`: the author sees «Без оплаты, по договорённости с
-редакцией», the year starts that day). Switching back asks for it again with
+(`pay_state = 'waived'`: the author sees «Оплата не требуется», the year starts that day). Switching back asks for it again with
 a fresh 30 days. An author with no paid contract cannot be made paid from
 here yet: they need an offer on a paid tariff, and an invitation is only for
 a page without an owner.
@@ -247,3 +246,12 @@ Walked end to end for friends of the team (`docs/author-runbook.md`, «Наш
 
 Not built: the site sends the author no email when a Series is ready; the team
 writes to them.
+
+## No "ours" in front of the author (2026-11-25)
+
+The author never reads that they are «наш автор», came by acquaintance or
+publish «по договорённости с редакцией»: an author with no contract sees the
+same Workshop as everyone, only without a payment step, and the contract page
+(reached only by a direct link for them) says «Документов пока нет». A waived
+payment reads «Оплата не требуется». «Наш автор» stays a word for the team in
+Studio.
