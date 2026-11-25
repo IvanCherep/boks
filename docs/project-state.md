@@ -277,6 +277,13 @@ See `docs/studies.md`.
 
 ## Live
 
+**Friends of the team (2026-11-25, release 20261125-113119-0885dc5).** The way
+in for an author of ours with no money was walked end to end on a local stack
+(no account / existing account, texts and a recording from Studio, the
+teleprompter, the author's own text, Series, the page opened with three). The
+invitation now waits for a chosen tariff (it started on the paid one), and the
+post date shows only under a contract. Steps: `docs/author-runbook.md`, «Наш автор».
+
 **"Что почитать" (2026-11-16).** A button above Read on the main feed's
 cover: mood (soft, puts matching boks first), form and author groups (strict,
 in retrieval); Apply opens a different bok carried in by the yellow ribbon;
