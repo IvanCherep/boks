@@ -1,25 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Download } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, SlidersHorizontal } from "lucide-react";
+import "@/app/share-kit.css";
 import { ReaderBackIcon as ArrowLeft } from "./reader/reader-icons";
 import { Button } from "@/components/ui/button";
 import { useReaderPreferences } from "@/components/boks/reader-preferences";
-import { bokShareUrl, renderBokPoster, type ShareBok } from "@/components/boks/share-card-export";
+import { bokShareUrl, type ShareBok } from "@/components/boks/share-card-export";
 import { loadBokSlug } from "@/components/boks/supabase-browser-data";
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
+import { russianShareUrl } from "@/lib/boks/share-link";
+import { canShareKitFile, KitOptions, KitPreview, useKitCard } from "@/components/boks/story-kit/kit-editor";
+import { kitWorkFromStory } from "@/components/boks/story-kit/kit-subjects";
+import { shareToStory } from "@/components/boks/story-kit/kit-share";
 
-import { bokCoverStyle } from "./reader/bok-cover-palette";
-import { bokArtworkFocus } from "./reader/bok-artwork";
+/**
+ * "Share bok": the link, and a picture of the bok drawn by the same engine as
+ * the author's "For social media" (`docs/story-kit.md`). The picture is ready
+ * as the sheet opens; its choices (format, style, frame, lines) stay folded
+ * behind one quiet button, so a reader who only wants the link sees no more
+ * than before.
+ */
+type ShareStory = ShareBok & { authorHandle?: string; body?: string };
 
-export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareBok; artwork?: string | null; onClose: () => void; onShared?: () => void }) {
+export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareStory; artwork?: string | null; onClose: () => void; onShared?: () => void }) {
   const { t } = useReaderPreferences();
-  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [showLink, setShowLink] = useState(false);
   const [fallbackLink, setFallbackLink] = useState<string | null>(null);
-  const [artworkFailed, setArtworkFailed] = useState(false);
-  const [posterDownloadUrl, setPosterDownloadUrl] = useState<string | null>(null);
+  const [tuning, setTuning] = useState(false);
+  const [offerDownload, setOfferDownload] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   // Asked for as the sheet opens, not on the tap: a share sheet must open in
   // the tap itself, with no wait in between. A tap before the answer shares
@@ -32,13 +42,15 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
   }, [story.id]);
   const link = typeof window === "undefined" ? "" : bokShareUrl({ id: story.id, slug }, window.location.origin);
 
+  const subject = useMemo(() => kitWorkFromStory(story, artwork ?? null), [story, artwork]);
+  const kit = useKitCard(subject, story.authorHandle ?? "");
+  const canShareFile = canShareKitFile(kit.file);
+
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     panelRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
     return () => previous?.focus();
   }, []);
-
-  useEffect(() => () => { if (posterDownloadUrl) URL.revokeObjectURL(posterDownloadUrl); }, [posterDownloadUrl]);
 
   async function copyLink(text = link) {
     try {
@@ -52,31 +64,26 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
     }
   }
 
-  async function saveCard() {
-    setBusy(true);
-    setStatus("");
-    try {
-      const blob = await renderBokPoster(story, artwork);
-      const file = new File([blob], `boks-${story.id}.png`, { type: "image/png" });
-      const url = URL.createObjectURL(blob);
-      setPosterDownloadUrl(url);
-      // Some embedded browsers advertise file sharing but never resolve its
-      // promise. The generated PNG remains a usable download in that case.
-      setBusy(false);
-      setStatus(t("Your card is ready. You can also download the PNG below.", "Карточка готова. Можно скачать PNG по ссылке ниже."));
-      if (navigator.canShare?.({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: story.title }); onShared?.(); return; }
-        catch (error) { if (error instanceof Error && error.name === "AbortError") return; }
-      }
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = file.name;
-      anchor.click();
-      onShared?.();
-      setStatus(t("Card ready to save.", "Карточка готова к сохранению."));
-    } catch {
-      setStatus(t("Could not create the card. Try again or copy the link.", "Не удалось создать карточку. Попробуйте ещё раз или скопируйте ссылку."));
-    } finally { setBusy(false); }
+  function download() {
+    if (!kit.picture) return;
+    const anchor = document.createElement("a");
+    anchor.href = kit.picture.url;
+    anchor.download = kit.fileName;
+    anchor.click();
+    onShared?.();
+    setStatus(t("The picture is saved.", "Картинка сохранена."));
+  }
+
+  async function sharePicture() {
+    if (!kit.file || !kit.ready) return;
+    if (!canShareFile) { download(); return; }
+    // Some embedded browsers advertise file sharing but never answer: the download stays at hand.
+    setOfferDownload(true);
+    // The link goes to the clipboard in the same tap, for the story's "Link" sticker.
+    const { outcome, copied } = await shareToStory(kit.file, russianShareUrl(link), { share: (data) => navigator.share(data), clipboard: navigator.clipboard });
+    if (outcome === "shared") onShared?.();
+    if (outcome === "failed") setStatus(t("The phone did not open its menu. Save the picture below.", "Телефон не открыл меню. Сохраните картинку по ссылке ниже."));
+    else if (copied) setStatus(t("The link is copied: in a story, paste it into the “Link” sticker.", "Ссылка скопирована: в сторис вставьте её в стикер «Ссылка»."));
   }
 
   return (
@@ -95,17 +102,22 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareB
       onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
       <section className="social-page share-page" ref={panelRef}>
         <header className="social-page-header"><Button size="icon" variant="ghost" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></Button><span>{t("Share bok", "Поделиться боком")}</span><span /></header>
-        <div className={`bok-share-poster${artwork && !artworkFailed ? " bok-share-poster--art" : ""}`} style={bokCoverStyle(story.id) as CSSProperties}>
-          {/* The real artwork is decorative; title and byline stay selectable. */}
-          {artwork && !artworkFailed && <img src={artwork} alt="" style={{ objectPosition: bokArtworkFocus(story.id) }} onError={() => setArtworkFailed(true)} />}
-          {(!artwork || artworkFailed) && <span className="bok-share-poster-letter" aria-hidden="true">{story.title.trim().charAt(0)}</span>}
-          <span className="bok-share-wordmark">boks</span>
-          <div className="bok-share-copy" translate="no"><h1>{story.title}</h1><p>{story.authorName}</p></div>
-          <small>{typeof window === "undefined" ? "boks" : window.location.hostname}</small>
+        <div className={`share-kit${tuning ? " is-tuning" : ""}`}>
+          <KitPreview kit={kit} />
+          <button type="button" className="share-kit-toggle" aria-expanded={tuning} onClick={() => setTuning((now) => !now)}>
+            <SlidersHorizontal aria-hidden="true" />
+            {tuning ? t("Done", "Готово") : t("Change the picture", "Изменить картинку")}
+          </button>
+          {tuning && <div className="share-kit-options"><KitOptions kit={kit} onNotice={setStatus} /></div>}
         </div>
-        <div className="share-controls"><ShareLinkPair url={link} share={{ title: story.title, onShared }} onCopy={async (text) => { const ok = await copyLink(text); if (ok === false) setFallbackLink(text); return ok; }} /><Button variant="outline" onClick={() => void saveCard()} disabled={busy}><Download />{busy ? t("Creating…", "Создаём…") : t("Save card", "Сохранить картинку")}</Button></div>
+        <div className="share-controls">
+          <ShareLinkPair url={link} share={{ title: story.title, onShared }} onCopy={async (text) => { const ok = await copyLink(text); if (ok === false) setFallbackLink(text); return ok; }} />
+          <Button variant="outline" onClick={() => void sharePicture()} disabled={!kit.ready}>
+            <Download />{canShareFile ? t("Share the picture", "Поделиться картинкой") : t("Save the picture", "Сохранить картинку")}
+          </Button>
+        </div>
         {showLink && <input className="share-link-fallback" aria-label={t("Bok link", "Ссылка на бок")} value={fallbackLink ?? link} readOnly onFocus={(event) => event.currentTarget.select()} />}
-        {posterDownloadUrl && <a className="share-download-link" href={posterDownloadUrl} download={`boks-${story.id}.png`} onClick={() => onShared?.()}>{t("Download PNG", "Скачать PNG")}</a>}
+        {offerDownload && kit.picture && <a className="share-download-link" href={kit.picture.url} download={kit.fileName} onClick={() => onShared?.()}>{t("Download the picture", "Скачать картинку")}</a>}
         {status && <p className="social-status" role="status">{status}</p>}
       </section>
     </div>

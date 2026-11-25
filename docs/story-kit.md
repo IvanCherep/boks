@@ -99,3 +99,15 @@ database; the sheet wraps itself in `.acab` to keep the cabinet's look there.
 - A moving story: the curtain opening on the cover as a vertical MP4, made by
   the curtain job on the server (`deploy/curtain/`), the way the link loops are.
 - The same sheet on the reader's Share sheet.
+
+## The same picture for readers (2026-11-25, local)
+
+The reader's **Share bok** sheet (`components/boks/share-card.tsx`) draws its
+picture with the same engine (`story-kit/kit-editor.tsx`: `useKitCard`,
+`KitPreview`, `KitOptions`), from what the feed holds (`kitWorkFromStory`).
+The sheet opens on the Poster story card; one quiet button, **Change the
+picture**, unfolds the same choices (story/post, Poster/Frame/Lines, a frame,
+lines) with the picture kept in sight above them. The link buttons stay as
+they were; the picture button shares to a story on a phone (copying the link
+for the sticker) and saves elsewhere. The card prints the author's page,
+`tryboks.com/@handle`, or the site's address for a bok without one.

@@ -2,8 +2,9 @@ import type { PreviewItem, SpacePreview } from "@/components/boks/author-spaces/
 import { getBokArtwork, bokArtworkFocus } from "@/components/boks/reader/bok-artwork";
 import { seriesPieceFor } from "@/components/boks/series/series-catalogue";
 import { poemManifestFor } from "@/components/boks/poetry/poems";
+import { isBoksSeriesPiece } from "@/components/boks/cinema/series";
 import { linkOnlyCover, linkOnlyFilePath } from "@/lib/boks/link-only";
-import type { KitSubject } from "./story-kit-sheet";
+import type { KitSubject } from "./kit-editor";
 
 export type KitWork = Extract<KitSubject, { kind: "work" }>;
 
@@ -42,5 +43,26 @@ export function kitSubjectsFromPreview(preview: SpacePreview): { page: KitSubjec
       series: works.filter((work) => work.series).length,
     },
     works,
+  };
+}
+
+/**
+ * A bok as the reader's "Share bok" sheet sees it: the same card an author
+ * gets, from what the feed already holds. A Series is what the reader is
+ * offered as one (a finished piece or a poem with a manifest).
+ */
+export function kitWorkFromStory(story: { id: string; title: string; authorName: string; body?: string | null }, artwork: string | null): KitWork {
+  const piece = seriesPieceFor(story.id);
+  const manifest = poemManifestFor(story.id);
+  return {
+    kind: "work",
+    bokId: story.id,
+    title: story.title,
+    byline: story.authorName || null,
+    cover: piece?.cover ?? artwork,
+    focus: piece?.coverFocus ?? bokArtworkFocus(story.id),
+    series: Boolean(manifest) || isBoksSeriesPiece(story.id),
+    manifest,
+    body: story.body ?? null,
   };
 }
