@@ -18,7 +18,7 @@ describe("toAuthorSearchPage", () => {
       { kind: "byline", accountHandle: "boks", byline: "Яков Полонский" },
     ]);
     expect(page.results.map((row) => row.avatarUrl)).toEqual([
-      "/a/demidov/photo?v=1",
+      "/a/demidov/photo?v=1&s=s",
       null,
       null,
     ]);

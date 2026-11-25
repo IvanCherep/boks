@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { linkOnlyCover, linkOnlyFilePath } from "@/lib/boks/link-only";
+import { authorPhotoPath } from "@/lib/boks/author/photo-path";
 
 /**
  * Authors' own Series sections, read from the database (`get_boks_series_shelf_authors`,
@@ -95,7 +96,7 @@ export function readLiveSeries(rows: unknown): LiveSeriesSection[] {
       id: `author-${handle.toLowerCase().replace(/_/g, "-")}`,
       handle,
       name,
-      photo: Number.isInteger(version) && version > 0 ? `/a/${encodeURIComponent(handle)}/photo?v=${version}` : null,
+      photo: Number.isInteger(version) && version > 0 ? authorPhotoPath(handle, version, "s") : null,
       pieces,
     });
   }

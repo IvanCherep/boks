@@ -32,7 +32,7 @@ describe("live Series sections", () => {
     expect(sections).toHaveLength(1);
     const [section] = sections;
     expect(section.id).toBe("author-vodennikov");
-    expect(section.photo).toBe("/a/vodennikov/photo?v=3");
+    expect(section.photo).toBe("/a/vodennikov/photo?v=3&s=s");
     expect(section.pieces.map((piece) => piece.title)).toEqual(["Второе", "Первое"]);
     expect(section.pieces[0]).toMatchObject({ cover: `/l/${tokenB}/f/cover.webp`, durationSeconds: 161, scenes: 14, coverFocus: "50% 30%" });
     // A card the team has not filled leaves the numbers out rather than guessing.

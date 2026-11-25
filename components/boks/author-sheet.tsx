@@ -11,6 +11,7 @@ import { currentUiLanguage } from "@/components/boks/ui-language";
 import { authorPortraitFor } from "@/components/boks/author-portraits";
 import { AuthorPortraitPage } from "@/components/boks/author-portrait-page";
 import { setAuthorPageFollow } from "@/components/boks/author-spaces/data";
+import { authorPhotoPath } from "@/lib/boks/author/photo-path";
 
 /**
  * Everything one author has written, reached by tapping their byline.
@@ -176,7 +177,9 @@ export function AuthorSheet({
   const ownName = !writerView && author?.writers.length === 1 ? author.writers[0].name : null;
   const bareHandle = (author?.authorHandle || handle).replace(/^@+/, "");
   const pageName = !writerView ? page?.name?.trim() || null : null;
-  const pagePhoto = !writerView && page?.photoVersion ? `/a/${bareHandle}/photo?v=${page.photoVersion}` : null;
+  // The portrait and curtain at 1080 px, the small avatars at 192 (`photo-sizes.ts`).
+  const pagePhoto = !writerView ? authorPhotoPath(bareHandle, page?.photoVersion, "l") : null;
+  const pageThumb = !writerView ? authorPhotoPath(bareHandle, page?.photoVersion, "s") : null;
   const name = author?.byline
     || pageName
     || (portrait ? `${portrait.given} ${portrait.family}` : null)
@@ -186,7 +189,7 @@ export function AuthorSheet({
   // The curtain opens on the stage portrait when the page has one; the avatar stays the photo.
   const stagePhoto = !writerView ? page?.stagePhoto || null : null;
   const identity = pagePhoto || stagePhoto
-    ? { handle: bareHandle, name, photo: stagePhoto ?? pagePhoto, thumb: pagePhoto ?? stagePhoto, focus: "50% 50%" }
+    ? { handle: bareHandle, name, photo: stagePhoto ?? pagePhoto, thumb: pageThumb ?? stagePhoto, focus: "50% 50%" }
     : { handle: bareHandle, name, photo: portrait?.photo, thumb: portrait?.thumb, focus: portrait?.focus };
 
   return (

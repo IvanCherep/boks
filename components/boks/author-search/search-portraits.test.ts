@@ -3,7 +3,7 @@ import { searchPortraitFor } from "./search-portraits";
 
 describe("search portraits", () => {
   it("gives an author the photo of their own page, by its version", () => {
-    expect(searchPortraitFor({ kind: "account", handle: "demidov", photoVersion: 3 })).toBe("/a/demidov/photo?v=3");
+    expect(searchPortraitFor({ kind: "account", handle: "demidov", photoVersion: 3 })).toBe("/a/demidov/photo?v=3&s=s");
     expect(searchPortraitFor({ kind: "account", handle: "demidov", photoVersion: null })).toBeNull();
   });
 

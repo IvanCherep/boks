@@ -61,6 +61,7 @@ import { moveBy } from "@/lib/boks/author/page-order";
 import { spaceStage, spaceTimeline, type SpaceStage, type StageInput, type TimelineEvent } from "@/lib/boks/author/space-stage";
 import { useLivePoll } from "@/components/boks/author-spaces/live-poll";
 import { defineMessages, plural } from "@/lib/i18n/messages";
+import { authorPhotoPath } from "@/lib/boks/author/photo-path";
 
 /**
  * Studio → Authors (2026-11-14): pages prepared by the team.
@@ -515,7 +516,7 @@ function SpaceList({ onOpen, onCreate }: { onOpen: (id: string) => void; onCreat
               <span className="asp-row__photo" aria-hidden="true">
                 {row.photoVersion && row.status === "published" && row.handle
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={`/a/${row.handle}/photo?v=${row.photoVersion}`} alt="" />
+                  ? <img src={authorPhotoPath(row.handle, row.photoVersion, "s") ?? undefined} alt="" />
                   : <span>{(row.name ?? row.handle ?? "b").charAt(0).toUpperCase()}</span>}
               </span>
               <span className="asp-row__who">
