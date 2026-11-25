@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ShareLinkPair } from "@/components/boks/share/share-link-pair";
 import { bokShareUrl } from "@/lib/boks/share-link";
+import { loadMyAgreement } from "@/components/boks/author-spaces/data";
 import { loadShareLinks, shareLinkDays, submitShareLink, WorkshopError, type ShareLinkSeries } from "@/lib/boks/author-desk/server";
 
 /*
@@ -10,15 +11,25 @@ import { loadShareLinks, shareLinkDays, submitShareLink, WorkshopError, type Sha
  * posts"). The author contract asks the author to post a link to each
  * published Series in an open social account within 30 days and to send the
  * team the link to that post through the cabinet: this is that channel.
+ *
+ * Only a contract asks for it (any tariff, «Сотрудничество» included). Our
+ * authors with no contract at all (friends, special projects) are asked to
+ * share too, but with no date and no «условие тарифа»: they owe us nothing.
  */
 
 export function useShareLinks(enabled = true) {
   const [series, setSeries] = useState<ShareLinkSeries[] | null>(null);
+  // Whether a contract asks for the posts (and so for a date); null while loading.
+  const [duty, setDuty] = useState<boolean | null>(null);
   useEffect(() => {
     if (!enabled) return;
     let live = true;
     // A closed Workshop or a failed load simply shows nothing here.
     loadShareLinks().then((next) => live && setSeries(next), () => live && setSeries([]));
+    loadMyAgreement().then(
+      (agreement) => live && setDuty(Boolean(agreement && agreement.payState !== "cancelled")),
+      () => live && setDuty(false),
+    );
     return () => {
       live = false;
     };
@@ -26,7 +37,7 @@ export function useShareLinks(enabled = true) {
   const submit = useCallback(async (bokId: string, url: string) => {
     setSeries(await submitShareLink(bokId, url));
   }, []);
-  return { series, submit };
+  return { series, submit, duty: duty === true };
 }
 
 export function shareDeadline(publishedAt: string | null | undefined) {
@@ -39,9 +50,10 @@ function day(date: Date, month: "long" | "2-digit" = "long") {
 }
 
 /** The quiet line under a published Series on the desk home. */
-export function shareMarker(entry: ShareLinkSeries | undefined) {
+export function shareMarker(entry: ShareLinkSeries | undefined, duty: boolean) {
   if (!entry) return null;
   if (entry.links.length) return "ссылка на пост у редакции ✓";
+  if (!duty) return null;
   const deadline = shareDeadline(entry.publishedAt);
   if (!deadline) return null;
   return deadline.getTime() >= Date.now() ? `ждём ссылку на пост до ${day(deadline, "2-digit")}` : "ждём ссылку на пост";
@@ -55,7 +67,7 @@ export function ShareBlock({ bokId, shares }: { bokId: string; shares: ReturnTyp
   const [sent, setSent] = useState(false);
   if (!entry) return null;
 
-  const deadline = shareDeadline(entry.publishedAt);
+  const deadline = shares.duty ? shareDeadline(entry.publishedAt) : null;
   const seriesUrl = bokShareUrl({ id: entry.bokId, slug: entry.slug }, typeof window === "undefined" ? "https://tryboks.com" : window.location.origin);
 
   async function send() {
@@ -77,10 +89,14 @@ export function ShareBlock({ bokId, shares }: { bokId: string; shares: ReturnTyp
   return (
     <div className="desk-share">
       <h3>Поделились выпуском?</h3>
-      <p className="desk-calm">
-        Расскажите о серии в своём открытом аккаунте в соцсети и пришлите нам ссылку на пост
-        {deadline ? <> до <b>{day(deadline)}</b></> : null}. Так редакция видит, что условие тарифа выполнено.
-      </p>
+      {shares.duty ? (
+        <p className="desk-calm">
+          Расскажите о серии в своём открытом аккаунте в соцсети и пришлите нам ссылку на пост
+          {deadline ? <> до <b>{day(deadline)}</b></> : null}. Так редакция видит, что условие тарифа выполнено.
+        </p>
+      ) : (
+        <p className="desk-calm">Расскажите о серии в своей соцсети, чтобы её нашли ваши читатели. Если поделились, пришлите нам ссылку на пост: так мы увидим, откуда приходят читатели.</p>
+      )}
       <span className="desk-label">Ссылка на серию для вашего поста</span>
       <ShareLinkPair url={seriesUrl} language="ru" />
       <form
@@ -116,7 +132,7 @@ export function ShareBlock({ bokId, shares }: { bokId: string; shares: ReturnTyp
         </div>
         {problem ? <p className="desk-warn">{problem}</p> : null}
         {sent ? <p className="desk-calm">Готово, ссылка у редакции.</p> : null}
-        <p className="desk-calm">Подойдёт пост в открытом аккаунте, который виден всем без подписки. Закрытые группы, личные сообщения и «истории» не засчитываются.</p>
+        {shares.duty ? <p className="desk-calm">Подойдёт пост в открытом аккаунте, который виден всем без подписки. Закрытые группы, личные сообщения и «истории» не засчитываются.</p> : null}
       </form>
       {entry.links.length ? (
         <ul className="desk-share-sent">

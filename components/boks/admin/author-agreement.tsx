@@ -97,7 +97,7 @@ export const invitePlans: { value: AuthorPlan | ""; label: string }[] = [
   { value: "partner", label: `${planName.partner}: бесплатно, ссылка на каждую Series в соцсетях (по знакомству)` },
   { value: "launch", label: `${planName.launch}, бесплатно` },
   { value: "page_no_promotion", label: `${planName.page_no_promotion}, ${rub(500000)}` },
-  { value: "", label: "Наш автор: без оплаты и без оферты (партнёрство, особый проект)" },
+  { value: "", label: "Наш автор: без оплаты и без оферты (друзья редакции, особый проект)" },
 ];
 
 const stateLabel: Record<PayState, string> = {
@@ -118,7 +118,8 @@ export function InvitePlanFields({
   legalName,
   setLegalName,
 }: {
-  plan: AuthorPlan | "";
+  /** null until the team chooses: no tariff is a safe default (a friend must not see a price, a paying author must not get it free). */
+  plan: AuthorPlan | "" | null;
   setPlan: (plan: AuthorPlan | "") => void;
   legalName: string;
   setLegalName: (name: string) => void;
@@ -127,11 +128,14 @@ export function InvitePlanFields({
     <>
       <label className="asp-field">
         <span>Тариф (договор-оферта)</span>
-        <select className="asp-select" value={plan} onChange={(event) => setPlan(event.target.value as AuthorPlan | "")}>
+        <select className="asp-select" value={plan ?? "choose"} onChange={(event) => setPlan(event.target.value as AuthorPlan | "")}>
+          {plan === null && <option value="choose" disabled>Выберите условия</option>}
           {invitePlans.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
         <small>
-          {plan === "partner"
+          {plan === null
+            ? "Для дружественного автора без денег и обязательств: «Наш автор». Для платного: «Кабинет автора»."
+            : plan === "partner"
             ? "Автор примет оферту о сотрудничестве (/author/terms/partner) и два согласия галочками на экране приглашения. Платить не нужно, условие одно: пост со ссылкой на каждую вышедшую Series. Не выполняет: можно остановить работу над его Series."
             : plan
             ? "Автор примет оферту этого тарифа и два согласия галочками на экране приглашения. Кабинет откроется сразу, страница читателям только после оплаты."

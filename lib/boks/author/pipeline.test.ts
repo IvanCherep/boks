@@ -89,7 +89,12 @@ describe("pipelineStep", () => {
 
   it("an open page is fine, unless posts are missing for a month", () => {
     expect(pipelineStep(owned({ pageStatus: "published", published: 5 }), now)).toMatchObject({ step: "Публикуется", mover: "none", title: "Всё идёт" });
-    expect(pipelineStep(owned({ pageStatus: "published", published: 5, unshared: 2, unsharedOldestAt: ago(40) }), now)).toMatchObject({ mover: "team", title: "Нет ссылок на посты: напомнить" });
+    expect(pipelineStep(owned({ pageStatus: "published", published: 5, unshared: 2, unsharedOldestAt: ago(40), agreement: paidAgreement("paid") }), now)).toMatchObject({ mover: "team", title: "Нет ссылок на посты: напомнить" });
+    expect(pipelineStep(owned({ pageStatus: "published", published: 5, unshared: 2, unsharedOldestAt: ago(40), agreement: paidAgreement("free", { plan: "partner", priceRub: 0 }) }), now)).toMatchObject({ title: "Нет ссылок на посты: напомнить" });
+  });
+
+  it("an author of ours with no contract owes no posts", () => {
+    expect(pipelineStep(owned({ pageStatus: "published", published: 5, unshared: 2, unsharedOldestAt: ago(40) }), now)).toMatchObject({ mover: "none", title: "Всё идёт" });
   });
 
   it("an invitation on a paid tariff counts as paid before the author accepts", () => {

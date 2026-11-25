@@ -1302,7 +1302,8 @@ function InvitePanel({ t, space, busy, run, prefill = null }: { t: Words; space:
   const [account, setAccount] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [plan, setPlan] = useState<AuthorPlan | "">(prefill?.plan ?? "page");
+  // No tariff chosen until the team picks one (an application brings its own).
+  const [plan, setPlan] = useState<AuthorPlan | "" | null>(prefill?.plan ?? null);
   const [legalName, setLegalName] = useState("");
   const [plans, setPlans] = useState<Record<string, { plan: AuthorPlan | null }>>({});
   const latest = space.invites[0] ?? null;
@@ -1357,7 +1358,7 @@ function InvitePanel({ t, space, busy, run, prefill = null }: { t: Words; space:
             {account && <small>Аккаунт уже есть: {account}. Приглашение увидит при следующем входе, а по ссылке откроет сразу.</small>}
           </label>
           <InvitePlanFields plan={plan} setPlan={setPlan} legalName={legalName} setLegalName={setLegalName} />
-          <Button disabled={busy || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())} onClick={() => void run(async () => {
+          <Button disabled={busy || plan === null || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())} onClick={() => void run(async () => {
             const answer = await issueAuthorInvite(space.id, email.trim(), plan || null, legalName.trim());
             setLink(inviteLink(window.location.origin, answer.token));
             setCopied(false);

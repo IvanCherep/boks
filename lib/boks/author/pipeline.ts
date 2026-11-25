@@ -239,7 +239,8 @@ export function pipelineStep(facts: PipelineFacts, now = new Date()): PipelineSt
       openPage,
     );
   }
-  if ((facts.unshared ?? 0) > 0) {
+  // Posts are a contract's condition: an author of ours with no contract owes none.
+  if ((facts.unshared ?? 0) > 0 && facts.agreement && facts.agreement.payState !== "cancelled") {
     const days = daysSince(facts.unsharedOldestAt, now) ?? 0;
     if (days >= stuckAfterDays.unshared) {
       return make("Публикуется", "team", "Нет ссылок на посты: напомнить", `${plural(facts.unshared!, "Series", "Series", "Series")} без ссылок на посты в соцсетях, старшей больше 30 дней.`, facts.unsharedOldestAt, 0, openPage);

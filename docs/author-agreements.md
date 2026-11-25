@@ -220,3 +220,22 @@ the application, the page, Модерация or «Boks Series в работе»
 first; a wait longer than its step should take (`stuckAfterDays`) is
 «застрял». Filters: Ждут нас, Застряли, Ждём автора, Страница открыта, Все;
 search by name, @ or email.
+
+## Our authors without a contract (2026-11-25)
+
+Walked end to end for friends of the team (`docs/author-runbook.md`, «Наш
+автор»). Two fixes:
+
+- The invitation has no tariff chosen until the team picks one («Пригласить»
+  waits). It used to start on the paid «Кабинет автора», so a friend invited in
+  a hurry saw 30 000 ₽ and an offer.
+- Posts with a link to each Series are a contract's condition (any tariff,
+  «Сотрудничество» included): the date («ждём ссылку на пост до …», «до 25
+  декабря») and «условие тарифа» show only to an author with a contract that is
+  not cancelled (`useShareLinks().duty`, from `get_my_author_agreement`), and
+  «Ведение авторов» reminds about posts only for them. Before, an author of
+  ours with no contract got a 30-day date, while a «Сотрудничество» author did
+  not see it on the Workshop home (it was tied to `billing = 'paid'`).
+
+Not built: the site sends the author no email when a Series is ready; the team
+writes to them.

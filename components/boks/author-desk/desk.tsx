@@ -379,7 +379,7 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
   const published = works.filter((work) => work.editors.step === "published").sort((a, b) => (b.editors.publishedAt ?? "").localeCompare(a.editors.publishedAt ?? ""));
   const shares = useShareLinks(published.length > 0);
   const replies = works.filter((work) => work.editors.notes.at(-1)?.from === "editors" && work.editors.step !== "published" && work.editors.step !== "approval" && !work.outcome);
-  // Published Series with no link to the author's post yet (the offer's sharing condition, 30 days).
+  // Published Series with no link to the author's post yet (a contract's sharing condition, 30 days; a date only under a contract).
   const unshared = (shares.series ?? []).filter((item) => !item.links.length && item.publishedAt);
   const firstDue = unshared.map((item) => shareDeadline(item.publishedAt)).filter((date): date is Date => Boolean(date)).sort((a, b) => a.getTime() - b.getTime())[0];
   const unsharedDue = firstDue ? firstDue.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : null;
@@ -493,7 +493,7 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
                   ) : (
                     <>Поделитесь серией <b>«{unshared[0].title}»</b> в своей соцсети и пришлите нам ссылку на пост</>
                   )}
-                  {desk.state?.author.billing === "paid" && unsharedDue ? ` до ${unsharedDue}` : ""}
+                  {shares.duty && unsharedDue ? ` до ${unsharedDue}` : ""}
                 </span>
                 <span className="desk-nudge-go">Поделиться</span>
               </a>
@@ -650,8 +650,8 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
                 <span className="desk-book-cover" aria-hidden />
                 <span className="desk-book-title">{work.title}</span>
                 <span className="desk-book-meta">{work.editors.publishedAt ? when(work.editors.publishedAt) : ""}</span>
-                {shareMarker(shares.series?.find((item) => item.bokId === work.id)) ? (
-                  <span className="desk-book-meta desk-share-mark">{shareMarker(shares.series?.find((item) => item.bokId === work.id))}</span>
+                {shareMarker(shares.series?.find((item) => item.bokId === work.id), shares.duty) ? (
+                  <span className="desk-book-meta desk-share-mark">{shareMarker(shares.series?.find((item) => item.bokId === work.id), shares.duty)}</span>
                 ) : null}
               </a>
             ))}
