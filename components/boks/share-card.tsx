@@ -29,7 +29,6 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareS
   const [showLink, setShowLink] = useState(false);
   const [fallbackLink, setFallbackLink] = useState<string | null>(null);
   const [tuning, setTuning] = useState(false);
-  const [offerDownload, setOfferDownload] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   // Asked for as the sheet opens, not on the tap: a share sheet must open in
   // the tap itself, with no wait in between. A tap before the answer shares
@@ -77,12 +76,11 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareS
   async function sharePicture() {
     if (!kit.file || !kit.ready) return;
     if (!canShareFile) { download(); return; }
-    // Some embedded browsers advertise file sharing but never answer: the download stays at hand.
-    setOfferDownload(true);
     // The link goes to the clipboard in the same tap, for the story's "Link" sticker.
     const { outcome, copied } = await shareToStory(kit.file, russianShareUrl(link), { share: (data) => navigator.share(data), clipboard: navigator.clipboard });
     if (outcome === "shared") onShared?.();
-    if (outcome === "failed") setStatus(t("The phone did not open its menu. Save the picture below.", "Телефон не открыл меню. Сохраните картинку по ссылке ниже."));
+    // The phone did not open its menu (some in-app browsers): the picture is saved instead, no second button.
+    if (outcome === "failed") download();
     else if (copied) setStatus(t("The link is copied: in a story, paste it into the “Link” sticker.", "Ссылка скопирована: в сторис вставьте её в стикер «Ссылка»."));
   }
 
@@ -116,7 +114,6 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareS
           </Button>
         </div>
         {showLink && <input className="share-link-fallback" aria-label={t("Bok link", "Ссылка на бок")} value={fallbackLink ?? link} readOnly onFocus={(event) => event.currentTarget.select()} />}
-        {offerDownload && kit.picture && <a className="share-download-link" href={kit.picture.url} download={kit.fileName} onClick={() => onShared?.()}>{t("Download the picture", "Скачать картинку")}</a>}
         {status && <p className="social-status" role="status">{status}</p>}
         {tuning && (
           // The choices get a screen of their own over the sheet: the link buttons stay out of sight while choosing.
