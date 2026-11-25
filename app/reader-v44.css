@@ -84,7 +84,9 @@ html, body { background-color:var(--background); }
 }
 .reader-cover__heading h1 { max-width:100%; font:400 62px/.98 "Boks Literary",serif; letter-spacing:-1.9px; text-wrap:balance; overflow-wrap:break-word; margin:0 0 20px; }
 .reader-cover:has(.reader-cover__art) h1 { max-width:310px; font-size:48px; }
-.reader-cover__byline { display:flex; align-items:center; gap:6px; font:400 12px/1.4 system-ui,sans-serif; letter-spacing:.1px; text-align:left; overflow-wrap:anywhere; min-height:44px; margin-top:-12px; }
+.reader-cover__byline { display:flex; align-items:center; gap:8px; font:400 14px/1.4 system-ui,sans-serif; letter-spacing:.1px; text-align:left; overflow-wrap:anywhere; min-height:44px; margin-top:-12px; }
+/* A thin up-right arrow says the name opens the author's page. */
+.reader-cover__byline:not(:disabled)::after { content:""; flex:none; width:11px; height:11px; background:currentColor; opacity:.78; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 9.5 9.5 2.5M4 2.5h5.5V8'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 9.5 9.5 2.5M4 2.5h5.5V8'/%3E%3C/svg%3E") center/contain no-repeat; }
 /* The summary says what the bok is and why to read it, before the reader commits. */
 .reader-cover__summary { max-width:440px; margin:6px 0 0; font:400 16px/1.42 "Boks Literary",serif; letter-spacing:0; opacity:.86; text-wrap:pretty; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; line-clamp:6; overflow:hidden; }
 .reader-cover__caption { width:100%; margin:0 auto; display:grid; gap:5px; }
