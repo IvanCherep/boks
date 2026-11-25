@@ -36,6 +36,7 @@ import { OpenPage, StartPath } from "./start-path";
 import { chooseTake, uploadTake } from "@/components/boks/author-cabinet/voice-data";
 import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
 import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
+import { MusicCreditField } from "@/components/boks/author-desk/music-credit";
 
 /*
  * The workshop's words, in one place. Plain Russian, the same word for the
@@ -878,6 +879,7 @@ function TextStep({ work, update, go }: { work: Work; update: Update; go: (hash:
           onChange={(event) => update((current) => ({ ...current, text: event.target.value }))}
           spellCheck
         />
+        <MusicCreditField bokId={work.id} />
         <div className="desk-paper-foot">
           <span>
             {words} слов · около {Math.max(1, Math.round(seconds / 60))} мин вслух
@@ -1524,6 +1526,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
               Попросить исправить
             </button>
           </div>
+          <MusicCreditField bokId={work.id} compact />
           {!pageOpen ? (
             <p className="desk-calm">
               {firstInWork.length
@@ -1546,6 +1549,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
             {work.editors.publishedAt ? `${when(work.editors.publishedAt)}. ` : ""}Серия на вашей странице и в ленте. <a href="/series">Открыть полку серий</a>
           </p>
           <ShareBlock bokId={work.id} shares={shares} />
+          <MusicCreditField bokId={work.id} compact />
         </div>
       </div>
     );

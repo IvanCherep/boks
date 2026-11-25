@@ -106,6 +106,7 @@ const messages = defineMessages(
 
 export function ImmersivePoem({
   manifest,
+  musicBy,
   coverArtwork,
   finale,
   recording = false,
@@ -122,6 +123,8 @@ export function ImmersivePoem({
   onBegin,
 }: {
   manifest: PoemManifest;
+  /** Who made the music, when the author named it: under the byline on the ending. */
+  musicBy?: string;
   coverArtwork?: string;
   /**
    * What the ending's buttons do - the same object every format is given.
@@ -1329,6 +1332,7 @@ export function ImmersivePoem({
           onReadText={readText}
           title={manifest.title}
           byline={manifest.author}
+          musicBy={musicBy}
           artwork={manifest.scenes.at(-1)?.image}
           onAgain={() => {
             seekTo(0);

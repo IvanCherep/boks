@@ -87,6 +87,8 @@ html, body { background-color:var(--background); }
 .reader-cover__byline { display:flex; align-items:center; gap:8px; font:400 14px/1.4 system-ui,sans-serif; letter-spacing:.1px; text-align:left; overflow-wrap:anywhere; min-height:44px; margin-top:-12px; }
 /* A thin up-right arrow says the name opens the author's page. */
 .reader-cover__byline:not(:disabled)::after { content:""; flex:none; width:11px; height:11px; background:currentColor; opacity:.78; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 9.5 9.5 2.5M4 2.5h5.5V8'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 9.5 9.5 2.5M4 2.5h5.5V8'/%3E%3C/svg%3E") center/contain no-repeat; }
+/* Who made the music, when the author named it: the byline's size, under it. */
+.reader-cover__music { margin:-8px 0 4px; font:400 14px/1.4 system-ui,sans-serif; letter-spacing:.1px; overflow-wrap:anywhere; opacity:.86; text-wrap:pretty; }
 /* The summary says what the bok is and why to read it, before the reader commits. */
 .reader-cover__summary { max-width:440px; margin:6px 0 0; font:400 16px/1.42 "Boks Literary",serif; letter-spacing:0; opacity:.86; text-wrap:pretty; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; line-clamp:6; overflow:hidden; }
 .reader-cover__caption { width:100%; margin:0 auto; display:grid; gap:5px; }
@@ -155,6 +157,7 @@ html, body { background-color:var(--background); }
 .bok-finale__heading { text-align:center; margin:15px auto 28px; }
 .bok-finale__heading h2 { max-width:260px; margin:0 auto 14px; font:italic 400 32px/1.12 "Boks Literary",serif; text-wrap:balance; overflow-wrap:anywhere; }
 .bok-finale__heading p { font-size:12px; margin:0; opacity:.8; }
+.bok-finale__heading p.bok-finale__music { margin-top:4px; text-wrap:balance; overflow-wrap:anywhere; }
 .bok-finale__heading .bok-endmark { margin:22px auto 0; }
 .bok-finale__read { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:44px; margin:22px auto 0; padding:0 20px; border:1px solid var(--border); border-radius:999px; background:#fff6e714; color:var(--foreground); font-size:15px; font-weight:600; }
 .bok-finale__read:hover { background:#fff6e724; }

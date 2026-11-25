@@ -181,6 +181,7 @@ function languageOf(text: string) {
 
 export function CinemaMode({
   story,
+  musicBy,
   finale,
   recording = false,
   autoPlay = false,
@@ -194,6 +195,8 @@ export function CinemaMode({
   curtain = false,
 }: {
   story: Story;
+  /** Who made the music, when the author named it: under the byline on the ending. */
+  musicBy?: string;
   /** What the ending's buttons do - the same object every format is given. */
   finale: FinaleActions;
   /**
@@ -620,6 +623,7 @@ export function CinemaMode({
           onReadText={readText}
           title={story.title}
           byline={story.authorName}
+          musicBy={musicBy}
           artwork={picture.placeholder ? undefined : picture.src}
           onAgain={() => {
             // A second listen is a second telling: the crowd gathers again

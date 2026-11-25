@@ -8,6 +8,7 @@ import { useReaderPreferences } from "@/components/boks/reader-preferences";
 import { bokCoverStyle } from "./reader/bok-cover-palette";
 import { bokArtworkFocus } from "./reader/bok-artwork";
 import { formatCompactCount } from "./client-format";
+import { musicCreditLine } from "@/lib/boks/music-credit";
 
 export type FinaleActions = {
   liked: boolean;
@@ -28,7 +29,7 @@ export type FinaleActions = {
 };
 
 /** One ending for HTML text and both reading formats. No completion button. */
-export function ReadingFinale({ actions, onAgain, onReadText, title, byline, artwork, inline = false }: {
+export function ReadingFinale({ actions, onAgain, onReadText, title, byline, musicBy, artwork, inline = false }: {
   actions?: FinaleActions;
   onAgain: () => void;
   /**
@@ -39,10 +40,13 @@ export function ReadingFinale({ actions, onAgain, onReadText, title, byline, art
   onReadText?: () => void;
   title?: string;
   byline?: string;
+  /** Who made the music, when the author named it: a line under the byline. */
+  musicBy?: string;
   artwork?: string | null;
   inline?: boolean;
 }) {
   const { t } = useReaderPreferences();
+  const musicLine = musicBy ? musicCreditLine(musicBy, t) : "";
   const [picked, setPicked] = useState<AftertasteTag[]>([]);
   const selected = actions?.aftertaste ?? picked;
   const reached = useRef(actions?.onReached);
@@ -55,7 +59,7 @@ export function ReadingFinale({ actions, onAgain, onReadText, title, byline, art
   return <section className={`bok-finale${inline ? " bok-finale--inline" : " bok-finale--immersive"}`} aria-label={t("After reading", "После чтения")} onPointerDown={actions?.onInteract} onFocus={actions?.onInteract}>
     {!inline && artwork && <img className="bok-finale__backdrop" src={artwork} alt="" />}
     {!inline && <div className="bok-finale__heading">
-      {title && <h2>{title}</h2>}{byline && <p>{byline}</p>}<span className="bok-endmark" aria-hidden="true">b.</span>
+      {title && <h2>{title}</h2>}{byline && <p>{byline}</p>}{musicLine && <p className="bok-finale__music" translate="no">{musicLine}</p>}<span className="bok-endmark" aria-hidden="true">b.</span>
       {onReadText && <button type="button" className="bok-finale__read" onClick={onReadText}><BookOpen size={18} aria-hidden="true" /><span>{t("Read text", "Читать текст")}</span></button>}
     </div>}
     <div className="bok-finale__content">

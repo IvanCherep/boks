@@ -12,6 +12,8 @@ import { createSeriesDraftFromBok, loadSeriesDraft } from "@/components/boks/adm
 import { loadStudioSeriesWork, studioSendSeries, type StudioSeriesWork } from "@/components/boks/author-cabinet/voice-data";
 import { readableBoksError } from "@/lib/boks/errors";
 import { defineMessages } from "@/lib/i18n/messages";
+import { supabase } from "@/lib/boks/supabase-client";
+import { maxMusicCredit, musicCreditNames } from "@/lib/boks/music-credit";
 
 /**
  * Studio → «Boks Series в работе» (`docs/author-publishing.md`, "The editors
@@ -132,6 +134,7 @@ function WorkCard({ item, onChanged, openRecorder }: { item: StudioSeriesWork; o
       </div>
       <p className="studio-series-work__who">{item.authorHandle ? `@${item.authorHandle} · ` : ""}{item.byline}</p>
       <AuthorVoicePanel bokId={item.bokId} expected />
+      <StudioMusicCredit bokId={item.bokId} />
       {open && <TeamCoverPanel bokId={item.bokId} title={item.title} text={item.text} forSeries onCover={() => setHasCover(true)} />}
       {open && (
         <div className="studio-series-work__series">
@@ -158,5 +161,45 @@ function WorkCard({ item, onChanged, openRecorder }: { item: StudioSeriesWork; o
       <EditorDecisionDialog bokId={item.bokId} title={item.title} decision={returning ? "changes" : null}
         onClose={() => setReturning(false)} onDone={() => { setReturning(false); onChanged(); }} />
     </li>
+  );
+}
+
+/**
+ * «Музыка» as readers will see it under the byline. The author usually fills
+ * it in the Workshop; the editors fill or correct it here.
+ */
+function StudioMusicCredit({ bokId }: { bokId: string }) {
+  const language = useUiLanguage();
+  const [value, setValue] = useState("");
+  const [saved, setSaved] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  useEffect(() => {
+    let live = true;
+    supabase?.rpc("get_my_bok_music", { p_bok_id: bokId }).then(({ data }) => {
+      if (!live) return;
+      const music = typeof data === "string" ? data : "";
+      setValue(music);
+      setSaved(music);
+    }, () => undefined);
+    return () => { live = false; };
+  }, [bokId]);
+  const names = musicCreditNames(value);
+  return (
+    <div className="studio-series-work__series">
+      <label className="studio-field">Музыка (необязательно)
+        <input value={value} maxLength={maxMusicCredit} disabled={saved === null} placeholder="Л. Булдыгин, В. Рвачев" onChange={(event) => { setValue(event.target.value); setNote(""); }} />
+      </label>
+      <small>{names ? `Под именем автора: «Музыка: ${names}»` : "Пусто: строки про музыку не будет."}</small>
+      <div className="studio-series-work__actions">
+        <Button variant="outline" disabled={saved === null || value.trim() === saved} onClick={() => {
+          supabase?.rpc("studio_set_bok_music", { p_bok_id: bokId, p_music: value }).then(({ data, error }) => {
+            if (error) { setNote(readableBoksError(error, "Не получилось сохранить.", language)); return; }
+            const music = String((data as { musicBy?: string } | null)?.musicBy ?? "");
+            setValue(music); setSaved(music); setNote("Сохранено.");
+          }, (error) => setNote(readableBoksError(error, "Не получилось сохранить.", language)));
+        }}>Сохранить музыку</Button>
+      </div>
+      {note && <small role="status">{note}</small>}
+    </div>
   );
 }

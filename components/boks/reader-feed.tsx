@@ -135,7 +135,9 @@ import {
   submitSupabaseComment,
   loadLiveBokReactions,
   searchBoksAuthors,
+  loadMusicCredits,
 } from "@/components/boks/supabase-browser-data";
+import { musicCreditLine } from "@/lib/boks/music-credit";
 import type { ReaderEvent, ReaderEventType, AftertasteTag, TouchKind } from "@/lib/boks/contracts";
 import { WhatToRead, type ApplyResult } from "@/components/boks/what-to-read/what-to-read";
 import { useReadingRequest } from "@/components/boks/what-to-read/use-reading-request";
@@ -1362,6 +1364,15 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
       )
     : 0;
   const currentAuthorLabel = currentStory?.authorName || (atHandle(currentStory?.authorHandle) || wordsNow().bokAuthor);
+  /** Who made the music, when the author named it (`loadMusicCredits`). */
+  const [musicCredits, setMusicCredits] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let active = true;
+    // A credit is a courtesy line: without it the cover is simply as before.
+    loadMusicCredits().then((credits) => { if (active) setMusicCredits(credits); }, () => undefined);
+    return () => { active = false; };
+  }, []);
+  const currentMusicBy = currentStory ? musicCredits[currentStory.id] : undefined;
   const persistedLikedStoryIds = useMemo(() => new Set(likedStoryIds), [likedStoryIds]);
 
   // Ask for the next slate a few boks before the end, so it is there in time.
@@ -3617,6 +3628,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
               <CoverHeading artwork={getBokArtwork(currentStory)}>
                 <h1>{currentStory.title}</h1>
                 <button type="button" className="reader-cover__byline" onClick={() => openAuthor(currentStory.authorHandle, currentStory.authorName)} disabled={!currentStory.authorHandle}>{currentAuthorLabel}</button>
+                {currentMusicBy && musicCreditLine(currentMusicBy, t) && <p className="reader-cover__music" translate="no">{musicCreditLine(currentMusicBy, t)}</p>}
                 {currentStory.summary && <p className="reader-cover__summary" lang={currentStory.language || "und"} translate="no">{currentStory.summary}</p>}
               </CoverHeading>
               <div className="reader-cover__caption">
@@ -3828,6 +3840,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
             finale={finale}
             recording={recording}
             autoPlay
+            musicBy={currentMusicBy}
             curtain={Boolean(currentSeriesPiece)}
             suspended={readerOverlayOpen}
             onPlaybackChange={onFormatPlayback}
@@ -3839,7 +3852,7 @@ export function ReaderFeed({ initialView = "feed", seriesCollection = null }: { 
         )}
 
         {poem && (
-          <div style={{ display: "contents" }} inert={readerOverlayOpen}><ImmersivePoem manifest={poem} finale={finale} recording={recording} autoPlay
+          <div style={{ display: "contents" }} inert={readerOverlayOpen}><ImmersivePoem manifest={poem} finale={finale} recording={recording} autoPlay musicBy={currentMusicBy}
             curtain={Boolean(currentSeriesPiece)}
             coverArtwork={getBokArtwork(currentStory) ?? undefined}
             suspended={readerOverlayOpen}

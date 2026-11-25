@@ -1276,6 +1276,21 @@ export async function loadSeriesBoks(
   );
 }
 
+/**
+ * Who made the music, by published bok id (`get_bok_music_credits`): only the
+ * pieces whose author named it, so one small call covers the whole feed.
+ */
+export async function loadMusicCredits(): Promise<Record<string, string>> {
+  if (!supabase) return {};
+  const result = await supabase.rpc("get_bok_music_credits");
+  if (result.error) throw result.error;
+  const credits: Record<string, string> = {};
+  for (const [id, music] of Object.entries((result.data ?? {}) as Record<string, unknown>)) {
+    if (typeof music === "string" && music.trim()) credits[id] = music.trim();
+  }
+  return credits;
+}
+
 /** Slugs already asked for, so a share sheet opened twice asks once. */
 const bokSlugs = new Map<string, Promise<string | null>>();
 

@@ -144,6 +144,8 @@ const russianSentences: Record<string, string> = {
   "Which piece is the picture for?": "Для какого бока картинка?",
   "Which piece is this?": "Какой это бок?",
   "This piece belongs to another account.": "Этот бок принадлежит другому аккаунту.",
+  "Only the piece's author can name its music.": "Авторов музыки указывает автор текста.",
+  "Keep the music credit under 200 characters.": "Строка про музыку должна быть короче 200 знаков.",
   "Both pictures for this piece are already drawn. Upload your own to replace them.":
     "Оба варианта для этого бока уже нарисованы. Чтобы заменить, загрузите свою картинку.",
   "That is all the pictures for today. Tomorrow there will be more; your own can be uploaded now.":

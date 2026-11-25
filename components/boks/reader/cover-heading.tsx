@@ -46,7 +46,7 @@ function headingShade(heading: HTMLElement, image: HTMLImageElement | HTMLVideoE
   context.fillStyle = base; context.fillRect(0, 0, canvas.width, canvas.height);
   const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
   let alpha = 0;
-  for (const element of heading.querySelectorAll<HTMLElement>("h1, .reader-cover__byline, .reader-cover__summary")) {
+  for (const element of heading.querySelectorAll<HTMLElement>("h1, .reader-cover__byline, .reader-cover__music, .reader-cover__summary")) {
     const visible = element.getBoundingClientRect();
     const opacity = Number(getComputedStyle(element).opacity);
     const range = document.createRange(); range.selectNodeContents(element);
