@@ -32,7 +32,7 @@ import { durationProblem, fileProblem, useDesk, useTakes, type Desk, type DeskSt
 import { Teleprompter } from "./teleprompter";
 import { ShareBlock, shareDeadline, shareMarker, useShareLinks } from "./share-links";
 import { AgreementCard, useMyAgreement } from "@/components/boks/author-cabinet/agreement-card";
-import { StartPath } from "./start-path";
+import { OpenPage, StartPath } from "./start-path";
 import { chooseTake, uploadTake } from "@/components/boks/author-cabinet/voice-data";
 import { loadMyAuthorSpace, markMyMessagesSeen, sendMyMessage, type SpaceMessage } from "@/components/boks/author-spaces/data";
 import { voiceFingerprint } from "@/lib/boks/author/voice/rules";
@@ -476,7 +476,7 @@ function Home({ desk, go, onHelp }: { desk: Desk; go: (hash: string) => void; on
                   <p>
                     {desk.state?.author.pageStatus === "published"
                       ? "Редакция нарисовала серию с вашим голосом. Посмотрите и опубликуйте, когда захотите."
-                      : "Редакция нарисовала серию с вашим голосом. Посмотрите её: страница откроется сразу со всеми готовыми сериями."}
+                      : "Редакция нарисовала серию с вашим голосом. Посмотрите её: страница откроется вместе с сериями, которые вы отметите."}
                   </p>
                   <a className="desk-btn desk-btn-red" href={`#w/${work.id}/editors`}>
                     Посмотреть
@@ -1518,17 +1518,7 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
                 {busy ? "Публикуем…" : "Опубликовать"}
               </button>
             ) : !firstInWork.length ? (
-              <button
-                type="button"
-                className="desk-btn desk-btn-red"
-                disabled={busy}
-                onClick={() =>
-                  window.confirm(`Открыть страницу читателям? Она откроется сразу ${firstReady.length > 1 ? `с ${firstReady.length} сериями, они появятся` : "с этой серией, она появится"} и в ленте.`) &&
-                  void desk.approveAll(firstReady.map((item) => item.id))
-                }
-              >
-                {busy ? "Открываем…" : firstReady.length > 1 ? `Открыть страницу с ${firstReady.length} сериями` : "Открыть страницу"}
-              </button>
+              <OpenPage desk={desk} ready={firstReady} />
             ) : null}
             <button type="button" id="desk-ask-fix" className="desk-quiet" onClick={askFix}>
               Попросить исправить
@@ -1537,8 +1527,10 @@ function SeriesStep({ work, desk, go }: { work: Work; desk: Desk; go: (hash: str
           {!pageOpen ? (
             <p className="desk-calm">
               {firstInWork.length
-                ? `Ваша страница пока закрыта. Готово серий: ${firstReady.length} из ${firstReady.length + firstInWork.length}. Когда редакция закончит остальные, вы откроете страницу одной кнопкой сразу со всеми.`
-                : "Ваша страница пока закрыта: она откроется читателям сразу со всеми готовыми сериями."}
+                ? `Ваша страница пока закрыта. Готово серий: ${firstReady.length} из ${firstReady.length + firstInWork.length}. Когда редакция закончит остальные, вы откроете страницу одной кнопкой и отметите, какие серии выйдут.`
+                : firstReady.length > 1
+                  ? "Ваша страница пока закрыта. Откроете её одной кнопкой и сами отметите, какие из готовых серий выйдут вместе с ней."
+                  : "Ваша страница пока закрыта: она откроется читателям вместе с этой серией."}
             </p>
           ) : null}
         </div>

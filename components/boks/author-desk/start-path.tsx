@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { canQueue, type Work } from "@/lib/boks/author-desk/workflow";
 import { daysToPay, ruDate, type AuthorAgreement } from "@/lib/boks/author/agreement";
 import type { Desk } from "./store";
@@ -21,6 +22,8 @@ const plural = (n: number, one: string, few: string, many: string) => {
 const textsWord = (n: number) => `${n} ${plural(n, "текст", "текста", "текстов")}`;
 const seriesWord = (n: number) => `${n} ${plural(n, "серия", "серии", "серий")}`;
 /** «делает 1 серию / 3 серии / 5 серий». */
+/** «с 1 серией / с 3 сериями». */
+const withSeries = (n: number) => `${n} ${plural(n, "серией", "сериями", "сериями")}`;
 const seriesAcc = (n: number) => `${n} ${plural(n, "серию", "серии", "серий")}`;
 
 const voiced = (work: Work) => {
@@ -118,17 +121,10 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
     done: false,
     status:
       ready.length && !inWork.length
-        ? `Готово ${seriesWord(ready.length)}: откройте страницу, и они выйдут вместе с ней.`
-        : "Одной кнопкой, сразу со всеми готовыми сериями. До этого страницу видите только вы и редакция.",
-    action:
-      ready.length && !inWork.length
-        ? {
-            label: ready.length > 1 ? `Открыть страницу с ${ready.length} сериями` : "Открыть страницу",
-            run: () => {
-              if (window.confirm(`Открыть страницу читателям? ${ready.length > 1 ? `${seriesWord(ready.length)} выйдут` : "Серия выйдет"} вместе с ней и появятся в ленте.`)) void desk.approveAll(ready.map((work) => work.id));
-            },
-          }
-        : undefined,
+        ? ready.length > 1
+          ? `Готово ${seriesWord(ready.length)}. Посмотрите их и откройте страницу: выйдут те, что вы отметите.`
+          : "Готова 1 серия: откройте страницу, и она выйдет вместе с ней."
+        : "Одной кнопкой, вместе с готовыми сериями: вы сами отметите, какие выйдут. До этого страницу видите только вы и редакция.",
   });
 
   const current = steps.findIndex((step) => !step.done);
@@ -145,7 +141,8 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
                 {index !== current && step.short ? <em> · {step.short}</em> : null}
               </b>
               {index === current ? <span>{step.status}</span> : null}
-              {step.action && (index === current || step.key === "pay" || step.key === "send" || step.key === "open") ? (
+              {step.key === "open" && ready.length && !inWork.length ? <OpenPage desk={desk} ready={ready} /> : null}
+              {step.action && (index === current || step.key === "pay" || step.key === "send") ? (
                 <button type="button" className={`desk-btn ${index === current || step.key === "open" ? "desk-btn-red" : "desk-btn-ink"}`} onClick={step.action.run}>
                   {step.action.label}
                 </button>
@@ -155,5 +152,77 @@ export function StartPath({ desk, agreement, onPay }: { desk: Desk; agreement: A
         ))}
       </ol>
     </section>
+  );
+}
+
+/**
+ * «Открыть страницу с N сериями» with a choice: every ready Series is ticked,
+ * the author unticks any they do not want out yet. Those stay ready in the
+ * Workshop: published later one by one, or sent back with «Попросить исправить».
+ */
+export function OpenPage({ desk, ready }: { desk: Desk; ready: Work[] }) {
+  const [choosing, setChoosing] = useState(false);
+  const [off, setOff] = useState<Set<string>>(() => new Set());
+  const chosen = ready.filter((work) => !off.has(work.id));
+  const open = (works: Work[]) => {
+    const n = works.length;
+    if (!n) return;
+    if (window.confirm(`Открыть страницу читателям? ${n > 1 ? `${seriesWord(n)} выйдут` : "Серия выйдет"} вместе с ней и появятся в ленте.`)) void desk.approveAll(works.map((work) => work.id));
+  };
+  if (ready.length < 2) {
+    return (
+      <button type="button" className="desk-btn desk-btn-red" onClick={() => open(ready)}>
+        Открыть страницу
+      </button>
+    );
+  }
+  if (!choosing) {
+    return (
+      <button type="button" className="desk-btn desk-btn-red" onClick={() => setChoosing(true)}>
+        Открыть страницу с {withSeries(ready.length)}
+      </button>
+    );
+  }
+  return (
+    <div className="desk-open-choose">
+      <p>Какие серии выйдут вместе со страницей? Остальные останутся у вас: опубликуете позже или попросите исправить.</p>
+      <ul>
+        {ready.map((work) => {
+          const piece = desk.state?.series[work.id]?.seriesPiece ?? null;
+          return (
+            <li key={work.id}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={!off.has(work.id)}
+                  onChange={(event) =>
+                    setOff((current) => {
+                      const next = new Set(current);
+                      if (event.target.checked) next.delete(work.id);
+                      else next.add(work.id);
+                      return next;
+                    })
+                  }
+                />
+                <span>{work.title || "Без названия"}</span>
+              </label>
+              {piece ? (
+                <a href={`/l/${piece}`} target="_blank" rel="noreferrer">
+                  Посмотреть
+                </a>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="desk-open-choose-actions">
+        <button type="button" className="desk-btn desk-btn-red" disabled={!chosen.length} onClick={() => open(chosen)}>
+          {chosen.length ? `Открыть страницу с ${withSeries(chosen.length)}` : "Отметьте хотя бы одну"}
+        </button>
+        <button type="button" className="desk-quiet" onClick={() => setChoosing(false)}>
+          Отмена
+        </button>
+      </div>
+    </div>
   );
 }

@@ -85,7 +85,8 @@ opens the page with all of them at once.
   the Workshop has no per-Series «Опубликовать»: it says how many are ready
   of how many in work, and once none is left with the editors offers
   «Открыть страницу с N сериями», which publishes the page with every ready
-  Series in one call.
+  Series in one call (since 2026-11-25 the author unticks any that should
+  wait).
 
 Not covered: an author who already owns a team-made page (a special
 project) cannot be given a paid contract from Studio yet (the invitation
@@ -236,6 +237,13 @@ Walked end to end for friends of the team (`docs/author-runbook.md`, «Наш
   «Ведение авторов» reminds about posts only for them. Before, an author of
   ours with no contract got a 30-day date, while a «Сотрудничество» author did
   not see it on the Workshop home (it was tied to `billing = 'paid'`).
+
+- «Открыть страницу с N сериями» lets the author choose: every ready Series
+  ticked, untick what should not go out yet (`OpenPage` in
+  `components/boks/author-desk/start-path.tsx`). The rest stay ready, with
+  their own «Опубликовать» once the page is open. Before, the page could only
+  open with all of them, and «Попросить исправить» held the opening until the
+  team redid that one.
 
 Not built: the site sends the author no email when a Series is ready; the team
 writes to them.
