@@ -90,7 +90,7 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareS
     <div className="auth-overlay social-overlay" role="dialog" aria-modal="true" aria-label={t("Share bok", "Поделиться боком")}
       onKeyDown={(event) => {
         event.stopPropagation();
-        if (event.key === "Escape") onClose();
+        if (event.key === "Escape") { if (tuning) setTuning(false); else onClose(); }
         if (event.key === "Tab") {
           const nodes = panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input, a[href]');
           if (!nodes?.length) return;
@@ -102,13 +102,12 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareS
       onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
       <section className="social-page share-page" ref={panelRef}>
         <header className="social-page-header"><Button size="icon" variant="ghost" onClick={onClose} aria-label={t("Back", "Назад")}><ArrowLeft /></Button><span>{t("Share bok", "Поделиться боком")}</span><span /></header>
-        <div className={`share-kit${tuning ? " is-tuning" : ""}`}>
+        <div className="share-kit">
           <KitPreview kit={kit} />
-          <button type="button" className="share-kit-toggle" aria-expanded={tuning} onClick={() => setTuning((now) => !now)}>
+          <button type="button" className="share-kit-toggle" aria-haspopup="dialog" onClick={() => { setStatus(""); panelRef.current?.scrollTo(0, 0); setTuning(true); }}>
             <SlidersHorizontal aria-hidden="true" />
-            {tuning ? t("Done", "Готово") : t("Change the picture", "Изменить картинку")}
+            {t("Change the picture", "Изменить картинку")}
           </button>
-          {tuning && <div className="share-kit-options"><KitOptions kit={kit} onNotice={setStatus} /></div>}
         </div>
         <div className="share-controls">
           <ShareLinkPair url={link} share={{ title: story.title, onShared }} onCopy={async (text) => { const ok = await copyLink(text); if (ok === false) setFallbackLink(text); return ok; }} />
@@ -119,6 +118,16 @@ export function ShareCard({ story, artwork, onClose, onShared }: { story: ShareS
         {showLink && <input className="share-link-fallback" aria-label={t("Bok link", "Ссылка на бок")} value={fallbackLink ?? link} readOnly onFocus={(event) => event.currentTarget.select()} />}
         {offerDownload && kit.picture && <a className="share-download-link" href={kit.picture.url} download={kit.fileName} onClick={() => onShared?.()}>{t("Download the picture", "Скачать картинку")}</a>}
         {status && <p className="social-status" role="status">{status}</p>}
+        {tuning && (
+          // The choices get a screen of their own over the sheet: the link buttons stay out of sight while choosing.
+          <div className="share-kit-screen" role="dialog" aria-label={t("The picture", "Картинка")}>
+            <header className="social-page-header"><Button size="icon" variant="ghost" onClick={() => setTuning(false)} aria-label={t("Back", "Назад")}><ArrowLeft /></Button><span>{t("The picture", "Картинка")}</span><span /></header>
+            <KitPreview kit={kit} />
+            <div className="share-kit-options"><KitOptions kit={kit} onNotice={setStatus} /></div>
+            {status && <p className="social-status" role="status">{status}</p>}
+            <div className="share-kit-done"><Button onClick={() => { setStatus(""); setTuning(false); }}>{t("Done", "Готово")}</Button></div>
+          </div>
+        )}
       </section>
     </div>
   );

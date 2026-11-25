@@ -107,7 +107,7 @@ picture with the same engine (`story-kit/kit-editor.tsx`: `useKitCard`,
 `KitPreview`, `KitOptions`), from what the feed holds (`kitWorkFromStory`).
 The sheet opens on the Poster story card; one quiet button, **Change the
 picture**, unfolds the same choices (story/post, Poster/Frame/Lines, a frame,
-lines) with the picture kept in sight above them. The link buttons stay as
+lines) on a screen of its own over the sheet, the picture above them; Done returns. The link buttons stay as
 they were; the picture button shares to a story on a phone (copying the link
 for the sticker) and saves elsewhere. The card prints the author's page,
 `tryboks.com/@handle`, or the site's address for a bok without one.
