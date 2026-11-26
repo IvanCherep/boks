@@ -50,6 +50,11 @@ export function Teleprompter({
   const [error, setError] = useState("");
   /** «Попробовать снова» asks for the microphone again. */
   const [attempt, setAttempt] = useState(0);
+  /** The microphone the author picked here; empty means the browser's own choice. */
+  const [micId, setMicId] = useState(readMic);
+  /** Every microphone the device has, and the one actually heard now. */
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
+  const [activeMic, setActiveMic] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -68,11 +73,26 @@ export function Teleprompter({
       const timer = window.setTimeout(() => setError("Этот браузер не даёт записывать звук на этой странице. Загрузите готовую запись или откройте кабинет в Chrome или Safari."), 0);
       return () => window.clearTimeout(timer);
     }
-    navigator.mediaDevices
-      .getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
-      .then((stream) => {
+    let alive = true;
+    const open = (id: string) =>
+      navigator.mediaDevices.getUserMedia({
+        audio: { ...(id ? { deviceId: { exact: id } } : {}), echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+    // A remembered microphone that is unplugged now falls back to the browser's choice.
+    open(micId)
+      .catch((reason) => (micId ? open("") : Promise.reject(reason)))
+      .then(async (stream) => {
+        if (!alive) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         streamRef.current = stream;
         setMicReady(true);
+        // Names come only after the permission, so the list is read here.
+        const list = await listMics();
+        if (!alive) return;
+        setMics(list);
+        setActiveMic(heardMic(stream, list));
         context = new AudioContext();
         const analyser = context.createAnalyser();
         analyser.fftSize = 512;
@@ -92,12 +112,37 @@ export function Teleprompter({
           "Браузер не дал микрофон. Разрешите доступ: на телефоне через «аА» или замок рядом с адресом, на компьютере через значок микрофона или замка в адресной строке. Потом нажмите «Попробовать снова».",
         ),
       );
+    // A headset plugged in while the check screen is open shows up in the list at once.
+    const refresh = () =>
+      void listMics().then((list) => {
+        if (!alive) return;
+        setMics(list);
+        if (streamRef.current) setActiveMic(heardMic(streamRef.current, list));
+      });
+    navigator.mediaDevices.addEventListener?.("devicechange", refresh);
     return () => {
+      alive = false;
+      navigator.mediaDevices.removeEventListener?.("devicechange", refresh);
       cancelAnimationFrame(frame);
       void context?.close();
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     };
-  }, [attempt]);
+    // micId: choosing another microphone opens it in place of the old one.
+  }, [attempt, micId]);
+
+  const chooseMic = (id: string) => {
+    try {
+      localStorage.setItem(micKey, id);
+    } catch {
+      /* private mode: this teleprompter only */
+    }
+    setLevel(0);
+    setMicReady(false);
+    setMicId(id);
+    // The same id again (a remembered one that fell back) still has to be opened anew.
+    setAttempt((n) => n + 1);
+  };
 
   const stop = useCallback(() => {
     const recorder = recorderRef.current;
@@ -242,8 +287,38 @@ export function Teleprompter({
             <span style={{ width: `${Math.min(100, level * 260)}%` }} />
           </div>
           <p className="desk-prompter-hint">
-            {error || (!micReady ? "Если браузер спросит, разрешите доступ к микрофону." : level > 0.5 ? "Громковато: отодвиньтесь чуть дальше." : level > 0.05 ? "Хорошо слышно." : "Тишина. Скажите что-нибудь.")}
+            {error ||
+              (!micReady
+                ? "Если браузер спросит, разрешите доступ к микрофону."
+                : level > 0.5
+                  ? "Громковато: отодвиньтесь чуть дальше."
+                  : level > 0.05
+                    ? "Хорошо слышно."
+                    : mics.length > 1
+                      ? "Тишина. Скажите что-нибудь. Если полоска не двигается, выберите другой микрофон ниже."
+                      : "Тишина. Скажите что-нибудь.")}
           </p>
+          {micReady && !error && mics.length ? (
+            <label className="desk-prompter-mic">
+              <span>Микрофон</span>
+              {mics.length > 1 ? (
+                <select value={activeMic} onChange={(event) => chooseMic(event.target.value)}>
+                  {mics.map((mic, index) => (
+                    <option key={mic.deviceId} value={mic.deviceId}>
+                      {micName(mic, index)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <b>{micName(mics[0], 0)}</b>
+              )}
+              <small>
+                {mics.length > 1
+                  ? "Запись пойдёт с этого микрофона. Выбор запомнится."
+                  : "Подключите наушники или внешний микрофон, и он появится здесь для выбора."}
+              </small>
+            </label>
+          ) : null}
           {error ? (
             <div className="desk-prompter-retry">
               <button type="button" className="desk-btn desk-btn-red" onClick={() => { setError(""); setAttempt((n) => n + 1); }}>
@@ -316,4 +391,47 @@ function readPace() {
   } catch {
     return defaultPace;
   }
+}
+
+/** The microphone picked in the teleprompter, kept for the next takes and visits. */
+const micKey = "boks-desk-mic-v1";
+
+function readMic() {
+  try {
+    return localStorage.getItem(micKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** Real microphones only: Chrome adds «default» and «communications» copies of one of them. */
+async function listMics() {
+  try {
+    const all = await navigator.mediaDevices.enumerateDevices();
+    const inputs = all.filter((device) => device.kind === "audioinput" && device.deviceId);
+    const real = inputs.filter((device) => device.deviceId !== "default" && device.deviceId !== "communications");
+    return real.length ? real : inputs;
+  } catch {
+    return [];
+  }
+}
+
+/** Which of the listed microphones the stream comes from, even when Chrome reports «default». */
+function heardMic(stream: MediaStream, list: MediaDeviceInfo[]) {
+  const track = stream.getAudioTracks()[0];
+  if (!track) return list[0]?.deviceId ?? "";
+  const { deviceId, groupId } = track.getSettings();
+  return (
+    list.find((mic) => mic.deviceId === deviceId)?.deviceId ??
+    list.find((mic) => mic.label && mic.label === track.label)?.deviceId ??
+    list.find((mic) => groupId && mic.groupId === groupId)?.deviceId ??
+    list[0]?.deviceId ??
+    ""
+  );
+}
+
+/** A name a person recognises: without USB codes like «(046d:0825)». */
+function micName(mic: MediaDeviceInfo, index: number) {
+  const name = mic.label.replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)\s*$/i, "").trim();
+  return name || `Микрофон ${index + 1}`;
 }

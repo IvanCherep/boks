@@ -549,6 +549,13 @@
 .desk .desk-voice-main.has-takes .desk-way b{font-size:15px}
 
 /* The teleprompter when the microphone is refused; no keyboard hint on touch screens. */
+.desk-prompter-mic{display:flex;flex-direction:column;align-items:center;gap:6px;width:min(420px,86vw);color:#b9c1b6;font-size:14px}
+.desk-prompter-mic>span{text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:#8f978c}
+.desk-prompter-mic select{width:100%;font:inherit;font-size:16px;color:#f4f0e8;background:rgba(244,240,232,.08);border:1px solid rgba(244,240,232,.28);border-radius:10px;padding:10px 36px 10px 14px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#f4f0e8 50%),linear-gradient(135deg,#f4f0e8 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;cursor:pointer}
+.desk-prompter-mic select:focus-visible{outline:2px solid #e5c07b;outline-offset:2px}
+.desk-prompter-mic option{color:#111;background:#fff}
+.desk-prompter-mic b{font-weight:500;font-size:16px;color:#f4f0e8}
+.desk-prompter-mic small{font-size:13px;color:#8f978c}
 .desk-prompter-retry{display:flex;flex-direction:column;align-items:center;gap:12px}
 .desk-prompter-retry .desk-quiet{color:#cfc9b8}
 @media (hover:none) and (pointer:coarse){.desk-prompter-keys{display:none}}
