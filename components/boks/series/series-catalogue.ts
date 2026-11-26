@@ -758,6 +758,27 @@ export function liveCollections(
     }));
 }
 
+/**
+ * Sections in code that belong to an author (`author.handle`) also take that
+ * author's Series published later from their page (`live-series.ts`), after
+ * the ones the code lists. Without this a poet whose section is in code
+ * (Алексей Прохоров) publishes a new Series and it never reaches their
+ * section: `liveCollections` drops the live section with the same handle.
+ */
+export function withLivePieces(
+  inCode: readonly SeriesCollection[],
+  sections: readonly { handle: string; pieces: readonly { storyId: string }[] }[]
+): SeriesCollection[] {
+  const byHandle = new Map(sections.map((section) => [section.handle.toLowerCase(), section]));
+  return inCode.map((collection) => {
+    const section = collection.author ? byHandle.get(collection.author.handle.toLowerCase()) : undefined;
+    if (!section) return collection;
+    const listed = new Set(collection.storyIds);
+    const added = section.pieces.map((piece) => piece.storyId).filter((id) => !listed.has(id));
+    return added.length ? { ...collection, storyIds: [...collection.storyIds, ...added] } : collection;
+  });
+}
+
 export const seriesCollections: readonly SeriesCollection[] = [
   {
     // Poe for the eye, Dickinson for the hand, Hardy to end on something human.

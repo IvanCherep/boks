@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { liveSeriesManifestFor, liveSeriesPieceFor, readLiveSeries, setLiveSeries } from "./live-series";
-import { activeCollections, arrangeSeriesShelf, liveCollections, publishedSeriesShelf, seriesCollections, seriesPieceFor, seriesPieces, seriesShelfOrder, seriesShelfPrints, shelfSections, tokenPrint } from "./series-catalogue";
+import { activeCollections, arrangeSeriesShelf, liveCollections, withLivePieces, publishedSeriesShelf, seriesCollections, seriesPieceFor, seriesPieces, seriesShelfOrder, seriesShelfPrints, shelfSections, tokenPrint } from "./series-catalogue";
 import { poemManifestFor } from "@/components/boks/poetry/poems";
 
 const bokA = "11111111-1111-4111-8111-111111111111";
@@ -84,6 +84,22 @@ describe("live Series sections", () => {
   it("leaves an author with a section in code to that section", () => {
     const sections = readLiveSeries([{ handle: "prokhorov", name: "Алексей Прохоров", pieces: answer[0].pieces }]);
     expect(liveCollections(sections)).toEqual([]);
+  });
+
+  it("adds a Series the author published from their page to their section in code, after the listed ones", () => {
+    const sections = readLiveSeries([{ handle: "prokhorov", name: "Алексей Прохоров", pieces: answer[0].pieces }]);
+    setLiveSeries(sections);
+    const inCode = seriesCollections.filter((collection) => !collection.until);
+    const merged = withLivePieces(inCode, sections);
+    const prokhorov = merged.find((collection) => collection.id === "prokhorov")!;
+    const listed = inCode.find((collection) => collection.id === "prokhorov")!.storyIds;
+    expect(prokhorov.storyIds.slice(0, listed.length)).toEqual(listed);
+    expect(prokhorov.storyIds.slice(listed.length)).toEqual(sections[0].pieces.map((piece) => piece.storyId));
+    // The reader opens it as a Series too.
+    expect(seriesPieceFor(sections[0].pieces[0].storyId)).not.toBeNull();
+    // Other sections are left as they are, and nothing is added twice.
+    expect(merged.filter((collection) => collection.id !== "prokhorov")).toEqual(inCode.filter((collection) => collection.id !== "prokhorov"));
+    expect(withLivePieces(merged, sections).find((collection) => collection.id === "prokhorov")!.storyIds).toEqual(prokhorov.storyIds);
   });
 
   it("puts Демидов fourth, under Мальо-Субботина, and a new unlisted author after the listed ones", () => {
