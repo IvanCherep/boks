@@ -16,15 +16,27 @@
 // server; a server that does not answer is said so in the group at once.
 //
 // Secrets: TG_TOKEN, TG_CHAT, RELAY_KEY. Vars: SITE_URL. KV: STATE.
+//
+// The team chat can move without a deploy. Whoever knows the connect code
+// (derived from RELAY_KEY) sends `/connect <code>` in the new chat; the chat is
+// kept in KV ("chat") and that person becomes an owner. Later an owner only
+// has to add the bot to another group and it moves there by itself. A group
+// upgraded to a supergroup changes its id; the bot follows. TG_CHAT is the
+// first chat, used until KV holds one.
 
 const failuresBeforeAlert = 2;
 
-async function telegram(env, text, silent = false) {
+async function teamChat(env) {
+  return (await env.STATE.get("chat")) || String(env.TG_CHAT);
+}
+
+async function telegram(env, text, silent = false, chat = undefined) {
+  const chatId = chat ?? (await teamChat(env));
   const response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chat_id: env.TG_CHAT,
+      chat_id: chatId,
       text: text.slice(0, 4000),
       parse_mode: "HTML",
       disable_web_page_preview: true,
@@ -107,7 +119,24 @@ async function takeUpdate(request, env, ctx) {
   try { update = await request.json(); } catch { return new Response("ok"); }
   const message = update?.message;
   const text = typeof message?.text === "string" ? message.text.trim() : "";
-  if (!message || String(message.chat?.id) !== String(env.TG_CHAT) || !commandShape.test(text)) return new Response("ok");
+  if (!message) return new Response("ok");
+  const here = String(message.chat?.id ?? "");
+  const current = await teamChat(env);
+  // The team group became a supergroup: same people, new id.
+  if (message.migrate_to_chat_id && here === current) {
+    await moveTo(env, String(message.migrate_to_chat_id), null, false);
+    return new Response("ok");
+  }
+  if (here !== current && (await isInvitedByOwner(env, message))) {
+    await moveTo(env, here, null, true);
+    return new Response("ok");
+  }
+  if (/^\/connect(@\w+)?(\s|$)/i.test(text)) {
+    const given = text.split(/\s+/)[1] ?? "";
+    if (sameKey(given.toLowerCase(), await connectCode(env))) await moveTo(env, here, message.from?.id, true);
+    return new Response("ok");
+  }
+  if (here !== current || !commandShape.test(text)) return new Response("ok");
   const command = text.split(/[\s@]/)[0].toLowerCase();
   // The list of commands needs nothing from the server: answered here, always.
   if (command === "/help" || command === "/start") {
@@ -117,6 +146,60 @@ async function takeUpdate(request, env, ctx) {
   ctx.waitUntil(askServer(env, text, command));
   return new Response("ok");
 }
+
+// What `/connect` must carry: short enough to type, derived from RELAY_KEY.
+async function connectCode(env) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`telegram-connect:${env.RELAY_KEY}`));
+  return [...new Uint8Array(digest)].slice(0, 5).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function owners(env) {
+  try {
+    return JSON.parse((await env.STATE.get("owners")) ?? "[]").map(String);
+  } catch {
+    return [];
+  }
+}
+
+// The bot itself among the new members, added by an owner.
+async function isInvitedByOwner(env, message) {
+  const botId = String(env.TG_TOKEN).split(":")[0];
+  const added = [...(message.new_chat_members ?? []), ...(message.new_chat_member ? [message.new_chat_member] : [])];
+  const groupMade = message.group_chat_created || message.supergroup_chat_created;
+  if (!added.some((member) => String(member.id) === botId) && !groupMade) return false;
+  return (await owners(env)).includes(String(message.from?.id ?? ""));
+}
+
+// The team chat is now `chat`: alerts, moderation and commands all go there.
+async function moveTo(env, chat, ownerId, greet) {
+  const before = await teamChat(env);
+  await env.STATE.put("chat", chat);
+  if (ownerId) {
+    const list = await owners(env);
+    if (!list.includes(String(ownerId))) await env.STATE.put("owners", JSON.stringify([...list, String(ownerId)]));
+  }
+  await setCommands(env, chat).catch(() => undefined);
+  if (greet) {
+    await telegram(env, "🤖 <b>Бот boks теперь работает в этом чате.</b> Сюда приходят статистика по командам и служебные уведомления сайта.\n\n" + helpText, false, chat).catch(() => undefined);
+    if (before !== chat) await telegram(env, "Бот boks переехал в другой чат: команды и уведомления теперь там.", true, before).catch(() => undefined);
+  }
+}
+
+async function setCommands(env, chat) {
+  const response = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/setMyCommands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scope: { type: "chat", chat_id: chat }, commands: botCommands }),
+  });
+  return response.json();
+}
+
+const botCommands = [
+  { command: "stats", description: "Статистика: сегодня; /stats week — неделя" },
+  { command: "online", description: "Кто на сайте сейчас" },
+  { command: "server", description: "Нагрузка, память, диск, сервисы" },
+  { command: "help", description: "Что умеет бот" },
+];
 
 async function botKey(env) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`bot-call:${env.RELAY_KEY}`));
@@ -164,15 +247,7 @@ async function setup(env, origin) {
     allowed_updates: ["message"],
     drop_pending_updates: true,
   });
-  const commands = await api("setMyCommands", {
-    scope: { type: "chat", chat_id: env.TG_CHAT },
-    commands: [
-      { command: "stats", description: "Статистика: сегодня; /stats week — неделя" },
-      { command: "online", description: "Кто на сайте сейчас" },
-      { command: "server", description: "Нагрузка, память, диск, сервисы" },
-      { command: "help", description: "Что умеет бот" },
-    ],
-  });
+  const commands = await setCommands(env, await teamChat(env));
   return Response.json({ webhook: hook, commands });
 }
 
