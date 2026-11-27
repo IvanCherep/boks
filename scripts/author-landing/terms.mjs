@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Brings the page for authors in line with the author contract (v7, 2026-11-22).
+ * Brings the page for authors in line with the author contract (2026-11-27).
  *
  *   node scripts/author-landing/terms.mjs
  *
@@ -8,14 +8,17 @@
  * still carries the old offer (a 30 000 ₽ page without conditions, a free
  * joint launch for 15 000 views, five Series for 10 000 ₽, authors' own
  * pictures, a Series "in about a minute"). The contract says: «Совместный
- * запуск» free for authors whose posts reach 30 000 views, «Кабинет автора»
+ * запуск» is a talk about individual terms (exclusive publication, authors
+ * with a large audience; no price and no views target), «Кабинет автора»
  * 30 000 ₽ a year with a link to every Series in the author's social media,
- * «Кабинет автора без продвижения» 500 000 ₽ without it (behind a «?», why-share.js); 5 starting Series, then up to 50 a year;
+ * «Кабинет автора без продвижения» 500 000 ₽ without it (behind a «?», why-share.js);
+ * up to 12 Series a year, 1 to 5 of them at the start;
  * the author reads, the editors make the pictures, the author publishes.
  *
  * It rewrites the copy objects inside landing.js (both languages), then
  * renders index.html again from that script, so the two never disagree.
  * Each change must find its target; a moved text fails here, not on the site.
+ * It can run again on its own output (the appended «?» files are replaced).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -32,7 +35,7 @@ let js = fs.readFileSync(jsFile, "utf8");
 const studio = {
   ru: [
     "Авторская страница tryboks.com/@имя и кабинет автора",
-    "5 Boks Series на старте, дальше до 30 выпусков за год",
+    "До 12 Boks Series за год, из них от 1 до 5 на старте",
     "Ваш голос: запись с суфлёром в кабинете или свой файл",
     "Иллюстрации и звук к каждому выпуску делает редакция",
     "Готовый выпуск вы смотрите первым и публикуете сами",
@@ -41,7 +44,7 @@ const studio = {
   ],
   en: [
     "An author’s page at tryboks.com/@name and an author’s studio",
-    "5 Boks Series to start with, then up to 30 editions a year",
+    "Up to 12 Boks Series a year, 1 to 5 of them to start with",
     "Your voice: record with the teleprompter in the studio or send your own file",
     "The editors make the illustrations and sound for every edition",
     "You see each edition first and publish it yourself",
@@ -53,15 +56,15 @@ const copy = {
   ru: {
     plans: [
       {
-        number: "01", id: "launch", label: "ДЛЯ АВТОРОВ С АУДИТОРИЕЙ", title: "Совместный запуск", price: "Бесплатно", period: "всё, что входит в «Кабинет автора»",
-        promotion: "Подходит, если у вас есть читатели в соцсетях и вы готовы рассказывать им о каждом выпуске.",
+        number: "01", id: "launch", label: "ИНДИВИДУАЛЬНЫЕ УСЛОВИЯ", title: "Совместный запуск", price: "Обсудим", period: "условия под ваш случай",
+        promotion: "Расскажите, как вы видите наше сотрудничество. Возможно, у вас есть свои условия или идея, которой нет в обычном тарифе.",
         items: [
-          "Условие: ссылка на каждую вышедшую Series в ваших соцсетях",
-          "За первые 3 месяца ваши посты о boks вместе набирают от 30\u00a0000 просмотров",
-          "Подать заявку можно с аудиторией от 500\u00a0подписчиков",
-          "Каждую такую заявку редакция рассматривает индивидуально",
+          "Эксклюзивная публикация ваших произведений на boks",
+          "Авторы с большой аудиторией и узнаваемым именем",
+          "Совместные проекты и особые форматы выпусков",
+          "Каждое предложение редакция рассматривает индивидуально",
         ],
-        cta: "Оставить заявку",
+        cta: "Рассказать о сотрудничестве",
       },
       {
         number: "02", id: "author", title: "Кабинет автора", price: "30 000 ₽", period: "за год",
@@ -83,15 +86,15 @@ const copy = {
   en: {
     plans: [
       {
-        number: "01", id: "launch", label: "FOR AUTHORS WITH AN AUDIENCE", title: "Joint launch", price: "Free", period: "everything in the “Author’s studio”",
-        promotion: "For you if you have readers on social media and are ready to tell them about every edition.",
+        number: "01", id: "launch", label: "INDIVIDUAL TERMS", title: "Joint launch", price: "Let’s talk", period: "terms for your case",
+        promotion: "Tell us how you see our collaboration. Perhaps you have terms of your own or an idea the standard plan does not cover.",
         items: [
-          "Condition: a link to every published Series on your social media",
-          "Within the first 3 months your posts about boks reach 30,000\u00a0views in total",
-          "You can apply with an audience of 500 followers or more",
-          "The editors consider each such application individually",
+          "Exclusive publication of your works on boks",
+          "Authors with a large audience and a known name",
+          "Joint projects and special edition formats",
+          "The editors consider each proposal individually",
         ],
-        cta: "Apply",
+        cta: "Tell us about it",
       },
       {
         number: "02", id: "author", title: "Author’s studio", price: "30,000 ₽", period: "per year",
@@ -180,7 +183,7 @@ rewrite("benefits", (v) => (JSON.stringify(v).includes("Boks Series") ? (/[а-я
     ? (typeof x.title === "string" && /^Boks Series (с суфлёром|with a teleprompter)$/.test(x.title) ? { ...x, body: copy[l].benefit } : Object.fromEntries(Object.entries(x).map(([k, y]) => [k, fix(y)])))
     : x);
   const next = fix(v);
-  if (JSON.stringify(next) === JSON.stringify(v)) throw new Error("benefits: no teleprompter card");
+  if (!/Boks Series (с суфлёром|with a teleprompter)/.test(JSON.stringify(v))) throw new Error("benefits: no teleprompter card");
   return next;
 });
 
@@ -197,6 +200,7 @@ rewrite("application", (v) => (Array.isArray(v.interests) ? (/[а-я]/.test(v.ti
 /** A plain text replacement that must match exactly once. */
 function once(from, to) {
   const n = js.split(from).length - 1;
+  if (n === 0 && js.split(to).length - 1 === 1) return; // already done by an earlier run
   if (n !== 1) throw new Error(`expected one ${from}, found ${n}`);
   js = js.replace(from, to);
 }
@@ -207,10 +211,15 @@ once('["author","series","launch","unsure"]', '["launch","author","nopromo","uns
 once('{author:"page",series:"series",launch:"launch",unsure:"unsure"}', '{author:"page",nopromo:"page_no_promotion",series:"series",launch:"launch",unsure:"unsure"}');
 
 // The plan without the condition lives behind a «?» on «Кабинет автора» (why-share.js), not in a card.
-js += "\n" + fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.js"), "utf8");
+const whyShare = fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.js"), "utf8");
+const whyAt = js.indexOf("\n/*\n * boks: the «?» next to the sharing condition");
+js = (whyAt < 0 ? js : js.slice(0, whyAt)) + "\n" + whyShare;
 fs.writeFileSync(jsFile, js);
 
-const css = fs.readFileSync(cssFile, "utf8") + "\n" + fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.css"), "utf8");
+const whyCss = fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.css"), "utf8");
+const baseCss = fs.readFileSync(cssFile, "utf8");
+const cssAt = baseCss.indexOf("\n/* boks: the «?» on the sharing condition");
+const css = (cssAt < 0 ? baseCss : baseCss.slice(0, cssAt)) + "\n" + whyCss;
 fs.writeFileSync(cssFile, css);
 
 // index.html: rendered again in Russian from the changed script.
