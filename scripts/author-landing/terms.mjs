@@ -67,7 +67,7 @@ const copy = {
         cta: "Рассказать о сотрудничестве",
       },
       {
-        number: "02", id: "author", title: "Кабинет автора", price: "30 000 ₽", period: "за год",
+        number: "02", id: "author", title: "Кабинет автора", oldPrice: "50 000 ₽", price: "30 000 ₽", period: "за год, специальные условия до 1 января 2027",
         promotion: "Подходит, если вы только собираете аудиторию и хотите, чтобы выпуски помогали вам её растить.",
         items: [...studio.ru, "Условие: ссылка на каждую вышедшую Series в ваших соцсетях"],
         cta: "Оставить заявку",
@@ -97,7 +97,7 @@ const copy = {
         cta: "Tell us about it",
       },
       {
-        number: "02", id: "author", title: "Author’s studio", price: "30,000 ₽", period: "per year",
+        number: "02", id: "author", title: "Author’s studio", oldPrice: "50,000 ₽", price: "30,000 ₽", period: "per year, special terms until 1 January 2027",
         promotion: "For you if you are still building an audience and want the editions to help it grow.",
         items: [...studio.en, "Condition: a link to every published Series on your social media"],
         cta: "Apply",
