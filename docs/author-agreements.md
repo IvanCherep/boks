@@ -109,8 +109,10 @@ The way in serves two kinds of authors, and the page says which
   one, keeps it ours.
 
 The yearly number of Series belongs to the tariff
-(`boks_plan_series_per_year`: 30 for the paid tariffs, none for free and
-ours) and is written on the contract when it is accepted
+(`boks_plan_series_per_year`: 12 for the paid tariffs since 2026-11-27, 30
+before; none for free and ours; an invitation may carry a bigger number,
+`author_space_invites.series_per_year`, Studio's «До 30 Series в год вместо 12»
+for authors promised 30 earlier) and is written on the contract when it is accepted
 (`author_agreements.series_per_year`): if it changes one day (with a new
 edition of the offer), contracts keep the number they were signed with.
 
@@ -123,7 +125,7 @@ a page without an owner.
 ## What the author sees (walkthrough 2026-11-23)
 
 - The invitation says what waits in the cabinet («В кабинете уже ждут 3
-  ваших текста, 2 из них с вашей записью») and, for a paid tariff, «до 30
+  ваших текста, 2 из них с вашей записью») and, for a paid tariff, «до 12 (or the invitation's number)
   серий в год, не чаще одной в неделю».
 - After accepting, and whenever a verified author opens `/author`, the
   Workshop is home (`/author/desk`); «Моя страница» is in its header.

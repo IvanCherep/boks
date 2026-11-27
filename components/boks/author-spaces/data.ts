@@ -266,8 +266,12 @@ export const findBoksToAttach = (query: string, spaceId: string | null) =>
   call<FoundBok[]>("studio_find_boks", { p_query: query, p_space_id: spaceId });
 
 /** `plan` null: no offer to accept (a special project arranged separately). */
-export const issueAuthorInvite = (spaceId: string, email: string, plan: AuthorPlan | null = "page", legalName = "") =>
-  call<{ token: string; invite: SpaceInvite }>("studio_issue_author_invite", { p_space_id: spaceId, p_email: email, p_plan: plan, p_legal_name: legalName || null });
+/** `seriesPerYear`: only for an author promised more than the tariff's 12 a year before 2026-11-27 (30). */
+export const issueAuthorInvite = (spaceId: string, email: string, plan: AuthorPlan | null = "page", legalName = "", seriesPerYear: number | null = null) =>
+  call<{ token: string; invite: SpaceInvite }>("studio_issue_author_invite", {
+    p_space_id: spaceId, p_email: email, p_plan: plan, p_legal_name: legalName || null,
+    ...(seriesPerYear ? { p_series_per_year: seriesPerYear } : {}),
+  });
 
 // ------------------------------------------------------------------ the contract (`20261123100000_boks_author_agreements.sql`)
 

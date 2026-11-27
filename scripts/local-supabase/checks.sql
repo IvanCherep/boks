@@ -6236,11 +6236,12 @@ begin
   v_paid_bok := (v_seed ->> 'id')::uuid;
   perform public.studio_set_space_seed_voice(v_paid_bok, jsonb_build_object('file', 'take-1.mp3', 'durationMs', 9000, 'source', 'upload',
     'fingerprint', public.boks_voice_fingerprint('Строка платная')));
-  v_token := public.studio_issue_author_invite(v_paid_space, 'pays-paid@boks.test', 'page') ->> 'token';
+  -- Promised 30 a year before the tariff became 12 (2026-11-27): the invitation carries it.
+  v_token := public.studio_issue_author_invite(v_paid_space, 'pays-paid@boks.test', 'page', null, 30) ->> 'token';
   perform public.boks_test_login(v_paid);
   perform public.accept_author_invite_with_terms(v_token, null, v_terms);
   perform public.boks_assert((select billing from public.author_spaces where id = v_paid_space) = 'paid', 'a paid tariff makes the author paid');
-  perform public.boks_assert((public.get_my_workshop() -> 'plan' ->> 'perYear')::integer = 30, 'a paid author has the tariff''s yearly limit');
+  perform public.boks_assert((public.get_my_workshop() -> 'plan' ->> 'perYear')::integer = 30, 'a paid author keeps the yearly number the invitation promised');
   perform public.save_my_bok(v_paid_bok, 'Платный', 'Строка платная', true, null, true);
 
   perform public.boks_test_login(v_editor);
@@ -6495,7 +6496,7 @@ begin
   perform public.boks_assert((select count(*) from public.author_payments where agreement_id = v_agreement and kind = 'tariff' and state = 'awaiting' and amount_rub = 30000) = 1, 'a paid contract has its payment, awaiting');
   v_bill := public.get_my_billing();
   perform public.boks_assert(v_bill ->> 'billing' = 'paid' and jsonb_array_length(v_bill -> 'agreements') = 1, 'the author sees their contract');
-  perform public.boks_assert((v_bill -> 'agreements' -> 0 ->> 'seriesPerYear')::integer = 30 and (v_bill -> 'agreements' -> 0 ->> 'seriesUsed')::integer = 0, 'with its yearly number and none used');
+  perform public.boks_assert((v_bill -> 'agreements' -> 0 ->> 'seriesPerYear')::integer = 12 and (v_bill -> 'agreements' -> 0 ->> 'seriesUsed')::integer = 0, 'with the tariff''s yearly number (12) and none used');
   perform public.boks_assert(v_bill -> 'agreements' -> 0 -> 'payments' -> 0 ->> 'state' = 'awaiting', 'and the payment awaiting');
   perform public.report_my_author_payment();
   perform public.boks_assert((select state from public.author_payments where agreement_id = v_agreement) = 'reported', 'the payment follows «Я оплатил(а)»');

@@ -1306,6 +1306,9 @@ function InvitePanel({ t, space, busy, run, prefill = null }: { t: Words; space:
   // No tariff chosen until the team picks one (an application brings its own).
   const [plan, setPlan] = useState<AuthorPlan | "" | null>(prefill?.plan ?? null);
   const [legalName, setLegalName] = useState("");
+  // Authors promised 30 Series a year before the tariff became 12 (2026-11-27) keep 30.
+  const [promisedThirty, setPromisedThirty] = useState(false);
+  const paidPlan = plan === "page" || plan === "page_no_promotion";
   const [plans, setPlans] = useState<Record<string, { plan: AuthorPlan | null }>>({});
   const latest = space.invites[0] ?? null;
   const invitesKey = space.invites.map((invite) => invite.id).join(",");
@@ -1359,8 +1362,14 @@ function InvitePanel({ t, space, busy, run, prefill = null }: { t: Words; space:
             {account && <small>Аккаунт уже есть: {account}. Приглашение увидит при следующем входе, а по ссылке откроет сразу.</small>}
           </label>
           <InvitePlanFields plan={plan} setPlan={setPlan} legalName={legalName} setLegalName={setLegalName} />
+          {paidPlan && (
+            <label className="asp-check">
+              <input type="checkbox" checked={promisedThirty} onChange={(event) => setPromisedThirty(event.target.checked)} />
+              <span>До 30 Series в год вместо 12: автору это обещали до 27 ноября 2026</span>
+            </label>
+          )}
           <Button disabled={busy || plan === null || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())} onClick={() => void run(async () => {
-            const answer = await issueAuthorInvite(space.id, email.trim(), plan || null, legalName.trim());
+            const answer = await issueAuthorInvite(space.id, email.trim(), plan || null, legalName.trim(), paidPlan && promisedThirty ? 30 : null);
             setLink(inviteLink(window.location.origin, answer.token));
             setCopied(false);
             return loadStudioSpace(space.id);

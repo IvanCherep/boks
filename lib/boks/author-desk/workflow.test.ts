@@ -73,8 +73,8 @@ describe("the release queue: one Boks Series a week", () => {
 });
 
 describe("the standard plan and the editors' fixed places", () => {
-  it("skips into the next year once thirty are used", () => {
-    const weeks = plannedWeeks({ queue: ["a", "b", "c"], busyThisWeek: 0, today: day("2026-11-21"), usedByYear: { 2026: 29 } });
+  it("skips into the next year once twelve are used", () => {
+    const weeks = plannedWeeks({ queue: ["a", "b", "c"], busyThisWeek: 0, today: day("2026-11-21"), usedByYear: { 2026: 11 } });
     expect(["a", "b", "c"].map((id) => ymd(weeks.get(id)))).toEqual(["2026-11-16", "2027-01-04", "2027-01-11"]);
   });
 
