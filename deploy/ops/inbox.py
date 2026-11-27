@@ -119,13 +119,21 @@ FEEDS = {
     # A bok Yandex's content filter would not label (deploy/embedder/facets.mjs):
     # an editor sets its mood by hand. Told once, when the refusal is stored.
     "refused": """
-        select json_build_object('at', to_char(l.labeled_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
-          'title', r.title, 'author', coalesce(nullif(btrim(r.author_name), ''), p.handle), 'id', r.id::text, 'slug', r.slug)
-        from public.bok_facet_labels l join public.reels r on r.id = l.bok_id
-        left join public.user_profiles p on p.user_id = r.author_user_id
-        where l.facet = 'mood' and l.source = 'model' and l.note = 'refused: content_filter'
-          and l.labeled_at > :'since'::timestamptz
-        order by l.labeled_at limit {limit};
+        select j from (
+          select l.labeled_at as at, json_build_object('at', to_char(l.labeled_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+            'title', r.title, 'author', coalesce(nullif(btrim(r.author_name), ''), p.handle), 'id', r.id::text, 'slug', r.slug) as j
+          from public.bok_facet_labels l join public.reels r on r.id = l.bok_id
+          left join public.user_profiles p on p.user_id = r.author_user_id
+          where l.facet = 'mood' and l.source = 'model' and l.note = 'refused: content_filter'
+            and l.labeled_at > :'since'::timestamptz
+          union all
+          -- A byline the filter would not group (its titles): an editor sets the author group by hand.
+          select l.labeled_at, json_build_object('at', to_char(l.labeled_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+            'byline', l.byline)
+          from public.byline_facet_labels l
+          where l.facet = 'author_group' and l.source = 'model' and l.note = 'refused: content_filter'
+            and l.labeled_at > :'since'::timestamptz
+        ) ev order by ev.at limit {limit};
     """,
 }
 
@@ -232,6 +240,10 @@ def message(feed, row):
                     f"Проверьте поступление и нажмите «Оплата получена»: Studio → Авторы → Договоры авторов: {STUDIO}")
         amount = f"{int(row.get('amount') or 0):,}".replace(",", " ") + " ₽"
         return f"✅ Оплата по договору № {esc(row.get('number'))} отмечена: {amount}, <b>{name}</b>{handle}. Страница может открыться читателям."
+    if feed == "refused" and row.get("byline"):
+        return (f"🟡 <b>Яндекс отказался определить группу автора</b>: {esc(row.get('byline'), 120)}\n"
+                f"Фильтр содержания YandexGPT (обычно из-за названий работ). Работы на сайте в порядке, автора нет только в фильтре "
+                f"«Что почитать» по группе (классики / современные). Нужно поставить группу вручную.")
     if feed == "refused":
         link = f"https://tryboks.com/b/{esc(row.get('slug') or row.get('id'))}"
         return (f"🟡 <b>Яндекс отказался размечать настроение</b>: «{esc(row.get('title'), 160)}» — {esc(row.get('author'), 120)}\n"

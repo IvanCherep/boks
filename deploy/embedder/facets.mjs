@@ -201,9 +201,25 @@ async function labelBoks(boks, rubricVersion) {
 
 async function labelBylines(bylines, rubricVersion) {
   const done = [];
+  const refused = [];
   let unusable = 0;
   await Promise.all(bylines.map(async (row) => {
-    const { answer } = await askOrNull(() => call(lib.authorGroupTask(row.byline, row.titles, row.own_account)), lib.readAuthorGroupAnswer);
+    const asked = await askOrNull(() => call(lib.authorGroupTask(row.byline, row.titles, row.own_account)), lib.readAuthorGroupAnswer);
+    // The filter may refuse a byline for its titles (God, church): same as a bok, an empty label
+    // marked `refusedNote`, not asked again, and an editor sets the group by hand.
+    if (asked.refused) {
+      await sql`
+        insert into public.byline_facet_labels (byline, facet, facet_values, source, labeler, rubric_version, note)
+        values (${row.byline}, 'author_group', '{}'::text[], 'model', ${model}, ${rubricVersion}, ${refusedNote})
+        on conflict (byline, facet) do update set
+          facet_values = excluded.facet_values, source = excluded.source, labeler = excluded.labeler,
+          rubric_version = excluded.rubric_version, note = excluded.note, labeled_at = now()
+        where public.byline_facet_labels.source <> 'editor'
+      `;
+      refused.push(row.byline);
+      return;
+    }
+    const answer = asked.answer;
     if (!answer) {
       unusable += 1;
       return;
@@ -218,7 +234,7 @@ async function labelBylines(bylines, rubricVersion) {
     `;
     done.push(`${row.byline}: ${answer.values[0] ?? "unknown"}`);
   }));
-  return { done, unusable };
+  return { done, unusable, refused };
 }
 
 async function label() {
@@ -238,16 +254,16 @@ async function label() {
     const groups = await labelBylines(bylines, versions.author_group);
     const unusable = moods.unusable + groups.unusable;
     // Every reply unusable is a broken model or prompt, not bad luck.
-    if (boks.length + bylines.length > moods.refused.length && moods.done.length + groups.done.length === 0) {
+    if (boks.length + bylines.length > moods.refused.length + groups.refused.length && moods.done.length + groups.done.length === 0) {
       throw new Error(`The model gave no usable answer for ${unusable} requests.${lastError ? ` Last error: ${lastError}` : ""}`);
     }
     const remaining = await counts();
     // Refused boks are labelled (empty) above, so they are not counted as remaining.
     await sql`
       update public.background_job_runs
-      set status = 'ok', finished_at = now(), processed = ${moods.done.length + groups.done.length + moods.refused.length},
+      set status = 'ok', finished_at = now(), processed = ${moods.done.length + groups.done.length + moods.refused.length + groups.refused.length},
           remaining = ${remaining.boks + remaining.bylines}, duration_ms = ${Date.now() - started},
-          details = ${sql.json({ model, usage, unusable, lastError, refused: moods.refused, boks: moods.done.slice(0, 20), bylines: groups.done.slice(0, 20) })}
+          details = ${sql.json({ model, usage, unusable, lastError, refused: moods.refused, refusedBylines: groups.refused, boks: moods.done.slice(0, 20), bylines: groups.done.slice(0, 20) })}
       where id = ${run.id}
     `;
     await sql`delete from public.background_job_runs where job = ${job} and started_at < now() - make_interval(days => ${keepDays})`;
