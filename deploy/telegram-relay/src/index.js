@@ -107,7 +107,9 @@ const helpText = [
 ].join("\n");
 
 
-const commandShape = /^\/(stats|stat|server|status|online|help|start)(@\w+)?(\s+[\w\u0400-\u04ff]{1,12})?\s*$/i;
+// Up to three words after the command ("/stats authors 30"); the server reads
+// what it knows and ignores the rest, so a stray "!" does not lose the command.
+const commandShape = /^\/(stats|stat|server|status|online|help|start)(@\w+)?(\s+\S{1,24}){0,3}\s*$/iu;
 
 // A command from the team group. Anything else - other chats, ordinary
 // messages - is ignored. Telegram is answered at once; the work goes on after.
