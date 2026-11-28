@@ -210,6 +210,42 @@ once('["author","series","launch","unsure"]', '["launch","author","nopromo","uns
 // bridge.js inside the bundle: the third offer has its own value in the applications.
 once('{author:"page",series:"series",launch:"launch",unsure:"unsure"}', '{author:"page",nopromo:"page_no_promotion",series:"series",launch:"launch",unsure:"unsure"}');
 
+// Contact by email only (2026-11-28): the team answers applications and questions from info@tryboks.com,
+// and a Telegram or VK handle is often unreachable. Both forms ask for an email and check its shape.
+const inner = (value) => literal(value).slice(1, -1);
+for (const [from, to] of [
+  ["ССЫЛКА, ЧТОБЫ С ВАМИ СВЯЗАТЬСЯ", "ЭЛЕКТРОННАЯ ПОЧТА ДЛЯ СВЯЗИ"],
+  ["Telegram, VK, почта или другая соцсеть", "name@mail.ru"],
+  ["КУДА ОТВЕТИТЬ", "ВАША ПОЧТА"],
+  ["Telegram, VK или почта", "name@mail.ru"],
+  ["Ответим туда, куда укажете, обычно", "Ответим на почту, обычно"],
+  ["A LINK WHERE WE CAN CONTACT YOU", "YOUR EMAIL"],
+  ["Telegram, VK, email or another social network", "name@example.com"],
+  ["WHERE TO REPLY", "YOUR EMAIL"],
+  ["Telegram, VK or email", "name@example.com"],
+  ["We will reply wherever you specify, usually", "We will reply by email, usually"],
+  ["где ваши читатели. Ответим в течение двух рабочих дней.", "где ваши читатели. Ответим на почту в течение двух рабочих дней."],
+  ["where your readers are. We will reply within two working days.", "where your readers are. We will reply by email within two working days."],
+  ["по контакту, который вы оставили", "на почту, которую вы оставили"],
+  ["through the contact you left", "by email"],
+]) {
+  // Copy text: every occurrence changes; a text found in neither form means the designers moved it.
+  if (js.includes(inner(from))) js = js.split(inner(from)).join(inner(to));
+  else if (!js.includes(inner(to))) throw new Error(`expected ${from}`);
+}
+const emailInput = 'type="email" inputmode="email" autocomplete="email" pattern="[^@ ]+@[^@ ]+[.][^@ ]+"';
+once('<input name="contact" placeholder="${e(g[1].placeholder)}" required maxlength="300">', `<input name="contact" ${emailInput} title="\${e(g[1].placeholder)}" placeholder="\${e(g[1].placeholder)}" required maxlength="200">`);
+once('<input name="replyContact" placeholder="${e(i.question.contactPlaceholder)}" maxlength="300" required>', `<input name="replyContact" ${emailInput} title="\${e(i.question.contactPlaceholder)}" placeholder="\${e(i.question.contactPlaceholder)}" maxlength="200" required>`);
+
+// A wrong address gets a hint in the page's language, not the browser's own English line.
+const ruRequired = `required:${literal("Заполните это поле")},`;
+once(ruRequired, `${ruRequired}email:${literal("Укажите адрес почты, например name@mail.ru")},`);
+once('required:"Please fill in this field",', 'required:"Please fill in this field",email:"Enter an email address, for example name@example.com",');
+const badEmail = (v) => `${v}.type==="email"&&(${v}.validity.typeMismatch||${v}.validity.patternMismatch)`;
+once('x.validity.valueMissing&&x.setCustomValidity(m().ui.required)', `(x.validity.valueMissing?x.setCustomValidity(m().ui.required):${badEmail("x")}&&x.setCustomValidity(m().ui.email))`);
+once('x.setCustomValidity(T?m().ui.required:"")}return o.reportValidity()', `x.setCustomValidity(""),x.setCustomValidity(T?m().ui.required:${badEmail("x")}?m().ui.email:"")}return o.reportValidity()`);
+once('L.setCustomValidity(L.value.trim()?"":window.BoksAuthorCopy?.[p()]?.ui?.required||"")', `(L.setCustomValidity(""),L.setCustomValidity(L.value.trim()?(${badEmail("L")}?window.BoksAuthorCopy?.[p()]?.ui?.email||"":""):window.BoksAuthorCopy?.[p()]?.ui?.required||""))`);
+
 // The plan without the condition lives behind a «?» on «Кабинет автора» (why-share.js), not in a card.
 const whyShare = fs.readFileSync(path.join(repo, "scripts", "author-landing", "why-share.js"), "utf8");
 const whyAt = js.indexOf("\n/*\n * boks: the «?» next to the sharing condition");
